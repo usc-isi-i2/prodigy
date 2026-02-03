@@ -1,15 +1,34 @@
-# Requirements for twitter_csv.py data import
-# Core dependencies for loading and processing Twitter CSV data
-#
-# IMPORTANT: Install in this order:
-# 1. pip3 install torch==2.0.1
-# 2. pip3 install torch_scatter torch_sparse -f https://data.pyg.org/whl/torch-2.0.1+cpu.html
-# 3. pip3 install torch-geometric==2.3.1 pandas numpy
+# Requirements for ARM Mac (Apple Silicon M1/M2/M3)
+# Tested and working as of February 2026
 
-torch==2.0.1
+# Core ML/DL packages - IMPORTANT: Install in this order
+# Step 1: Install NumPy first
+numpy<2.0  # Must be <2.0 for PyTorch compatibility
+
+# Step 2: Install PyTorch and PyG
+torch==2.4.1
+torch-geometric==2.7.0
+
+# Step 3: Install PyG extensions from wheel repository
+# Run: pip install torch-scatter torch-sparse -f https://data.pyg.org/whl/torch-2.4.0+cpu.html
+torch_scatter  # Installed from PyG wheels
+torch_sparse   # Installed from PyG wheels
+
+# Scientific computing
+scipy==1.15.3
+scikit-learn==1.0.2
 pandas
-numpy
-torch-geometric==2.3.1
 
-# Note: torch_scatter and torch_sparse should be installed separately with:
-# pip3 install torch_scatter torch_sparse -f https://data.pyg.org/whl/torch-2.0.1+cpu.html
+# NLP and transformers
+sentence-transformers==2.2.2
+transformers==4.29.2
+
+# Graph and knowledge graph datasets
+ogb
+lmdb  # Used for KG dataset caching
+
+# Utilities
+tqdm==4.64.0
+
+# Experiment tracking
+wandb
