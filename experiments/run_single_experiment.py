@@ -60,12 +60,14 @@ if __name__ == '__main__':
         kg_emb_model=params["kg_emb_model"] if params["kg_emb_model"] != "" else None,
         task_name = params["task_name"],
         shuffle_index=params["shuffle_index"],
-        node_graph = params["task_name"] == "sn_neighbor_matching"
+        node_graph = params["task_name"] == "sn_neighbor_matching",
+        csv_filename=params["csv_filename"],
+        label_type=params["label_type"],
+        max_users=params["max_users"]
     )
 
     trnr = TrainerFS(datasets,  params)
 
     trnr.train()
-
 
 

@@ -22,6 +22,9 @@ def get_dataset_wrap(root, dataset, **kwargs):
     if dataset == "mag240m":
         from data.mag240m import get_mag240m_dataset
         return get_mag240m_dataset(root=os.path.join(root, "mag240m"), **kwargs)
+    if dataset == "twitter":
+        from data.twitter_csv import get_twitter_dataset
+        return get_twitter_dataset(root=root, **kwargs)
     if dataset in ["Wiki", "WikiKG90M"]:
         from data.kg import get_kg_dataset
         return get_kg_dataset(root=root, name=dataset, **kwargs)

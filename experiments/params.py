@@ -12,6 +12,9 @@ def get_params():
 
     args.add_argument("-root", "--root", default="./FSdatasets", type=str)
     args.add_argument("-dataset", "--dataset", default="arxiv", type=str)
+    args.add_argument("--csv_filename", default="twitter_data.csv", type=str)
+    args.add_argument("--label_type", default="verified", type=str)
+    args.add_argument("--max_users", default=None, type=int)
     args.add_argument("-invalidate_cache", "--invalidate_cache", default=False, type=bool)
     # if true, it will regenerate preprocessed cache
     args.add_argument("-ds_cap", "--dataset_len_cap", default=10000, type=int)
@@ -142,4 +145,3 @@ def get_params():
     params["exp_name"] = params["prefix"] + "_" + params["timestamp"]
 
     return params
-

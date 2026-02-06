@@ -208,6 +208,9 @@ class TrainerFS():
         kwargs["split_labels"] = not self.parameter["no_split_labels"]
         kwargs["train_cap"] = self.parameter["train_cap"]
         kwargs['linear_probe'] = self.parameter['linear_probe']
+        kwargs["csv_filename"] = self.parameter["csv_filename"]
+        kwargs["label_type"] = self.parameter["label_type"]
+        kwargs["max_users"] = self.parameter["max_users"]
         if self.parameter["all_test"]:
             kwargs["all_test"] = True
         if self.parameter["label_set"]:
@@ -228,6 +231,10 @@ class TrainerFS():
             assert self.parameter["task_name"] != "classification"
             from data.kg import get_kg_dataloader
             get_dataloader = get_kg_dataloader
+        elif dataset_name == "twitter":
+            from data.twitter_csv import get_twitter_dataloader
+            kwargs["root"] = self.parameter["root"]
+            get_dataloader = get_twitter_dataloader
         else:
             raise NotImplementedError
 
@@ -510,4 +517,3 @@ class TrainerFS():
         if ranks is not None:
             ranks = {key: np.average([r[0][key] for r in ranks], weights=[r[1] for r in ranks]) for key in ranks[0][0]}
         return loss_global, acc_global, acc_batch_std, aux_loss_global, ranks
-
