@@ -136,7 +136,16 @@ class TrainerFS():
             self.aux_loss.to(self.device)
 
         bert_model_name = self.parameter["bert_emb_model"]
-        self.Bert = SentenceEmb(bert_model_name, device=self.device, cache_folder=os.path.join(self.parameter["root"], "sbert"))
+        # Twitter + numerical features does not need sentence embeddings and can
+        # run with random label embeddings in the dataloader.
+        if self.dataset_name == "twitter" and self.original_features:
+            self.Bert = None
+        else:
+            self.Bert = SentenceEmb(
+                bert_model_name,
+                device=self.device,
+                cache_folder=os.path.join(self.parameter["root"], "sbert"),
+            )
 
         params = list(self.model.parameters())
         if hasattr(self, "aux_header"):
