@@ -25,6 +25,9 @@ def get_dataset_wrap(root, dataset, **kwargs):
     if dataset == "twitter":
         from data.twitter_csv import get_twitter_dataset
         return get_twitter_dataset(root=root, **kwargs)
+    if dataset in {"facebook-uk_ru", "facebook_uk_ru"}:
+        from data.facebook_uk_ru import get_facebook_uk_ru_dataset
+        return get_facebook_uk_ru_dataset(root=root, **kwargs)
     if dataset in ["Wiki", "WikiKG90M"]:
         from data.kg import get_kg_dataset
         return get_kg_dataset(root=root, name=dataset, **kwargs)

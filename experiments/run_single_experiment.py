@@ -63,11 +63,22 @@ if __name__ == '__main__':
         node_graph = params["task_name"] == "sn_neighbor_matching",
         csv_filename=params["csv_filename"],
         label_type=params["label_type"],
-        max_users=params["max_users"]
+        max_users=params["max_users"],
+        pkl_filename=params["facebook_pkl_filename"],
+        facebook_edges_filename=params["facebook_edges_filename"],
+        facebook_node_features_filename=params["facebook_node_features_filename"],
+        facebook_data_source=params["facebook_data_source"],
+        facebook_use_edge_features=params["facebook_use_edge_features"],
+        facebook_edge_feature_columns=params["facebook_edge_feature_columns"],
+        source_pkl_path=params["facebook_source_pkl_path"],
+        facebook_embeddings_path=params["facebook_embeddings_path"],
+        facebook_embedding_ids_path=params["facebook_embedding_ids_path"],
+        facebook_text_emb_model=params["facebook_text_emb_model"],
+        facebook_target_dim=params["facebook_target_dim"],
+        facebook_filter_to_uk_ru=params["facebook_filter_to_uk_ru"],
+        max_posts=params["facebook_max_posts"],
     )
 
     trnr = TrainerFS(datasets,  params)
 
     trnr.train()
-
-
