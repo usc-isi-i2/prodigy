@@ -452,12 +452,13 @@ class TrainerFS():
             )
             t_load += t2 - t1
             t_one_step += t3 - t2
-            pbar.set_description("load: %s, step: %s" % (t_load / (e + 1), t_one_step / (e + 1)))
-
-            # print the loss on specific step
-            if e % self.print_step == 0:
-                # loss_num = loss
-                pbar.write(f"Loss: {loss.item()}")
+            pbar.set_postfix(
+                loss=f"{_to_float(loss):.4f}",
+                acc=f"{_to_float(acc):.4f}",
+                aux=f"{_to_float(aux_loss):.4f}",
+                load=f"{(t2-t1):.2f}s",
+                step=f"{(t3-t2):.2f}s",
+            )
             # save checkpoint on specific step
             if e % self.checkpoint_step == 0 and e != 0:
                 pbar.write('Step  {} has finished, saving...'.format(e))
@@ -481,7 +482,7 @@ class TrainerFS():
                     #     pbar.write("Early stopping at step {}".format(e))
                     #     break
 
-                pbar.write(f"Validation loss {val_loss} acc {val_acc} aux_loss {val_aux_loss}")
+                pbar.write(f"[step {e}] val_loss={_to_float(val_loss):.4f} val_acc={_to_float(val_acc):.4f} val_aux={_to_float(val_aux_loss):.4f}")
                 wandb.log({"valid_loss": _to_float(val_loss), "valid_acc": _to_float(val_acc), "valid_aux_loss": _to_float(val_aux_loss)},
                           step=e)
 
