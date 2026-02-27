@@ -1,12 +1,16 @@
 import numpy as np
 import random
 import torch
+import time
 
-torch.multiprocessing.set_sharing_strategy("file_system") 
+torch.multiprocessing.set_sharing_strategy("file_system")
 
 import sys
 import os
 torch.autograd.set_detect_anomaly(True)
+
+def _log(msg):
+    print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 sys.path.extend(os.path.join(os.path.dirname(__file__), "../../"))
 
@@ -40,6 +44,7 @@ if __name__ == '__main__':
     if params["dataset"] in ["FB15K-237", "NELL", "ConceptNet", "Wiki"]:
         print("Using KG dataset - setting language model to sentence-transformers/all-mpnet-base-v2")
         params["bert_emb_model"] = "sentence-transformers/all-mpnet-base-v2"
+    _log("Loading dataset...")
     datasets = get_dataset_wrap(
         root=params["root"],
         dataset=params["dataset"],
@@ -79,6 +84,8 @@ if __name__ == '__main__':
         max_posts=params["facebook_max_posts"],
     )
 
-    trnr = TrainerFS(datasets,  params)
+    _log("Dataset loaded. Initializing trainer...")
+    trnr = TrainerFS(datasets, params)
 
+    _log("Trainer initialized. Starting train/eval...")
     trnr.train()

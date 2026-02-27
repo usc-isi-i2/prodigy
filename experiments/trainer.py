@@ -144,9 +144,9 @@ class TrainerFS():
             self.aux_loss.to(self.device)
 
         bert_model_name = self.parameter["bert_emb_model"]
-        # Twitter + numerical features does not need sentence embeddings and can
+        # Twitter/midterm + numerical features does not need sentence embeddings and can
         # run with random label embeddings in the dataloader.
-        if self.dataset_name == "twitter" and self.original_features:
+        if self.dataset_name in {"twitter", "midterm"} and self.original_features:
             self.Bert = None
         else:
             self.Bert = SentenceEmb(
@@ -269,6 +269,10 @@ class TrainerFS():
             from data.facebook_uk_ru import get_facebook_uk_ru_dataloader
             kwargs["root"] = self.parameter["root"]
             get_dataloader = get_facebook_uk_ru_dataloader
+        elif dataset_name == "midterm":
+            from data.midterm import get_midterm_dataloader
+            kwargs["root"] = self.parameter["root"]
+            get_dataloader = get_midterm_dataloader
         else:
             raise NotImplementedError
 
