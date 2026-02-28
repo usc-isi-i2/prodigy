@@ -22,6 +22,8 @@ python experiments/run_single_experiment.py \
     --device 0 \
     --dataset_len_cap 10000 \
     --epochs 1 \
+    --eval_step 500 \
+    --checkpoint_step 500 \
     -val_cap 100 \
     -test_cap 100 \
     --prefix pretrain_midterm_nm_test

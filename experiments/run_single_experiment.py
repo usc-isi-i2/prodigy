@@ -27,10 +27,6 @@ if __name__ == '__main__':
     torch.set_num_threads(4)
 
     params = get_params()
-    print("---------Parameters---------")
-    for k, v in params.items():
-        print(k + ': ' + str(v))
-    print("----------------------------")
 
     # control random seed
     if params['seed'] is not None:

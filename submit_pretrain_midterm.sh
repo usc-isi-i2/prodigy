@@ -16,7 +16,7 @@ mkdir -p logs
 python experiments/run_single_experiment.py \
     --dataset midterm \
     --root midterm/graph \
-    --input_dim 89 \
+    --input_dim 98 \
     --original_features True \
     --task neighbor_matching \
     --device 0 \
