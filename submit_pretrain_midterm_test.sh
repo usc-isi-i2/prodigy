@@ -15,7 +15,7 @@ mkdir -p logs
 
 python experiments/run_single_experiment.py \
     --dataset midterm \
-    --root midterm/converted_data_2022-10-17-00_2022-10-17-23/graph \
+    --root midterm/graph \
     --input_dim 89 \
     --original_features True \
     --task neighbor_matching \
