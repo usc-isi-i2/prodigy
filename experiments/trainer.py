@@ -395,7 +395,15 @@ class TrainerFS():
         
         with torch.no_grad():
             # self.model.eval()
+            print("Evaluating on test set...", flush=True)
             test_loss, test_acc, test_acc_std, test_aux_loss, ranks = self.do_eval(self.test_dataloader)
+            print(f"\n========== TEST RESULTS ==========")
+            print(f"  Accuracy:  {_to_float(test_acc):.4f} ± {_to_float(test_acc_std):.4f}")
+            print(f"  Loss:      {_to_float(test_loss):.4f}")
+            if ranks is not None:
+                for key, val in ranks.items():
+                    print(f"  {key}: {val:.4f}")
+            print(f"==================================\n", flush=True)
             start_log_dict = {"start_test_acc": test_acc, "start_test_acc_std": test_acc_std}
             if ranks is not None:
                 for key in ranks:
@@ -404,7 +412,6 @@ class TrainerFS():
 
         if "eval_only" in self.parameter and self.parameter["eval_only"]:
             print("Evaluation only - skipping training - exiting now")
-            print("Note: also skipping evaluation of val set")
             return
 
         with torch.no_grad():
