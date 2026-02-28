@@ -389,40 +389,38 @@ class TrainerFS():
 
         # training by step
         t_load, t_one_step = 0, 0
-        pbar = trange(self.steps)
         train_dataloader_itr = iter(self.train_dataloader)
 
         bad_counts = 0
 
         def prefix_dict(d, prefix):
             return {prefix + key: value for key, value in d.items()}
-        
+
         with torch.no_grad():
-            # self.model.eval()
             _log("Pre-training eval on test set...")
             test_loss, test_acc, test_acc_std, test_aux_loss, ranks = self.do_eval(self.test_dataloader)
-            print(f"  [pre-train test]  acc={_to_float(test_acc):.4f} ± {_to_float(test_acc_std):.4f}  loss={_to_float(test_loss):.4f}", flush=True)
+            _log(f"  [pre-train test]  acc={_to_float(test_acc):.4f} ± {_to_float(test_acc_std):.4f}  loss={_to_float(test_loss):.4f}")
             start_log_dict = {"start_test_acc": test_acc, "start_test_acc_std": test_acc_std}
             if ranks is not None:
                 for key in ranks:
                     start_log_dict["start_test_" + key] = ranks[key]
-            wandb.log(start_log_dict, step=0) # Test accuracy before training (if using e.g. a pretrained model etc.)
+            wandb.log(start_log_dict, step=0)
 
         if "eval_only" in self.parameter and self.parameter["eval_only"]:
-            print("Evaluation only - skipping training - exiting now")
+            _log("Evaluation only — done.")
             return
 
-        _log("Pre-training eval on val set...")
         with torch.no_grad():
-            # self.model.eval()
+            _log("Pre-training eval on val set...")
             val_loss, val_acc, val_acc_std, val_aux_loss, ranks = self.do_eval(self.val_dataloader)
-            print(f"  [pre-train val]   acc={_to_float(val_acc):.4f} ± {_to_float(val_acc_std):.4f}  loss={_to_float(val_loss):.4f}", flush=True)
+            _log(f"  [pre-train val]   acc={_to_float(val_acc):.4f} ± {_to_float(val_acc_std):.4f}  loss={_to_float(val_loss):.4f}")
             start_log_dict = {"start_val_acc": val_acc, "start_val_acc_std": val_acc_std}
             if ranks is not None:
                 for key in ranks:
                     start_log_dict["start_val_" + key] = ranks[key]
             wandb.log(start_log_dict, step=0)
 
+        pbar = trange(self.steps)
         for e in pbar:
             self.model.train()
 
