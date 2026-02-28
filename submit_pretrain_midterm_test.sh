@@ -20,7 +20,7 @@ python experiments/run_single_experiment.py \
     --original_features True \
     --task neighbor_matching \
     --device 0 \
-    --dataset_len_cap 10000 \
+    --dataset_len_cap 1000 \
     --epochs 1 \
     --eval_step 500 \
     --checkpoint_step 500 \

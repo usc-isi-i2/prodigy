@@ -21,7 +21,7 @@ python experiments/run_single_experiment.py \
     --task neighbor_matching \
     --device 0 \
     --epochs 4 \
-    --batch_size 20
+    --batch_size 20 \
     -val_cap 1000 \
     -test_cap 1000 \
     --prefix pretrain_midterm_nm
