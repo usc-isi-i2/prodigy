@@ -20,21 +20,23 @@ warnings.filterwarnings('ignore')
 ## Config
 path_pattern = "/project2/ll_774_951/midterm/*/*.csv"
 OUTPUT_DIR = "graph_co_retweet"
-MAX_GROUP_SIZE = None  # None = infinity; set e.g. 500 to cap large popular accounts
+MAX_GROUP_SIZE = 500  # None = infinity; set e.g. 500 to cap large popular accounts
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # %%
 ## Load data
 files = sorted(glob.glob(path_pattern))
-mdf = pd.concat([pd.read_csv(f, low_memory=False) for f in files], ignore_index=True)
+mdf = pd.concat([pd.read_csv(f) for f in files], ignore_index=True)
 print(f"Loaded {len(mdf):,} rows, {mdf['userid'].nunique():,} unique users")
 
 # %%
 ## Build co-retweet edge list
 rt_df = mdf[mdf['rt_userid'].notna()][['userid', 'rt_userid']].copy()
+rt_df['userid'] = pd.to_numeric(rt_df['userid'], errors='coerce')
 rt_df['rt_userid'] = pd.to_numeric(rt_df['rt_userid'], errors='coerce')
-rt_df = rt_df.dropna(subset=['rt_userid'])
+rt_df = rt_df.dropna(subset=['rt_userid', 'userid'])
+rt_df['userid'] = rt_df['userid'].astype(int)
 rt_df['rt_userid'] = rt_df['rt_userid'].astype(int)
 
 print(f"Retweet rows: {len(rt_df):,}")
