@@ -14,8 +14,8 @@ warnings.filterwarnings('ignore')
 
 ## Config
 path_pattern = "/project2/ll_774_951/midterm/*/*.csv"
-EXISTING_GRAPH = "midterm/graph_mention/graph_data.pt"
-OUTPUT_DIR = "midterm/graph_co_retweet"
+EXISTING_GRAPH = "graph_mention/graph_data.pt"
+OUTPUT_DIR = "graph_co_retweet"
 MAX_GROUP_SIZE = 500
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -31,7 +31,7 @@ print(f"Nodes: {len(user_ids):,}  Features: {existing['x'].shape[1]}")
 print("Loading CSVs...")
 files = sorted(glob.glob(path_pattern))
 rt_df = pd.concat(
-    [pd.read_csv(f, usecols=['userid', 'rt_userid'], low_memory=False) for f in files],
+    [pd.read_csv(f, usecols=['userid', 'rt_userid'], on_bad_lines='skip', engine='python') for f in files],
     ignore_index=True
 )
 rt_df = rt_df[rt_df['rt_userid'].notna()].copy()
