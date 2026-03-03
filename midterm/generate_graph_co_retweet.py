@@ -30,6 +30,26 @@ files = sorted(glob.glob(path_pattern))
 mdf = pd.concat([pd.read_csv(f) for f in files], ignore_index=True)
 print(f"Loaded {len(mdf):,} rows, {mdf['userid'].nunique():,} unique users")
 
+# Ensure node IDs are valid numeric Twitter user IDs.
+# Bad rows can exist from malformed source records and should not create graph nodes.
+raw_userid = mdf['userid'].copy()
+mdf['userid'] = pd.to_numeric(raw_userid, errors='coerce')
+invalid_userid = mdf['userid'].isna()
+if invalid_userid.any():
+    bad_count = int(invalid_userid.sum())
+    bad_examples = (
+        raw_userid.loc[invalid_userid]
+        .astype(str)
+        .drop_duplicates()
+        .head(5)
+        .tolist()
+    )
+    print(f"Dropping rows with invalid userid: {bad_count:,} / {len(mdf):,}")
+    print(f"Example invalid userid values: {bad_examples}")
+    mdf = mdf.loc[~invalid_userid].copy()
+mdf['userid'] = mdf['userid'].astype(np.int64)
+print(f"After userid cleanup: {len(mdf):,} rows, {mdf['userid'].nunique():,} unique users")
+
 # %%
 ## Build co-retweet edge list
 rt_df = mdf[mdf['rt_userid'].notna()][['userid', 'rt_userid']].copy()

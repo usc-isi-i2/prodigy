@@ -117,9 +117,50 @@ print(f"\nLoading source graph from {SOURCE_GRAPH} ...")
 raw = torch.load(SOURCE_GRAPH, map_location='cpu')
 
 user_ids = raw['user_ids']          # numpy array of integer user IDs
-id_to_idx = {int(uid): i for i, uid in enumerate(user_ids)}
 num_nodes = len(user_ids)
 print(f"Source graph: {num_nodes:,} nodes")
+
+
+def _to_int_user_id(uid):
+    """Best-effort conversion to integer user ID; returns None if invalid."""
+    if isinstance(uid, (int, np.integer)):
+        return int(uid)
+    if isinstance(uid, (float, np.floating)):
+        if np.isfinite(uid):
+            return int(uid)
+        return None
+    s = str(uid).strip()
+    if not s or s.lower() in {"nan", "none", "null"}:
+        return None
+    v = pd.to_numeric(s, errors='coerce')
+    if pd.isna(v):
+        return None
+    return int(v)
+
+
+# Build index only for valid numeric user IDs in the source graph.
+id_to_idx = {}
+invalid_uid_count = 0
+duplicate_uid_count = 0
+invalid_uid_examples = []
+for i, uid in enumerate(user_ids):
+    u = _to_int_user_id(uid)
+    if u is None:
+        invalid_uid_count += 1
+        if len(invalid_uid_examples) < 10:
+            invalid_uid_examples.append(repr(uid))
+        continue
+    if u in id_to_idx:
+        duplicate_uid_count += 1
+        continue
+    id_to_idx[u] = i
+
+print(
+    f"Usable source user_ids: {len(id_to_idx):,} / {num_nodes:,} "
+    f"(invalid: {invalid_uid_count:,}, duplicates: {duplicate_uid_count:,})"
+)
+if invalid_uid_examples:
+    print("Example invalid source user_ids:", invalid_uid_examples)
 
 # %%
 ## Convert edge sets to tensors (only keep edges where both endpoints are in node set)
