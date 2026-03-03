@@ -8,6 +8,7 @@ import glob
 import os
 import warnings
 from itertools import combinations
+import argparse
 
 import numpy as np
 import pandas as pd
@@ -17,6 +18,16 @@ warnings.filterwarnings('ignore')
 
 # %%
 ## Config
+parser = argparse.ArgumentParser(description="Build temporal co-retweet graph.")
+parser.add_argument(
+    "--strict-dates",
+    "--strict_dates",
+    dest="strict_dates",
+    action="store_true",
+    help="Fail if any row has an invalid date value instead of dropping invalid rows.",
+)
+args = parser.parse_args()
+
 path_pattern = "/project2/ll_774_951/midterm/*/*.csv"
 SOURCE_GRAPH = "midterm/graph_co_retweet/graph_data.pt"
 OUTPUT_DIR = "midterm/graph_temporal"
@@ -37,7 +48,31 @@ print(f"Total rows: {len(mdf):,}  unique users: {mdf['userid'].nunique():,}")
 
 # %%
 ## Parse timestamps and sort
-mdf['timestamp'] = pd.to_datetime(mdf['date'], format='%a %b %d %H:%M:%S +0000 %Y', utc=True)
+# Some source rows can contain malformed date values (e.g. "1").
+# Coerce parse failures to NaT, report them, and drop those rows.
+mdf['date'] = mdf['date'].astype(str).str.strip()
+mdf['timestamp'] = pd.to_datetime(
+    mdf['date'],
+    format='%a %b %d %H:%M:%S +0000 %Y',
+    utc=True,
+    errors='coerce',
+)
+invalid_ts = mdf['timestamp'].isna()
+if invalid_ts.any():
+    bad_count = int(invalid_ts.sum())
+    bad_examples = mdf.loc[invalid_ts, 'date'].drop_duplicates().head(5).tolist()
+    if args.strict_dates:
+        raise ValueError(
+            f"Invalid timestamp rows: {bad_count:,} / {len(mdf):,}. "
+            f"Examples: {bad_examples}"
+        )
+    print(f"Invalid timestamp rows: {bad_count:,} / {len(mdf):,} (dropping)")
+    print(f"Example invalid date values: {bad_examples}")
+    mdf = mdf.loc[~invalid_ts].copy()
+
+if len(mdf) == 0:
+    raise ValueError("No valid timestamps after parsing 'date' column.")
+
 mdf = mdf.sort_values('timestamp').reset_index(drop=True)
 
 cutoff_idx = int(len(mdf) * 0.80)
