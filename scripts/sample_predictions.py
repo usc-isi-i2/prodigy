@@ -13,7 +13,7 @@ import os
 import torch
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import NearestCentroid
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -121,9 +121,9 @@ with torch.no_grad():
         raw_feats = graph.x[supernode_idx].cpu().numpy()
         support_mask = (~is_query).numpy()
         query_mask = is_query.numpy()
-        lr = LogisticRegression(max_iter=1000, C=1.0)
-        lr.fit(raw_feats[support_mask], gt_label_idx[support_mask].numpy())
-        lr_preds = lr.predict(raw_feats[query_mask])
+        nc = NearestCentroid()
+        nc.fit(raw_feats[support_mask], gt_label_idx[support_mask].numpy())
+        lr_preds = nc.predict(raw_feats[query_mask])
 
         # --- GNN model ---
         yt, yp, graph_out = model(*batch)
@@ -164,7 +164,7 @@ df = pd.DataFrame(rows)
 df.to_csv(args.output, index=False)
 print(f"\nSaved {len(df)} predictions to {args.output}")
 print(f"GNN accuracy:      {df['correct'].mean():.4f}")
-print(f"LR accuracy:       {df['lr_correct'].mean():.4f}")
+print(f"Nearest-centroid:  {df['lr_correct'].mean():.4f}")
 print(f"Random baseline:   {1/args.n_way:.4f}")
 print(f"\nSample predictions:")
 print(df[['episode','true_state','pred_state','correct','lr_pred_state','lr_correct']].head(10).to_string(index=False))
