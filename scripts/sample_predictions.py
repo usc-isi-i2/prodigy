@@ -13,7 +13,6 @@ import os
 import torch
 import numpy as np
 import pandas as pd
-from sklearn.neighbors import NearestCentroid
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -121,9 +120,11 @@ with torch.no_grad():
         raw_feats = graph.x[supernode_idx].cpu().numpy()
         support_mask = (~is_query).numpy()
         query_mask = is_query.numpy()
-        nc = NearestCentroid()
-        nc.fit(raw_feats[support_mask], gt_label_idx[support_mask].numpy())
-        lr_preds = nc.predict(raw_feats[query_mask])
+        support_labels_np = gt_label_idx[support_mask].numpy()
+        classes = sorted(set(support_labels_np))
+        centroids = np.stack([raw_feats[support_mask][support_labels_np == c].mean(0) for c in classes])
+        dists = np.linalg.norm(raw_feats[query_mask][:, None] - centroids[None, :], axis=2)
+        lr_preds = np.array([classes[i] for i in dists.argmin(axis=1)])
 
         # --- GNN model ---
         yt, yp, graph_out = model(*batch)
