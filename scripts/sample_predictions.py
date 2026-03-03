@@ -77,7 +77,7 @@ params = {
     'not_freeze_learned_label_embedding': False, 'linear_probe': False,
     'no_bn_metagraph': False, 'no_bn_encoder': False,
     'dropout': 0, 'reset_after_layer': None, 'meta_gnn_pos_only': False,
-    'text_features_dropout': 0,
+    'text_features_dropout': 0, 'zero_shot': False,
 }
 initial_label_mlp = torch.nn.Linear(768, emb_dim)
 layer_list = get_module_list(
