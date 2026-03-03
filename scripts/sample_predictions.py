@@ -81,7 +81,7 @@ params = {
 }
 initial_label_mlp = torch.nn.Linear(768, emb_dim)
 layer_list = get_module_list(
-    params['layers'], emb_dim, edge_attr_dim=0,
+    params['layers'], emb_dim, edge_attr_dim=None,
     input_dim=params['input_dim'], dropout=params['dropout'],
     reset_after_layer=params['reset_after_layer'],
     attention_mask_scheme=params['attention_mask_scheme'],
@@ -106,9 +106,6 @@ model.eval()
 with torch.no_grad():
     for episode_idx, batch in enumerate(dataloader):
         batch = [b.to(device) for b in batch]
-        for b in batch:
-            if hasattr(b, 'edge_attr'):
-                b.edge_attr = None
         yt, yp, graph_out = model(*batch)
 
         yt_cpu = yt.detach().cpu()
