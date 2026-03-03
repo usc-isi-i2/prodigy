@@ -13,6 +13,7 @@ import os
 import torch
 import numpy as np
 import pandas as pd
+from tqdm import trange
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -104,7 +105,7 @@ print("Model loaded.")
 rows = []
 model.eval()
 with torch.no_grad():
-    for episode_idx, batch in enumerate(dataloader):
+    for episode_idx, batch in zip(trange(args.n_episodes, desc='episodes'), dataloader):
         batch = [b.to(device) for b in batch]
 
         # --- labels / split (needed before model call) ---
