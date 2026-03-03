@@ -106,6 +106,9 @@ model.eval()
 with torch.no_grad():
     for episode_idx, batch in enumerate(dataloader):
         batch = [b.to(device) for b in batch]
+        for b in batch:
+            if hasattr(b, 'edge_attr'):
+                b.edge_attr = None
         yt, yp, graph_out = model(*batch)
 
         yt_cpu = yt.detach().cpu()
