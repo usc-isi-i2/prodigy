@@ -125,12 +125,13 @@ with torch.no_grad():
 
         pred_idx = torch.argmax(yp_cpu, dim=1).long()
 
+        q = 0  # index into yp_cpu / pred_idx (query nodes only)
         for i in range(len(gt_label_idx)):
             if not is_query[i]:
                 continue  # skip support nodes
             node_idx = center_nodes[i] if center_nodes else None
             true_label = int(gt_label_idx[i].item())
-            pred_label = int(pred_idx[i].item())
+            pred_label = int(pred_idx[q].item())
             uid = int(user_ids[node_idx]) if (user_ids is not None and node_idx is not None) else node_idx
             true_state = label_names[true_label] if true_label < len(label_names) else true_label
             pred_state = label_names[pred_label] if pred_label < len(label_names) else pred_label
@@ -141,8 +142,9 @@ with torch.no_grad():
                 'true_state': true_state,
                 'pred_state': pred_state,
                 'correct': true_state == pred_state,
-                'confidence': float(yp_cpu[i].max().item()),
+                'confidence': float(yp_cpu[q].max().item()),
             })
+            q += 1
 
 df = pd.DataFrame(rows)
 df.to_csv(args.output, index=False)
