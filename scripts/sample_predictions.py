@@ -13,6 +13,7 @@ import os
 import torch
 import numpy as np
 import pandas as pd
+from sklearn.linear_model import LogisticRegression
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -106,35 +107,46 @@ model.eval()
 with torch.no_grad():
     for episode_idx, batch in enumerate(dataloader):
         batch = [b.to(device) for b in batch]
-        yt, yp, graph_out = model(*batch)
 
-        yt_cpu = yt.detach().cpu()
-        yp_cpu = yp.detach().cpu()
-
-        # Get center node indices if available
-        center_nodes = None
-        if hasattr(graph_out, 'center_node_idx'):
-            center_nodes = graph_out.center_node_idx.detach().cpu().flatten().tolist()
-
-        # Get label assignments (which n_way classes were sampled)
+        # --- labels / split (needed before model call) ---
         labels_onehot = batch[2].detach().cpu()
         num_labels = labels_onehot.shape[1]
         gt_label_idx = torch.argmax(labels_onehot, dim=1).long()
         meta_mask = batch[5].detach().cpu().view(-1, num_labels)
         is_query = meta_mask[:, 0].bool()
 
+        # --- few-shot logistic regression on raw node features ---
+        graph = batch[0]
+        supernode_idx = (graph.supernode + graph.ptr[:-1]).long()
+        raw_feats = graph.x[supernode_idx].cpu().numpy()
+        support_mask = (~is_query).numpy()
+        query_mask = is_query.numpy()
+        lr = LogisticRegression(max_iter=1000, C=1.0)
+        lr.fit(raw_feats[support_mask], gt_label_idx[support_mask].numpy())
+        lr_preds = lr.predict(raw_feats[query_mask])
+
+        # --- GNN model ---
+        yt, yp, graph_out = model(*batch)
+        yp_cpu = yp.detach().cpu()
         pred_idx = torch.argmax(yp_cpu, dim=1).long()
 
-        q = 0  # index into yp_cpu / pred_idx (query nodes only)
+        # Get center node indices if available
+        center_nodes = None
+        if hasattr(graph_out, 'center_node_idx'):
+            center_nodes = graph_out.center_node_idx.detach().cpu().flatten().tolist()
+
+        q = 0  # index into yp_cpu / pred_idx / lr_preds (query nodes only)
         for i in range(len(gt_label_idx)):
             if not is_query[i]:
                 continue  # skip support nodes
             node_idx = center_nodes[i] if center_nodes else None
             true_label = int(gt_label_idx[i].item())
             pred_label = int(pred_idx[q].item())
+            lr_label = int(lr_preds[q])
             uid = int(user_ids[node_idx]) if (user_ids is not None and node_idx is not None) else node_idx
             true_state = label_names[true_label] if true_label < len(label_names) else true_label
             pred_state = label_names[pred_label] if pred_label < len(label_names) else pred_label
+            lr_state = label_names[lr_label] if lr_label < len(label_names) else lr_label
             rows.append({
                 'episode': episode_idx,
                 'node_idx': node_idx,
@@ -143,12 +155,16 @@ with torch.no_grad():
                 'pred_state': pred_state,
                 'correct': true_state == pred_state,
                 'confidence': float(yp_cpu[q].max().item()),
+                'lr_pred_state': lr_state,
+                'lr_correct': true_state == lr_state,
             })
             q += 1
 
 df = pd.DataFrame(rows)
 df.to_csv(args.output, index=False)
 print(f"\nSaved {len(df)} predictions to {args.output}")
-print(f"Overall accuracy: {df['correct'].mean():.4f}")
+print(f"GNN accuracy:      {df['correct'].mean():.4f}")
+print(f"LR accuracy:       {df['lr_correct'].mean():.4f}")
+print(f"Random baseline:   {1/args.n_way:.4f}")
 print(f"\nSample predictions:")
-print(df.head(10).to_string(index=False))
+print(df[['episode','true_state','pred_state','correct','lr_pred_state','lr_correct']].head(10).to_string(index=False))
