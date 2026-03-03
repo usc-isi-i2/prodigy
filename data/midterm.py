@@ -38,7 +38,13 @@ def get_midterm_dataset(
     print("Building neighbor sampler (CSR preprocessing)...", flush=True)
     neighbor_sampler = NeighborSampler(graph, num_hops=n_hop)
     print("Neighbor sampler ready.", flush=True)
-    return SubgraphDataset(graph, neighbor_sampler, bidirectional=False)
+    dataset = SubgraphDataset(graph, neighbor_sampler, bidirectional=False)
+    if 'future_edge_index' in raw:
+        print("Building future neighbor sampler...", flush=True)
+        future_graph = Data(edge_index=raw['future_edge_index'], num_nodes=graph.num_nodes)
+        dataset.future_neighbor_sampler = NeighborSampler(future_graph, num_hops=n_hop)
+        print("Future neighbor sampler ready.", flush=True)
+    return dataset
 
 
 def midterm_task(
@@ -146,6 +152,14 @@ def get_midterm_dataloader(
             ParamSampler(batch_size, n_way, n_shot, n_query, 1),
             seed=seed,
         )
+    elif task_name == "temporal_link_prediction":
+        sampler = BatchSampler(
+            batch_count,
+            NeighborTask(dataset.future_neighbor_sampler, graph.num_nodes, "inout"),
+            ParamSampler(batch_size, n_way, n_shot, n_query, 1),
+            seed=seed,
+        )
+        label_embeddings = torch.zeros(1, 768).expand(graph.num_nodes, -1)
     else:
         raise ValueError(f"Unknown task for midterm: {task_name}")
 
