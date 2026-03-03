@@ -16,9 +16,9 @@ import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from experiments.params import get_params
 from data.midterm import get_midterm_dataset, get_midterm_dataloader
-from models.get_model import get_model
+from models.general_gnn import SingleLayerGeneralGNN
+from experiments.layers import get_module_list
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--root', required=True)
@@ -67,17 +67,31 @@ dataloader = get_midterm_dataloader(
 
 # Load model
 print("Loading model...")
+emb_dim = 256
 params = {
-    'input_dim': args.input_dim, 'emb_dim': 256, 'gnn_type': 'sage',
+    'input_dim': args.input_dim, 'emb_dim': emb_dim, 'gnn_type': 'sage',
     'n_layer': 1, 'meta_n_layer': 1, 'second_gnn': 'Atten',
     'attention_mask_scheme': 'causal', 'skip_path': False,
     'has_final_back': False, 'layers': 'S,U,M',
     'ignore_label_embeddings': True, 'zero_label_embeddings': False,
     'not_freeze_learned_label_embedding': False, 'linear_probe': False,
     'no_bn_metagraph': False, 'no_bn_encoder': False,
-    'dropout': 0, 'device': device,
+    'dropout': 0, 'reset_after_layer': None, 'meta_gnn_pos_only': False,
+    'text_features_dropout': 0,
 }
-model = get_model(params)
+initial_label_mlp = torch.nn.Linear(768, emb_dim)
+layer_list = get_module_list(
+    params['layers'], emb_dim, edge_attr_dim=0,
+    input_dim=params['input_dim'], dropout=params['dropout'],
+    reset_after_layer=params['reset_after_layer'],
+    attention_mask_scheme=params['attention_mask_scheme'],
+    has_final_back=params['has_final_back'],
+    msg_pos_only=params['meta_gnn_pos_only'],
+    batch_norm_metagraph=True, batch_norm_encoder=True, gnn_use_relu=False,
+)
+layer_list = torch.nn.ModuleList(layer_list)
+txt_dropout = torch.nn.Dropout(0)
+model = SingleLayerGeneralGNN(layer_list=layer_list, initial_label_mlp=initial_label_mlp, params=params, text_dropout=txt_dropout)
 model = model.to(device)
 
 ckpt = torch.load(args.checkpoint, map_location=device)
