@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=temporal_link_pred_pretrained
+#SBATCH --job-name=temporal_link_pred
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 #SBATCH --partition=gpu
@@ -11,10 +11,9 @@
 source $(conda info --base)/etc/profile.d/conda.sh
 conda activate prodigy
 
-mkdir -p logs
+cd "$(dirname "$0")/.."
 
-# Replace with actual run directory from your NM pretraining job
-PRETRAINED_RUN="state/pretrain_co_retweet_nm_<RUN_ID>/state_dict"
+mkdir -p logs
 
 python experiments/run_single_experiment.py \
     --dataset midterm \
@@ -25,5 +24,4 @@ python experiments/run_single_experiment.py \
     --device 0 \
     -val_cap 1000 \
     -test_cap 1000 \
-    --pretrained_model_run "$PRETRAINED_RUN" \
-    --prefix temporal_link_pred_pretrained
+    --prefix temporal_link_pred_scratch

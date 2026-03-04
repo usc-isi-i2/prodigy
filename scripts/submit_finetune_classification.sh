@@ -1,15 +1,17 @@
 #!/bin/bash
-#SBATCH --job-name=pretrain_co_retweet_nm_test
+#SBATCH --job-name=finetune_classification
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=64G
-#SBATCH --time=01:00:00
+#SBATCH --time=08:00:00
 
 source $(conda info --base)/etc/profile.d/conda.sh
 conda activate prodigy
+
+cd "$(dirname "$0")/.."
 
 mkdir -p logs
 
@@ -18,12 +20,9 @@ python experiments/run_single_experiment.py \
     --root midterm/graph_co_retweet \
     --input_dim 98 \
     --original_features True \
-    --task neighbor_matching \
+    --task classification \
     --device 0 \
-    --dataset_len_cap 1000 \
-    --epochs 1 \
-    --eval_step 500 \
-    --checkpoint_step 500 \
-    -val_cap 100 \
-    -test_cap 100 \
-    --prefix pretrain_co_retweet_nm_test
+    -val_cap 1000 \
+    -test_cap 1000 \
+    --pretrained_model_run state/pretrain_co_retweet_nm_test_02_03_2026_11_59_59/state_dict \
+    --prefix finetune_classification

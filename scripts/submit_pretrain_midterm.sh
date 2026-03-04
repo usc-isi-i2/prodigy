@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=train_classification
+#SBATCH --job-name=pretrain_midterm_nm
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 #SBATCH --partition=gpu
@@ -11,15 +11,17 @@
 source $(conda info --base)/etc/profile.d/conda.sh
 conda activate prodigy
 
+cd "$(dirname "$0")/.."
+
 mkdir -p logs
 
 python experiments/run_single_experiment.py \
     --dataset midterm \
-    --root midterm/graph_co_retweet \
+    --root midterm/graph_mention \
     --input_dim 98 \
     --original_features True \
-    --task classification \
+    --task neighbor_matching \
     --device 0 \
     -val_cap 1000 \
     -test_cap 1000 \
-    --prefix train_classification_scratch
+    --prefix pretrain_midterm_nm
