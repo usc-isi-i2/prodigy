@@ -4,7 +4,7 @@
 #SBATCH --error=logs/%x_%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=12
 #SBATCH --mem=64G
 #SBATCH --time=01:00:00
 
@@ -28,4 +28,5 @@ python experiments/run_single_experiment.py \
     --checkpoint_step 500 \
     -val_cap 100 \
     -test_cap 100 \
+    --workers 10 \
     --prefix pretrain_co_retweet_nm_test

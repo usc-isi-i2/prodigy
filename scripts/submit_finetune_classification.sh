@@ -4,7 +4,7 @@
 #SBATCH --error=logs/%x_%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=12
 #SBATCH --mem=64G
 #SBATCH --time=08:00:00
 
@@ -25,4 +25,5 @@ python experiments/run_single_experiment.py \
     -val_cap 1000 \
     -test_cap 1000 \
     --pretrained_model_run state/pretrain_co_retweet_nm_test_02_03_2026_11_59_59/state_dict \
+    --workers 10 \
     --prefix finetune_classification
