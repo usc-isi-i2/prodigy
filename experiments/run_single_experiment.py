@@ -78,6 +78,7 @@ if __name__ == '__main__':
         facebook_target_dim=params["facebook_target_dim"],
         facebook_filter_to_uk_ru=params["facebook_filter_to_uk_ru"],
         max_posts=params["facebook_max_posts"],
+        n_hop=params["n_hop"],
     )
 
     _log("Dataset loaded. Initializing trainer...")

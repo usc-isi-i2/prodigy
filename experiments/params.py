@@ -137,6 +137,8 @@ def get_params():
     args.add_argument("-pretrained", "--pretrained_model_run", default="", type=str)
     #  Name of WanDB run to pull the best model from.
 
+    args.add_argument("-n_hop", "--n_hop", default=2, type=int)  # number of hops for subgraph extraction
+
     args.add_argument("-smalldataset", "--small_dataset", default=False,
                       type=bool)  # use for debugging  - very small dataset
 
