@@ -4,7 +4,7 @@
 #SBATCH --error=logs/%x_%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=12
 #SBATCH --mem=64G
 #SBATCH --time=08:00:00
 
@@ -24,4 +24,5 @@ python experiments/run_single_experiment.py \
     --device 0 \
     -val_cap 1000 \
     -test_cap 1000 \
+    --workers 10 \
     --prefix train_classification_scratch
