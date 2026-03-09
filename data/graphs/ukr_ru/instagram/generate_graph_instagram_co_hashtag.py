@@ -74,12 +74,14 @@ mention_re  = r'(?:^|(?<=\s))@([A-Za-z0-9_](?:(?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28
 
 df['description'] = df['description'].fillna('')
 df['hashtags'] = (
-    df['description'].str.extractall(hashtag_re).groupby(level=0).agg(list)
-    .reindex(df.index).apply(lambda x: [h.lower() for h in x] if isinstance(x, list) else [])
+    df['description'].str.extractall(hashtag_re)[0].str.lower()
+    .groupby(level=0).agg(list).reindex(df.index)
+    .apply(lambda x: x if isinstance(x, list) else [])
 )
 df['mentions'] = (
-    df['description'].str.extractall(mention_re).groupby(level=0).agg(list)
-    .reindex(df.index).apply(lambda x: [m.lower() for m in x] if isinstance(x, list) else [])
+    df['description'].str.extractall(mention_re)[0].str.lower()
+    .groupby(level=0).agg(list).reindex(df.index)
+    .apply(lambda x: x if isinstance(x, list) else [])
 )
 
 ## Drop rows with no account_id
