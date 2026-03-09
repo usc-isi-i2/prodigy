@@ -138,6 +138,7 @@ def get_params():
     #  Name of WanDB run to pull the best model from.
 
     args.add_argument("-n_hop", "--n_hop", default=2, type=int)  # number of hops for subgraph extraction
+    args.add_argument("--graph_filename", default="graph_data.pt", type=str)  # graph file to load from root
 
     args.add_argument("-smalldataset", "--small_dataset", default=False,
                       type=bool)  # use for debugging  - very small dataset

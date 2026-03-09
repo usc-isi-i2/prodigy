@@ -15,9 +15,10 @@ from .dataset import SubgraphDataset
 def get_midterm_dataset(
         root: str,
         n_hop: int = 2,
+        graph_filename: str = 'graph_data.pt',
         **kwargs
 ) -> SubgraphDataset:
-    graph_path = os.path.join(root, 'graph_data.pt')
+    graph_path = os.path.join(root, graph_filename)
     print(f"Loading midterm graph from {graph_path}...")
     raw = torch.load(graph_path, map_location='cpu')
 
