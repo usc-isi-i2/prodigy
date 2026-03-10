@@ -150,7 +150,7 @@ class TrainerFS():
         bert_model_name = self.parameter["bert_emb_model"]
         # Twitter/midterm + numerical features does not need sentence embeddings and can
         # run with random label embeddings in the dataloader.
-        if self.dataset_name in {"twitter", "midterm"} and self.original_features:
+        if self.dataset_name in {"twitter", "midterm", "instagram_mention"} and self.original_features:
             self.Bert = None
         else:
             self.Bert = SentenceEmb(
@@ -277,6 +277,10 @@ class TrainerFS():
             from data.midterm import get_midterm_dataloader
             kwargs["root"] = self.parameter["root"]
             get_dataloader = get_midterm_dataloader
+        elif dataset_name == "instagram_mention":
+            from data.instagram_mention import get_instagram_mention_dataloader
+            kwargs["root"] = self.parameter["root"]
+            get_dataloader = get_instagram_mention_dataloader
         else:
             raise NotImplementedError
 

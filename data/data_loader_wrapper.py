@@ -31,6 +31,9 @@ def get_dataset_wrap(root, dataset, **kwargs):
     if dataset in {"facebook-uk_ru", "facebook_uk_ru"}:
         from data.facebook_uk_ru import get_facebook_uk_ru_dataset
         return get_facebook_uk_ru_dataset(root=root, **kwargs)
+    if dataset == "instagram_mention":
+        from data.instagram_mention import get_instagram_mention_dataset
+        return get_instagram_mention_dataset(root=root, **kwargs)
     if dataset in ["Wiki", "WikiKG90M"]:
         from data.kg import get_kg_dataset
         return get_kg_dataset(root=root, name=dataset, **kwargs)
