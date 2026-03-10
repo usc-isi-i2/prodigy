@@ -21,8 +21,14 @@ def get_instagram_mention_dataset(
     ckpt = torch.load(graph_path, map_location="cpu")
     graph = ckpt["data"]
 
-    if not hasattr(graph, "num_nodes") or graph.num_nodes is None:
-        graph.num_nodes = graph.x.shape[0]
+    n_from_edges = int(graph.edge_index.max().item()) + 1 if graph.edge_index.numel() > 0 else 0
+    n_from_x = graph.x.shape[0]
+    num_nodes = max(n_from_edges, n_from_x)
+    if num_nodes > n_from_x:
+        pad = torch.zeros(num_nodes - n_from_x, graph.x.shape[1])
+        graph.x = torch.cat([graph.x, pad], dim=0)
+        print(f"Padded {num_nodes - n_from_x} feature-less nodes (edge-only) with zeros")
+    graph.num_nodes = num_nodes
 
     print(f"Graph: {graph.num_nodes} nodes, {graph.edge_index.shape[1]} edges, "
           f"{graph.x.shape[1]} features")
