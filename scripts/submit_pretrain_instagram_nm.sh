@@ -24,7 +24,7 @@ python experiments/run_single_experiment.py \
     --original_features True \
     --task neighbor_matching \
     --device 0 \
-    -val_cap 1000 \
-    -test_cap 1000 \
+    -val_cap 100 \
+    -test_cap 100 \
     --workers 10 \
     --prefix pretrain_instagram_nm
