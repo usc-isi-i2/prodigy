@@ -27,4 +27,6 @@ python experiments/run_single_experiment.py \
     -val_cap 1000 \
     -test_cap 1000 \
     --workers 10 \
+    -shot 5 \
+    -way 5 \
     --prefix pretrain_instagram_nm
