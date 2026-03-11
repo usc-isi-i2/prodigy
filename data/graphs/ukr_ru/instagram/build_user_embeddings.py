@@ -59,6 +59,8 @@ print(f"Found {len(files)} files")
 for fpath in tqdm(files, desc="Files"):
     try:
         df = pd.read_pickle(fpath)
+        
+        print(df.iloc[0].values)
         if not isinstance(df, pd.DataFrame):
             df = pd.DataFrame(df)
     except Exception as e:
