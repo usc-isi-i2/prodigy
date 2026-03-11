@@ -50,8 +50,10 @@ def main():
             x[idx] = emb
             matched += 1
 
+    unmatched_emb = len(handle_to_emb) - matched
     print(f"  Matched {matched}/{num_nodes} nodes ({matched/num_nodes*100:.1f}%)")
-    print(f"  {num_nodes - matched} nodes padded with zeros")
+    print(f"  {num_nodes - matched} nodes padded with zeros (in graph, no embedding)")
+    print(f"  {unmatched_emb} embeddings not matched to any graph node (have posts but not in graph)")
 
     # ── Save ──────────────────────────────────────────────────────────────────
     data.x = x
