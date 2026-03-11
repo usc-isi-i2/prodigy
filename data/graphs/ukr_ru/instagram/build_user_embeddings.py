@@ -22,7 +22,7 @@ from tqdm import tqdm
 # ── Config ──────────────────────────────────────────────────────────────────
 DATA_GLOB = "/project2/ll_774_951/uk_ru/Instagram_Uk_ru/*.pkl"
 OUTPUT_PATH = "user_embeddings.pt"
-MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"  # 384-dim, fast
+MODEL_NAME = "BAAI/bge-m3"  # 1024-dim, multilingual
 BATCH_SIZE = 256
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
