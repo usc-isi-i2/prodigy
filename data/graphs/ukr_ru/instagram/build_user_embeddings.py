@@ -23,7 +23,7 @@ from tqdm import tqdm
 DATA_GLOB = "/project2/ll_774_951/uk_ru/Instagram_Uk_ru/*.pkl"
 OUTPUT_PATH = "user_embeddings.pt"
 MODEL_NAME = "BAAI/bge-m3"  # 1024-dim, multilingual
-BATCH_SIZE = 256
+BATCH_SIZE = 32
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
@@ -97,6 +97,7 @@ for fpath in tqdm(files, desc="Files"):
         batch_size=BATCH_SIZE,
         show_progress_bar=False,
         convert_to_numpy=True,
+        max_length=512,
     )  # shape (n, DIM), float32
 
     for handle, emb in zip(valid_handles, embeddings):
@@ -106,6 +107,7 @@ for fpath in tqdm(files, desc="Files"):
 
     del valid_texts, valid_handles, embeddings
     gc.collect()
+    torch.cuda.empty_cache()
 
 # ── Finalize ────────────────────────────────────────────────────────────────
 handles_sorted = sorted(user_sum.keys())
