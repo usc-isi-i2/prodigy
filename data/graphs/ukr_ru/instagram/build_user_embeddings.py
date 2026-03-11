@@ -59,18 +59,20 @@ print(f"Found {len(files)} files")
 for fpath in tqdm(files, desc="Files"):
     try:
         df = pd.read_pickle(fpath)
+        df = pd.DataFrame(df)
         
-        print(df.iloc[0].values)
         if not isinstance(df, pd.DataFrame):
             df = pd.DataFrame(df)
     except Exception as e:
         print(f"  ⚠ Skipping {os.path.basename(fpath)}: {e}")
         continue
+    
+    df['handle'] = df.account.str['handle']
 
     if "handle" not in df.columns:
         print(f"  ⚠ No 'handle' column in {os.path.basename(fpath)}, skipping")
         del df
-        gc.collect()
+        gc.collect() 
         continue
 
     texts = df.apply(build_post_text, axis=1).tolist()
