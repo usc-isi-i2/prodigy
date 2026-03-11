@@ -44,6 +44,7 @@ def build_post_text(row: pd.Series) -> str:
 # ── Load model ──────────────────────────────────────────────────────────────
 print(f"Loading model {MODEL_NAME} on {DEVICE}...")
 model = SentenceTransformer(MODEL_NAME, device=DEVICE)
+model.max_seq_length = 512
 DIM = model.get_sentence_embedding_dimension()
 print(f"Embedding dim: {DIM}")
 
@@ -97,7 +98,6 @@ for fpath in tqdm(files, desc="Files"):
         batch_size=BATCH_SIZE,
         show_progress_bar=False,
         convert_to_numpy=True,
-        max_length=512,
     )  # shape (n, DIM), float32
 
     for handle, emb in zip(valid_handles, embeddings):
