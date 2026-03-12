@@ -32,7 +32,7 @@ for MODEL in "${MODELS[@]}"; do
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=12
 #SBATCH --mem=64G
-#SBATCH --time=01:00:00
+#SBATCH --time=00:30:00
 
 source \$(conda info --base)/etc/profile.d/conda.sh
 conda activate prodigy
