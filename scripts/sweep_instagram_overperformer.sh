@@ -31,8 +31,8 @@ for MODEL in "${MODELS[@]}"; do
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=12
-#SBATCH --mem=128G
-#SBATCH --time=02:00:00
+#SBATCH --mem=64G
+#SBATCH --time=01:00:00
 
 source \$(conda info --base)/etc/profile.d/conda.sh
 conda activate prodigy
@@ -49,9 +49,9 @@ python experiments/run_single_experiment.py \\
     --original_features True \\
     --task classification \\
     --device 0 \\
-    -val_cap 1000 \\
-    -test_cap 1000 \\
-    --workers 4 \\
+    -val_cap 500 \\
+    -test_cap 500 \\
+    --workers 8 \\
     -shot ${SHOT} \\
     -way ${WAY} \\
     --pretrained_model_run ${CKPT} \\
