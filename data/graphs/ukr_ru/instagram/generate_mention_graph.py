@@ -225,6 +225,7 @@ edges["src"] = edges["handle"].map(h2i)
 edges["dst"] = edges["mentions"].map(h2i)
 edges = edges.dropna(subset=["src", "dst"])
 edges = edges.drop_duplicates(subset=["src", "dst"])
+print(f"  Pairs after dedup: {len(edges):,}")
 
 edge_index = torch.tensor(
     [edges["src"].astype(int).values, edges["dst"].astype(int).values],
