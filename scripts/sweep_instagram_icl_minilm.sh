@@ -45,7 +45,7 @@ for LABEL in "${LABELS[@]}"; do
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=12
-#SBATCH --mem=64G
+#SBATCH --mem=32G
 #SBATCH --time=00:30:00
 
 source \$(conda info --base)/etc/profile.d/conda.sh
