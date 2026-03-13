@@ -30,10 +30,12 @@ echo "Model:      $MODEL"
 echo "Checkpoint: $CKPT"
 echo ""
 
-# ── 1. Neighbor matching (no labels — pure structure transfer) ────────────────
-PREFIX_NM="eval_twitter_nm_${MODEL}"
-echo "Submitting NM: $PREFIX_NM"
-sbatch <<EOF
+# ── 1. Neighbor matching sweep (varying shots) ───────────────────────────────
+echo "Total NM jobs: ${#SHOTS[@]}"
+for SHOT in "${SHOTS[@]}"; do
+    PREFIX_NM="eval_twitter_nm_${MODEL}_${SHOT}shot"
+    echo "Submitting NM: $PREFIX_NM"
+    sbatch <<EOF
 #!/bin/bash
 #SBATCH --job-name=tw_nm_transfer
 #SBATCH --output=logs/${PREFIX_NM}_%j.out
@@ -62,11 +64,12 @@ python experiments/run_single_experiment.py \\
     -val_cap 100 \\
     -test_cap 100 \\
     --workers 4 \\
-    -shot 5 \\
+    -shot ${SHOT} \\
     -way 5 \\
     --pretrained_model_run ${CKPT} \\
     --prefix ${PREFIX_NM}
 EOF
+done
 
 # ── 2. Classification sweep (political + follower tier, varying shots) ────────
 echo ""
