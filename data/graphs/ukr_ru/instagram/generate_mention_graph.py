@@ -176,19 +176,13 @@ user_agg = df.groupby("handle").agg(
 for col in ["subscriber_count", "avg_favorites", "avg_comments", "post_count"]:
     user_agg[col] = np.log1p(user_agg[col].fillna(0).clip(lower=0))
 
-handle_to_feats: dict[str, list] = {
-    row["handle"]: [row[c] for c in FEATURE_COLS]
-    for _, row in user_agg.iterrows()
-}
-
 # Zero-initialise; only posters get real features (mention-only nodes stay 0)
 X = np.zeros((N, len(FEATURE_COLS)), dtype=np.float64)
-matched = 0
-for handle, idx in h2i.items():
-    feats = handle_to_feats.get(handle)
-    if feats is not None:
-        X[idx] = feats
-        matched += 1
+user_agg["node_idx"] = user_agg["handle"].map(h2i)
+has_idx = user_agg["node_idx"].notna()
+rows = user_agg.loc[has_idx, "node_idx"].astype(int).values
+X[rows] = user_agg.loc[has_idx, FEATURE_COLS].values
+matched = int(has_idx.sum())
 print(f"  Nodes with features: {matched:,} / {N:,}  "
       f"({N - matched:,} mention-only nodes stay zero)")
 
@@ -202,28 +196,27 @@ print(f"  Feature matrix: {X.shape}  columns: {FEATURE_COLS}")
 
 # ── Build directed mention edges ──────────────────────────────────────────────
 print("Building mention edges...")
-src_list, dst_list = [], []
 
-for _, row in df.iterrows():
-    poster_canonical = row["handle"]
-    if poster_canonical not in h2i:
-        continue
-    src_idx = h2i[poster_canonical]
+# Explode mentions so each (poster, mention) pair is its own row, then map to node indices
+edges = (
+    df[["handle", "mentions"]]
+    .explode("mentions")
+    .dropna(subset=["mentions"])
+)
+edges = edges[edges["mentions"].ne("")]
+edges["mentions"] = edges["mentions"].str.lower()
+edges["mentions"] = edges["mentions"].map(handle_lower_to_canonical)
+edges = edges.dropna(subset=["mentions"])
+edges = edges[edges["handle"] != edges["mentions"]]   # drop self-loops
+edges["src"] = edges["handle"].map(h2i)
+edges["dst"] = edges["mentions"].map(h2i)
+edges = edges.dropna(subset=["src", "dst"])
+edges = edges.drop_duplicates(subset=["src", "dst"])
 
-    for mention in (row["mentions"] or []):
-        canonical = handle_lower_to_canonical.get(mention.lower())
-        if canonical is None or canonical == poster_canonical:
-            continue
-        dst_idx = h2i.get(canonical)
-        if dst_idx is not None:
-            src_list.append(src_idx)
-            dst_list.append(dst_idx)
-
-edge_index = torch.tensor([src_list, dst_list], dtype=torch.long)
-print(f"  Raw directed mention edges: {edge_index.shape[1]:,}")
-
-if edge_index.shape[1] > 0:
-    edge_index = torch.unique(edge_index, dim=1)
+edge_index = torch.tensor(
+    [edges["src"].astype(int).values, edges["dst"].astype(int).values],
+    dtype=torch.long,
+)
 print(f"  Unique directed mention edges: {edge_index.shape[1]:,}")
 
 degrees_out = torch.bincount(edge_index[0], minlength=N)
