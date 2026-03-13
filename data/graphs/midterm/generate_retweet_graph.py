@@ -157,7 +157,7 @@ print(f"  Nodes with features: {matched:,} / {N:,}  ({N-matched:,} retweet-only 
 has_feats = X.any(axis=1)
 scaler = StandardScaler()
 X[has_feats] = scaler.fit_transform(X[has_feats])
-X = X.astype(np.float32)
+X = np.nan_to_num(X, nan=0.0).astype(np.float32)
 print(f"  Feature matrix: {X.shape}  columns: {FEATURE_COLS}")
 
 # ── Build retweet edges ───────────────────────────────────────────────────────
