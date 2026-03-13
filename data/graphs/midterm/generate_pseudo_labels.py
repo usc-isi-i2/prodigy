@@ -127,14 +127,13 @@ save_graph(ckpt, y, label_names_pol, out)
 # ── 2. Follower tier (quintiles — balanced by construction) ──────────────────
 print("\n[2] follower_tier (quintiles: nano=0, micro=1, mid=2, macro=3, mega=4)")
 
+df["followers_count"] = pd.to_numeric(df["followers_count"], errors="coerce")
 user_followers = (
     df.groupby("screen_name")["followers_count"]
     .max()
     .reset_index()
 )
-user_followers["followers_count"] = pd.to_numeric(
-    user_followers["followers_count"], errors="coerce"
-).fillna(0)
+user_followers["followers_count"] = user_followers["followers_count"].fillna(0)
 
 log_followers = np.log1p(user_followers["followers_count"].values)
 quintile_labels = pd.qcut(log_followers, q=5, labels=False, duplicates="drop")
