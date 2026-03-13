@@ -4,7 +4,7 @@
 #   model_run_name: optional, defaults to latest pretrain_instagram_nm checkpoint
 
 SHOTS=(1 3 5 10)
-WAYS=(2 3)
+WAYS=(3)
 LABELS=(overperformer language)
 
 # ── Resolve checkpoint ────────────────────────────────────────────────────────
