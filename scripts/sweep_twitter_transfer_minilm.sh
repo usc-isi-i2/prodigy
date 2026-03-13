@@ -108,7 +108,7 @@ python experiments/run_single_experiment.py \\
     -test_cap 500 \\
     --workers 8 \\
     -shot ${SHOT} \\
-    -way 3 \\
+    -way 2 \\
     --pretrained_model_run ${CKPT} \\
     --prefix ${PREFIX}
 EOF
