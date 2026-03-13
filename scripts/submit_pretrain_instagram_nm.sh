@@ -5,7 +5,7 @@
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=12
-#SBATCH --mem=64G
+#SBATCH --mem=128G
 #SBATCH --time=08:00:00
 
 source $(conda info --base)/etc/profile.d/conda.sh
@@ -19,14 +19,14 @@ mkdir -p logs
 python experiments/run_single_experiment.py \
     --dataset instagram_mention \
     --root data/graphs/ukr_ru/instagram \
-    --graph_filename mention_graph_bge.pt \
-    --input_dim 1024 \
+    --graph_filename mention_graph_minilm.pt \
+    --input_dim 393 \
     --original_features True \
     --task neighbor_matching \
     --device 0 \
     -val_cap 100 \
     -test_cap 100 \
-    --workers 10 \
+    --workers 4 \
     -shot 5 \
     -way 5 \
     --prefix pretrain_instagram_nm
