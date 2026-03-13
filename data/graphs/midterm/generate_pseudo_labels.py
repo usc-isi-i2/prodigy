@@ -4,11 +4,14 @@ Attach pseudo labels to retweet_graph.pt (instagram_mention format).
 Labels generated:
   retweet_graph_political.pt   – pro_republican=0, pro_democrat=1, other_political=2
   retweet_graph_follower.pt    – follower tier quintiles: nano=0 … mega=4
+  retweet_graph_repdем.pt      – rep=0, dem=1  (from existing graph_data_pseudo.pt,
+                                  bridged via userid → screen_name mapping)
 
 Usage:
     python generate_pseudo_labels.py \\
-        --csv  /project2/ll_774_951/midterm/*/*.csv \\
-        --graph retweet_graph.pt \\
+        --csv        /project2/ll_774_951/midterm/*/*.csv \\
+        --graph      retweet_graph.pt \\
+        --repdem     /home1/eibl/gfm/prodigy/midterm/graph_co_retweet/graph_data_pseudo.pt \\
         --out_dir .
 """
 
@@ -41,6 +44,8 @@ MIN_SCORE = 2   # minimum hashtag hits to assign a label
 parser = argparse.ArgumentParser()
 parser.add_argument("--csv",     default="/project2/ll_774_951/midterm/*/*.csv")
 parser.add_argument("--graph",   default="retweet_graph.pt")
+parser.add_argument("--repdem",  default="/home1/eibl/gfm/prodigy/midterm/graph_co_retweet/graph_data_pseudo.pt",
+                    help="Existing pseudo-labeled co-retweet graph (rep/dem labels)")
 parser.add_argument("--out_dir", default=".")
 args = parser.parse_args()
 
@@ -146,5 +151,50 @@ for handle, idx in h2i.items():
 
 out = os.path.join(args.out_dir, "retweet_graph_follower.pt")
 save_graph(ckpt, y, ["nano", "micro", "mid", "macro", "mega"], out)
+
+
+# ── 3. Rep/dem from existing graph_data_pseudo.pt ────────────────────────────
+print("\n[3] repdem (rep=0, dem=1) — bridged from existing pseudo labels via userid→screen_name")
+
+if not os.path.exists(args.repdem):
+    print(f"  Skipping: {args.repdem} not found")
+else:
+    # Build userid → screen_name from CSVs
+    uid_to_sn = (
+        df.dropna(subset=["userid"])
+        .assign(userid=lambda d: pd.to_numeric(d["userid"], errors="coerce"))
+        .dropna(subset=["userid"])
+        .assign(userid=lambda d: d["userid"].astype(int))
+        .drop_duplicates("userid")
+        .set_index("userid")["screen_name"]
+        .to_dict()
+    )
+    print(f"  userid→screen_name map: {len(uid_to_sn):,} entries")
+
+    repdem_raw = torch.load(args.repdem, map_location="cpu")
+    old_user_ids = repdem_raw["user_ids"]
+    old_y = repdem_raw["y"]
+
+    # Map old labels to new graph via userid → screen_name → h2i
+    y = torch.full((num_nodes,), -1, dtype=torch.long)
+    mapped = 0
+    for node_idx, uid in enumerate(old_user_ids):
+        old_label = int(old_y[node_idx])
+        if old_label < 0:
+            continue
+        try:
+            sn = uid_to_sn.get(int(uid))
+        except (ValueError, TypeError):
+            continue
+        if sn is None:
+            continue
+        new_idx = h2i.get(sn)
+        if new_idx is not None and new_idx < num_nodes:
+            y[new_idx] = old_label
+            mapped += 1
+
+    print(f"  Mapped {mapped:,} labeled nodes to new graph")
+    out = os.path.join(args.out_dir, "retweet_graph_repdem.pt")
+    save_graph(ckpt, y, ["rep", "dem"], out)
 
 print("\nDone.")
