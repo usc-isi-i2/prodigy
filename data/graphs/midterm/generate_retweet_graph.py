@@ -116,6 +116,12 @@ df["has_media"]   = df["media_urls"].apply(
     lambda x: int(pd.notna(x) and str(x).strip() not in ("", "[]", "nan"))
 ) if "media_urls" in df.columns else 0
 
+# Coerce numeric columns that may have been read as strings
+for col in ["followers_count", "verified", "rt_fav_count", "rt_reply_count",
+            "sent_vader", "statuses_count"]:
+    if col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+
 agg_dict = dict(
     subscriber_count = ("followers_count",  "max"),
     verified         = ("verified",         "max"),
