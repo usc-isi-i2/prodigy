@@ -24,9 +24,8 @@ from tqdm import tqdm
 DATA_GLOB       = "/project2/ll_774_951/uk_ru/Instagram_Uk_ru/*.pkl"
 CHECKPOINT_PATH = "user_embeddings_minilm_checkpoint.pkl"
 OUTPUT_PATH     = "user_embeddings_minilm.pt"                                           
-MODEL_NAME      = "sentence-transformers/all-MiniLM-L6-v2"  # 384-dim      
+MODEL_NAME      = "sentence-transformers/all-MiniLM-L6-v2"  # 384-dim
 CHECKPOINT_EVERY = 4  # save accumulator state every N files
-MODEL_NAME      = "BAAI/bge-m3"  # 1024-dim, multilingual
 BATCH_SIZE      = 256
 DEVICE          = "cuda" if torch.cuda.is_available() else "cpu"
 
