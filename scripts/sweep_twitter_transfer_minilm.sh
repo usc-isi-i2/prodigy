@@ -6,7 +6,7 @@
 #   model_run_name: optional, defaults to latest pretrain_instagram_nm checkpoint
 
 SHOTS=(1 3 5 10)
-LABELS=(political follower repdem)
+LABELS=(follower repdem)
 
 # ── Resolve checkpoint ────────────────────────────────────────────────────────
 if [ -n "$1" ]; then

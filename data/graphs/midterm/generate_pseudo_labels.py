@@ -2,10 +2,9 @@
 Attach pseudo labels to retweet_graph.pt (instagram_mention format).
 
 Labels generated:
-  retweet_graph_political.pt   – pro_republican=0, pro_democrat=1, other_political=2
-  retweet_graph_follower.pt    – follower tier quintiles: nano=0 … mega=4
-  retweet_graph_repdем.pt      – rep=0, dem=1  (from existing graph_data_pseudo.pt,
-                                  bridged via userid → screen_name mapping)
+  retweet_graph_follower.pt  – follower tier quintiles: nano=0 … mega=4
+  retweet_graph_repdem.pt    – rep=0, dem=1  (from existing graph_data_pseudo.pt,
+                               bridged via userid → screen_name mapping)
 
 Usage:
     python generate_pseudo_labels.py \\
@@ -23,23 +22,6 @@ import numpy as np
 import pandas as pd
 import torch
 
-# ── Hashtag-based political groups ───────────────────────────────────────────
-POLITICAL_GROUPS = {
-    "pro_republican": [
-        "maga", "trump2024", "letsgobrandon", "fjb", "redwave",
-        "republicanparty", "gop", "trump", "saveamerica",
-    ],
-    "pro_democrat": [
-        "voteblue", "democraticparty", "biden2024", "bluewave",
-        "democrats", "votedem", "bidensamerica",
-    ],
-    "other_political": [
-        "prochoice", "mybodymychoice", "roevwade", "abortionrights",
-        "prolife", "endabortion", "prolifegeneration",
-        "blacklivesmatter", "blm", "stopthesteal", "jan6",
-    ],
-}
-MIN_SCORE = 2   # minimum hashtag hits to assign a label
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--csv",     default="/project2/ll_774_951/midterm/*/*.csv")
@@ -86,45 +68,7 @@ df["screen_name"] = df["screen_name"].str.lower()
 print(f"  {len(df):,} rows, {df['screen_name'].nunique():,} unique users")
 
 
-# ── 1. Political pseudo labels ────────────────────────────────────────────────
-print("\n[1] political (pro_republican=0, pro_democrat=1, other_political=2)")
-
-def parse_hashtags(val):
-    if pd.isna(val):
-        return set()
-    val = str(val).lower().replace("'", "").replace('"', '').strip("[]")
-    return {t.strip() for t in val.split(",") if t.strip()}
-
-label_names_pol = list(POLITICAL_GROUPS.keys())
-label2idx = {name: i for i, name in enumerate(label_names_pol)}
-
-from collections import defaultdict
-user_scores = defaultdict(lambda: defaultdict(int))
-
-for _, row in df.iterrows():
-    sn = row["screen_name"]
-    tags = parse_hashtags(row.get("hashtag")) | parse_hashtags(row.get("rt_hashtag"))
-    for label, keywords in POLITICAL_GROUPS.items():
-        hits = sum(1 for t in keywords if t in tags)
-        if hits:
-            user_scores[sn][label] += hits
-
-sn_to_label = {}
-for sn, scores in user_scores.items():
-    best = max(scores, key=scores.get)
-    if scores[best] >= MIN_SCORE:
-        sn_to_label[sn] = label2idx[best]
-
-y = torch.full((num_nodes,), -1, dtype=torch.long)
-for handle, idx in h2i.items():
-    if idx < num_nodes and handle in sn_to_label:
-        y[idx] = sn_to_label[handle]
-
-out = os.path.join(args.out_dir, "retweet_graph_political.pt")
-save_graph(ckpt, y, label_names_pol, out)
-
-
-# ── 2. Follower tier (quintiles — balanced by construction) ──────────────────
+# ── 1. Follower tier (quintiles — balanced by construction) ──────────────────
 print("\n[2] follower_tier (quintiles: nano=0, micro=1, mid=2, macro=3, mega=4)")
 
 df["followers_count"] = pd.to_numeric(df["followers_count"], errors="coerce")
