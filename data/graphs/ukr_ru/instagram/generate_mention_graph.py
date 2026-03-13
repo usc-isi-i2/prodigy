@@ -16,7 +16,7 @@ Next step:
         --embeddings user_embeddings_minilm.pt \\
         --out        mention_graph_minilm.pt
 """
-
+print('running')
 import argparse
 import gc
 import glob
@@ -84,6 +84,8 @@ else:
 
 
 # ── Parse account fields ──────────────────────────────────────────────────────
+print("Parsing account fields...")
+
 def safe_get(d, key, default=None):
     return d.get(key, default) if isinstance(d, dict) else default
 
@@ -93,6 +95,8 @@ df["subscriber_count"] = df["account"].apply(lambda x: float(safe_get(x, "subscr
 
 
 # ── Parse statistics ──────────────────────────────────────────────────────────
+print("Parsing statistics...")
+
 def get_stat(stats, key):
     if isinstance(stats, dict):
         actual = stats.get("actual", {})
@@ -112,18 +116,24 @@ hashtag_re = r'(?:^|(?<=\s))#([A-Za-z_][A-Za-z0-9_]{0,29})'
 df["description"] = df["description"].fillna("")
 
 if "mentions" not in df.columns:
+    print("Extracting mentions from description...")
     df["mentions"] = (
         df["description"].str.extractall(mention_re)[0].str.lower()
         .groupby(level=0).agg(list).reindex(df.index)
         .apply(lambda x: x if isinstance(x, list) else [])
     )
+else:
+    print("Mentions already in parquet, skipping extraction.")
 
 if "hashtags" not in df.columns:
+    print("Extracting hashtags from description...")
     df["hashtags"] = (
         df["description"].str.extractall(hashtag_re)[0].str.lower()
         .groupby(level=0).agg(list).reindex(df.index)
         .apply(lambda x: x if isinstance(x, list) else [])
     )
+else:
+    print("Hashtags already in parquet, skipping extraction.")
 
 # Drop rows with empty handle
 df = df[df["handle"].notna() & df["handle"].ne("")]
@@ -135,9 +145,12 @@ df["has_media"]   = df["media"].apply(
 )
 
 print(f"Unique handles (posters): {df['handle'].nunique():,}")
+print(f"Posts with mentions: {df['n_mentions'].gt(0).sum():,}")
+print(f"Posts with hashtags: {df['n_hashtags'].gt(0).sum():,}")
 
 
 # ── Build node set: all posters + all mentioned accounts ─────────────────────
+print("Building node set...")
 # Preserve original handle case so h2i matches user_embeddings_minilm.pt.
 # Build a lowercase → canonical-handle map for case-insensitive mention lookup.
 handle_lower_to_canonical: dict[str, str] = {}
@@ -195,7 +208,7 @@ print(f"  Feature matrix: {X.shape}  columns: {FEATURE_COLS}")
 
 
 # ── Build directed mention edges ──────────────────────────────────────────────
-print("Building mention edges...")
+print("Building mention edges (explode + map)...")
 
 # Explode mentions so each (poster, mention) pair is its own row, then map to node indices
 edges = (
