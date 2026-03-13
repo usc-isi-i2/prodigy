@@ -5,7 +5,7 @@
 
 SHOTS=(1 3 5 10)
 WAYS=(3)
-LABELS=(overperformer language)
+LABELS=(overperformer)
 
 # ── Resolve checkpoint ────────────────────────────────────────────────────────
 if [ -n "$1" ]; then
