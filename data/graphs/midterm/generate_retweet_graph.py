@@ -23,6 +23,7 @@ import argparse
 import glob
 import os
 import warnings
+import csv
 
 import numpy as np
 import pandas as pd
@@ -35,6 +36,7 @@ warnings.filterwarnings("ignore")
 # ── Config ────────────────────────────────────────────────────────────────────
 DEFAULT_CSV = "/project2/ll_774_951/midterm/*/*.csv"
 DEFAULT_OUT = "retweet_graph.pt"
+
 
 # Same feature names as Instagram — keeps feature space interpretable for transfer
 FEATURE_COLS = [
@@ -56,14 +58,113 @@ USECOLS = [
     "hashtag", "mentionsn", "media_urls",
 ]
 
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--csv", default=DEFAULT_CSV)
 parser.add_argument("--out", default=DEFAULT_OUT)
+parser.add_argument("--max_files", type=int, default=None, help="Limit number of CSV files to load (for debugging)")
 args = parser.parse_args()
+
+# ── NEW READER ────────────────────────────────────────────────────────────────
+def load_interleaved_csv(filepath):
+    """
+    Loads CSVs where each record can be split across two consecutive rows:
+      - a "main" row (len 66 in your example)
+      - optionally followed by a "sub" row (len 11)
+    This reconstructs a single DataFrame with columns from the main header
+    plus a set of sub columns merged on the right.
+    """
+    main_rows, sub_rows = [], []
+
+    # read headers (two header-like lines at the top)
+    with open(filepath, "r", encoding="utf-8", errors="replace") as f:
+        reader = csv.reader(f)
+        try:
+            header = next(reader)
+        except StopIteration:
+            raise ValueError(f"File {filepath} appears empty or malformed (no header).")
+        # Attempt to read a second header/sub-header line if present; otherwise keep as-is.
+        try:
+            sub_header_raw = next(reader)
+        except StopIteration:
+            sub_header_raw = None
+
+    # read and pair rows
+    with open(filepath, "r", encoding="utf-8", errors="replace") as f:
+        reader = csv.reader(f)
+        # skip the header lines we already consumed above (if present)
+        next(reader)  # skip header
+        # If there was a second header/sub-header, skip it too.
+        if sub_header_raw is not None:
+            next(reader)
+
+        pending_main = None
+        for row in reader:
+            # ensure we only consider non-empty rows
+            if not row:
+                continue
+            if len(row) == 66:
+                # start or replace pending main
+                if pending_main is not None:
+                    # previous main had no sub; record it with empty sub
+                    main_rows.append(pending_main)
+                    sub_rows.append([""] * 11)
+                pending_main = row
+            elif len(row) == 11:
+                if pending_main is not None:
+                    main_rows.append(pending_main)
+                    sub_rows.append(row)
+                    pending_main = None
+                else:
+                    # sub-row without a pending main — skip or treat as standalone
+                    # we'll skip to avoid misalignment
+                    continue
+            else:
+                # row length doesn't match either expected pattern; ignore
+                # (could optionally try to coerce, but keep conservative)
+                continue
+        if pending_main is not None:
+            # last main without sub
+            main_rows.append(pending_main)
+            sub_rows.append([""] * 11)
+
+    # define sub columns (drop the first 'sub_extra' column later if unused)
+    sub_cols = ["sub_extra", "state", "country", "rt_state", "rt_country",
+                "qtd_state", "qtd_country", "norm_country",
+                "norm_rt_country", "norm_qtd_country", "acc_age"]
+
+    # create dataframes
+    df_main = pd.DataFrame(main_rows, columns=header)
+    df_sub = pd.DataFrame(sub_rows, columns=sub_cols).drop(columns=["sub_extra"], errors="ignore")
+    df = pd.concat([df_main.reset_index(drop=True), df_sub.reset_index(drop=True)], axis=1)
+
+    # basic coercions and cleaning
+    if "date" in df.columns:
+        df["date"] = pd.to_datetime(df["date"], format="%a %b %d %H:%M:%S %z %Y", errors="coerce")
+    if "acc_age" in df.columns:
+        df["acc_age"] = pd.to_numeric(df["acc_age"], errors="coerce")
+    if "tweetid" in df.columns:
+        df["tweetid"] = pd.to_numeric(df["tweetid"], errors="coerce")
+    if "userid" in df.columns:
+        df["userid"] = pd.to_numeric(df["userid"], errors="coerce")
+
+    # strip whitespace from object columns
+    str_cols = df.select_dtypes(include="object").columns
+    if len(str_cols) > 0:
+        df[str_cols] = df[str_cols].apply(lambda x: x.str.strip())
+
+    # replace empty strings with NA
+    df.replace("", pd.NA, inplace=True)
+
+    return df
 
 # ── Load CSVs ─────────────────────────────────────────────────────────────────
 print("Loading CSV files...")
 files = sorted(glob.glob(args.csv))
+
+if args.max_files is not None:
+    files = files[:args.max_files]
+
 if not files:
     raise FileNotFoundError(f"No CSV files found at: {args.csv}")
 print(f"  Found {len(files)} files")
@@ -71,11 +172,23 @@ print(f"  Found {len(files)} files")
 chunks = []
 for f in files:
     try:
-        avail = pd.read_csv(f, nrows=0).columns.tolist()
-        usecols = [c for c in USECOLS if c in avail]
-        chunks.append(pd.read_csv(f, usecols=usecols, low_memory=False, on_bad_lines="skip"))
+        # Use the new reader to load the file (it returns a DataFrame)
+        df_file = load_interleaved_csv(f)
+
+        # Keep only the columns we care about (if present)
+        usecols = [c for c in USECOLS if c in df_file.columns]
+        if not usecols:
+            print(f"  Skipping {os.path.basename(f)}: no usable columns found")
+            continue
+
+        # select the requested columns (will preserve NaNs for missing ones)
+        df_sel = df_file[usecols].copy()
+        chunks.append(df_sel)
     except Exception as e:
         print(f"  Skipping {os.path.basename(f)}: {e}")
+
+if not chunks:
+    raise FileNotFoundError(f"No valid CSV content found in: {args.csv}")
 
 df = pd.concat(chunks, ignore_index=True)
 del chunks
@@ -87,7 +200,7 @@ df["screen_name"] = df["screen_name"].str.lower()
 
 print(f"Unique screen_names: {df['screen_name'].nunique():,}")
 
-# ── Build node set ────────────────────────────────────────────────────────────
+# ── Build node set ───────────────────────────────────────────────────────────
 print("Building node set...")
 all_handles = set(df["screen_name"].unique())
 if "rt_screen" in df.columns:
@@ -156,7 +269,8 @@ print(f"  Nodes with features: {matched:,} / {N:,}  ({N-matched:,} retweet-only 
 
 has_feats = X.any(axis=1)
 scaler = StandardScaler()
-X[has_feats] = scaler.fit_transform(X[has_feats])
+if has_feats.any():
+    X[has_feats] = scaler.fit_transform(X[has_feats])
 X = np.nan_to_num(X, nan=0.0).astype(np.float32)
 print(f"  Feature matrix: {X.shape}  columns: {FEATURE_COLS}")
 
