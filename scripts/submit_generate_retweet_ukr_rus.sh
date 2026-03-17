@@ -16,4 +16,4 @@ cd /home1/eibl/gfm/prodigy/data/graphs/midterm
 mkdir -p logs
 mkdir -p /home1/eibl/gfm/prodigy/data/graphs/ukr_rus_twitter
 
-python generate_retweet_graph.py --csv "/project2/ll_774_951/ukr_rus_twitter/*/*.csv" --out "/home1/eibl/gfm/prodigy/data/graphs/ukr_rus_twitter/retweet_graph.pt" --max_files 500
+python generate_retweet_graph.py --csv "/project2/ll_774_951/uk_ru/twitter/data/*/*.csv" --out "/home1/eibl/gfm/prodigy/data/graphs/ukr_ru/twitter/retweet_graph.pt" --max_files 500
