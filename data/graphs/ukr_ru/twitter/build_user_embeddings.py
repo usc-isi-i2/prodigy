@@ -312,7 +312,7 @@ def main():
         embeddings = model.encode(
             valid_texts,
             batch_size=args.batch_size,
-            show_progress_bar=False,
+            show_progress_bar=True,
             convert_to_numpy=True,
         )  # shape (n, DIM), float32
 
