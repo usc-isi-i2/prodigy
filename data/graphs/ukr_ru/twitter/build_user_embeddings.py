@@ -1,9 +1,12 @@
+#!/usr/bin/env python3
 """
 Build per-user embeddings (meanpool + maxpool) from Instagram/Twitter post CSV files.
 Processes files one-at-a-time to stay within memory limits.
 
-This version reads CSVs (including the interleaved-format CSVs) instead of pickles.
+Usage example:
+  python build_user_embeddings.py --data-glob "/path/*.csv" --output-path out.pt --max-files 100
 """
+import argparse
 import gc
 import glob
 import os
@@ -17,20 +20,13 @@ from sentence_transformers import SentenceTransformer
 from collections import defaultdict
 from tqdm import tqdm
 
-# ── Config ──────────────────────────────────────────────────────────────────
-DATA_GLOB       = "/project2/ll_774_951/uk_ru/twitter/data/2022-02/*.csv"
-CHECKPOINT_PATH = "user_embeddings_minilm_checkpoint.pkl"
-OUTPUT_PATH     = "user_embeddings_minilm.pt"
-MODEL_NAME      = "sentence-transformers/all-MiniLM-L6-v2"  # 384-dim
-CHECKPOINT_EVERY = 4  # save accumulator state every N files
-BATCH_SIZE      = 256
-DEVICE          = "cuda" if torch.cuda.is_available() else "cpu"
-
-# ── Helpers: CSV loader for interleaved files ─────────────────────────────────
+# -------------------------
+# Helpers: CSV loader for interleaved files
+# -------------------------
 
 def load_interleaved_csv(filepath):
     """
-    Read CSV files with interleaved main-row (len 66) + optional sub-row (len 11).
+    Read CSV files with interleaved main-row (len header) + optional sub-row (len sub_header).
     If the file isn't in this format, this function may raise or return a DataFrame with mismatched columns.
     """
     main_rows, sub_rows = [], []
@@ -89,19 +85,13 @@ def load_interleaved_csv(filepath):
             main_rows.append(pending_main)
             sub_rows.append([""] * len(sub_header_raw))
 
-    # Build dataframes and concat side-by-side (drop the first sub column if it's an extra)
-    # The original sub_cols in your example had an extra leading "sub_extra" to drop.
-    # Here we infer sub column names from the sub_header_raw; if there's an extra leading column,
-    # we'll drop it if its name is blank or obviously a placeholder.
     sub_cols = list(sub_header_raw)
-    # If first sub column is empty-ish, rename to 'sub_extra' and drop later
     if not sub_cols or not sub_cols[0].strip():
         sub_cols[0] = "sub_extra"
 
     df_main = pd.DataFrame(main_rows, columns=header)
     df_sub  = pd.DataFrame(sub_rows, columns=sub_cols)
 
-    # If 'sub_extra' exists, drop it to match previous expected layout
     if "sub_extra" in df_sub.columns:
         df_sub = df_sub.drop(columns=["sub_extra"])
 
@@ -125,47 +115,41 @@ def read_post_file(fpath):
     Read a single file robustly:
       - attempt interleaved parser first (load_interleaved_csv)
       - fall back to pd.read_csv with low_memory=False
-    Also ensures 'handle' column exists if possible by checking a few common places:
-      - 'handle' column
-      - 'account.handle' column
-      - 'account' column containing JSON/dict with 'handle' key
+    Also ensures 'handle' column exists if possible by checking a few common places.
     Returns a DataFrame or raises an exception.
     """
-    # Try interleaved loader first (because some files are interleaved in your dataset)
+    # Try interleaved loader first (because some files are interleaved in some datasets)
     try:
         df = load_interleaved_csv(fpath)
-        # success; convert empty strings to NaN consistently
         df.replace("", pd.NA, inplace=True)
     except Exception as e_inter:
         # Fall back to standard CSV read
         try:
-            df = pd.read_csv(fpath, low_memory=False, encoding="utf-8", error_bad_lines=False)
+            # pandas' error_bad_lines is deprecated; use on_bad_lines
+            df = pd.read_csv(fpath, low_memory=False, encoding="utf-8", on_bad_lines="skip")
             df.replace("", pd.NA, inplace=True)
         except Exception as e_csv:
             raise RuntimeError(f"Failed to read {os.path.basename(fpath)} as interleaved CSV ({e_inter}) or regular CSV ({e_csv})")
 
     # Ensure handle column: several formats possible
     if "handle" not in df.columns:
-        # pattern: account.handle
         if "account.handle" in df.columns:
             df["handle"] = df["account.handle"]
         elif "account" in df.columns:
-            # account may be a JSON string or a dict-like object; try to parse/extract
             try:
-                # attempt to parse JSON-like strings when present
                 parsed = df["account"].apply(try_parse_json_field)
                 if parsed.apply(lambda x: isinstance(x, dict)).any():
                     df["handle"] = parsed.apply(lambda a: a.get("handle") if isinstance(a, dict) else pd.NA)
                 else:
-                    # maybe account column is like "handle:foo" or has a handle substring; skip heuristic
-                    # leave for downstream; no handle column created here
                     pass
             except Exception:
                 pass
 
     return df
 
-# ── Helpers for text building and checkpointing ──────────────────────────────
+# -------------------------
+# Helpers for text building and checkpointing
+# -------------------------
 
 def build_post_text(row: pd.Series) -> str:
     """Combine available text fields into a single string for embedding."""
@@ -179,151 +163,203 @@ def build_post_text(row: pd.Series) -> str:
         parts.append(str(row["imageText"]).strip())
     return " ".join(parts) if parts else ""
 
-def save_checkpoint(user_sum, user_max, user_count, files_done):
-    tmp = CHECKPOINT_PATH + ".tmp"
+def save_checkpoint(path, user_sum, user_max, user_count, files_done):
+    tmp = path + ".tmp"
     with open(tmp, "wb") as f:
         pickle.dump({
             "user_sum":   dict(user_sum),
             "user_max":   dict(user_max),
             "user_count": dict(user_count),
-            "files_done": files_done,
+            "files_done": list(files_done),
         }, f)
-    os.replace(tmp, CHECKPOINT_PATH)  # atomic
-    print(f"  ✓ Checkpoint saved ({len(files_done)} files done)")
+    os.replace(tmp, path)  # atomic
+    print(f"  ✓ Checkpoint saved ({len(files_done)} files done) -> {path}")
 
-def load_checkpoint():
-    if not os.path.exists(CHECKPOINT_PATH):
+def load_checkpoint(path):
+    if not os.path.exists(path):
         return None
-    with open(CHECKPOINT_PATH, "rb") as f:
+    with open(path, "rb") as f:
         return pickle.load(f)
 
-# ── Load model ──────────────────────────────────────────────────────────────
-print(f"Loading model {MODEL_NAME} on {DEVICE}...")
-model = SentenceTransformer(MODEL_NAME, device=DEVICE)
-model.max_seq_length = 512
-DIM = model.get_sentence_embedding_dimension()
-print(f"Embedding dim: {DIM}")
+# -------------------------
+# Main
+# -------------------------
 
-# ── Resume from checkpoint if available ─────────────────────────────────────
-checkpoint = load_checkpoint()
-if checkpoint:
-    user_sum   = defaultdict(lambda: np.zeros(DIM, dtype=np.float64), checkpoint["user_sum"])
-    user_max   = defaultdict(lambda: np.full(DIM, -np.inf, dtype=np.float32), checkpoint["user_max"])
-    user_count = defaultdict(int, checkpoint["user_count"])
-    files_done = set(checkpoint["files_done"])
-    print(f"Resumed from checkpoint: {len(files_done)} files already processed, {len(user_sum)} users so far")
-else:
-    user_sum   = defaultdict(lambda: np.zeros(DIM, dtype=np.float64))
-    user_max   = defaultdict(lambda: np.full(DIM, -np.inf, dtype=np.float32))
-    user_count = defaultdict(int)
-    files_done = set()
+def main():
+    p = argparse.ArgumentParser(description="Build per-user embeddings (mean + max pooling) from post CSVs.")
+    p.add_argument("--data-glob", type=str, required=True, help="glob pattern for input CSV files (e.g. '/data/*.csv')")
+    p.add_argument("--checkpoint-path", type=str, default="user_embeddings_minilm_checkpoint.pkl", help="checkpoint pickle path")
+    p.add_argument("--output-path", type=str, default="user_embeddings_minilm.pt", help="output torch .pt file")
+    p.add_argument("--model-name", type=str, default="sentence-transformers/all-MiniLM-L6-v2", help="SentenceTransformer model name")
+    p.add_argument("--checkpoint-every", type=int, default=4, help="save accumulator state every N files")
+    p.add_argument("--batch-size", type=int, default=256, help="encoding batch size")
+    p.add_argument("--device", type=str, default=None, help="device to use (e.g. 'cuda' or 'cpu'); defaults to auto-detect")
+    p.add_argument("--max-files", type=int, default=None, help="maximum number of files to process in this run (unprocessed files only). None => all files")
+    p.add_argument("--resume", action="store_true", default=False, help="resume from checkpoint if available")
+    p.add_argument("--no-cuda", action="store_true", default=False, help="disable CUDA even if available")
+    p.add_argument("--verbose", action="store_true", default=False, help="print extra logs")
+    args = p.parse_args()
 
-# ── Stream through files ────────────────────────────────────────────────────
-files = sorted(glob.glob(DATA_GLOB))
-print(f"Found {len(files)} files ({len(files_done)} already done)")
+    # Resolve device
+    if args.device:
+        device = args.device
+    else:
+        device = "cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu"
 
-for i, fpath in enumerate(tqdm(files, desc="Files")):
-    if fpath in files_done:
-        continue
+    # Print config
+    print("Configuration:")
+    for k in ("data_glob", "checkpoint_path", "output_path", "model_name", "checkpoint_every", "batch_size", "device", "max_files", "resume"):
+        print(f"  {k}: {getattr(args, k)}")
+    print("")
 
-    try:
-        df = read_post_file(fpath)
-        if not isinstance(df, pd.DataFrame):
-            df = pd.DataFrame(df)
-    except Exception as e:
-        print(f"  ⚠ Skipping {os.path.basename(fpath)}: read error: {e}")
-        files_done.add(fpath)
-        continue
+    # Load model
+    print(f"Loading model {args.model_name} on {device}...")
+    model = SentenceTransformer(args.model_name, device=device)
+    model.max_seq_length = 512
+    DIM = model.get_sentence_embedding_dimension()
+    print(f"Embedding dim: {DIM}")
 
-    # Ensure we can find a handle column; try a couple of heuristics
-    if "handle" not in df.columns:
-        # try other common names
-        possible = None
-        for c in ("screen_name", "username", "user_screen_name", "user"):
-            if c in df.columns:
-                possible = c
-                break
-        if possible is not None:
-            df["handle"] = df[possible]
-        else:
-            # nothing we can use reliably
-            print(f"  ⚠ No 'handle' column (or equivalent) in {os.path.basename(fpath)}, skipping")
-            del df
-            gc.collect()
-            files_done.add(fpath)
+    # Resume or init accumulators
+    checkpoint = load_checkpoint(args.checkpoint_path) if args.resume else None
+    if checkpoint:
+        # loaded checkpoint stores lists/dicts -> need to wrap back into default dicts
+        user_sum   = defaultdict(lambda: np.zeros(DIM, dtype=np.float64), checkpoint.get("user_sum", {}))
+        user_max   = defaultdict(lambda: np.full(DIM, -np.inf, dtype=np.float32), checkpoint.get("user_max", {}))
+        user_count = defaultdict(int, checkpoint.get("user_count", {}))
+        files_done = set(checkpoint.get("files_done", []))
+        print(f"Resumed from checkpoint: {len(files_done)} files already processed, {len(user_sum)} users so far")
+    else:
+        user_sum   = defaultdict(lambda: np.zeros(DIM, dtype=np.float64))
+        user_max   = defaultdict(lambda: np.full(DIM, -np.inf, dtype=np.float32))
+        user_count = defaultdict(int)
+        files_done = set()
+
+    # Discover files
+    files = sorted(glob.glob(args.data_glob))
+    print(f"Found {len(files)} files (already done: {len(files_done)})")
+
+    processed_in_run = 0
+    for i, fpath in enumerate(tqdm(files, desc="Files")):
+        # if file already processed (from checkpoint), skip
+        if fpath in files_done:
+            if args.verbose:
+                print(f"Skipping already-processed file: {fpath}")
             continue
 
-    # If account column exists and is dict-like with handle, prefer that for reliability
-    if "account" in df.columns and "handle" not in df.columns:
+        # apply max-files limit (only counts newly processed files)
+        if args.max_files is not None and processed_in_run >= args.max_files:
+            if args.verbose:
+                print(f"Reached max-files={args.max_files}; stopping.")
+            break
+
         try:
-            parsed = df["account"].apply(try_parse_json_field)
-            if parsed.apply(lambda x: isinstance(x, dict) and "handle" in x).any():
-                df["handle"] = parsed.apply(lambda a: a.get("handle") if isinstance(a, dict) else pd.NA)
-        except Exception:
-            pass
+            df = read_post_file(fpath)
+            if not isinstance(df, pd.DataFrame):
+                df = pd.DataFrame(df)
+        except Exception as e:
+            print(f"  ⚠ Skipping {os.path.basename(fpath)}: read error: {e}")
+            files_done.add(fpath)
+            processed_in_run += 1  # consider it consumed for the max-files counter
+            continue
 
-    # Build texts and handles
-    texts = df.apply(build_post_text, axis=1).tolist()
-    handles = df["handle"].tolist()
-    del df
-    gc.collect()
+        # ensure we can find a handle column; try a couple heuristics
+        if "handle" not in df.columns:
+            possible = None
+            for c in ("screen_name", "username", "user_screen_name", "user"):
+                if c in df.columns:
+                    possible = c
+                    break
+            if possible is not None:
+                df["handle"] = df[possible]
+            else:
+                print(f"  ⚠ No 'handle' column (or equivalent) in {os.path.basename(fpath)}, skipping")
+                del df
+                gc.collect()
+                files_done.add(fpath)
+                processed_in_run += 1
+                continue
 
-    # Filter: must have text and a non-null handle
-    valid_idx = [
-        idx for idx, (t, h) in enumerate(zip(texts, handles))
-        if isinstance(t, str) and t.strip() and pd.notna(h)
-    ]
-    if not valid_idx:
+        # if account column exists and is dict-like with handle, prefer that
+        if "account" in df.columns and "handle" not in df.columns:
+            try:
+                parsed = df["account"].apply(try_parse_json_field)
+                if parsed.apply(lambda x: isinstance(x, dict) and "handle" in x).any():
+                    df["handle"] = parsed.apply(lambda a: a.get("handle") if isinstance(a, dict) else pd.NA)
+            except Exception:
+                pass
+
+        # Build texts and handles
+        texts = df.apply(build_post_text, axis=1).tolist()
+        handles = df["handle"].tolist()
+        del df
+        gc.collect()
+
+        # Filter: must have text and a non-null handle
+        valid_idx = [
+            idx for idx, (t, h) in enumerate(zip(texts, handles))
+            if isinstance(t, str) and t.strip() and pd.notna(h)
+        ]
+        if not valid_idx:
+            files_done.add(fpath)
+            processed_in_run += 1
+            continue
+
+        valid_texts   = [texts[idx] for idx in valid_idx]
+        valid_handles = [handles[idx] for idx in valid_idx]
+        del texts, handles
+
+        # encode embeddings
+        embeddings = model.encode(
+            valid_texts,
+            batch_size=args.batch_size,
+            show_progress_bar=False,
+            convert_to_numpy=True,
+        )  # shape (n, DIM), float32
+
+        for handle, emb in zip(valid_handles, embeddings):
+            handle = str(handle).strip()
+            user_sum[handle]   += emb.astype(np.float64)
+            user_max[handle]    = np.maximum(user_max[handle], emb)
+            user_count[handle] += 1
+
         files_done.add(fpath)
-        continue
+        processed_in_run += 1
 
-    valid_texts   = [texts[idx] for idx in valid_idx]
-    valid_handles = [handles[idx] for idx in valid_idx]
-    del texts, handles
+        # free memory
+        del valid_texts, valid_handles, embeddings
+        gc.collect()
+        if device.startswith("cuda"):
+            torch.cuda.empty_cache()
 
-    embeddings = model.encode(
-        valid_texts,
-        batch_size=BATCH_SIZE,
-        show_progress_bar=False,
-        convert_to_numpy=True,
-    )  # shape (n, DIM), float32
+        if len(files_done) % args.checkpoint_every == 0:
+            save_checkpoint(args.checkpoint_path, user_sum, user_max, user_count, files_done)
 
-    for handle, emb in zip(valid_handles, embeddings):
-        # ensure handle is string (strip whitespace)
-        handle = str(handle).strip()
-        user_sum[handle]   += emb.astype(np.float64)
-        user_max[handle]    = np.maximum(user_max[handle], emb)
-        user_count[handle] += 1
+    # Final checkpoint before finalizing (safe to always save)
+    save_checkpoint(args.checkpoint_path, user_sum, user_max, user_count, files_done)
 
-    files_done.add(fpath)
-    del valid_texts, valid_handles, embeddings
-    gc.collect()
-    if DEVICE.startswith("cuda"):
-        torch.cuda.empty_cache()
+    # Finalize
+    handles_sorted = sorted(user_sum.keys())
+    N = len(handles_sorted)
+    print(f"\nTotal unique users: {N}")
+    print(f"Total posts embedded: {sum(user_count.values())}")
 
-    if len(files_done) % CHECKPOINT_EVERY == 0:
-        save_checkpoint(user_sum, user_max, user_count, files_done)
+    meanpool = torch.zeros(N, DIM)
+    maxpool  = torch.zeros(N, DIM)
 
-# ── Finalize ────────────────────────────────────────────────────────────────
-handles_sorted = sorted(user_sum.keys())
-N = len(handles_sorted)
-print(f"\nTotal unique users: {N}")
-print(f"Total posts embedded: {sum(user_count.values())}")
+    for i, h in enumerate(handles_sorted):
+        meanpool[i] = torch.from_numpy((user_sum[h] / user_count[h]).astype(np.float32))
+        maxpool[i]  = torch.from_numpy(user_max[h])
 
-meanpool = torch.zeros(N, DIM)
-maxpool  = torch.zeros(N, DIM)
+    torch.save({
+        "handles":  handles_sorted,
+        "meanpool": meanpool,
+        "maxpool":  maxpool,
+        "counts":   {h: user_count[h] for h in handles_sorted},
+    }, args.output_path)
 
-for i, h in enumerate(handles_sorted):
-    meanpool[i] = torch.from_numpy((user_sum[h] / user_count[h]).astype(np.float32))
-    maxpool[i]  = torch.from_numpy(user_max[h])
+    print(f"Saved to {args.output_path}")
+    print(f"  meanpool shape: {meanpool.shape}")
+    print(f"  maxpool  shape: {maxpool.shape}")
 
-torch.save({
-    "handles":  handles_sorted,
-    "meanpool": meanpool,
-    "maxpool":  maxpool,
-    "counts":   {h: user_count[h] for h in handles_sorted},
-}, OUTPUT_PATH)
-
-print(f"Saved to {OUTPUT_PATH}")
-print(f"  meanpool shape: {meanpool.shape}")
-print(f"  maxpool  shape: {maxpool.shape}")
+if __name__ == "__main__":
+    main()
