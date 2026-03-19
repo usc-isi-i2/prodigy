@@ -7,7 +7,7 @@ The model must classify each query node to its correct center node.
 
 Usage:
     python scripts/sample_temporal_link_pred.py \
-        --root midterm/graph_temporal \
+        --root midterm/graph \
         --checkpoint state/<run>/state_dict \
         --n_episodes 100 \
         --output temporal_preds.csv
@@ -27,13 +27,17 @@ from models.general_gnn import SingleLayerGeneralGNN
 from experiments.layers import get_module_list
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--root',       required=True,  help='Path to graph_temporal dir')
+parser.add_argument('--root',       required=True,  help='Path to midterm graph dir')
 parser.add_argument('--checkpoint', required=True,  help='Path to .ckpt or state_dict dir')
 parser.add_argument('--input_dim',  type=int, default=98)
 parser.add_argument('--n_episodes', type=int, default=100)
 parser.add_argument('--n_way',      type=int, default=3)
 parser.add_argument('--n_shot',     type=int, default=3)
 parser.add_argument('--n_query',    type=int, default=10)
+parser.add_argument('--midterm_edge_view', default='temporal_history')
+parser.add_argument('--midterm_target_edge_view', default='temporal_new')
+parser.add_argument('--midterm_edge_feature_subset', default='keep:first_retweet_time,n_retweets')
+parser.add_argument('--midterm_use_edge_features', action='store_true')
 parser.add_argument('--output',     default='temporal_preds.csv')
 args = parser.parse_args()
 
@@ -41,7 +45,12 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # ── Load graph ────────────────────────────────────────────────────────────────
 print("Loading dataset...")
-dataset = get_midterm_dataset(root=args.root)
+dataset = get_midterm_dataset(
+    root=args.root,
+    midterm_edge_view=args.midterm_edge_view,
+    midterm_target_edge_view=args.midterm_target_edge_view,
+    midterm_edge_feature_subset=args.midterm_edge_feature_subset,
+)
 graph = dataset.graph
 
 raw = torch.load(os.path.join(args.root, 'graph_data.pt'), map_location='cpu')
@@ -82,9 +91,14 @@ params = {
     'dropout': 0, 'reset_after_layer': None, 'meta_gnn_pos_only': False,
     'text_features_dropout': 0, 'zero_shot': False,
 }
+edge_attr_dim = None
+if args.midterm_use_edge_features:
+    if not hasattr(graph, "edge_attr") or graph.edge_attr is None:
+        raise ValueError("midterm_use_edge_features enabled, but selected edge view has no edge_attr")
+    edge_attr_dim = graph.edge_attr.shape[1] if graph.edge_attr.dim() > 1 else 1
 initial_label_mlp = torch.nn.Linear(768, emb_dim)
 layer_list = get_module_list(
-    params['layers'], emb_dim, edge_attr_dim=None,
+    params['layers'], emb_dim, edge_attr_dim=edge_attr_dim,
     input_dim=params['input_dim'], dropout=params['dropout'],
     reset_after_layer=params['reset_after_layer'],
     attention_mask_scheme=params['attention_mask_scheme'],
