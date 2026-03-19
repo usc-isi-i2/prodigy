@@ -202,6 +202,8 @@ user_agg = df.groupby("screen_name").agg(**agg_dict).reset_index()
 for col in FEATURE_COLS:
     if col not in user_agg.columns:
         user_agg[col] = 0.0
+    # Prevent NaNs from sparse/missing aggregates from leaking into node features
+    user_agg[col] = user_agg[col].fillna(0.0)
 
 print("Applying log transformations and scaling...")
 for col in ["subscriber_count", "avg_favorites", "avg_comments", "post_count"]:

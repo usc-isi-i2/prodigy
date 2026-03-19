@@ -23,7 +23,7 @@ from tqdm import tqdm
 
 def parse_args():
     p = argparse.ArgumentParser(description="Build per-user embeddings from Instagram post pickles.")
-    p.add_argument("--data-glob", default="/project2/ll_774_951/uk_ru/Instagram_Uk_ru/*.pkl",
+    p.add_argument("--data-glob", default="/project2/ll_774_951/uk_ru/twitter/data/2022-02/*.pkl",
                    help="glob pattern matching input .pkl files")
     p.add_argument("--checkpoint-path", default="user_embeddings_minilm_checkpoint.pkl",
                    help="path to checkpoint pickle")
