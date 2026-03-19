@@ -80,6 +80,9 @@ def normalize_ids_and_timestamps(df: pd.DataFrame, strict_dates: bool) -> pd.Dat
     df = df.copy()
     df["userid"] = pd.to_numeric(df.get("userid"), errors="coerce")
     df["rt_userid"] = pd.to_numeric(df.get("rt_userid"), errors="coerce")
+    for col in ("rt_fav_count", "rt_reply_count", "followers_count", "statuses_count", "sent_vader"):
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
 
     df["date"] = df.get("date", "").astype(str).str.strip()
     df["timestamp"] = pd.to_datetime(
