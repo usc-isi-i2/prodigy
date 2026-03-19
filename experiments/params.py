@@ -139,6 +139,39 @@ def get_params():
 
     args.add_argument("-n_hop", "--n_hop", default=2, type=int)  # number of hops for subgraph extraction
     args.add_argument("--graph_filename", default="graph_data.pt", type=str)  # graph file to load from root
+    args.add_argument(
+        "--midterm_feature_subset",
+        default="all",
+        type=str,
+        help=(
+            "Feature subset spec for midterm node features. "
+            "Supported: all | stats_only | emb_only | keep:<f1,f2,...> | drop:<f1,f2,...>"
+        ),
+    )
+    args.add_argument(
+        "--midterm_edge_view",
+        default="default",
+        type=str,
+        help="Named edge view for midterm background graph (default uses 'edge_index').",
+    )
+    args.add_argument(
+        "--midterm_target_edge_view",
+        default="future",
+        type=str,
+        help="Named edge target view for midterm temporal link prediction (default uses 'future_edge_index').",
+    )
+    args.add_argument(
+        "--midterm_edge_feature_subset",
+        default="all",
+        type=str,
+        help="Midterm edge feature subset: all | none | keep:<f1,f2,...> | drop:<f1,f2,...>",
+    )
+    args.add_argument(
+        "--midterm_use_edge_features",
+        default=False,
+        type=bool,
+        help="If True, configure the background GNN to consume midterm edge_attr features.",
+    )
 
     args.add_argument("-smalldataset", "--small_dataset", default=False,
                       type=bool)  # use for debugging  - very small dataset

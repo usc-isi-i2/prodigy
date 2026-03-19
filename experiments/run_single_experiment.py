@@ -80,6 +80,10 @@ if __name__ == '__main__':
         max_posts=params["facebook_max_posts"],
         n_hop=params["n_hop"],
         graph_filename=params["graph_filename"],
+        midterm_feature_subset=params["midterm_feature_subset"],
+        midterm_edge_view=params["midterm_edge_view"],
+        midterm_target_edge_view=params["midterm_target_edge_view"],
+        midterm_edge_feature_subset=params["midterm_edge_feature_subset"],
     )
 
     _log("Dataset loaded. Initializing trainer...")

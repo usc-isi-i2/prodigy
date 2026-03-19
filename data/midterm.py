@@ -12,6 +12,162 @@ from .dataloader import MulticlassTask, ParamSampler, BatchSampler, Collator, Ne
 from .dataset import SubgraphDataset
 
 
+def _normalize_view_name(view_name: Optional[str], default: str = "default") -> str:
+    name = (view_name or "").strip()
+    return default if name == "" else name
+
+
+def _load_named_tensor(
+        raw: dict,
+        view_name: str,
+        *,
+        default_key: str,
+        views_key: str,
+        legacy_prefix: str,
+):
+    if view_name == "default":
+        return raw.get(default_key), "default"
+
+    views = raw.get(views_key, {})
+    if isinstance(views, dict) and view_name in views:
+        return views[view_name], view_name
+
+    legacy_key = f"{legacy_prefix}_{view_name}"
+    if legacy_key in raw:
+        return raw[legacy_key], view_name
+
+    available = ["default"]
+    if isinstance(views, dict):
+        available.extend(sorted(views.keys()))
+    available.extend(sorted(
+        key[len(f"{legacy_prefix}_"):]
+        for key in raw.keys()
+        if key.startswith(f"{legacy_prefix}_")
+    ))
+    available = sorted(set(available))
+    raise ValueError(
+        f"Unknown view '{view_name}' for {default_key}. "
+        f"Available views: {available}"
+    )
+
+
+def _load_edge_feature_names(raw: dict, resolved_edge_view: str):
+    if resolved_edge_view == "default":
+        names = raw.get("edge_attr_feature_names", [])
+        return list(names) if isinstance(names, (list, tuple)) else []
+
+    names_views = raw.get("edge_attr_feature_names_views", {})
+    if isinstance(names_views, dict) and resolved_edge_view in names_views:
+        names = names_views[resolved_edge_view]
+        return list(names) if isinstance(names, (list, tuple)) else []
+
+    legacy_key = f"edge_attr_feature_names_{resolved_edge_view}"
+    names = raw.get(legacy_key, [])
+    return list(names) if isinstance(names, (list, tuple)) else []
+
+
+def _apply_feature_subset(graph: Data, subset_spec: str) -> Data:
+    spec = (subset_spec or "all").strip()
+    if spec in {"", "all"}:
+        print(f"Using all midterm features ({graph.x.shape[1]} dims).")
+        return graph
+
+    feature_names = list(getattr(graph, "feature_names", []))
+    x_dim = graph.x.shape[1]
+    if not feature_names or len(feature_names) != x_dim:
+        feature_names = [f"f{i}" for i in range(x_dim)]
+
+    emb_mask = [name.startswith("emb_") for name in feature_names]
+    stats_idx = [i for i, is_emb in enumerate(emb_mask) if not is_emb]
+    emb_idx = [i for i, is_emb in enumerate(emb_mask) if is_emb]
+
+    indices = None
+    if spec == "stats_only":
+        indices = stats_idx
+    elif spec == "emb_only":
+        indices = emb_idx
+    elif spec.startswith("keep:"):
+        keep = [s.strip() for s in spec.split(":", 1)[1].split(",") if s.strip()]
+        keep_set = set(keep)
+        indices = [i for i, name in enumerate(feature_names) if name in keep_set]
+    elif spec.startswith("drop:"):
+        drop = [s.strip() for s in spec.split(":", 1)[1].split(",") if s.strip()]
+        drop_set = set(drop)
+        indices = [i for i, name in enumerate(feature_names) if name not in drop_set]
+    else:
+        raise ValueError(
+            f"Unsupported midterm_feature_subset='{subset_spec}'. "
+            f"Use one of: all, stats_only, emb_only, keep:<...>, drop:<...>."
+        )
+
+    if not indices:
+        raise ValueError(
+            f"midterm_feature_subset='{subset_spec}' selected 0 columns out of {x_dim}."
+        )
+
+    graph.x = graph.x[:, indices]
+    graph.feature_names = [feature_names[i] for i in indices]
+    print(
+        f"Applied midterm feature subset '{subset_spec}': "
+        f"{x_dim} -> {graph.x.shape[1]} dims."
+    )
+    return graph
+
+
+def _apply_edge_feature_subset(graph: Data, subset_spec: str, feature_names=None):
+    if not hasattr(graph, "edge_attr") or graph.edge_attr is None:
+        return graph
+
+    spec = (subset_spec or "all").strip()
+    if spec in {"", "all"}:
+        names = list(feature_names or [])
+        if names:
+            print(f"Using all midterm edge features ({graph.edge_attr.shape[1]} dims): {names}")
+        else:
+            print(f"Using all midterm edge features ({graph.edge_attr.shape[1]} dims).")
+        graph.edge_attr_feature_names = names
+        return graph
+
+    if spec == "none":
+        graph.edge_attr = None
+        graph.edge_attr_feature_names = []
+        print("Disabled midterm edge features (midterm_edge_feature_subset='none').")
+        return graph
+
+    x_dim = graph.edge_attr.shape[1]
+    names = list(feature_names or [])
+    if not names or len(names) != x_dim:
+        names = [f"ef{i}" for i in range(x_dim)]
+
+    indices = None
+    if spec.startswith("keep:"):
+        keep = [s.strip() for s in spec.split(":", 1)[1].split(",") if s.strip()]
+        keep_set = set(keep)
+        indices = [i for i, name in enumerate(names) if name in keep_set]
+    elif spec.startswith("drop:"):
+        drop = [s.strip() for s in spec.split(":", 1)[1].split(",") if s.strip()]
+        drop_set = set(drop)
+        indices = [i for i, name in enumerate(names) if name not in drop_set]
+    else:
+        raise ValueError(
+            f"Unsupported midterm_edge_feature_subset='{subset_spec}'. "
+            "Use one of: all, none, keep:<...>, drop:<...>."
+        )
+
+    if not indices:
+        raise ValueError(
+            f"midterm_edge_feature_subset='{subset_spec}' selected 0 columns out of {x_dim}."
+        )
+
+    graph.edge_attr = graph.edge_attr[:, indices]
+    graph.edge_attr_feature_names = [names[i] for i in indices]
+    print(
+        f"Applied midterm edge feature subset '{subset_spec}': "
+        f"{x_dim} -> {graph.edge_attr.shape[1]} dims."
+    )
+    return graph
+
+
 def get_midterm_dataset(
         root: str,
         n_hop: int = 2,
@@ -22,14 +178,48 @@ def get_midterm_dataset(
     print(f"Loading midterm graph from {graph_path}...")
     raw = torch.load(graph_path, map_location='cpu')
 
+    edge_view = _normalize_view_name(kwargs.get("midterm_edge_view", "default"))
+    edge_index, resolved_edge_view = _load_named_tensor(
+        raw,
+        edge_view,
+        default_key="edge_index",
+        views_key="edge_index_views",
+        legacy_prefix="edge_index",
+    )
+    if edge_index is None:
+        raise ValueError(
+            f"No edge_index found for view '{resolved_edge_view}'. "
+            "The graph file must contain at least 'edge_index'."
+        )
+
     graph = Data(
         x=raw['x'],
-        edge_index=raw['edge_index'],
+        edge_index=edge_index,
         y=raw['y'],
         num_nodes=raw['x'].shape[0],
     )
+    try:
+        edge_attr, _ = _load_named_tensor(
+            raw,
+            resolved_edge_view,
+            default_key="edge_attr",
+            views_key="edge_attr_views",
+            legacy_prefix="edge_attr",
+        )
+    except ValueError:
+        edge_attr = None
+    edge_feature_names = _load_edge_feature_names(raw, resolved_edge_view)
+    if edge_attr is not None:
+        graph.edge_attr = edge_attr
+
     graph.label_names = raw['label_names']
     graph.feature_names = raw.get('feature_names', [])
+    graph = _apply_feature_subset(graph, kwargs.get("midterm_feature_subset", "all"))
+    graph = _apply_edge_feature_subset(
+        graph,
+        kwargs.get("midterm_edge_feature_subset", "all"),
+        feature_names=edge_feature_names,
+    )
 
     print(f"Graph: {graph.num_nodes} nodes, {graph.edge_index.shape[1]} edges, "
           f"{len(graph.label_names)} state classes")
@@ -40,11 +230,25 @@ def get_midterm_dataset(
     neighbor_sampler = NeighborSampler(graph, num_hops=n_hop)
     print("Neighbor sampler ready.", flush=True)
     dataset = SubgraphDataset(graph, neighbor_sampler, bidirectional=False)
-    if 'future_edge_index' in raw:
+    if hasattr(graph, "edge_attr") and graph.edge_attr is not None:
+        print(f"Edge features: {graph.edge_attr.shape[1]} dims from edge view '{resolved_edge_view}'")
+
+    target_view = _normalize_view_name(kwargs.get("midterm_target_edge_view", "future"), default="future")
+    future_edge_index, resolved_target_view = _load_named_tensor(
+        raw,
+        target_view,
+        default_key="future_edge_index",
+        views_key="target_edge_index_views",
+        legacy_prefix="future_edge_index",
+    )
+    if future_edge_index is not None:
         print("Building future neighbor sampler...", flush=True)
-        future_graph = Data(edge_index=raw['future_edge_index'], num_nodes=graph.num_nodes)
+        future_graph = Data(edge_index=future_edge_index, num_nodes=graph.num_nodes)
         dataset.future_neighbor_sampler = NeighborSampler(future_graph, num_hops=n_hop)
+        dataset.future_edge_view = resolved_target_view
         print("Future neighbor sampler ready.", flush=True)
+    else:
+        dataset.future_edge_view = None
     return dataset
 
 
@@ -154,6 +358,11 @@ def get_midterm_dataloader(
             seed=seed,
         )
     elif task_name == "temporal_link_prediction":
+        if not hasattr(dataset, "future_neighbor_sampler"):
+            raise ValueError(
+                "temporal_link_prediction requires target edges, but no future edge view was found. "
+                "Provide --midterm_target_edge_view (or ensure 'future_edge_index' exists in graph_data.pt)."
+            )
         sampler = BatchSampler(
             batch_count,
             NeighborTask(dataset.future_neighbor_sampler, graph.num_nodes, "inout"),

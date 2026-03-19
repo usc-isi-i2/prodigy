@@ -105,6 +105,15 @@ class TrainerFS():
                 self.parameter["input_dim"] = kg_embedding_dim + 2  # add 2 to flag head and tail nodes
         if self.dataset_name in ["CSG"]:
             edge_attr_dim = 128
+        if self.dataset_name == "midterm" and self.parameter.get("midterm_use_edge_features", False):
+            midterm_edge_attr = getattr(dataset.graph, "edge_attr", None)
+            if midterm_edge_attr is None:
+                raise ValueError(
+                    "midterm_use_edge_features=True but the loaded midterm graph has no edge_attr. "
+                    "Check --midterm_edge_view / --midterm_edge_feature_subset and graph_data.pt contents."
+                )
+            edge_attr_dim = midterm_edge_attr.shape[1] if midterm_edge_attr.dim() > 1 else 1
+            _log(f"Using midterm edge features with edge_attr_dim={edge_attr_dim}")
 
         self.txt_dropout = torch.nn.Dropout(self.parameter["text_features_dropout"])
         self.msg_pos_only = "meta_gnn_pos_only" in self.parameter and self.parameter["meta_gnn_pos_only"]
@@ -245,6 +254,10 @@ class TrainerFS():
         kwargs["facebook_target_dim"] = self.parameter["facebook_target_dim"]
         kwargs["facebook_filter_to_uk_ru"] = self.parameter["facebook_filter_to_uk_ru"]
         kwargs["max_posts"] = self.parameter["facebook_max_posts"]
+        kwargs["midterm_feature_subset"] = self.parameter["midterm_feature_subset"]
+        kwargs["midterm_edge_view"] = self.parameter["midterm_edge_view"]
+        kwargs["midterm_target_edge_view"] = self.parameter["midterm_target_edge_view"]
+        kwargs["midterm_edge_feature_subset"] = self.parameter["midterm_edge_feature_subset"]
         if self.parameter["all_test"]:
             kwargs["all_test"] = True
         if self.parameter["label_set"]:
