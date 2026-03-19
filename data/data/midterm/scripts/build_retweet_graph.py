@@ -1,5 +1,4 @@
 import argparse
-import csv
 import glob
 import json
 import os
@@ -24,54 +23,6 @@ def parse_args():
     p.add_argument("--history_fraction", type=float, default=0.8)
     p.add_argument("--no_temporal_views", action="store_true")
     return p.parse_args()
-
-
-def load_interleaved_csv(filepath: str) -> pd.DataFrame:
-    main_rows, sub_rows = [], []
-
-    with open(filepath, "r", encoding="utf-8", errors="replace") as f:
-        reader = csv.reader(f)
-        try:
-            header = next(reader)
-            sub_header_raw = next(reader)
-        except StopIteration:
-            return pd.DataFrame()
-
-    with open(filepath, "r", encoding="utf-8", errors="replace") as f:
-        reader = csv.reader(f)
-        next(reader, None)
-        if sub_header_raw is not None:
-            next(reader, None)
-
-        pending_main = None
-        for row in reader:
-            if not row:
-                continue
-            if len(row) == 66:
-                if pending_main is not None:
-                    main_rows.append(pending_main)
-                    sub_rows.append([""] * 11)
-                pending_main = row
-            elif len(row) == 11:
-                if pending_main is not None:
-                    main_rows.append(pending_main)
-                    sub_rows.append(row)
-                    pending_main = None
-            else:
-                continue
-
-        if pending_main is not None:
-            main_rows.append(pending_main)
-            sub_rows.append([""] * 11)
-
-    sub_cols = [
-        "sub_extra", "state", "country", "rt_state", "rt_country",
-        "qtd_state", "qtd_country", "norm_country", "norm_rt_country",
-        "norm_qtd_country", "acc_age",
-    ]
-    df_main = pd.DataFrame(main_rows, columns=header)
-    df_sub = pd.DataFrame(sub_rows, columns=sub_cols).drop(columns=["sub_extra"], errors="ignore")
-    return pd.concat([df_main.reset_index(drop=True), df_sub.reset_index(drop=True)], axis=1)
 
 
 def count_list_like(val) -> int:
@@ -104,7 +55,7 @@ def load_raw_rows(csv_glob: str, max_files: int) -> pd.DataFrame:
     print(f"Found {len(files)} files")
     for i, fpath in enumerate(files, start=1):
         try:
-            dfi = load_interleaved_csv(fpath)
+            dfi = pd.read_csv(fpath, low_memory=False, on_bad_lines="skip")
             if dfi.empty:
                 continue
             cols = [c for c in dfi.columns if c in usecols]
