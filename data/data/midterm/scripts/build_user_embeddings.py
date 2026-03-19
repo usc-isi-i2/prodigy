@@ -1,5 +1,4 @@
 import argparse
-import csv
 import glob
 import json
 import os
@@ -21,55 +20,6 @@ def parse_args():
     p.add_argument("--device", default=("cuda" if torch.cuda.is_available() else "cpu"))
     p.add_argument("--max_seq_len", type=int, default=512)
     return p.parse_args()
-
-
-# Midterm CSVs may contain interleaved 66-col + 11-col rows.
-def load_interleaved_csv(filepath: str) -> pd.DataFrame:
-    main_rows, sub_rows = [], []
-
-    with open(filepath, "r", encoding="utf-8", errors="replace") as f:
-        reader = csv.reader(f)
-        try:
-            header = next(reader)
-            sub_header_raw = next(reader)
-        except StopIteration:
-            return pd.DataFrame()
-
-    with open(filepath, "r", encoding="utf-8", errors="replace") as f:
-        reader = csv.reader(f)
-        next(reader, None)
-        if sub_header_raw is not None:
-            next(reader, None)
-
-        pending_main = None
-        for row in reader:
-            if not row:
-                continue
-            if len(row) == 66:
-                if pending_main is not None:
-                    main_rows.append(pending_main)
-                    sub_rows.append([""] * 11)
-                pending_main = row
-            elif len(row) == 11:
-                if pending_main is not None:
-                    main_rows.append(pending_main)
-                    sub_rows.append(row)
-                    pending_main = None
-            else:
-                continue
-
-        if pending_main is not None:
-            main_rows.append(pending_main)
-            sub_rows.append([""] * 11)
-
-    sub_cols = [
-        "sub_extra", "state", "country", "rt_state", "rt_country",
-        "qtd_state", "qtd_country", "norm_country", "norm_rt_country",
-        "norm_qtd_country", "acc_age",
-    ]
-    df_main = pd.DataFrame(main_rows, columns=header)
-    df_sub = pd.DataFrame(sub_rows, columns=sub_cols).drop(columns=["sub_extra"], errors="ignore")
-    return pd.concat([df_main.reset_index(drop=True), df_sub.reset_index(drop=True)], axis=1)
 
 
 def build_text(row: pd.Series) -> str:
@@ -111,7 +61,7 @@ def main():
     print(f"Files: {len(files)}")
 
     for i, fpath in enumerate(files, start=1):
-        df = load_interleaved_csv(fpath)
+        df = pd.read_csv(fpath, low_memory=False, on_bad_lines="skip")
         if df.empty:
             continue
 
