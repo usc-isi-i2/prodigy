@@ -131,14 +131,24 @@ class NeighborSampler:
         for _ in range(self.num_hops):
             row_start = rowptr[node_idx]
             row_end = rowptr[node_idx + 1]
-            idx = (torch.rand(node_idx.shape) * (row_end - row_start)).long() + row_start
-            node_idx = col[idx]
             mask = row_start < row_end
+            if not mask.any():
+                return node_idx[:0]
+
+            row_start = row_start[mask]
+            row_end = row_end[mask]
+            widths = row_end - row_start
+            idx = (torch.rand(row_start.shape, device=row_start.device) * widths).long() + row_start
+            next_node_idx = col[idx]
+
             if direction == "in":
-                mask = mask.logical_and(e_id[idx] < 0)
+                dir_mask = e_id[idx] < 0
             elif direction == "out":
-                mask = mask.logical_and(e_id[idx] >= 0)
-            node_idx = node_idx[mask]
+                dir_mask = e_id[idx] >= 0
+            else:
+                dir_mask = torch.ones_like(idx, dtype=torch.bool)
+
+            node_idx = next_node_idx[dir_mask]
         return node_idx
 
 

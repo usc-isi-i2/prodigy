@@ -10,8 +10,14 @@ class SubgraphDataset(Dataset):
         self.offset = offset
         self.bidirectional = bidirectional
 
-        self.node_attrs = [key for key, value in self.graph if self.graph.is_node_attr(key)]
-        self.edge_attrs = [key for key, value in self.graph if self.graph.is_edge_attr(key) and key != "edge_index"]
+        self.node_attrs = [
+            key for key, value in self.graph
+            if self.graph.is_node_attr(key) and isinstance(value, torch.Tensor)
+        ]
+        self.edge_attrs = [
+            key for key, value in self.graph
+            if self.graph.is_edge_attr(key) and key != "edge_index" and isinstance(value, torch.Tensor)
+        ]
         assert not self.edge_attrs or not bidirectional
 
     def get_subgraph(self, node_idx): # refactor as __item__, add supernode in here
@@ -36,6 +42,8 @@ class SubgraphDataset(Dataset):
     def add_pooling_supernode(self, data):
         for key in self.node_attrs:
             value = data[key]
+            if not isinstance(value, torch.Tensor):
+                continue
             data[key] = torch.cat((value, torch.zeros(1, *value.shape[1:], dtype=value.dtype, layout=value.layout, device=value.device)))
 
         supernode_idx = data.num_nodes
