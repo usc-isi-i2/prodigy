@@ -637,6 +637,32 @@ class TrainerFS():
                     pred_val = float(ypred.flatten()[0].item())
                     true_val = float(ytrue.flatten()[0].item())
                     print(f"[debug-example] sample=0 pred={pred_val:.4f} gt={true_val:.4f}")
+                    # Human-readable LP preview for binary temporal link prediction.
+                    if self.parameter.get("task_name", "") == "temporal_link_prediction":
+                        try:
+                            if (
+                                center_nodes is not None
+                                and hasattr(graph, "task_id_per_sample")
+                                and hasattr(graph, "lp_task_center_ids")
+                            ):
+                                task_ids = graph.task_id_per_sample.detach().cpu().flatten().long()
+                                task_centers = graph.lp_task_center_ids.detach().cpu().flatten().long()
+                                top_k = min(5, len(center_nodes), int(task_ids.numel()), int(ytrue.shape[0]))
+                                probs = torch.sigmoid(ypred[:top_k].flatten()).detach().cpu().tolist()
+                                print("[debug-lp] first eval examples (candidate -> future_center):")
+                                for i in range(top_k):
+                                    cand = int(center_nodes[i])
+                                    tid = int(task_ids[i].item())
+                                    fcenter = int(task_centers[tid].item())
+                                    gt_i = float(ytrue[i].item()) if ytrue.ndim == 1 else float(ytrue[i].flatten()[0].item())
+                                    logit_i = float(ypred[i].flatten()[0].item())
+                                    prob_i = float(probs[i])
+                                    print(
+                                        f"  i={i} pair=({cand}->{fcenter}) gt={int(round(gt_i))} "
+                                        f"logit={logit_i:.4f} prob={prob_i:.4f}"
+                                    )
+                        except Exception as ex:
+                            print(f"[debug-lp] failed to decode LP example: {ex}")
                 self._printed_example = True
             if self.calc_ranks:
                 assert len(batch) == 10, "Not using the right batch structure; need to include task_mask"
