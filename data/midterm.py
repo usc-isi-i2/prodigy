@@ -242,7 +242,7 @@ def _apply_edge_feature_subset(graph: Data, subset_spec: str, feature_names=None
 
 def get_midterm_dataset(
         root: str,
-        n_hop: int = 2,
+        n_hop: int = 1,
         graph_filename: str = 'graph_data.pt',
         **kwargs
 ) -> SubgraphDataset:
