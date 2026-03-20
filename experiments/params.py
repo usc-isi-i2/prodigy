@@ -145,7 +145,7 @@ def get_params():
         type=str,
         help=(
             "Feature subset spec for midterm node features. "
-            "Supported: all | stats_only | emb_only | keep:<f1,f2,...> | drop:<f1,f2,...>"
+            "Supported: all | constant1 | stats_only | emb_only | keep:<f1,f2,...> | drop:<f1,f2,...>"
         ),
     )
     args.add_argument(
