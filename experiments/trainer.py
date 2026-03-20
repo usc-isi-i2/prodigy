@@ -258,6 +258,8 @@ class TrainerFS():
         kwargs["midterm_edge_view"] = self.parameter["midterm_edge_view"]
         kwargs["midterm_target_edge_view"] = self.parameter["midterm_target_edge_view"]
         kwargs["midterm_edge_feature_subset"] = self.parameter["midterm_edge_feature_subset"]
+        kwargs["midterm_binary_lp"] = self.parameter.get("midterm_binary_lp", False)
+        kwargs["midterm_lp_neg_ratio"] = self.parameter.get("midterm_lp_neg_ratio", 1)
         if self.parameter["all_test"]:
             kwargs["all_test"] = True
         if self.parameter["label_set"]:

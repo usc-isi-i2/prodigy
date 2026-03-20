@@ -12,6 +12,73 @@ from .dataloader import MulticlassTask, ParamSampler, BatchSampler, Collator, Ne
 from .dataset import SubgraphDataset
 
 
+class BinaryFutureLinkTask:
+    """
+    Build true binary temporal LP episodes from a future-edge neighbor sampler.
+    For each sampled center node:
+    - negatives: sampled nodes that are not future neighbors of the center
+    - positives: sampled future neighbors of the center
+    """
+    def __init__(self, future_neighbor_sampler, size: int, neg_ratio: int = 1):
+        self.future_neighbor_sampler = future_neighbor_sampler
+        self.size = size
+        self.neg_ratio = max(1, int(neg_ratio))
+        self.rowptr, self.col, _ = self.future_neighbor_sampler.whole_adj.csr()
+        self._all_nodes = list(range(size))
+
+    def _future_neighbors(self, center: int):
+        start = int(self.rowptr[center].item())
+        end = int(self.rowptr[center + 1].item())
+        if end <= start:
+            return []
+        neigh = self.col[start:end].tolist()
+        # Deduplicate and avoid self loops for LP pair sampling.
+        neigh = [int(n) for n in set(neigh) if int(n) != center]
+        return neigh
+
+    def sample(self, num_label, num_member, num_shot, num_query, rng):
+        del num_label, num_shot, num_query
+        center = None
+        neighbors = []
+
+        # Find a center that has at least one future neighbor.
+        for _ in range(2000):
+            candidate = rng.randrange(self.size)
+            curr = self._future_neighbors(candidate)
+            if curr:
+                center = candidate
+                neighbors = curr
+                break
+        if center is None:
+            raise RuntimeError("BinaryFutureLinkTask could not find a center with future neighbors.")
+
+        # Positive samples are future neighbors.
+        pos = [rng.choice(neighbors) for _ in range(num_member)]
+        neg_target = num_member * self.neg_ratio
+
+        # Negative samples are nodes not in future-neighbor set (and not self).
+        forbidden = set(neighbors)
+        forbidden.add(center)
+        neg = []
+        trials = 0
+        max_trials = max(100, neg_target * 100)
+        while len(neg) < neg_target and trials < max_trials:
+            cand = rng.randrange(self.size)
+            if cand not in forbidden:
+                neg.append(cand)
+            trials += 1
+        if len(neg) < neg_target:
+            # Dense-graph fallback: deterministically fill from remaining node pool.
+            remaining = [n for n in self._all_nodes if n not in forbidden]
+            if not remaining:
+                raise RuntimeError("BinaryFutureLinkTask found no valid negative candidates.")
+            while len(neg) < neg_target:
+                neg.append(remaining[len(neg) % len(remaining)])
+
+        # Order matters for Collator(is_multiway=False): negatives first, positives second.
+        return {(0, center): neg, (1, center): pos}
+
+
 def _normalize_view_name(view_name: Optional[str], default: str = "default") -> str:
     name = (view_name or "").strip()
     return default if name == "" else name
@@ -363,9 +430,29 @@ def get_midterm_dataloader(
                 "temporal_link_prediction requires target edges, but no future edge view was found. "
                 "Provide --midterm_target_edge_view (or ensure 'future_edge_index' exists in graph_data.pt)."
             )
+        use_binary_lp = bool(kwargs.get("midterm_binary_lp", False))
+        neg_ratio = int(kwargs.get("midterm_lp_neg_ratio", 1))
+        if use_binary_lp and isinstance(n_way, int) and n_way != 1:
+            raise ValueError(
+                f"midterm_binary_lp=True expects --n_way 1, got n_way={n_way}."
+            )
+        if use_binary_lp:
+            print(
+                "Using binary temporal LP sampler "
+                f"(explicit future-positive vs non-future-negative pairs, neg_ratio={neg_ratio}:1)."
+            )
+        task = (
+            BinaryFutureLinkTask(
+                dataset.future_neighbor_sampler,
+                graph.num_nodes,
+                neg_ratio=neg_ratio,
+            )
+            if use_binary_lp
+            else NeighborTask(dataset.future_neighbor_sampler, graph.num_nodes, "inout")
+        )
         sampler = BatchSampler(
             batch_count,
-            NeighborTask(dataset.future_neighbor_sampler, graph.num_nodes, "inout"),
+            task,
             ParamSampler(batch_size, n_way, n_shot, n_query, 1),
             seed=seed,
         )
@@ -374,10 +461,13 @@ def get_midterm_dataloader(
         raise ValueError(f"Unknown task for midterm: {task_name}")
 
     aug_fn = get_aug(aug, dataset.graph.x) if (split == "train" or aug_test) else get_aug("")
+    is_multiway = not bool(
+        task_name == "temporal_link_prediction" and kwargs.get("midterm_binary_lp", False)
+    )
 
     return DataLoader(
         dataset,
         batch_sampler=sampler,
         num_workers=num_workers,
-        collate_fn=Collator(label_embeddings, aug=aug_fn),
+        collate_fn=Collator(label_embeddings, aug=aug_fn, is_multiway=is_multiway),
     )
