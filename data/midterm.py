@@ -138,6 +138,11 @@ def _apply_feature_subset(graph: Data, subset_spec: str) -> Data:
     if spec in {"", "all"}:
         print(f"Using all midterm features ({graph.x.shape[1]} dims).")
         return graph
+    if spec == "constant1":
+        graph.x = torch.ones((graph.x.shape[0], 1), dtype=graph.x.dtype, device=graph.x.device)
+        graph.feature_names = ["const_1"]
+        print("Using constant node feature: 1 dim (all ones).")
+        return graph
 
     feature_names = list(getattr(graph, "feature_names", []))
     x_dim = graph.x.shape[1]
@@ -164,7 +169,7 @@ def _apply_feature_subset(graph: Data, subset_spec: str) -> Data:
     else:
         raise ValueError(
             f"Unsupported midterm_feature_subset='{subset_spec}'. "
-            f"Use one of: all, stats_only, emb_only, keep:<...>, drop:<...>."
+            f"Use one of: all, constant1, stats_only, emb_only, keep:<...>, drop:<...>."
         )
 
     if not indices:
