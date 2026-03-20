@@ -184,6 +184,12 @@ def get_params():
         type=bool,
         help="If True, configure the background GNN to consume midterm edge_attr features.",
     )
+    args.add_argument(
+        "--midterm_debug_print_episodes",
+        default=0,
+        type=int,
+        help="If >0, print full first-eval episode details for this many LP episodes.",
+    )
 
     args.add_argument("-smalldataset", "--small_dataset", default=False,
                       type=bool)  # use for debugging  - very small dataset

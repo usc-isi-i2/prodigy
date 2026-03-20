@@ -663,6 +663,57 @@ class TrainerFS():
                                     )
                         except Exception as ex:
                             print(f"[debug-lp] failed to decode LP example: {ex}")
+                    # Optional full-episode dump for LP debugging.
+                    if self.parameter.get("task_name", "") == "temporal_link_prediction":
+                        max_eps = int(self.parameter.get("midterm_debug_print_episodes", 0) or 0)
+                        if max_eps > 0:
+                            try:
+                                labels_all = batch[2].detach().cpu().reshape(-1)
+                                query_mask_all = batch[5].detach().cpu().reshape(-1).bool()
+                                if (
+                                    center_nodes is not None
+                                    and hasattr(graph, "task_id_per_sample")
+                                    and hasattr(graph, "lp_task_center_ids")
+                                ):
+                                    task_ids = graph.task_id_per_sample.detach().cpu().reshape(-1).long()
+                                    task_centers = graph.lp_task_center_ids.detach().cpu().reshape(-1).long()
+                                    n_eps = min(max_eps, int(task_centers.numel()))
+
+                                    # Query outputs correspond to query rows in this exact order.
+                                    query_indices = torch.where(query_mask_all)[0].tolist()
+                                    qpos_to_pred = {int(idx): k for k, idx in enumerate(query_indices)}
+
+                                    print(f"[debug-lp-full] printing first {n_eps} episode(s)")
+                                    for ep in range(n_eps):
+                                        ep_idx = torch.where(task_ids == ep)[0].tolist()
+                                        fut_center = int(task_centers[ep].item())
+                                        print(f"[debug-lp-full][episode {ep}] future_center={fut_center}")
+
+                                        support_idx = [i for i in ep_idx if not bool(query_mask_all[i].item())]
+                                        query_idx = [i for i in ep_idx if bool(query_mask_all[i].item())]
+
+                                        print("  supports:")
+                                        for i in support_idx:
+                                            cand = int(center_nodes[i])
+                                            gt_i = int(round(float(labels_all[i].item())))
+                                            print(f"    cand={cand} pair=({cand}->{fut_center}) gt={gt_i}")
+
+                                        print("  queries:")
+                                        for i in query_idx:
+                                            cand = int(center_nodes[i])
+                                            gt_i = int(round(float(labels_all[i].item())))
+                                            if i in qpos_to_pred:
+                                                k = qpos_to_pred[i]
+                                                logit_i = float(ypred[k].flatten()[0].item())
+                                                prob_i = float(torch.sigmoid(ypred[k].flatten()[0]).item())
+                                                print(
+                                                    f"    cand={cand} pair=({cand}->{fut_center}) gt={gt_i} "
+                                                    f"logit={logit_i:.4f} prob={prob_i:.4f}"
+                                                )
+                                            else:
+                                                print(f"    cand={cand} pair=({cand}->{fut_center}) gt={gt_i}")
+                            except Exception as ex:
+                                print(f"[debug-lp-full] failed to print full episodes: {ex}")
                 self._printed_example = True
             if self.calc_ranks:
                 assert len(batch) == 10, "Not using the right batch structure; need to include task_mask"
