@@ -1,12 +1,16 @@
 import numpy as np
 import random
 import torch
+import time
 
-torch.multiprocessing.set_sharing_strategy("file_system") 
+torch.multiprocessing.set_sharing_strategy("file_system")
 
 import sys
 import os
 torch.autograd.set_detect_anomaly(True)
+
+def _log(msg):
+    print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 sys.path.extend(os.path.join(os.path.dirname(__file__), "../../"))
 
@@ -23,10 +27,6 @@ if __name__ == '__main__':
     torch.set_num_threads(4)
 
     params = get_params()
-    print("---------Parameters---------")
-    for k, v in params.items():
-        print(k + ': ' + str(v))
-    print("----------------------------")
 
     # control random seed
     if params['seed'] is not None:
@@ -40,6 +40,7 @@ if __name__ == '__main__':
     if params["dataset"] in ["FB15K-237", "NELL", "ConceptNet", "Wiki"]:
         print("Using KG dataset - setting language model to sentence-transformers/all-mpnet-base-v2")
         params["bert_emb_model"] = "sentence-transformers/all-mpnet-base-v2"
+    _log("Loading dataset...")
     datasets = get_dataset_wrap(
         root=params["root"],
         dataset=params["dataset"],
@@ -60,12 +61,33 @@ if __name__ == '__main__':
         kg_emb_model=params["kg_emb_model"] if params["kg_emb_model"] != "" else None,
         task_name = params["task_name"],
         shuffle_index=params["shuffle_index"],
-        node_graph = params["task_name"] == "sn_neighbor_matching"
+        node_graph = params["task_name"] == "sn_neighbor_matching",
+        csv_filename=params["csv_filename"],
+        label_type=params["label_type"],
+        max_users=params["max_users"],
+        pkl_filename=params["facebook_pkl_filename"],
+        facebook_edges_filename=params["facebook_edges_filename"],
+        facebook_node_features_filename=params["facebook_node_features_filename"],
+        facebook_data_source=params["facebook_data_source"],
+        facebook_use_edge_features=params["facebook_use_edge_features"],
+        facebook_edge_feature_columns=params["facebook_edge_feature_columns"],
+        source_pkl_path=params["facebook_source_pkl_path"],
+        facebook_embeddings_path=params["facebook_embeddings_path"],
+        facebook_embedding_ids_path=params["facebook_embedding_ids_path"],
+        facebook_text_emb_model=params["facebook_text_emb_model"],
+        facebook_target_dim=params["facebook_target_dim"],
+        facebook_filter_to_uk_ru=params["facebook_filter_to_uk_ru"],
+        max_posts=params["facebook_max_posts"],
+        n_hop=params["n_hop"],
+        graph_filename=params["graph_filename"],
+        midterm_feature_subset=params["midterm_feature_subset"],
+        midterm_edge_view=params["midterm_edge_view"],
+        midterm_target_edge_view=params["midterm_target_edge_view"],
+        midterm_edge_feature_subset=params["midterm_edge_feature_subset"],
     )
 
-    trnr = TrainerFS(datasets,  params)
+    _log("Dataset loaded. Initializing trainer...")
+    trnr = TrainerFS(datasets, params)
 
+    _log("Trainer initialized. Starting train/eval...")
     trnr.train()
-
-
-

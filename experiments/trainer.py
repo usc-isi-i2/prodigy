@@ -13,9 +13,18 @@ sys.path.extend(os.path.join(os.path.dirname(__file__), "../../"))
 from models.get_model import print_num_trainable_params
 from models.model_eval_utils import accuracy
 from models.general_gnn import SingleLayerGeneralGNN
-from models.simple_dot_product import SimpleDotProdModel
 from models.sentence_embedding import SentenceEmb
 from experiments.layers import get_module_list
+
+def _to_float(v):
+    if isinstance(v, torch.Tensor):
+        if v.numel() == 1:
+            return float(v.detach().cpu().item())
+        return float(v.detach().cpu().mean().item())
+    return float(v)
+
+def _log(msg):
+    print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
 class TrainerFS():
@@ -23,10 +32,11 @@ class TrainerFS():
         wandb.init(project="graph-clip", name=parameter["exp_name"])
         #wandb.run.log_code(".")
         wandb.run.summary["wandb_url"] = wandb.run.url
-        print("---------Parameters---------")
+        _log("Initializing trainer")
+        print("---------- Parameters ----------", flush=True)
         for k, v in parameter.items():
-            print(k + ': ' + str(v))
-        print("----------------------------")
+            print(f"  {k}: {v}", flush=True)
+        print("--------------------------------", flush=True)
         wandb.config.trainer_fs = True
 
         self.parameter = parameter
@@ -66,6 +76,7 @@ class TrainerFS():
 
         self.calc_ranks = parameter['calc_ranks']
         self.cos = torch.nn.CosineSimilarity(dim=1)
+        self._printed_example = False
 
         bert_dim = 768
 
@@ -94,6 +105,15 @@ class TrainerFS():
                 self.parameter["input_dim"] = kg_embedding_dim + 2  # add 2 to flag head and tail nodes
         if self.dataset_name in ["CSG"]:
             edge_attr_dim = 128
+        if self.dataset_name == "midterm" and self.parameter.get("midterm_use_edge_features", False):
+            midterm_edge_attr = getattr(dataset.graph, "edge_attr", None)
+            if midterm_edge_attr is None:
+                raise ValueError(
+                    "midterm_use_edge_features=True but the loaded midterm graph has no edge_attr. "
+                    "Check --midterm_edge_view / --midterm_edge_feature_subset and graph_data.pt contents."
+                )
+            edge_attr_dim = midterm_edge_attr.shape[1] if midterm_edge_attr.dim() > 1 else 1
+            _log(f"Using midterm edge features with edge_attr_dim={edge_attr_dim}")
 
         self.txt_dropout = torch.nn.Dropout(self.parameter["text_features_dropout"])
         self.msg_pos_only = "meta_gnn_pos_only" in self.parameter and self.parameter["meta_gnn_pos_only"]
@@ -114,6 +134,7 @@ class TrainerFS():
             self.model = SingleLayerGeneralGNN(layer_list=layer_list, initial_label_mlp=initial_label_mlp,  # initial_input_mlp = initial_input_mlp,
                                                  params=self.parameter, text_dropout=self.txt_dropout)
         else:
+            from models.simple_dot_product import SimpleDotProdModel
             self.model = SimpleDotProdModel(layer_list=None, initial_label_mlp=initial_label_mlp,
                                             params=self.parameter, text_dropout=self.txt_dropout)
         print(self.model)
@@ -136,7 +157,16 @@ class TrainerFS():
             self.aux_loss.to(self.device)
 
         bert_model_name = self.parameter["bert_emb_model"]
-        self.Bert = SentenceEmb(bert_model_name, device=self.device, cache_folder=os.path.join(self.parameter["root"], "sbert"))
+        # Twitter/midterm + numerical features does not need sentence embeddings and can
+        # run with random label embeddings in the dataloader.
+        if self.dataset_name in {"twitter", "midterm", "instagram_mention"} and self.original_features:
+            self.Bert = None
+        else:
+            self.Bert = SentenceEmb(
+                bert_model_name,
+                device=self.device,
+                cache_folder=os.path.join(self.parameter["root"], "sbert"),
+            )
 
         params = list(self.model.parameters())
         if hasattr(self, "aux_header"):
@@ -187,7 +217,7 @@ class TrainerFS():
         }
         self.pretrained_model_run = self.parameter["pretrained_model_run"]
         if self.pretrained_model_run != "":
-            print("Reload state dict from path", self.pretrained_model_run)
+            _log(f"Reloading state dict from {self.pretrained_model_run}")
             self.load_checkpoint(self.pretrained_model_run)
 
         # Data loader creation.
@@ -208,6 +238,26 @@ class TrainerFS():
         kwargs["split_labels"] = not self.parameter["no_split_labels"]
         kwargs["train_cap"] = self.parameter["train_cap"]
         kwargs['linear_probe'] = self.parameter['linear_probe']
+        kwargs["csv_filename"] = self.parameter["csv_filename"]
+        kwargs["label_type"] = self.parameter["label_type"]
+        kwargs["max_users"] = self.parameter["max_users"]
+        kwargs["pkl_filename"] = self.parameter["facebook_pkl_filename"]
+        kwargs["facebook_edges_filename"] = self.parameter["facebook_edges_filename"]
+        kwargs["facebook_node_features_filename"] = self.parameter["facebook_node_features_filename"]
+        kwargs["facebook_data_source"] = self.parameter["facebook_data_source"]
+        kwargs["facebook_use_edge_features"] = self.parameter["facebook_use_edge_features"]
+        kwargs["facebook_edge_feature_columns"] = self.parameter["facebook_edge_feature_columns"]
+        kwargs["source_pkl_path"] = self.parameter["facebook_source_pkl_path"]
+        kwargs["facebook_embeddings_path"] = self.parameter["facebook_embeddings_path"]
+        kwargs["facebook_embedding_ids_path"] = self.parameter["facebook_embedding_ids_path"]
+        kwargs["facebook_text_emb_model"] = self.parameter["facebook_text_emb_model"]
+        kwargs["facebook_target_dim"] = self.parameter["facebook_target_dim"]
+        kwargs["facebook_filter_to_uk_ru"] = self.parameter["facebook_filter_to_uk_ru"]
+        kwargs["max_posts"] = self.parameter["facebook_max_posts"]
+        kwargs["midterm_feature_subset"] = self.parameter["midterm_feature_subset"]
+        kwargs["midterm_edge_view"] = self.parameter["midterm_edge_view"]
+        kwargs["midterm_target_edge_view"] = self.parameter["midterm_target_edge_view"]
+        kwargs["midterm_edge_feature_subset"] = self.parameter["midterm_edge_feature_subset"]
         if self.parameter["all_test"]:
             kwargs["all_test"] = True
         if self.parameter["label_set"]:
@@ -228,16 +278,35 @@ class TrainerFS():
             assert self.parameter["task_name"] != "classification"
             from data.kg import get_kg_dataloader
             get_dataloader = get_kg_dataloader
+        elif dataset_name == "twitter":
+            from data.twitter_csv import get_twitter_dataloader
+            kwargs["root"] = self.parameter["root"]
+            get_dataloader = get_twitter_dataloader
+        elif dataset_name in {"facebook-uk_ru", "facebook_uk_ru"}:
+            from data.facebook_uk_ru import get_facebook_uk_ru_dataloader
+            kwargs["root"] = self.parameter["root"]
+            get_dataloader = get_facebook_uk_ru_dataloader
+        elif dataset_name == "midterm":
+            from data.midterm import get_midterm_dataloader
+            kwargs["root"] = self.parameter["root"]
+            get_dataloader = get_midterm_dataloader
+        elif dataset_name == "instagram_mention":
+            from data.instagram_mention import get_instagram_mention_dataloader
+            kwargs["root"] = self.parameter["root"]
+            get_dataloader = get_instagram_mention_dataloader
         else:
             raise NotImplementedError
 
-        val_dataloader = get_dataloader(dataset, split="val", node_split="", batch_count=self.parameter["val_len_cap"], **kwargs)
-        test_dataloader = get_dataloader(dataset, split="test", node_split="", batch_count=self.parameter["test_len_cap"], **kwargs)
+        val_batch_count = self.parameter["val_len_cap"] if self.parameter["val_len_cap"] is not None else self.parameter["dataset_len_cap"]
+        test_batch_count = self.parameter["test_len_cap"] if self.parameter["test_len_cap"] is not None else self.parameter["dataset_len_cap"]
+
+        val_dataloader = get_dataloader(dataset, split="val", node_split="", batch_count=val_batch_count, **kwargs)
+        test_dataloader = get_dataloader(dataset, split="test", node_split="", batch_count=test_batch_count, **kwargs)
 
         train_val_dataloader = None
         train_node_split = ""
         if self.parameter["split_train_nodes"]:
-            train_val_dataloader = get_dataloader(dataset, split="train", node_split="val", batch_count=self.parameter["val_len_cap"], **kwargs)
+            train_val_dataloader = get_dataloader(dataset, split="train", node_split="val", batch_count=val_batch_count, **kwargs)
             train_node_split = "train"
 
         # Update the n_way, n_shot, n_query parameters with range objects for the dataset
@@ -337,37 +406,38 @@ class TrainerFS():
 
         # training by step
         t_load, t_one_step = 0, 0
-        pbar = trange(self.steps)
         train_dataloader_itr = iter(self.train_dataloader)
 
         bad_counts = 0
 
         def prefix_dict(d, prefix):
             return {prefix + key: value for key, value in d.items()}
-        
+
         with torch.no_grad():
-            # self.model.eval()
+            _log("Pre-training eval on test set...")
             test_loss, test_acc, test_acc_std, test_aux_loss, ranks = self.do_eval(self.test_dataloader)
+            _log(f"  [pre-train test]  acc={_to_float(test_acc):.4f} ± {_to_float(test_acc_std):.4f}  loss={_to_float(test_loss):.4f}")
             start_log_dict = {"start_test_acc": test_acc, "start_test_acc_std": test_acc_std}
             if ranks is not None:
                 for key in ranks:
                     start_log_dict["start_test_" + key] = ranks[key]
-            wandb.log(start_log_dict) # Test accuracy before training (if using e.g. a pretrained model etc.)
+            wandb.log(start_log_dict, step=0)
 
         if "eval_only" in self.parameter and self.parameter["eval_only"]:
-            print("Evaluation only - skipping training - exiting now")
-            print("Note: also skipping evaluation of val set")
+            _log("Evaluation only — done.")
             return
 
         with torch.no_grad():
-            # self.model.eval()
+            _log("Pre-training eval on val set...")
             val_loss, val_acc, val_acc_std, val_aux_loss, ranks = self.do_eval(self.val_dataloader)
+            _log(f"  [pre-train val]   acc={_to_float(val_acc):.4f} ± {_to_float(val_acc_std):.4f}  loss={_to_float(val_loss):.4f}")
             start_log_dict = {"start_val_acc": val_acc, "start_val_acc_std": val_acc_std}
             if ranks is not None:
                 for key in ranks:
                     start_log_dict["start_val_" + key] = ranks[key]
-            wandb.log(start_log_dict)  # Test accuracy before training (if using e.g. a pretrained model etc.)
+            wandb.log(start_log_dict, step=0)
 
+        pbar = trange(self.steps)
         for e in pbar:
             self.model.train()
 
@@ -391,20 +461,29 @@ class TrainerFS():
             # self.scheduler.step()
 
             t3 = time.time()
-            wandb.log({"step_time": t3 - t2}, step=e)
-            wandb.log({"load_time": t2 - t1}, step=e)
-            wandb.log({"train_loss": loss, "train_acc": acc, "train_aux_loss": aux_loss, "train_total_loss": total_loss}, step=e)  # loss and acc here are both floats
+            wandb.log({"step_time": _to_float(t3 - t2)}, step=e)
+            wandb.log({"load_time": _to_float(t2 - t1)}, step=e)
+            wandb.log(
+                {
+                    "train_loss": _to_float(loss),
+                    "train_acc": _to_float(acc),
+                    "train_aux_loss": _to_float(aux_loss),
+                    "train_total_loss": _to_float(total_loss),
+                },
+                step=e,
+            )
             t_load += t2 - t1
             t_one_step += t3 - t2
-            pbar.set_description("load: %s, step: %s" % (t_load / (e + 1), t_one_step / (e + 1)))
-
-            # print the loss on specific step
-            if e % self.print_step == 0:
-                # loss_num = loss
-                pbar.write(f"Loss: {loss.item()}")
+            pbar.set_postfix(
+                loss=f"{_to_float(loss):.4f}",
+                acc=f"{_to_float(acc):.4f}",
+                aux=f"{_to_float(aux_loss):.4f}",
+                load=f"{(t2-t1):.2f}s",
+                step=f"{(t3-t2):.2f}s",
+            )
             # save checkpoint on specific step
             if e % self.checkpoint_step == 0 and e != 0:
-                pbar.write('Step  {} has finished, saving...'.format(e))
+                pbar.write(f"[{time.strftime('%H:%M:%S')}] [step {e}] saving checkpoint...")
                 self.save_checkpoint(e)
 
             if e % self.eval_step == 0 and e != 0:
@@ -419,45 +498,49 @@ class TrainerFS():
                     bad_counts = 0
                     self.save_checkpoint(best_step)  # save the best checkpoint
                 else:
-                    pbar.write("Validation loss did not improve now for {} validation checkpoints".format(bad_counts))
+                    pbar.write(f"[{time.strftime('%H:%M:%S')}] [step {e}] val acc did not improve ({bad_counts} checks without improvement)")
                     bad_counts += 1
                     # if bad_counts >= self.early_stopping_patience:
                     #     pbar.write("Early stopping at step {}".format(e))
                     #     break
 
-                pbar.write(f"Validation loss {val_loss} acc {val_acc} aux_loss {val_aux_loss}")
-                wandb.log({"valid_loss": val_loss, "valid_acc": val_acc, "valid_aux_loss": val_aux_loss},
+                pbar.write(f"[{time.strftime('%H:%M:%S')}] [step {e}] val  acc={_to_float(val_acc):.4f} ± {_to_float(val_acc_std):.4f}  loss={_to_float(val_loss):.4f}  aux={_to_float(val_aux_loss):.4f}")
+                wandb.log({"valid_loss": _to_float(val_loss), "valid_acc": _to_float(val_acc), "valid_aux_loss": _to_float(val_aux_loss)},
                           step=e)
 
                 if self.train_val_dataloader is not None:
                     with torch.no_grad():
                         self.model.eval()
                         tval_loss, tval_acc, tval_acc_std, tval_aux_loss, ranks = self.do_eval(self.train_val_dataloader)
-                        wandb.log({"train_val_loss": tval_loss, "train_val_acc": tval_acc, "train_val_aux_loss": tval_aux_loss}, step=e)
+                        wandb.log({"train_val_loss": _to_float(tval_loss), "train_val_acc": _to_float(tval_acc), "train_val_aux_loss": _to_float(tval_aux_loss)}, step=e)
 
                 # Also evaluate on test set
                 with torch.no_grad():
                     self.model.eval()
                     test_loss, test_acc, test_acc_std, test_aux_loss, ranks = self.do_eval(self.test_dataloader)
-                    log_dict = {"test_acc": test_acc, "test_loss": test_loss.cpu().detach().float(), "test_aux_loss": test_aux_loss, "test_acc_std": test_acc_std}
+                    log_dict = {
+                        "test_acc": _to_float(test_acc),
+                        "test_loss": _to_float(test_loss),
+                        "test_aux_loss": _to_float(test_aux_loss),
+                        "test_acc_std": _to_float(test_acc_std),
+                    }
                     #print("Logging", log_dict)
                     #wandb.log(log_dict, step=e)
                     if ranks is not None:
                         ranks_dict = prefix_dict(ranks, "test_")
                         log_dict.update(ranks_dict)
                     wandb.log(log_dict, step=e)
+                    pbar.write(f"[{time.strftime('%H:%M:%S')}] [step {e}] test acc={_to_float(test_acc):.4f} ± {_to_float(test_acc_std):.4f}  loss={_to_float(test_loss):.4f}")
                     best_test_acc = max(best_test_acc, test_acc)
                     if e == best_step:
                         test_acc_on_best_val = test_acc
                         if ranks is not None:
                             other_metrics_on_best = ranks
-        print('Training has finished')
-        print('\tBest step is {0} | {1} of valid set is {2:.3f}'.format(best_step, "accuracy", best_val))
-
-        print("Best step is", best_step)
-        print("Best testing accuracy is", best_test_acc)
-        print("Testing accuracy on best val is", test_acc_on_best_val)
-        print("Best val accuracy is", best_val)
+        _log("Training finished")
+        print(f"  best step:             {best_step}", flush=True)
+        print(f"  best val acc:          {_to_float(best_val):.4f}", flush=True)
+        print(f"  best test acc:         {_to_float(best_test_acc):.4f}", flush=True)
+        print(f"  test acc @ best val:   {_to_float(test_acc_on_best_val):.4f}", flush=True)
         wandb.run.summary["best_step"] = best_step
         wandb.run.summary["best_test_acc"] = best_test_acc
         wandb.run.summary["test_acc_on_best_val"] = test_acc_on_best_val
@@ -466,7 +549,6 @@ class TrainerFS():
               for key in other_metrics_on_best:
                   wandb.run.summary["final_test_" + key] = other_metrics_on_best[key]
         self.save_best_state_dict(best_step)
-        print('Finish')
         wandb.finish()
         return best_val, test_acc_on_best_val, best_step
         # returns best-val-acc, best-test-acc, best-step
@@ -483,6 +565,77 @@ class TrainerFS():
         for batch in tqdm(dataloader, leave=False):
             batch = [i.to(self.device) for i in batch]
             yt, yp, graph = self.model(*batch)  # apply the model
+            if not self._printed_example:
+                ytrue = yt.detach().cpu()
+                ypred = yp.detach().cpu()
+                center_nodes = None
+                if hasattr(graph, "center_node_idx"):
+                    try:
+                        center_nodes = graph.center_node_idx.detach().cpu().flatten().tolist()
+                    except Exception:
+                        center_nodes = None
+                if ypred.ndim > 1 and ypred.shape[-1] > 1:
+                    pred_idx = int(torch.argmax(ypred[0]).item())
+                    if ytrue.ndim > 1 and ytrue.shape[-1] > 1:
+                        true_idx = int(torch.argmax(ytrue[0]).item())
+                    else:
+                        true_idx = int(ytrue[0].item())
+                    print(
+                        f"[debug-example] sample=0 pred={pred_idx} gt={true_idx} "
+                        f"logits={ypred[0].tolist()}"
+                    )
+                    top_k = min(5, ypred.shape[0])
+                    pred_all = torch.argmax(ypred[:top_k], dim=1).tolist()
+                    if ytrue.ndim > 1 and ytrue.shape[-1] > 1:
+                        gt_all = torch.argmax(ytrue[:top_k], dim=1).tolist()
+                    else:
+                        gt_all = ytrue[:top_k].flatten().long().tolist()
+                    if center_nodes is not None:
+                        print(f"[debug-examples] centers={center_nodes[:top_k]} pred={pred_all} gt={gt_all}")
+                    else:
+                        print(f"[debug-examples] pred={pred_all} gt={gt_all}")
+
+                    if self.parameter.get("task_name", "") == "neighbor_matching" and center_nodes is not None:
+                        try:
+                            labels_onehot = batch[2].detach().cpu()
+                            num_labels = int(labels_onehot.shape[1])
+                            gt_label_idx = torch.argmax(labels_onehot, dim=1).long()
+                            meta_mask = batch[5].detach().cpu().view(-1, num_labels)
+                            query_mask = meta_mask[:, 0].bool()
+
+                            total_items = int(gt_label_idx.numel())
+                            if isinstance(self.batch_size, int) and self.batch_size > 0 and total_items % self.batch_size == 0:
+                                task_len = total_items // self.batch_size
+                            else:
+                                task_len = total_items
+
+                            centers_t = torch.tensor(center_nodes, dtype=torch.long)[:task_len]
+                            gt_t = gt_label_idx[:task_len]
+                            q_t = query_mask[:task_len]
+                            pred_t = torch.argmax(ypred[:task_len], dim=1).long().cpu()
+
+                            print("[debug-episode] first eval task")
+                            for n in range(num_labels):
+                                print(f"N{n + 1}: {n}")
+                            s_count = 0
+                            q_count = 0
+                            for n in range(num_labels):
+                                s_idx = torch.where((gt_t == n) & (~q_t))[0][:5]
+                                q_idx = torch.where((gt_t == n) & q_t)[0][:5]
+                                for i in s_idx.tolist():
+                                    s_count += 1
+                                    print(f"S{s_count}: {int(centers_t[i].item())} (N{n + 1})")
+                                for i in q_idx.tolist():
+                                    q_count += 1
+                                    pred_n = int(pred_t[i].item()) + 1
+                                    print(f"Q{q_count}: {int(centers_t[i].item())} (pred N{pred_n} -> gt N{n + 1})")
+                        except Exception as ex:
+                            print(f"[debug-episode] failed to decode episode: {ex}")
+                else:
+                    pred_val = float(ypred.flatten()[0].item())
+                    true_val = float(ytrue.flatten()[0].item())
+                    print(f"[debug-example] sample=0 pred={pred_val:.4f} gt={true_val:.4f}")
+                self._printed_example = True
             if self.calc_ranks:
                 assert len(batch) == 10, "Not using the right batch structure; need to include task_mask"
             loss, acc = self.get_loss_and_acc(yt, yp)  # get loss
@@ -510,4 +663,3 @@ class TrainerFS():
         if ranks is not None:
             ranks = {key: np.average([r[0][key] for r in ranks], weights=[r[1] for r in ranks]) for key in ranks[0][0]}
         return loss_global, acc_global, acc_batch_std, aux_loss_global, ranks
-

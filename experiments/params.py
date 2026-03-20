@@ -12,6 +12,22 @@ def get_params():
 
     args.add_argument("-root", "--root", default="./FSdatasets", type=str)
     args.add_argument("-dataset", "--dataset", default="arxiv", type=str)
+    args.add_argument("--csv_filename", default="twitter_data.csv", type=str)
+    args.add_argument("--facebook_pkl_filename", default="facebook_2022-06-24_2022-06-25_part1.pkl", type=str)
+    args.add_argument("--facebook_edges_filename", default="facebook_2022-06-24_2022-06-25_part1_edges.csv", type=str)
+    args.add_argument("--facebook_node_features_filename", default="facebook_2022-06-24_2022-06-25_part1_node_features.csv", type=str)
+    args.add_argument("--facebook_data_source", default="csv", type=str)
+    args.add_argument("--facebook_use_edge_features", default=False, type=bool)
+    args.add_argument("--facebook_edge_feature_columns", default="", type=str)
+    args.add_argument("--facebook_source_pkl_path", default="", type=str)
+    args.add_argument("--facebook_embeddings_path", default="", type=str)
+    args.add_argument("--facebook_embedding_ids_path", default="", type=str)
+    args.add_argument("--facebook_text_emb_model", default="", type=str)
+    args.add_argument("--facebook_target_dim", default=768, type=int)
+    args.add_argument("--facebook_filter_to_uk_ru", default=True, type=bool)
+    args.add_argument("--facebook_max_posts", default=None, type=int)
+    args.add_argument("--label_type", default="verified", type=str)
+    args.add_argument("--max_users", default=None, type=int)
     args.add_argument("-invalidate_cache", "--invalidate_cache", default=False, type=bool)
     # if true, it will regenerate preprocessed cache
     args.add_argument("-ds_cap", "--dataset_len_cap", default=10000, type=int)
@@ -121,6 +137,42 @@ def get_params():
     args.add_argument("-pretrained", "--pretrained_model_run", default="", type=str)
     #  Name of WanDB run to pull the best model from.
 
+    args.add_argument("-n_hop", "--n_hop", default=2, type=int)  # number of hops for subgraph extraction
+    args.add_argument("--graph_filename", default="graph_data.pt", type=str)  # graph file to load from root
+    args.add_argument(
+        "--midterm_feature_subset",
+        default="all",
+        type=str,
+        help=(
+            "Feature subset spec for midterm node features. "
+            "Supported: all | stats_only | emb_only | keep:<f1,f2,...> | drop:<f1,f2,...>"
+        ),
+    )
+    args.add_argument(
+        "--midterm_edge_view",
+        default="default",
+        type=str,
+        help="Named edge view for midterm background graph (default uses 'edge_index').",
+    )
+    args.add_argument(
+        "--midterm_target_edge_view",
+        default="future",
+        type=str,
+        help="Named edge target view for midterm temporal link prediction (default uses 'future_edge_index').",
+    )
+    args.add_argument(
+        "--midterm_edge_feature_subset",
+        default="all",
+        type=str,
+        help="Midterm edge feature subset: all | none | keep:<f1,f2,...> | drop:<f1,f2,...>",
+    )
+    args.add_argument(
+        "--midterm_use_edge_features",
+        default=False,
+        type=bool,
+        help="If True, configure the background GNN to consume midterm edge_attr features.",
+    )
+
     args.add_argument("-smalldataset", "--small_dataset", default=False,
                       type=bool)  # use for debugging  - very small dataset
 
@@ -142,4 +194,3 @@ def get_params():
     params["exp_name"] = params["prefix"] + "_" + params["timestamp"]
 
     return params
-
