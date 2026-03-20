@@ -350,6 +350,7 @@ class Collator:
         assert all(len(i) == num_labels for i in label_map) # label_map length is the same for all tasks
 
         graphs = Batch.from_data_list([g for l in graphs for g in l])
+        graphs.task_id_per_sample = torch.arange(num_task).repeat_interleave(task_len)
         labels = torch.cat(labels)
         b_mask = torch.stack(query_mask)
         query_mask = torch.cat(query_mask)
@@ -400,6 +401,9 @@ class Collator:
             metagraph_edge_attr = (metagraph_edge_attr * 2 - 1) * (~metagraph_edge_mask)
             metagraph_edge_attr = torch.stack([metagraph_edge_mask, metagraph_edge_attr], dim=1)
             label_map = label_map[1::2]
+            if len(label_map) > 0 and isinstance(label_map[0], tuple) and len(label_map[0]) == 2:
+                # Keep per-task center ids for debug decoding in trainer logs.
+                graphs.lp_task_center_ids = torch.tensor([int(label_name) for (_, label_name) in label_map], dtype=torch.long)
             # Tuple case, where the first element is the label id and the second element is the task name.
             if isinstance(label_map[0], tuple) and len(label_map[0]) == 2:
                 label_embeddings = []
