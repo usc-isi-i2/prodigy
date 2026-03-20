@@ -369,7 +369,10 @@ class Collator:
             if isinstance(label_map[0], tuple) and len(label_map[0]) == 2:
                 label_embeddings = []
                 for (label_id, label_name) in label_map:
-                    label_embeddings.append(self.label_meta[label_name][label_id])
+                    if isinstance(self.label_meta, torch.Tensor):
+                        label_embeddings.append(self.label_meta[label_name])
+                    else:
+                        label_embeddings.append(self.label_meta[label_name][label_id])
                 label_embeddings = torch.stack(label_embeddings, dim=0)
             else:
                 label_map = torch.tensor(label_map)
@@ -401,7 +404,12 @@ class Collator:
             if isinstance(label_map[0], tuple) and len(label_map[0]) == 2:
                 label_embeddings = []
                 for (label_id, label_name) in label_map:
-                    label_embeddings.append(self.label_meta[label_name][label_id])
+                    if isinstance(self.label_meta, torch.Tensor):
+                        # Binary LP on midterm passes tuples like (0|1, center_node_id),
+                        # with label_meta as a tensor over node ids. Use center id only.
+                        label_embeddings.append(self.label_meta[label_name])
+                    else:
+                        label_embeddings.append(self.label_meta[label_name][label_id])
                 label_embeddings = torch.stack(label_embeddings, dim=0)
             else:
                 label_map = torch.tensor(label_map)
