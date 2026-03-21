@@ -240,16 +240,7 @@ def _apply_edge_feature_subset(graph: Data, subset_spec: str, feature_names=None
     return graph
 
 
-def get_midterm_dataset(
-        root: str,
-        n_hop: int = 1,
-        graph_filename: str = 'graph_data.pt',
-        **kwargs
-) -> SubgraphDataset:
-    graph_path = os.path.join(root, graph_filename)
-    print(f"Loading midterm graph from {graph_path}...")
-    raw = torch.load(graph_path, map_location='cpu')
-
+def _build_midterm_graph(raw: dict, **kwargs):
     edge_view = _normalize_view_name(kwargs.get("midterm_edge_view", "default"))
     edge_index, resolved_edge_view = _load_named_tensor(
         raw,
@@ -292,6 +283,20 @@ def get_midterm_dataset(
         kwargs.get("midterm_edge_feature_subset", "all"),
         feature_names=edge_feature_names,
     )
+    return graph, resolved_edge_view
+
+
+def get_midterm_dataset(
+        root: str,
+        n_hop: int = 1,
+        graph_filename: str = 'graph_data.pt',
+        **kwargs
+) -> SubgraphDataset:
+    graph_path = os.path.join(root, graph_filename)
+    print(f"Loading midterm graph from {graph_path}...")
+    raw = torch.load(graph_path, map_location='cpu')
+
+    graph, resolved_edge_view = _build_midterm_graph(raw, **kwargs)
 
     print(f"Graph: {graph.num_nodes} nodes, {graph.edge_index.shape[1]} edges, "
           f"{len(graph.label_names)} state classes")
