@@ -16,48 +16,53 @@ class BinaryFutureLinkTask:
     """
     Build true binary temporal LP episodes from a future-edge neighbor sampler.
     For each sampled center node:
-    - negatives: sampled nodes that are not future neighbors of the center
-    - positives: sampled future neighbors of the center
+    - positives: users that will retweet the center in the future (candidate -> center)
+    - negatives: users that will not retweet the center in the future
     """
     def __init__(self, future_neighbor_sampler, size: int, neg_ratio: int = 1):
         self.future_neighbor_sampler = future_neighbor_sampler
         self.size = size
         self.neg_ratio = max(1, int(neg_ratio))
-        self.rowptr, self.col, _ = self.future_neighbor_sampler.whole_adj.csr()
+        self.rowptr, self.col, self.value = self.future_neighbor_sampler.whole_adj.csr()
         self._all_nodes = list(range(size))
 
-    def _future_neighbors(self, center: int):
+    def _future_retweeters(self, center: int):
         start = int(self.rowptr[center].item())
         end = int(self.rowptr[center + 1].item())
         if end <= start:
             return []
-        neigh = self.col[start:end].tolist()
-        # Deduplicate and avoid self loops for LP pair sampling.
-        neigh = [int(n) for n in set(neigh) if int(n) != center]
-        return neigh
+
+        neigh = self.col[start:end]
+        edge_ids = self.value[start:end]
+
+        # preprocess(..., bidirectional=True) adds reverse edges with negative ids.
+        # Row=center and negative id therefore means an original edge candidate -> center.
+        incoming = neigh[edge_ids < 0].tolist()
+        incoming = [int(n) for n in set(incoming) if int(n) != center]
+        return incoming
 
     def sample(self, num_label, num_member, num_shot, num_query, rng):
         del num_label, num_shot, num_query
         center = None
-        neighbors = []
+        retweeters = []
 
-        # Find a center that has at least one future neighbor.
+        # Find a center that has at least one future retweeter.
         for _ in range(2000):
             candidate = rng.randrange(self.size)
-            curr = self._future_neighbors(candidate)
+            curr = self._future_retweeters(candidate)
             if curr:
                 center = candidate
-                neighbors = curr
+                retweeters = curr
                 break
         if center is None:
-            raise RuntimeError("BinaryFutureLinkTask could not find a center with future neighbors.")
+            raise RuntimeError("BinaryFutureLinkTask could not find a center with future retweeters.")
 
-        # Positive samples are future neighbors.
-        pos = [rng.choice(neighbors) for _ in range(num_member)]
+        # Positive samples are users with a future edge candidate -> center.
+        pos = [rng.choice(retweeters) for _ in range(num_member)]
         neg_target = num_member * self.neg_ratio
 
-        # Negative samples are nodes not in future-neighbor set (and not self).
-        forbidden = set(neighbors)
+        # Negative samples are users not in the future retweeter set (and not self).
+        forbidden = set(retweeters)
         forbidden.add(center)
         neg = []
         trials = 0
