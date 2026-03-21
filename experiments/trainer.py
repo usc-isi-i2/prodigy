@@ -65,6 +65,12 @@ class TrainerFS():
 
         self.device = parameter['device']
 
+        if parameter["task_name"] == "temporal_link_prediction" and self.ways != 1:
+            raise ValueError(
+                "temporal_link_prediction now only supports binary LP episodes. "
+                f"Use --n_way 1, got n_way={self.ways}."
+            )
+
         if self.ways > 1:
             self.loss = torch.nn.CrossEntropyLoss()
             self.is_multiway = True
@@ -259,7 +265,6 @@ class TrainerFS():
         kwargs["midterm_target_edge_view"] = self.parameter["midterm_target_edge_view"]
         kwargs["midterm_edge_feature_subset"] = self.parameter["midterm_edge_feature_subset"]
         kwargs["neighbor_sampling_strategy"] = self.parameter["neighbor_sampling_strategy"]
-        kwargs["midterm_binary_lp"] = self.parameter.get("midterm_binary_lp", False)
         kwargs["midterm_lp_neg_ratio"] = self.parameter.get("midterm_lp_neg_ratio", 1)
         if self.parameter["all_test"]:
             kwargs["all_test"] = True

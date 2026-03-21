@@ -21,6 +21,7 @@ python experiments/run_single_experiment.py \
     --input_dim 98 \
     --original_features True \
     --task temporal_link_prediction \
+    --n_way 1 \
     --midterm_edge_view temporal_history \
     --midterm_target_edge_view temporal_new \
     --midterm_use_edge_features True \
