@@ -2,6 +2,37 @@
 
 Graph of US politicians and their retweet interactions, split into historical and future edges for temporal link prediction.
 
+## File Structure
+
+```python
+{
+    'x':                              tensor([308983, 395]),   # node features
+    'edge_index':                     tensor([2, 807036]),     # all retweets (leaks future!)
+    'edge_attr':                      tensor([807036, 4]),     # edge features for edge_index
+    'edge_attr_feature_names':        ['first_retweet_time', 'n_retweets', 'avg_rt_fav', 'avg_rt_reply'],
+    'user_ids':                       array([308983]),         # original Twitter IDs
+    'feature_names':                  [...],                   # 395 column names
+    'y':                              tensor([308983]),        # state labels, -1=unlabeled
+    'label_names':                    ['AK', 'AL', ...],      # 51 US states
+    'edge_index_views': {
+        'retweet_all':       tensor([2, 807036]),
+        'temporal_history':  tensor([2, 657932]),
+    },
+    'edge_attr_views': {
+        'retweet_all':       tensor([807036, 4]),
+        'temporal_history':  tensor([657932, 4]),
+    },
+    'edge_attr_feature_names_views': {
+        'retweet_all':       ['first_retweet_time', 'n_retweets', 'avg_rt_fav', 'avg_rt_reply'],
+        'temporal_history':  ['first_retweet_time', 'n_retweets', 'avg_rt_fav', 'avg_rt_reply'],
+    },
+    'target_edge_index_views': {
+        'temporal_new':      tensor([2, 149104]),
+    },
+    'future_edge_index':              tensor([2, 149104]),     # same as temporal_new
+}
+```
+
 ## Nodes
 
 | Field | Shape | dtype | Description |
