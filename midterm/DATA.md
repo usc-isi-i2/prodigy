@@ -90,12 +90,11 @@ python experiments/run_single_experiment.py \
   --midterm_feature_subset emb_only \
   --input_dim 384 \
   --n_way 1 \
-  --midterm_binary_lp True \
   --midterm_lp_neg_ratio 1
 ```
 
 Key flags:
 - `--midterm_edge_view temporal_history` — prevents future edge leakage into background graph
 - `--midterm_target_edge_view temporal_new` — sets the future edges as the prediction target
-- `--midterm_binary_lp True` — binary (positive/negative) framing instead of multiway
+- `--n_way 1` — temporal LP is binary-only and uses positive/negative pairs
 - `--input_dim 384` — must match feature dim when using `emb_only`

@@ -188,16 +188,10 @@ def get_params():
         help="Midterm edge feature subset: all | none | keep:<f1,f2,...> | drop:<f1,f2,...>",
     )
     args.add_argument(
-        "--midterm_binary_lp",
-        default=False,
-        type=bool,
-        help="If True (with temporal_link_prediction and n_way=1), sample explicit positive/negative LP pairs.",
-    )
-    args.add_argument(
         "--midterm_lp_neg_ratio",
         default=1,
         type=int,
-        help="Negative:positive ratio for midterm_binary_lp sampling (e.g., 5 means 5 negatives per positive).",
+        help="Negative:positive ratio for temporal_link_prediction binary sampling (e.g., 5 means 5 negatives per positive).",
     )
     args.add_argument(
         "--midterm_use_edge_features",

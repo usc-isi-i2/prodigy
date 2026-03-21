@@ -445,30 +445,24 @@ def get_midterm_dataloader(
                 "temporal_link_prediction requires target edges, but no future edge view was found. "
                 "Provide --midterm_target_edge_view (or ensure 'future_edge_index' exists in graph_data.pt)."
             )
-        use_binary_lp = bool(kwargs.get("midterm_binary_lp", False))
         neg_ratio = int(kwargs.get("midterm_lp_neg_ratio", 1))
-        if use_binary_lp and isinstance(n_way, int) and n_way != 1:
+        if isinstance(n_way, int):
+            invalid_n_way = n_way != 1
+        else:
+            invalid_n_way = any(v != 1 for v in n_way)
+        if invalid_n_way:
             raise ValueError(
-                f"midterm_binary_lp=True expects --n_way 1, got n_way={n_way}."
+                "temporal_link_prediction now only supports binary LP episodes. "
+                f"Use --n_way 1, got n_way={n_way}."
             )
-        if use_binary_lp:
-            print(
-                "Using binary temporal LP sampler "
-                f"(explicit future-positive vs non-future-negative pairs, neg_ratio={neg_ratio}:1)."
-            )
-        task = (
-            BinaryFutureLinkTask(
-                dataset.future_neighbor_sampler,
-                graph.num_nodes,
-                neg_ratio=neg_ratio,
-            )
-            if use_binary_lp
-            else NeighborTask(
-                dataset.future_neighbor_sampler,
-                graph.num_nodes,
-                "inout",
-                kwargs.get("neighbor_sampling_strategy", "strict"),
-            )
+        print(
+            "Using binary temporal LP sampler "
+            f"(explicit future-positive vs non-future-negative pairs, neg_ratio={neg_ratio}:1)."
+        )
+        task = BinaryFutureLinkTask(
+            dataset.future_neighbor_sampler,
+            graph.num_nodes,
+            neg_ratio=neg_ratio,
         )
         sampler = BatchSampler(
             batch_count,
@@ -481,9 +475,7 @@ def get_midterm_dataloader(
         raise ValueError(f"Unknown task for midterm: {task_name}")
 
     aug_fn = get_aug(aug, dataset.graph.x) if (split == "train" or aug_test) else get_aug("")
-    is_multiway = not bool(
-        task_name == "temporal_link_prediction" and kwargs.get("midterm_binary_lp", False)
-    )
+    is_multiway = task_name != "temporal_link_prediction"
 
     return DataLoader(
         dataset,
