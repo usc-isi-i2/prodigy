@@ -388,11 +388,12 @@ class TrainerFS():
     def save_best_state_dict(self, best_step):
         best_step = os.path.join(self.ckpt_dir, 'state_dict_' + str(best_step) + '.ckpt')
         best_ckpt = os.path.join(self.state_dir, 'state_dict')
-        # Check if best_step exists
         if os.path.exists(best_step):
             shutil.copy(best_step, best_ckpt)
         else:
-            print('No such best checkpoint to copy: {}'.format(best_step))
+            print('No such best checkpoint to copy: {}. Saving current model state instead.'.format(best_step))
+            state_dict = {key: value.state_dict() for key, value in self.all_saveable_modules.items()}
+            torch.save(state_dict, best_ckpt)
         print("Saved best model to {}".format(best_ckpt))
         self.best_state_dict_path = best_ckpt
 
@@ -432,6 +433,7 @@ class TrainerFS():
 
         if eval_only:
             _log("Evaluation only — done.")
+            wandb.finish()
             return
 
         if run_val_before_train:
@@ -495,6 +497,7 @@ class TrainerFS():
                 self.save_checkpoint(e)
 
             if e % self.eval_step == 0 and e != 0:
+                should_stop = False
                 # pbar.write("Evaluating on validation set!")
                 with torch.no_grad():
                     self.model.eval()
@@ -506,11 +509,9 @@ class TrainerFS():
                     bad_counts = 0
                     self.save_checkpoint(best_step)  # save the best checkpoint
                 else:
-                    pbar.write(f"[{time.strftime('%H:%M:%S')}] [step {e}] val acc did not improve ({bad_counts} checks without improvement)")
                     bad_counts += 1
-                    # if bad_counts >= self.early_stopping_patience:
-                    #     pbar.write("Early stopping at step {}".format(e))
-                    #     break
+                    pbar.write(f"[{time.strftime('%H:%M:%S')}] [step {e}] val acc did not improve ({bad_counts} checks without improvement)")
+                    should_stop = bad_counts >= self.early_stopping_patience
 
                 pbar.write(f"[{time.strftime('%H:%M:%S')}] [step {e}] val  acc={_to_float(val_acc):.4f} ± {_to_float(val_acc_std):.4f}  loss={_to_float(val_loss):.4f}  aux={_to_float(val_aux_loss):.4f}")
                 wandb.log({"valid_loss": _to_float(val_loss), "valid_acc": _to_float(val_acc), "valid_aux_loss": _to_float(val_aux_loss)},
@@ -544,6 +545,9 @@ class TrainerFS():
                         test_acc_on_best_val = test_acc
                         if ranks is not None:
                             other_metrics_on_best = ranks
+                if should_stop:
+                    pbar.write(f"[{time.strftime('%H:%M:%S')}] Early stopping at step {e}")
+                    break
         _log("Training finished")
         print(f"  best step:             {best_step}", flush=True)
         print(f"  best val acc:          {_to_float(best_val):.4f}", flush=True)
