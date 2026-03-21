@@ -404,7 +404,12 @@ def get_midterm_dataloader(
     if task_name == "neighbor_matching":
         sampler = BatchSampler(
             batch_count,
-            NeighborTask(dataset.neighbor_sampler, graph.num_nodes, "inout"),
+            NeighborTask(
+                dataset.neighbor_sampler,
+                graph.num_nodes,
+                "inout",
+                kwargs.get("neighbor_sampling_strategy", "strict"),
+            ),
             ParamSampler(batch_size, n_way, n_shot, n_query, 1),
             seed=seed,
         )
@@ -458,7 +463,12 @@ def get_midterm_dataloader(
                 neg_ratio=neg_ratio,
             )
             if use_binary_lp
-            else NeighborTask(dataset.future_neighbor_sampler, graph.num_nodes, "inout")
+            else NeighborTask(
+                dataset.future_neighbor_sampler,
+                graph.num_nodes,
+                "inout",
+                kwargs.get("neighbor_sampling_strategy", "strict"),
+            )
         )
         sampler = BatchSampler(
             batch_count,

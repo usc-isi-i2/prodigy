@@ -120,7 +120,12 @@ def get_mag240m_dataloader(dataset, task_name, split, node_split, batch_size, n_
         neighbor_sampler.num_hops = 2
         sampler = BatchSampler(
             batch_count,
-            NeighborTask(neighbor_sampler, len(dataset), "inout"),
+            NeighborTask(
+                neighbor_sampler,
+                len(dataset),
+                "inout",
+                kwargs.get("neighbor_sampling_strategy", "strict"),
+            ),
             ParamSampler(batch_size, n_way, n_shot, n_query, 1),
             seed=seed,
         )
@@ -143,12 +148,22 @@ def get_mag240m_dataloader(dataset, task_name, split, node_split, batch_size, n_
         if task_name.endswith("sb"):
             task_base = MultiTaskSplitBatch([
                 MulticlassTask(labels, label_set),
-                NeighborTask(neighbor_sampler, len(dataset), "inout")
+                NeighborTask(
+                    neighbor_sampler,
+                    len(dataset),
+                    "inout",
+                    kwargs.get("neighbor_sampling_strategy", "strict"),
+                )
             ], ["mct", "nt"], [1, 3])
         elif task_name.endswith("sw"):
             task_base = MultiTaskSplitWay([
                 MulticlassTask(labels, label_set), 
-                NeighborTask(neighbor_sampler, len(dataset), "inout")
+                NeighborTask(
+                    neighbor_sampler,
+                    len(dataset),
+                    "inout",
+                    kwargs.get("neighbor_sampling_strategy", "strict"),
+                )
             ], ["mct", "nt"], split="even")
         
         sampler = BatchSampler(
