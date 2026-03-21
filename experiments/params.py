@@ -112,7 +112,7 @@ def get_params():
     args.add_argument("-meta_pos", "--meta_gnn_pos_only", default=False, type=bool)  # Whether to use only positive edges for meta graph
 
     ###  Few-shot task parameters  ###
-    args.add_argument("-task", "--task_name", default="classification", type=str)  # the name of the pretraining task
+    args.add_argument("-task", "--task_name", default=None, type=str)  # the name of the pretraining task
     args.add_argument("-zeroshot", "--zero_shot", default=False, type=bool) # if True, messages will NOT be passed along the metagraph edges.
     args.add_argument("-no_split_labels", "--no_split_labels", default=True, type=bool) # split train/val/test with original dataset split
     args.add_argument("-all_test", "--all_test", default=False,
@@ -223,6 +223,12 @@ def get_params():
     params = {}
     for k, v in vars(args).items():
         params[k] = v
+
+    if params["task_name"] is None:
+        if params["dataset"] == "midterm":
+            params["task_name"] = "neighbor_matching"
+        else:
+            params["task_name"] = "classification"
 
     if args.device == 123:
         params["device"] = torch.device('cpu')
