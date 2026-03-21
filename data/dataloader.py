@@ -178,10 +178,16 @@ class ContrastiveTask(TaskBase):
         return task
 
 class NeighborTask(TaskBase):
-    def __init__(self, neighbor_sampler, size, direction):
+    def __init__(self, neighbor_sampler, size, direction, sampling_strategy="strict"):
         self.neighbor_sampler = neighbor_sampler
         self.size = size
         self.direction = direction
+        if sampling_strategy not in {"strict", "replacement"}:
+            raise ValueError(
+                f"Unknown NeighborTask sampling_strategy='{sampling_strategy}'. "
+                "Use 'strict' or 'replacement'."
+            )
+        self.sampling_strategy = sampling_strategy
 
     def sample(self, num_label, num_member, num_shot, num_query, rng):
         # Task is dict
@@ -194,9 +200,16 @@ class NeighborTask(TaskBase):
                 continue
             node_idx = torch.ones(num_member * 10, dtype=torch.long) * center
             node_idx = self.neighbor_sampler.random_walk(node_idx, self.direction)
-            node_idx = torch.unique(node_idx)
-            if node_idx.size(0) >= num_member:
-                task[center] = node_idx[:num_member].tolist()
+            if node_idx.numel() == 0:
+                continue
+            unique_node_idx = torch.unique(node_idx)
+            if unique_node_idx.size(0) >= num_member:
+                task[center] = unique_node_idx[:num_member].tolist()
+            elif self.sampling_strategy == "replacement":
+                sampled = unique_node_idx.tolist()
+                while len(sampled) < num_member:
+                    sampled.append(rng.choice(sampled))
+                task[center] = sampled[:num_member]
 
         return task
 
@@ -299,7 +312,13 @@ class BatchSampler(Sampler):
 
         batch = []
         for _ in range(batch_param.batch_size):
-            batch.append(self.task.sample(batch_param.n_way, batch_param.n_member, batch_param.n_shot, batch_param.n_query, self.rng))
+            example = self.task.sample(
+                batch_param.n_way,
+                batch_param.n_member, 
+                batch_param.n_shot,
+                batch_param.n_query, 
+                self.rng)
+            batch.append(example)
         return batch, batch_param
 
 

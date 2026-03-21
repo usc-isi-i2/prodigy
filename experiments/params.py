@@ -124,6 +124,15 @@ def get_params():
     args.add_argument("-way", "--n_way", default=3, type=int) # how many labels do we want in each few-shot task
     args.add_argument("-shot", "--n_shots", default=3, type=int) # if not zeroshot, how many shots do we want in the training dataset?
     args.add_argument("-qry", "--n_query", default=24, type=int)
+    args.add_argument(
+        "--neighbor_sampling_strategy",
+        default="strict",
+        choices=["strict", "replacement"],
+        help=(
+            "How NeighborTask handles centers with too few unique sampled neighbors. "
+            "'strict' rejects the center; 'replacement' reuses sampled neighbors with replacement."
+        ),
+    )
 
     args.add_argument("-way_u", "--n_way_upper", default=-1, type=int) # If defined, will set the upper bound for n_way
     args.add_argument("-shot_u", "--n_shots_upper", default=-1, type=int) # If defined, will set the upper bound for n_shots

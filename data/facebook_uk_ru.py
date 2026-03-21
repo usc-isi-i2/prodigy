@@ -789,7 +789,12 @@ def get_facebook_uk_ru_dataloader(
     if task_name == "neighbor_matching":
         sampler = BatchSampler(
             batch_count,
-            NeighborTask(dataset.neighbor_sampler, graph.num_nodes, "inout"),
+            NeighborTask(
+                dataset.neighbor_sampler,
+                graph.num_nodes,
+                "inout",
+                kwargs.get("neighbor_sampling_strategy", "strict"),
+            ),
             ParamSampler(batch_size, n_way, n_shot, n_query, 1),
             seed=seed,
         )

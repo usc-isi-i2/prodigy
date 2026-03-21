@@ -209,7 +209,12 @@ def get_kg_dataloader(dataset, task_name, split, node_split, batch_size, n_way, 
         neighbor_sampler.num_hops = 1
         sampler = BatchSampler(
             batch_count,
-            NeighborTask(neighbor_sampler, num_nodes, "inout"),
+            NeighborTask(
+                neighbor_sampler,
+                num_nodes,
+                "inout",
+                kwargs.get("neighbor_sampling_strategy", "strict"),
+            ),
             ParamSampler(batch_size, n_way, n_shot, n_query, 1),
             seed=seed,
         )
