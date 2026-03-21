@@ -396,7 +396,7 @@ def get_midterm_dataloader(
         **kwargs
 ) -> DataLoader:
     del node_split, root
-    task_name = kwargs.get("task_name", "classification")
+    task_name = kwargs.get("task_name", "neighbor_matching")
     seed = sum(ord(c) for c in split)
 
     graph = dataset.graph
