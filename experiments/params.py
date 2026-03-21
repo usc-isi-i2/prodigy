@@ -97,6 +97,18 @@ def get_params():
 
     args.add_argument("-calc_ranks", "--calc_ranks", default=False, type=bool)  # Whether to calc MRR and HITS ranks.
     args.add_argument("-eval_only", "--eval_only", default=False, type=bool)  # Eval. only mode (no training, only one pass of testing ds at the beginning and then quit)
+    args.add_argument(
+        "--eval_test_before_train",
+        default=False,
+        type=bool,
+        help="If True, run a test-set evaluation before training starts.",
+    )
+    args.add_argument(
+        "--eval_val_before_train",
+        default=False,
+        type=bool,
+        help="If True, run a validation-set evaluation before training starts.",
+    )
     args.add_argument("-meta_pos", "--meta_gnn_pos_only", default=False, type=bool)  # Whether to use only positive edges for meta graph
 
     ###  Few-shot task parameters  ###
