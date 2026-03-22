@@ -46,19 +46,23 @@ class BinaryFutureLinkTask:
         center = None
         retweeters = []
 
-        # Find a center that has at least one future retweeter.
+        # Find a center with enough distinct future retweeters to fill support and
+        # query without overlap (num_member = num_shot + num_query with n_aug=1).
         for _ in range(2000):
             candidate = rng.randrange(self.size)
             curr = self._future_retweeters(candidate)
-            if curr:
+            if len(curr) >= num_member:
                 center = candidate
                 retweeters = curr
                 break
         if center is None:
-            raise RuntimeError("BinaryFutureLinkTask could not find a center with future retweeters.")
+            raise RuntimeError(
+                f"BinaryFutureLinkTask could not find a center with >= {num_member} "
+                "future retweeters. Try reducing n_shots or n_query."
+            )
 
-        # Positive samples are users with a future edge candidate -> center.
-        pos = [rng.choice(retweeters) for _ in range(num_member)]
+        # Positive samples without replacement so support and query nodes are distinct.
+        pos = rng.sample(retweeters, num_member)
         neg_target = num_member * self.neg_ratio
 
         # Negative samples are users not in the future retweeter set (and not self).
