@@ -82,7 +82,8 @@ class TrainerFS():
 
         self.calc_ranks = parameter['calc_ranks']
         self.cos = torch.nn.CosineSimilarity(dim=1)
-        self._printed_example = False
+        self._printed_eval_example = False
+        self._printed_train_example = False
 
         bert_dim = 768
 
@@ -390,6 +391,158 @@ class TrainerFS():
         for key, module in self.all_saveable_modules.items():
             module.load_state_dict(state_dict[key], strict=False)
 
+    def _maybe_print_debug_example(self, batch, yt, yp, graph, split_name, printed_attr, require_flag=False):
+        if getattr(self, printed_attr):
+            return
+        max_eps = int(self.parameter.get("midterm_debug_print_episodes", 0) or 0)
+        if require_flag and max_eps <= 0:
+            return
+
+        ytrue = yt.detach().cpu()
+        ypred = yp.detach().cpu()
+        center_nodes = None
+        if hasattr(graph, "center_node_idx"):
+            try:
+                center_nodes = graph.center_node_idx.detach().cpu().flatten().tolist()
+            except Exception:
+                center_nodes = None
+
+        if ypred.ndim > 1 and ypred.shape[-1] > 1:
+            pred_idx = int(torch.argmax(ypred[0]).item())
+            if ytrue.ndim > 1 and ytrue.shape[-1] > 1:
+                true_idx = int(torch.argmax(ytrue[0]).item())
+            else:
+                true_idx = int(ytrue[0].item())
+            print(
+                f"[debug-example] split={split_name} sample=0 pred={pred_idx} gt={true_idx} "
+                f"logits={ypred[0].tolist()}"
+            )
+            top_k = min(5, ypred.shape[0])
+            pred_all = torch.argmax(ypred[:top_k], dim=1).tolist()
+            if ytrue.ndim > 1 and ytrue.shape[-1] > 1:
+                gt_all = torch.argmax(ytrue[:top_k], dim=1).tolist()
+            else:
+                gt_all = ytrue[:top_k].flatten().long().tolist()
+            if center_nodes is not None:
+                print(f"[debug-examples] split={split_name} centers={center_nodes[:top_k]} pred={pred_all} gt={gt_all}")
+            else:
+                print(f"[debug-examples] split={split_name} pred={pred_all} gt={gt_all}")
+
+            if self.parameter.get("task_name", "") == "neighbor_matching" and center_nodes is not None:
+                try:
+                    labels_onehot = batch[2].detach().cpu()
+                    num_labels = int(labels_onehot.shape[1])
+                    gt_label_idx = torch.argmax(labels_onehot, dim=1).long()
+                    meta_mask = batch[5].detach().cpu().view(-1, num_labels)
+                    query_mask = meta_mask[:, 0].bool()
+
+                    total_items = int(gt_label_idx.numel())
+                    if isinstance(self.batch_size, int) and self.batch_size > 0 and total_items % self.batch_size == 0:
+                        task_len = total_items // self.batch_size
+                    else:
+                        task_len = total_items
+
+                    centers_t = torch.tensor(center_nodes, dtype=torch.long)[:task_len]
+                    gt_t = gt_label_idx[:task_len]
+                    q_t = query_mask[:task_len]
+                    pred_t = torch.argmax(ypred[:task_len], dim=1).long().cpu()
+
+                    print(f"[debug-episode] first {split_name} task")
+                    for n in range(num_labels):
+                        print(f"N{n + 1}: {n}")
+                    s_count = 0
+                    q_count = 0
+                    for n in range(num_labels):
+                        s_idx = torch.where((gt_t == n) & (~q_t))[0][:5]
+                        q_idx = torch.where((gt_t == n) & q_t)[0][:5]
+                        for i in s_idx.tolist():
+                            s_count += 1
+                            print(f"S{s_count}: {int(centers_t[i].item())} (N{n + 1})")
+                        for i in q_idx.tolist():
+                            q_count += 1
+                            pred_n = int(pred_t[i].item()) + 1
+                            print(f"Q{q_count}: {int(centers_t[i].item())} (pred N{pred_n} -> gt N{n + 1})")
+                except Exception as ex:
+                    print(f"[debug-episode] failed to decode episode: {ex}")
+        else:
+            pred_val = float(ypred.flatten()[0].item())
+            true_val = float(ytrue.flatten()[0].item())
+            print(f"[debug-example] split={split_name} sample=0 pred={pred_val:.4f} gt={true_val:.4f}")
+            if self.parameter.get("task_name", "") == "temporal_link_prediction":
+                try:
+                    if (
+                        center_nodes is not None
+                        and hasattr(graph, "task_id_per_sample")
+                        and hasattr(graph, "lp_task_center_ids")
+                    ):
+                        task_ids = graph.task_id_per_sample.detach().cpu().flatten().long()
+                        task_centers = graph.lp_task_center_ids.detach().cpu().flatten().long()
+                        top_k = min(5, len(center_nodes), int(task_ids.numel()), int(ytrue.shape[0]))
+                        probs = torch.sigmoid(ypred[:top_k].flatten()).detach().cpu().tolist()
+                        print(f"[debug-lp] first {split_name} examples (candidate -> future_center):")
+                        for i in range(top_k):
+                            cand = int(center_nodes[i])
+                            tid = int(task_ids[i].item())
+                            fcenter = int(task_centers[tid].item())
+                            gt_i = float(ytrue[i].item()) if ytrue.ndim == 1 else float(ytrue[i].flatten()[0].item())
+                            logit_i = float(ypred[i].flatten()[0].item())
+                            prob_i = float(probs[i])
+                            print(
+                                f"  i={i} pair=({cand}->{fcenter}) gt={int(round(gt_i))} "
+                                f"logit={logit_i:.4f} prob={prob_i:.4f}"
+                            )
+                except Exception as ex:
+                    print(f"[debug-lp] failed to decode LP example: {ex}")
+            if self.parameter.get("task_name", "") == "temporal_link_prediction" and max_eps > 0:
+                try:
+                    labels_all = batch[2].detach().cpu().reshape(-1)
+                    query_mask_all = batch[5].detach().cpu().reshape(-1).bool()
+                    if (
+                        center_nodes is not None
+                        and hasattr(graph, "task_id_per_sample")
+                        and hasattr(graph, "lp_task_center_ids")
+                    ):
+                        task_ids = graph.task_id_per_sample.detach().cpu().reshape(-1).long()
+                        task_centers = graph.lp_task_center_ids.detach().cpu().reshape(-1).long()
+                        n_eps = min(max_eps, int(task_centers.numel()))
+
+                        query_indices = torch.where(query_mask_all)[0].tolist()
+                        qpos_to_pred = {int(idx): k for k, idx in enumerate(query_indices)}
+
+                        print(f"[debug-lp-full] printing first {n_eps} {split_name} episode(s)")
+                        for ep in range(n_eps):
+                            ep_idx = torch.where(task_ids == ep)[0].tolist()
+                            fut_center = int(task_centers[ep].item())
+                            print(f"[debug-lp-full][episode {ep}] future_center={fut_center}")
+
+                            support_idx = [i for i in ep_idx if not bool(query_mask_all[i].item())]
+                            query_idx = [i for i in ep_idx if bool(query_mask_all[i].item())]
+
+                            print("  supports:")
+                            for i in support_idx:
+                                cand = int(center_nodes[i])
+                                gt_i = int(round(float(labels_all[i].item())))
+                                print(f"    cand={cand} pair=({cand}->{fut_center}) gt={gt_i}")
+
+                            print("  queries:")
+                            for i in query_idx:
+                                cand = int(center_nodes[i])
+                                gt_i = int(round(float(labels_all[i].item())))
+                                if i in qpos_to_pred:
+                                    k = qpos_to_pred[i]
+                                    logit_i = float(ypred[k].flatten()[0].item())
+                                    prob_i = float(torch.sigmoid(ypred[k].flatten()[0]).item())
+                                    print(
+                                        f"    cand={cand} pair=({cand}->{fut_center}) gt={gt_i} "
+                                        f"logit={logit_i:.4f} prob={prob_i:.4f}"
+                                    )
+                                else:
+                                    print(f"    cand={cand} pair=({cand}->{fut_center}) gt={gt_i}")
+                except Exception as ex:
+                    print(f"[debug-lp-full] failed to print full episodes: {ex}")
+
+        setattr(self, printed_attr, True)
+
 
     def save_best_state_dict(self, best_step):
         best_step = os.path.join(self.ckpt_dir, 'state_dict_' + str(best_step) + '.ckpt')
@@ -468,6 +621,15 @@ class TrainerFS():
             t2 = time.time()
             batch = [i.to(self.device) for i in batch]
             yt, yp, graph = self.model(*batch) # apply the model
+            self._maybe_print_debug_example(
+                batch,
+                yt,
+                yp,
+                graph,
+                split_name="train",
+                printed_attr="_printed_train_example",
+                require_flag=True,
+            )
             loss, acc = self.get_loss_and_acc(yt, yp) # get loss
             aux_loss = self.get_aux_loss(graph)
             weight = self.parameter["attr_regression_weight"]
@@ -583,154 +745,15 @@ class TrainerFS():
         for batch in tqdm(dataloader, leave=False):
             batch = [i.to(self.device) for i in batch]
             yt, yp, graph = self.model(*batch)  # apply the model
-            if not self._printed_example:
-                ytrue = yt.detach().cpu()
-                ypred = yp.detach().cpu()
-                center_nodes = None
-                if hasattr(graph, "center_node_idx"):
-                    try:
-                        center_nodes = graph.center_node_idx.detach().cpu().flatten().tolist()
-                    except Exception:
-                        center_nodes = None
-                if ypred.ndim > 1 and ypred.shape[-1] > 1:
-                    pred_idx = int(torch.argmax(ypred[0]).item())
-                    if ytrue.ndim > 1 and ytrue.shape[-1] > 1:
-                        true_idx = int(torch.argmax(ytrue[0]).item())
-                    else:
-                        true_idx = int(ytrue[0].item())
-                    print(
-                        f"[debug-example] sample=0 pred={pred_idx} gt={true_idx} "
-                        f"logits={ypred[0].tolist()}"
-                    )
-                    top_k = min(5, ypred.shape[0])
-                    pred_all = torch.argmax(ypred[:top_k], dim=1).tolist()
-                    if ytrue.ndim > 1 and ytrue.shape[-1] > 1:
-                        gt_all = torch.argmax(ytrue[:top_k], dim=1).tolist()
-                    else:
-                        gt_all = ytrue[:top_k].flatten().long().tolist()
-                    if center_nodes is not None:
-                        print(f"[debug-examples] centers={center_nodes[:top_k]} pred={pred_all} gt={gt_all}")
-                    else:
-                        print(f"[debug-examples] pred={pred_all} gt={gt_all}")
-
-                    if self.parameter.get("task_name", "") == "neighbor_matching" and center_nodes is not None:
-                        try:
-                            labels_onehot = batch[2].detach().cpu()
-                            num_labels = int(labels_onehot.shape[1])
-                            gt_label_idx = torch.argmax(labels_onehot, dim=1).long()
-                            meta_mask = batch[5].detach().cpu().view(-1, num_labels)
-                            query_mask = meta_mask[:, 0].bool()
-
-                            total_items = int(gt_label_idx.numel())
-                            if isinstance(self.batch_size, int) and self.batch_size > 0 and total_items % self.batch_size == 0:
-                                task_len = total_items // self.batch_size
-                            else:
-                                task_len = total_items
-
-                            centers_t = torch.tensor(center_nodes, dtype=torch.long)[:task_len]
-                            gt_t = gt_label_idx[:task_len]
-                            q_t = query_mask[:task_len]
-                            pred_t = torch.argmax(ypred[:task_len], dim=1).long().cpu()
-
-                            print("[debug-episode] first eval task")
-                            for n in range(num_labels):
-                                print(f"N{n + 1}: {n}")
-                            s_count = 0
-                            q_count = 0
-                            for n in range(num_labels):
-                                s_idx = torch.where((gt_t == n) & (~q_t))[0][:5]
-                                q_idx = torch.where((gt_t == n) & q_t)[0][:5]
-                                for i in s_idx.tolist():
-                                    s_count += 1
-                                    print(f"S{s_count}: {int(centers_t[i].item())} (N{n + 1})")
-                                for i in q_idx.tolist():
-                                    q_count += 1
-                                    pred_n = int(pred_t[i].item()) + 1
-                                    print(f"Q{q_count}: {int(centers_t[i].item())} (pred N{pred_n} -> gt N{n + 1})")
-                        except Exception as ex:
-                            print(f"[debug-episode] failed to decode episode: {ex}")
-                else:
-                    pred_val = float(ypred.flatten()[0].item())
-                    true_val = float(ytrue.flatten()[0].item())
-                    print(f"[debug-example] sample=0 pred={pred_val:.4f} gt={true_val:.4f}")
-                    # Human-readable LP preview for binary temporal link prediction.
-                    if self.parameter.get("task_name", "") == "temporal_link_prediction":
-                        try:
-                            if (
-                                center_nodes is not None
-                                and hasattr(graph, "task_id_per_sample")
-                                and hasattr(graph, "lp_task_center_ids")
-                            ):
-                                task_ids = graph.task_id_per_sample.detach().cpu().flatten().long()
-                                task_centers = graph.lp_task_center_ids.detach().cpu().flatten().long()
-                                top_k = min(5, len(center_nodes), int(task_ids.numel()), int(ytrue.shape[0]))
-                                probs = torch.sigmoid(ypred[:top_k].flatten()).detach().cpu().tolist()
-                                print("[debug-lp] first eval examples (candidate -> future_center):")
-                                for i in range(top_k):
-                                    cand = int(center_nodes[i])
-                                    tid = int(task_ids[i].item())
-                                    fcenter = int(task_centers[tid].item())
-                                    gt_i = float(ytrue[i].item()) if ytrue.ndim == 1 else float(ytrue[i].flatten()[0].item())
-                                    logit_i = float(ypred[i].flatten()[0].item())
-                                    prob_i = float(probs[i])
-                                    print(
-                                        f"  i={i} pair=({cand}->{fcenter}) gt={int(round(gt_i))} "
-                                        f"logit={logit_i:.4f} prob={prob_i:.4f}"
-                                    )
-                        except Exception as ex:
-                            print(f"[debug-lp] failed to decode LP example: {ex}")
-                    # Optional full-episode dump for LP debugging.
-                    if self.parameter.get("task_name", "") == "temporal_link_prediction":
-                        max_eps = int(self.parameter.get("midterm_debug_print_episodes", 0) or 0)
-                        if max_eps > 0:
-                            try:
-                                labels_all = batch[2].detach().cpu().reshape(-1)
-                                query_mask_all = batch[5].detach().cpu().reshape(-1).bool()
-                                if (
-                                    center_nodes is not None
-                                    and hasattr(graph, "task_id_per_sample")
-                                    and hasattr(graph, "lp_task_center_ids")
-                                ):
-                                    task_ids = graph.task_id_per_sample.detach().cpu().reshape(-1).long()
-                                    task_centers = graph.lp_task_center_ids.detach().cpu().reshape(-1).long()
-                                    n_eps = min(max_eps, int(task_centers.numel()))
-
-                                    # Query outputs correspond to query rows in this exact order.
-                                    query_indices = torch.where(query_mask_all)[0].tolist()
-                                    qpos_to_pred = {int(idx): k for k, idx in enumerate(query_indices)}
-
-                                    print(f"[debug-lp-full] printing first {n_eps} episode(s)")
-                                    for ep in range(n_eps):
-                                        ep_idx = torch.where(task_ids == ep)[0].tolist()
-                                        fut_center = int(task_centers[ep].item())
-                                        print(f"[debug-lp-full][episode {ep}] future_center={fut_center}")
-
-                                        support_idx = [i for i in ep_idx if not bool(query_mask_all[i].item())]
-                                        query_idx = [i for i in ep_idx if bool(query_mask_all[i].item())]
-
-                                        print("  supports:")
-                                        for i in support_idx:
-                                            cand = int(center_nodes[i])
-                                            gt_i = int(round(float(labels_all[i].item())))
-                                            print(f"    cand={cand} pair=({cand}->{fut_center}) gt={gt_i}")
-
-                                        print("  queries:")
-                                        for i in query_idx:
-                                            cand = int(center_nodes[i])
-                                            gt_i = int(round(float(labels_all[i].item())))
-                                            if i in qpos_to_pred:
-                                                k = qpos_to_pred[i]
-                                                logit_i = float(ypred[k].flatten()[0].item())
-                                                prob_i = float(torch.sigmoid(ypred[k].flatten()[0]).item())
-                                                print(
-                                                    f"    cand={cand} pair=({cand}->{fut_center}) gt={gt_i} "
-                                                    f"logit={logit_i:.4f} prob={prob_i:.4f}"
-                                                )
-                                            else:
-                                                print(f"    cand={cand} pair=({cand}->{fut_center}) gt={gt_i}")
-                            except Exception as ex:
-                                print(f"[debug-lp-full] failed to print full episodes: {ex}")
-                self._printed_example = True
+            self._maybe_print_debug_example(
+                batch,
+                yt,
+                yp,
+                graph,
+                split_name="eval",
+                printed_attr="_printed_eval_example",
+                require_flag=False,
+            )
             if self.calc_ranks:
                 assert len(batch) == 10, "Not using the right batch structure; need to include task_mask"
             loss, acc = self.get_loss_and_acc(yt, yp)  # get loss
