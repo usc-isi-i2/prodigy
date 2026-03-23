@@ -96,6 +96,12 @@ def get_params():
                       type=bool)
 
     args.add_argument("-calc_ranks", "--calc_ranks", default=False, type=bool)  # Whether to calc MRR and HITS ranks.
+    args.add_argument(
+        "--save_roc_curve",
+        default=False,
+        type=bool,
+        help="If True, save ROC curve plot/points for binary evaluation splits.",
+    )
     args.add_argument("-eval_only", "--eval_only", default=False, type=bool)  # Eval. only mode (no training, only one pass of testing ds at the beginning and then quit)
     args.add_argument(
         "--eval_test_before_train",
