@@ -319,20 +319,24 @@ def get_midterm_dataset(
     if hasattr(graph, "edge_attr") and graph.edge_attr is not None:
         print(f"Edge features: {graph.edge_attr.shape[1]} dims from edge view '{resolved_edge_view}'")
 
-    target_view = _normalize_view_name(kwargs.get("midterm_target_edge_view", "future"), default="future")
-    future_edge_index, resolved_target_view = _load_named_tensor(
-        raw,
-        target_view,
-        default_key="future_edge_index",
-        views_key="target_edge_index_views",
-        legacy_prefix="future_edge_index",
-    )
-    if future_edge_index is not None:
-        print("Building future neighbor sampler...", flush=True)
-        future_graph = Data(edge_index=future_edge_index, num_nodes=graph.num_nodes)
-        dataset.future_neighbor_sampler = NeighborSampler(future_graph, num_hops=n_hop)
-        dataset.future_edge_view = resolved_target_view
-        print("Future neighbor sampler ready.", flush=True)
+    task_name = kwargs.get("task_name", "")
+    if task_name == "temporal_link_prediction":
+        target_view = _normalize_view_name(kwargs.get("midterm_target_edge_view", "future"), default="future")
+        future_edge_index, resolved_target_view = _load_named_tensor(
+            raw,
+            target_view,
+            default_key="future_edge_index",
+            views_key="target_edge_index_views",
+            legacy_prefix="future_edge_index",
+        )
+        if future_edge_index is not None:
+            print("Building future neighbor sampler...", flush=True)
+            future_graph = Data(edge_index=future_edge_index, num_nodes=graph.num_nodes)
+            dataset.future_neighbor_sampler = NeighborSampler(future_graph, num_hops=n_hop)
+            dataset.future_edge_view = resolved_target_view
+            print("Future neighbor sampler ready.", flush=True)
+        else:
+            dataset.future_edge_view = None
     else:
         dataset.future_edge_view = None
     return dataset
