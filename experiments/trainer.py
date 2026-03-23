@@ -7,6 +7,7 @@ import torch.optim as optim
 import time
 from tqdm import tqdm, trange
 import shutil
+from sklearn.metrics import roc_curve
 
 sys.path.extend(os.path.join(os.path.dirname(__file__), "../../"))
 
@@ -394,6 +395,48 @@ class TrainerFS():
         for key, module in self.all_saveable_modules.items():
             module.load_state_dict(state_dict[key], strict=False)
 
+    def _maybe_save_roc_curve(self, y_true_matrix, y_pred_matrix, split_name, step=None):
+        if not self.parameter.get("save_roc_curve", False):
+            return
+        if self.is_multiway:
+            return
+        y_true = y_true_matrix.detach().cpu().reshape(-1).numpy()
+        y_score = y_pred_matrix.detach().cpu().reshape(-1).numpy()
+        if y_true.size == 0:
+            return
+        if len(np.unique(y_true)) < 2:
+            return
+
+        fpr, tpr, thresholds = roc_curve(y_true, y_score)
+
+        try:
+            import matplotlib.pyplot as plt
+
+            suffix = split_name if step is None else f"{split_name}_step{step}"
+            png_path = os.path.join(self.logging_dir, f"roc_{suffix}.png")
+            csv_path = os.path.join(self.logging_dir, f"roc_{suffix}.csv")
+
+            fig = plt.figure()
+            plt.plot(fpr, tpr, label=f"{split_name} ROC-AUC")
+            plt.plot([0, 1], [0, 1], linestyle="--", linewidth=1)
+            plt.xlabel("False Positive Rate")
+            plt.ylabel("True Positive Rate")
+            plt.title(f"ROC Curve ({split_name})")
+            plt.legend()
+            plt.tight_layout()
+            fig.savefig(png_path, dpi=160)
+            plt.close(fig)
+
+            np.savetxt(
+                csv_path,
+                np.column_stack([fpr, tpr, thresholds]),
+                delimiter=",",
+                header="fpr,tpr,threshold",
+                comments="",
+            )
+        except Exception as ex:
+            _log(f"Failed to save ROC curve for {split_name}: {ex}")
+
     def _maybe_print_debug_example(self, batch, yt, yp, graph, split_name, printed_attr, require_flag=False):
         if getattr(self, printed_attr):
             return
@@ -482,16 +525,20 @@ class TrainerFS():
                         task_centers = graph.lp_task_center_ids.detach().cpu().flatten().long()
                         top_k = min(len(center_nodes), int(task_ids.numel()), int(ytrue.shape[0]))
                         probs = torch.sigmoid(ypred[:top_k].flatten()).detach().cpu().tolist()
-                        print(f"[debug-lp] {split_name} examples (candidate -> future_center):")
+                        print(f"[debug-lp] {split_name} examples by episode:")
+                        current_tid = None
                         for i in range(top_k):
-                            cand = int(center_nodes[i])
                             tid = int(task_ids[i].item())
                             fcenter = int(task_centers[tid].item())
+                            if tid != current_tid:
+                                current_tid = tid
+                                print(f"  [episode {tid}] future_center={fcenter}")
+                            cand = int(center_nodes[i])
                             gt_i = float(ytrue[i].item()) if ytrue.ndim == 1 else float(ytrue[i].flatten()[0].item())
                             logit_i = float(ypred[i].flatten()[0].item())
                             prob_i = float(probs[i])
                             print(
-                                f"  i={i} pair=({cand}->{fcenter}) gt={int(round(gt_i))} "
+                                f"    i={i} pair=({cand}->{fcenter}) gt={int(round(gt_i))} "
                                 f"logit={logit_i:.4f} prob={prob_i:.4f}"
                             )
                 except Exception as ex:
@@ -585,7 +632,7 @@ class TrainerFS():
         if run_test_before_train or eval_only:
             with torch.no_grad():
                 _log("Pre-training eval on test set...")
-                test_loss, test_acc, test_acc_std, test_aux_loss, ranks = self.do_eval(self.test_dataloader)
+                test_loss, test_acc, test_acc_std, test_aux_loss, ranks = self.do_eval(self.test_dataloader, split_name="test", step=0)
                 _log(f"  [pre-train test]  acc={_to_float(test_acc):.4f} ± {_to_float(test_acc_std):.4f}  loss={_to_float(test_loss):.4f}")
                 start_log_dict = {"start_test_acc": test_acc, "start_test_acc_std": test_acc_std}
                 if ranks is not None:
@@ -601,7 +648,7 @@ class TrainerFS():
         if run_val_before_train:
             with torch.no_grad():
                 _log("Pre-training eval on val set...")
-                val_loss, val_acc, val_acc_std, val_aux_loss, ranks = self.do_eval(self.val_dataloader)
+                val_loss, val_acc, val_acc_std, val_aux_loss, ranks = self.do_eval(self.val_dataloader, split_name="val", step=0)
                 _log(f"  [pre-train val]   acc={_to_float(val_acc):.4f} ± {_to_float(val_acc_std):.4f}  loss={_to_float(val_loss):.4f}")
                 start_log_dict = {"start_val_acc": val_acc, "start_val_acc_std": val_acc_std}
                 if ranks is not None:
@@ -672,7 +719,7 @@ class TrainerFS():
                 # pbar.write("Evaluating on validation set!")
                 with torch.no_grad():
                     self.model.eval()
-                    val_loss, val_acc, val_acc_std, val_aux_loss, ranks = self.do_eval(self.val_dataloader)
+                    val_loss, val_acc, val_acc_std, val_aux_loss, ranks = self.do_eval(self.val_dataloader, split_name="val", step=e)
 
                 if val_acc >= best_val:
                     best_val = val_acc
@@ -691,13 +738,13 @@ class TrainerFS():
                 if self.train_val_dataloader is not None:
                     with torch.no_grad():
                         self.model.eval()
-                        tval_loss, tval_acc, tval_acc_std, tval_aux_loss, ranks = self.do_eval(self.train_val_dataloader)
+                        tval_loss, tval_acc, tval_acc_std, tval_aux_loss, ranks = self.do_eval(self.train_val_dataloader, split_name="train_val", step=e)
                         wandb.log({"train_val_loss": _to_float(tval_loss), "train_val_acc": _to_float(tval_acc), "train_val_aux_loss": _to_float(tval_aux_loss)}, step=e)
 
                 # Also evaluate on test set
                 with torch.no_grad():
                     self.model.eval()
-                    test_loss, test_acc, test_acc_std, test_aux_loss, ranks = self.do_eval(self.test_dataloader)
+                    test_loss, test_acc, test_acc_std, test_aux_loss, ranks = self.do_eval(self.test_dataloader, split_name="test", step=e)
                     log_dict = {
                         "test_acc": _to_float(test_acc),
                         "test_loss": _to_float(test_loss),
@@ -736,7 +783,7 @@ class TrainerFS():
         return best_val, test_acc_on_best_val, best_step
         # returns best-val-acc, best-test-acc, best-step
 
-    def do_eval(self, dataloader, eff_len=None):
+    def do_eval(self, dataloader, eff_len=None, split_name="eval", step=None):
         # calc_ranks: if True, it will calculate MRR, HITS scores etc.
         torch.set_grad_enabled(False)  # disable gradient calculation
         ranks = None
@@ -778,6 +825,7 @@ class TrainerFS():
                 ypredall = torch.cat((ypredall, yp), dim=0)
             all_aux_loss.append(aux_loss.item())
         loss_global, acc_global = self.get_loss_and_acc(ytrueall, ypredall)
+        self._maybe_save_roc_curve(ytrueall, ypredall, split_name=split_name, step=step)
         acc_batch_std = np.std(acc_all)
         aux_loss_global = sum(all_aux_loss) / len(all_aux_loss)
         torch.set_grad_enabled(True)
