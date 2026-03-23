@@ -1,4 +1,5 @@
 import argparse
+import ast
 import glob
 import json
 import os
@@ -11,11 +12,15 @@ from sklearn.preprocessing import StandardScaler
 
 
 REP_HASHTAGS = [
-    "maga",
     "voteredtosaveamerica",
     "votered",
     "redwavecoming",
     "democratsaretheproblem",
+    "2a",
+    "1a",
+    "fjb",
+    "americafirst",
+    "kag",
 ]
 DEM_HASHTAGS = [
     "voteblue",
@@ -55,13 +60,17 @@ DEM_HASHTAGS = [
     "goptraitorstodemocracy",
     "gopliesabouteverything",
     "magaidiots",
+    "blm",
+    "blacklivesmatter",
+    "resist",
+    "fbr",
 ]
 DEM_MEDIA_OUTLETS = [
     "abcnews", "bbc", "buzzfeednews", "huffpost", "msnbc", "cnn",
     "nytimes", "washingtonpost", "latimes", "guardian",
 ]
 REP_MEDIA_OUTLETS = [
-    "breitbartnews", "dailycaller", "dailymail", "foxnews", "infowars", "oann",
+    "breitbartnews", "dailycaller", "dailymail", "foxnews", "infowars", "oann", "breitbart",
 ]
 
 
@@ -210,50 +219,109 @@ def to_edge_tensors(edge_df: pd.DataFrame, id_to_idx: Dict[int, int], edge_featu
     return edge_index, edge_attr
 
 
+def _parse_url_entries(val) -> List[str]:
+    if isinstance(val, list):
+        raw = val
+    elif pd.isna(val):
+        return []
+    else:
+        s = str(val).strip()
+        if s in {"", "[]", "nan", "None"}:
+            return []
+        try:
+            raw = ast.literal_eval(s)
+        except Exception:
+            raw = val
+
+    if isinstance(raw, dict):
+        raw = [raw]
+    if not isinstance(raw, list):
+        raw = [raw]
+
+    urls: List[str] = []
+    for item in raw:
+        if isinstance(item, dict):
+            url = item.get("expanded_url") or item.get("url")
+            if url:
+                urls.append(str(url).lower())
+        elif isinstance(item, str):
+            urls.append(item.lower())
+    return urls
+
+
 def build_political_leaning_labels(base: pd.DataFrame, id_to_idx: Dict[int, int]) -> Tuple[torch.Tensor, List[str]]:
     label_names = ["rep", "dem"]
     y = torch.full((len(id_to_idx),), -1, dtype=torch.long)
 
-    label_df = base[["userid", "date"]].copy()
-    label_df["date"] = pd.to_datetime(base["date"], errors="coerce", utc=True)
+    label_df = base[["userid"]].copy()
     label_df["description"] = base.get("description", "").fillna("").astype(str).str.lower()
-
-    url_series = None
-    if "urls" in base.columns:
-        url_series = base["urls"]
-    elif "urls_list" in base.columns:
-        url_series = base["urls_list"]
+    if "urls_list" in base.columns:
+        url_source = base["urls_list"]
+    elif "urls" in base.columns:
+        url_source = base["urls"]
     else:
-        url_series = pd.Series(index=base.index, dtype=object)
-    label_df["urls"] = url_series.fillna("").astype(str).str.lower()
+        url_source = pd.Series(index=base.index, dtype=object)
+    label_df["urls"] = url_source.apply(_parse_url_entries)
 
     rep_pat = r"\#(?:" + "|".join(REP_HASHTAGS) + r")"
     dem_pat = r"\#(?:" + "|".join(DEM_HASHTAGS) + r")"
     rep_media_pat = "|".join(REP_MEDIA_OUTLETS)
     dem_media_pat = "|".join(DEM_MEDIA_OUTLETS)
 
-    label_df["rep_hash_count"] = label_df["description"].str.count(rep_pat)
-    label_df["dem_hash_count"] = label_df["description"].str.count(dem_pat)
-    label_df["rep_url_count"] = label_df["urls"].str.count(rep_media_pat)
-    label_df["dem_url_count"] = label_df["urls"].str.count(dem_media_pat)
+    label_df["rep_domains"] = (
+        label_df["urls"].explode().str.findall(rep_media_pat).explode().dropna().groupby(level=0).agg(list)
+    )
+    label_df["dem_domains"] = (
+        label_df["urls"].explode().str.findall(dem_media_pat).explode().dropna().groupby(level=0).agg(list)
+    )
+    label_df["has_rep_dom"] = label_df["rep_domains"].str.len()
+    label_df["has_dem_dom"] = label_df["dem_domains"].str.len()
 
-    udf = label_df.sort_values("date", ascending=False).drop_duplicates("userid", keep="first").set_index("userid")
-    grouped = label_df.groupby("userid")
-    udf["rep_url_count"] = grouped["rep_url_count"].sum()
-    udf["dem_url_count"] = grouped["dem_url_count"].sum()
+    label_df["rep_hashs"] = label_df["description"].str.findall(rep_pat)
+    label_df["rep_hashs_len"] = label_df["rep_hashs"].str.len()
+    user2rep_hash = (
+        label_df.sort_values("rep_hashs_len")
+        .drop_duplicates(["userid", "description"], keep="first")
+        .groupby("userid")
+        .agg({"rep_hashs": "sum"})
+    )
+    user2rep_hash["rep_hashs"] = user2rep_hash["rep_hashs"].apply(set)
+    user2rep_hash["rep_hashs_len"] = user2rep_hash["rep_hashs"].str.len()
 
-    udf["label"] = -1
-    rep_mask = udf[["rep_hash_count", "rep_url_count"]].sum(axis=1).gt(0)
-    udf.loc[rep_mask, "label"] = 0
-    dem_mask = udf[["dem_hash_count", "dem_url_count"]].sum(axis=1).gt(0)
-    udf.loc[dem_mask, "label"] = 1
+    label_df["dem_hashs"] = label_df["description"].str.findall(dem_pat)
+    label_df["dem_hashs_len"] = label_df["dem_hashs"].str.len()
+    user2dem_hash = (
+        label_df.sort_values("dem_hashs_len")
+        .drop_duplicates(["userid", "description"], keep="first")
+        .groupby("userid")
+        .agg({"dem_hashs": "sum"})
+    )
+    user2dem_hash["dem_hashs"] = user2dem_hash["dem_hashs"].apply(set)
+    user2dem_hash["dem_hashs_len"] = user2dem_hash["dem_hashs"].str.len()
+
+    user2pol = user2rep_hash.join(user2dem_hash)
+    user2pol["user2rep_dom_tweet_count"] = label_df.groupby("userid")["has_rep_dom"].sum()
+    user2pol["user2dem_dom_tweet_count"] = label_df.groupby("userid")["has_dem_dom"].sum()
+    user2pol["is_rep"] = (
+        user2pol["user2rep_dom_tweet_count"].gt(0) | user2pol["rep_hashs_len"].gt(0)
+    )
+    user2pol["is_dem"] = (
+        user2pol["user2dem_dom_tweet_count"].gt(0) | user2pol["dem_hashs_len"].gt(0)
+    )
+    user2pol = user2pol[~(user2pol["is_rep"] & user2pol["is_dem"])].copy()
 
     labeled_count = 0
-    for uid, label in udf["label"].replace({-1: np.nan}).dropna().items():
+    for uid in user2pol.index[user2pol["is_rep"]]:
         node_idx = id_to_idx.get(int(uid))
         if node_idx is None:
             continue
-        y[node_idx] = int(label)
+        y[node_idx] = 0
+        labeled_count += 1
+    for uid in user2pol.index[user2pol["is_dem"]]:
+        node_idx = id_to_idx.get(int(uid))
+        if node_idx is None:
+            continue
+        y[node_idx] = 1
         labeled_count += 1
 
     print(
