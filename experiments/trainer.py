@@ -438,7 +438,7 @@ class TrainerFS():
             _log(f"Failed to save ROC curve for {split_name}: {ex}")
 
     def _maybe_print_debug_example(self, batch, yt, yp, graph, split_name, printed_attr, require_flag=False):
-        if split_name == "train" and getattr(self, printed_attr):
+        if split_name != "test" and getattr(self, printed_attr):
             return
         max_eps = int(self.parameter.get("midterm_debug_print_episodes", 0) or 0)
         if require_flag and max_eps <= 0:
@@ -463,7 +463,7 @@ class TrainerFS():
                 f"[debug-example] split={split_name} sample=0 pred={pred_idx} gt={true_idx} "
                 f"logits={ypred[0].tolist()}"
             )
-            top_k = min(5, ypred.shape[0])
+            top_k = ypred.shape[0]
             pred_all = torch.argmax(ypred[:top_k], dim=1).tolist()
             if ytrue.ndim > 1 and ytrue.shape[-1] > 1:
                 gt_all = torch.argmax(ytrue[:top_k], dim=1).tolist()
@@ -591,7 +591,7 @@ class TrainerFS():
                 except Exception as ex:
                     print(f"[debug-lp-full] failed to print full episodes: {ex}")
 
-        if split_name == "train":
+        if split_name != "test":
             setattr(self, printed_attr, True)
 
 
