@@ -463,16 +463,6 @@ class TrainerFS():
                 f"[debug-example] split={split_name} sample=0 pred={pred_idx} gt={true_idx} "
                 f"logits={ypred[0].tolist()}"
             )
-            top_k = ypred.shape[0]
-            pred_all = torch.argmax(ypred[:top_k], dim=1).tolist()
-            if ytrue.ndim > 1 and ytrue.shape[-1] > 1:
-                gt_all = torch.argmax(ytrue[:top_k], dim=1).tolist()
-            else:
-                gt_all = ytrue[:top_k].flatten().long().tolist()
-            if center_nodes is not None:
-                print(f"[debug-examples] split={split_name} centers={center_nodes[:top_k]} pred={pred_all} gt={gt_all}")
-            else:
-                print(f"[debug-examples] split={split_name} pred={pred_all} gt={gt_all}")
 
             if self.parameter.get("task_name", "") == "neighbor_matching" and center_nodes is not None:
                 try:
