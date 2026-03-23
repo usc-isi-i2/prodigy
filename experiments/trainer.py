@@ -594,6 +594,88 @@ class TrainerFS():
         if split_name == "train":
             setattr(self, printed_attr, True)
 
+    def _maybe_log_eval_diagnostics(self, y_true_matrix, y_pred_matrix, split_name, step=None):
+        # Focus diagnostics on 2-way classification, where sudden accuracy jumps can
+        # come from a smooth logit-margin shift crossing the argmax boundary.
+        if split_name == "train":
+            return
+        if y_pred_matrix is None or y_pred_matrix.numel() == 0:
+            return
+        if y_pred_matrix.ndim != 2 or y_pred_matrix.shape[1] != 2:
+            return
+        if self.parameter.get("task_name") != "classification":
+            return
+
+        y_pred_cpu = y_pred_matrix.detach().cpu()
+        if y_true_matrix.ndim > 1 and y_true_matrix.shape[-1] > 1:
+            y_true_cpu = torch.argmax(y_true_matrix.detach().cpu(), dim=1).long()
+        else:
+            y_true_cpu = y_true_matrix.detach().cpu().reshape(-1).long()
+
+        pred_cpu = torch.argmax(y_pred_cpu, dim=1).long()
+        probs_cpu = torch.softmax(y_pred_cpu, dim=1)
+        p1_cpu = probs_cpu[:, 1]
+        conf_cpu = probs_cpu.max(dim=1).values
+        logit_margin_cpu = y_pred_cpu[:, 1] - y_pred_cpu[:, 0]
+        true_margin_cpu = torch.where(y_true_cpu == 1, logit_margin_cpu, -logit_margin_cpu)
+
+        gt0 = y_true_cpu == 0
+        gt1 = y_true_cpu == 1
+        pred0 = pred_cpu == 0
+        pred1 = pred_cpu == 1
+
+        def _mean_or_none(x):
+            if x.numel() == 0:
+                return None
+            return float(x.float().mean().item())
+
+        tn = int((gt0 & pred0).sum().item())
+        fp = int((gt0 & pred1).sum().item())
+        fn = int((gt1 & pred0).sum().item())
+        tp = int((gt1 & pred1).sum().item())
+
+        diag = {
+            f"{split_name}_pred_class1_rate": float(pred_cpu.float().mean().item()),
+            f"{split_name}_gt_class1_rate": float(y_true_cpu.float().mean().item()),
+            f"{split_name}_mean_confidence": float(conf_cpu.mean().item()),
+            f"{split_name}_mean_p_class1": float(p1_cpu.mean().item()),
+            f"{split_name}_mean_true_margin": float(true_margin_cpu.mean().item()),
+            f"{split_name}_mean_logit_margin": float(logit_margin_cpu.mean().item()),
+            f"{split_name}_tn": tn,
+            f"{split_name}_fp": fp,
+            f"{split_name}_fn": fn,
+            f"{split_name}_tp": tp,
+        }
+
+        class0_acc = _mean_or_none(pred_cpu[gt0] == 0)
+        class1_acc = _mean_or_none(pred_cpu[gt1] == 1)
+        p1_gt0 = _mean_or_none(p1_cpu[gt0])
+        p1_gt1 = _mean_or_none(p1_cpu[gt1])
+        if class0_acc is not None:
+            diag[f"{split_name}_class0_acc"] = class0_acc
+        if class1_acc is not None:
+            diag[f"{split_name}_class1_acc"] = class1_acc
+        if p1_gt0 is not None:
+            diag[f"{split_name}_mean_p_class1_gt0"] = p1_gt0
+        if p1_gt1 is not None:
+            diag[f"{split_name}_mean_p_class1_gt1"] = p1_gt1
+
+        print(
+            f"[diag-{split_name}] n={int(y_true_cpu.numel())} "
+            f"cm=[[{tn},{fp}],[{fn},{tp}]] "
+            f"pred1_rate={diag[f'{split_name}_pred_class1_rate']:.4f} "
+            f"gt1_rate={diag[f'{split_name}_gt_class1_rate']:.4f} "
+            f"class0_acc={class0_acc:.4f} "
+            f"class1_acc={class1_acc:.4f} "
+            f"mean_true_margin={diag[f'{split_name}_mean_true_margin']:.4f} "
+            f"mean_conf={diag[f'{split_name}_mean_confidence']:.4f} "
+            f"p1(gt0)={p1_gt0:.4f} "
+            f"p1(gt1)={p1_gt1:.4f}",
+            flush=True,
+        )
+
+        wandb.log(diag, step=0 if step is None else step)
+
 
     def save_best_state_dict(self, best_step):
         best_step = os.path.join(self.ckpt_dir, 'state_dict_' + str(best_step) + '.ckpt')
@@ -801,7 +883,7 @@ class TrainerFS():
                 yt,
                 yp,
                 graph,
-                split_name="eval",
+                split_name=split_name,
                 printed_attr="_printed_eval_example",
                 require_flag=False,
             )
@@ -826,6 +908,7 @@ class TrainerFS():
                 ypredall = torch.cat((ypredall, yp), dim=0)
             all_aux_loss.append(aux_loss.item())
         loss_global, acc_global = self.get_loss_and_acc(ytrueall, ypredall)
+        self._maybe_log_eval_diagnostics(ytrueall, ypredall, split_name=split_name, step=step)
         self._maybe_save_roc_curve(ytrueall, ypredall, split_name=split_name, step=step)
         acc_batch_std = np.std(acc_all)
         aux_loss_global = sum(all_aux_loss) / len(all_aux_loss)
