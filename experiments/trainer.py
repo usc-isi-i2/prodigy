@@ -865,18 +865,21 @@ class TrainerFS():
         ytrueall, ypredall = None, None
         all_aux_loss = []
         acc_all = []
+        printed_debug_this_eval = False
         for batch in tqdm(dataloader, leave=False):
             batch = [i.to(self.device) for i in batch]
             yt, yp, graph = self.model(*batch)  # apply the model
-            self._maybe_print_debug_example(
-                batch,
-                yt,
-                yp,
-                graph,
-                split_name=split_name,
-                printed_attr="_printed_eval_example",
-                require_flag=False,
-            )
+            if not printed_debug_this_eval:
+                self._maybe_print_debug_example(
+                    batch,
+                    yt,
+                    yp,
+                    graph,
+                    split_name=split_name,
+                    printed_attr="_printed_eval_example",
+                    require_flag=False,
+                )
+                printed_debug_this_eval = True
             if self.calc_ranks:
                 assert len(batch) == 10, "Not using the right batch structure; need to include task_mask"
             loss, acc = self.get_loss_and_acc(yt, yp)  # get loss
