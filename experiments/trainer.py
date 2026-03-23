@@ -480,9 +480,9 @@ class TrainerFS():
                     ):
                         task_ids = graph.task_id_per_sample.detach().cpu().flatten().long()
                         task_centers = graph.lp_task_center_ids.detach().cpu().flatten().long()
-                        top_k = min(5, len(center_nodes), int(task_ids.numel()), int(ytrue.shape[0]))
+                        top_k = min(len(center_nodes), int(task_ids.numel()), int(ytrue.shape[0]))
                         probs = torch.sigmoid(ypred[:top_k].flatten()).detach().cpu().tolist()
-                        print(f"[debug-lp] first {split_name} examples (candidate -> future_center):")
+                        print(f"[debug-lp] {split_name} examples (candidate -> future_center):")
                         for i in range(top_k):
                             cand = int(center_nodes[i])
                             tid = int(task_ids[i].item())
