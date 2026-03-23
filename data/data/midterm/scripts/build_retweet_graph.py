@@ -21,6 +21,16 @@ def parse_args():
     p.add_argument("--max_files", type=int, default=0)
     p.add_argument("--strict_dates", action="store_true")
     p.add_argument("--history_fraction", type=float, default=0.8)
+    p.add_argument(
+        "--future_target_mode",
+        choices=["new_only", "all_future"],
+        default="new_only",
+        help=(
+            "How to define temporal LP targets: "
+            "'new_only' keeps only future pairs not seen in history; "
+            "'all_future' keeps every pair that appears after the split."
+        ),
+    )
     p.add_argument("--no_temporal_views", action="store_true")
     return p.parse_args()
 
@@ -296,14 +306,17 @@ def main():
 
         hist_pairs = set(zip(hist_edges_df["userid"].astype(int), hist_edges_df["rt_userid"].astype(int)))
         fut_pairs = set(zip(fut_edges_df["userid"].astype(int), fut_edges_df["rt_userid"].astype(int)))
-        new_pairs = fut_pairs - hist_pairs
+        if args.future_target_mode == "new_only":
+            target_pairs = fut_pairs - hist_pairs
+        else:
+            target_pairs = fut_pairs
 
-        if new_pairs:
-            new_df = pd.DataFrame(sorted(list(new_pairs)), columns=["userid", "rt_userid"])
-            new_df["src"] = new_df["userid"].map(id_to_idx)
-            new_df["dst"] = new_df["rt_userid"].map(id_to_idx)
-            new_df = new_df.dropna(subset=["src", "dst"])
-            target_new_edge_index = torch.tensor(new_df[["src", "dst"]].astype(int).values.T, dtype=torch.long)
+        if target_pairs:
+            target_df = pd.DataFrame(sorted(list(target_pairs)), columns=["userid", "rt_userid"])
+            target_df["src"] = target_df["userid"].map(id_to_idx)
+            target_df["dst"] = target_df["rt_userid"].map(id_to_idx)
+            target_df = target_df.dropna(subset=["src", "dst"])
+            target_new_edge_index = torch.tensor(target_df[["src", "dst"]].astype(int).values.T, dtype=torch.long)
         else:
             target_new_edge_index = torch.zeros((2, 0), dtype=torch.long)
 
@@ -326,10 +339,13 @@ def main():
 
         temporal_stats = {
             "history_fraction": args.history_fraction,
+            "future_target_mode": args.future_target_mode,
             "history_rows": int(len(hist_rt)),
             "future_rows": int(len(fut_rt)),
             "history_edges": int(hist_edge_index.shape[1]),
-            "future_new_edges": int(target_new_edge_index.shape[1]),
+            "future_edges": int(len(fut_pairs)),
+            "future_overlap_edges": int(len(hist_pairs & fut_pairs)),
+            "future_target_edges": int(target_new_edge_index.shape[1]),
         }
 
     torch.save(graph_obj, args.out)
