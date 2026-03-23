@@ -339,11 +339,14 @@ class TrainerFS():
         if not self.is_multiway:
             p_score = y_pred_matrix[y_true_matrix == 1]
             n_score = y_pred_matrix[y_true_matrix == 0]
-            if len(p_score) == len(n_score):
+            if (
+                self.parameter.get("task_name") != "temporal_link_prediction"
+                and len(p_score) == len(n_score)
+            ):
                 y = torch.Tensor([1]).to(y_true_matrix.device)
                 loss = torch.nn.MarginRankingLoss(0.5)(p_score, n_score, y)
             else:
-                print("Not using ranking loss")
+                pass  # keep BCE for temporal LP or when pos/neg counts differ
 
         return loss, accuracy(y_true_matrix, y_pred_matrix, calc_roc=not self.is_multiway)[2]
     
