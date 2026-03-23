@@ -1,5 +1,4 @@
 import argparse
-from collections import defaultdict
 import glob
 import json
 import os
@@ -11,24 +10,59 @@ import torch
 from sklearn.preprocessing import StandardScaler
 
 
-POLITICAL_LEANING_GROUPS = {
-    "pro_republican": [
-        "maga", "trump2024", "letsgobrandon", "fjb", "redwave",
-        "republicanparty", "gop", "trump", "saveamerica",
-    ],
-    "pro_democrat": [
-        "voteblue", "democraticparty", "biden2024", "bluewave",
-        "democrats", "votedem", "bidensamerica",
-    ],
-    "abortion_rights": [
-        "prochoice", "mybodymychoice", "roevwade", "abortionrights",
-        "bansoffdourbodies", "reproductiverights",
-    ],
-    "anti_abortion": [
-        "prolife", "endabortion", "prolifegeneration", "marchforlife",
-    ],
-}
-POLITICAL_LEANING_MIN_SCORE = 2
+REP_HASHTAGS = [
+    "maga",
+    "voteredtosaveamerica",
+    "votered",
+    "redwavecoming",
+    "democratsaretheproblem",
+]
+DEM_HASHTAGS = [
+    "voteblue",
+    "voteblue2022",
+    "votebluetosavedemocracy",
+    "votebluetosaveamerica",
+    "votebluein2022",
+    "votebluenomatterwho",
+    "votebluefordemocracy",
+    "votebluetoprotectwomen",
+    "voteblueforwomensrights",
+    "votebluetoprotectyourrights",
+    "voteblueforsomanyreasons",
+    "votebluetoendtheinsanity",
+    "votebluenotq",
+    "votebluedownballot",
+    "votebluedownballotlocalstatefederal",
+    "votebluetosavesocialsecurity",
+    "votebluetosavesocialsecurityandmedicare",
+    "votebluetosaveourkids",
+    "bluewave",
+    "bluewave2022",
+    "bluecrew",
+    "bluevoters",
+    "ourbluevoice",
+    "bluein22",
+    "proudblue22",
+    "demvoice1",
+    "wtpblue",
+    "democratsdeliver",
+    "demsact",
+    "voteouteveryrepublican",
+    "stopvotingforrepublicans",
+    "neverrepublicanagain",
+    "republicansaretheproblem",
+    "republicanwaronwomen",
+    "goptraitorstodemocracy",
+    "gopliesabouteverything",
+    "magaidiots",
+]
+DEM_MEDIA_OUTLETS = [
+    "abcnews", "bbc", "buzzfeednews", "huffpost", "msnbc", "cnn",
+    "nytimes", "washingtonpost", "latimes", "guardian",
+]
+REP_MEDIA_OUTLETS = [
+    "breitbartnews", "dailycaller", "dailymail", "foxnews", "infowars", "oann",
+]
 
 
 def parse_args():
@@ -89,7 +123,7 @@ def load_raw_rows(csv_glob: str, max_files: int) -> pd.DataFrame:
         "userid", "rt_userid", "date", "state",
         "followers_count", "verified", "statuses_count", "sent_vader",
         "hashtag", "rt_hashtag", "mentionsn", "media_urls",
-        "rt_fav_count", "rt_reply_count",
+        "rt_fav_count", "rt_reply_count", "description", "urls", "urls_list",
     }
 
     chunks: List[pd.DataFrame] = []
@@ -176,49 +210,50 @@ def to_edge_tensors(edge_df: pd.DataFrame, id_to_idx: Dict[int, int], edge_featu
     return edge_index, edge_attr
 
 
-def parse_hashtag_sets(series: pd.Series) -> List[set]:
-    out: List[set] = []
-    for val in series:
-        if pd.isna(val):
-            out.append(set())
-            continue
-        val = str(val).lower().replace("'", "").replace('"', "").strip("[]")
-        out.append(set(t.strip() for t in val.split(",") if t.strip()))
-    return out
-
-
 def build_political_leaning_labels(base: pd.DataFrame, id_to_idx: Dict[int, int]) -> Tuple[torch.Tensor, List[str]]:
-    label_names = list(POLITICAL_LEANING_GROUPS.keys())
-    label_to_idx = {name: i for i, name in enumerate(label_names)}
+    label_names = ["rep", "dem"]
     y = torch.full((len(id_to_idx),), -1, dtype=torch.long)
 
-    label_df = base[["userid", "hashtag", "rt_hashtag"]].copy()
-    label_df["_tags_own"] = parse_hashtag_sets(label_df.get("hashtag", pd.Series(index=label_df.index, dtype=object)))
-    label_df["_tags_rt"] = parse_hashtag_sets(label_df.get("rt_hashtag", pd.Series(index=label_df.index, dtype=object)))
-    label_df["_all_tags"] = [own | rt for own, rt in zip(label_df["_tags_own"], label_df["_tags_rt"])]
+    label_df = base[["userid", "date"]].copy()
+    label_df["date"] = pd.to_datetime(base["date"], errors="coerce", utc=True)
+    label_df["description"] = base.get("description", "").fillna("").astype(str).str.lower()
 
-    user_scores = defaultdict(lambda: defaultdict(int))
-    for _, row in label_df.iterrows():
-        uid = row["userid"]
-        if pd.isna(uid):
-            continue
-        tags = row["_all_tags"]
-        if not tags:
-            continue
-        for label_name, tag_list in POLITICAL_LEANING_GROUPS.items():
-            hits = sum(1 for tag in tag_list if tag in tags)
-            if hits:
-                user_scores[int(uid)][label_name] += hits
+    url_series = None
+    if "urls" in base.columns:
+        url_series = base["urls"]
+    elif "urls_list" in base.columns:
+        url_series = base["urls_list"]
+    else:
+        url_series = pd.Series(index=base.index, dtype=object)
+    label_df["urls"] = url_series.fillna("").astype(str).str.lower()
+
+    rep_pat = r"\#(?:" + "|".join(REP_HASHTAGS) + r")"
+    dem_pat = r"\#(?:" + "|".join(DEM_HASHTAGS) + r")"
+    rep_media_pat = "|".join(REP_MEDIA_OUTLETS)
+    dem_media_pat = "|".join(DEM_MEDIA_OUTLETS)
+
+    label_df["rep_hash_count"] = label_df["description"].str.count(rep_pat)
+    label_df["dem_hash_count"] = label_df["description"].str.count(dem_pat)
+    label_df["rep_url_count"] = label_df["urls"].str.count(rep_media_pat)
+    label_df["dem_url_count"] = label_df["urls"].str.count(dem_media_pat)
+
+    udf = label_df.sort_values("date", ascending=False).drop_duplicates("userid", keep="first").set_index("userid")
+    grouped = label_df.groupby("userid")
+    udf["rep_url_count"] = grouped["rep_url_count"].sum()
+    udf["dem_url_count"] = grouped["dem_url_count"].sum()
+
+    udf["label"] = -1
+    rep_mask = udf[["rep_hash_count", "rep_url_count"]].sum(axis=1).gt(0)
+    udf.loc[rep_mask, "label"] = 0
+    dem_mask = udf[["dem_hash_count", "dem_url_count"]].sum(axis=1).gt(0)
+    udf.loc[dem_mask, "label"] = 1
 
     labeled_count = 0
-    for uid, scores in user_scores.items():
-        best_label = max(scores, key=scores.get)
-        if scores[best_label] < POLITICAL_LEANING_MIN_SCORE:
-            continue
+    for uid, label in udf["label"].replace({-1: np.nan}).dropna().items():
         node_idx = id_to_idx.get(int(uid))
         if node_idx is None:
             continue
-        y[node_idx] = label_to_idx[best_label]
+        y[node_idx] = int(label)
         labeled_count += 1
 
     print(
