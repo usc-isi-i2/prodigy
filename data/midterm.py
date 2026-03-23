@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Set, Union
+from typing import Dict, Optional, Set, Union
 
 import numpy as np
 import torch
@@ -140,6 +140,61 @@ def _load_edge_feature_names(raw: dict, resolved_edge_view: str):
     legacy_key = f"edge_attr_feature_names_{resolved_edge_view}"
     names = raw.get(legacy_key, [])
     return list(names) if isinstance(names, (list, tuple)) else []
+
+
+def _build_stratified_node_splits(
+        labels: np.ndarray,
+        *,
+        seed: int = 0,
+        train_frac: float = 0.6,
+        val_frac: float = 0.2,
+) -> Dict[str, np.ndarray]:
+    labels = np.asarray(labels)
+    rng = np.random.default_rng(seed)
+    split_members = {"train": [], "val": [], "test": []}
+
+    classes = sorted(int(c) for c in np.unique(labels) if int(c) >= 0)
+    for cls in classes:
+        idx = np.where(labels == cls)[0].copy()
+        if idx.size == 0:
+            continue
+        rng.shuffle(idx)
+
+        n = int(idx.size)
+        n_train = int(round(n * train_frac))
+        n_val = int(round(n * val_frac))
+
+        if n >= 3:
+            n_train = min(max(1, n_train), n - 2)
+            n_val = min(max(1, n_val), n - n_train - 1)
+        elif n == 2:
+            n_train, n_val = 1, 0
+        else:
+            n_train, n_val = 1, 0
+
+        n_test = n - n_train - n_val
+        if n >= 3 and n_test <= 0:
+            n_test = 1
+            if n_val > 1:
+                n_val -= 1
+            else:
+                n_train -= 1
+
+        split_members["train"].append(idx[:n_train])
+        split_members["val"].append(idx[n_train:n_train + n_val])
+        split_members["test"].append(idx[n_train + n_val:])
+
+    return {
+        key: (np.concatenate(vals) if len(vals) else np.empty(0, dtype=np.int64))
+        for key, vals in split_members.items()
+    }
+
+
+def _mask_labels_to_node_split(labels: np.ndarray, allowed_idx: np.ndarray, off_value: int = -100) -> np.ndarray:
+    masked = np.full_like(labels, off_value)
+    if allowed_idx.size > 0:
+        masked[allowed_idx] = labels[allowed_idx]
+    return masked
 
 
 def _apply_feature_subset(graph: Data, subset_spec: str) -> Data:
@@ -408,7 +463,7 @@ def get_midterm_dataloader(
         label_set: Optional[Set[int]] = None,
         **kwargs
 ) -> DataLoader:
-    del node_split, root
+    del root
     task_name = kwargs.get("task_name", "neighbor_matching")
     seed = sum(ord(c) for c in split)
 
@@ -437,12 +492,23 @@ def get_midterm_dataloader(
             label_embeddings = torch.randn(num_classes, 768)
 
         labels = graph.y.numpy()
+        if not hasattr(dataset, "_classification_node_splits"):
+            dataset._classification_node_splits = _build_stratified_node_splits(labels, seed=0)
+
+        split_key = (node_split or "").strip() or split
+        node_splits = dataset._classification_node_splits
+        if split_key not in node_splits:
+            raise ValueError(
+                f"Unknown midterm classification node split '{split_key}'. "
+                f"Available: {sorted(node_splits.keys())}"
+            )
+        labels = _mask_labels_to_node_split(labels, node_splits[split_key])
         task = midterm_task(
             labels=labels,
             num_classes=num_classes,
             split=split,
             label_set=label_set,
-            split_labels=split_labels,
+            split_labels=False,
             train_cap=train_cap,
             linear_probe=linear_probe,
         )
