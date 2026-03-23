@@ -1,4 +1,5 @@
 import argparse
+from collections import defaultdict
 import glob
 import json
 import os
@@ -8,6 +9,26 @@ import numpy as np
 import pandas as pd
 import torch
 from sklearn.preprocessing import StandardScaler
+
+
+POLITICAL_LEANING_GROUPS = {
+    "pro_republican": [
+        "maga", "trump2024", "letsgobrandon", "fjb", "redwave",
+        "republicanparty", "gop", "trump", "saveamerica",
+    ],
+    "pro_democrat": [
+        "voteblue", "democraticparty", "biden2024", "bluewave",
+        "democrats", "votedem", "bidensamerica",
+    ],
+    "abortion_rights": [
+        "prochoice", "mybodymychoice", "roevwade", "abortionrights",
+        "bansoffdourbodies", "reproductiverights",
+    ],
+    "anti_abortion": [
+        "prolife", "endabortion", "prolifegeneration", "marchforlife",
+    ],
+}
+POLITICAL_LEANING_MIN_SCORE = 2
 
 
 def parse_args():
@@ -21,6 +42,16 @@ def parse_args():
     p.add_argument("--max_files", type=int, default=0)
     p.add_argument("--strict_dates", action="store_true")
     p.add_argument("--history_fraction", type=float, default=0.8)
+    p.add_argument(
+        "--label_source",
+        choices=["political_leaning", "state"],
+        default="political_leaning",
+        help=(
+            "Node label source. "
+            "'political_leaning' uses hashtag-based political leaning labels; "
+            "'state' uses the original state column."
+        ),
+    )
     p.add_argument(
         "--future_target_mode",
         choices=["new_only", "all_future"],
@@ -57,7 +88,7 @@ def load_raw_rows(csv_glob: str, max_files: int) -> pd.DataFrame:
     usecols = {
         "userid", "rt_userid", "date", "state",
         "followers_count", "verified", "statuses_count", "sent_vader",
-        "hashtag", "mentionsn", "media_urls",
+        "hashtag", "rt_hashtag", "mentionsn", "media_urls",
         "rt_fav_count", "rt_reply_count",
     }
 
@@ -145,7 +176,82 @@ def to_edge_tensors(edge_df: pd.DataFrame, id_to_idx: Dict[int, int], edge_featu
     return edge_index, edge_attr
 
 
-def build_node_features(rt: pd.DataFrame, id_to_idx: Dict[int, int], edge_df: pd.DataFrame) -> Tuple[torch.Tensor, List[str], torch.Tensor, List[str]]:
+def parse_hashtag_sets(series: pd.Series) -> List[set]:
+    out: List[set] = []
+    for val in series:
+        if pd.isna(val):
+            out.append(set())
+            continue
+        val = str(val).lower().replace("'", "").replace('"', "").strip("[]")
+        out.append(set(t.strip() for t in val.split(",") if t.strip()))
+    return out
+
+
+def build_political_leaning_labels(base: pd.DataFrame, id_to_idx: Dict[int, int]) -> Tuple[torch.Tensor, List[str]]:
+    label_names = list(POLITICAL_LEANING_GROUPS.keys())
+    label_to_idx = {name: i for i, name in enumerate(label_names)}
+    y = torch.full((len(id_to_idx),), -1, dtype=torch.long)
+
+    label_df = base[["userid", "hashtag", "rt_hashtag"]].copy()
+    label_df["_tags_own"] = parse_hashtag_sets(label_df.get("hashtag", pd.Series(index=label_df.index, dtype=object)))
+    label_df["_tags_rt"] = parse_hashtag_sets(label_df.get("rt_hashtag", pd.Series(index=label_df.index, dtype=object)))
+    label_df["_all_tags"] = [own | rt for own, rt in zip(label_df["_tags_own"], label_df["_tags_rt"])]
+
+    user_scores = defaultdict(lambda: defaultdict(int))
+    for _, row in label_df.iterrows():
+        uid = row["userid"]
+        if pd.isna(uid):
+            continue
+        tags = row["_all_tags"]
+        if not tags:
+            continue
+        for label_name, tag_list in POLITICAL_LEANING_GROUPS.items():
+            hits = sum(1 for tag in tag_list if tag in tags)
+            if hits:
+                user_scores[int(uid)][label_name] += hits
+
+    labeled_count = 0
+    for uid, scores in user_scores.items():
+        best_label = max(scores, key=scores.get)
+        if scores[best_label] < POLITICAL_LEANING_MIN_SCORE:
+            continue
+        node_idx = id_to_idx.get(int(uid))
+        if node_idx is None:
+            continue
+        y[node_idx] = label_to_idx[best_label]
+        labeled_count += 1
+
+    print(
+        f"Political-leaning labels: {labeled_count:,} / {len(id_to_idx):,} "
+        f"({100 * labeled_count / max(1, len(id_to_idx)):.1f}%) labeled"
+    )
+    return y, label_names
+
+
+def build_state_labels(base: pd.DataFrame, id_to_idx: Dict[int, int]) -> Tuple[torch.Tensor, List[str]]:
+    y = torch.full((len(id_to_idx),), -1, dtype=torch.long)
+    label_names: List[str] = []
+    if "state" not in base.columns:
+        return y, label_names
+
+    st = base[base["state"].notna() & base["state"].astype(str).ne("")][["userid", "state"]].drop_duplicates("userid")
+    if len(st):
+        label_names = sorted(st["state"].astype(str).unique().tolist())
+        st2i = {s: i for i, s in enumerate(label_names)}
+        for _, r in st.iterrows():
+            uid = int(r["userid"])
+            node_idx = id_to_idx.get(uid)
+            if node_idx is not None:
+                y[node_idx] = st2i[str(r["state"])]
+    return y, label_names
+
+
+def build_node_features(
+    rt: pd.DataFrame,
+    id_to_idx: Dict[int, int],
+    edge_df: pd.DataFrame,
+    label_source: str,
+) -> Tuple[torch.Tensor, List[str], torch.Tensor, List[str]]:
     base = rt.dropna(subset=["userid"]).copy()
 
     for col in ["followers_count", "statuses_count", "sent_vader", "rt_fav_count", "rt_reply_count"]:
@@ -209,17 +315,12 @@ def build_node_features(rt: pd.DataFrame, id_to_idx: Dict[int, int], edge_df: pd
 
     x = torch.tensor(X, dtype=torch.float)
 
-    y = torch.full((n_nodes,), -1, dtype=torch.long)
-    label_names: List[str] = []
-    if "state" in base.columns:
-        st = base[base["state"].notna() & base["state"].astype(str).ne("")][["userid", "state"]].drop_duplicates("userid")
-        if len(st):
-            label_names = sorted(st["state"].astype(str).unique().tolist())
-            st2i = {s: i for i, s in enumerate(label_names)}
-            for _, r in st.iterrows():
-                uid = int(r["userid"])
-                if uid in id_to_idx:
-                    y[id_to_idx[uid]] = st2i[str(r["state"])]
+    if label_source == "political_leaning":
+        y, label_names = build_political_leaning_labels(base, id_to_idx)
+    elif label_source == "state":
+        y, label_names = build_state_labels(base, id_to_idx)
+    else:
+        raise ValueError(f"Unknown label_source='{label_source}'")
 
     return x, feature_names, y, label_names
 
@@ -274,7 +375,12 @@ def main():
     edge_index, edge_attr = to_edge_tensors(edge_all_df, id_to_idx, edge_feature_names)
     print(f"Directed edges: {edge_index.shape[1]:,}")
 
-    x, feature_names, y, label_names = build_node_features(rt, id_to_idx, edge_all_df)
+    x, feature_names, y, label_names = build_node_features(
+        rt,
+        id_to_idx,
+        edge_all_df,
+        label_source=args.label_source,
+    )
     x, feature_names, emb_stats = maybe_attach_embeddings(
         x, feature_names, node_ids, args.embeddings, args.embedding_pool
     )
@@ -363,6 +469,7 @@ def main():
         "embedding_pool": args.embedding_pool,
         "embedding_dim": emb_stats["embedding_dim"],
         "embedding_matched_users": emb_stats["matched_users"],
+        "label_source": args.label_source,
         "temporal": temporal_stats,
     }
     meta_path = args.out.replace(".pt", ".meta.json")
