@@ -437,7 +437,7 @@ class TrainerFS():
         except Exception as ex:
             _log(f"Failed to save ROC curve for {split_name}: {ex}")
 
-    def _maybe_print_debug_example(self, batch, yt, yp, graph, split_name, printed_attr, require_flag=False):
+    def _maybe_print_debug_example(self, batch, yt, yp, graph, split_name, printed_attr, require_flag=False, raw_graph=None):
         if split_name == "train" and getattr(self, printed_attr):
             return
         max_eps = int(self.parameter.get("midterm_debug_print_episodes", 0) or 0)
@@ -446,7 +446,6 @@ class TrainerFS():
 
         ytrue = yt.detach().cpu()
         ypred = yp.detach().cpu()
-        raw_graph = self._extract_raw_debug_graph(batch)
         center_nodes = None
         center_graph = raw_graph if raw_graph is not None else graph
         if hasattr(center_graph, "center_node_idx"):
@@ -678,15 +677,19 @@ class TrainerFS():
 
     def _format_debug_node_features(self, graph, sample_idx: int = 0, emb_preview: int = 8):
         try:
-            if not hasattr(graph, "x") or graph.x is None or graph.x.ndim != 2:
+            if isinstance(graph, dict):
+                x = graph.get("x")
+                feature_names = graph.get("feature_names", None)
+            else:
+                x = graph.x if hasattr(graph, "x") else None
+                feature_names = getattr(graph, "feature_names", None)
+
+            if x is None or x.ndim != 2:
                 return None
-            if sample_idx < 0 or sample_idx >= int(graph.x.shape[0]):
+            if sample_idx < 0 or sample_idx >= int(x.shape[0]):
                 return None
 
-            x_row = graph.x[sample_idx].detach().cpu().flatten()
-            print(x_row.shape, x_row)
-            return
-            feature_names = getattr(graph, "feature_names", None)
+            x_row = x[sample_idx].detach().cpu().flatten()
             if not feature_names or len(feature_names) != int(x_row.numel()):
                 feature_names = [f"f{i}" for i in range(int(x_row.numel()))]
 
@@ -722,6 +725,29 @@ class TrainerFS():
             return raw_graph
         except Exception:
             return None
+
+    def _snapshot_debug_graph(self, batch):
+        raw_graph = self._extract_raw_debug_graph(batch)
+        if raw_graph is None:
+            return None
+        snap = {}
+        try:
+            if hasattr(raw_graph, "x") and raw_graph.x is not None:
+                snap["x"] = raw_graph.x.detach().cpu().clone()
+        except Exception:
+            pass
+        try:
+            if hasattr(raw_graph, "center_node_idx") and raw_graph.center_node_idx is not None:
+                snap["center_node_idx"] = raw_graph.center_node_idx.detach().cpu().clone()
+        except Exception:
+            pass
+        try:
+            feature_names = getattr(raw_graph, "feature_names", None)
+            if feature_names is not None:
+                snap["feature_names"] = list(feature_names)
+        except Exception:
+            pass
+        return snap
 
 
     def save_best_state_dict(self, best_step):
@@ -800,6 +826,7 @@ class TrainerFS():
                 batch = next(train_dataloader_itr)
             t2 = time.time()
             batch = [i.to(self.device) for i in batch]
+            raw_debug_graph = self._snapshot_debug_graph(batch)
             yt, yp, graph = self.model(*batch) # apply the model
             self._maybe_print_debug_example(
                 batch,
@@ -809,6 +836,7 @@ class TrainerFS():
                 split_name="train",
                 printed_attr="_printed_train_example",
                 require_flag=True,
+                raw_graph=raw_debug_graph,
             )
             loss, acc = self.get_loss_and_acc(yt, yp) # get loss
             aux_loss = self.get_aux_loss(graph)
@@ -925,6 +953,7 @@ class TrainerFS():
         printed_debug_this_eval = False
         for batch in tqdm(dataloader, leave=False):
             batch = [i.to(self.device) for i in batch]
+            raw_debug_graph = self._snapshot_debug_graph(batch)
             yt, yp, graph = self.model(*batch)  # apply the model
             if not printed_debug_this_eval:
                 self._maybe_print_debug_example(
@@ -935,6 +964,7 @@ class TrainerFS():
                     split_name=split_name,
                     printed_attr="_printed_eval_example",
                     require_flag=False,
+                    raw_graph=raw_debug_graph,
                 )
                 printed_debug_this_eval = True
             if self.calc_ranks:
