@@ -717,12 +717,7 @@ class TrainerFS():
 
     def _extract_raw_debug_graph(self, batch):
         try:
-            raw_graph = batch[0]
-            if hasattr(raw_graph, "detach"):
-                raw_graph = raw_graph.detach()
-            if hasattr(raw_graph, "cpu"):
-                raw_graph = raw_graph.cpu()
-            return raw_graph
+            return batch[0]
         except Exception:
             return None
 
