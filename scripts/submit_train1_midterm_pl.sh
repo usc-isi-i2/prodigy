@@ -38,5 +38,5 @@ python3 experiments/run_single_experiment.py \
   --workers 8 \
   --device 0 \
   --seed 0 \
-  --prefix midterm_pl_sanity_emb_only \
-  --midterm_label_downsample 50:50
+  --midterm_label_downsample 50:50 \
+  --prefix train1_midterm_pl
