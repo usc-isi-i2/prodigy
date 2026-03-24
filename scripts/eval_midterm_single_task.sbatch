@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=eval_midterm
-#SBATCH --output=logs/%x_%j.out
-#SBATCH --error=logs/%x_%j.err
+#SBATCH --output=/home/eibl/gfm/prodigy/logs/%x_%j.out
+#SBATCH --error=/home/eibl/gfm/prodigy/logs/%x_%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
