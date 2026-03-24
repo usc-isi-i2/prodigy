@@ -188,6 +188,15 @@ def get_params():
         ),
     )
     args.add_argument(
+        "--midterm_label_downsample",
+        default="",
+        type=str,
+        help=(
+            "Optional class-balance downsampling for midterm labels before train/val/test node splits. "
+            "Examples: '50:50', '20:80'. Ratios follow graph.label_names order."
+        ),
+    )
+    args.add_argument(
         "--midterm_edge_view",
         default="default",
         type=str,
