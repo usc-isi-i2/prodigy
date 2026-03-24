@@ -212,6 +212,84 @@ def _deterministic_label_embeddings(label_names, dim: int = 768) -> torch.Tensor
     return torch.stack(rows, dim=0)
 
 
+def _apply_label_downsample(
+        labels: torch.Tensor,
+        label_names,
+        ratio_spec: str,
+        *,
+        seed: int = 0,
+) -> torch.Tensor:
+    spec = (ratio_spec or "").strip()
+    if spec == "":
+        return labels
+
+    parts = [p.strip() for p in spec.replace("/", ":").split(":") if p.strip()]
+    if len(parts) < 2:
+        raise ValueError(
+            f"Invalid midterm_label_downsample='{ratio_spec}'. "
+            "Use colon-separated ratios like '50:50' or '20:80'."
+        )
+
+    try:
+        target = np.asarray([float(p) for p in parts], dtype=np.float64)
+    except ValueError as ex:
+        raise ValueError(
+            f"Invalid midterm_label_downsample='{ratio_spec}'. "
+            "Ratios must be numeric, e.g. '50:50'."
+        ) from ex
+
+    if np.any(target <= 0):
+        raise ValueError(
+            f"Invalid midterm_label_downsample='{ratio_spec}'. "
+            "All ratio entries must be > 0."
+        )
+
+    num_classes = len(label_names)
+    if target.size != num_classes:
+        raise ValueError(
+            f"midterm_label_downsample='{ratio_spec}' has {target.size} entries, "
+            f"but graph has {num_classes} labels: {list(label_names)}"
+        )
+
+    labels_np = labels.detach().cpu().numpy().copy()
+    present_classes = [cls for cls in range(num_classes) if np.any(labels_np == cls)]
+    if len(present_classes) != num_classes:
+        raise ValueError(
+            "midterm_label_downsample requires all classes to be present in graph.y. "
+            f"Present classes: {present_classes}, expected 0..{num_classes - 1}."
+        )
+
+    counts = np.asarray([int(np.sum(labels_np == cls)) for cls in range(num_classes)], dtype=np.int64)
+    target_norm = target / target.sum()
+    max_total = min(counts[i] / target_norm[i] for i in range(num_classes))
+    target_counts = np.floor(max_total * target_norm + 1e-9).astype(np.int64)
+    target_counts = np.minimum(target_counts, counts)
+    if np.any(target_counts <= 0):
+        raise ValueError(
+            f"midterm_label_downsample='{ratio_spec}' produced invalid target counts {target_counts.tolist()} "
+            f"from observed counts {counts.tolist()}."
+        )
+
+    rng = np.random.default_rng(seed)
+    keep_idx = []
+    for cls, keep_n in enumerate(target_counts):
+        cls_idx = np.where(labels_np == cls)[0]
+        rng.shuffle(cls_idx)
+        keep_idx.append(cls_idx[:keep_n])
+    keep_idx = np.sort(np.concatenate(keep_idx))
+
+    out = np.full_like(labels_np, -1)
+    out[keep_idx] = labels_np[keep_idx]
+
+    before = ", ".join(f"{label_names[i]}={counts[i]}" for i in range(num_classes))
+    after = ", ".join(f"{label_names[i]}={target_counts[i]}" for i in range(num_classes))
+    print(
+        f"Applied midterm label downsampling '{ratio_spec}' with seed={seed}: "
+        f"{before} -> {after}."
+    )
+    return torch.as_tensor(out, dtype=labels.dtype)
+
+
 def _apply_feature_subset(graph: Data, subset_spec: str) -> Data:
     spec = (subset_spec or "all").strip()
     if spec in {"", "all"}:
@@ -391,6 +469,12 @@ def _build_midterm_graph(raw: dict, **kwargs):
         graph.edge_attr = edge_attr
 
     graph.label_names = raw['label_names']
+    graph.y = _apply_label_downsample(
+        graph.y,
+        graph.label_names,
+        kwargs.get("midterm_label_downsample", ""),
+        seed=int(kwargs.get("seed", 0) or 0),
+    )
     graph.feature_names = raw.get('feature_names', [])
     graph = _apply_feature_subset(graph, kwargs.get("midterm_feature_subset", "all"))
     graph = _apply_edge_feature_subset(

@@ -81,9 +81,11 @@ if __name__ == '__main__':
         n_hop=params["n_hop"],
         graph_filename=params["graph_filename"],
         midterm_feature_subset=params["midterm_feature_subset"],
+        midterm_label_downsample=params["midterm_label_downsample"],
         midterm_edge_view=params["midterm_edge_view"],
         midterm_target_edge_view=params["midterm_target_edge_view"],
         midterm_edge_feature_subset=params["midterm_edge_feature_subset"],
+        seed=params["seed"],
     )
 
     _log("Dataset loaded. Initializing trainer...")
