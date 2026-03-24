@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=midterm_lp_sanity
+#SBATCH --job-name=train1_midterm_lp
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 #SBATCH --partition=gpu
@@ -11,7 +11,7 @@
 source $(conda info --base)/etc/profile.d/conda.sh
 conda activate prodigy
 
-cd "$(dirname "$0")/.."
+cd /home/eibl/gfm/prodigy
 
 mkdir -p logs
 

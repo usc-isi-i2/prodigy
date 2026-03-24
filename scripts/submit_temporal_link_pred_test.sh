@@ -11,7 +11,7 @@
 source $(conda info --base)/etc/profile.d/conda.sh
 conda activate prodigy
 
-cd "$(dirname "$0")/.."
+cd /home/eibl/gfm/prodigy
 
 mkdir -p logs
 
