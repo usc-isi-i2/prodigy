@@ -446,10 +446,12 @@ class TrainerFS():
 
         ytrue = yt.detach().cpu()
         ypred = yp.detach().cpu()
+        raw_graph = self._extract_raw_debug_graph(batch)
         center_nodes = None
-        if hasattr(graph, "center_node_idx"):
+        center_graph = raw_graph if raw_graph is not None else graph
+        if hasattr(center_graph, "center_node_idx"):
             try:
-                center_nodes = graph.center_node_idx.detach().cpu().flatten().tolist()
+                center_nodes = center_graph.center_node_idx.detach().cpu().flatten().tolist()
             except Exception:
                 center_nodes = None
 
@@ -463,7 +465,7 @@ class TrainerFS():
                 f"[debug-example] split={split_name} sample=0 pred={pred_idx} gt={true_idx} "
                 f"logits={ypred[0].tolist()}"
             )
-            feat_str = self._format_debug_node_features(graph, sample_idx=0)
+            feat_str = self._format_debug_node_features(raw_graph if raw_graph is not None else graph, sample_idx=0)
             if feat_str is not None:
                 center0 = int(center_nodes[0]) if center_nodes is not None and len(center_nodes) > 0 else "na"
                 print(f"[debug-features] split={split_name} sample=0 center_node={center0} {feat_str}")
@@ -508,7 +510,7 @@ class TrainerFS():
             pred_val = float(ypred.flatten()[0].item())
             true_val = float(ytrue.flatten()[0].item())
             print(f"[debug-example] split={split_name} sample=0 pred={pred_val:.4f} gt={true_val:.4f}")
-            feat_str = self._format_debug_node_features(graph, sample_idx=0)
+            feat_str = self._format_debug_node_features(raw_graph if raw_graph is not None else graph, sample_idx=0)
             if feat_str is not None:
                 center0 = int(center_nodes[0]) if center_nodes is not None and len(center_nodes) > 0 else "na"
                 print(f"[debug-features] split={split_name} sample=0 center_node={center0} {feat_str}")
@@ -707,6 +709,17 @@ class TrainerFS():
             return " ".join(parts)
         except Exception as ex:
             return f"<failed to format node features: {ex}>"
+
+    def _extract_raw_debug_graph(self, batch):
+        try:
+            raw_graph = batch[0]
+            if hasattr(raw_graph, "detach"):
+                raw_graph = raw_graph.detach()
+            if hasattr(raw_graph, "cpu"):
+                raw_graph = raw_graph.cpu()
+            return raw_graph
+        except Exception:
+            return None
 
 
     def save_best_state_dict(self, best_step):
