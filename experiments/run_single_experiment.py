@@ -2,6 +2,7 @@ import numpy as np
 import random
 import torch
 import time
+import shlex
 
 torch.multiprocessing.set_sharing_strategy("file_system")
 
@@ -25,6 +26,7 @@ warnings.filterwarnings("ignore")
 
 if __name__ == '__main__':
     torch.set_num_threads(4)
+    _log("Command: " + " ".join(shlex.quote(arg) for arg in [sys.executable, *sys.argv]))
 
     params = get_params()
 
