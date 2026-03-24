@@ -11,7 +11,7 @@
 source $(conda info --base)/etc/profile.d/conda.sh
 conda activate prodigy
 
-cd /home/eibl/gfm/prodigy
+cd /home1/eibl/gfm/prodigy
 
 mkdir -p logs
 

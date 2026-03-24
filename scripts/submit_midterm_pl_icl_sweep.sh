@@ -15,7 +15,7 @@ source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate prodigy
 export LD_PRELOAD="$CONDA_PREFIX/lib/libstdc++.so.6"
 
-cd /home/eibl/gfm/prodigy
+cd /home1/eibl/gfm/prodigy
 mkdir -p logs
 
 SHOTS=(0 1 3 5 10 20)

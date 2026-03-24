@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=train2_midterm
-#SBATCH --output=/home/eibl/gfm/prodigy/logs/%x_%j.out
-#SBATCH --error=/home/eibl/gfm/prodigy/logs/%x_%j.err
+#SBATCH --output=/home1/eibl/gfm/prodigy/logs/%x_%j.out
+#SBATCH --error=/home1/eibl/gfm/prodigy/logs/%x_%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
@@ -13,7 +13,7 @@ set -euo pipefail
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate prodigy
 
-cd /home/eibl/gfm/prodigy
+cd /home1/eibl/gfm/prodigy
 mkdir -p logs
 
 : "${SOURCE_MODEL:?SOURCE_MODEL is required}"
