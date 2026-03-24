@@ -33,4 +33,4 @@ python3 experiments/run_single_experiment.py \
   --workers 8 \
   --device 0 \
   --seed 0 \
-  --prefix pretrain_midterm_nm
+  --prefix train1_midterm_nm
