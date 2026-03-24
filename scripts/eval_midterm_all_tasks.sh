@@ -8,6 +8,7 @@ if [[ $# -ne 3 ]]; then
 fi
 
 cd "$(dirname "$0")"
+mkdir -p /home/eibl/gfm/prodigy/logs
 
 NM_CKPT="$1"
 LP_CKPT="$2"
