@@ -96,9 +96,9 @@ class SingleLayerGeneralGNN(torch.nn.Module):
 
         x_orig = graph.x.clone()
 
-        x_label = self.initial_label_mlp(x_label)
         if do_break:
             breakpoint()
+        x_label = self.initial_label_mlp(x_label)
         if self.params["ignore_label_embeddings"]:
             #x_label = torch.zeros_like(x_label).float()  # to make sure no language information is passed through the model
             # x_label = torch.nn.ReLU()(torch.normal(0, 6,x_label.shape).to(x_label.device))
