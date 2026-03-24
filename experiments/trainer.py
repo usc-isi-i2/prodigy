@@ -499,6 +499,12 @@ class TrainerFS():
                         emb_preview = ", ".join(f"{v:.4f}" for v in label_emb[n][: min(8, label_emb.shape[1])].tolist())
                         print(f"  label N{n + 1} emb[:8]=[{emb_preview}]")
 
+                    task_obj = getattr(getattr(self, f"{split_name}_dataloader", None), "batch_sampler", None)
+                    if task_obj is not None:
+                        task_obj = getattr(task_obj, "task", None)
+                    orig_labels = getattr(task_obj, "original_graph_labels", None)
+                    split_labels = getattr(task_obj, "split_masked_labels", None)
+
                     s_count = 0
                     q_count = 0
                     for n in range(num_labels):
@@ -508,7 +514,12 @@ class TrainerFS():
                             s_count += 1
                             center_i = int(center_nodes[i]) if center_nodes is not None and i < len(center_nodes) else "na"
                             feat_i = self._format_debug_node_features(raw_graph if raw_graph is not None else graph, sample_idx=i, emb_preview=4)
-                            print(f"  S{s_count}: idx={i} center={center_i} local_gt=N{n + 1} pred=N{int(pred_t[i].item()) + 1}")
+                            raw_y_i = orig_labels[center_i] if isinstance(center_i, int) and orig_labels is not None else "na"
+                            split_y_i = split_labels[center_i] if isinstance(center_i, int) and split_labels is not None else "na"
+                            print(
+                                f"  S{s_count}: idx={i} center={center_i} raw_y={raw_y_i} split_y={split_y_i} "
+                                f"local_gt=N{n + 1} pred=N{int(pred_t[i].item()) + 1}"
+                            )
                             if feat_i is not None:
                                 print(f"    features: {feat_i}")
                         for i in q_idx.tolist():
@@ -517,8 +528,11 @@ class TrainerFS():
                             logits_i = [float(v) for v in ypred[i].tolist()]
                             probs_i = [float(v) for v in prob_t[i].tolist()]
                             feat_i = self._format_debug_node_features(raw_graph if raw_graph is not None else graph, sample_idx=i, emb_preview=4)
+                            raw_y_i = orig_labels[center_i] if isinstance(center_i, int) and orig_labels is not None else "na"
+                            split_y_i = split_labels[center_i] if isinstance(center_i, int) and split_labels is not None else "na"
                             print(
-                                f"  Q{q_count}: idx={i} center={center_i} pred=N{int(pred_t[i].item()) + 1} -> gt=N{n + 1} "
+                                f"  Q{q_count}: idx={i} center={center_i} raw_y={raw_y_i} split_y={split_y_i} "
+                                f"pred=N{int(pred_t[i].item()) + 1} -> gt=N{n + 1} "
                                 f"logits={logits_i} probs={probs_i}"
                             )
                             if feat_i is not None:
