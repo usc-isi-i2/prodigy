@@ -217,6 +217,25 @@ def _apply_feature_subset(graph: Data, subset_spec: str) -> Data:
     stats_idx = [i for i, is_emb in enumerate(emb_mask) if not is_emb]
     emb_idx = [i for i, is_emb in enumerate(emb_mask) if is_emb]
 
+    if spec == "emb_only_plus_label":
+        if not emb_idx:
+            raise ValueError("midterm_feature_subset='emb_only_plus_label' requires embedding features.")
+        label_names = list(getattr(graph, "label_names", []))
+        n_label = max(1, len(label_names))
+        leak = torch.zeros((graph.x.shape[0], n_label), dtype=graph.x.dtype, device=graph.x.device)
+        y = getattr(graph, "y", None)
+        if y is not None:
+            labeled_mask = (y >= 0) & (y < n_label)
+            if labeled_mask.any():
+                leak[labeled_mask, y[labeled_mask].long()] = 1.0
+        graph.x = torch.cat([graph.x[:, emb_idx], leak], dim=1)
+        graph.feature_names = [feature_names[i] for i in emb_idx] + [f"label_leak_{name}" for name in label_names]
+        print(
+            "Applied midterm feature subset 'emb_only_plus_label': "
+            f"{x_dim} -> {graph.x.shape[1]} dims."
+        )
+        return graph
+
     indices = None
     if spec == "stats_only":
         indices = stats_idx
@@ -233,7 +252,7 @@ def _apply_feature_subset(graph: Data, subset_spec: str) -> Data:
     else:
         raise ValueError(
             f"Unsupported midterm_feature_subset='{subset_spec}'. "
-            f"Use one of: all, constant1, stats_only, emb_only, keep:<...>, drop:<...>."
+            f"Use one of: all, constant1, stats_only, emb_only, emb_only_plus_label, keep:<...>, drop:<...>."
         )
 
     if not indices:
