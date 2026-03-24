@@ -212,6 +212,12 @@ def get_params():
         type=int,
         help="If >0, print full first-eval episode details for this many LP episodes.",
     )
+    args.add_argument(
+        "--midterm_episode_label_leak",
+        default=False,
+        type=bool,
+        help="If True, append the episode-local remapped label one-hot to each sampled graph's node features.",
+    )
 
     args.add_argument("-smalldataset", "--small_dataset", default=False,
                       type=bool)  # use for debugging  - very small dataset
