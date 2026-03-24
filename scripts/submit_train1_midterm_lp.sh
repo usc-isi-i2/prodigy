@@ -35,4 +35,5 @@ python3 experiments/run_single_experiment.py \
   --workers 8 \
   --device 0 \
   --seed 0 \
+  --midterm_target_edge_view default \
   --prefix midterm_lp_sanity
