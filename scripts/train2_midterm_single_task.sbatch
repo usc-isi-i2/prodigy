@@ -14,7 +14,7 @@ source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate prodigy
 
 cd /home1/eibl/gfm/prodigy
-mkdir -p logs
+mkdir -p /home1/eibl/gfm/prodigy/logs
 
 : "${SOURCE_MODEL:?SOURCE_MODEL is required}"
 : "${TARGET_TASK:?TARGET_TASK is required}"

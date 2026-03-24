@@ -13,8 +13,8 @@ set -euo pipefail
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate prodigy
 
-cd "$(dirname "$0")/.."
-mkdir -p logs
+cd /home1/eibl/gfm/prodigy
+mkdir -p /home1/eibl/gfm/prodigy/logs
 
 : "${MODEL_NAME:?MODEL_NAME is required}"
 : "${TASK_NAME:?TASK_NAME is required}"
