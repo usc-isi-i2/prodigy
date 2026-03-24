@@ -548,6 +548,8 @@ def get_midterm_dataloader(
             train_cap=train_cap,
             linear_probe=linear_probe,
         )
+        task.original_graph_labels = graph.y.numpy().copy()
+        task.split_masked_labels = labels.copy()
         sampler = BatchSampler(
             batch_count,
             task,
