@@ -78,6 +78,7 @@ class SingleLayerGeneralGNN(torch.nn.Module):
         # task_mask: Not actually needed here, but is passed here from the dataloader batch output..
         :return: y_true_matrix, y_pred_matrix (for the query set only!)
         '''
+        breakpoint()
         supernode_idx = graph.supernode + graph.ptr[:-1]
         #center_nodes = torch.zeros([graph.x.shape[0], 1]).to(graph.x.device)
         #center_nodes[graph.ptr[:-1]] = 1

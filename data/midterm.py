@@ -530,7 +530,6 @@ def get_midterm_dataloader(
         labels = graph.y.numpy()
         if not hasattr(dataset, "_classification_node_splits"):
             dataset._classification_node_splits = _build_stratified_node_splits(labels, seed=0)
-            breakpoint()
 
         split_key = (node_split or "").strip() or split
         node_splits = dataset._classification_node_splits
