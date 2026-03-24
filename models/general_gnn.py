@@ -22,6 +22,7 @@ class SingleLayerGeneralGNN(torch.nn.Module):
         self.final_label_mlp = final_label_mlp
         self.final_input_mlp = final_input_mlp
         self.learned_label_embedding = torch.nn.Embedding(1000, params["emb_dim"])
+        self._debug_forward_calls = 0
 
         if params is not None:
             self.params = params
@@ -78,7 +79,10 @@ class SingleLayerGeneralGNN(torch.nn.Module):
         # task_mask: Not actually needed here, but is passed here from the dataloader batch output..
         :return: y_true_matrix, y_pred_matrix (for the query set only!)
         '''
-        breakpoint()
+        self._debug_forward_calls += 1
+        do_break = (self._debug_forward_calls % 1000 == 0)
+        if do_break:
+            breakpoint()
         supernode_idx = graph.supernode + graph.ptr[:-1]
         #center_nodes = torch.zeros([graph.x.shape[0], 1]).to(graph.x.device)
         #center_nodes[graph.ptr[:-1]] = 1
@@ -93,14 +97,16 @@ class SingleLayerGeneralGNN(torch.nn.Module):
         x_orig = graph.x.clone()
 
         x_label = self.initial_label_mlp(x_label)
-        breakpoint()
+        if do_break:
+            breakpoint()
         if self.params["ignore_label_embeddings"]:
             #x_label = torch.zeros_like(x_label).float()  # to make sure no language information is passed through the model
             # x_label = torch.nn.ReLU()(torch.normal(0, 6,x_label.shape).to(x_label.device))
             x_label = self.learned_label_embedding(torch.arange(x_label.shape[0]).to(x_label.device))
         if self.params["zero_label_embeddings"]:
             x_label = torch.zeros_like(x_label).float()
-        breakpoint()
+        if do_break:
+            breakpoint()
         '''
         # temporary code for debugging
         bg_gnn = self.layer_list[0]
