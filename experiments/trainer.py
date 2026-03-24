@@ -684,6 +684,8 @@ class TrainerFS():
                 return None
 
             x_row = graph.x[sample_idx].detach().cpu().flatten()
+            print(x_row.shape, x_row)
+            return
             feature_names = getattr(graph, "feature_names", None)
             if not feature_names or len(feature_names) != int(x_row.numel()):
                 feature_names = [f"f{i}" for i in range(int(x_row.numel()))]
