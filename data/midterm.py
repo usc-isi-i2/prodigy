@@ -591,10 +591,18 @@ def get_midterm_dataloader(
 
     aug_fn = get_aug(aug, dataset.graph.x) if (split == "train" or aug_test) else get_aug("")
     is_multiway = task_name != "temporal_link_prediction"
+    episode_label_leak = bool(kwargs.get("midterm_episode_label_leak", False))
+    if episode_label_leak:
+        print("Using episode-local label leak in collator (sanity mode).")
 
     return DataLoader(
         dataset,
         batch_sampler=sampler,
         num_workers=num_workers,
-        collate_fn=Collator(label_embeddings, aug=aug_fn, is_multiway=is_multiway),
+        collate_fn=Collator(
+            label_embeddings,
+            aug=aug_fn,
+            is_multiway=is_multiway,
+            episode_label_leak=episode_label_leak,
+        ),
     )
