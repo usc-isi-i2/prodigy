@@ -93,12 +93,14 @@ class SingleLayerGeneralGNN(torch.nn.Module):
         x_orig = graph.x.clone()
 
         x_label = self.initial_label_mlp(x_label)
+        breakpoint()
         if self.params["ignore_label_embeddings"]:
             #x_label = torch.zeros_like(x_label).float()  # to make sure no language information is passed through the model
             # x_label = torch.nn.ReLU()(torch.normal(0, 6,x_label.shape).to(x_label.device))
             x_label = self.learned_label_embedding(torch.arange(x_label.shape[0]).to(x_label.device))
         if self.params["zero_label_embeddings"]:
             x_label = torch.zeros_like(x_label).float()
+        breakpoint()
         '''
         # temporary code for debugging
         bg_gnn = self.layer_list[0]
@@ -154,4 +156,3 @@ class SingleLayerGeneralGNN(torch.nn.Module):
 
         qry_idx = torch.where(query_set_mask.reshape(-1, y_true_matrix.shape[1])[:, 0] == 1)[0]
         return y_true_matrix[qry_idx, :], y_pred_matrix[qry_idx, :], graph
-
