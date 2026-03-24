@@ -36,4 +36,4 @@ python3 experiments/run_single_experiment.py \
   --device 0 \
   --seed 0 \
   --midterm_target_edge_view default \
-  --prefix midterm_lp_sanity
+  --prefix train1_midterm_lp
