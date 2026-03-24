@@ -7,6 +7,17 @@ from datetime import datetime
 sys.path.extend(os.path.join(os.path.dirname(__file__), "../../"))
 
 
+def str2bool(value):
+    if isinstance(value, bool):
+        return value
+    value = value.lower()
+    if value in {"true", "t", "yes", "y", "1"}:
+        return True
+    if value in {"false", "f", "no", "n", "0"}:
+        return False
+    raise argparse.ArgumentTypeError(f"Boolean value expected, got '{value}'.")
+
+
 def get_params():
     args = argparse.ArgumentParser()
 
@@ -17,30 +28,30 @@ def get_params():
     args.add_argument("--facebook_edges_filename", default="facebook_2022-06-24_2022-06-25_part1_edges.csv", type=str)
     args.add_argument("--facebook_node_features_filename", default="facebook_2022-06-24_2022-06-25_part1_node_features.csv", type=str)
     args.add_argument("--facebook_data_source", default="csv", type=str)
-    args.add_argument("--facebook_use_edge_features", default=False, type=bool)
+    args.add_argument("--facebook_use_edge_features", default=False, type=str2bool)
     args.add_argument("--facebook_edge_feature_columns", default="", type=str)
     args.add_argument("--facebook_source_pkl_path", default="", type=str)
     args.add_argument("--facebook_embeddings_path", default="", type=str)
     args.add_argument("--facebook_embedding_ids_path", default="", type=str)
     args.add_argument("--facebook_text_emb_model", default="", type=str)
     args.add_argument("--facebook_target_dim", default=768, type=int)
-    args.add_argument("--facebook_filter_to_uk_ru", default=True, type=bool)
+    args.add_argument("--facebook_filter_to_uk_ru", default=True, type=str2bool)
     args.add_argument("--facebook_max_posts", default=None, type=int)
     args.add_argument("--label_type", default="verified", type=str)
     args.add_argument("--max_users", default=None, type=int)
-    args.add_argument("-invalidate_cache", "--invalidate_cache", default=False, type=bool)
+    args.add_argument("-invalidate_cache", "--invalidate_cache", default=False, type=str2bool)
     # if true, it will regenerate preprocessed cache
     args.add_argument("-ds_cap", "--dataset_len_cap", default=10000, type=int)
     args.add_argument("-val_cap", "--val_len_cap", default=None, type=int)
     args.add_argument("-test_cap", "--test_len_cap", default=None, type=int)
-    args.add_argument("-shuffle_index", "--shuffle_index", default=False, type=bool) # For KG datasets, shuffle index to get a different task each time if using ds_cap 1
+    args.add_argument("-shuffle_index", "--shuffle_index", default=False, type=str2bool) # For KG datasets, shuffle index to get a different task each time if using ds_cap 1
     # will cap length of training and testing datasets (use this for debugging or when using smaller GPU)
-    args.add_argument("-force_cache", "--force_cache", default=False, type=bool)  # will use preprocessed cache
-    args.add_argument("-cl_only", "--classification_only", default=False, type=bool) # only set this to true when using the very basic arxiv dataset!!! (this is basic node classification where labels are the same in train and test)
+    args.add_argument("-force_cache", "--force_cache", default=False, type=str2bool)  # will use preprocessed cache
+    args.add_argument("-cl_only", "--classification_only", default=False, type=str2bool) # only set this to true when using the very basic arxiv dataset!!! (this is basic node classification where labels are the same in train and test)
     args.add_argument("-esp", "--early_stopping_patience", default=20, type=int) # early stopping patience (in validation epochs, so with default eval_epoch argument 20 * 10 = 200 epochs)
     args.add_argument("--reset_after_layer", default=None, nargs='+', type=int)
-    args.add_argument("-original_features", "--original_features", default=False, type=bool)
-    args.add_argument("-override_log", "--override_log", default=False, type=bool)
+    args.add_argument("-original_features", "--original_features", default=False, type=str2bool)
+    args.add_argument("-override_log", "--override_log", default=False, type=str2bool)
 
 
     args.add_argument("-seed", "--seed", default=None, type=int)
@@ -62,9 +73,9 @@ def get_params():
     args.add_argument("-txt_dropout", "--text_features_dropout", default=0, type=float)  # additionally drop out text features
     args.add_argument("-rel_sample_seed", "--rel_sample_random_seed", default=None, type=float)  # seed for sampling relations
 
-    args.add_argument("-split_train_nodes", "--split_train_nodes", default=False, type=bool) # Split train nodes into 'train' and 'val'
+    args.add_argument("-split_train_nodes", "--split_train_nodes", default=False, type=str2bool) # Split train nodes into 'train' and 'val'
 
-    args.add_argument("-verbose", "--verbose", default=False, type=bool)
+    args.add_argument("-verbose", "--verbose", default=False, type=str2bool)
 
     args.add_argument("-workers", "--workers", default=10, type=int)  # Number of workers per dataloader
     args.add_argument("-gpu", "--device", default=123, type=int)  # device 123 means CPU
@@ -78,54 +89,54 @@ def get_params():
     args.add_argument("-meta_n_layer", "--meta_n_layer", default=1, type=int)
     args.add_argument("-gnn2", "--second_gnn", default="Atten", type=str)  # "vanilla" or "gat"
     args.add_argument("--attention_mask_scheme", default="causal", type=str)  # the name of the pretraining task
-    args.add_argument("-skip", "--skip_path", default=False, type=bool)
-    args.add_argument("-has_final_back", "--has_final_back", default=False, type=bool)
+    args.add_argument("-skip", "--skip_path", default=False, type=str2bool)
+    args.add_argument("-has_final_back", "--has_final_back", default=False, type=str2bool)
 
     args.add_argument("-layers", "--layers", default="S,U,M", type=str)  # default: GraphSAGE->Up->Metagraph (see experiments/layers.py for more info)
-    args.add_argument("-ignore_label_embs", "--ignore_label_embeddings", default=True, type=bool)
-    args.add_argument("-zero_lbl", "--zero_label_embeddings", default=False, type=bool)
-    args.add_argument("-not_freeze_learned_label_embedding", "--not_freeze_learned_label_embedding", default=False, type=bool)
-    args.add_argument("-linear_probe", "--linear_probe", default=False, type=bool)
+    args.add_argument("-ignore_label_embs", "--ignore_label_embeddings", default=True, type=str2bool)
+    args.add_argument("-zero_lbl", "--zero_label_embeddings", default=False, type=str2bool)
+    args.add_argument("-not_freeze_learned_label_embedding", "--not_freeze_learned_label_embedding", default=False, type=str2bool)
+    args.add_argument("-linear_probe", "--linear_probe", default=False, type=str2bool)
     args.add_argument("-fdf", "--fix_datasets_first", default=False,
-                      type=bool)  # Whether to convert datasets to list first (no sampling involved later).
+                      type=str2bool)  # Whether to convert datasets to list first (no sampling involved later).
     # This should generally not be used as the resulting files would be way too large
 
     args.add_argument("-no_bn_metagraph", "--no_bn_metagraph", default=False,  # no batch norm metagraph
-                      type=bool)
+                      type=str2bool)
     args.add_argument("-no_bn_encoder", "--no_bn_encoder", default=False,  # no batch norm on S layers etc.
-                      type=bool)
+                      type=str2bool)
 
-    args.add_argument("-calc_ranks", "--calc_ranks", default=False, type=bool)  # Whether to calc MRR and HITS ranks.
+    args.add_argument("-calc_ranks", "--calc_ranks", default=False, type=str2bool)  # Whether to calc MRR and HITS ranks.
     args.add_argument(
         "--save_roc_curve",
         default=False,
-        type=bool,
+        type=str2bool,
         help="If True, save ROC curve plot/points for binary evaluation splits.",
     )
-    args.add_argument("-eval_only", "--eval_only", default=False, type=bool)  # Eval. only mode (no training, only one pass of testing ds at the beginning and then quit)
+    args.add_argument("-eval_only", "--eval_only", default=False, type=str2bool)  # Eval. only mode (no training, only one pass of testing ds at the beginning and then quit)
     args.add_argument(
         "--eval_test_before_train",
         default=False,
-        type=bool,
+        type=str2bool,
         help="If True, run a test-set evaluation before training starts.",
     )
     args.add_argument(
         "--eval_val_before_train",
         default=False,
-        type=bool,
+        type=str2bool,
         help="If True, run a validation-set evaluation before training starts.",
     )
-    args.add_argument("-meta_pos", "--meta_gnn_pos_only", default=False, type=bool)  # Whether to use only positive edges for meta graph
+    args.add_argument("-meta_pos", "--meta_gnn_pos_only", default=False, type=str2bool)  # Whether to use only positive edges for meta graph
 
     ###  Few-shot task parameters  ###
     args.add_argument("-task", "--task_name", default=None, type=str)  # the name of the pretraining task
-    args.add_argument("-zeroshot", "--zero_shot", default=False, type=bool) # if True, messages will NOT be passed along the metagraph edges.
-    args.add_argument("-no_split_labels", "--no_split_labels", default=True, type=bool) # split train/val/test with original dataset split
+    args.add_argument("-zeroshot", "--zero_shot", default=False, type=str2bool) # if True, messages will NOT be passed along the metagraph edges.
+    args.add_argument("-no_split_labels", "--no_split_labels", default=True, type=str2bool) # split train/val/test with original dataset split
     args.add_argument("-all_test", "--all_test", default=False,
-                      type=bool)  # Set train/test/val labels to the same label set (for testing purposes)
+                      type=str2bool)  # Set train/test/val labels to the same label set (for testing purposes)
     args.add_argument("-train_cap", "--train_cap", default=None, type=int) # split train/val/test with original dataset split
     args.add_argument('--label_set', type=str, nargs='+')
-    args.add_argument("-csr_split", "--csr_split", default=False, type=bool)  # Whether to use CSR split...
+    args.add_argument("-csr_split", "--csr_split", default=False, type=str2bool)  # Whether to use CSR split...
 
     args.add_argument("-way", "--n_way", default=3, type=int) # how many labels do we want in each few-shot task
     args.add_argument("-shot", "--n_shots", default=3, type=int) # if not zeroshot, how many shots do we want in the training dataset?
@@ -147,7 +158,7 @@ def get_params():
 
     ### data augmentation parameters ###
     args.add_argument("-aug", "--augmentation", default="", type=str)
-    args.add_argument("-aug_test", "--augment_test", default=False, type=bool)  # if set, the valid set and the test set are also augmented
+    args.add_argument("-aug_test", "--augment_test", default=False, type=str2bool)  # if set, the valid set and the test set are also augmented
     args.add_argument("-attr", "--attr_regression_weight", default=0.0, type=float)
 
 
@@ -203,7 +214,7 @@ def get_params():
     args.add_argument(
         "--midterm_use_edge_features",
         default=False,
-        type=bool,
+        type=str2bool,
         help="If True, configure the background GNN to consume midterm edge_attr features.",
     )
     args.add_argument(
@@ -214,7 +225,7 @@ def get_params():
     )
 
     args.add_argument("-smalldataset", "--small_dataset", default=False,
-                      type=bool)  # use for debugging  - very small dataset
+                      type=str2bool)  # use for debugging  - very small dataset
 
     args.add_argument("-exptype", "--experiment_type", default="metagraph")
 
