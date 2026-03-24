@@ -2,6 +2,7 @@ import os
 from typing import Dict, Optional, Set, Union
 
 import numpy as np
+import hashlib
 import torch
 from torch.utils.data import DataLoader
 from torch_geometric.data import Data
@@ -195,6 +196,20 @@ def _mask_labels_to_node_split(labels: np.ndarray, allowed_idx: np.ndarray, off_
     if allowed_idx.size > 0:
         masked[allowed_idx] = labels[allowed_idx]
     return masked
+
+
+def _deterministic_label_embeddings(label_names, dim: int = 768) -> torch.Tensor:
+    rows = []
+    for idx, name in enumerate(label_names):
+        key = f"{idx}:{name}".encode("utf-8")
+        digest = hashlib.sha256(key).digest()
+        seed = int.from_bytes(digest[:8], "little", signed=False)
+        generator = torch.Generator(device="cpu")
+        generator.manual_seed(seed)
+        rows.append(torch.randn(dim, generator=generator))
+    if not rows:
+        return torch.zeros((0, dim), dtype=torch.float)
+    return torch.stack(rows, dim=0)
 
 
 def _apply_feature_subset(graph: Data, subset_spec: str) -> Data:
@@ -525,7 +540,7 @@ def get_midterm_dataloader(
         if bert is not None:
             label_embeddings = bert.get_sentence_embeddings(label_names)
         else:
-            label_embeddings = torch.randn(num_classes, 768)
+            label_embeddings = _deterministic_label_embeddings(label_names, dim=768)
 
         labels = graph.y.numpy()
         if not hasattr(dataset, "_classification_node_splits"):
