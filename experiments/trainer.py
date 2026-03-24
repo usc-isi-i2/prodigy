@@ -463,6 +463,10 @@ class TrainerFS():
                 f"[debug-example] split={split_name} sample=0 pred={pred_idx} gt={true_idx} "
                 f"logits={ypred[0].tolist()}"
             )
+            feat_str = self._format_debug_node_features(graph, sample_idx=0)
+            if feat_str is not None:
+                center0 = int(center_nodes[0]) if center_nodes is not None and len(center_nodes) > 0 else "na"
+                print(f"[debug-features] split={split_name} sample=0 center_node={center0} {feat_str}")
 
             if self.parameter.get("task_name", "") == "neighbor_matching" and center_nodes is not None:
                 try:
@@ -504,6 +508,10 @@ class TrainerFS():
             pred_val = float(ypred.flatten()[0].item())
             true_val = float(ytrue.flatten()[0].item())
             print(f"[debug-example] split={split_name} sample=0 pred={pred_val:.4f} gt={true_val:.4f}")
+            feat_str = self._format_debug_node_features(graph, sample_idx=0)
+            if feat_str is not None:
+                center0 = int(center_nodes[0]) if center_nodes is not None and len(center_nodes) > 0 else "na"
+                print(f"[debug-features] split={split_name} sample=0 center_node={center0} {feat_str}")
             if self.parameter.get("task_name", "") == "temporal_link_prediction":
                 try:
                     if (
@@ -665,6 +673,40 @@ class TrainerFS():
         )
 
         wandb.log(diag, step=0 if step is None else step)
+
+    def _format_debug_node_features(self, graph, sample_idx: int = 0, emb_preview: int = 8):
+        try:
+            if not hasattr(graph, "x") or graph.x is None or graph.x.ndim != 2:
+                return None
+            if sample_idx < 0 or sample_idx >= int(graph.x.shape[0]):
+                return None
+
+            x_row = graph.x[sample_idx].detach().cpu().flatten()
+            feature_names = getattr(graph, "feature_names", None)
+            if not feature_names or len(feature_names) != int(x_row.numel()):
+                feature_names = [f"f{i}" for i in range(int(x_row.numel()))]
+
+            stat_pairs = []
+            emb_pairs = []
+            for name, val in zip(feature_names, x_row.tolist()):
+                pair = f"{name}={val:.4f}"
+                if str(name).startswith("emb_"):
+                    emb_pairs.append(pair)
+                else:
+                    stat_pairs.append(pair)
+
+            parts = []
+            if stat_pairs:
+                parts.append("stats=[" + ", ".join(stat_pairs) + "]")
+            if emb_pairs:
+                if len(emb_pairs) <= emb_preview * 2:
+                    emb_str = ", ".join(emb_pairs)
+                else:
+                    emb_str = ", ".join(emb_pairs[:emb_preview]) + ", ..., " + ", ".join(emb_pairs[-emb_preview:])
+                parts.append(f"emb[{len(emb_pairs)}]=[" + emb_str + "]")
+            return " ".join(parts)
+        except Exception as ex:
+            return f"<failed to format node features: {ex}>"
 
 
     def save_best_state_dict(self, best_step):
