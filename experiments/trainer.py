@@ -504,6 +504,12 @@ class TrainerFS():
                         task_obj = getattr(task_obj, "task", None)
                     orig_labels = getattr(task_obj, "original_graph_labels", None)
                     split_labels = getattr(task_obj, "split_masked_labels", None)
+                    raw_ptr = raw_graph.get("ptr") if isinstance(raw_graph, dict) else None
+
+                    def center_row_for_sample(sample_idx: int):
+                        if raw_ptr is not None and sample_idx < int(raw_ptr.numel()) - 1:
+                            return int(raw_ptr[sample_idx].item())
+                        return sample_idx
 
                     s_count = 0
                     q_count = 0
@@ -512,26 +518,28 @@ class TrainerFS():
                         q_idx = torch.where((gt_t == n) & q_t)[0][:5]
                         for i in s_idx.tolist():
                             s_count += 1
+                            center_row = center_row_for_sample(i)
                             center_i = int(center_nodes[i]) if center_nodes is not None and i < len(center_nodes) else "na"
-                            feat_i = self._format_debug_node_features(raw_graph if raw_graph is not None else graph, sample_idx=i, emb_preview=4)
+                            feat_i = self._format_debug_node_features(raw_graph if raw_graph is not None else graph, sample_idx=center_row, emb_preview=4)
                             raw_y_i = orig_labels[center_i] if isinstance(center_i, int) and orig_labels is not None else "na"
                             split_y_i = split_labels[center_i] if isinstance(center_i, int) and split_labels is not None else "na"
                             print(
-                                f"  S{s_count}: idx={i} center={center_i} raw_y={raw_y_i} split_y={split_y_i} "
+                                f"  S{s_count}: idx={i} center_row={center_row} center={center_i} raw_y={raw_y_i} split_y={split_y_i} "
                                 f"local_gt=N{n + 1} pred=N{int(pred_t[i].item()) + 1}"
                             )
                             if feat_i is not None:
                                 print(f"    features: {feat_i}")
                         for i in q_idx.tolist():
                             q_count += 1
+                            center_row = center_row_for_sample(i)
                             center_i = int(center_nodes[i]) if center_nodes is not None and i < len(center_nodes) else "na"
                             logits_i = [float(v) for v in ypred[i].tolist()]
                             probs_i = [float(v) for v in prob_t[i].tolist()]
-                            feat_i = self._format_debug_node_features(raw_graph if raw_graph is not None else graph, sample_idx=i, emb_preview=4)
+                            feat_i = self._format_debug_node_features(raw_graph if raw_graph is not None else graph, sample_idx=center_row, emb_preview=4)
                             raw_y_i = orig_labels[center_i] if isinstance(center_i, int) and orig_labels is not None else "na"
                             split_y_i = split_labels[center_i] if isinstance(center_i, int) and split_labels is not None else "na"
                             print(
-                                f"  Q{q_count}: idx={i} center={center_i} raw_y={raw_y_i} split_y={split_y_i} "
+                                f"  Q{q_count}: idx={i} center_row={center_row} center={center_i} raw_y={raw_y_i} split_y={split_y_i} "
                                 f"pred=N{int(pred_t[i].item()) + 1} -> gt=N{n + 1} "
                                 f"logits={logits_i} probs={probs_i}"
                             )
@@ -805,6 +813,11 @@ class TrainerFS():
         try:
             if hasattr(raw_graph, "center_node_idx") and raw_graph.center_node_idx is not None:
                 snap["center_node_idx"] = raw_graph.center_node_idx.detach().cpu().clone()
+        except Exception:
+            pass
+        try:
+            if hasattr(raw_graph, "ptr") and raw_graph.ptr is not None:
+                snap["ptr"] = raw_graph.ptr.detach().cpu().clone()
         except Exception:
             pass
         try:
