@@ -336,11 +336,10 @@ def linearize(mask, inputs_idx, output_idx, batch_rand_perm = None):
     return seqs.transpose(2,1).reshape(seqs.shape[0], -1), batch_rand_perm
 
 class Collator:
-    def __init__(self, label_meta, aug=Identity(), is_multiway=True, episode_label_leak=False):
+    def __init__(self, label_meta, aug=Identity(), is_multiway=True):
         self.label_meta = label_meta
         self.aug = aug
         self.is_multiway = is_multiway
-        self.episode_label_leak = episode_label_leak
 
     def process_one_task(self, task, batch_param):
         label_map = list(task) # Looks like this: (0, 'task1'), (1, 'task2'), ...
@@ -354,17 +353,6 @@ class Collator:
             query_mask.extend([False] * (batch_param.n_shot))
             query_mask.extend([True] * (len(augmented) - batch_param.n_shot))
             labels.extend([label_map_reverse[label]] * len(augmented)) # label_map_reverse[label] is the index of label in label_map
-
-        if self.episode_label_leak and self.is_multiway:
-            num_labels = len(label_map)
-            for data, label_idx in zip(all_graphs, labels):
-                leak = torch.zeros((data.x.shape[0], num_labels), dtype=data.x.dtype, device=data.x.device)
-                leak[:, int(label_idx)] = 1.0
-                data.x = torch.cat([data.x, leak], dim=1)
-                if hasattr(data, "x_orig") and data.x_orig is not None:
-                    leak_orig = torch.zeros((data.x_orig.shape[0], num_labels), dtype=data.x_orig.dtype, device=data.x_orig.device)
-                    leak_orig[:, int(label_idx)] = 1.0
-                    data.x_orig = torch.cat([data.x_orig, leak_orig], dim=1)
 
         return all_graphs, torch.tensor(labels), torch.tensor(query_mask), label_map
 
