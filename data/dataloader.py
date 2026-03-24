@@ -375,6 +375,11 @@ class Collator:
         b_mask = torch.stack(query_mask)
         query_mask = torch.cat(query_mask)
         label_map = list(chain(*label_map))
+        if label_map and not isinstance(label_map[0], tuple):
+            try:
+                graphs.task_label_map = torch.tensor(label_map).reshape(num_task, num_labels)
+            except Exception:
+                pass
         if self.is_multiway:
             metagraph_edge_source = torch.arange(labels.size(0)).repeat_interleave(num_labels)
             metagraph_edge_target = torch.arange(num_labels).repeat(labels.size(0))

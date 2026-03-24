@@ -469,6 +469,63 @@ class TrainerFS():
                 center0 = int(center_nodes[0]) if center_nodes is not None and len(center_nodes) > 0 else "na"
                 print(f"[debug-features] split={split_name} sample=0 center_node={center0} {feat_str}")
 
+            if self.parameter.get("task_name", "") == "classification":
+                try:
+                    labels_onehot = batch[2].detach().cpu()
+                    num_labels = int(labels_onehot.shape[1])
+                    gt_label_idx = torch.argmax(labels_onehot, dim=1).long()
+                    meta_mask = batch[5].detach().cpu().view(-1, num_labels)
+                    query_mask = meta_mask[:, 0].bool()
+
+                    total_items = int(gt_label_idx.numel())
+                    if isinstance(self.batch_size, int) and self.batch_size > 0 and total_items % self.batch_size == 0:
+                        task_len = total_items // self.batch_size
+                    else:
+                        task_len = total_items
+
+                    gt_t = gt_label_idx[:task_len]
+                    q_t = query_mask[:task_len]
+                    pred_t = torch.argmax(ypred[:task_len], dim=1).long().cpu()
+                    prob_t = torch.softmax(ypred[:task_len], dim=1).cpu()
+                    label_emb = batch[1].detach().cpu()[:num_labels]
+
+                    print(f"[debug-classification] first {split_name} task")
+                    if hasattr(graph, "task_label_map"):
+                        task_label_map = graph.task_label_map.detach().cpu()
+                        if task_label_map.ndim == 2 and task_label_map.shape[0] > 0:
+                            print(f"  local->global label map: {task_label_map[0].tolist()}")
+                    print(f"  label embedding shape: {tuple(label_emb.shape)}")
+                    for n in range(num_labels):
+                        emb_preview = ", ".join(f"{v:.4f}" for v in label_emb[n][: min(8, label_emb.shape[1])].tolist())
+                        print(f"  label N{n + 1} emb[:8]=[{emb_preview}]")
+
+                    s_count = 0
+                    q_count = 0
+                    for n in range(num_labels):
+                        s_idx = torch.where((gt_t == n) & (~q_t))[0][:5]
+                        q_idx = torch.where((gt_t == n) & q_t)[0][:5]
+                        for i in s_idx.tolist():
+                            s_count += 1
+                            center_i = int(center_nodes[i]) if center_nodes is not None and i < len(center_nodes) else "na"
+                            feat_i = self._format_debug_node_features(raw_graph if raw_graph is not None else graph, sample_idx=i, emb_preview=4)
+                            print(f"  S{s_count}: idx={i} center={center_i} local_gt=N{n + 1} pred=N{int(pred_t[i].item()) + 1}")
+                            if feat_i is not None:
+                                print(f"    features: {feat_i}")
+                        for i in q_idx.tolist():
+                            q_count += 1
+                            center_i = int(center_nodes[i]) if center_nodes is not None and i < len(center_nodes) else "na"
+                            logits_i = [float(v) for v in ypred[i].tolist()]
+                            probs_i = [float(v) for v in prob_t[i].tolist()]
+                            feat_i = self._format_debug_node_features(raw_graph if raw_graph is not None else graph, sample_idx=i, emb_preview=4)
+                            print(
+                                f"  Q{q_count}: idx={i} center={center_i} pred=N{int(pred_t[i].item()) + 1} -> gt=N{n + 1} "
+                                f"logits={logits_i} probs={probs_i}"
+                            )
+                            if feat_i is not None:
+                                print(f"    features: {feat_i}")
+                except Exception as ex:
+                    print(f"[debug-classification] failed to decode episode: {ex}")
+
             if self.parameter.get("task_name", "") == "neighbor_matching" and center_nodes is not None:
                 try:
                     labels_onehot = batch[2].detach().cpu()
