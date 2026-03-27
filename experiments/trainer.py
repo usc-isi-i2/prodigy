@@ -2,12 +2,14 @@ import torch
 import numpy as np
 import sys
 import os
+import json
 import wandb
 import torch.optim as optim
 import time
 from tqdm import tqdm, trange
 import shutil
 from sklearn.metrics import roc_curve
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 
 sys.path.extend(os.path.join(os.path.dirname(__file__), "../../"))
 
@@ -754,6 +756,70 @@ class TrainerFS():
 
         wandb.log(diag, step=0 if step is None else step)
 
+    def _compute_eval_metrics(self, y_true_matrix, y_pred_matrix):
+        metrics = {}
+        if y_true_matrix is None or y_pred_matrix is None:
+            return metrics
+
+        yt = y_true_matrix.detach().cpu()
+        yp = y_pred_matrix.detach().cpu()
+
+        try:
+            if yp.ndim == 1 or (yp.ndim == 2 and yp.shape[1] == 1):
+                # Binary single-logit case (e.g. temporal_link_prediction).
+                y_true = yt.reshape(-1).numpy().astype(int)
+                y_score = torch.sigmoid(yp.reshape(-1)).numpy()
+                y_pred = (y_score >= 0.5).astype(int)
+                metrics["accuracy"] = float(accuracy_score(y_true, y_pred))
+                metrics["f1"] = float(f1_score(y_true, y_pred, zero_division=0))
+                if len(np.unique(y_true)) >= 2:
+                    metrics["roc_auc"] = float(roc_auc_score(y_true, y_score))
+                return metrics
+
+            # Multi-logit classification case.
+            if yt.ndim > 1 and yt.shape[1] > 1:
+                y_true = torch.argmax(yt, dim=1).numpy().astype(int)
+            else:
+                y_true = yt.reshape(-1).numpy().astype(int)
+
+            y_pred = torch.argmax(yp, dim=1).numpy().astype(int)
+            metrics["accuracy"] = float(accuracy_score(y_true, y_pred))
+
+            avg = "binary" if yp.shape[1] == 2 else "macro"
+            metrics["f1"] = float(f1_score(y_true, y_pred, average=avg, zero_division=0))
+
+            probs = torch.softmax(yp, dim=1).numpy()
+            n_classes = int(probs.shape[1])
+            if n_classes == 2:
+                if len(np.unique(y_true)) >= 2:
+                    metrics["roc_auc"] = float(roc_auc_score(y_true, probs[:, 1]))
+            elif len(np.unique(y_true)) >= 2:
+                true_1hot = np.eye(n_classes, dtype=np.float32)[y_true]
+                metrics["roc_auc"] = float(
+                    roc_auc_score(true_1hot, probs, multi_class="ovr", average="macro")
+                )
+        except Exception as ex:
+            _log(f"Failed to compute eval metrics: {ex}")
+
+        return metrics
+
+    def _log_eval_metrics(self, metrics, split_name, step=None):
+        if not metrics:
+            return
+        prefix_metrics = {f"{split_name}_{k}": v for k, v in metrics.items()}
+        wandb.log(prefix_metrics, step=0 if step is None else step)
+
+        suffix = split_name if step is None else f"{split_name}_step{step}"
+        out_path = os.path.join(self.logging_dir, f"metrics_{suffix}.json")
+        try:
+            with open(out_path, "w", encoding="utf-8") as f:
+                json.dump(prefix_metrics, f, indent=2, sort_keys=True)
+        except Exception as ex:
+            _log(f"Failed to save metrics file {out_path}: {ex}")
+
+        msg = " ".join(f"{k}={v:.4f}" for k, v in prefix_metrics.items())
+        _log(f"[metrics] {msg}")
+
     def _format_debug_node_features(self, graph, sample_idx: int = 0, emb_preview: int = 8):
         try:
             if isinstance(graph, dict):
@@ -1067,8 +1133,10 @@ class TrainerFS():
                 ypredall = torch.cat((ypredall, yp), dim=0)
             all_aux_loss.append(aux_loss.item())
         loss_global, acc_global = self.get_loss_and_acc(ytrueall, ypredall)
+        eval_metrics = self._compute_eval_metrics(ytrueall, ypredall)
         self._maybe_log_eval_diagnostics(ytrueall, ypredall, split_name=split_name, step=step)
         self._maybe_save_roc_curve(ytrueall, ypredall, split_name=split_name, step=step)
+        self._log_eval_metrics(eval_metrics, split_name=split_name, step=step)
         acc_batch_std = np.std(acc_all)
         aux_loss_global = sum(all_aux_loss) / len(all_aux_loss)
         torch.set_grad_enabled(True)
