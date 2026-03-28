@@ -20,7 +20,6 @@ python3 experiments/run_single_experiment.py \
   --root /scratch1/eibl/data/midterm/graphs \
   --graph_filename retweet_graph_5050_all_future_political_leaning.pt \
   --task_name neighbor_matching \
-  --n_hop 1 \
   --midterm_feature_subset emb_only \
   --input_dim 384 \
   --n_way 3 \
