@@ -16,18 +16,26 @@ conda activate prodigy
 cd /home1/eibl/gfm/prodigy
 mkdir -p /home1/eibl/gfm/prodigy/logs
 
-if [[ $# -ne 1 ]]; then
-  echo "Usage: sbatch $0 <model_list.txt>" >&2
+if [[ $# -lt 1 || $# -gt 2 ]]; then
+  echo "Usage: sbatch $0 <model_list.txt> [shots_csv]" >&2
   echo "Each non-empty, non-comment line may be either:" >&2
   echo "  <ckpt_path>" >&2
   echo "or" >&2
   echo "  <model_name> <ckpt_path>" >&2
+  echo "Example shots_csv: 1,2,5,10" >&2
   exit 1
 fi
 
 MODEL_LIST="$1"
+SHOTS_CSV="${2:-1,2,5,10}"
 if [[ ! -f "$MODEL_LIST" ]]; then
   echo "Model list not found: $MODEL_LIST" >&2
+  exit 1
+fi
+
+IFS=',' read -r -a SHOT_LIST <<< "$SHOTS_CSV"
+if [[ ${#SHOT_LIST[@]} -eq 0 ]]; then
+  echo "No shots provided via shots_csv='${SHOTS_CSV}'" >&2
   exit 1
 fi
 
@@ -51,27 +59,32 @@ run_eval() {
   local model_name="$1"
   local ckpt_path="$2"
   local task_name="$3"
+  local shots="$4"
+
+  local task_tag=""
 
   local extra_args=()
   case "$task_name" in
     neighbor_matching)
+      task_tag="nm"
       extra_args=(
         --task_name neighbor_matching
         --n_way 3
-        --n_shots 3
+        --n_shots "$shots"
         --n_query 24
         --val_len_cap 500
         --test_len_cap 500
         --eval_step 1000
         --checkpoint_step 1000
-        --prefix "eval_${model_name}_on_nm"
+        --prefix "trained_on_${model_name}_eval_on_${task_tag}_${shots}_shot"
       )
       ;;
     temporal_link_prediction)
+      task_tag="lp"
       extra_args=(
         --task_name temporal_link_prediction
         --n_way 1
-        --n_shots 1
+        --n_shots "$shots"
         --n_query 3
         --zero_shot False
         --val_len_cap 500
@@ -80,16 +93,17 @@ run_eval() {
         --eval_step 1000
         --checkpoint_step 1000
         --midterm_target_edge_view default
-        --prefix "eval_${model_name}_on_lp"
+        --prefix "trained_on_${model_name}_eval_on_${task_tag}_${shots}_shot"
       )
       ;;
     classification)
+      task_tag="pl"
       extra_args=(
         --task_name classification
         --ignore_label_embeddings False
         --linear_probe False
         --n_way 2
-        --n_shots 4
+        --n_shots "$shots"
         --n_query 3
         --zero_shot False
         --dataset_len_cap 2000
@@ -99,7 +113,7 @@ run_eval() {
         --eval_step 1000
         --checkpoint_step 1000
         --midterm_label_downsample 50:50
-        --prefix "eval_${model_name}_on_pl"
+        --prefix "trained_on_${model_name}_eval_on_${task_tag}_${shots}_shot"
       )
       ;;
     *)
@@ -108,7 +122,7 @@ run_eval() {
       ;;
   esac
 
-  echo "=== Evaluating model=${model_name} task=${task_name} ckpt=${ckpt_path} ==="
+  echo "=== Evaluating model=${model_name} task=${task_name} shots=${shots} ckpt=${ckpt_path} ==="
   python3 experiments/run_single_experiment.py \
     "${COMMON_ARGS[@]}" \
     --pretrained_model_run "$ckpt_path" \
@@ -143,8 +157,9 @@ while IFS= read -r raw_line || [[ -n "$raw_line" ]]; do
     exit 1
   fi
 
-  run_eval "$model_name" "$ckpt_path" neighbor_matching
-  run_eval "$model_name" "$ckpt_path" temporal_link_prediction
-  run_eval "$model_name" "$ckpt_path" classification
+  for shots in "${SHOT_LIST[@]}"; do
+    run_eval "$model_name" "$ckpt_path" neighbor_matching "$shots"
+    run_eval "$model_name" "$ckpt_path" temporal_link_prediction "$shots"
+    run_eval "$model_name" "$ckpt_path" classification "$shots"
+  done
 done < "$MODEL_LIST"
-
