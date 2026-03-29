@@ -1,0 +1,29 @@
+#!/bin/bash
+#SBATCH --job-name=ukr-twitter-emb
+#SBATCH --output=/home1/eibl/gfm/prodigy/logs/ukr-twitter-emb-%j.out
+#SBATCH --error=/home1/eibl/gfm/prodigy/logs/ukr-twitter-emb-%j.err
+#SBATCH --partition=gpu
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=64G
+#SBATCH --time=08:00:00
+
+set -euo pipefail
+
+module purge || true
+
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate prodigy
+
+cd /home1/eibl/gfm/prodigy
+
+mkdir -p /home1/eibl/gfm/prodigy/logs
+mkdir -p /home1/eibl/gfm/prodigy/data/data/ukr_rus_twitter/embeddings
+
+export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
+
+python data/data/ukr_rus_twitter/scripts/build_user_embeddings.py \
+  --csv_glob "/project2/ll_774_951/uk_ru/twitter/data/*/*.csv" \
+  --out data/data/ukr_rus_twitter/embeddings/user_embeddings_minilm.pt \
+  --batch_size 32
+  --max_files 200
