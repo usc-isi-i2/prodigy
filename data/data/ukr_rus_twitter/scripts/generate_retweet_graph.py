@@ -278,6 +278,7 @@ degrees_in  = torch.bincount(edge_index[1], minlength=N)
 isolated_nodes = ((degrees_out == 0) & (degrees_in == 0)).sum().item()
 print(f"  Graph Density Stats:")
 print(f"    - Avg Out-degree: {degrees_out.float().mean():.2f}")
+print(f"    - Avg In-degree: {degrees_in.float().mean():.2f}")
 print(f"    - Max In-degree (most retweeted): {degrees_in.max().item()}")
 print(f"    - Isolated nodes: {isolated_nodes:,}")
 
