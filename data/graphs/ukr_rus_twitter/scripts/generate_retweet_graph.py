@@ -14,7 +14,7 @@ from torch_geometric.data import Data
 warnings.filterwarnings("ignore")
 
 # ── Config ────────────────────────────────────────────────────────────────────
-DEFAULT_CSV = "/project2/ll_774_951/midterm/*/*.csv"
+DEFAULT_CSV = "/project2/ll_774_951/uk_ru/twitter/data/*/*.csv"
 DEFAULT_OUT = "retweet_graph.pt"
 
 FEATURE_COLS = [
