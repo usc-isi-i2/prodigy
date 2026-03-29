@@ -40,6 +40,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--csv", default=DEFAULT_CSV)
 parser.add_argument("--out", default=DEFAULT_OUT)
 parser.add_argument("--max_files", type=int, default=None, help="Limit number of CSV files to load")
+parser.add_argument(
+    "--keep-isolates",
+    dest="keep_isolates",
+    action=argparse.BooleanOptionalAction,
+    default=False,
+    help="Keep nodes with zero in-degree and zero out-degree in the saved graph.",
+)
 args = parser.parse_args()
 
 # ── NEW READER ────────────────────────────────────────────────────────────────
@@ -273,6 +280,23 @@ print(f"  Graph Density Stats:")
 print(f"    - Avg Out-degree: {degrees_out.float().mean():.2f}")
 print(f"    - Max In-degree (most retweeted): {degrees_in.max().item()}")
 print(f"    - Isolated nodes: {isolated_nodes:,}")
+
+if not args.keep_isolates:
+    keep_mask = (degrees_out > 0) | (degrees_in > 0)
+    kept_nodes = int(keep_mask.sum().item())
+    remap = torch.full((N,), -1, dtype=torch.long)
+    remap[keep_mask] = torch.arange(kept_nodes, dtype=torch.long)
+
+    X = X[keep_mask.numpy()]
+    edge_index = remap[edge_index]
+    handles = [handle for handle, keep in zip(handles, keep_mask.tolist()) if keep]
+    h2i = {h: i for i, h in enumerate(handles)}
+    N = kept_nodes
+
+    print(f"  Dropped isolated nodes for output: {isolated_nodes:,}")
+    print(f"  Remaining nodes after isolate drop: {N:,}")
+else:
+    print("  Keeping isolated nodes in output graph.")
 
 # ── Save ──────────────────────────────────────────────────────────────────────
 data = Data(x=torch.from_numpy(X), edge_index=edge_index)
