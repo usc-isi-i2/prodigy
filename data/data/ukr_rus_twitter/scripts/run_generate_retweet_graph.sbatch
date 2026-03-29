@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=ukr-retweet
-#SBATCH --output=logs/ukr-retweet-%j.out
-#SBATCH --error=logs/ukr-retweet-%j.err
+#SBATCH --output=/home1/eibl/gfm/prodigy/logs/ukr-retweet-%j.out
+#SBATCH --error=/home1/eibl/gfm/prodigy/logs/ukr-retweet-%j.err
 #SBATCH --partition=gpu
 #SBATCH --time=02:00:00
 #SBATCH --cpus-per-task=16
@@ -9,10 +9,12 @@
 
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "$0")/../../../../" && pwd)"
-cd "$ROOT_DIR"
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate prodigy
 
-mkdir -p logs
+cd /home1/eibl/gfm/prodigy
+
+mkdir -p /home1/eibl/gfm/prodigy/logs
 
 # Load your Python environment here if needed.
 # module load python/3.10
