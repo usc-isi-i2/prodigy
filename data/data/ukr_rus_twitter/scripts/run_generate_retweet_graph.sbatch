@@ -24,4 +24,4 @@ mkdir -p /home1/eibl/gfm/prodigy/logs
 python data/data/ukr_rus_twitter/scripts/generate_retweet_graph.py \
   --csv "/project2/ll_774_951/uk_ru/twitter/data/*/*.csv" \
   --out data/data/ukr_rus_twitter/graphs/retweet_graph.pt \
-  --max_files 200
+  --max_files 5
