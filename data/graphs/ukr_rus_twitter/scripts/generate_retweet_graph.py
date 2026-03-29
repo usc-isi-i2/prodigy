@@ -115,6 +115,7 @@ chunks = []
 start_time = time.time()
 for i, f in enumerate(files):
     try:
+        print(f"Processing file {i+1}/{len(files)}: {os.path.basename(f)}")
         df_file = load_interleaved_csv(f)
         if df_file.empty:
             continue
