@@ -143,16 +143,24 @@ print(f"Total raw rows loaded: {len(df):,}")
 
 # ── Clean ─────────────────────────────────────────────────────────────────────
 print(f"\n{'='*60}\nSTEP 2: Cleaning and Node Mapping\n{'='*60}")
+
+def normalize_handle(series):
+    normalized = series.astype("string").str.strip().str.lower()
+    return normalized.mask(normalized.isin(["", "nan", "none", "<na>"]))
+
 initial_len = len(df)
-df = df[df["screen_name"].notna() & df["screen_name"].ne("")]
-df["screen_name"] = df["screen_name"].str.lower()
+df["screen_name"] = normalize_handle(df["screen_name"])
+if "rt_screen" in df.columns:
+    df["rt_screen"] = normalize_handle(df["rt_screen"])
+
+df = df[df["screen_name"].notna()].copy()
 print(f"Dropped {initial_len - len(df):,} rows with missing screen_names.")
 
 # ── Build node set ───────────────────────────────────────────────────────────
 print("Building node set...")
 all_handles = set(df["screen_name"].unique())
 if "rt_screen" in df.columns:
-    rt_handles = set(df["rt_screen"].dropna().str.lower().unique())
+    rt_handles = set(df["rt_screen"].dropna().unique())
     print(f"  Unique tweeters: {len(all_handles):,}")
     print(f"  Unique retweeted targets: {len(rt_handles):,}")
     all_handles.update(rt_handles)
@@ -231,7 +239,6 @@ print(f"\n{'='*60}\nSTEP 4: Edge Construction\n{'='*60}")
 
 if "rt_screen" in df.columns:
     edges = df[["screen_name", "rt_screen"]].dropna(subset=["rt_screen"]).copy()
-    edges["rt_screen"] = edges["rt_screen"].str.lower()
 elif "rt_userid" in df.columns:
     print("  Resolving rt_userid to screen_names...")
     uid_to_sn = df.dropna(subset=["userid", "screen_name"]).drop_duplicates("userid").set_index("userid")["screen_name"].to_dict()
@@ -239,7 +246,8 @@ elif "rt_userid" in df.columns:
     edges["rt_userid"] = pd.to_numeric(edges["rt_userid"], errors="coerce")
     edges = edges.dropna(subset=["rt_userid"])
     edges["rt_screen"] = edges["rt_userid"].astype(int).map(uid_to_sn)
-    edges = edges.dropna(subset=["rt_screen"]).str.lower()
+    edges["rt_screen"] = normalize_handle(edges["rt_screen"])
+    edges = edges.dropna(subset=["rt_screen"]).copy()
 
 # Edge filtering logs
 raw_edge_count = len(edges)
@@ -260,10 +268,11 @@ print(f"  Final unique directed edges: {edge_index.shape[1]:,}")
 # Degree Statistics
 degrees_out = torch.bincount(edge_index[0], minlength=N)
 degrees_in  = torch.bincount(edge_index[1], minlength=N)
+isolated_nodes = ((degrees_out == 0) & (degrees_in == 0)).sum().item()
 print(f"  Graph Density Stats:")
 print(f"    - Avg Out-degree: {degrees_out.float().mean():.2f}")
 print(f"    - Max In-degree (most retweeted): {degrees_in.max().item()}")
-print(f"    - Isolated nodes: {(degrees_out == 0).sum().item():,}")
+print(f"    - Isolated nodes: {isolated_nodes:,}")
 
 # ── Save ──────────────────────────────────────────────────────────────────────
 data = Data(x=torch.from_numpy(X), edge_index=edge_index)
