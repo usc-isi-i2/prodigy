@@ -3,6 +3,7 @@ import csv
 import glob
 import json
 import os
+import pickle
 import time
 from collections import defaultdict
 
@@ -28,6 +29,12 @@ def parse_args():
     p.add_argument("--max_files", type=int, default=0)
     p.add_argument("--device", default=("cuda" if torch.cuda.is_available() else "cpu"))
     p.add_argument("--max_seq_len", type=int, default=512)
+    p.add_argument(
+        "--checkpoint_path",
+        default="data/data/ukr_rus_twitter/embeddings/user_embeddings_minilm.checkpoint.pkl",
+    )
+    p.add_argument("--checkpoint_every", type=int, default=5)
+    p.add_argument("--resume", action="store_true", default=False)
     return p.parse_args()
 
 
@@ -122,6 +129,29 @@ def read_post_file(fpath: str) -> pd.DataFrame:
     return df
 
 
+def save_checkpoint(path, user_sum, user_max, user_count, files_done):
+    tmp = path + ".tmp"
+    with open(tmp, "wb") as f:
+        pickle.dump(
+            {
+                "user_sum": dict(user_sum),
+                "user_max": dict(user_max),
+                "user_count": dict(user_count),
+                "files_done": list(files_done),
+            },
+            f,
+        )
+    os.replace(tmp, path)
+    print(f"  [CHECKPOINT] saved {len(files_done):,} files -> {path}", flush=True)
+
+
+def load_checkpoint(path):
+    if not os.path.exists(path):
+        return None
+    with open(path, "rb") as f:
+        return pickle.load(f)
+
+
 def main():
     args = parse_args()
     start_time = time.time()
@@ -134,6 +164,9 @@ def main():
     out_dir = os.path.dirname(args.out)
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
+    checkpoint_dir = os.path.dirname(args.checkpoint_path)
+    if checkpoint_dir:
+        os.makedirs(checkpoint_dir, exist_ok=True)
 
     model = SentenceTransformer(args.model, device=args.device)
     model.max_seq_length = args.max_seq_len
@@ -141,16 +174,39 @@ def main():
 
     use_cols = {"screen_name", "text", "rt_text", "qtd_text", "description"}
 
-    user_sum = defaultdict(lambda: np.zeros(emb_dim, dtype=np.float64))
-    user_max = defaultdict(lambda: np.full(emb_dim, -np.inf, dtype=np.float32))
-    user_count = defaultdict(int)
-
     print(f"Embedding model: {args.model}")
     print(f"Device: {args.device}")
     print(f"Files: {len(files)}")
     print(f"Output: {args.out}")
+    print(f"Checkpoint: {args.checkpoint_path}")
+    print(f"Resume: {args.resume}")
 
+    checkpoint = load_checkpoint(args.checkpoint_path) if args.resume else None
+    if checkpoint:
+        user_sum = defaultdict(lambda: np.zeros(emb_dim, dtype=np.float64), checkpoint.get("user_sum", {}))
+        user_max = defaultdict(lambda: np.full(emb_dim, -np.inf, dtype=np.float32), checkpoint.get("user_max", {}))
+        user_count = defaultdict(int, checkpoint.get("user_count", {}))
+        files_done = set(checkpoint.get("files_done", []))
+        print(
+            f"Resumed from checkpoint: files_done={len(files_done):,} users={len(user_sum):,} "
+            f"posts={sum(user_count.values()):,}",
+            flush=True,
+        )
+    else:
+        user_sum = defaultdict(lambda: np.zeros(emb_dim, dtype=np.float64))
+        user_max = defaultdict(lambda: np.full(emb_dim, -np.inf, dtype=np.float32))
+        user_count = defaultdict(int)
+        files_done = set()
+
+    processed_in_run = 0
     for i, fpath in enumerate(files, start=1):
+        if fpath in files_done:
+            print(f"[{i}/{len(files)}] Skipping {os.path.basename(fpath)} (already checkpointed)", flush=True)
+            continue
+        if args.max_files > 0 and processed_in_run >= args.max_files:
+            print(f"Reached max_files={args.max_files}; stopping this run.", flush=True)
+            break
+
         file_start = time.time()
         print(f"[{i}/{len(files)}] Loading {os.path.basename(fpath)}", flush=True)
         try:
@@ -205,6 +261,8 @@ def main():
             user_max[handle] = np.maximum(user_max[handle], emb.astype(np.float32))
             user_count[handle] += 1
 
+        files_done.add(fpath)
+        processed_in_run += 1
         elapsed = time.time() - file_start
         total_elapsed = time.time() - start_time
         print(
@@ -213,6 +271,10 @@ def main():
             f"cumulative_users={len(user_sum):,} cumulative_posts={sum(user_count.values()):,}",
             flush=True,
         )
+        if args.checkpoint_every > 0 and processed_in_run % args.checkpoint_every == 0:
+            save_checkpoint(args.checkpoint_path, user_sum, user_max, user_count, files_done)
+
+    save_checkpoint(args.checkpoint_path, user_sum, user_max, user_count, files_done)
 
     handles = sorted(user_sum.keys())
     n = len(handles)

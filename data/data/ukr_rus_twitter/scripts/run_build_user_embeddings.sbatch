@@ -25,5 +25,8 @@ export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 python data/data/ukr_rus_twitter/scripts/build_user_embeddings.py \
   --csv_glob "/project2/ll_774_951/uk_ru/twitter/data/*/*.csv" \
   --out data/data/ukr_rus_twitter/embeddings/user_embeddings_minilm.pt \
-  --batch_size 32
+  --batch_size 32 \
+  --checkpoint_path data/data/ukr_rus_twitter/embeddings/user_embeddings_minilm.checkpoint.pkl \
+  --checkpoint_every 5 \
+  --resume
   --max_files 200
