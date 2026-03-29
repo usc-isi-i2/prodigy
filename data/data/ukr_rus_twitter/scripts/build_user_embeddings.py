@@ -3,6 +3,7 @@ import csv
 import glob
 import json
 import os
+import time
 from collections import defaultdict
 
 import numpy as np
@@ -123,6 +124,7 @@ def read_post_file(fpath: str) -> pd.DataFrame:
 
 def main():
     args = parse_args()
+    start_time = time.time()
     files = sorted(glob.glob(args.csv_glob))
     if args.max_files > 0:
         files = files[: args.max_files]
@@ -146,25 +148,32 @@ def main():
     print(f"Embedding model: {args.model}")
     print(f"Device: {args.device}")
     print(f"Files: {len(files)}")
+    print(f"Output: {args.out}")
 
     for i, fpath in enumerate(files, start=1):
+        file_start = time.time()
+        print(f"[{i}/{len(files)}] Loading {os.path.basename(fpath)}", flush=True)
         try:
             df = read_post_file(fpath)
         except Exception as exc:
-            print(f"  [ERROR] Skipping {os.path.basename(fpath)}: {exc}")
+            print(f"  [ERROR] Skipping {os.path.basename(fpath)}: {exc}", flush=True)
             continue
 
         if df.empty:
+            print("  [SKIP] empty file", flush=True)
             continue
 
         cols = [c for c in df.columns if c in use_cols]
         if "screen_name" not in cols:
+            print("  [SKIP] missing screen_name column", flush=True)
             continue
         df = df[cols].copy()
+        raw_rows = len(df)
 
         df["screen_name"] = normalize_handle(df["screen_name"])
         df = df[df["screen_name"].notna()].copy()
         if df.empty:
+            print(f"  [SKIP] no valid screen_name rows out of {raw_rows:,}", flush=True)
             continue
 
         texts = df.apply(build_text, axis=1).tolist()
@@ -172,10 +181,16 @@ def main():
 
         valid_idx = [k for k, text in enumerate(texts) if text.strip()]
         if not valid_idx:
+            print(f"  [SKIP] no non-empty texts out of {len(df):,} rows", flush=True)
             continue
 
         valid_texts = [texts[k] for k in valid_idx]
         valid_handles = [handles[k] for k in valid_idx]
+
+        print(
+            f"  rows={raw_rows:,} valid_handles={len(df):,} texts_to_embed={len(valid_texts):,}",
+            flush=True,
+        )
 
         embs = model.encode(
             valid_texts,
@@ -190,8 +205,14 @@ def main():
             user_max[handle] = np.maximum(user_max[handle], emb.astype(np.float32))
             user_count[handle] += 1
 
-        if i % 10 == 0 or i == len(files):
-            print(f"  processed {i}/{len(files)} files")
+        elapsed = time.time() - file_start
+        total_elapsed = time.time() - start_time
+        print(
+            "  [DONE] "
+            f"file_time={elapsed:.1f}s total_time={total_elapsed/60:.1f}m "
+            f"cumulative_users={len(user_sum):,} cumulative_posts={sum(user_count.values()):,}",
+            flush=True,
+        )
 
     handles = sorted(user_sum.keys())
     n = len(handles)
