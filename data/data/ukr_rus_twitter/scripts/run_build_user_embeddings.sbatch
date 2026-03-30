@@ -18,15 +18,15 @@ conda activate prodigy
 cd /home1/eibl/gfm/prodigy
 
 mkdir -p /home1/eibl/gfm/prodigy/logs
-mkdir -p /home1/eibl/gfm/prodigy/data/data/ukr_rus_twitter/embeddings
+mkdir -p /scratch1/eibl/data/ukr_rus_twitter/embeddings
 
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
 python data/data/ukr_rus_twitter/scripts/build_user_embeddings.py \
   --csv_glob "/project2/ll_774_951/uk_ru/twitter/data/*/*.csv" \
-  --out data/data/ukr_rus_twitter/embeddings/user_embeddings_minilm.pt \
+  --out /scratch1/eibl/data/ukr_rus_twitter/embeddings/user_embeddings_minilm.pt \
   --batch_size 32 \
-  --checkpoint_path data/data/ukr_rus_twitter/embeddings/user_embeddings_minilm.checkpoint.pkl \
+  --checkpoint_path /scratch1/eibl/data/ukr_rus_twitter/embeddings/user_embeddings_minilm.checkpoint.pkl \
   --checkpoint_every 5 \
   --resume
-  --max_files 200
+  --max_files 2
