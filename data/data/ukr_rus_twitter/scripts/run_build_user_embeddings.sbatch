@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=ukr-twitter-emb
-#SBATCH --output=/home1/eibl/gfm/prodigy/logs/ukr-twitter-emb-%j.out
-#SBATCH --error=/home1/eibl/gfm/prodigy/logs/ukr-twitter-emb-%j.err
+#SBATCH --output=/scratch1/eibl/data/ukr_rus_twitter/logs/ukr-twitter-emb-%j.out
+#SBATCH --error=/scratch1/eibl/data/ukr_rus_twitter/logs/ukr-twitter-emb-%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
@@ -17,7 +17,7 @@ conda activate prodigy
 
 cd /home1/eibl/gfm/prodigy
 
-mkdir -p /home1/eibl/gfm/prodigy/logs
+mkdir -p /scratch1/eibl/data/ukr_rus_twitter/logs
 mkdir -p /scratch1/eibl/data/ukr_rus_twitter/embeddings
 
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
@@ -27,6 +27,6 @@ python data/data/ukr_rus_twitter/scripts/build_user_embeddings.py \
   --out /scratch1/eibl/data/ukr_rus_twitter/embeddings/user_embeddings_minilm.pt \
   --batch_size 32 \
   --checkpoint_path /scratch1/eibl/data/ukr_rus_twitter/embeddings/user_embeddings_minilm.checkpoint.pkl \
-  --checkpoint_every 5 \
-  --resume
-  --max_files 2
+  --checkpoint_every 10 \
+  --resume \
+  --max_files 200
