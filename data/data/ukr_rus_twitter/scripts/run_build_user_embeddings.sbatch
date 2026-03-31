@@ -8,8 +8,6 @@
 #SBATCH --mem=64G
 #SBATCH --time=08:00:00
 
-set -euo pipefail
-
 module purge || true
 
 source "$(conda info --base)/etc/profile.d/conda.sh"
