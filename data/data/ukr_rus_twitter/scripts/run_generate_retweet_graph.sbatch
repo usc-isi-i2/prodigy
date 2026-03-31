@@ -2,7 +2,7 @@
 #SBATCH --job-name=ukr-retweet
 #SBATCH --output=/scratch1/eibl/data/ukr_rus_twitter/logs/ukr-retweet-%j.out
 #SBATCH --error=/scratch1/eibl/data/ukr_rus_twitter/logs/ukr-retweet-%j.err
-#SBATCH --partition=largemem
+#SBATCH --partition=main
 #SBATCH --time=02:00:00
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=128G
