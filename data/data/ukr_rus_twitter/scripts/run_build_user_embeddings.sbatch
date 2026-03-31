@@ -5,7 +5,7 @@
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=64G
+#SBATCH --mem=128G
 #SBATCH --time=08:00:00
 
 module purge || true
@@ -27,4 +27,4 @@ python data/data/ukr_rus_twitter/scripts/build_user_embeddings.py \
   --checkpoint_path /scratch1/eibl/data/ukr_rus_twitter/embeddings/user_embeddings_minilm.checkpoint.pkl \
   --checkpoint_every 10 \
   --resume \
-  --max_files 200
+  --max_files 150
