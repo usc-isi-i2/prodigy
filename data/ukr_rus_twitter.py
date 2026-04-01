@@ -1,6 +1,7 @@
 import os
 from typing import Optional, Set, Union
 
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from torch_geometric.data import Data
@@ -16,6 +17,11 @@ from .midterm import (
     _load_edge_feature_names,
     _apply_feature_subset,
     _apply_edge_feature_subset,
+    _build_stratified_node_splits,
+    _mask_labels_to_node_split,
+    _apply_label_downsample,
+    midterm_task,
+    _deterministic_label_embeddings,
 )
 
 
@@ -63,6 +69,12 @@ def _build_ukr_rus_twitter_graph(raw: dict, **kwargs):
     graph.feature_names = raw.get("feature_names", [])
     graph.label_names = raw.get("label_names", [])
     graph.handles = raw.get("handles", [])
+    graph.y = _apply_label_downsample(
+        graph.y,
+        graph.label_names,
+        kwargs.get("midterm_label_downsample", ""),
+        seed=int(kwargs.get("seed", 0) or 0),
+    )
 
     graph = _apply_feature_subset(graph, kwargs.get("midterm_feature_subset", "all"))
     graph = _apply_edge_feature_subset(
@@ -139,7 +151,7 @@ def get_ukr_rus_twitter_dataloader(
         label_set: Optional[Set[int]] = None,
         **kwargs
 ) -> DataLoader:
-    del root, bert, split_labels, train_cap, linear_probe, label_set, node_split
+    del root
     seed = sum(ord(c) for c in split)
     graph = dataset.graph
     task_name = kwargs.get("task_name", "neighbor_matching")
@@ -192,7 +204,46 @@ def get_ukr_rus_twitter_dataloader(
         label_embeddings = torch.zeros(1, 768).expand(graph.num_nodes, -1)
         is_multiway = False
     elif task_name == "classification":
-        raise ValueError("ukr_rus_twitter graph currently has no node labels; classification is unsupported.")
+        label_names = list(getattr(graph, "label_names", []))
+        num_classes = len(label_names)
+        if num_classes == 0:
+            raise ValueError("ukr_rus_twitter classification requires graph.label_names to be populated.")
+
+        if bert is not None:
+            label_embeddings = bert.get_sentence_embeddings(label_names)
+        else:
+            label_embeddings = _deterministic_label_embeddings(label_names, dim=768)
+
+        labels = graph.y.numpy()
+        if not hasattr(dataset, "_classification_node_splits"):
+            dataset._classification_node_splits = _build_stratified_node_splits(labels, seed=0)
+
+        split_key = (node_split or "").strip() or split
+        node_splits = dataset._classification_node_splits
+        if split_key not in node_splits:
+            raise ValueError(
+                f"Unknown ukr_rus_twitter classification node split '{split_key}'. "
+                f"Available: {sorted(node_splits.keys())}"
+            )
+        labels = _mask_labels_to_node_split(labels, node_splits[split_key])
+        task = midterm_task(
+            labels=labels,
+            num_classes=num_classes,
+            split=split,
+            label_set=label_set,
+            split_labels=False,
+            train_cap=train_cap,
+            linear_probe=linear_probe,
+        )
+        task.original_graph_labels = graph.y.numpy().copy()
+        task.split_masked_labels = labels.copy()
+        sampler = BatchSampler(
+            batch_count,
+            task,
+            ParamSampler(batch_size, n_way, n_shot, n_query, 1),
+            seed=seed,
+        )
+        is_multiway = True
     else:
         raise ValueError(f"Unknown task for ukr_rus_twitter: {task_name}")
 
