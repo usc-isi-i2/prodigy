@@ -7,7 +7,7 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=64G
 
-# set -euo pipefail
+set -euo pipefail
 
 module purge || true
 
@@ -28,5 +28,7 @@ export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
 python -u data/data/ukr_rus_twitter/scripts/generate_retweet_graph.py \
   --csv "/project2/ll_774_951/uk_ru/twitter/data/*/*.csv" \
-  --out /scratch1/eibl/data/ukr_rus_twitter/graphs/retweet_graph_100files.pt \
-  --max_files 100
+  --out /scratch1/eibl/data/ukr_rus_twitter/graphs/retweet_graph_150files_minilm.pt \
+  --max_files 150 \
+  --embeddings /scratch1/eibl/data/ukr_rus_twitter/embeddings/user_embeddings_minilm.pt \
+  --embedding_pool meanpool
