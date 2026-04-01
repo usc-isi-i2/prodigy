@@ -28,6 +28,9 @@ def get_dataset_wrap(root, dataset, **kwargs):
     if dataset == "midterm":
         from data.midterm import get_midterm_dataset
         return get_midterm_dataset(root=root, **kwargs)
+    if dataset == "ukr_rus_twitter":
+        from data.ukr_rus_twitter import get_ukr_rus_twitter_dataset
+        return get_ukr_rus_twitter_dataset(root=root, **kwargs)
     if dataset in {"facebook-uk_ru", "facebook_uk_ru"}:
         from data.facebook_uk_ru import get_facebook_uk_ru_dataset
         return get_facebook_uk_ru_dataset(root=root, **kwargs)
