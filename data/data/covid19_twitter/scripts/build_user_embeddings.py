@@ -45,16 +45,28 @@ def normalize_handle(handle):
 
 def load_json_items(path: str):
     with open(path, "r", encoding="utf-8", errors="replace") as f:
-        obj = json.load(f)
-    if isinstance(obj, list):
-        return obj
-    if isinstance(obj, dict):
-        if isinstance(obj.get("statuses"), list):
-            return obj["statuses"]
-        if isinstance(obj.get("data"), list):
-            return obj["data"]
-        return [obj]
-    return []
+        text = f.read().strip()
+    if not text:
+        return []
+    try:
+        obj = json.loads(text)
+        if isinstance(obj, list):
+            return obj
+        if isinstance(obj, dict):
+            if isinstance(obj.get("statuses"), list):
+                return obj["statuses"]
+            if isinstance(obj.get("data"), list):
+                return obj["data"]
+            return [obj]
+        return []
+    except json.JSONDecodeError:
+        items = []
+        for line in text.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            items.append(json.loads(line))
+        return items
 
 
 def get_tweet_text(tweet: dict) -> str:
