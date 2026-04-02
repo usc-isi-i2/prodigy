@@ -11,7 +11,7 @@ import torch
 from sentence_transformers import SentenceTransformer
 
 
-DEFAULT_JSON_GLOB = "/scratch1/eibl/data/covid19_twitter/*/*.json"
+DEFAULT_JSON_GLOB = "/scratch1/eibl/data/covid19_twitter/raw/*/*.json"
 DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 DEFAULT_OUT = "data/data/covid19_twitter/embeddings/user_embeddings_minilm.pt"
 
