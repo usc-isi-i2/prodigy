@@ -22,5 +22,5 @@ python -u data/data/covid19_twitter/scripts/generate_retweet_graph.py \
   --json_glob "/scratch1/eibl/data/covid19_twitter/raw/*/*.json" \
   --out /scratch1/eibl/data/covid19_twitter/graphs/retweet_graph_minilm.pt \
   --embeddings /scratch1/eibl/data/covid19_twitter/embeddings/user_embeddings_minilm.pt \
-  --embedding_pool meanpool
+  --embedding_pool meanpool \
   --max_files 100
