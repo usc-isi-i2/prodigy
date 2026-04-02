@@ -24,6 +24,6 @@ python -u data/data/covid19_twitter/scripts/build_user_embeddings.py \
   --out /scratch1/eibl/data/covid19_twitter/embeddings/user_embeddings_minilm.pt \
   --batch_size 32 \
   --checkpoint_path /scratch1/eibl/data/covid19_twitter/embeddings/user_embeddings_minilm.checkpoint.pkl \
-  --checkpoint_every 5 \
-  --max_files 10 \
+  --checkpoint_every 10 \
+  --max_files 100 \
   --resume
