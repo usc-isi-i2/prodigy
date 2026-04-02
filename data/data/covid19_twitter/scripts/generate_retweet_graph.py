@@ -11,7 +11,7 @@ from sklearn.preprocessing import StandardScaler
 from torch_geometric.data import Data
 
 
-DEFAULT_JSON_GLOB = "/scratch1/eibl/data/covid19_twitter/*/*.json"
+DEFAULT_JSON_GLOB = "/scratch1/eibl/data/covid19_twitter/raw/*/*.json"
 DEFAULT_OUT = "data/data/covid19_twitter/graphs/retweet_graph.pt"
 DEFAULT_HISTORY_FRACTION = 0.8
 
