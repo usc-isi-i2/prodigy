@@ -61,11 +61,17 @@ def load_json_items(path: str):
         return []
     except json.JSONDecodeError:
         items = []
+        bad_lines = 0
         for line in text.splitlines():
             line = line.strip()
             if not line:
                 continue
-            items.append(json.loads(line))
+            try:
+                items.append(json.loads(line))
+            except json.JSONDecodeError:
+                bad_lines += 1
+        if bad_lines:
+            print(f"  [WARN] skipped {bad_lines:,} malformed JSON lines in {os.path.basename(path)}", flush=True)
         return items
 
 
