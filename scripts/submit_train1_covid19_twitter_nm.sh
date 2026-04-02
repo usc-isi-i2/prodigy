@@ -25,7 +25,7 @@ python3 experiments/run_single_experiment.py \
   --midterm_feature_subset emb_only \
   --midterm_edge_view temporal_history \
   --input_dim 384 \
-  --n_way 2 \
+  --n_way 3 \
   --n_shots 3 \
   --n_query 8 \
   --checkpoint_step 1000 \
