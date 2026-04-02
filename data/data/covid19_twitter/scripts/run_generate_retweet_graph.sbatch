@@ -20,7 +20,8 @@ export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
 python -u data/data/covid19_twitter/scripts/generate_retweet_graph.py \
   --json_glob "/scratch1/eibl/data/covid19_twitter/raw/*/*.json" \
-  --out /scratch1/eibl/data/covid19_twitter/graphs/retweet_graph_minilm_first100.pt \
+  --out /scratch1/eibl/data/covid19_twitter/graphs/retweet_graph_minilm_first100_hf03.pt \
   --embeddings /scratch1/eibl/data/covid19_twitter/embeddings/user_embeddings_minilm_first100.pt \
   --embedding_pool meanpool \
-  --max_files 100
+  --max_files 100 \
+  --history_fraction 0.3
