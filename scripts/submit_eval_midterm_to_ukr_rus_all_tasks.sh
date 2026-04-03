@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-SHOTS_CSV="${1:-1,2,5,10}"
+SHOTS_CSV="${1:-0,1,2,5,10}"
 
 cd /home1/eibl/gfm/prodigy
 

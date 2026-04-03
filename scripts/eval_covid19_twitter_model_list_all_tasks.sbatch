@@ -1,21 +1,21 @@
 #!/bin/bash
-#SBATCH --job-name=eval_ukr_rus_twitter_all
-#SBATCH --output=/scratch1/eibl/data/ukr_rus_twitter/logs/%x_%j.out
-#SBATCH --error=/scratch1/eibl/data/ukr_rus_twitter/logs/%x_%j.err
+#SBATCH --job-name=eval_covid19_twitter_all
+#SBATCH --output=/scratch1/eibl/data/covid19_twitter/logs/%x_%j.out
+#SBATCH --error=/scratch1/eibl/data/covid19_twitter/logs/%x_%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --time=04:00:00
 
-# set -euo pipefail
+set -euo pipefail
 
 module purge || true
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate prodigy
 
 cd /home1/eibl/gfm/prodigy
-mkdir -p /scratch1/eibl/data/ukr_rus_twitter/logs
+mkdir -p /scratch1/eibl/data/covid19_twitter/logs
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
 if [[ $# -lt 1 || $# -gt 2 ]]; then
@@ -24,7 +24,7 @@ if [[ $# -lt 1 || $# -gt 2 ]]; then
   echo "  <ckpt_path>" >&2
   echo "or" >&2
   echo "  <model_name> <ckpt_path>" >&2
-  echo "Example shots_csv: 1,2,5,10" >&2
+  echo "Example shots_csv: 0,1,2,5,10" >&2
   exit 1
 fi
 
@@ -42,8 +42,9 @@ if [[ ${#SHOT_LIST[@]} -eq 0 ]]; then
 fi
 
 COMMON_ARGS=(
-  --dataset ukr_rus_twitter
-  --root /scratch1/eibl/data/ukr_rus_twitter/graphs
+  --dataset covid19_twitter
+  --root /scratch1/eibl/data/covid19_twitter/graphs
+  --graph_filename retweet_graph_minilm_first100_hf03.pt
   --midterm_feature_subset emb_only
   --midterm_edge_view temporal_history
   --input_dim 384
@@ -69,7 +70,6 @@ run_eval() {
     neighbor_matching)
       task_tag="nm"
       extra_args=(
-        --graph_filename retweet_graph_150files_minilm_hf03.pt
         --task_name neighbor_matching
         --n_way 2
         --n_shots "$shots"
@@ -85,7 +85,6 @@ run_eval() {
     temporal_link_prediction)
       task_tag="lp"
       extra_args=(
-        --graph_filename retweet_graph_150files_minilm_hf03.pt
         --task_name temporal_link_prediction
         --n_way 1
         --n_shots "$shots"
@@ -100,29 +99,8 @@ run_eval() {
         --prefix "trained_on_${model_name}_eval_on_${task_tag}_${shots}_shot"
       )
       ;;
-    classification)
-      task_tag="pl"
-      extra_args=(
-        --graph_filename retweet_graph_150files_minilm_hf03_political_labels.pt
-        --task_name classification
-        --ignore_label_embeddings False
-        --linear_probe False
-        --n_way 2
-        --n_shots "$shots"
-        --n_query 3
-        --zero_shot "$([[ "$shots" == "0" ]] && echo True || echo False)"
-        --dataset_len_cap 2000
-        --val_len_cap 500
-        --test_len_cap 500
-        --epochs 3
-        --eval_step 1000
-        --checkpoint_step 1000
-        --midterm_label_downsample 50:50
-        --prefix "trained_on_${model_name}_eval_on_${task_tag}_${shots}_shot"
-      )
-      ;;
     *)
-      echo "Unknown task: $task_name" >&2
+      echo "Unknown or unsupported task for covid19_twitter: $task_name" >&2
       exit 1
       ;;
   esac
@@ -165,6 +143,5 @@ while IFS= read -r raw_line || [[ -n "$raw_line" ]]; do
   for shots in "${SHOT_LIST[@]}"; do
     run_eval "$model_name" "$ckpt_path" neighbor_matching "$shots"
     run_eval "$model_name" "$ckpt_path" temporal_link_prediction "$shots"
-    run_eval "$model_name" "$ckpt_path" classification "$shots"
   done
 done < "$MODEL_LIST"

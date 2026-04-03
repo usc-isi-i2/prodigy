@@ -27,7 +27,7 @@ if [[ $# -lt 1 || $# -gt 2 ]]; then
 fi
 
 MODEL_LIST="$1"
-SHOTS_CSV="${2:-1,2,5,10}"
+SHOTS_CSV="${2:-0,1,2,5,10}"
 if [[ ! -f "$MODEL_LIST" ]]; then
   echo "Model list not found: $MODEL_LIST" >&2
   exit 1
@@ -72,6 +72,7 @@ run_eval() {
         --n_way 3
         --n_shots "$shots"
         --n_query 24
+        --zero_shot "$([[ "$shots" == "0" ]] && echo True || echo False)"
         --val_len_cap 500
         --test_len_cap 500
         --eval_step 1000
@@ -86,7 +87,7 @@ run_eval() {
         --n_way 1
         --n_shots "$shots"
         --n_query 3
-        --zero_shot False
+        --zero_shot "$([[ "$shots" == "0" ]] && echo True || echo False)"
         --val_len_cap 500
         --test_len_cap 500
         --epochs 3
@@ -105,7 +106,7 @@ run_eval() {
         --n_way 2
         --n_shots "$shots"
         --n_query 3
-        --zero_shot False
+        --zero_shot "$([[ "$shots" == "0" ]] && echo True || echo False)"
         --dataset_len_cap 2000
         --val_len_cap 500
         --test_len_cap 500
