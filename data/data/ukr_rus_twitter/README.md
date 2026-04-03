@@ -40,7 +40,15 @@ python data/data/ukr_rus_twitter/scripts/build_user_embeddings.py \
 | `--checkpoint_every` | 5 | Save checkpoint every N files |
 | `--resume` | off | Resume from existing checkpoint |
 
-**Output:** a `.pt` file containing keys `user_ids` and `meanpool` (tensor `[num_users, emb_dim]`).
+**Output schema:**
+
+| Key | Description |
+|---|---|
+| `handles` | sorted list of lowercased screen names |
+| `meanpool` | tensor `[N, D]` |
+| `maxpool` | tensor `[N, D]` |
+| `counts` | dict `handle -> number of embedded posts` |
+| `model` | model name string |
 
 ### Step 2 — Build the retweet graph
 
@@ -62,18 +70,22 @@ python data/data/ukr_rus_twitter/scripts/generate_retweet_graph.py \
 | `--history_fraction` | 0.8 | Fraction of edges in the "history" split for temporal LP |
 | `--max_files` | 0 (all) | Limit number of CSV files |
 
-**Output:** same schema as the midterm graph:
+**Current graph artifact schema:**
 
 | Key | Shape | Description |
 |---|---|---|
 | `x` | `[N, F]` | Node features (11 numeric + optional 384-dim embeddings) |
-| `edge_index` | `[2, E]` | Retweet edges |
+| `edge_index` | `[2, E]` | Directed retweet edges |
 | `edge_attr` | `[E, 4]` | `first_retweet_time`, `n_retweets`, `avg_rt_fav`, `avg_rt_reply` |
-| `y` | `[N]` | Node labels |
-| `user_ids` | `[N]` | User ID strings |
-| `feature_names` | list | Names of the 11 numeric node features |
-| `label_names` | list | Label class names |
-| `temporal_*` | — | Temporal train/val/test edge masks |
+| `handles` | `list[str]` | Node IDs |
+| `h2i` | `dict[str, int]` | Handle-to-index map |
+| `feature_names` | list | Node feature names |
+| `y` | `[N]` | Labels, currently all `-1` unless you add political labels |
+| `label_names` | list | Label class names, empty unless labels are attached |
+| `edge_index_views` | dict | Includes `temporal_history` |
+| `target_edge_index_views` | dict | Includes `temporal_new` |
+| `future_edge_index` | `[2, E_future]` | LP target edges |
+| `data` | PyG `Data` | Convenience copy for compatibility |
 
 Node features (11): `subscriber_count`, `verified`, `avg_favorites`, `avg_comments`, `avg_score`, `avg_n_hashtags`, `avg_n_mentions`, `avg_has_media`, `post_count`, `in_degree`, `out_degree`.
 
@@ -82,6 +94,12 @@ Node features (11): `subscriber_count`, `verified`, `avg_favorites`, `avg_commen
 ```bash
 python data/data/ukr_rus_twitter/scripts/validate_graph.py \
   --graph data/data/ukr_rus_twitter/graphs/retweet_graph.pt
+```
+
+```bash
+python data/data/ukr_rus_twitter/scripts/inspect_graph.py \
+  --graph data/data/ukr_rus_twitter/graphs/retweet_graph.pt \
+  --topk 20
 ```
 
 ## Running on the cluster
@@ -110,6 +128,7 @@ sbatch scripts/submit_train1_ukr_rus_twitter_pl.sh   # political leaning classif
 |---|---|---|
 | Temporal link prediction | `temporal_link_prediction` | `--midterm_edge_view temporal_history --midterm_target_edge_view temporal_new --n_way 1 --n_shots 1 --n_query 3` |
 | Neighbor matching | `neighbor_matching` | `--midterm_edge_view temporal_history --n_way 3 --n_shots 3 --n_query 24` |
+| Classification | `classification` | requires a labeled graph such as `retweet_graph_150files_minilm_hf03_political_labels.pt` |
 
 Set `--midterm_feature_subset emb_only --input_dim 384` when using text embeddings only.
 The graph filename used in the current scripts is `retweet_graph_150files_minilm_hf03.pt` (150 CSV files, MiniLM embeddings, history fraction 0.3).

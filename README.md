@@ -99,11 +99,20 @@ sbatch scripts/submit_train1_covid19_twitter_nm.sh
 
 > The scripts have hardcoded paths under `/scratch1/eibl/` and `/home1/eibl/`. Update `--root`, `--graph_filename`, and the `cd` / log paths to your own directories before submitting.
 
-Cross-dataset transfer (train on one, eval on other):
+Cross-dataset transfer (train on one, eval on other) — see [CROSS_DATASET_EVAL.md](CROSS_DATASET_EVAL.md) for the full flow:
 
 ```bash
+# Midterm <-> Ukraine-Russia
 sbatch scripts/submit_eval_midterm_to_ukr_rus_all_tasks.sh
 sbatch scripts/submit_eval_ukr_rus_to_midterm_all_tasks.sh
+
+# Evaluate any model list on a COVID-19 target graph
+sbatch scripts/eval_covid19_twitter_model_list_all_tasks.sbatch \
+  scripts/eval1_covid_model_list.txt
+
+# Evaluate any model list on a Ukraine-Russia target graph
+sbatch scripts/eval_ukr_rus_twitter_model_list_all_tasks.sbatch \
+  scripts/eval1_model_list.txt
 ```
 
 ### MAG240M pretraining
