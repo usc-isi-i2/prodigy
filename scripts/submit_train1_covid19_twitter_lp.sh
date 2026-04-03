@@ -20,7 +20,7 @@ export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 python3 experiments/run_single_experiment.py \
   --dataset covid19_twitter \
   --root /scratch1/eibl/data/covid19_twitter/graphs \
-  --graph_filename retweet_graph_minilm.pt \
+  --graph_filename retweet_graph_minilm_first100_hf03.pt \
   --task_name temporal_link_prediction \
   --midterm_feature_subset emb_only \
   --midterm_edge_view temporal_history \
@@ -39,4 +39,4 @@ python3 experiments/run_single_experiment.py \
   --workers 4 \
   --device 0 \
   --seed 0 \
-  --prefix train1_covid19_twitter_lp
+  --prefix train1_covid19_twitter_lp_first100_hf03
