@@ -18,6 +18,8 @@ from torch_geometric.data import Data
 DEFAULT_CSV = "/project2/ll_774_951/uk_ru/twitter/data/*/*.csv"
 DEFAULT_OUT = "data/data/ukr_rus_twitter/graphs/retweet_graph.pt"
 DEFAULT_HISTORY_FRACTION = 0.8
+LABEL_NAMES = ["left", "right"]
+LABEL_TO_ID = {name: i for i, name in enumerate(LABEL_NAMES)}
 
 OUTLET_SCORES = {
     "abcnews.go.com": 2.0,
@@ -49,6 +51,18 @@ OUTLET_SCORES = {
     "vice.com": 1.0,
     "washingtonpost.com": 2.0,
     "wsj.com": 3.0,
+}
+
+HASHTAG_TO_LABEL = {
+    "voteblue": "left",
+    "voteblue2022": "left",
+    "bluewave": "left",
+    "bluewave2022": "left",
+    "maga": "right",
+    "voteredtosaveamerica": "right",
+    "votered": "right",
+    "redwavecoming": "right",
+    "democratsaretheproblem": "right",
 }
 
 DOMAIN_TO_CANONICAL = {
@@ -151,6 +165,12 @@ DOMAIN_TO_CANONICAL = {
     "kremlin.ru": "kremlin.ru",
 }
 
+URL_TO_LABEL = {
+    domain: ("left" if score < 3 else "right")
+    for domain, score in OUTLET_SCORES.items()
+    if score != 3
+}
+
 NODE_FEATURE_NAMES = [
     "subscriber_count",
     "verified",
@@ -190,6 +210,7 @@ USECOLS = {
     "description",
     "urls_list",
     "rt_urls_list",
+    "rt_hashtag",
 }
 
 
@@ -223,6 +244,12 @@ def parse_args():
         action=argparse.BooleanOptionalAction,
         default=False,
         help="Generate binary pseudo political labels from linked news domains.",
+    )
+    p.add_argument(
+        "--pseudo-label-margin",
+        type=int,
+        default=2,
+        help="Minimum absolute left-vs-right evidence difference required to assign a pseudo label.",
     )
     return p.parse_args()
 
@@ -351,75 +378,178 @@ def canonicalize_domain(domain: str):
         return None
     if domain in DOMAIN_TO_CANONICAL:
         return DOMAIN_TO_CANONICAL[domain]
-    if domain in OUTLET_SCORES:
+    if domain in URL_TO_LABEL:
         return domain
     parts = domain.split(".")
     for i in range(1, len(parts) - 1):
         candidate = ".".join(parts[i:])
         if candidate in DOMAIN_TO_CANONICAL:
             return DOMAIN_TO_CANONICAL[candidate]
-        if candidate in OUTLET_SCORES:
+        if candidate in URL_TO_LABEL:
             return candidate
     return None
 
 
-def build_pseudo_political_labels(raw: pd.DataFrame, handles: List[str]) -> Tuple[torch.Tensor, List[str], int]:
-    user_df = raw.copy()
+def score_url_field_value(val) -> Dict[str, int]:
+    counts = {label: 0 for label in LABEL_NAMES}
+    for domain in extract_domains_from_url_field(val):
+        canonical = canonicalize_domain(domain)
+        if canonical is None:
+            continue
+        label = URL_TO_LABEL.get(canonical)
+        if label is None:
+            continue
+        counts[label] += 1
+    return counts
+
+
+def map_url_scores(series: pd.Series) -> Tuple[pd.Series, pd.Series]:
+    keys = series.astype("string").fillna("")
+    unique_vals = pd.unique(keys)
+
+    left_map: Dict[str, int] = {}
+    right_map: Dict[str, int] = {}
+    for val in unique_vals:
+        counts = score_url_field_value(val)
+        left_map[val] = counts["left"]
+        right_map[val] = counts["right"]
+
+    left_series = keys.map(left_map).fillna(0).astype(np.int32)
+    right_series = keys.map(right_map).fillna(0).astype(np.int32)
+    return left_series, right_series
+
+
+def extract_hashtags_from_field(val) -> List[str]:
+    tags: List[str] = []
+    for item in parse_serialized_list(val):
+        if isinstance(item, dict):
+            tag = str(item.get("text") or item.get("tag") or "").strip().lower()
+        else:
+            tag = str(item).strip().lower()
+        if not tag:
+            continue
+        if tag.startswith("#"):
+            tag = tag[1:]
+        if tag:
+            tags.append(tag)
+    return tags
+
+
+def extract_hashtags_from_text(text) -> List[str]:
+    s = str(text or "").lower()
+    return [match[1:] for match in re.findall(r"#\w+", s)]
+
+
+def score_hashtag_iter(tags: List[str]) -> Dict[str, int]:
+    counts = {label: 0 for label in LABEL_NAMES}
+    for tag in tags:
+        label = HASHTAG_TO_LABEL.get(tag)
+        if label is not None:
+            counts[label] += 1
+    return counts
+
+
+def map_hashtag_field_scores(series: pd.Series) -> Tuple[pd.Series, pd.Series]:
+    keys = series.astype("string").fillna("")
+    unique_vals = pd.unique(keys)
+
+    left_map: Dict[str, int] = {}
+    right_map: Dict[str, int] = {}
+    for val in unique_vals:
+        counts = score_hashtag_iter(extract_hashtags_from_field(val))
+        left_map[val] = counts["left"]
+        right_map[val] = counts["right"]
+
+    left_series = keys.map(left_map).fillna(0).astype(np.int32)
+    right_series = keys.map(right_map).fillna(0).astype(np.int32)
+    return left_series, right_series
+
+
+def build_pseudo_political_labels(
+    raw: pd.DataFrame,
+    handles: List[str],
+    min_margin: int = 2,
+) -> Tuple[torch.Tensor, List[str], int]:
+    needed_cols = [c for c in ("screen_name", "description", "urls_list", "rt_urls_list", "hashtag", "rt_hashtag") if c in raw.columns]
+    user_df = raw[needed_cols].copy()
     user_df["screen_name"] = normalize_handle(user_df["screen_name"])
     user_df = user_df[user_df["screen_name"].notna()].copy()
     if user_df.empty:
         y = torch.full((len(handles),), -1, dtype=torch.long)
-        return y, ["left", "right"], 0
+        return y, list(LABEL_NAMES), 0
 
-    left_counts: Dict[str, int] = {}
-    right_counts: Dict[str, int] = {}
-    domain_regex = re.compile(r"#(?:maga|voteredtosaveamerica|votered|redwavecoming|democratsaretheproblem|voteblue|voteblue2022|bluewave|bluewave2022)")
-
-    for row in user_df.itertuples(index=False):
-        handle = getattr(row, "screen_name", None)
-        if not handle:
+    url_left = pd.Series(0, index=user_df.index, dtype=np.int32)
+    url_right = pd.Series(0, index=user_df.index, dtype=np.int32)
+    for col in ("urls_list", "rt_urls_list"):
+        if col not in user_df.columns:
             continue
-        row_left = 0
-        row_right = 0
-        for field_name in ("urls_list", "rt_urls_list"):
-            for domain in extract_domains_from_url_field(getattr(row, field_name, None)):
-                canonical = canonicalize_domain(domain)
-                if canonical is None:
-                    continue
-                score = OUTLET_SCORES.get(canonical)
-                if score is None:
-                    continue
-                if score < 3:
-                    row_left += 1
-                elif score > 3:
-                    row_right += 1
+        left_scores, right_scores = map_url_scores(user_df[col])
+        url_left = url_left.add(left_scores, fill_value=0).astype(np.int32)
+        url_right = url_right.add(right_scores, fill_value=0).astype(np.int32)
 
-        desc = str(getattr(row, "description", "") or "").lower()
-        if desc:
-            hashtag_hits = domain_regex.findall(desc)
-            for hit in hashtag_hits:
-                if "voteblue" in hit or "bluewave" in hit:
-                    row_left += 1
-                else:
-                    row_right += 1
+    url_agg = (
+        pd.DataFrame(
+            {
+                "screen_name": user_df["screen_name"],
+                "left_url": url_left,
+                "right_url": url_right,
+            }
+        )
+        .groupby("screen_name", sort=False)[["left_url", "right_url"]]
+        .sum()
+    )
 
-        if row_left:
-            left_counts[handle] = left_counts.get(handle, 0) + row_left
-        if row_right:
-            right_counts[handle] = right_counts.get(handle, 0) + row_right
+    hashtag_left = pd.Series(0, index=user_df.index, dtype=np.int32)
+    hashtag_right = pd.Series(0, index=user_df.index, dtype=np.int32)
+    for col in ("hashtag", "rt_hashtag"):
+        if col not in user_df.columns:
+            continue
+        left_scores, right_scores = map_hashtag_field_scores(user_df[col])
+        hashtag_left = hashtag_left.add(left_scores, fill_value=0).astype(np.int32)
+        hashtag_right = hashtag_right.add(right_scores, fill_value=0).astype(np.int32)
+
+    hashtag_agg = (
+        pd.DataFrame(
+            {
+                "screen_name": user_df["screen_name"],
+                "left_hashtag": hashtag_left,
+                "right_hashtag": hashtag_right,
+            }
+        )
+        .groupby("screen_name", sort=False)[["left_hashtag", "right_hashtag"]]
+        .sum()
+    )
+
+    desc_agg = pd.DataFrame(index=url_agg.index.union(hashtag_agg.index), data={"left_desc": 0, "right_desc": 0})
+    if "description" in user_df.columns:
+        desc_df = user_df[["screen_name", "description"]].copy()
+        desc_df["description"] = desc_df["description"].astype("string").fillna("").str.strip().str.lower()
+        desc_df = desc_df[desc_df["description"] != ""].drop_duplicates(subset=["screen_name", "description"])
+        if not desc_df.empty:
+            desc_scores = desc_df["description"].apply(lambda text: score_hashtag_iter(extract_hashtags_from_text(text)))
+            desc_df["left_desc"] = desc_scores.map(lambda d: d["left"]).astype(np.int32)
+            desc_df["right_desc"] = desc_scores.map(lambda d: d["right"]).astype(np.int32)
+            desc_agg = desc_df.groupby("screen_name", sort=False)[["left_desc", "right_desc"]].sum()
+
+    label_agg = url_agg.join(hashtag_agg, how="outer").join(desc_agg, how="outer").fillna(0)
+    left_totals = label_agg["left_url"] + label_agg.get("left_hashtag", 0) + label_agg.get("left_desc", 0)
+    right_totals = label_agg["right_url"] + label_agg.get("right_hashtag", 0) + label_agg.get("right_desc", 0)
 
     y = torch.full((len(handles),), -1, dtype=torch.long)
     labeled = 0
+    left_by_handle = left_totals.to_dict()
+    right_by_handle = right_totals.to_dict()
     for i, handle in enumerate(handles):
-        left = left_counts.get(handle, 0)
-        right = right_counts.get(handle, 0)
-        if left > right and left > 0:
-            y[i] = 0
+        left = int(left_by_handle.get(handle, 0))
+        right = int(right_by_handle.get(handle, 0))
+        margin = left - right
+        if margin >= min_margin and left > 0:
+            y[i] = LABEL_TO_ID["left"]
             labeled += 1
-        elif right > left and right > 0:
-            y[i] = 1
+        elif margin <= -min_margin and right > 0:
+            y[i] = LABEL_TO_ID["right"]
             labeled += 1
-    return y, ["left", "right"], labeled
+    return y, list(LABEL_NAMES), labeled
 
 
 def load_raw_rows(csv_glob: str, max_files: int) -> pd.DataFrame:
@@ -693,7 +823,11 @@ def main():
         isolated_dropped = 0
 
     if args.pseudo_political_labels:
-        y, label_names, labeled_nodes = build_pseudo_political_labels(raw, handles)
+        y, label_names, labeled_nodes = build_pseudo_political_labels(
+            raw,
+            handles,
+            min_margin=args.pseudo_label_margin,
+        )
         print(f"Generated pseudo political labels: {labeled_nodes:,} / {len(handles):,} labeled")
     else:
         y = torch.full((len(handles),), -1, dtype=torch.long)
@@ -791,6 +925,7 @@ def main():
         "embedding_dim": emb_stats["embedding_dim"],
         "embedding_matched_users": emb_stats["matched_users"],
         "pseudo_political_labels": bool(args.pseudo_political_labels),
+        "pseudo_label_margin": int(args.pseudo_label_margin),
         "keep_isolates": args.keep_isolates,
         "isolated_nodes_before_drop": isolated_before_drop,
         "isolated_nodes_dropped": isolated_dropped,
