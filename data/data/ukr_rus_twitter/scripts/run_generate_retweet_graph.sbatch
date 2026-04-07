@@ -28,8 +28,8 @@ export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
 python -u data/data/ukr_rus_twitter/scripts/generate_retweet_graph.py \
   --csv "/project2/ll_774_951/uk_ru/twitter/data/*/*.csv" \
-  --out /scratch1/eibl/data/ukr_rus_twitter/graphs/retweet_graph_150files_minilm_hf03_political_labels.pt \
-  --max_files 150 \
+  --out /scratch1/eibl/data/ukr_rus_twitter/graphs/retweet_graph_10files_minilm_hf03_political_labels.pt \
+  --max_files 10 \
   --embeddings /scratch1/eibl/data/ukr_rus_twitter/embeddings/user_embeddings_minilm.pt \
   --embedding_pool meanpool \
   --history_fraction 0.3 \
