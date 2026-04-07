@@ -5,7 +5,7 @@
 #SBATCH --partition=main
 #SBATCH --time=01:00:00
 #SBATCH --cpus-per-task=16
-#SBATCH --mem=64G
+#SBATCH --mem=128G
 
 set -euo pipefail
 
