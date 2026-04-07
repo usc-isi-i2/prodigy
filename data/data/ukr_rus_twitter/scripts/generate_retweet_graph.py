@@ -1,8 +1,11 @@
 import argparse
+import ast
 import csv
 import glob
 import json
 import os
+import re
+from urllib.parse import urlparse
 from typing import Dict, List, Tuple
 
 import numpy as np
@@ -15,6 +18,138 @@ from torch_geometric.data import Data
 DEFAULT_CSV = "/project2/ll_774_951/uk_ru/twitter/data/*/*.csv"
 DEFAULT_OUT = "data/data/ukr_rus_twitter/graphs/retweet_graph.pt"
 DEFAULT_HISTORY_FRACTION = 0.8
+
+OUTLET_SCORES = {
+    "abcnews.go.com": 2.0,
+    "bbc.com": 3.0,
+    "breitbart.com": 5.0,
+    "bostonglobe.com": 2.0,
+    "businessinsider.com": 3.0,
+    "buzzfeednews.com": 1.0,
+    "cbsnews.com": 2.0,
+    "chicagotribune.com": 3.0,
+    "cnbc.com": 3.0,
+    "cnn.com": 2.0,
+    "dailycaller.com": 5.0,
+    "dailymail.co.uk": 5.0,
+    "foxnews.com": 4.0,
+    "huffpost.com": 1.0,
+    "infowars.com": 5.0,
+    "latimes.com": 2.0,
+    "msnbc.om": 1.0,
+    "nbcnews.com": 2.0,
+    "nytimes.com": 2.0,
+    "npr.org": 3.0,
+    "oann.com": 4.0,
+    "pbs.org": 3.0,
+    "reuters.com": 3.0,
+    "theguardian.com": 2.0,
+    "usatoday.com": 3.0,
+    "yahoo.com": 2.0,
+    "vice.com": 1.0,
+    "washingtonpost.com": 2.0,
+    "wsj.com": 3.0,
+}
+
+DOMAIN_TO_CANONICAL = {
+    "bit.ly": None,
+    "dlvr.it": None,
+    "trib.al": None,
+    "ift.tt": None,
+    "twibbon.com": None,
+    "t.me": None,
+    "apple.news": None,
+    "ow.ly": None,
+    "buff.ly": None,
+    "tinyurl.com": None,
+    "news.google.com": None,
+    "lnr.app": None,
+    "fiverr.com": None,
+    "twitter.com": "twitter.com",
+    "reut.rs": "reuters.com",
+    "youtu.be": "youtube.com",
+    "theguardian.com": "theguardian.com",
+    "youtube.com": "youtube.com",
+    "nytimes.com": "nytimes.com",
+    "reuters.com": "reuters.com",
+    "mfa.gov.tr": "mfa.gov.tr",
+    "washingtonpost.com": "washingtonpost.com",
+    "cnn.com": "cnn.com",
+    "businessinsider.com": "businessinsider.com",
+    "rt.com": "rt.com",
+    "hill.cm": "thehill.com",
+    "bbc.in": "bbc.com",
+    "foxnews.com": "foxnews.com",
+    "facebook.com": "facebook.com",
+    "rawstory.com": "rawstory.com",
+    "bbc.co.uk": "bbc.com",
+    "news.sky.com": "news.sky.com",
+    "melenchon.fr": "melenchon.fr",
+    "a.msn.com": "msn.com",
+    "npr.org": "npr.org",
+    "politico.com": "politico.com",
+    "en.wikipedia.org": "wikipedia.org",
+    "cnb.cx": "cnbc.com",
+    "timesofindia.indiatimes.com": "timesofindia.indiatimes.com",
+    "dailykos.com": "dailykos.com",
+    "independent.co.uk": "independent.co.uk",
+    "bfmtv.com": "bfmtv.com",
+    "msn.com": "msn.com",
+    "jp.reuters.com": "reuters.com",
+    "axios.com": "axios.com",
+    "babylonbee.com": "babylonbee.com",
+    "news.yahoo.com": "yahoo.com",
+    "gelecektenhaber.com": "gelecektenhaber.com",
+    "instagram.com": "instagram.com",
+    "google.com": "google.com",
+    "zerohedge.com": "zerohedge.com",
+    "tagesschau.de": "tagesschau.de",
+    "thehill.com": "thehill.com",
+    "bloomberg.com": "bloomberg.com",
+    "lemonde.fr": "lemonde.fr",
+    "ndtv.com": "ndtv.com",
+    "forbes.com": "forbes.com",
+    "ti.me": "time.com",
+    "aninews.in": "aninews.in",
+    "theatlantic.com": "theatlantic.com",
+    "spiegel.de": "spiegel.de",
+    "on.ft.com": "ft.com",
+    "en.kremlin.ru": "kremlin.ru",
+    "cnn.it": "cnn.com",
+    "whitehouse.gov": "whitehouse.gov",
+    "insiderpaper.com": "insiderpaper.com",
+    "abc.net.au": "abc.net.au",
+    "francetvinfo.fr": "francetvinfo.fr",
+    "edition.cnn.com": "cnn.com",
+    "on.rt.com": "rt.com",
+    "aljazeera.com": "aljazeera.com",
+    "mobile.twitter.com": "twitter.com",
+    "parafesor.net": "parafesor.net",
+    "who.int": "who.int",
+    "world.bistosh.com": "bistosh.com",
+    "es.rt.com": "rt.com",
+    "coinkurry.com": "coinkurry.com",
+    "presidentti.fi": "presidentti.fi",
+    "nos.nl": "nos.nl",
+    "sputniknews.com": "sputniknews.com",
+    "mol.im": "dailymail.co.uk",
+    "vilaweb.cat": "vilaweb.cat",
+    "bild.de": "bild.de",
+    "washingtontimes.com": "washingtontimes.com",
+    "scmp.com": "scmp.com",
+    "wapo.st": "washingtonpost.com",
+    "aajtak.in": "aajtak.in",
+    "nbcnews.com": "nbcnews.com",
+    "tf1info.fr": "tf1info.fr",
+    "rumble.com": "rumble.com",
+    "maisinwin.blogspot.com": "maisinwin.blogspot.com",
+    "welt.de": "welt.de",
+    "nypost.com": "nypost.com",
+    "ft.com": "ft.com",
+    "liveuamap.com": "liveuamap.com",
+    "moneycontrol.com": "moneycontrol.com",
+    "kremlin.ru": "kremlin.ru",
+}
 
 NODE_FEATURE_NAMES = [
     "subscriber_count",
@@ -52,6 +187,9 @@ USECOLS = {
     "hashtag",
     "mentionsn",
     "media_urls",
+    "description",
+    "urls_list",
+    "rt_urls_list",
 }
 
 
@@ -79,6 +217,12 @@ def parse_args():
         action=argparse.BooleanOptionalAction,
         default=False,
         help="Keep nodes with zero in-degree and zero out-degree in the saved graph.",
+    )
+    p.add_argument(
+        "--pseudo-political-labels",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Generate binary pseudo political labels from linked news domains.",
     )
     return p.parse_args()
 
@@ -155,6 +299,127 @@ def count_list_like(val) -> int:
     if not s:
         return 0
     return len([x for x in s.split(",") if x.strip()])
+
+
+def parse_serialized_list(val):
+    if pd.isna(val):
+        return []
+    if isinstance(val, list):
+        return val
+    s = str(val).strip()
+    if s in {"", "[]", "nan", "None", "<NA>"}:
+        return []
+    try:
+        parsed = ast.literal_eval(s)
+    except Exception:
+        return []
+    return parsed if isinstance(parsed, list) else []
+
+
+def normalize_domain(domain: str) -> str:
+    domain = (domain or "").strip().lower()
+    if not domain:
+        return ""
+    if domain.startswith("www."):
+        domain = domain[4:]
+    return domain
+
+
+def extract_domains_from_url_field(val) -> List[str]:
+    domains: List[str] = []
+    for item in parse_serialized_list(val):
+        expanded = ""
+        if isinstance(item, dict):
+            expanded = str(item.get("expanded_url") or item.get("url") or "").strip()
+        else:
+            expanded = str(item).strip()
+        if not expanded:
+            continue
+        try:
+            netloc = urlparse(expanded).netloc
+        except Exception:
+            netloc = ""
+        domain = normalize_domain(netloc)
+        if domain:
+            domains.append(domain)
+    return domains
+
+
+def canonicalize_domain(domain: str):
+    domain = normalize_domain(domain)
+    if not domain:
+        return None
+    if domain in DOMAIN_TO_CANONICAL:
+        return DOMAIN_TO_CANONICAL[domain]
+    if domain in OUTLET_SCORES:
+        return domain
+    parts = domain.split(".")
+    for i in range(1, len(parts) - 1):
+        candidate = ".".join(parts[i:])
+        if candidate in DOMAIN_TO_CANONICAL:
+            return DOMAIN_TO_CANONICAL[candidate]
+        if candidate in OUTLET_SCORES:
+            return candidate
+    return None
+
+
+def build_pseudo_political_labels(raw: pd.DataFrame, handles: List[str]) -> Tuple[torch.Tensor, List[str], int]:
+    user_df = raw.copy()
+    user_df["screen_name"] = normalize_handle(user_df["screen_name"])
+    user_df = user_df[user_df["screen_name"].notna()].copy()
+    if user_df.empty:
+        y = torch.full((len(handles),), -1, dtype=torch.long)
+        return y, ["left", "right"], 0
+
+    left_counts: Dict[str, int] = {}
+    right_counts: Dict[str, int] = {}
+    domain_regex = re.compile(r"#(?:maga|voteredtosaveamerica|votered|redwavecoming|democratsaretheproblem|voteblue|voteblue2022|bluewave|bluewave2022)")
+
+    for row in user_df.itertuples(index=False):
+        handle = getattr(row, "screen_name", None)
+        if not handle:
+            continue
+        row_left = 0
+        row_right = 0
+        for field_name in ("urls_list", "rt_urls_list"):
+            for domain in extract_domains_from_url_field(getattr(row, field_name, None)):
+                canonical = canonicalize_domain(domain)
+                if canonical is None:
+                    continue
+                score = OUTLET_SCORES.get(canonical)
+                if score is None:
+                    continue
+                if score < 3:
+                    row_left += 1
+                elif score > 3:
+                    row_right += 1
+
+        desc = str(getattr(row, "description", "") or "").lower()
+        if desc:
+            hashtag_hits = domain_regex.findall(desc)
+            for hit in hashtag_hits:
+                if "voteblue" in hit or "bluewave" in hit:
+                    row_left += 1
+                else:
+                    row_right += 1
+
+        if row_left:
+            left_counts[handle] = left_counts.get(handle, 0) + row_left
+        if row_right:
+            right_counts[handle] = right_counts.get(handle, 0) + row_right
+
+    y = torch.full((len(handles),), -1, dtype=torch.long)
+    labeled = 0
+    for i, handle in enumerate(handles):
+        left = left_counts.get(handle, 0)
+        right = right_counts.get(handle, 0)
+        if left > right and left > 0:
+            y[i] = 0
+            labeled += 1
+        elif right > left and right > 0:
+            y[i] = 1
+            labeled += 1
+    return y, ["left", "right"], labeled
 
 
 def load_raw_rows(csv_glob: str, max_files: int) -> pd.DataFrame:
@@ -427,8 +692,13 @@ def main():
     else:
         isolated_dropped = 0
 
-    y = torch.full((len(handles),), -1, dtype=torch.long)
-    label_names: List[str] = []
+    if args.pseudo_political_labels:
+        y, label_names, labeled_nodes = build_pseudo_political_labels(raw, handles)
+        print(f"Generated pseudo political labels: {labeled_nodes:,} / {len(handles):,} labeled")
+    else:
+        y = torch.full((len(handles),), -1, dtype=torch.long)
+        label_names = []
+        labeled_nodes = 0
 
     graph_obj = {
         "x": x,
@@ -514,12 +784,13 @@ def main():
         "edges": int(edge_index.shape[1]),
         "node_feature_dim": int(x.shape[1]),
         "edge_feature_names": EDGE_FEATURE_NAMES,
-        "label_count": 0,
-        "labeled_nodes": 0,
+        "label_count": int(len(label_names)),
+        "labeled_nodes": int(labeled_nodes),
         "embeddings": args.embeddings,
         "embedding_pool": args.embedding_pool,
         "embedding_dim": emb_stats["embedding_dim"],
         "embedding_matched_users": emb_stats["matched_users"],
+        "pseudo_political_labels": bool(args.pseudo_political_labels),
         "keep_isolates": args.keep_isolates,
         "isolated_nodes_before_drop": isolated_before_drop,
         "isolated_nodes_dropped": isolated_dropped,
