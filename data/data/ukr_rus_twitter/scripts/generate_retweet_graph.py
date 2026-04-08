@@ -51,19 +51,17 @@ OUTLET_SCORES = {
     "vice.com": 1.0,
     "washingtonpost.com": 2.0,
     "wsj.com": 3.0,
+    # additional
+    "thehill.com": 2.7,
+    "rt.com": 3.7,
+    "rawstory.com": 1.7,
+    "news.sky.com": 2.3,
+    "independent.co.uk": 2.3,
+    "dailykos.com": 1.7,
 }
 
-HASHTAG_TO_LABEL = {
-    "voteblue": "left",
-    "voteblue2022": "left",
-    "bluewave": "left",
-    "bluewave2022": "left",
-    "maga": "right",
-    "voteredtosaveamerica": "right",
-    "votered": "right",
-    "redwavecoming": "right",
-    "democratsaretheproblem": "right",
-}
+HASHTAG_TO_LABEL = {'blm': 0, 'resist': 0, 'fbpe': 0, 'blacklivesmatter': 0, 'fbr': 0, 'maga': 1, 'theresistance': 0, 'voteblue': 0, 'resistance': 0, 'bidenharris': 0, 'johnsonout': 0, 'lgbtq': 0, 'bidenharris2020': 0, '2a': 1, 'fbpa': 0, 'resister': 0, 'fbppr': 0, 'bluewave': 0, 'gtto': 0, 'freepalestine': 0, 'rejoineu': 0, 'voteblue2022': 0, 'kag': 1, 'wearamask': 0, 'getvaccinated': 0, 'humanrights': 0, 'votingrights': 0, 'science': 0, 'goodtrouble': 0, 'strongertogether': 0, 'stillwithher': 0, 'climatecrisis': 0, 'metoo': 0, 'demvoice1': 0, 'biden': 0, 'climatechange': 0, 'justicematters': 0, 'americafirst': 1, 'nevertrump': 0, 'khive': 0, 'democrat': 0, 'vaccinated': 0, 'buildbackbetter': 0, 'stopasianhate': 0, 'prochoice': 0, 'drcole': 1, 'bds': 0, 'votebluenomatterwho': 0, 'teampelosi': 0, 'handmarkedpaperballots': 1, 'reconquête': 1, 'biden2020': 0, 'patriot': 1, 'equality': 0, 'prolife': 1, 'antifa': 0, 'fjb': 1, 'lgbt': 0, 'nra': 1, 'climateaction': 0, 'unionpopulaire': 0, 'zemmour2022': 1, 'trump': 1, 'demcast': 0, 'm4a': 0, 'vaxxed': 0, 'democracy': 0, 'indivisible': 0, 'teamjustice': 0, 'noafd': 0, 'alllivesmatter': 1}
+
 
 DOMAIN_TO_CANONICAL = {
     "bit.ly": None,
@@ -163,6 +161,45 @@ DOMAIN_TO_CANONICAL = {
     "liveuamap.com": "liveuamap.com",
     "moneycontrol.com": "moneycontrol.com",
     "kremlin.ru": "kremlin.ru",
+}
+
+HANDLE_SCORES = {
+    'abc': 2,
+    'bbcworld': 3,
+    'breitbartnews': 5,
+    'bostonglobe': 2,
+    'businessinsider': 3,
+    'buzzfeednews': 1,
+    'cbsnews': 2,
+    'chicagotribune': 3,
+    'cnbc': 3,
+    'cnn': 2,
+    'dailycaller': 5,
+    'dailymail': 5,
+    'foxnews': 4,
+    'huffpost': 1,
+    'infowars': 5,
+    'latimes': 2,
+    'msnbc': 1,
+    'nbcnews': 2,
+    'nytimes': 2,
+    'npr': 3,
+    'oann': 4,
+    'pbs': 3,
+    'reuters': 3,
+    'guardian': 2,
+    'usatoday': 3,
+    'yahoonews': 2,
+    'vice': 1,
+    'washingtonpost': 2,
+    'wsj': 3,
+    # additional
+    'thehill': 2.7,
+    'rt_com': 3.7,
+    'rawstory': 1.7,
+    'skynews': 2.3,
+    'independent': 2.3,
+    'dailykos': 1.7,
 }
 
 URL_TO_LABEL = {
@@ -443,9 +480,11 @@ def extract_hashtags_from_text(text) -> List[str]:
 def score_hashtag_iter(tags: List[str]) -> Dict[str, int]:
     counts = {label: 0 for label in LABEL_NAMES}
     for tag in tags:
-        label = HASHTAG_TO_LABEL.get(tag)
-        if label is not None:
-            counts[label] += 1
+        val = HASHTAG_TO_LABEL.get(tag)
+        if val is None:
+            continue
+        label = LABEL_NAMES[val]
+        counts[label] += 1
     return counts
 
 
@@ -470,7 +509,8 @@ def build_pseudo_political_labels(
     handles: List[str],
     min_margin: int = 2,
 ) -> Tuple[torch.Tensor, List[str], int]:
-    needed_cols = [c for c in ("screen_name", "description", "urls_list", "rt_urls_list", "hashtag", "rt_hashtag") if c in raw.columns]
+    # Signals match the notebook exactly: own-tweet URLs, retweet target handles, description hashtags
+    needed_cols = [c for c in ("screen_name", "rt_screen", "description", "urls_list") if c in raw.columns]
     user_df = raw[needed_cols].copy()
     user_df["screen_name"] = normalize_handle(user_df["screen_name"])
     user_df = user_df[user_df["screen_name"].notna()].copy()
@@ -478,14 +518,11 @@ def build_pseudo_political_labels(
         y = torch.full((len(handles),), -1, dtype=torch.long)
         return y, list(LABEL_NAMES), 0
 
+    # Signal 1: URLs in own tweets (urls_list only, not rt_urls_list)
     url_left = pd.Series(0, index=user_df.index, dtype=np.int32)
     url_right = pd.Series(0, index=user_df.index, dtype=np.int32)
-    for col in ("urls_list", "rt_urls_list"):
-        if col not in user_df.columns:
-            continue
-        left_scores, right_scores = map_url_scores(user_df[col])
-        url_left = url_left.add(left_scores, fill_value=0).astype(np.int32)
-        url_right = url_right.add(right_scores, fill_value=0).astype(np.int32)
+    if "urls_list" in user_df.columns:
+        url_left, url_right = map_url_scores(user_df["urls_list"])
 
     url_agg = (
         pd.DataFrame(
@@ -499,57 +536,46 @@ def build_pseudo_political_labels(
         .sum()
     )
 
-    hashtag_left = pd.Series(0, index=user_df.index, dtype=np.int32)
-    hashtag_right = pd.Series(0, index=user_df.index, dtype=np.int32)
-    for col in ("hashtag", "rt_hashtag"):
-        if col not in user_df.columns:
-            continue
-        left_scores, right_scores = map_hashtag_field_scores(user_df[col])
-        hashtag_left = hashtag_left.add(left_scores, fill_value=0).astype(np.int32)
-        hashtag_right = hashtag_right.add(right_scores, fill_value=0).astype(np.int32)
+    # Signal 2: Retweet target handles (rt_screen)
+    rt_agg = pd.DataFrame(index=url_agg.index, data={"left_rt": 0, "right_rt": 0})
+    if "rt_screen" in user_df.columns:
+        rt_score = user_df["rt_screen"].str.lower().map(HANDLE_SCORES)
+        rt_df = pd.DataFrame({
+            "screen_name": user_df["screen_name"],
+            "left_rt": (rt_score.lt(3) & rt_score.notna()).astype(np.int32).values,
+            "right_rt": (rt_score.gt(3) & rt_score.notna()).astype(np.int32).values,
+        })
+        rt_agg = rt_df.groupby("screen_name", sort=False)[["left_rt", "right_rt"]].sum()
 
-    hashtag_agg = (
-        pd.DataFrame(
-            {
-                "screen_name": user_df["screen_name"],
-                "left_hashtag": hashtag_left,
-                "right_hashtag": hashtag_right,
-            }
-        )
-        .groupby("screen_name", sort=False)[["left_hashtag", "right_hashtag"]]
-        .sum()
-    )
-
-    desc_agg = pd.DataFrame(index=url_agg.index.union(hashtag_agg.index), data={"left_desc": 0, "right_desc": 0})
+    # Signal 3: Hashtags in profile description
+    desc_agg = pd.DataFrame(index=url_agg.index, data={"left_hashtag": 0, "right_hashtag": 0})
     if "description" in user_df.columns:
         desc_df = user_df[["screen_name", "description"]].copy()
         desc_df["description"] = desc_df["description"].astype("string").fillna("").str.strip().str.lower()
         desc_df = desc_df[desc_df["description"] != ""].drop_duplicates(subset=["screen_name", "description"])
         if not desc_df.empty:
             desc_scores = desc_df["description"].apply(lambda text: score_hashtag_iter(extract_hashtags_from_text(text)))
-            desc_df["left_desc"] = desc_scores.map(lambda d: d["left"]).astype(np.int32)
-            desc_df["right_desc"] = desc_scores.map(lambda d: d["right"]).astype(np.int32)
-            desc_agg = desc_df.groupby("screen_name", sort=False)[["left_desc", "right_desc"]].sum()
+            desc_df["left_hashtag"] = desc_scores.map(lambda d: d["left"]).astype(np.int32)
+            desc_df["right_hashtag"] = desc_scores.map(lambda d: d["right"]).astype(np.int32)
+            desc_agg = desc_df.groupby("screen_name", sort=False)[["left_hashtag", "right_hashtag"]].sum()
 
-    label_agg = url_agg.join(hashtag_agg, how="outer").join(desc_agg, how="outer").fillna(0)
-    left_totals = label_agg["left_url"] + label_agg.get("left_hashtag", 0) + label_agg.get("left_desc", 0)
-    right_totals = label_agg["right_url"] + label_agg.get("right_hashtag", 0) + label_agg.get("right_desc", 0)
+    label_agg = url_agg.join(rt_agg, how="outer").join(desc_agg, how="outer").fillna(0)
+    left_totals = label_agg["left_url"] + label_agg["left_rt"] + label_agg["left_hashtag"]
+    right_totals = label_agg["right_url"] + label_agg["right_rt"] + label_agg["right_hashtag"]
 
-    y = torch.full((len(handles),), -1, dtype=torch.long)
-    labeled = 0
-    left_by_handle = left_totals.to_dict()
-    right_by_handle = right_totals.to_dict()
-    for i, handle in enumerate(handles):
-        left = int(left_by_handle.get(handle, 0))
-        right = int(right_by_handle.get(handle, 0))
-        margin = left - right
-        if margin >= min_margin and left > 0:
-            y[i] = LABEL_TO_ID["left"]
-            labeled += 1
-        elif margin <= -min_margin and right > 0:
-            y[i] = LABEL_TO_ID["right"]
-            labeled += 1
-    return y, list(LABEL_NAMES), labeled
+    handle_index = pd.Index(handles)
+    left_votes = handle_index.map(left_totals).fillna(0).astype(int)
+    right_votes = handle_index.map(right_totals).fillna(0).astype(int)
+
+    has_enough = (right_votes >= min_margin) | (left_votes >= min_margin)
+    not_mixed = ~((right_votes > 0) & (left_votes > 0))
+    valid = has_enough & not_mixed
+
+    y_np = np.full(len(handles), -1, dtype=np.int64)
+    y_np[valid & (right_votes > 0)] = LABEL_TO_ID["right"]
+    y_np[valid & (right_votes == 0)] = LABEL_TO_ID["left"]
+    labeled = int(valid.sum())
+    return torch.from_numpy(y_np), list(LABEL_NAMES), labeled
 
 
 def load_raw_rows(csv_glob: str, max_files: int) -> pd.DataFrame:
@@ -809,9 +835,12 @@ def main():
     print(f"Directed edges: {edge_index.shape[1]:,}")
 
     x, feature_names = build_node_features(rt, h2i, edge_all_df)
+    print(f"Node features: {x.shape[1]} ({', '.join(feature_names)})")
+    
     x, feature_names, emb_stats = maybe_attach_embeddings(
         x, feature_names, handles, args.embeddings, args.embedding_pool
     )
+    print(f"After attaching embeddings: {x.shape[1]} features, matched users: {emb_stats['matched_users']:,}")
 
     isolated_before_drop = int(((torch.bincount(edge_index[0], minlength=len(handles)) == 0) & (torch.bincount(edge_index[1], minlength=len(handles)) == 0)).sum().item())
     if not args.keep_isolates:
