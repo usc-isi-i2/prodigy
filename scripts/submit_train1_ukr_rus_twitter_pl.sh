@@ -31,9 +31,9 @@ python3 experiments/run_single_experiment.py \
   --ignore_label_embeddings False \
   --linear_probe False \
   --n_way 2 \
-  --n_shots 4 \
+  --n_shots 0 \
   --n_query 3 \
-  --zero_shot False \
+  --zero_shot True \
   --dataset_len_cap 2000 \
   --val_len_cap 500 \
   --test_len_cap 500 \
