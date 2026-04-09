@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=train1_ukr_rus_twitter_pl
-#SBATCH --output=/scratch1/eibl/gfm/prodigy/logs/%j.out
-#SBATCH --error=/scratch1/eibl/gfm/prodigy/logs/%j.err
+#SBATCH --output=/home1/eibl/gfm/prodigy/logs/%j.out
+#SBATCH --error=/home1/eibl/gfm/prodigy/logs/%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
@@ -16,7 +16,7 @@ conda activate prodigy
 
 cd /home1/eibl/gfm/prodigy
 
-mkdir -p /scratch1/eibl/gfm/prodigy/logs/
+mkdir -p /home1/eibl/gfm/prodigy/logs/
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
 args=(
