@@ -25,14 +25,14 @@ python3 experiments/run_single_experiment.py \
   --graph_filename retweet_graph_150files_minilm_hf03_political_labels.pt \
   --task_name classification \
   --midterm_feature_subset emb_only \
-  --midterm_edge_view temporal_history \
+  --midterm_edge_view retweet_all \
   --input_dim 384 \
   --original_features True \
   --ignore_label_embeddings False \
   --linear_probe False \
   --n_way 2 \
   --n_shots 0 \
-  --n_query 8 \
+  --n_query 4 \
   --zero_shot True \
   --dataset_len_cap 2000 \
   --val_len_cap 500 \
