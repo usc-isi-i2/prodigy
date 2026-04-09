@@ -16,7 +16,7 @@ conda activate prodigy
 
 cd /home1/eibl/gfm/prodigy
 
-mkdir -p /scratch1/eibl/data/ukr_rus_twitter/logs
+mkdir -p /scratch1/eibl/gfm/prodigy/logs/
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
 args=(
