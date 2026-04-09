@@ -32,7 +32,7 @@ python3 experiments/run_single_experiment.py \
   --linear_probe False \
   --n_way 2 \
   --n_shots 0 \
-  --n_query 3 \
+  --n_query 8 \
   --zero_shot True \
   --dataset_len_cap 2000 \
   --val_len_cap 500 \
