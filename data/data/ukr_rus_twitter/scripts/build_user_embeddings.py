@@ -16,6 +16,13 @@ from sentence_transformers import SentenceTransformer
 DEFAULT_CSV = "/project2/ll_774_951/uk_ru/twitter/data/*/*.csv"
 DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 DEFAULT_OUT = "data/data/ukr_rus_twitter/embeddings/user_embeddings_minilm.pt"
+TEXT_FIELD_TO_COLUMN = {
+    "tweet_text": "text",
+    "retweet_text": "rt_text",
+    "quote_text": "qtd_text",
+    "bio": "description",
+}
+DEFAULT_TEXT_FIELDS = "tweet_text,retweet_text,quote_text"
 
 
 def parse_args():
@@ -35,6 +42,11 @@ def parse_args():
     )
     p.add_argument("--checkpoint_every", type=int, default=5)
     p.add_argument("--resume", action="store_true", default=False)
+    p.add_argument(
+        "--text_fields",
+        default=DEFAULT_TEXT_FIELDS,
+        help="Comma-separated semantic text fields to embed. Supported: tweet_text,retweet_text,quote_text,bio",
+    )
     return p.parse_args()
 
 
@@ -99,21 +111,29 @@ def normalize_handle(series: pd.Series) -> pd.Series:
     return series.astype("string").str.strip().str.lower()
 
 
-def build_text(row: pd.Series) -> str:
-    parts = []
+def parse_text_fields(spec: str):
+    fields = [part.strip() for part in str(spec).split(",") if part.strip()]
+    if not fields:
+        raise ValueError("text_fields must contain at least one field")
+    invalid = [field for field in fields if field not in TEXT_FIELD_TO_COLUMN]
+    if invalid:
+        raise ValueError(
+            f"Unsupported text field(s): {invalid}. Supported: {sorted(TEXT_FIELD_TO_COLUMN.keys())}"
+        )
+    return fields
 
-    for col in ("text", "rt_text", "qtd_text", "description"):
+
+def build_text(row: pd.Series, text_fields) -> str:
+    parts = []
+    seen = set()
+    for field in text_fields:
+        col = TEXT_FIELD_TO_COLUMN[field]
         val = row.get(col)
         if pd.notna(val) and str(val).strip():
-            parts.append(str(val).strip())
-            break
-
-    bio = row.get("description")
-    if pd.notna(bio) and str(bio).strip():
-        bio_str = str(bio).strip()
-        if not parts or parts[0] != bio_str:
-            parts.append(bio_str)
-
+            value = str(val).strip()
+            if value not in seen:
+                parts.append(value)
+                seen.add(value)
     return " ".join(parts)[:512] if parts else ""
 
 
@@ -155,6 +175,7 @@ def load_checkpoint(path):
 def main():
     args = parse_args()
     start_time = time.time()
+    text_fields = parse_text_fields(args.text_fields)
     files = sorted(glob.glob(args.csv_glob))
     if args.max_files > 0:
         files = files[: args.max_files]
@@ -172,7 +193,7 @@ def main():
     model.max_seq_length = args.max_seq_len
     emb_dim = model.get_sentence_embedding_dimension()
 
-    use_cols = {"screen_name", "text", "rt_text", "qtd_text", "description"}
+    use_cols = {"screen_name"} | {TEXT_FIELD_TO_COLUMN[field] for field in text_fields}
 
     print(f"Embedding model: {args.model}")
     print(f"Device: {args.device}")
@@ -180,6 +201,7 @@ def main():
     print(f"Output: {args.out}")
     print(f"Checkpoint: {args.checkpoint_path}")
     print(f"Resume: {args.resume}")
+    print(f"Text fields: {','.join(text_fields)}")
 
     checkpoint = load_checkpoint(args.checkpoint_path) if args.resume else None
     if checkpoint:
@@ -232,7 +254,7 @@ def main():
             print(f"  [SKIP] no valid screen_name rows out of {raw_rows:,}", flush=True)
             continue
 
-        texts = df.apply(build_text, axis=1).tolist()
+        texts = df.apply(build_text, axis=1, text_fields=text_fields).tolist()
         handles = df["screen_name"].tolist()
 
         valid_idx = [k for k, text in enumerate(texts) if text.strip()]
@@ -298,6 +320,7 @@ def main():
         "csv_glob": args.csv_glob,
         "files_count": len(files),
         "model": args.model,
+        "text_fields": list(text_fields),
         "embedding_dim": int(emb_dim),
         "users": int(n),
         "total_posts_embedded": int(sum(user_count.values())),

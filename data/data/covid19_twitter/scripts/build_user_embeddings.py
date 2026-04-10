@@ -14,6 +14,8 @@ from sentence_transformers import SentenceTransformer
 DEFAULT_JSON_GLOB = "/scratch1/eibl/data/covid19_twitter/raw/*/*.json"
 DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 DEFAULT_OUT = "data/data/covid19_twitter/embeddings/user_embeddings_minilm.pt"
+TEXT_FIELDS_SUPPORTED = ("tweet_text", "retweet_text", "quote_text", "bio")
+DEFAULT_TEXT_FIELDS = "tweet_text,retweet_text,quote_text"
 
 
 def parse_args():
@@ -33,6 +35,11 @@ def parse_args():
     )
     p.add_argument("--checkpoint_every", type=int, default=5)
     p.add_argument("--resume", action="store_true", default=False)
+    p.add_argument(
+        "--text_fields",
+        default=DEFAULT_TEXT_FIELDS,
+        help="Comma-separated semantic text fields to embed. Supported: tweet_text,retweet_text,quote_text,bio",
+    )
     return p.parse_args()
 
 
@@ -41,6 +48,18 @@ def normalize_handle(handle):
         return None
     s = str(handle).strip().lower()
     return s if s and s not in {"nan", "none", "<na>"} else None
+
+
+def parse_text_fields(spec: str):
+    fields = [part.strip() for part in str(spec).split(",") if part.strip()]
+    if not fields:
+        raise ValueError("text_fields must contain at least one field")
+    invalid = [field for field in fields if field not in TEXT_FIELDS_SUPPORTED]
+    if invalid:
+        raise ValueError(
+            f"Unsupported text field(s): {invalid}. Supported: {list(TEXT_FIELDS_SUPPORTED)}"
+        )
+    return fields
 
 
 def load_json_items(path: str):
@@ -75,34 +94,35 @@ def load_json_items(path: str):
         return items
 
 
-def get_tweet_text(tweet: dict) -> str:
-    extended = tweet.get("extended_tweet") or {}
-    retweeted = tweet.get("retweeted_status") or {}
-    retweeted_ext = retweeted.get("extended_tweet") or {}
+def _get_status_text(status: dict) -> str:
+    extended = status.get("extended_tweet") or {}
     for candidate in (
         extended.get("full_text"),
-        tweet.get("full_text"),
-        tweet.get("text"),
-        retweeted_ext.get("full_text"),
-        retweeted.get("full_text"),
-        retweeted.get("text"),
+        status.get("full_text"),
+        status.get("text"),
     ):
         if candidate and str(candidate).strip():
             return str(candidate).strip()
     return ""
 
 
-def build_text(tweet: dict) -> str:
+def build_text(tweet: dict, text_fields) -> str:
     parts = []
-    text = get_tweet_text(tweet)
-    if text:
-        parts.append(text)
+    seen = set()
+    retweeted = tweet.get("retweeted_status") or {}
+    quoted = tweet.get("quoted_status") or {}
     user = tweet.get("user") or {}
-    desc = user.get("description")
-    if desc and str(desc).strip():
-        desc = str(desc).strip()
-        if not parts or parts[0] != desc:
-            parts.append(desc)
+    field_values = {
+        "tweet_text": _get_status_text(tweet),
+        "retweet_text": _get_status_text(retweeted) if retweeted else "",
+        "quote_text": _get_status_text(quoted) if quoted else "",
+        "bio": str(user.get("description") or "").strip(),
+    }
+    for field in text_fields:
+        value = field_values.get(field, "")
+        if value and value not in seen:
+            parts.append(value)
+            seen.add(value)
     return " ".join(parts)[:512] if parts else ""
 
 
@@ -132,6 +152,7 @@ def load_checkpoint(path):
 def main():
     args = parse_args()
     start_time = time.time()
+    text_fields = parse_text_fields(args.text_fields)
     files = sorted(glob.glob(args.json_glob))
     if args.max_files > 0:
         files = files[: args.max_files]
@@ -155,6 +176,7 @@ def main():
     print(f"Output: {args.out}")
     print(f"Checkpoint: {args.checkpoint_path}")
     print(f"Resume: {args.resume}")
+    print(f"Text fields: {','.join(text_fields)}")
 
     checkpoint = load_checkpoint(args.checkpoint_path) if args.resume else None
     if checkpoint:
@@ -201,7 +223,7 @@ def main():
             handle = normalize_handle(user.get("screen_name"))
             if not handle:
                 continue
-            text = build_text(tweet)
+            text = build_text(tweet, text_fields)
             if not text:
                 continue
             handles.append(handle)
@@ -266,6 +288,7 @@ def main():
         "json_glob": args.json_glob,
         "files_count": len(files),
         "model": args.model,
+        "text_fields": list(text_fields),
         "embedding_dim": int(emb_dim),
         "users": int(n),
         "total_posts_embedded": int(sum(user_count.values())),
