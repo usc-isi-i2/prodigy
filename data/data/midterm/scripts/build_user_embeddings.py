@@ -9,6 +9,13 @@ import pandas as pd
 import torch
 from sentence_transformers import SentenceTransformer
 
+TEXT_FIELD_TO_COLUMN = {
+    "tweet_text": "text",
+    "retweet_text": "rt_text",
+    "bio": "description",
+}
+DEFAULT_TEXT_FIELDS = "tweet_text,retweet_text"
+
 
 def parse_args():
     p = argparse.ArgumentParser(description="Build per-user (userid) pooled text embeddings from raw midterm CSV files.")
@@ -19,19 +26,37 @@ def parse_args():
     p.add_argument("--max_files", type=int, default=0)
     p.add_argument("--device", default=("cuda" if torch.cuda.is_available() else "cpu"))
     p.add_argument("--max_seq_len", type=int, default=512)
+    p.add_argument(
+        "--text_fields",
+        default=DEFAULT_TEXT_FIELDS,
+        help="Comma-separated semantic text fields to embed. Supported: tweet_text,retweet_text,bio",
+    )
     return p.parse_args()
 
 
-def build_text(row: pd.Series) -> str:
+def parse_text_fields(spec: str):
+    fields = [part.strip() for part in str(spec).split(",") if part.strip()]
+    if not fields:
+        raise ValueError("text_fields must contain at least one field")
+    invalid = [field for field in fields if field not in TEXT_FIELD_TO_COLUMN]
+    if invalid:
+        raise ValueError(
+            f"Unsupported text field(s): {invalid}. Supported: {sorted(TEXT_FIELD_TO_COLUMN.keys())}"
+        )
+    return fields
+
+
+def build_text(row: pd.Series, text_fields) -> str:
     parts = []
-    for col in ("text", "rt_text"):
+    seen = set()
+    for field in text_fields:
+        col = TEXT_FIELD_TO_COLUMN[field]
         v = row.get(col)
         if pd.notna(v) and str(v).strip():
-            parts.append(str(v).strip())
-            break
-    bio = row.get("description")
-    if pd.notna(bio) and str(bio).strip():
-        parts.append(str(bio).strip())
+            value = str(v).strip()
+            if value not in seen:
+                parts.append(value)
+                seen.add(value)
     if not parts:
         return ""
     return " ".join(parts)[:512]
@@ -39,6 +64,7 @@ def build_text(row: pd.Series) -> str:
 
 def main():
     args = parse_args()
+    text_fields = parse_text_fields(args.text_fields)
     files = sorted(glob.glob(args.csv_glob))
     if args.max_files > 0:
         files = files[: args.max_files]
@@ -51,7 +77,7 @@ def main():
     model.max_seq_length = args.max_seq_len
     emb_dim = model.get_sentence_embedding_dimension()
 
-    use_cols = {"userid", "text", "rt_text", "description"}
+    use_cols = {"userid"} | {TEXT_FIELD_TO_COLUMN[field] for field in text_fields}
 
     user_sum = defaultdict(lambda: np.zeros(emb_dim, dtype=np.float64))
     user_max = defaultdict(lambda: np.full(emb_dim, -np.inf, dtype=np.float32))
@@ -59,6 +85,7 @@ def main():
 
     print(f"Embedding model: {args.model}")
     print(f"Files: {len(files)}")
+    print(f"Text fields: {','.join(text_fields)}")
 
     for i, fpath in enumerate(files, start=1):
         df = pd.read_csv(fpath, low_memory=False, on_bad_lines="skip")
@@ -76,7 +103,7 @@ def main():
             continue
         df["userid"] = df["userid"].astype(np.int64)
 
-        texts = df.apply(build_text, axis=1).tolist()
+        texts = df.apply(build_text, axis=1, text_fields=text_fields).tolist()
         uids = df["userid"].tolist()
 
         valid_idx = [k for k, t in enumerate(texts) if t.strip()]
@@ -123,6 +150,7 @@ def main():
         "csv_glob": args.csv_glob,
         "files_count": len(files),
         "model": args.model,
+        "text_fields": list(text_fields),
         "embedding_dim": int(emb_dim),
         "users": int(n),
         "total_posts_embedded": int(sum(user_count.values())),
