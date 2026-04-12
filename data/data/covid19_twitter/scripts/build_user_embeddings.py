@@ -1,21 +1,21 @@
 import argparse
 import glob
+import json
 import os
 import time
+from collections import defaultdict
 
 import numpy as np
 import torch
 from sentence_transformers import SentenceTransformer
 
-import orjson as _json
-def json_loads(s): return _json.loads(s)
+import orjson
+def _loads(s): return orjson.loads(s)
 
 
 DEFAULT_JSON_GLOB = "/scratch1/eibl/data/covid19_twitter/raw/*/*.json"
 DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 DEFAULT_OUT = "data/data/covid19_twitter/embeddings/user_embeddings_minilm.pt"
-TEXT_FIELDS_SUPPORTED = ("tweet_text", "retweet_text", "quote_text", "bio")
-DEFAULT_TEXT_FIELDS = "tweet_text,retweet_text,quote_text"
 
 
 def parse_args():
@@ -28,25 +28,32 @@ def parse_args():
     p.add_argument("--device", default=("cuda" if torch.cuda.is_available() else "cpu"))
     p.add_argument("--max_seq_len", type=int, default=48)
     p.add_argument("--fp16", action="store_true", default=True)
-    p.add_argument("--text_fields", default=DEFAULT_TEXT_FIELDS)
     return p.parse_args()
 
 
-def parse_text_fields(spec):
-    fields = [s.strip() for s in spec.split(",") if s.strip()]
-    bad = [f for f in fields if f not in TEXT_FIELDS_SUPPORTED]
-    if bad:
-        raise ValueError(f"Unsupported text fields: {bad}")
-    return fields
+def normalize_user_id(user_id):
+    if user_id is None:
+        return None
+    try:
+        return int(user_id)
+    except Exception:
+        return None
+
+
+def normalize_handle(h):
+    if h is None:
+        return None
+    s = str(h).strip().lower()
+    return s if s and s not in {"nan", "none", "<na>"} else None
 
 
 def load_json_items(path):
     with open(path, "rb") as f:
-        data = f.read()
-    if not data.strip():
+        raw = f.read()
+    if not raw.strip():
         return []
     try:
-        obj = json_loads(data)
+        obj = _loads(raw)
         if isinstance(obj, list):
             return obj
         if isinstance(obj, dict):
@@ -56,19 +63,23 @@ def load_json_items(path):
             return [obj]
         return []
     except Exception:
+        # JSONL fallback
         items = []
-        for line in data.splitlines():
+        for line in raw.splitlines():
             line = line.strip()
             if not line:
                 continue
             try:
-                items.append(json_loads(line))
+                items.append(_loads(line))
             except Exception:
                 pass
         return items
 
 
-def get_status_text(status):
+def _status_text(status):
+    """Extract the text body from a status dict, preferring extended/full_text."""
+    if not status:
+        return ""
     ext = status.get("extended_tweet") or {}
     for c in (ext.get("full_text"), status.get("full_text"), status.get("text")):
         if c:
@@ -78,36 +89,30 @@ def get_status_text(status):
     return ""
 
 
-def build_text(tweet, text_fields):
-    parts = []
-    seen = set()
-    rt = tweet.get("retweeted_status") or {}
-    qt = tweet.get("quoted_status") or {}
-    user = tweet.get("user") or {}
-    vals = {
-        "tweet_text": get_status_text(tweet),
-        "retweet_text": get_status_text(rt) if rt else "",
-        "quote_text": get_status_text(qt) if qt else "",
-        "bio": str(user.get("description") or "").strip(),
-    }
-    for f in text_fields:
-        v = vals.get(f, "")
-        if v and v not in seen:
-            parts.append(v)
-            seen.add(v)
-    return " ".join(parts)
+def build_text(tweet):
+    """
+    Original tweet  -> user's own text
+    Pure retweet    -> original (retweeted_status) text   [endorsement signal]
+    Quote tweet     -> user's added comment (= the tweet's own text)
+    """
+    retweeted = tweet.get("retweeted_status")
+    if retweeted:
+        # Pure RTs: tweet text is just "RT @user: ..."; use the source text instead.
+        return _status_text(retweeted)
+
+    # Quote tweet OR original tweet -> the user's own composed text.
+    return _status_text(tweet)
 
 
 def main():
     args = parse_args()
     t0 = time.time()
-    text_fields = parse_text_fields(args.text_fields)
 
     files = sorted(glob.glob(args.json_glob))
     if args.max_files > 0:
         files = files[: args.max_files]
     if not files:
-        raise FileNotFoundError(args.json_glob)
+        raise FileNotFoundError(f"No files matched: {args.json_glob}")
 
     out_dir = os.path.dirname(args.out)
     if out_dir:
@@ -116,60 +121,82 @@ def main():
     model = SentenceTransformer(args.model, device=args.device)
     model.max_seq_length = args.max_seq_len
     if args.fp16 and args.device.startswith("cuda"):
-        model.half()
+        model = model.half()
     emb_dim = model.get_sentence_embedding_dimension()
 
-    print(f"model={args.model} device={args.device} dim={emb_dim}")
-    print(f"files={len(files)} batch={args.batch_size} seq={args.max_seq_len} fp16={args.fp16}")
-    print(f"text_fields={text_fields}")
+    print(f"Model={args.model} device={args.device} fp16={args.fp16} "
+          f"seq_len={args.max_seq_len} batch={args.batch_size} files={len(files)}")
 
-    # Two-pass-free streaming reduction:
-    # Map user_id -> contiguous row index on the fly. Accumulate into dense
-    # float32 matrices that we grow in chunks.
+    # Dense accumulators, grown as new users appear.
     uid_to_row = {}
-    handles = {}
-    CHUNK = 200_000
-    sum_mat = np.zeros((CHUNK, emb_dim), dtype=np.float32)
-    cnt_vec = np.zeros(CHUNK, dtype=np.int32)
-    n_users = 0
+    handles = []           # parallel to uid_to_row rows
+    sum_rows = []          # list of np.ndarray(emb_dim, float32) blocks
+    counts = []            # list of int
 
-    total_tweets = 0
-    total_embedded = 0
+    # Use a single growing float32 matrix doubled on demand.
+    cap = 1 << 16
+    sum_mat = np.zeros((cap, emb_dim), dtype=np.float32)
+    cnt_arr = np.zeros(cap, dtype=np.int32)
 
-    for i, fpath in enumerate(files, 1):
-        fstart = time.time()
+    def ensure_capacity(n_new):
+        nonlocal cap, sum_mat, cnt_arr
+        need = len(uid_to_row) + n_new
+        if need <= cap:
+            return
+        while cap < need:
+            cap *= 2
+        new_sum = np.zeros((cap, emb_dim), dtype=np.float32)
+        new_sum[: len(uid_to_row)] = sum_mat[: len(uid_to_row)]
+        sum_mat = new_sum
+        new_cnt = np.zeros(cap, dtype=np.int32)
+        new_cnt[: len(uid_to_row)] = cnt_arr[: len(uid_to_row)]
+        cnt_arr = new_cnt
+
+    total_posts = 0
+    for i, fpath in enumerate(files, start=1):
+        ft = time.time()
         try:
             items = load_json_items(fpath)
         except Exception as e:
             print(f"[{i}/{len(files)}] ERROR {os.path.basename(fpath)}: {e}", flush=True)
             continue
         if not items:
+            print(f"[{i}/{len(files)}] empty {os.path.basename(fpath)}", flush=True)
             continue
-        total_tweets += len(items)
 
         texts = []
-        uids = []
+        rows = []  # row index in sum_mat for each text
+
+        # First pass: collect texts and assign row ids (cheap, no GPU).
+        new_uids = []
         for tw in items:
             user = tw.get("user") or {}
-            uid = user.get("id")
+            uid = normalize_user_id(user.get("id"))
             if uid is None:
                 continue
-            try:
-                uid = int(uid)
-            except Exception:
-                continue
-            text = build_text(tw, text_fields)
+            text = build_text(tw)
             if not text:
                 continue
-            uids.append(uid)
+            row = uid_to_row.get(uid)
+            if row is None:
+                new_uids.append((uid, normalize_handle(user.get("screen_name"))))
             texts.append(text)
-            sn = user.get("screen_name")
-            if sn and uid not in handles:
-                handles[uid] = str(sn).strip().lower()
+            rows.append(uid)  # temporarily store uid; resolve after capacity grow
 
         if not texts:
+            print(f"[{i}/{len(files)}] no texts in {len(items):,} tweets", flush=True)
             continue
 
+        if new_uids:
+            ensure_capacity(len(new_uids))
+            for uid, handle in new_uids:
+                if uid not in uid_to_row:
+                    uid_to_row[uid] = len(uid_to_row)
+                    handles.append(handle)
+
+        row_idx = np.fromiter((uid_to_row[u] for u in rows), dtype=np.int64, count=len(rows))
+
+        # GPU encode (already L2-normalized).
         embs = model.encode(
             texts,
             batch_size=args.batch_size,
@@ -178,66 +205,58 @@ def main():
             normalize_embeddings=True,
         ).astype(np.float32, copy=False)
 
-        # Map uids to row indices, growing matrices as needed.
-        rows = np.empty(len(uids), dtype=np.int64)
-        for j, uid in enumerate(uids):
-            r = uid_to_row.get(uid)
-            if r is None:
-                r = n_users
-                uid_to_row[uid] = r
-                n_users += 1
-                if n_users > sum_mat.shape[0]:
-                    new_size = max(sum_mat.shape[0] * 2, n_users + CHUNK)
-                    new_sum = np.zeros((new_size, emb_dim), dtype=np.float32)
-                    new_cnt = np.zeros(new_size, dtype=np.int32)
-                    new_sum[: sum_mat.shape[0]] = sum_mat
-                    new_cnt[: cnt_vec.shape[0]] = cnt_vec
-                    sum_mat = new_sum
-                    cnt_vec = new_cnt
-            rows[j] = r
+        # Vectorized scatter-add.
+        np.add.at(sum_mat, row_idx, embs)
+        np.add.at(cnt_arr, row_idx, 1)
 
-        # Vectorized scatter-add (handles duplicate rows correctly).
-        np.add.at(sum_mat, rows, embs)
-        np.add.at(cnt_vec, rows, 1)
-        total_embedded += len(texts)
-
-        ftime = time.time() - fstart
+        total_posts += len(texts)
+        dt = time.time() - ft
         print(
             f"[{i}/{len(files)}] {os.path.basename(fpath)} "
             f"tweets={len(items):,} embedded={len(texts):,} "
-            f"users={n_users:,} ftime={ftime:.1f}s "
+            f"users={len(uid_to_row):,} file={dt:.1f}s "
             f"total={ (time.time()-t0)/60:.1f}m",
             flush=True,
         )
 
-    # Finalize
-    sum_mat = sum_mat[:n_users]
-    cnt_vec = cnt_vec[:n_users]
-    meanpool = sum_mat / np.maximum(cnt_vec, 1)[:, None]
+    n = len(uid_to_row)
+    user_ids = np.empty(n, dtype=np.int64)
+    for uid, row in uid_to_row.items():
+        user_ids[row] = uid
 
-    # Sort by user_id for deterministic output
-    user_ids_arr = np.empty(n_users, dtype=np.int64)
-    for uid, r in uid_to_row.items():
-        user_ids_arr[r] = uid
-    order = np.argsort(user_ids_arr)
-    user_ids_sorted = user_ids_arr[order]
-    meanpool = meanpool[order]
-    cnt_sorted = cnt_vec[order]
-    handle_list = [handles.get(int(u)) for u in user_ids_sorted]
+    counts_final = cnt_arr[:n].astype(np.int64)
+    # Mean pool, guarding against zero (shouldn't happen).
+    denom = np.maximum(counts_final, 1).astype(np.float32)[:, None]
+    meanpool = sum_mat[:n] / denom
+    # Re-normalize the mean to unit length (common for averaged sentence embeddings).
+    norms = np.linalg.norm(meanpool, axis=1, keepdims=True)
+    norms[norms == 0] = 1.0
+    meanpool = meanpool / norms
 
     out_obj = {
-        "user_ids": user_ids_sorted,
-        "handles": handle_list,
+        "user_ids": user_ids,
+        "handles": handles,
         "meanpool": torch.from_numpy(meanpool),
-        "counts": torch.from_numpy(cnt_sorted.astype(np.int64)),
+        "counts": counts_final,
         "model": args.model,
     }
     torch.save(out_obj, args.out)
 
-    print(
-        f"DONE users={n_users:,} tweets_seen={total_tweets:,} "
-        f"embedded={total_embedded:,} time={(time.time()-t0)/60:.1f}m"
-    )
+    meta = {
+        "json_glob": args.json_glob,
+        "files_count": len(files),
+        "model": args.model,
+        "embedding_dim": int(emb_dim),
+        "users": int(n),
+        "total_posts_embedded": int(total_posts),
+        "max_seq_len": args.max_seq_len,
+        "fp16": bool(args.fp16),
+    }
+    with open(args.out.replace(".pt", ".meta.json"), "w") as f:
+        json.dump(meta, f, indent=2)
+
+    print(f"Saved {args.out} users={n:,} dim={emb_dim} posts={total_posts:,} "
+          f"wall={(time.time()-t0)/60:.1f}m")
 
 
 if __name__ == "__main__":
