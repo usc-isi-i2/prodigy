@@ -14,6 +14,8 @@ from torch_geometric.data import Data
 DEFAULT_JSON_GLOB = "/scratch1/eibl/data/covid19_twitter/raw/*/*.json"
 DEFAULT_OUT = "data/data/covid19_twitter/graphs/retweet_graph.pt"
 DEFAULT_HISTORY_FRACTION = 0.8
+DEFAULT_LABEL_HANDLE_COL = "screen_name"
+DEFAULT_LABEL_VALUE_COL = "political_gen"
 
 NODE_FEATURE_NAMES = [
     "subscriber_count",
@@ -50,6 +52,11 @@ def parse_args():
     p.add_argument("--history_fraction", type=float, default=DEFAULT_HISTORY_FRACTION)
     p.add_argument("--future_target_mode", choices=["new_only", "all_future"], default="new_only")
     p.add_argument("--no_temporal_views", action="store_true")
+    p.add_argument(
+        "--labels_parquet_glob",
+        default="",
+        help="Optional parquet glob containing external node labels keyed by handle.",
+    )
     p.add_argument(
         "--keep-isolates",
         dest="keep_isolates",
@@ -295,6 +302,61 @@ def maybe_attach_embeddings(x, feature_names, handles, embeddings_path, embeddin
     return torch.cat([x, extra], dim=1), feature_names + [f"emb_{k}" for k in range(emb_dim)], {"matched_users": matched, "embedding_dim": emb_dim}
 
 
+def load_external_labels(labels_parquet_glob: str):
+    if not labels_parquet_glob:
+        return None
+    files = sorted(glob.glob(labels_parquet_glob))
+    if not files:
+        raise FileNotFoundError(f"No label parquet files matched: {labels_parquet_glob}")
+
+    chunks = []
+    for path in files:
+        df = pd.read_parquet(path, columns=[DEFAULT_LABEL_HANDLE_COL, DEFAULT_LABEL_VALUE_COL])
+        chunks.append(df)
+    labels_df = pd.concat(chunks, ignore_index=True)
+    if labels_df.empty:
+        raise RuntimeError("External labels dataframe is empty.")
+
+    labels_df = labels_df.dropna(subset=[DEFAULT_LABEL_HANDLE_COL, DEFAULT_LABEL_VALUE_COL]).copy()
+    labels_df["handle"] = labels_df[DEFAULT_LABEL_HANDLE_COL].map(normalize_handle)
+    labels_df = labels_df.dropna(subset=["handle"]).copy()
+    labels_df = labels_df.drop_duplicates(subset=["handle"], keep="first")
+    if labels_df.empty:
+        raise RuntimeError("No usable external labels remained after normalization.")
+
+    raw_values = labels_df[DEFAULT_LABEL_VALUE_COL].tolist()
+    unique_raw_values = sorted(pd.Series(raw_values).drop_duplicates().tolist(), key=lambda v: str(v))
+    label_names = [str(v) for v in unique_raw_values]
+
+    raw_to_idx = {raw_value: idx for idx, raw_value in enumerate(unique_raw_values)}
+    handle_to_label = labels_df.set_index("handle")[DEFAULT_LABEL_VALUE_COL].map(raw_to_idx).to_dict()
+    return {
+        "handle_to_label": handle_to_label,
+        "label_names": label_names,
+        "raw_values": unique_raw_values,
+        "n_rows": int(len(labels_df)),
+        "n_files": int(len(files)),
+    }
+
+
+def build_node_labels(handles, label_info):
+    y = torch.full((len(handles),), -1, dtype=torch.long)
+    label_names = []
+    if not label_info:
+        return y, label_names, {"labeled_nodes": 0, "label_count": 0}
+
+    handle_to_label = label_info["handle_to_label"]
+    label_names = list(label_info["label_names"])
+    labeled = 0
+    for i, handle in enumerate(handles):
+        label = handle_to_label.get(handle)
+        if label is None:
+            continue
+        y[i] = int(label)
+        labeled += 1
+    return y, label_names, {"labeled_nodes": labeled, "label_count": len(label_names)}
+
+
 def drop_isolates_from_graph(x, edge_index, edge_attr, handles):
     n = len(handles)
     degrees_out = torch.bincount(edge_index[0], minlength=n)
@@ -337,8 +399,14 @@ def main():
     else:
         isolated_dropped = 0
 
-    y = torch.full((len(handles),), -1, dtype=torch.long)
-    label_names = []
+    label_info = load_external_labels(args.labels_parquet_glob)
+    y, label_names, label_stats = build_node_labels(handles, label_info)
+    if label_info:
+        print(
+            f"Attached labels: labeled_nodes={label_stats['labeled_nodes']:,} "
+            f"label_count={label_stats['label_count']} labels={label_names}",
+            flush=True,
+        )
 
     graph_obj = {
         "x": x,
@@ -393,6 +461,7 @@ def main():
     data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
     data.feature_names = feature_names
     data.edge_attr_feature_names = EDGE_FEATURE_NAMES
+    data.label_names = label_names
     graph_obj["data"] = data
     torch.save(graph_obj, args.out)
 
@@ -403,12 +472,15 @@ def main():
         "edges": int(edge_index.shape[1]),
         "node_feature_dim": int(x.shape[1]),
         "edge_feature_names": EDGE_FEATURE_NAMES,
-        "label_count": 0,
-        "labeled_nodes": 0,
+        "label_count": int(label_stats["label_count"]),
+        "labeled_nodes": int(label_stats["labeled_nodes"]),
         "embeddings": args.embeddings,
         "embedding_pool": args.embedding_pool,
         "embedding_dim": emb_stats["embedding_dim"],
         "embedding_matched_users": emb_stats["matched_users"],
+        "labels_parquet_glob": args.labels_parquet_glob,
+        "labels_handle_col": DEFAULT_LABEL_HANDLE_COL,
+        "labels_value_col": DEFAULT_LABEL_VALUE_COL,
         "keep_isolates": args.keep_isolates,
         "isolated_nodes_before_drop": isolated_before_drop,
         "isolated_nodes_dropped": isolated_dropped,
