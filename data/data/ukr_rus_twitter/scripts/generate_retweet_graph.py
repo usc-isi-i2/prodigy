@@ -17,7 +17,7 @@ from torch_geometric.data import Data
 
 DEFAULT_CSV = "/project2/ll_774_951/uk_ru/twitter/data/*/*.csv"
 DEFAULT_OUT = "data/data/ukr_rus_twitter/graphs/retweet_graph.pt"
-DEFAULT_HISTORY_FRACTION = 0.8
+DEFAULT_HISTORY_FRACTION = 0.3
 LABEL_NAMES = ["left", "right"]
 LABEL_TO_ID = {name: i for i, name in enumerate(LABEL_NAMES)}
 
