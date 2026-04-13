@@ -15,7 +15,7 @@ def _loads(s): return orjson.loads(s)
 
 DEFAULT_JSON_GLOB = "/scratch1/eibl/data/covid19_twitter/raw/*/*.json"
 DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-DEFAULT_OUT = "data/data/covid19_twitter/embeddings/user_embeddings_minilm.pt"
+DEFAULT_OUT = "/scratch1/eibl/data/covid19_twitter/embeddings/user_embeddings_minilm_first100.pt"
 
 
 def parse_args():
