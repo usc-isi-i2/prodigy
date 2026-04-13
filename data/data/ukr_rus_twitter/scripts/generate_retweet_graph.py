@@ -260,6 +260,7 @@ def parse_args():
     p.add_argument("--embeddings", default="", help="Optional user_embeddings_*.pt with user_ids + meanpool (handles fallback supported)")
     p.add_argument("--embedding_pool", choices=["meanpool", "maxpool"], default="meanpool")
     p.add_argument("--max_files", type=int, default=0)
+    p.add_argument("--max_nodes", type=int, default=0, help="Stop loading files once this many unique nodes are seen (0 = no limit)")
     p.add_argument("--strict_dates", action="store_true")
     p.add_argument("--history_fraction", type=float, default=DEFAULT_HISTORY_FRACTION)
     p.add_argument(
@@ -578,7 +579,7 @@ def build_pseudo_political_labels(
     return torch.from_numpy(y_np), list(LABEL_NAMES), labeled
 
 
-def load_raw_rows(csv_glob: str, max_files: int) -> pd.DataFrame:
+def load_raw_rows(csv_glob: str, max_files: int, max_nodes: int = 0) -> pd.DataFrame:
     files = sorted(glob.glob(csv_glob))
     if max_files > 0:
         files = files[:max_files]
@@ -586,6 +587,7 @@ def load_raw_rows(csv_glob: str, max_files: int) -> pd.DataFrame:
         raise FileNotFoundError(f"No files matched: {csv_glob}")
 
     chunks: List[pd.DataFrame] = []
+    seen_nodes: set = set()
     print(f"Found {len(files)} files")
     for i, fpath in enumerate(files, start=1):
         print(f"[{i}/{len(files)}] Loading {os.path.basename(fpath)}", flush=True)
@@ -604,6 +606,16 @@ def load_raw_rows(csv_glob: str, max_files: int) -> pd.DataFrame:
 
         if i % 10 == 0 or i == len(files):
             print(f"  processed {i}/{len(files)} files", flush=True)
+
+        if max_nodes > 0 and chunks:
+            chunk = chunks[-1]
+            if "userid" in chunk.columns:
+                seen_nodes.update(pd.to_numeric(chunk["userid"], errors="coerce").dropna().astype(np.int64).tolist())
+            if "rt_userid" in chunk.columns:
+                seen_nodes.update(pd.to_numeric(chunk["rt_userid"], errors="coerce").dropna().astype(np.int64).tolist())
+            if len(seen_nodes) >= max_nodes:
+                print(f"  reached max_nodes={max_nodes:,} after {i}/{len(files)} files, stopping early", flush=True)
+                break
 
     if not chunks:
         raise RuntimeError("No valid rows parsed")
@@ -648,6 +660,45 @@ def prepare_retweet_rows(df: pd.DataFrame, strict_dates: bool) -> pd.DataFrame:
     if rt.empty:
         raise RuntimeError("No valid retweet rows after cleaning")
     return rt
+
+
+def trim_rt_to_max_nodes(rt: pd.DataFrame, max_nodes: int) -> pd.DataFrame:
+    if max_nodes <= 0:
+        return rt
+
+    src = rt["userid"].to_numpy(dtype=np.int64, copy=False)
+    dst = rt["rt_userid"].to_numpy(dtype=np.int64, copy=False)
+    keep_rows = np.zeros(len(rt), dtype=bool)
+    keep_nodes = set()
+
+    for i, (u, v) in enumerate(zip(src, dst)):
+        add = 0
+        if u not in keep_nodes:
+            add += 1
+        if v not in keep_nodes:
+            add += 1
+        if len(keep_nodes) + add <= max_nodes:
+            keep_rows[i] = True
+            keep_nodes.add(int(u))
+            keep_nodes.add(int(v))
+        elif len(keep_nodes) >= max_nodes and u in keep_nodes and v in keep_nodes:
+            keep_rows[i] = True
+        if len(keep_nodes) == max_nodes:
+            continue
+
+    rt2 = rt.loc[keep_rows].copy()
+    actual_nodes = sorted(set(rt2["userid"].tolist()) | set(rt2["rt_userid"].tolist()))
+    print(
+        f"Applied exact max_nodes={max_nodes:,}: kept rows={len(rt2):,} "
+        f"nodes={len(actual_nodes):,}",
+        flush=True,
+    )
+    if len(actual_nodes) != min(max_nodes, len(set(rt['userid'].tolist()) | set(rt['rt_userid'].tolist()))):
+        print(
+            f"  [WARN] exact max_nodes target not reached after trimming; got {len(actual_nodes):,} nodes",
+            flush=True,
+        )
+    return rt2
 
 
 def build_user_index(rt: pd.DataFrame) -> Tuple[List[int], Dict[int, int]]:
@@ -840,8 +891,9 @@ def main():
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
 
-    raw = load_raw_rows(args.csv, args.max_files)
+    raw = load_raw_rows(args.csv, args.max_files, args.max_nodes)
     rt = prepare_retweet_rows(raw, args.strict_dates)
+    rt = trim_rt_to_max_nodes(rt, args.max_nodes)
 
     user_ids, u2i = build_user_index(rt)
     handles = build_user_metadata(rt, user_ids)

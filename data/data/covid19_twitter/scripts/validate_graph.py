@@ -4,7 +4,7 @@ import sys
 import torch
 
 
-REQUIRED_TOP_LEVEL = ["data", "h2i", "handles"]
+REQUIRED_TOP_LEVEL = ["data", "user_ids"]
 
 
 def parse_args():
@@ -29,8 +29,9 @@ def main():
             fail(f"missing required key: {key}")
 
     data = raw["data"]
-    h2i = raw["h2i"]
-    handles = raw["handles"]
+    user_ids = raw["user_ids"]
+    u2i = raw.get("u2i", {})
+    handles = raw.get("handles", [])
     x = data.x
     edge_index = data.edge_index
     feature_names = list(getattr(data, "feature_names", []))
@@ -41,16 +42,16 @@ def main():
         fail("data.x must be 2D")
     if edge_index.dim() != 2 or edge_index.shape[0] != 2:
         fail("data.edge_index must have shape [2, E]")
-    if not isinstance(h2i, dict):
-        fail("raw['h2i'] must be a dict")
-    if not isinstance(handles, list):
-        fail("raw['handles'] must be a list")
-    if len(handles) != x.shape[0]:
-        fail("len(handles) must equal data.x.shape[0]")
+    if not isinstance(user_ids, (list, tuple)):
+        fail("raw['user_ids'] must be a list/tuple")
+    if len(user_ids) != x.shape[0]:
+        fail("len(user_ids) must equal data.x.shape[0]")
+    if handles and (not isinstance(handles, list) or len(handles) != x.shape[0]):
+        fail("if present, raw['handles'] must be a list aligned to data.x.shape[0]")
     if len(feature_names) != x.shape[1]:
         fail("len(data.feature_names) must equal data.x.shape[1]")
-    if len(h2i) != len(handles):
-        fail("len(h2i) must equal len(handles)")
+    if u2i and len(u2i) != len(user_ids):
+        fail("if present, len(u2i) must equal len(user_ids)")
     if torch.isnan(x).any():
         fail("data.x contains NaN")
     if edge_index.numel() > 0:
@@ -61,9 +62,13 @@ def main():
         if max_idx >= x.shape[0]:
             fail("edge_index references out-of-range node index")
 
-    for i, handle in enumerate(handles):
-        if h2i.get(handle) != i:
-            fail(f"h2i[{handle!r}] mismatch at index {i}")
+    for i, user_id in enumerate(user_ids):
+        try:
+            user_id_int = int(user_id)
+        except Exception:
+            fail(f"user_ids[{i}] is not int-like: {user_id!r}")
+        if u2i and u2i.get(user_id_int) != i:
+            fail(f"u2i[{user_id_int!r}] mismatch at index {i}")
 
     print("[PASS] graph is valid")
 

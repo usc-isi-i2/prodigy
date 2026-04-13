@@ -22,6 +22,7 @@ def parse_args():
     p.add_argument("--out", default=DEFAULT_OUT)
     p.add_argument("--batch_size", type=int, default=1024)
     p.add_argument("--max_files", type=int, default=0)
+    p.add_argument("--max_nodes", type=int, default=0, help="Stop loading files once this many unique users are seen (0 = no limit)")
     p.add_argument("--device", default=("cuda" if torch.cuda.is_available() else "cpu"))
     p.add_argument("--max_seq_len", type=int, default=64)
     p.add_argument("--fp16", action="store_true", default=True)
@@ -97,6 +98,7 @@ def main():
     total_items = 0
     total_missing_uid = 0
     total_empty_text = 0
+    total_skip_new_uid = 0
 
     for i, fpath in enumerate(files, start=1):
         ft = time.time()
@@ -122,16 +124,20 @@ def main():
         row_uids = []
         file_missing_uid = 0
         file_empty_text = 0
-        new_uids = []
+        file_skip_new_uid = 0
 
         for _, r in df.iterrows():
-            uid = r["userid"]
+            uid = int(r["userid"])
             text = build_text(r)
             if not text:
                 file_empty_text += 1
                 continue
             if uid not in uid_to_row:
-                new_uids.append(uid)
+                if args.max_nodes > 0 and len(uid_to_row) >= args.max_nodes:
+                    file_skip_new_uid += 1
+                    continue
+                ensure_capacity(1)
+                uid_to_row[uid] = len(uid_to_row)
             texts.append(text)
             row_uids.append(uid)
 
@@ -140,12 +146,8 @@ def main():
             total_empty_text += file_empty_text
             continue
 
-        unique_new = len(set(new_uids))
-        if new_uids:
-            ensure_capacity(len(new_uids))
-            for uid in new_uids:
-                if uid not in uid_to_row:
-                    uid_to_row[uid] = len(uid_to_row)
+        unique_new = len({u for u in row_uids if uid_to_row.get(u, -1) >= 0})  # overwritten below for logging clarity
+        unique_new = len({u for u in row_uids if cnt_arr[uid_to_row[u]] == 0})
 
         row_idx = np.fromiter((uid_to_row[u] for u in row_uids), dtype=np.int64, count=len(row_uids))
 
@@ -163,12 +165,13 @@ def main():
         total_posts += len(texts)
         total_missing_uid += file_missing_uid
         total_empty_text += file_empty_text
+        total_skip_new_uid += file_skip_new_uid
         dt = time.time() - ft
         print(
             f"[{i}/{len(files)}] {os.path.basename(fpath)} "
             f"rows={len(df):,} embedded={len(texts):,} "
             f"new_users={unique_new:,} users={len(uid_to_row):,} "
-            f"skip_uid={file_missing_uid:,} skip_empty={file_empty_text:,} "
+            f"skip_uid={file_missing_uid:,} skip_empty={file_empty_text:,} skip_new_uid={file_skip_new_uid:,} "
             f"file={dt:.1f}s total={(time.time()-t0)/60:.1f}m",
             flush=True,
         )
@@ -200,6 +203,7 @@ def main():
         "embedding_dim": int(emb_dim),
         "users": int(n),
         "total_posts_embedded": int(total_posts),
+        "max_nodes": int(args.max_nodes),
         "max_seq_len": args.max_seq_len,
         "fp16": bool(args.fp16),
     }
@@ -210,7 +214,7 @@ def main():
           f"wall={(time.time()-t0)/60:.1f}m")
     print(
         f"Summary: rows_seen={total_items:,} embedded={total_posts:,} "
-        f"skip_uid={total_missing_uid:,} skip_empty={total_empty_text:,}",
+        f"skip_uid={total_missing_uid:,} skip_empty={total_empty_text:,} skip_new_uid={total_skip_new_uid:,}",
         flush=True,
     )
 

@@ -29,14 +29,14 @@ def describe_degree(name: str, deg: torch.Tensor):
     )
 
 
-def print_topk(title: str, deg: torch.Tensor, handles: list[str], k: int):
+def print_topk(title: str, deg: torch.Tensor, names: list[str], k: int):
     if deg.numel() == 0 or k <= 0:
         return
     k = min(k, deg.numel())
     vals, idxs = torch.topk(deg, k=k)
     print(title)
     for rank, (idx, val) in enumerate(zip(idxs.tolist(), vals.tolist()), start=1):
-        print(f"  {rank:>2}. {handles[idx]}: {int(val)}")
+        print(f"  {rank:>2}. {names[idx]}: {int(val)}")
     print()
 
 
@@ -45,8 +45,14 @@ def main():
     raw = torch.load(args.graph, map_location="cpu")
     x = raw["x"]
     edge_index = raw["edge_index"]
-    handles = raw["handles"]
+    user_ids = list(raw.get("user_ids", []))
+    handles = list(raw.get("handles", []))
     feature_names = list(raw.get("feature_names", []))
+    names = []
+    for i in range(x.shape[0]):
+        handle = handles[i] if i < len(handles) else None
+        user_id = user_ids[i] if i < len(user_ids) else i
+        names.append(f"{handle} [{user_id}]" if handle else str(user_id))
 
     print("Keys:", sorted(raw.keys()))
     print("Shapes")
@@ -84,8 +90,8 @@ def main():
     print(f"  zero-feature rows: {zero_rows:,} ({pct(zero_rows, n_nodes)})")
     print()
 
-    print_topk("Top retweeted handles (in-degree)", in_deg, handles, args.topk)
-    print_topk("Top retweeters (out-degree)", out_deg, handles, args.topk)
+    print_topk("Top retweeted users (in-degree)", in_deg, names, args.topk)
+    print_topk("Top retweeters (out-degree)", out_deg, names, args.topk)
 
 
 if __name__ == "__main__":

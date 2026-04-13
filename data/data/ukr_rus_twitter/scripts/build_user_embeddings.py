@@ -25,6 +25,7 @@ def parse_args():
     p.add_argument("--out", default=DEFAULT_OUT)
     p.add_argument("--batch_size", type=int, default=1024)
     p.add_argument("--max_files", type=int, default=0)
+    p.add_argument("--max_nodes", type=int, default=0, help="Stop loading files once this many unique users are seen (0 = no limit)")
     p.add_argument("--device", default=("cuda" if torch.cuda.is_available() else "cpu"))
     p.add_argument("--max_seq_len", type=int, default=64)
     p.add_argument("--fp16", action="store_true", default=True)
@@ -161,6 +162,7 @@ def main():
     total_items = 0
     total_missing_handle = 0
     total_empty_text = 0
+    total_skip_new_handle = 0
 
     for i, fpath in enumerate(files, start=1):
         ft = time.time()
@@ -188,7 +190,7 @@ def main():
         row_handles = []
         file_missing_handle = 0
         file_empty_text = 0
-        new_handles = []
+        file_skip_new_handle = 0
 
         for _, r in df.iterrows():
             handle = r["screen_name"]
@@ -200,8 +202,15 @@ def main():
                 file_empty_text += 1
                 continue
             if handle not in handle_to_row:
+                if args.max_nodes > 0 and len(handle_to_row) >= args.max_nodes:
+                    file_skip_new_handle += 1
+                    continue
+                ensure_capacity(1)
+                handle_to_row[handle] = len(handle_to_row)
+                handles.append(handle)
                 uid = r.get("userid")
-                new_handles.append((handle, int(uid) if pd.notna(uid) else None))
+                if pd.notna(uid) and handle not in handle_to_userid:
+                    handle_to_userid[handle] = int(uid)
             texts.append(text)
             row_handles.append(handle)
 
@@ -210,15 +219,7 @@ def main():
             total_empty_text += file_empty_text
             continue
 
-        unique_new = len({h for h, _ in new_handles})
-        if new_handles:
-            ensure_capacity(len(new_handles))
-            for h, uid in new_handles:
-                if h not in handle_to_row:
-                    handle_to_row[h] = len(handle_to_row)
-                    handles.append(h)
-                if uid is not None and h not in handle_to_userid:
-                    handle_to_userid[h] = uid
+        unique_new = len({h for h in row_handles if cnt_arr[handle_to_row[h]] == 0})
 
         row_idx = np.fromiter((handle_to_row[h] for h in row_handles), dtype=np.int64, count=len(row_handles))
 
@@ -236,12 +237,13 @@ def main():
         total_posts += len(texts)
         total_missing_handle += file_missing_handle
         total_empty_text += file_empty_text
+        total_skip_new_handle += file_skip_new_handle
         dt = time.time() - ft
         print(
             f"[{i}/{len(files)}] {os.path.basename(fpath)} "
             f"rows={len(df):,} embedded={len(texts):,} "
             f"new_users={unique_new:,} users={len(handle_to_row):,} "
-            f"skip_handle={file_missing_handle:,} skip_empty={file_empty_text:,} "
+            f"skip_handle={file_missing_handle:,} skip_empty={file_empty_text:,} skip_new_handle={file_skip_new_handle:,} "
             f"file={dt:.1f}s total={(time.time()-t0)/60:.1f}m",
             flush=True,
         )
@@ -272,6 +274,7 @@ def main():
         "embedding_dim": int(emb_dim),
         "users": int(n),
         "total_posts_embedded": int(total_posts),
+        "max_nodes": int(args.max_nodes),
         "max_seq_len": args.max_seq_len,
         "fp16": bool(args.fp16),
     }
@@ -282,7 +285,8 @@ def main():
           f"wall={(time.time()-t0)/60:.1f}m")
     print(
         f"Summary: rows_seen={total_items:,} embedded={total_posts:,} "
-        f"skip_handle={total_missing_handle:,} skip_empty={total_empty_text:,}",
+        f"skip_handle={total_missing_handle:,} skip_empty={total_empty_text:,} "
+        f"skip_new_handle={total_skip_new_handle:,}",
         flush=True,
     )
 
