@@ -3,6 +3,7 @@ import ast
 import glob
 import json
 import os
+import re
 from typing import Dict, List, Tuple
 
 import numpy as np
@@ -74,6 +75,11 @@ REP_MEDIA_OUTLETS = [
     "breitbartnews", "dailycaller", "dailymail", "foxnews", "infowars", "oann", "breitbart",
 ]
 
+LABEL_NAMES = ["rep", "dem"]
+LABEL_TO_ID = {name: i for i, name in enumerate(LABEL_NAMES)}
+HASHTAG_TO_LABEL = {tag: "rep" for tag in REP_HASHTAGS} | {tag: "dem" for tag in DEM_HASHTAGS}
+URL_TO_LABEL = {domain: "rep" for domain in REP_MEDIA_OUTLETS} | {domain: "dem" for domain in DEM_MEDIA_OUTLETS}
+
 
 def parse_args():
     p = argparse.ArgumentParser(
@@ -87,16 +93,6 @@ def parse_args():
     p.add_argument("--max_nodes", type=int, default=0, help="Trim the final graph to exactly this many nodes when possible (0 = no limit)")
     p.add_argument("--strict_dates", action="store_true")
     p.add_argument("--history_fraction", type=float, default=0.8)
-    p.add_argument(
-        "--label_source",
-        choices=["political_leaning", "state"],
-        default="political_leaning",
-        help=(
-            "Node label source. "
-            "'political_leaning' uses hashtag-based political leaning labels; "
-            "'state' uses the original state column."
-        ),
-    )
     p.add_argument(
         "--future_target_mode",
         choices=["new_only", "all_future"],
@@ -114,6 +110,12 @@ def parse_args():
         action=argparse.BooleanOptionalAction,
         default=False,
         help="Keep nodes with zero in-degree and zero out-degree in the saved graph.",
+    )
+    p.add_argument(
+        "--pseudo-label-margin",
+        type=int,
+        default=2,
+        help="Minimum one-sided evidence count required to assign a pseudo label.",
     )
     return p.parse_args()
 
@@ -312,111 +314,175 @@ def _parse_url_entries(val) -> List[str]:
     return urls
 
 
-def build_political_leaning_labels(base: pd.DataFrame, id_to_idx: Dict[int, int]) -> Tuple[torch.Tensor, List[str]]:
-    label_names = ["rep", "dem"]
+def extract_domain(url: str) -> str:
+    s = str(url or "").strip().lower()
+    if not s:
+        return ""
+    s = s.replace("https://", "").replace("http://", "")
+    s = s.split("/", 1)[0]
+    if s.startswith("www."):
+        s = s[4:]
+    return s
+
+
+def score_url_iter(urls: List[str]) -> Dict[str, int]:
+    counts = {label: 0 for label in LABEL_NAMES}
+    for url in urls:
+        domain = extract_domain(url)
+        if not domain:
+            continue
+        matched = None
+        for outlet, label in URL_TO_LABEL.items():
+            if domain == outlet or domain.endswith(f".{outlet}"):
+                matched = label
+                break
+        if matched is not None:
+            counts[matched] += 1
+    return counts
+
+
+def map_url_scores(series: pd.Series) -> Tuple[pd.Series, pd.Series]:
+    keys = series.astype("string").fillna("")
+    unique_vals = pd.unique(keys)
+
+    rep_map: Dict[str, int] = {}
+    dem_map: Dict[str, int] = {}
+    for val in unique_vals:
+        counts = score_url_iter(_parse_url_entries(val))
+        rep_map[val] = counts["rep"]
+        dem_map[val] = counts["dem"]
+
+    rep_series = keys.map(rep_map).fillna(0).astype(np.int32)
+    dem_series = keys.map(dem_map).fillna(0).astype(np.int32)
+    return rep_series, dem_series
+
+
+def extract_hashtags_from_text(text) -> List[str]:
+    s = str(text or "").lower()
+    return [match[1:] for match in re.findall(r"#\w+", s)]
+
+
+def extract_hashtags_from_field(val) -> List[str]:
+    tags: List[str] = []
+    s = str(val).strip()
+    if s in {"", "[]", "nan", "None", "<NA>"}:
+        return tags
+    s = s.strip("[]").replace("'", "").replace('"', "")
+    for item in s.split(","):
+        tag = item.strip().lower()
+        if not tag:
+            continue
+        if tag.startswith("#"):
+            tag = tag[1:]
+        if tag:
+            tags.append(tag)
+    return tags
+
+
+def score_hashtag_iter(tags: List[str]) -> Dict[str, int]:
+    counts = {label: 0 for label in LABEL_NAMES}
+    for tag in tags:
+        label = HASHTAG_TO_LABEL.get(tag)
+        if label is not None:
+            counts[label] += 1
+    return counts
+
+
+def map_hashtag_field_scores(series: pd.Series) -> Tuple[pd.Series, pd.Series]:
+    keys = series.astype("string").fillna("")
+    unique_vals = pd.unique(keys)
+
+    rep_map: Dict[str, int] = {}
+    dem_map: Dict[str, int] = {}
+    for val in unique_vals:
+        counts = score_hashtag_iter(extract_hashtags_from_field(val))
+        rep_map[val] = counts["rep"]
+        dem_map[val] = counts["dem"]
+
+    rep_series = keys.map(rep_map).fillna(0).astype(np.int32)
+    dem_series = keys.map(dem_map).fillna(0).astype(np.int32)
+    return rep_series, dem_series
+
+
+def build_political_leaning_labels(
+    base: pd.DataFrame,
+    id_to_idx: Dict[int, int],
+    min_margin: int = 2,
+) -> Tuple[torch.Tensor, List[str]]:
     y = torch.full((len(id_to_idx),), -1, dtype=torch.long)
 
     label_df = base[["userid"]].copy()
-    label_df["description"] = base.get("description", "").fillna("").astype(str).str.lower()
     if "urls_list" in base.columns:
         url_source = base["urls_list"]
     elif "urls" in base.columns:
         url_source = base["urls"]
     else:
         url_source = pd.Series(index=base.index, dtype=object)
-    label_df["urls"] = url_source.apply(_parse_url_entries)
+    label_df["url_source"] = url_source
+    label_df["description"] = base.get("description", "").fillna("").astype(str).str.lower()
+    label_df["hashtag"] = base.get("hashtag", "").astype("string").fillna("")
+    label_df["rt_hashtag"] = base.get("rt_hashtag", "").astype("string").fillna("")
 
-    rep_pat = r"\#(?:" + "|".join(REP_HASHTAGS) + r")"
-    dem_pat = r"\#(?:" + "|".join(DEM_HASHTAGS) + r")"
-    rep_media_pat = "|".join(REP_MEDIA_OUTLETS)
-    dem_media_pat = "|".join(DEM_MEDIA_OUTLETS)
+    rep_url, dem_url = map_url_scores(label_df["url_source"])
+    rep_hashtag, dem_hashtag = map_hashtag_field_scores(label_df["hashtag"])
+    rep_rt_hashtag, dem_rt_hashtag = map_hashtag_field_scores(label_df["rt_hashtag"])
 
-    label_df["rep_domains"] = (
-        label_df["urls"].explode().str.findall(rep_media_pat).explode().dropna().groupby(level=0).agg(list)
+    url_agg = (
+        pd.DataFrame(
+            {
+                "userid": label_df["userid"],
+                "rep_url": rep_url,
+                "dem_url": dem_url,
+                "rep_hashtag": rep_hashtag + rep_rt_hashtag,
+                "dem_hashtag": dem_hashtag + dem_rt_hashtag,
+            }
+        )
+        .groupby("userid", sort=False)[["rep_url", "dem_url", "rep_hashtag", "dem_hashtag"]]
+        .sum()
     )
-    label_df["dem_domains"] = (
-        label_df["urls"].explode().str.findall(dem_media_pat).explode().dropna().groupby(level=0).agg(list)
-    )
-    label_df["has_rep_dom"] = label_df["rep_domains"].str.len()
-    label_df["has_dem_dom"] = label_df["dem_domains"].str.len()
 
-    label_df["rep_hashs"] = label_df["description"].str.findall(rep_pat)
-    label_df["rep_hashs_len"] = label_df["rep_hashs"].str.len()
-    user2rep_hash = (
-        label_df.sort_values("rep_hashs_len")
-        .drop_duplicates(["userid", "description"], keep="first")
-        .groupby("userid")
-        .agg({"rep_hashs": "sum"})
-    )
-    user2rep_hash["rep_hashs"] = user2rep_hash["rep_hashs"].apply(set)
-    user2rep_hash["rep_hashs_len"] = user2rep_hash["rep_hashs"].str.len()
+    desc_df = label_df[["userid", "description"]].copy()
+    desc_df["description"] = desc_df["description"].astype("string").fillna("").str.strip().str.lower()
+    desc_df = desc_df[desc_df["description"] != ""].drop_duplicates(subset=["userid", "description"])
+    if not desc_df.empty:
+        desc_scores = desc_df["description"].apply(lambda text: score_hashtag_iter(extract_hashtags_from_text(text)))
+        desc_df["rep_desc"] = desc_scores.map(lambda d: d["rep"]).astype(np.int32)
+        desc_df["dem_desc"] = desc_scores.map(lambda d: d["dem"]).astype(np.int32)
+        desc_agg = desc_df.groupby("userid", sort=False)[["rep_desc", "dem_desc"]].sum()
+    else:
+        desc_agg = pd.DataFrame(columns=["rep_desc", "dem_desc"])
 
-    label_df["dem_hashs"] = label_df["description"].str.findall(dem_pat)
-    label_df["dem_hashs_len"] = label_df["dem_hashs"].str.len()
-    user2dem_hash = (
-        label_df.sort_values("dem_hashs_len")
-        .drop_duplicates(["userid", "description"], keep="first")
-        .groupby("userid")
-        .agg({"dem_hashs": "sum"})
-    )
-    user2dem_hash["dem_hashs"] = user2dem_hash["dem_hashs"].apply(set)
-    user2dem_hash["dem_hashs_len"] = user2dem_hash["dem_hashs"].str.len()
+    label_agg = url_agg.join(desc_agg, how="outer").fillna(0)
+    rep_totals = label_agg.get("rep_url", 0) + label_agg.get("rep_hashtag", 0) + label_agg.get("rep_desc", 0)
+    dem_totals = label_agg.get("dem_url", 0) + label_agg.get("dem_hashtag", 0) + label_agg.get("dem_desc", 0)
 
-    user2pol = user2rep_hash.join(user2dem_hash)
-    user2pol["user2rep_dom_tweet_count"] = label_df.groupby("userid")["has_rep_dom"].sum()
-    user2pol["user2dem_dom_tweet_count"] = label_df.groupby("userid")["has_dem_dom"].sum()
-    user2pol["is_rep"] = (
-        user2pol["user2rep_dom_tweet_count"].gt(0) | user2pol["rep_hashs_len"].gt(0)
-    )
-    user2pol["is_dem"] = (
-        user2pol["user2dem_dom_tweet_count"].gt(0) | user2pol["dem_hashs_len"].gt(0)
-    )
-    user2pol = user2pol[~(user2pol["is_rep"] & user2pol["is_dem"])].copy()
+    node_ids = np.asarray(sorted(id_to_idx, key=id_to_idx.get), dtype=np.int64)
+    user_index = pd.Index(node_ids)
+    rep_votes = user_index.map(rep_totals).fillna(0).astype(int)
+    dem_votes = user_index.map(dem_totals).fillna(0).astype(int)
 
-    labeled_count = 0
-    for uid in user2pol.index[user2pol["is_rep"]]:
-        node_idx = id_to_idx.get(int(uid))
-        if node_idx is None:
-            continue
-        y[node_idx] = 0
-        labeled_count += 1
-    for uid in user2pol.index[user2pol["is_dem"]]:
-        node_idx = id_to_idx.get(int(uid))
-        if node_idx is None:
-            continue
-        y[node_idx] = 1
-        labeled_count += 1
+    has_enough = (rep_votes >= min_margin) | (dem_votes >= min_margin)
+    not_mixed = ~((rep_votes > 0) & (dem_votes > 0))
+    valid = has_enough & not_mixed
 
+    y_np = np.full(len(node_ids), -1, dtype=np.int64)
+    y_np[valid & (rep_votes > 0)] = LABEL_TO_ID["rep"]
+    y_np[valid & (rep_votes == 0)] = LABEL_TO_ID["dem"]
+    y = torch.from_numpy(y_np)
+
+    labeled_count = int(valid.sum())
     print(
         f"Political-leaning labels: {labeled_count:,} / {len(id_to_idx):,} "
         f"({100 * labeled_count / max(1, len(id_to_idx)):.1f}%) labeled"
     )
-    return y, label_names
-
-
-def build_state_labels(base: pd.DataFrame, id_to_idx: Dict[int, int]) -> Tuple[torch.Tensor, List[str]]:
-    y = torch.full((len(id_to_idx),), -1, dtype=torch.long)
-    label_names: List[str] = []
-    if "state" not in base.columns:
-        return y, label_names
-
-    st = base[base["state"].notna() & base["state"].astype(str).ne("")][["userid", "state"]].drop_duplicates("userid")
-    if len(st):
-        label_names = sorted(st["state"].astype(str).unique().tolist())
-        st2i = {s: i for i, s in enumerate(label_names)}
-        for _, r in st.iterrows():
-            uid = int(r["userid"])
-            node_idx = id_to_idx.get(uid)
-            if node_idx is not None:
-                y[node_idx] = st2i[str(r["state"])]
-    return y, label_names
+    return y, list(LABEL_NAMES)
 
 
 def build_node_features(
     rt: pd.DataFrame,
     id_to_idx: Dict[int, int],
     edge_df: pd.DataFrame,
-    label_source: str,
+    pseudo_label_margin: int,
 ) -> Tuple[torch.Tensor, List[str], torch.Tensor, List[str]]:
     base = rt.dropna(subset=["userid"]).copy()
 
@@ -474,12 +540,7 @@ def build_node_features(
 
     x = torch.tensor(X, dtype=torch.float)
 
-    if label_source == "political_leaning":
-        y, label_names = build_political_leaning_labels(base, id_to_idx)
-    elif label_source == "state":
-        y, label_names = build_state_labels(base, id_to_idx)
-    else:
-        raise ValueError(f"Unknown label_source='{label_source}'")
+    y, label_names = build_political_leaning_labels(base, id_to_idx, min_margin=pseudo_label_margin)
 
     return x, feature_names, y, label_names
 
@@ -567,7 +628,7 @@ def main():
         rt,
         u2i,
         edge_all_df,
-        label_source=args.label_source,
+        pseudo_label_margin=args.pseudo_label_margin,
     )
     x, feature_names, emb_stats = maybe_attach_embeddings(
         x, feature_names, user_ids, args.embeddings, args.embedding_pool
@@ -673,7 +734,7 @@ def main():
         "embedding_pool": args.embedding_pool,
         "embedding_dim": emb_stats["embedding_dim"],
         "embedding_matched_users": emb_stats["matched_users"],
-        "label_source": args.label_source,
+        "pseudo_label_margin": int(args.pseudo_label_margin),
         "keep_isolates": args.keep_isolates,
         "isolated_nodes_before_drop": isolated_before_drop,
         "isolated_nodes_dropped": isolated_dropped,
