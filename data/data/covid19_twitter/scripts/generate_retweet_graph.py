@@ -124,6 +124,15 @@ def count_list_like(items) -> int:
     return 0
 
 
+def _fast_list_lens(series: pd.Series) -> np.ndarray:
+    # Much faster than .apply on millions of rows.
+    return np.fromiter(
+        (len(x) if isinstance(x, list) else 0 for x in series),
+        dtype=np.int32,
+        count=len(series),
+    )
+
+
 def load_raw_rows(json_glob: str, max_files: int) -> pd.DataFrame:
     files = sorted(glob.glob(json_glob))
     if max_files > 0:
@@ -263,20 +272,23 @@ def build_user_index(rt: pd.DataFrame) -> Tuple[List[int], Dict[int, int]]:
 
 
 def build_user_metadata(raw: pd.DataFrame, user_ids: List[int]) -> List[str]:
-    frames = []
-    left = raw[["userid", "screen_name", "timestamp"]].rename(columns={"userid": "user_id", "screen_name": "handle"})
-    frames.append(left)
-    right = raw[["rt_userid", "rt_screen", "timestamp"]].rename(columns={"rt_userid": "user_id", "rt_screen": "handle"})
-    frames.append(right)
-    meta = pd.concat(frames, ignore_index=True)
-    meta = meta.dropna(subset=["user_id"]).copy()
-    meta["user_id"] = pd.to_numeric(meta["user_id"], errors="coerce")
-    meta = meta.dropna(subset=["user_id"]).copy()
+    # Take only what we need, pick the latest non-null handle per user_id
+    # via groupby-idxmax on timestamp. Avoids sorting a 2x-sized frame.
+    left = raw[["userid", "screen_name", "timestamp"]].rename(
+        columns={"userid": "user_id", "screen_name": "handle"}
+    )
+    right = raw[["rt_userid", "rt_screen", "timestamp"]].rename(
+        columns={"rt_userid": "user_id", "rt_screen": "handle"}
+    )
+    meta = pd.concat([left, right], ignore_index=True, copy=False)
+    meta = meta.dropna(subset=["user_id", "handle"])
+    if meta.empty:
+        return [None] * len(user_ids)
     meta["user_id"] = meta["user_id"].astype(np.int64)
-    meta["handle"] = meta["handle"].map(normalize_handle)
-    meta = meta.dropna(subset=["handle"]).copy()
-    meta = meta.sort_values("timestamp").drop_duplicates(subset=["user_id"], keep="last")
-    handle_map = meta.set_index("user_id")["handle"].to_dict()
+    # idxmax of timestamp per user_id -> row with latest timestamp
+    latest_idx = meta.groupby("user_id")["timestamp"].idxmax()
+    latest = meta.loc[latest_idx, ["user_id", "handle"]]
+    handle_map = dict(zip(latest["user_id"].to_numpy(), latest["handle"].to_numpy()))
     return [handle_map.get(int(user_id)) for user_id in user_ids]
 
 
@@ -308,9 +320,13 @@ def to_edge_tensors(edge_df: pd.DataFrame, u2i: Dict[int, int]) -> Tuple[torch.T
 
 def build_node_features(rt: pd.DataFrame, u2i: Dict[int, int], edge_df: pd.DataFrame):
     base = rt.copy()
-    base["n_hashtags"] = base.get("hashtag", []).apply(count_list_like)
-    base["n_mentions"] = base.get("mentionsn", []).apply(count_list_like)
-    base["has_media"] = base.get("media_urls", []).apply(lambda x: int(count_list_like(x) > 0))
+    # Fast list-length extraction (avoids .apply on millions of rows).
+    base["n_hashtags"] = _fast_list_lens(base["hashtag"]) if "hashtag" in base.columns else 0
+    base["n_mentions"] = _fast_list_lens(base["mentionsn"]) if "mentionsn" in base.columns else 0
+    if "media_urls" in base.columns:
+        base["has_media"] = (_fast_list_lens(base["media_urls"]) > 0).astype(np.int8)
+    else:
+        base["has_media"] = 0
     if "sent_vader" not in base.columns:
         base["sent_vader"] = 0.0
 
@@ -329,6 +345,7 @@ def build_node_features(rt: pd.DataFrame, u2i: Dict[int, int], edge_df: pd.DataF
     for col in ["subscriber_count", "avg_favorites", "avg_comments", "post_count"]:
         node_agg[col] = np.log1p(pd.to_numeric(node_agg[col], errors="coerce").fillna(0).clip(lower=0))
 
+    # Degrees from the aggregated edge frame. Merge once; no Python loops.
     in_deg = edge_df.groupby("rt_userid").size().rename("in_degree")
     out_deg = edge_df.groupby("userid").size().rename("out_degree")
     node_agg = node_agg.merge(out_deg, left_on="userid", right_index=True, how="left")
@@ -342,15 +359,6 @@ def build_node_features(rt: pd.DataFrame, u2i: Dict[int, int], edge_df: pd.DataF
     node_agg = node_agg.dropna(subset=["node_idx"])
     rows = node_agg["node_idx"].astype(int).values
     x_np[rows] = node_agg[NODE_FEATURE_NAMES].fillna(0).values.astype(np.float32)
-
-    all_out = np.zeros(n_nodes, dtype=np.float32)
-    all_in = np.zeros(n_nodes, dtype=np.float32)
-    for user_id, c in edge_df.groupby("userid").size().items():
-        all_out[u2i[int(user_id)]] = np.log1p(float(c))
-    for user_id, c in edge_df.groupby("rt_userid").size().items():
-        all_in[u2i[int(user_id)]] = np.log1p(float(c))
-    x_np[:, NODE_FEATURE_NAMES.index("out_degree")] = np.maximum(x_np[:, NODE_FEATURE_NAMES.index("out_degree")], all_out)
-    x_np[:, NODE_FEATURE_NAMES.index("in_degree")] = np.maximum(x_np[:, NODE_FEATURE_NAMES.index("in_degree")], all_in)
 
     nonzero = np.any(x_np != 0, axis=1)
     if nonzero.any():
@@ -368,30 +376,46 @@ def maybe_attach_embeddings(x, feature_names, user_ids, handles, embeddings_path
         raise KeyError(f"Embeddings file must contain '{embedding_pool}'")
     emb_dim = int(emb_mat.shape[1])
     extra = torch.zeros((len(handles), emb_dim), dtype=torch.float)
-    matched = 0
+
     emb_user_ids = emb.get("user_ids")
     if emb_user_ids is not None:
-        emb_map = {int(uid): i for i, uid in enumerate(np.asarray(emb_user_ids))}
-        for i, user_id in enumerate(user_ids):
-            j = emb_map.get(int(user_id))
-            if j is None:
-                continue
-            extra[i] = emb_mat[j].float()
-            matched += 1
+        # Vectorized join via searchsorted on a sorted copy of the embedding ids.
+        emb_ids = np.asarray(emb_user_ids).astype(np.int64)
+        order = np.argsort(emb_ids)
+        sorted_ids = emb_ids[order]
+        query = np.asarray(user_ids, dtype=np.int64)
+        pos = np.searchsorted(sorted_ids, query)
+        pos_clipped = np.clip(pos, 0, len(sorted_ids) - 1)
+        hit = (pos < len(sorted_ids)) & (sorted_ids[pos_clipped] == query)
+        tgt_rows = np.where(hit)[0]
+        src_rows = order[pos[hit]]
+        if len(tgt_rows):
+            extra[torch.from_numpy(tgt_rows)] = emb_mat[torch.from_numpy(src_rows)].float()
+        matched = int(hit.sum())
     else:
         emb_handles = emb.get("handles")
         if emb_handles is None:
             raise KeyError(f"Embeddings file must contain either 'user_ids' or 'handles' plus '{embedding_pool}'")
-        emb_map = {str(handle).strip().lower(): i for i, handle in enumerate(emb_handles)}
-        for i, handle in enumerate(handles):
-            if not handle:
-                continue
-            j = emb_map.get(handle)
-            if j is None:
-                continue
-            extra[i] = emb_mat[j].float()
-            matched += 1
-    return torch.cat([x, extra], dim=1), feature_names + [f"emb_{k}" for k in range(emb_dim)], {"matched_users": matched, "embedding_dim": emb_dim}
+        # Vectorized handle lookup via pandas.
+        emb_handle_series = pd.Series(
+            np.arange(len(emb_handles), dtype=np.int64),
+            index=[str(h).strip().lower() for h in emb_handles],
+        )
+        # Dedup in case of repeated handles in the embedding file.
+        emb_handle_series = emb_handle_series[~emb_handle_series.index.duplicated(keep="first")]
+        mapped = pd.Series(handles).map(emb_handle_series)
+        hit_mask = mapped.notna().to_numpy()
+        tgt_rows = np.where(hit_mask)[0]
+        src_rows = mapped.dropna().to_numpy(dtype=np.int64)
+        if len(tgt_rows):
+            extra[torch.from_numpy(tgt_rows)] = emb_mat[torch.from_numpy(src_rows)].float()
+        matched = int(hit_mask.sum())
+
+    return (
+        torch.cat([x, extra], dim=1),
+        feature_names + [f"emb_{k}" for k in range(emb_dim)],
+        {"matched_users": matched, "embedding_dim": emb_dim},
+    )
 
 
 def load_external_labels(labels_parquet_glob: str):
@@ -432,20 +456,18 @@ def load_external_labels(labels_parquet_glob: str):
 
 
 def build_node_labels(handles, label_info):
-    y = torch.full((len(handles),), -1, dtype=torch.long)
-    label_names = []
+    label_names: List[str] = []
     if not label_info:
+        y = torch.full((len(handles),), -1, dtype=torch.long)
         return y, label_names, {"labeled_nodes": 0, "label_count": 0}
 
     handle_to_label = label_info["handle_to_label"]
     label_names = list(label_info["label_names"])
-    labeled = 0
-    for i, handle in enumerate(handles):
-        label = handle_to_label.get(handle)
-        if label is None:
-            continue
-        y[i] = int(label)
-        labeled += 1
+    # Vectorized lookup via pandas.
+    mapped = pd.Series(handles).map(handle_to_label)
+    y_np = mapped.fillna(-1).to_numpy(dtype=np.int64)
+    y = torch.from_numpy(y_np)
+    labeled = int((y_np >= 0).sum())
     return y, label_names, {"labeled_nodes": labeled, "label_count": len(label_names)}
 
 
@@ -485,9 +507,16 @@ def main():
     print(f"Directed edges: {edge_index.shape[1]:,}")
 
     x, feature_names = build_node_features(rt, u2i, edge_all_df)
-    x, feature_names, emb_stats = maybe_attach_embeddings(x, feature_names, user_ids, handles, args.embeddings, args.embedding_pool)
+    x, feature_names, emb_stats = maybe_attach_embeddings(
+        x, feature_names, user_ids, handles, args.embeddings, args.embedding_pool
+    )
 
-    isolated_before_drop = int(((torch.bincount(edge_index[0], minlength=len(user_ids)) == 0) & (torch.bincount(edge_index[1], minlength=len(user_ids)) == 0)).sum().item())
+    # Cache bincounts once; reuse for the "before drop" stat and the drop itself.
+    n_nodes = len(user_ids)
+    out_deg_t = torch.bincount(edge_index[0], minlength=n_nodes)
+    in_deg_t = torch.bincount(edge_index[1], minlength=n_nodes)
+    isolated_before_drop = int(((out_deg_t == 0) & (in_deg_t == 0)).sum().item())
+
     if not args.keep_isolates:
         x, edge_index, edge_attr, user_ids, handles, u2i, isolated_dropped = drop_isolates_from_graph(
             x, edge_index, edge_attr, user_ids, handles
@@ -512,7 +541,6 @@ def main():
         "edge_attr_feature_names": EDGE_FEATURE_NAMES,
         "user_ids": user_ids,
         "u2i": u2i,
-        "handles": handles,
         "feature_names": feature_names,
         "y": y,
         "label_names": label_names,
@@ -561,7 +589,6 @@ def main():
     data.edge_attr_feature_names = EDGE_FEATURE_NAMES
     data.label_names = label_names
     data.user_ids = list(user_ids)
-    data.handles = list(handles)
     graph_obj["data"] = data
     torch.save(graph_obj, args.out)
 

@@ -6,7 +6,7 @@ import torch
 def parse_args():
     p = argparse.ArgumentParser(description="Inspect a ukr_rus_twitter retweet_graph.pt artifact")
     p.add_argument("--graph", default="data/data/ukr_rus_twitter/graphs/retweet_graph.pt")
-    p.add_argument("--topk", type=int, default=10, help="How many high-degree handles to print")
+    p.add_argument("--topk", type=int, default=10, help="How many high-degree users to print")
     return p.parse_args()
 
 
@@ -29,14 +29,14 @@ def describe_degree(name: str, deg: torch.Tensor):
     )
 
 
-def print_topk(title: str, deg: torch.Tensor, handles: list[str], k: int):
+def print_topk(title: str, deg: torch.Tensor, names: list[str], k: int):
     if deg.numel() == 0 or k <= 0:
         return
     k = min(k, deg.numel())
     vals, idxs = torch.topk(deg, k=k)
     print(title)
     for rank, (idx, val) in enumerate(zip(idxs.tolist(), vals.tolist()), start=1):
-        print(f"  {rank:>2}. {handles[idx]}: {int(val)}")
+        print(f"  {rank:>2}. {names[idx]}: {int(val)}")
     print()
 
 
@@ -44,12 +44,18 @@ def main():
     args = parse_args()
     raw = torch.load(args.graph, map_location="cpu")
     data = raw["data"]
-    handles = raw["handles"]
-    h2i = raw["h2i"]
+    user_ids = list(raw.get("user_ids", []))
+    handles = list(raw.get("handles", []))
+    u2i = raw.get("u2i", {})
 
     x = data.x
     edge_index = data.edge_index
     feature_names = list(getattr(data, "feature_names", []))
+    names = []
+    for i in range(x.shape[0]):
+        handle = handles[i] if i < len(handles) else None
+        user_id = user_ids[i] if i < len(user_ids) else i
+        names.append(f"{handle} [{user_id}]" if handle else str(user_id))
 
     print(f"Loaded: {args.graph}")
     print("Keys:", sorted(raw.keys()))
@@ -106,12 +112,14 @@ def main():
     print()
 
     print("Mapping")
-    print(f"  handles: {len(handles):,}")
-    print(f"  h2i size: {len(h2i):,}")
+    print(f"  user_ids: {len(user_ids):,}")
+    print(f"  u2i size: {len(u2i):,}")
+    if handles:
+        print(f"  handles: {len(handles):,}")
     print()
 
-    print_topk("Top retweeted handles (in-degree)", in_deg, handles, args.topk)
-    print_topk("Top retweeters (out-degree)", out_deg, handles, args.topk)
+    print_topk("Top retweeted users (in-degree)", in_deg, names, args.topk)
+    print_topk("Top retweeters (out-degree)", out_deg, names, args.topk)
 
 
 if __name__ == "__main__":

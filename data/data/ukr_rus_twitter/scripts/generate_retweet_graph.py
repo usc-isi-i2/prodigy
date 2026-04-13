@@ -366,6 +366,14 @@ def count_list_like(val) -> int:
     return len([x for x in s.split(",") if x.strip()])
 
 
+def _fast_list_lens(series: pd.Series) -> np.ndarray:
+    return np.fromiter(
+        (count_list_like(x) for x in series),
+        dtype=np.int32,
+        count=len(series),
+    )
+
+
 def parse_serialized_list(val):
     if pd.isna(val):
         return []
@@ -705,16 +713,24 @@ def build_user_metadata(rt: pd.DataFrame, user_ids: List[int]) -> List[str]:
     """Build a list of screen_name handles aligned with user_ids, for label computation."""
     frames = []
     if "screen_name" in rt.columns:
-        left = rt[["userid", "screen_name"]].rename(columns={"userid": "user_id", "screen_name": "handle"})
+        left = rt[["userid", "screen_name", "timestamp"]].rename(
+            columns={"userid": "user_id", "screen_name": "handle"}
+        )
         frames.append(left)
     if "rt_screen" in rt.columns:
-        right = rt[["rt_userid", "rt_screen"]].rename(columns={"rt_userid": "user_id", "rt_screen": "handle"})
+        right = rt[["rt_userid", "rt_screen", "timestamp"]].rename(
+            columns={"rt_userid": "user_id", "rt_screen": "handle"}
+        )
         frames.append(right)
     if not frames:
         return [None] * len(user_ids)
-    meta = pd.concat(frames, ignore_index=True)
-    meta = meta.dropna(subset=["user_id", "handle"]).drop_duplicates(subset=["user_id"], keep="last")
-    handle_map = meta.set_index("user_id")["handle"].to_dict()
+    meta = pd.concat(frames, ignore_index=True, copy=False)
+    meta = meta.dropna(subset=["user_id", "handle"])
+    if meta.empty:
+        return [None] * len(user_ids)
+    latest_idx = meta.groupby("user_id")["timestamp"].idxmax()
+    latest = meta.loc[latest_idx, ["user_id", "handle"]]
+    handle_map = dict(zip(latest["user_id"].to_numpy(), latest["handle"].to_numpy()))
     return [handle_map.get(int(uid)) for uid in user_ids]
 
 
@@ -751,11 +767,12 @@ def build_node_features(rt: pd.DataFrame, u2i: Dict[int, int], edge_df: pd.DataF
             base[col] = pd.to_numeric(base[col], errors="coerce")
 
     base["verified"] = base.get("verified", 0).map({True: 1, False: 0, "True": 1, "False": 0}).fillna(0).astype(float)
-    base["n_hashtags"] = base.get("hashtag", "").apply(count_list_like)
-    base["n_mentions"] = base.get("mentionsn", "").apply(count_list_like)
-    base["has_media"] = base.get("media_urls", "").apply(
-        lambda x: 0 if str(x).strip() in {"", "[]", "nan", "None"} else 1
-    )
+    base["n_hashtags"] = _fast_list_lens(base["hashtag"]) if "hashtag" in base.columns else 0
+    base["n_mentions"] = _fast_list_lens(base["mentionsn"]) if "mentionsn" in base.columns else 0
+    if "media_urls" in base.columns:
+        base["has_media"] = (_fast_list_lens(base["media_urls"]) > 0).astype(np.int8)
+    else:
+        base["has_media"] = 0
 
     node_agg = base.groupby("userid", as_index=False).agg(
         subscriber_count=("followers_count", "max"),
@@ -785,15 +802,6 @@ def build_node_features(rt: pd.DataFrame, u2i: Dict[int, int], edge_df: pd.DataF
     node_agg = node_agg.dropna(subset=["node_idx"])
     rows = node_agg["node_idx"].astype(int).values
     x_np[rows] = node_agg[NODE_FEATURE_NAMES].fillna(0).values.astype(np.float32)
-
-    all_out = np.zeros(n_nodes, dtype=np.float32)
-    all_in = np.zeros(n_nodes, dtype=np.float32)
-    for uid, c in edge_df.groupby("userid").size().items():
-        all_out[u2i[int(uid)]] = np.log1p(float(c))
-    for uid, c in edge_df.groupby("rt_userid").size().items():
-        all_in[u2i[int(uid)]] = np.log1p(float(c))
-    x_np[:, NODE_FEATURE_NAMES.index("out_degree")] = np.maximum(x_np[:, NODE_FEATURE_NAMES.index("out_degree")], all_out)
-    x_np[:, NODE_FEATURE_NAMES.index("in_degree")] = np.maximum(x_np[:, NODE_FEATURE_NAMES.index("in_degree")], all_in)
 
     nonzero = np.any(x_np != 0, axis=1)
     if nonzero.any():
@@ -825,26 +833,34 @@ def maybe_attach_embeddings(
 
     emb_user_ids = emb.get("user_ids")
     if emb_user_ids is not None:
-        emb_map = {int(uid): i for i, uid in enumerate(np.asarray(emb_user_ids))}
-        for i, uid in enumerate(user_ids):
-            j = emb_map.get(int(uid))
-            if j is None:
-                continue
-            extra[i] = emb_mat[j].float()
-            matched += 1
+        emb_ids = np.asarray(emb_user_ids).astype(np.int64)
+        order = np.argsort(emb_ids)
+        sorted_ids = emb_ids[order]
+        query = np.asarray(user_ids, dtype=np.int64)
+        pos = np.searchsorted(sorted_ids, query)
+        pos_clipped = np.clip(pos, 0, len(sorted_ids) - 1)
+        hit = (pos < len(sorted_ids)) & (sorted_ids[pos_clipped] == query)
+        tgt_rows = np.where(hit)[0]
+        src_rows = order[pos[hit]]
+        if len(tgt_rows):
+            extra[torch.from_numpy(tgt_rows)] = emb_mat[torch.from_numpy(src_rows)].float()
+        matched = int(hit.sum())
     else:
         emb_handles = emb.get("handles")
         if emb_handles is None:
             raise KeyError(f"Embeddings file must contain either 'user_ids' or 'handles' plus '{embedding_pool}'")
-        emb_map = {str(h).strip().lower(): i for i, h in enumerate(emb_handles)}
-        for i, handle in enumerate(handles):
-            if not handle:
-                continue
-            j = emb_map.get(handle)
-            if j is None:
-                continue
-            extra[i] = emb_mat[j].float()
-            matched += 1
+        emb_handle_series = pd.Series(
+            np.arange(len(emb_handles), dtype=np.int64),
+            index=[str(h).strip().lower() for h in emb_handles],
+        )
+        emb_handle_series = emb_handle_series[~emb_handle_series.index.duplicated(keep="first")]
+        mapped = pd.Series(handles).map(emb_handle_series)
+        hit_mask = mapped.notna().to_numpy()
+        tgt_rows = np.where(hit_mask)[0]
+        src_rows = mapped.dropna().to_numpy(dtype=np.int64)
+        if len(tgt_rows):
+            extra[torch.from_numpy(tgt_rows)] = emb_mat[torch.from_numpy(src_rows)].float()
+        matched = int(hit_mask.sum())
 
     x2 = torch.cat([x, extra], dim=1)
     names2 = feature_names + [f"emb_{k}" for k in range(emb_dim)]
@@ -934,7 +950,6 @@ def main():
         "edge_attr_feature_names": EDGE_FEATURE_NAMES,
         "user_ids": user_ids,
         "u2i": u2i,
-        "handles": handles,
         "feature_names": feature_names,
         "y": y,
         "label_names": label_names,
@@ -1002,7 +1017,6 @@ def main():
     data.feature_names = feature_names
     data.edge_attr_feature_names = EDGE_FEATURE_NAMES
     data.user_ids = list(user_ids)
-    data.handles = list(handles)
     graph_obj["data"] = data
 
     torch.save(graph_obj, args.out)

@@ -4,7 +4,7 @@ import sys
 import torch
 
 
-REQUIRED_TOP_LEVEL = ["data", "h2i", "handles"]
+REQUIRED_TOP_LEVEL = ["data", "user_ids"]
 
 
 def parse_args():
@@ -30,8 +30,8 @@ def main():
             fail(f"missing required key: {key}")
 
     data = raw["data"]
-    h2i = raw["h2i"]
-    handles = raw["handles"]
+    user_ids = raw["user_ids"]
+    u2i = raw.get("u2i", {})
 
     if not hasattr(data, "x") or not hasattr(data, "edge_index"):
         fail("raw['data'] must expose x and edge_index")
@@ -48,16 +48,14 @@ def main():
         fail("data.x must be 2D")
     if edge_index.dim() != 2 or edge_index.shape[0] != 2:
         fail("data.edge_index must have shape [2, E]")
-    if not isinstance(h2i, dict):
-        fail("raw['h2i'] must be a dict")
-    if not isinstance(handles, list):
-        fail("raw['handles'] must be a list")
-    if len(handles) != x.shape[0]:
-        fail("len(handles) must equal data.x.shape[0]")
+    if not isinstance(user_ids, (list, tuple)):
+        fail("raw['user_ids'] must be a list/tuple")
+    if len(user_ids) != x.shape[0]:
+        fail("len(user_ids) must equal data.x.shape[0]")
     if len(feature_names) != x.shape[1]:
         fail("len(data.feature_names) must equal data.x.shape[1]")
-    if len(h2i) != len(handles):
-        fail("len(h2i) must equal len(handles)")
+    if u2i and len(u2i) != len(user_ids):
+        fail("if present, len(u2i) must equal len(user_ids)")
 
     if torch.isnan(x).any():
         fail("data.x contains NaN")
@@ -72,27 +70,13 @@ def main():
         if max_idx >= x.shape[0]:
             fail("edge_index references out-of-range node index")
 
-    seen_handles = set()
-    for i, handle in enumerate(handles):
-        if not isinstance(handle, str) or not handle:
-            fail(f"handles[{i}] must be a non-empty string")
-        if handle in seen_handles:
-            fail(f"duplicate handle in handles: {handle}")
-        seen_handles.add(handle)
-
-        mapped = h2i.get(handle)
-        if mapped != i:
-            fail(f"h2i[{handle!r}]={mapped} but expected {i}")
-
-    for handle, idx in h2i.items():
-        if not isinstance(handle, str) or not handle:
-            fail(f"invalid h2i key: {handle!r}")
-        if not isinstance(idx, int):
-            fail(f"h2i[{handle!r}] must map to int, got {type(idx).__name__}")
-        if idx < 0 or idx >= len(handles):
-            fail(f"h2i[{handle!r}] index {idx} out of range")
-        if handles[idx] != handle:
-            fail(f"h2i[{handle!r}] points to handles[{idx}]={handles[idx]!r}")
+    for i, user_id in enumerate(user_ids):
+        try:
+            user_id_int = int(user_id)
+        except Exception:
+            fail(f"user_ids[{i}] is not int-like: {user_id!r}")
+        if u2i and u2i.get(user_id_int) != i:
+            fail(f"u2i[{user_id_int!r}] mismatch at index {i}")
 
     print("[PASS] graph is valid")
 
