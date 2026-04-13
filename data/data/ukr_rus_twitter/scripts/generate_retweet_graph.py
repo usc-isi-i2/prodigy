@@ -587,7 +587,7 @@ def build_pseudo_political_labels(
     return torch.from_numpy(y_np), list(LABEL_NAMES), labeled
 
 
-def load_raw_rows(csv_glob: str, max_files: int) -> pd.DataFrame:
+def load_raw_rows(csv_glob: str, max_files: int, strict_dates: bool = False, max_nodes: int = 0) -> pd.DataFrame:
     files = sorted(glob.glob(csv_glob))
     if max_files > 0:
         files = files[:max_files]
@@ -595,6 +595,8 @@ def load_raw_rows(csv_glob: str, max_files: int) -> pd.DataFrame:
         raise FileNotFoundError(f"No files matched: {csv_glob}")
 
     chunks: List[pd.DataFrame] = []
+    seen_nodes = set()
+    stopped_early = False
     print(f"Found {len(files)} files")
     for i, fpath in enumerate(files, start=1):
         print(f"[{i}/{len(files)}] Loading {os.path.basename(fpath)}", flush=True)
@@ -607,7 +609,29 @@ def load_raw_rows(csv_glob: str, max_files: int) -> pd.DataFrame:
             if not cols:
                 print("  [SKIP] no required columns", flush=True)
                 continue
-            chunks.append(dfi[cols].copy())
+            chunk = dfi[cols].copy()
+            if max_nodes > 0:
+                try:
+                    file_rt = prepare_retweet_rows(chunk, strict_dates)
+                except RuntimeError:
+                    file_rt = pd.DataFrame(columns=["userid", "rt_userid"])
+                if not file_rt.empty:
+                    seen_nodes.update(file_rt["userid"].tolist())
+                    seen_nodes.update(file_rt["rt_userid"].tolist())
+                    print(
+                        f"  cleaned participants seen so far: {len(seen_nodes):,}",
+                        flush=True,
+                    )
+                    if len(seen_nodes) >= max_nodes:
+                        print(
+                            f"  reached max_nodes target during ingestion after file {i}/{len(files)}; "
+                            "stopping raw file loading before full corpus read",
+                            flush=True,
+                        )
+                        stopped_early = True
+                        chunks.append(chunk)
+                        break
+            chunks.append(chunk)
         except Exception as exc:
             print(f"  [WARN] failed {os.path.basename(fpath)}: {exc}", flush=True)
 
@@ -619,6 +643,12 @@ def load_raw_rows(csv_glob: str, max_files: int) -> pd.DataFrame:
 
     df = pd.concat(chunks, ignore_index=True)
     print(f"Loaded rows: {len(df):,}")
+    if max_nodes > 0:
+        print(
+            f"Ingestion summary: cleaned participants seen={len(seen_nodes):,} "
+            f"(target={max_nodes:,}, early_stop={stopped_early})",
+            flush=True,
+        )
     return df
 
 
@@ -661,6 +691,7 @@ def prepare_retweet_rows(df: pd.DataFrame, strict_dates: bool) -> pd.DataFrame:
 
 def trim_rt_to_max_nodes(rt: pd.DataFrame, max_nodes: int) -> pd.DataFrame:
     if max_nodes <= 0:
+        print("No max_nodes trim requested; keeping all cleaned retweet participants.", flush=True)
         return rt
 
     total_unique_nodes = len(set(rt["userid"].tolist()) | set(rt["rt_userid"].tolist()))
@@ -901,10 +932,28 @@ def main():
     out_dir = os.path.dirname(args.out)
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
+    print("Configuration")
+    print(f"  csv_glob: {args.csv}")
+    print(f"  out: {args.out}")
+    print(f"  embeddings: {args.embeddings or '<none>'}")
+    print(f"  embedding_pool: {args.embedding_pool}")
+    print(f"  max_files: {args.max_files if args.max_files > 0 else 'all'}")
+    print(f"  max_nodes: {args.max_nodes if args.max_nodes > 0 else 'all'}")
+    print(f"  history_fraction: {args.history_fraction}")
+    print(f"  future_target_mode: {args.future_target_mode}")
+    print(f"  keep_isolates: {args.keep_isolates}")
+    print(f"  pseudo_political_labels: {args.pseudo_political_labels}")
+    print(f"  pseudo_label_margin: {args.pseudo_label_margin}")
+    print()
 
-    raw = load_raw_rows(args.csv, args.max_files)
+    raw = load_raw_rows(args.csv, args.max_files, strict_dates=args.strict_dates, max_nodes=args.max_nodes)
+    print(f"Raw frame: rows={len(raw):,} cols={len(raw.columns):,}", flush=True)
     rt = prepare_retweet_rows(raw, args.strict_dates)
+    pretrim_nodes = len(set(rt["userid"].tolist()) | set(rt["rt_userid"].tolist()))
+    print(f"Cleaned retweets: rows={len(rt):,} unique_nodes={pretrim_nodes:,}", flush=True)
     rt = trim_rt_to_max_nodes(rt, args.max_nodes)
+    posttrim_nodes = len(set(rt["userid"].tolist()) | set(rt["rt_userid"].tolist()))
+    print(f"Post-trim retweets: rows={len(rt):,} unique_nodes={posttrim_nodes:,}", flush=True)
 
     user_ids, u2i = build_user_index(rt)
     handles = build_user_metadata(rt, user_ids)
@@ -1012,6 +1061,14 @@ def main():
             "future_overlap_edges": int(len(hist_pairs & fut_pairs)),
             "future_target_edges": int(target_new_edge_index.shape[1]),
         }
+        print(
+            "Temporal views: "
+            f"history_rows={temporal_stats['history_rows']:,} "
+            f"future_rows={temporal_stats['future_rows']:,} "
+            f"history_edges={temporal_stats['history_edges']:,} "
+            f"future_target_edges={temporal_stats['future_target_edges']:,}",
+            flush=True,
+        )
 
     data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
     data.feature_names = feature_names

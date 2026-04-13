@@ -133,7 +133,7 @@ def _fast_list_lens(series: pd.Series) -> np.ndarray:
     )
 
 
-def load_raw_rows(json_glob: str, max_files: int) -> pd.DataFrame:
+def load_raw_rows(json_glob: str, max_files: int, strict_dates: bool = False, max_nodes: int = 0) -> pd.DataFrame:
     files = sorted(glob.glob(json_glob))
     if max_files > 0:
         files = files[:max_files]
@@ -141,6 +141,8 @@ def load_raw_rows(json_glob: str, max_files: int) -> pd.DataFrame:
         raise FileNotFoundError(f"No files matched: {json_glob}")
 
     rows = []
+    seen_nodes = set()
+    stopped_early = False
     print(f"Found {len(files)} files")
     for i, path in enumerate(files, start=1):
         print(f"[{i}/{len(files)}] Loading {os.path.basename(path)}", flush=True)
@@ -150,6 +152,7 @@ def load_raw_rows(json_glob: str, max_files: int) -> pd.DataFrame:
             print(f"  [WARN] failed {os.path.basename(path)}: {exc}", flush=True)
             continue
 
+        file_rows = []
         for tweet in items:
             user = tweet.get("user") or {}
             rt = tweet.get("retweeted_status") or {}
@@ -158,7 +161,7 @@ def load_raw_rows(json_glob: str, max_files: int) -> pd.DataFrame:
             uid = normalize_user_id(user.get("id"))
             rt_uid = normalize_user_id(rt_user.get("id")) if rt else None
 
-            rows.append(
+            file_rows.append(
                 {
                     "screen_name": normalize_handle(user.get("screen_name")),
                     "userid": uid,
@@ -177,6 +180,30 @@ def load_raw_rows(json_glob: str, max_files: int) -> pd.DataFrame:
                 }
             )
 
+        if file_rows:
+            rows.extend(file_rows)
+            if max_nodes > 0:
+                file_df = pd.DataFrame(file_rows)
+                try:
+                    file_rt = prepare_retweet_rows(file_df, strict_dates)
+                except RuntimeError:
+                    file_rt = pd.DataFrame(columns=["userid", "rt_userid"])
+                if not file_rt.empty:
+                    seen_nodes.update(file_rt["userid"].tolist())
+                    seen_nodes.update(file_rt["rt_userid"].tolist())
+                    print(
+                        f"  cleaned participants seen so far: {len(seen_nodes):,}",
+                        flush=True,
+                    )
+                    if len(seen_nodes) >= max_nodes:
+                        print(
+                            f"  reached max_nodes target during ingestion after file {i}/{len(files)}; "
+                            "stopping raw file loading before full corpus read",
+                            flush=True,
+                        )
+                        stopped_early = True
+                        break
+
         if i % 10 == 0 or i == len(files):
             print(f"  processed {i}/{len(files)} files", flush=True)
 
@@ -184,6 +211,12 @@ def load_raw_rows(json_glob: str, max_files: int) -> pd.DataFrame:
     if df.empty:
         raise RuntimeError("No valid rows parsed")
     print(f"Loaded rows: {len(df):,}")
+    if max_nodes > 0:
+        print(
+            f"Ingestion summary: cleaned participants seen={len(seen_nodes):,} "
+            f"(target={max_nodes:,}, early_stop={stopped_early})",
+            flush=True,
+        )
     return df
 
 
@@ -223,6 +256,7 @@ def prepare_retweet_rows(df: pd.DataFrame, strict_dates: bool) -> pd.DataFrame:
 
 def trim_rt_to_max_nodes(rt: pd.DataFrame, max_nodes: int) -> pd.DataFrame:
     if max_nodes <= 0:
+        print("No max_nodes trim requested; keeping all cleaned retweet participants.", flush=True)
         return rt
 
     total_unique_nodes = len(set(rt["userid"].tolist()) | set(rt["rt_userid"].tolist()))
@@ -494,10 +528,27 @@ def main():
     out_dir = os.path.dirname(args.out)
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
+    print("Configuration")
+    print(f"  json_glob: {args.json_glob}")
+    print(f"  out: {args.out}")
+    print(f"  embeddings: {args.embeddings or '<none>'}")
+    print(f"  embedding_pool: {args.embedding_pool}")
+    print(f"  max_files: {args.max_files if args.max_files > 0 else 'all'}")
+    print(f"  max_nodes: {args.max_nodes if args.max_nodes > 0 else 'all'}")
+    print(f"  history_fraction: {args.history_fraction}")
+    print(f"  future_target_mode: {args.future_target_mode}")
+    print(f"  labels_parquet_glob: {args.labels_parquet_glob or '<none>'}")
+    print(f"  keep_isolates: {args.keep_isolates}")
+    print()
 
-    raw = load_raw_rows(args.json_glob, args.max_files)
+    raw = load_raw_rows(args.json_glob, args.max_files, strict_dates=args.strict_dates, max_nodes=args.max_nodes)
+    print(f"Raw frame: rows={len(raw):,} cols={len(raw.columns):,}", flush=True)
     rt = prepare_retweet_rows(raw, args.strict_dates)
+    pretrim_nodes = len(set(rt["userid"].tolist()) | set(rt["rt_userid"].tolist()))
+    print(f"Cleaned retweets: rows={len(rt):,} unique_nodes={pretrim_nodes:,}", flush=True)
     rt = trim_rt_to_max_nodes(rt, args.max_nodes)
+    posttrim_nodes = len(set(rt["userid"].tolist()) | set(rt["rt_userid"].tolist()))
+    print(f"Post-trim retweets: rows={len(rt):,} unique_nodes={posttrim_nodes:,}", flush=True)
     user_ids, u2i = build_user_index(rt)
     handles = build_user_metadata(rt, user_ids)
     print(f"Nodes: {len(user_ids):,}")
@@ -509,6 +560,11 @@ def main():
     x, feature_names = build_node_features(rt, u2i, edge_all_df)
     x, feature_names, emb_stats = maybe_attach_embeddings(
         x, feature_names, user_ids, handles, args.embeddings, args.embedding_pool
+    )
+    print(
+        f"After attaching embeddings: {x.shape[1]} dims total, "
+        f"matched_users={emb_stats['matched_users']:,}, embedding_dim={emb_stats['embedding_dim']}",
+        flush=True,
     )
 
     # Cache bincounts once; reuse for the "before drop" stat and the drop itself.
@@ -583,6 +639,14 @@ def main():
             "future_overlap_edges": int(len(hist_pairs & fut_pairs)),
             "future_target_edges": int(target_new_edge_index.shape[1]),
         }
+        print(
+            "Temporal views: "
+            f"history_rows={temporal_stats['history_rows']:,} "
+            f"future_rows={temporal_stats['future_rows']:,} "
+            f"history_edges={temporal_stats['history_edges']:,} "
+            f"future_target_edges={temporal_stats['future_target_edges']:,}",
+            flush=True,
+        )
 
     data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
     data.feature_names = feature_names
