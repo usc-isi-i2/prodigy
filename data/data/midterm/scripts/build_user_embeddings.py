@@ -2,146 +2,193 @@ import argparse
 import glob
 import json
 import os
-from collections import defaultdict
+import time
 
 import numpy as np
 import pandas as pd
 import torch
 from sentence_transformers import SentenceTransformer
 
-TEXT_FIELD_TO_COLUMN = {
-    "tweet_text": "text",
-    "retweet_text": "rt_text",
-    "bio": "description",
-}
-DEFAULT_TEXT_FIELDS = "tweet_text,retweet_text"
+
+DEFAULT_CSV = "/project2/ll_774_951/midterm/*/*.csv"
+DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+DEFAULT_OUT = "data/data/midterm/embeddings/embeddings_all-MiniLM-L6-v2.pt"
 
 
 def parse_args():
     p = argparse.ArgumentParser(description="Build per-user (userid) pooled text embeddings from raw midterm CSV files.")
-    p.add_argument("--csv_glob", default="/project2/ll_774_951/midterm/*/*.csv")
-    p.add_argument("--model", default="sentence-transformers/all-MiniLM-L6-v2")
-    p.add_argument("--out", default="data/data/midterm/embeddings/embeddings_all-MiniLM-L6-v2.pt")
-    p.add_argument("--batch_size", type=int, default=256)
+    p.add_argument("--csv_glob", default=DEFAULT_CSV)
+    p.add_argument("--model", default=DEFAULT_MODEL)
+    p.add_argument("--out", default=DEFAULT_OUT)
+    p.add_argument("--batch_size", type=int, default=1024)
     p.add_argument("--max_files", type=int, default=0)
     p.add_argument("--device", default=("cuda" if torch.cuda.is_available() else "cpu"))
-    p.add_argument("--max_seq_len", type=int, default=512)
-    p.add_argument(
-        "--text_fields",
-        default=DEFAULT_TEXT_FIELDS,
-        help="Comma-separated semantic text fields to embed. Supported: tweet_text,retweet_text,bio",
-    )
+    p.add_argument("--max_seq_len", type=int, default=64)
+    p.add_argument("--fp16", action="store_true", default=True)
     return p.parse_args()
 
 
-def parse_text_fields(spec: str):
-    fields = [part.strip() for part in str(spec).split(",") if part.strip()]
-    if not fields:
-        raise ValueError("text_fields must contain at least one field")
-    invalid = [field for field in fields if field not in TEXT_FIELD_TO_COLUMN]
-    if invalid:
-        raise ValueError(
-            f"Unsupported text field(s): {invalid}. Supported: {sorted(TEXT_FIELD_TO_COLUMN.keys())}"
-        )
-    return fields
+def normalize_user_id(val):
+    try:
+        return int(val)
+    except Exception:
+        return None
 
 
-def build_text(row: pd.Series, text_fields) -> str:
-    parts = []
-    seen = set()
-    for field in text_fields:
-        col = TEXT_FIELD_TO_COLUMN[field]
-        v = row.get(col)
-        if pd.notna(v) and str(v).strip():
-            value = str(v).strip()
-            if value not in seen:
-                parts.append(value)
-                seen.add(value)
-    if not parts:
-        return ""
-    return " ".join(parts)[:512]
+def build_text(row: pd.Series) -> str:
+    """
+    Pure retweet (rt_text present) -> use retweeted text.
+    Quote tweet or original        -> use own text.
+    """
+    rt = row.get("rt_text")
+    if pd.notna(rt) and str(rt).strip():
+        return str(rt).strip()
+    own = row.get("text")
+    if pd.notna(own) and str(own).strip():
+        return str(own).strip()
+    return ""
 
 
 def main():
     args = parse_args()
-    text_fields = parse_text_fields(args.text_fields)
+    t0 = time.time()
+
     files = sorted(glob.glob(args.csv_glob))
     if args.max_files > 0:
         files = files[: args.max_files]
     if not files:
         raise FileNotFoundError(f"No files matched: {args.csv_glob}")
 
-    os.makedirs(os.path.dirname(args.out), exist_ok=True)
+    out_dir = os.path.dirname(args.out)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
 
     model = SentenceTransformer(args.model, device=args.device)
     model.max_seq_length = args.max_seq_len
+    if args.fp16 and args.device.startswith("cuda"):
+        model = model.half()
     emb_dim = model.get_sentence_embedding_dimension()
 
-    use_cols = {"userid"} | {TEXT_FIELD_TO_COLUMN[field] for field in text_fields}
+    print(f"Model={args.model} device={args.device} fp16={args.fp16} "
+          f"seq_len={args.max_seq_len} batch={args.batch_size} files={len(files)}")
+    print(f"Input glob={args.csv_glob}")
+    print(f"Output={args.out}")
 
-    user_sum = defaultdict(lambda: np.zeros(emb_dim, dtype=np.float64))
-    user_max = defaultdict(lambda: np.full(emb_dim, -np.inf, dtype=np.float32))
-    user_count = defaultdict(int)
+    uid_to_row = {}
+    cap = 1 << 16
+    sum_mat = np.zeros((cap, emb_dim), dtype=np.float32)
+    cnt_arr = np.zeros(cap, dtype=np.int32)
 
-    print(f"Embedding model: {args.model}")
-    print(f"Files: {len(files)}")
-    print(f"Text fields: {','.join(text_fields)}")
+    def ensure_capacity(n_new):
+        nonlocal cap, sum_mat, cnt_arr
+        need = len(uid_to_row) + n_new
+        if need <= cap:
+            return
+        while cap < need:
+            cap *= 2
+        new_sum = np.zeros((cap, emb_dim), dtype=np.float32)
+        new_sum[: len(uid_to_row)] = sum_mat[: len(uid_to_row)]
+        sum_mat = new_sum
+        new_cnt = np.zeros(cap, dtype=np.int32)
+        new_cnt[: len(uid_to_row)] = cnt_arr[: len(uid_to_row)]
+        cnt_arr = new_cnt
+
+    total_posts = 0
+    total_items = 0
+    total_missing_uid = 0
+    total_empty_text = 0
 
     for i, fpath in enumerate(files, start=1):
-        df = pd.read_csv(fpath, low_memory=False, on_bad_lines="skip")
+        ft = time.time()
+        print(f"[{i}/{len(files)}] loading {os.path.basename(fpath)}", flush=True)
+        try:
+            df = pd.read_csv(fpath, low_memory=False, on_bad_lines="skip")
+        except Exception as e:
+            print(f"[{i}/{len(files)}] ERROR {os.path.basename(fpath)}: {e}", flush=True)
+            continue
         if df.empty:
             continue
 
-        cols = [c for c in df.columns if c in use_cols]
-        if "userid" not in cols:
+        if "userid" not in df.columns:
+            print(f"[{i}/{len(files)}] missing userid, skipping", flush=True)
             continue
-        df = df[cols].copy()
 
         df["userid"] = pd.to_numeric(df["userid"], errors="coerce")
-        df = df.dropna(subset=["userid"])
-        if df.empty:
-            continue
+        df = df.dropna(subset=["userid"]).copy()
         df["userid"] = df["userid"].astype(np.int64)
+        total_items += len(df)
 
-        texts = df.apply(build_text, axis=1, text_fields=text_fields).tolist()
-        uids = df["userid"].tolist()
+        texts = []
+        row_uids = []
+        file_missing_uid = 0
+        file_empty_text = 0
+        new_uids = []
 
-        valid_idx = [k for k, t in enumerate(texts) if t.strip()]
-        if not valid_idx:
+        for _, r in df.iterrows():
+            uid = r["userid"]
+            text = build_text(r)
+            if not text:
+                file_empty_text += 1
+                continue
+            if uid not in uid_to_row:
+                new_uids.append(uid)
+            texts.append(text)
+            row_uids.append(uid)
+
+        if not texts:
+            total_missing_uid += file_missing_uid
+            total_empty_text += file_empty_text
             continue
 
-        valid_texts = [texts[k] for k in valid_idx]
-        valid_uids = [uids[k] for k in valid_idx]
+        unique_new = len(set(new_uids))
+        if new_uids:
+            ensure_capacity(len(new_uids))
+            for uid in new_uids:
+                if uid not in uid_to_row:
+                    uid_to_row[uid] = len(uid_to_row)
+
+        row_idx = np.fromiter((uid_to_row[u] for u in row_uids), dtype=np.int64, count=len(row_uids))
 
         embs = model.encode(
-            valid_texts,
+            texts,
             batch_size=args.batch_size,
             show_progress_bar=False,
             convert_to_numpy=True,
+            normalize_embeddings=True,
+        ).astype(np.float32, copy=False)
+
+        np.add.at(sum_mat, row_idx, embs)
+        np.add.at(cnt_arr, row_idx, 1)
+
+        total_posts += len(texts)
+        total_missing_uid += file_missing_uid
+        total_empty_text += file_empty_text
+        dt = time.time() - ft
+        print(
+            f"[{i}/{len(files)}] {os.path.basename(fpath)} "
+            f"rows={len(df):,} embedded={len(texts):,} "
+            f"new_users={unique_new:,} users={len(uid_to_row):,} "
+            f"skip_uid={file_missing_uid:,} skip_empty={file_empty_text:,} "
+            f"file={dt:.1f}s total={(time.time()-t0)/60:.1f}m",
+            flush=True,
         )
 
-        for uid, emb in zip(valid_uids, embs):
-            user_sum[int(uid)] += emb.astype(np.float64)
-            user_max[int(uid)] = np.maximum(user_max[int(uid)], emb.astype(np.float32))
-            user_count[int(uid)] += 1
+    n = len(uid_to_row)
+    user_ids = np.empty(n, dtype=np.int64)
+    for uid, row in uid_to_row.items():
+        user_ids[row] = uid
 
-        if i % 10 == 0 or i == len(files):
-            print(f"  processed {i}/{len(files)} files")
-
-    user_ids = np.array(sorted(user_sum.keys()), dtype=np.int64)
-    n = len(user_ids)
-    meanpool = torch.zeros(n, emb_dim, dtype=torch.float)
-    maxpool = torch.zeros(n, emb_dim, dtype=torch.float)
-
-    for idx, uid in enumerate(user_ids):
-        meanpool[idx] = torch.from_numpy((user_sum[int(uid)] / user_count[int(uid)]).astype(np.float32))
-        maxpool[idx] = torch.from_numpy(user_max[int(uid)])
+    counts_final = cnt_arr[:n].astype(np.int64)
+    denom = np.maximum(counts_final, 1).astype(np.float32)[:, None]
+    meanpool = sum_mat[:n] / denom
+    norms = np.linalg.norm(meanpool, axis=1, keepdims=True)
+    norms[norms == 0] = 1.0
+    meanpool = meanpool / norms
 
     out_obj = {
         "user_ids": user_ids,
-        "meanpool": meanpool,
-        "maxpool": maxpool,
-        "counts": {int(uid): int(user_count[int(uid)]) for uid in user_ids},
+        "meanpool": torch.from_numpy(meanpool),
+        "counts": counts_final,
         "model": args.model,
     }
     torch.save(out_obj, args.out)
@@ -150,16 +197,22 @@ def main():
         "csv_glob": args.csv_glob,
         "files_count": len(files),
         "model": args.model,
-        "text_fields": list(text_fields),
         "embedding_dim": int(emb_dim),
         "users": int(n),
-        "total_posts_embedded": int(sum(user_count.values())),
+        "total_posts_embedded": int(total_posts),
+        "max_seq_len": args.max_seq_len,
+        "fp16": bool(args.fp16),
     }
     with open(args.out.replace(".pt", ".meta.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, indent=2)
 
-    print(f"Saved embeddings: {args.out}")
-    print(f"users={n:,}, dim={emb_dim}")
+    print(f"Saved {args.out} users={n:,} dim={emb_dim} posts={total_posts:,} "
+          f"wall={(time.time()-t0)/60:.1f}m")
+    print(
+        f"Summary: rows_seen={total_items:,} embedded={total_posts:,} "
+        f"skip_uid={total_missing_uid:,} skip_empty={total_empty_text:,}",
+        flush=True,
+    )
 
 
 if __name__ == "__main__":

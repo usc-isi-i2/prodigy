@@ -26,7 +26,7 @@ def parse_args():
     p.add_argument("--batch_size", type=int, default=1024)
     p.add_argument("--max_files", type=int, default=0)
     p.add_argument("--device", default=("cuda" if torch.cuda.is_available() else "cpu"))
-    p.add_argument("--max_seq_len", type=int, default=48)
+    p.add_argument("--max_seq_len", type=int, default=64)
     p.add_argument("--fp16", action="store_true", default=True)
     return p.parse_args()
 
