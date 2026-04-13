@@ -1,0 +1,35 @@
+# Requirements for the rapids/ data preprocessing pipeline
+# (build_user_embeddings.py, generate_retweet_graph.py, validate_graph.py, inspect_graph.py)
+#
+# Install with:
+#   pip install -r requirements-data-pipeline.txt
+#
+# For GPU encoding (recommended on cluster), ensure torch is installed with the
+# appropriate CUDA version before running pip install here.
+
+# --- Core numeric / dataframe stack ---
+numpy>=1.24
+pandas>=2.0
+
+# --- Deep learning ---
+# Pin torch to match the rest of the project; override for newer CUDA if needed.
+torch>=2.0.1
+
+# --- Graph data structures ---
+torch-geometric>=2.3.1
+
+# --- Text embeddings ---
+sentence-transformers>=2.2.2
+# sentence-transformers pulls transformers and tokenizers transitively;
+# pin here only if you need a specific version.
+transformers>=4.29.2
+
+# --- ML utilities ---
+scikit-learn>=1.0
+
+# --- Parquet reading (covid19_twitter external labels) ---
+pyarrow>=12.0
+
+# --- Fast JSON parsing (optional but strongly recommended for covid19_twitter) ---
+# Falls back to stdlib json if not installed.
+orjson>=3.9
