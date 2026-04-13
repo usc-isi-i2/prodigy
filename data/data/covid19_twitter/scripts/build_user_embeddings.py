@@ -259,6 +259,14 @@ def main():
             break
 
     n = len(uid_to_row)
+    if args.max_nodes > 0:
+        if n > args.max_nodes:
+            raise RuntimeError(f"Embedding cap failed: requested max_nodes={args.max_nodes:,}, got {n:,}")
+        if n < args.max_nodes:
+            print(
+                f"[WARN] requested max_nodes={args.max_nodes:,}, but only {n:,} users were admitted.",
+                flush=True,
+            )
     user_ids = np.empty(n, dtype=np.int64)
     for uid, row in uid_to_row.items():
         user_ids[row] = uid

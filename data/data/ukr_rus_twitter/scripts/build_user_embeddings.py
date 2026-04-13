@@ -267,6 +267,14 @@ def main():
             break
 
     n = len(handle_to_row)
+    if args.max_nodes > 0:
+        if n > args.max_nodes:
+            raise RuntimeError(f"Embedding cap failed: requested max_nodes={args.max_nodes:,}, got {n:,}")
+        if n < args.max_nodes:
+            print(
+                f"[WARN] requested max_nodes={args.max_nodes:,}, but only {n:,} users were admitted.",
+                flush=True,
+            )
     counts_final = cnt_arr[:n].astype(np.int64)
     denom = np.maximum(counts_final, 1).astype(np.float32)[:, None]
     meanpool = sum_mat[:n] / denom

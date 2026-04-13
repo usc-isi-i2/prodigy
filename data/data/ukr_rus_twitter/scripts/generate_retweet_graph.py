@@ -260,7 +260,7 @@ def parse_args():
     p.add_argument("--embeddings", default="", help="Optional user_embeddings_*.pt with user_ids + meanpool (handles fallback supported)")
     p.add_argument("--embedding_pool", choices=["meanpool", "maxpool"], default="meanpool")
     p.add_argument("--max_files", type=int, default=0)
-    p.add_argument("--max_nodes", type=int, default=0, help="Stop loading files once this many unique nodes are seen (0 = no limit)")
+    p.add_argument("--max_nodes", type=int, default=0, help="Trim the final graph to exactly this many nodes when possible (0 = no limit)")
     p.add_argument("--strict_dates", action="store_true")
     p.add_argument("--history_fraction", type=float, default=DEFAULT_HISTORY_FRACTION)
     p.add_argument(
@@ -579,7 +579,7 @@ def build_pseudo_political_labels(
     return torch.from_numpy(y_np), list(LABEL_NAMES), labeled
 
 
-def load_raw_rows(csv_glob: str, max_files: int, max_nodes: int = 0) -> pd.DataFrame:
+def load_raw_rows(csv_glob: str, max_files: int) -> pd.DataFrame:
     files = sorted(glob.glob(csv_glob))
     if max_files > 0:
         files = files[:max_files]
@@ -587,7 +587,6 @@ def load_raw_rows(csv_glob: str, max_files: int, max_nodes: int = 0) -> pd.DataF
         raise FileNotFoundError(f"No files matched: {csv_glob}")
 
     chunks: List[pd.DataFrame] = []
-    seen_nodes: set = set()
     print(f"Found {len(files)} files")
     for i, fpath in enumerate(files, start=1):
         print(f"[{i}/{len(files)}] Loading {os.path.basename(fpath)}", flush=True)
@@ -606,16 +605,6 @@ def load_raw_rows(csv_glob: str, max_files: int, max_nodes: int = 0) -> pd.DataF
 
         if i % 10 == 0 or i == len(files):
             print(f"  processed {i}/{len(files)} files", flush=True)
-
-        if max_nodes > 0 and chunks:
-            chunk = chunks[-1]
-            if "userid" in chunk.columns:
-                seen_nodes.update(pd.to_numeric(chunk["userid"], errors="coerce").dropna().astype(np.int64).tolist())
-            if "rt_userid" in chunk.columns:
-                seen_nodes.update(pd.to_numeric(chunk["rt_userid"], errors="coerce").dropna().astype(np.int64).tolist())
-            if len(seen_nodes) >= max_nodes:
-                print(f"  reached max_nodes={max_nodes:,} after {i}/{len(files)} files, stopping early", flush=True)
-                break
 
     if not chunks:
         raise RuntimeError("No valid rows parsed")
@@ -666,6 +655,13 @@ def trim_rt_to_max_nodes(rt: pd.DataFrame, max_nodes: int) -> pd.DataFrame:
     if max_nodes <= 0:
         return rt
 
+    total_unique_nodes = len(set(rt["userid"].tolist()) | set(rt["rt_userid"].tolist()))
+    if total_unique_nodes < max_nodes:
+        raise ValueError(
+            f"Requested max_nodes={max_nodes:,}, but only {total_unique_nodes:,} unique retweet nodes exist "
+            "after cleaning."
+        )
+
     src = rt["userid"].to_numpy(dtype=np.int64, copy=False)
     dst = rt["rt_userid"].to_numpy(dtype=np.int64, copy=False)
     keep_rows = np.zeros(len(rt), dtype=bool)
@@ -693,10 +689,9 @@ def trim_rt_to_max_nodes(rt: pd.DataFrame, max_nodes: int) -> pd.DataFrame:
         f"nodes={len(actual_nodes):,}",
         flush=True,
     )
-    if len(actual_nodes) != min(max_nodes, len(set(rt['userid'].tolist()) | set(rt['rt_userid'].tolist()))):
-        print(
-            f"  [WARN] exact max_nodes target not reached after trimming; got {len(actual_nodes):,} nodes",
-            flush=True,
+    if len(actual_nodes) != max_nodes:
+        raise RuntimeError(
+            f"Exact max_nodes trim failed: requested {max_nodes:,}, got {len(actual_nodes):,} nodes"
         )
     return rt2
 
@@ -891,7 +886,7 @@ def main():
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
 
-    raw = load_raw_rows(args.csv, args.max_files, args.max_nodes)
+    raw = load_raw_rows(args.csv, args.max_files)
     rt = prepare_retweet_rows(raw, args.strict_dates)
     rt = trim_rt_to_max_nodes(rt, args.max_nodes)
 
