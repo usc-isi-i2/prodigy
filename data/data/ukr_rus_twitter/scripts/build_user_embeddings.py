@@ -3,9 +3,7 @@ import csv
 import glob
 import json
 import os
-import pickle
 import time
-from collections import defaultdict
 
 import numpy as np
 import pandas as pd
@@ -16,13 +14,6 @@ from sentence_transformers import SentenceTransformer
 DEFAULT_CSV = "/project2/ll_774_951/uk_ru/twitter/data/*/*.csv"
 DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 DEFAULT_OUT = "data/data/ukr_rus_twitter/embeddings/user_embeddings_minilm.pt"
-TEXT_FIELD_TO_COLUMN = {
-    "tweet_text": "text",
-    "retweet_text": "rt_text",
-    "quote_text": "qtd_text",
-    "bio": "description",
-}
-DEFAULT_TEXT_FIELDS = "tweet_text,retweet_text,quote_text"
 
 
 def parse_args():
@@ -32,21 +23,11 @@ def parse_args():
     p.add_argument("--csv_glob", default=DEFAULT_CSV)
     p.add_argument("--model", default=DEFAULT_MODEL)
     p.add_argument("--out", default=DEFAULT_OUT)
-    p.add_argument("--batch_size", type=int, default=256)
+    p.add_argument("--batch_size", type=int, default=1024)
     p.add_argument("--max_files", type=int, default=0)
     p.add_argument("--device", default=("cuda" if torch.cuda.is_available() else "cpu"))
-    p.add_argument("--max_seq_len", type=int, default=512)
-    p.add_argument(
-        "--checkpoint_path",
-        default="data/data/ukr_rus_twitter/embeddings/user_embeddings_minilm.checkpoint.pkl",
-    )
-    p.add_argument("--checkpoint_every", type=int, default=5)
-    p.add_argument("--resume", action="store_true", default=False)
-    p.add_argument(
-        "--text_fields",
-        default=DEFAULT_TEXT_FIELDS,
-        help="Comma-separated semantic text fields to embed. Supported: tweet_text,retweet_text,quote_text,bio",
-    )
+    p.add_argument("--max_seq_len", type=int, default=64)
+    p.add_argument("--fp16", action="store_true", default=True)
     return p.parse_args()
 
 
@@ -89,52 +70,34 @@ def load_interleaved_csv(filepath: str) -> pd.DataFrame:
             sub_rows.append([""] * 11)
 
     sub_cols = [
-        "sub_extra",
-        "state",
-        "country",
-        "rt_state",
-        "rt_country",
-        "qtd_state",
-        "qtd_country",
-        "norm_country",
-        "norm_rt_country",
-        "norm_qtd_country",
-        "acc_age",
+        "sub_extra", "state", "country", "rt_state", "rt_country",
+        "qtd_state", "qtd_country", "norm_country", "norm_rt_country",
+        "norm_qtd_country", "acc_age",
     ]
-
     df_main = pd.DataFrame(main_rows, columns=header)
     df_sub = pd.DataFrame(sub_rows, columns=sub_cols).drop(columns=["sub_extra"], errors="ignore")
     return pd.concat([df_main.reset_index(drop=True), df_sub.reset_index(drop=True)], axis=1)
 
 
-def normalize_handle(series: pd.Series) -> pd.Series:
-    return series.astype("string").str.strip().str.lower()
+def normalize_handle(h):
+    if h is None:
+        return None
+    s = str(h).strip().lower()
+    return s if s and s not in {"nan", "none", "<na>"} else None
 
 
-def parse_text_fields(spec: str):
-    fields = [part.strip() for part in str(spec).split(",") if part.strip()]
-    if not fields:
-        raise ValueError("text_fields must contain at least one field")
-    invalid = [field for field in fields if field not in TEXT_FIELD_TO_COLUMN]
-    if invalid:
-        raise ValueError(
-            f"Unsupported text field(s): {invalid}. Supported: {sorted(TEXT_FIELD_TO_COLUMN.keys())}"
-        )
-    return fields
-
-
-def build_text(row: pd.Series, text_fields) -> str:
-    parts = []
-    seen = set()
-    for field in text_fields:
-        col = TEXT_FIELD_TO_COLUMN[field]
-        val = row.get(col)
-        if pd.notna(val) and str(val).strip():
-            value = str(val).strip()
-            if value not in seen:
-                parts.append(value)
-                seen.add(value)
-    return " ".join(parts)[:512] if parts else ""
+def build_text(row: pd.Series) -> str:
+    """
+    Pure retweet (rt_text present) -> use retweeted text.
+    Quote tweet or original        -> use own text.
+    """
+    rt = row.get("rt_text")
+    if pd.notna(rt) and str(rt).strip():
+        return str(rt).strip()
+    own = row.get("text")
+    if pd.notna(own) and str(own).strip():
+        return str(own).strip()
+    return ""
 
 
 def read_post_file(fpath: str) -> pd.DataFrame:
@@ -144,38 +107,14 @@ def read_post_file(fpath: str) -> pd.DataFrame:
             return df
     except Exception:
         df = pd.read_csv(fpath, low_memory=False, encoding="utf-8", on_bad_lines="skip")
-
     df.replace("", pd.NA, inplace=True)
     return df
 
 
-def save_checkpoint(path, user_sum, user_max, user_count, files_done):
-    tmp = path + ".tmp"
-    with open(tmp, "wb") as f:
-        pickle.dump(
-            {
-                "user_sum": dict(user_sum),
-                "user_max": dict(user_max),
-                "user_count": dict(user_count),
-                "files_done": list(files_done),
-            },
-            f,
-        )
-    os.replace(tmp, path)
-    print(f"  [CHECKPOINT] saved {len(files_done):,} files -> {path}", flush=True)
-
-
-def load_checkpoint(path):
-    if not os.path.exists(path):
-        return None
-    with open(path, "rb") as f:
-        return pickle.load(f)
-
-
 def main():
     args = parse_args()
-    start_time = time.time()
-    text_fields = parse_text_fields(args.text_fields)
+    t0 = time.time()
+
     files = sorted(glob.glob(args.csv_glob))
     if args.max_files > 0:
         files = files[: args.max_files]
@@ -185,133 +124,134 @@ def main():
     out_dir = os.path.dirname(args.out)
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
-    checkpoint_dir = os.path.dirname(args.checkpoint_path)
-    if checkpoint_dir:
-        os.makedirs(checkpoint_dir, exist_ok=True)
 
     model = SentenceTransformer(args.model, device=args.device)
     model.max_seq_length = args.max_seq_len
+    if args.fp16 and args.device.startswith("cuda"):
+        model = model.half()
     emb_dim = model.get_sentence_embedding_dimension()
 
-    use_cols = {"screen_name"} | {TEXT_FIELD_TO_COLUMN[field] for field in text_fields}
+    print(f"Model={args.model} device={args.device} fp16={args.fp16} "
+          f"seq_len={args.max_seq_len} batch={args.batch_size} files={len(files)}")
+    print(f"Input glob={args.csv_glob}")
+    print(f"Output={args.out}")
 
-    print(f"Embedding model: {args.model}")
-    print(f"Device: {args.device}")
-    print(f"Files: {len(files)}")
-    print(f"Output: {args.out}")
-    print(f"Checkpoint: {args.checkpoint_path}")
-    print(f"Resume: {args.resume}")
-    print(f"Text fields: {','.join(text_fields)}")
+    handle_to_row = {}
+    handles = []
+    cap = 1 << 16
+    sum_mat = np.zeros((cap, emb_dim), dtype=np.float32)
+    cnt_arr = np.zeros(cap, dtype=np.int32)
 
-    checkpoint = load_checkpoint(args.checkpoint_path) if args.resume else None
-    if checkpoint:
-        user_sum = defaultdict(lambda: np.zeros(emb_dim, dtype=np.float64), checkpoint.get("user_sum", {}))
-        user_max = defaultdict(lambda: np.full(emb_dim, -np.inf, dtype=np.float32), checkpoint.get("user_max", {}))
-        user_count = defaultdict(int, checkpoint.get("user_count", {}))
-        files_done = set(checkpoint.get("files_done", []))
-        print(
-            f"Resumed from checkpoint: files_done={len(files_done):,} users={len(user_sum):,} "
-            f"posts={sum(user_count.values()):,}",
-            flush=True,
-        )
-    else:
-        user_sum = defaultdict(lambda: np.zeros(emb_dim, dtype=np.float64))
-        user_max = defaultdict(lambda: np.full(emb_dim, -np.inf, dtype=np.float32))
-        user_count = defaultdict(int)
-        files_done = set()
+    def ensure_capacity(n_new):
+        nonlocal cap, sum_mat, cnt_arr
+        need = len(handle_to_row) + n_new
+        if need <= cap:
+            return
+        while cap < need:
+            cap *= 2
+        new_sum = np.zeros((cap, emb_dim), dtype=np.float32)
+        new_sum[: len(handle_to_row)] = sum_mat[: len(handle_to_row)]
+        sum_mat = new_sum
+        new_cnt = np.zeros(cap, dtype=np.int32)
+        new_cnt[: len(handle_to_row)] = cnt_arr[: len(handle_to_row)]
+        cnt_arr = new_cnt
 
-    processed_in_run = 0
+    total_posts = 0
+    total_items = 0
+    total_missing_handle = 0
+    total_empty_text = 0
+
     for i, fpath in enumerate(files, start=1):
-        if fpath in files_done:
-            print(f"[{i}/{len(files)}] Skipping {os.path.basename(fpath)} (already checkpointed)", flush=True)
-            continue
-        if args.max_files > 0 and processed_in_run >= args.max_files:
-            print(f"Reached max_files={args.max_files}; stopping this run.", flush=True)
-            break
-
-        file_start = time.time()
-        print(f"[{i}/{len(files)}] Loading {os.path.basename(fpath)}", flush=True)
+        ft = time.time()
+        print(f"[{i}/{len(files)}] loading {os.path.basename(fpath)}", flush=True)
         try:
             df = read_post_file(fpath)
-        except Exception as exc:
-            print(f"  [ERROR] Skipping {os.path.basename(fpath)}: {exc}", flush=True)
+        except Exception as e:
+            print(f"[{i}/{len(files)}] ERROR {os.path.basename(fpath)}: {e}", flush=True)
             continue
-
         if df.empty:
-            print("  [SKIP] empty file", flush=True)
+            print(f"[{i}/{len(files)}] empty {os.path.basename(fpath)}", flush=True)
             continue
 
-        cols = [c for c in df.columns if c in use_cols]
-        if "screen_name" not in cols:
-            print("  [SKIP] missing screen_name column", flush=True)
+        if "screen_name" not in df.columns:
+            print(f"[{i}/{len(files)}] missing screen_name, skipping", flush=True)
             continue
-        df = df[cols].copy()
-        raw_rows = len(df)
 
-        df["screen_name"] = normalize_handle(df["screen_name"])
+        df["screen_name"] = df["screen_name"].apply(normalize_handle)
         df = df[df["screen_name"].notna()].copy()
-        if df.empty:
-            print(f"  [SKIP] no valid screen_name rows out of {raw_rows:,}", flush=True)
+        total_items += len(df)
+
+        texts = []
+        row_handles = []
+        file_missing_handle = 0
+        file_empty_text = 0
+        new_handles = []
+
+        for _, r in df.iterrows():
+            handle = r["screen_name"]
+            if not handle:
+                file_missing_handle += 1
+                continue
+            text = build_text(r)
+            if not text:
+                file_empty_text += 1
+                continue
+            if handle not in handle_to_row:
+                new_handles.append(handle)
+            texts.append(text)
+            row_handles.append(handle)
+
+        if not texts:
+            total_missing_handle += file_missing_handle
+            total_empty_text += file_empty_text
             continue
 
-        texts = df.apply(build_text, axis=1, text_fields=text_fields).tolist()
-        handles = df["screen_name"].tolist()
+        unique_new = len(set(new_handles))
+        if new_handles:
+            ensure_capacity(len(new_handles))
+            for h in new_handles:
+                if h not in handle_to_row:
+                    handle_to_row[h] = len(handle_to_row)
+                    handles.append(h)
 
-        valid_idx = [k for k, text in enumerate(texts) if text.strip()]
-        if not valid_idx:
-            print(f"  [SKIP] no non-empty texts out of {len(df):,} rows", flush=True)
-            continue
-
-        valid_texts = [texts[k] for k in valid_idx]
-        valid_handles = [handles[k] for k in valid_idx]
-
-        print(
-            f"  rows={raw_rows:,} valid_handles={len(df):,} texts_to_embed={len(valid_texts):,}",
-            flush=True,
-        )
+        row_idx = np.fromiter((handle_to_row[h] for h in row_handles), dtype=np.int64, count=len(row_handles))
 
         embs = model.encode(
-            valid_texts,
+            texts,
             batch_size=args.batch_size,
             show_progress_bar=False,
             convert_to_numpy=True,
             normalize_embeddings=True,
-        )
+        ).astype(np.float32, copy=False)
 
-        for handle, emb in zip(valid_handles, embs):
-            user_sum[handle] += emb.astype(np.float64)
-            user_max[handle] = np.maximum(user_max[handle], emb.astype(np.float32))
-            user_count[handle] += 1
+        np.add.at(sum_mat, row_idx, embs)
+        np.add.at(cnt_arr, row_idx, 1)
 
-        files_done.add(fpath)
-        processed_in_run += 1
-        elapsed = time.time() - file_start
-        total_elapsed = time.time() - start_time
+        total_posts += len(texts)
+        total_missing_handle += file_missing_handle
+        total_empty_text += file_empty_text
+        dt = time.time() - ft
         print(
-            "  [DONE] "
-            f"file_time={elapsed:.1f}s total_time={total_elapsed/60:.1f}m "
-            f"cumulative_users={len(user_sum):,} cumulative_posts={sum(user_count.values()):,}",
+            f"[{i}/{len(files)}] {os.path.basename(fpath)} "
+            f"rows={len(df):,} embedded={len(texts):,} "
+            f"new_users={unique_new:,} users={len(handle_to_row):,} "
+            f"skip_handle={file_missing_handle:,} skip_empty={file_empty_text:,} "
+            f"file={dt:.1f}s total={(time.time()-t0)/60:.1f}m",
             flush=True,
         )
-        if args.checkpoint_every > 0 and processed_in_run % args.checkpoint_every == 0:
-            save_checkpoint(args.checkpoint_path, user_sum, user_max, user_count, files_done)
 
-    save_checkpoint(args.checkpoint_path, user_sum, user_max, user_count, files_done)
-
-    handles = sorted(user_sum.keys())
-    n = len(handles)
-    meanpool = torch.zeros(n, emb_dim, dtype=torch.float32)
-    maxpool = torch.zeros(n, emb_dim, dtype=torch.float32)
-
-    for idx, handle in enumerate(handles):
-        meanpool[idx] = torch.from_numpy((user_sum[handle] / user_count[handle]).astype(np.float32))
-        maxpool[idx] = torch.from_numpy(user_max[handle])
+    n = len(handle_to_row)
+    counts_final = cnt_arr[:n].astype(np.int64)
+    denom = np.maximum(counts_final, 1).astype(np.float32)[:, None]
+    meanpool = sum_mat[:n] / denom
+    norms = np.linalg.norm(meanpool, axis=1, keepdims=True)
+    norms[norms == 0] = 1.0
+    meanpool = meanpool / norms
 
     out_obj = {
         "handles": handles,
-        "meanpool": meanpool,
-        "maxpool": maxpool,
-        "counts": {handle: int(user_count[handle]) for handle in handles},
+        "meanpool": torch.from_numpy(meanpool),
+        "counts": counts_final,
         "model": args.model,
     }
     torch.save(out_obj, args.out)
@@ -320,16 +260,22 @@ def main():
         "csv_glob": args.csv_glob,
         "files_count": len(files),
         "model": args.model,
-        "text_fields": list(text_fields),
         "embedding_dim": int(emb_dim),
         "users": int(n),
-        "total_posts_embedded": int(sum(user_count.values())),
+        "total_posts_embedded": int(total_posts),
+        "max_seq_len": args.max_seq_len,
+        "fp16": bool(args.fp16),
     }
     with open(args.out.replace(".pt", ".meta.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, indent=2)
 
-    print(f"Saved embeddings: {args.out}")
-    print(f"users={n:,}, dim={emb_dim}")
+    print(f"Saved {args.out} users={n:,} dim={emb_dim} posts={total_posts:,} "
+          f"wall={(time.time()-t0)/60:.1f}m")
+    print(
+        f"Summary: rows_seen={total_items:,} embedded={total_posts:,} "
+        f"skip_handle={total_missing_handle:,} skip_empty={total_empty_text:,}",
+        flush=True,
+    )
 
 
 if __name__ == "__main__":
