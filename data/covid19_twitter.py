@@ -61,7 +61,6 @@ def _build_covid19_twitter_graph(raw: dict, **kwargs):
     graph.feature_names = raw.get("feature_names", [])
     graph.label_names = raw.get("label_names", [])
     graph.user_ids = raw.get("user_ids", [])
-    graph.handles = raw.get("handles", [])
     graph.y = _apply_label_downsample(
         graph.y,
         graph.label_names,

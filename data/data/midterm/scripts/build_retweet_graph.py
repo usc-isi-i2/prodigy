@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import torch
 from sklearn.preprocessing import StandardScaler
+from torch_geometric.data import Data
 
 
 REP_HASHTAGS = [
@@ -107,6 +108,13 @@ def parse_args():
         ),
     )
     p.add_argument("--no_temporal_views", action="store_true")
+    p.add_argument(
+        "--keep-isolates",
+        dest="keep_isolates",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Keep nodes with zero in-degree and zero out-degree in the saved graph.",
+    )
     return p.parse_args()
 
 
@@ -120,6 +128,14 @@ def count_list_like(val) -> int:
     if not s:
         return 0
     return len([x for x in s.split(",") if x.strip()])
+
+
+def _fast_list_lens(series: pd.Series) -> np.ndarray:
+    return np.fromiter(
+        (count_list_like(x) for x in series),
+        dtype=np.int32,
+        count=len(series),
+    )
 
 
 def load_raw_rows(csv_glob: str, max_files: int) -> pd.DataFrame:
@@ -409,9 +425,12 @@ def build_node_features(
             base[col] = pd.to_numeric(base[col], errors="coerce")
 
     base["verified"] = base.get("verified", 0).map({True: 1, False: 0, "True": 1, "False": 0}).fillna(0).astype(float)
-    base["n_hashtags"] = base.get("hashtag", "").apply(count_list_like)
-    base["n_mentions"] = base.get("mentionsn", "").apply(count_list_like)
-    base["has_media"] = base.get("media_urls", "").apply(lambda x: 0 if str(x).strip() in {"", "[]", "nan", "None"} else 1)
+    base["n_hashtags"] = _fast_list_lens(base["hashtag"]) if "hashtag" in base.columns else 0
+    base["n_mentions"] = _fast_list_lens(base["mentionsn"]) if "mentionsn" in base.columns else 0
+    if "media_urls" in base.columns:
+        base["has_media"] = (_fast_list_lens(base["media_urls"]) > 0).astype(np.int8)
+    else:
+        base["has_media"] = 0
 
     node_agg = base.groupby("userid", as_index=False).agg(
         subscriber_count=("followers_count", "max"),
@@ -448,16 +467,6 @@ def build_node_features(
     rows = node_agg["node_idx"].astype(int).values
     X[rows] = node_agg[feature_names].fillna(0).values.astype(np.float32)
 
-    # ensure targets-only nodes get degree features
-    all_out = np.zeros(n_nodes, dtype=np.float32)
-    all_in = np.zeros(n_nodes, dtype=np.float32)
-    for uid, c in edge_df.groupby("userid").size().items():
-        all_out[id_to_idx[int(uid)]] = np.log1p(float(c))
-    for uid, c in edge_df.groupby("rt_userid").size().items():
-        all_in[id_to_idx[int(uid)]] = np.log1p(float(c))
-    X[:, feature_names.index("out_degree")] = np.maximum(X[:, feature_names.index("out_degree")], all_out)
-    X[:, feature_names.index("in_degree")] = np.maximum(X[:, feature_names.index("in_degree")], all_in)
-
     nonzero = np.any(X != 0, axis=1)
     if nonzero.any():
         scaler = StandardScaler()
@@ -491,22 +500,50 @@ def maybe_attach_embeddings(
     if emb_user_ids is None or emb_mat is None:
         raise KeyError(f"Embeddings file must contain 'user_ids' and '{embedding_pool}'")
 
-    emb_user_ids = np.asarray(emb_user_ids)
+    emb_user_ids = np.asarray(emb_user_ids).astype(np.int64)
     emb_dim = int(emb_mat.shape[1])
-    emb_map = {int(uid): i for i, uid in enumerate(emb_user_ids)}
-
     extra = torch.zeros((len(node_ids), emb_dim), dtype=torch.float)
-    matched = 0
-    for i, uid in enumerate(node_ids):
-        j = emb_map.get(int(uid))
-        if j is None:
-            continue
-        extra[i] = emb_mat[j].float()
-        matched += 1
+    order = np.argsort(emb_user_ids)
+    sorted_ids = emb_user_ids[order]
+    query = np.asarray(node_ids, dtype=np.int64)
+    pos = np.searchsorted(sorted_ids, query)
+    pos_clipped = np.clip(pos, 0, len(sorted_ids) - 1)
+    hit = (pos < len(sorted_ids)) & (sorted_ids[pos_clipped] == query)
+    tgt_rows = np.where(hit)[0]
+    src_rows = order[pos[hit]]
+    if len(tgt_rows):
+        extra[torch.from_numpy(tgt_rows)] = emb_mat[torch.from_numpy(src_rows)].float()
+    matched = int(hit.sum())
 
     x2 = torch.cat([x, extra], dim=1)
     names2 = feature_names + [f"emb_{k}" for k in range(emb_dim)]
     return x2, names2, {"matched_users": matched, "embedding_dim": emb_dim}
+
+
+def drop_isolates_from_graph(
+    x: torch.Tensor,
+    edge_index: torch.Tensor,
+    edge_attr: torch.Tensor,
+    user_ids: np.ndarray,
+    y: torch.Tensor,
+):
+    n = len(user_ids)
+    degrees_out = torch.bincount(edge_index[0], minlength=n)
+    degrees_in = torch.bincount(edge_index[1], minlength=n)
+    keep_mask = (degrees_out > 0) | (degrees_in > 0)
+    isolated = int((~keep_mask).sum().item())
+    if isolated == 0:
+        return x, edge_index, edge_attr, user_ids, y, {int(uid): i for i, uid in enumerate(user_ids.tolist())}, 0
+
+    kept_nodes = int(keep_mask.sum().item())
+    remap = torch.full((n,), -1, dtype=torch.long)
+    remap[keep_mask] = torch.arange(kept_nodes, dtype=torch.long)
+    x = x[keep_mask]
+    y = y[keep_mask]
+    edge_index = remap[edge_index]
+    user_ids = user_ids[keep_mask.cpu().numpy()]
+    u2i = {int(uid): i for i, uid in enumerate(user_ids.tolist())}
+    return x, edge_index, edge_attr, user_ids, y, u2i, isolated
 
 
 def main():
@@ -517,31 +554,41 @@ def main():
     rt = normalize_ids_and_timestamps(raw, args.strict_dates)
     rt = trim_rt_to_max_nodes(rt, args.max_nodes)
 
-    node_ids = np.array(sorted(set(rt["userid"].tolist()) | set(rt["rt_userid"].tolist())), dtype=np.int64)
-    id_to_idx = {int(uid): i for i, uid in enumerate(node_ids)}
-    print(f"Nodes: {len(node_ids):,}")
+    user_ids = np.array(sorted(set(rt["userid"].tolist()) | set(rt["rt_userid"].tolist())), dtype=np.int64)
+    u2i = {int(uid): i for i, uid in enumerate(user_ids)}
+    print(f"Nodes: {len(user_ids):,}")
 
     edge_feature_names = ["first_retweet_time", "n_retweets", "avg_rt_fav", "avg_rt_reply"]
     edge_all_df = aggregate_edge_features(rt)
-    edge_index, edge_attr = to_edge_tensors(edge_all_df, id_to_idx, edge_feature_names)
+    edge_index, edge_attr = to_edge_tensors(edge_all_df, u2i, edge_feature_names)
     print(f"Directed edges: {edge_index.shape[1]:,}")
 
     x, feature_names, y, label_names = build_node_features(
         rt,
-        id_to_idx,
+        u2i,
         edge_all_df,
         label_source=args.label_source,
     )
     x, feature_names, emb_stats = maybe_attach_embeddings(
-        x, feature_names, node_ids, args.embeddings, args.embedding_pool
+        x, feature_names, user_ids, args.embeddings, args.embedding_pool
     )
+
+    isolated_before_drop = int(((torch.bincount(edge_index[0], minlength=len(user_ids)) == 0) & (torch.bincount(edge_index[1], minlength=len(user_ids)) == 0)).sum().item())
+    if not args.keep_isolates:
+        x, edge_index, edge_attr, user_ids, y, u2i, isolated_dropped = drop_isolates_from_graph(
+            x, edge_index, edge_attr, user_ids, y
+        )
+        print(f"Dropped isolated nodes: {isolated_dropped:,}")
+    else:
+        isolated_dropped = 0
 
     graph_obj = {
         "x": x,
         "edge_index": edge_index,
         "edge_attr": edge_attr,
         "edge_attr_feature_names": edge_feature_names,
-        "user_ids": node_ids,
+        "user_ids": user_ids,
+        "u2i": u2i,
         "feature_names": feature_names,
         "y": y,
         "label_names": label_names,
@@ -559,7 +606,7 @@ def main():
         hist_edges_df = aggregate_edge_features(hist_rt)
         fut_edges_df = aggregate_edge_features(fut_rt)
 
-        hist_edge_index, hist_edge_attr = to_edge_tensors(hist_edges_df, id_to_idx, edge_feature_names)
+        hist_edge_index, hist_edge_attr = to_edge_tensors(hist_edges_df, u2i, edge_feature_names)
 
         hist_pairs = set(zip(hist_edges_df["userid"].astype(int), hist_edges_df["rt_userid"].astype(int)))
         fut_pairs = set(zip(fut_edges_df["userid"].astype(int), fut_edges_df["rt_userid"].astype(int)))
@@ -570,8 +617,8 @@ def main():
 
         if target_pairs:
             target_df = pd.DataFrame(sorted(list(target_pairs)), columns=["userid", "rt_userid"])
-            target_df["src"] = target_df["userid"].map(id_to_idx)
-            target_df["dst"] = target_df["rt_userid"].map(id_to_idx)
+            target_df["src"] = target_df["userid"].map(u2i)
+            target_df["dst"] = target_df["rt_userid"].map(u2i)
             target_df = target_df.dropna(subset=["src", "dst"])
             target_new_edge_index = torch.tensor(target_df[["src", "dst"]].astype(int).values.T, dtype=torch.long)
         else:
@@ -605,12 +652,18 @@ def main():
             "future_target_edges": int(target_new_edge_index.shape[1]),
         }
 
+    data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
+    data.feature_names = feature_names
+    data.edge_attr_feature_names = edge_feature_names
+    data.label_names = label_names
+    data.user_ids = list(user_ids.tolist())
+    graph_obj["data"] = data
     torch.save(graph_obj, args.out)
 
     meta = {
         "csv_glob": args.csv_glob,
         "max_files": args.max_files,
-        "nodes": int(len(node_ids)),
+        "nodes": int(len(user_ids)),
         "edges": int(edge_index.shape[1]),
         "node_feature_dim": int(x.shape[1]),
         "edge_feature_names": edge_feature_names,
@@ -621,6 +674,9 @@ def main():
         "embedding_dim": emb_stats["embedding_dim"],
         "embedding_matched_users": emb_stats["matched_users"],
         "label_source": args.label_source,
+        "keep_isolates": args.keep_isolates,
+        "isolated_nodes_before_drop": isolated_before_drop,
+        "isolated_nodes_dropped": isolated_dropped,
         "temporal": temporal_stats,
     }
     meta_path = args.out.replace(".pt", ".meta.json")

@@ -467,8 +467,11 @@ def _build_midterm_graph(raw: dict, **kwargs):
     edge_feature_names = _load_edge_feature_names(raw, resolved_edge_view)
     if edge_attr is not None:
         graph.edge_attr = edge_attr
+    graph.edge_attr_feature_names = edge_feature_names
 
     graph.label_names = raw['label_names']
+    graph.user_ids = raw.get("user_ids", [])
+    graph.u2i = raw.get("u2i", {})
     graph.y = _apply_label_downsample(
         graph.y,
         graph.label_names,

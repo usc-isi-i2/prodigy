@@ -68,7 +68,7 @@ def _build_ukr_rus_twitter_graph(raw: dict, **kwargs):
     graph.edge_attr_feature_names = edge_feature_names
     graph.feature_names = raw.get("feature_names", [])
     graph.label_names = raw.get("label_names", [])
-    graph.handles = raw.get("handles", [])
+    graph.user_ids = raw.get("user_ids", [])
     graph.y = _apply_label_downsample(
         graph.y,
         graph.label_names,
