@@ -49,6 +49,7 @@ def parse_args():
     p.add_argument("--embeddings", default="", help="Optional user_embeddings_*.pt with user_ids + meanpool/maxpool (handles fallback supported)")
     p.add_argument("--embedding_pool", choices=["meanpool", "maxpool"], default="meanpool")
     p.add_argument("--max_files", type=int, default=0)
+    p.add_argument("--max_nodes", type=int, default=0, help="Stop loading files once this many unique nodes are seen (0 = no limit)")
     p.add_argument("--strict_dates", action="store_true")
     p.add_argument("--history_fraction", type=float, default=DEFAULT_HISTORY_FRACTION)
     p.add_argument("--future_target_mode", choices=["new_only", "all_future"], default="new_only")
@@ -123,7 +124,7 @@ def count_list_like(items) -> int:
     return 0
 
 
-def load_raw_rows(json_glob: str, max_files: int) -> pd.DataFrame:
+def load_raw_rows(json_glob: str, max_files: int, max_nodes: int = 0) -> pd.DataFrame:
     files = sorted(glob.glob(json_glob))
     if max_files > 0:
         files = files[:max_files]
@@ -131,6 +132,7 @@ def load_raw_rows(json_glob: str, max_files: int) -> pd.DataFrame:
         raise FileNotFoundError(f"No files matched: {json_glob}")
 
     rows = []
+    seen_nodes: set = set()
     print(f"Found {len(files)} files")
     for i, path in enumerate(files, start=1):
         print(f"[{i}/{len(files)}] Loading {os.path.basename(path)}", flush=True)
@@ -145,12 +147,19 @@ def load_raw_rows(json_glob: str, max_files: int) -> pd.DataFrame:
             rt = tweet.get("retweeted_status") or {}
             rt_user = rt.get("user") or {}
 
+            uid = normalize_user_id(user.get("id"))
+            rt_uid = normalize_user_id(rt_user.get("id")) if rt else None
+            if uid is not None:
+                seen_nodes.add(uid)
+            if rt_uid is not None:
+                seen_nodes.add(rt_uid)
+
             rows.append(
                 {
                     "screen_name": normalize_handle(user.get("screen_name")),
-                    "userid": normalize_user_id(user.get("id")),
+                    "userid": uid,
                     "rt_screen": normalize_handle(rt_user.get("screen_name")) if rt else None,
-                    "rt_userid": normalize_user_id(rt_user.get("id")) if rt else None,
+                    "rt_userid": rt_uid,
                     "date": tweet.get("created_at"),
                     "followers_count": user.get("followers_count"),
                     "verified": user.get("verified"),
@@ -166,6 +175,10 @@ def load_raw_rows(json_glob: str, max_files: int) -> pd.DataFrame:
 
         if i % 10 == 0 or i == len(files):
             print(f"  processed {i}/{len(files)} files", flush=True)
+
+        if max_nodes > 0 and len(seen_nodes) >= max_nodes:
+            print(f"  reached max_nodes={max_nodes:,} after {i}/{len(files)} files, stopping early", flush=True)
+            break
 
     df = pd.DataFrame(rows)
     if df.empty:
@@ -206,6 +219,45 @@ def prepare_retweet_rows(df: pd.DataFrame, strict_dates: bool) -> pd.DataFrame:
     if rt.empty:
         raise RuntimeError("No valid retweet rows after cleaning")
     return rt
+
+
+def trim_rt_to_max_nodes(rt: pd.DataFrame, max_nodes: int) -> pd.DataFrame:
+    if max_nodes <= 0:
+        return rt
+
+    src = rt["userid"].to_numpy(dtype=np.int64, copy=False)
+    dst = rt["rt_userid"].to_numpy(dtype=np.int64, copy=False)
+    keep_rows = np.zeros(len(rt), dtype=bool)
+    keep_nodes = set()
+
+    for i, (u, v) in enumerate(zip(src, dst)):
+        add = 0
+        if u not in keep_nodes:
+            add += 1
+        if v not in keep_nodes:
+            add += 1
+        if len(keep_nodes) + add <= max_nodes:
+            keep_rows[i] = True
+            keep_nodes.add(int(u))
+            keep_nodes.add(int(v))
+        elif len(keep_nodes) >= max_nodes and u in keep_nodes and v in keep_nodes:
+            keep_rows[i] = True
+        if len(keep_nodes) == max_nodes:
+            continue
+
+    rt2 = rt.loc[keep_rows].copy()
+    actual_nodes = sorted(set(rt2["userid"].tolist()) | set(rt2["rt_userid"].tolist()))
+    print(
+        f"Applied exact max_nodes={max_nodes:,}: kept rows={len(rt2):,} "
+        f"nodes={len(actual_nodes):,}",
+        flush=True,
+    )
+    if len(actual_nodes) != min(max_nodes, len(set(rt['userid'].tolist()) | set(rt['rt_userid'].tolist()))):
+        print(
+            f"  [WARN] exact max_nodes target not reached after trimming; got {len(actual_nodes):,} nodes",
+            flush=True,
+        )
+    return rt2
 
 
 def build_user_index(rt: pd.DataFrame) -> Tuple[List[int], Dict[int, int]]:
@@ -424,8 +476,9 @@ def main():
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
 
-    raw = load_raw_rows(args.json_glob, args.max_files)
+    raw = load_raw_rows(args.json_glob, args.max_files, args.max_nodes)
     rt = prepare_retweet_rows(raw, args.strict_dates)
+    rt = trim_rt_to_max_nodes(rt, args.max_nodes)
     user_ids, u2i = build_user_index(rt)
     handles = build_user_metadata(rt, user_ids)
     print(f"Nodes: {len(user_ids):,}")

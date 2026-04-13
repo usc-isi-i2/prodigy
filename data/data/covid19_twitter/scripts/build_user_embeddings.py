@@ -25,6 +25,7 @@ def parse_args():
     p.add_argument("--out", default=DEFAULT_OUT)
     p.add_argument("--batch_size", type=int, default=1024)
     p.add_argument("--max_files", type=int, default=0)
+    p.add_argument("--max_nodes", type=int, default=0, help="Cap the embedding artifact to exactly this many unique users (0 = no limit)")
     p.add_argument("--device", default=("cuda" if torch.cuda.is_available() else "cpu"))
     p.add_argument("--max_seq_len", type=int, default=64)
     p.add_argument("--fp16", action="store_true", default=True)
@@ -158,6 +159,7 @@ def main():
     total_items = 0
     total_missing_uid = 0
     total_empty_text = 0
+    total_skip_new_uid = 0
     for i, fpath in enumerate(files, start=1):
         ft = time.time()
         print(f"[{i}/{len(files)}] loading {os.path.basename(fpath)}", flush=True)
@@ -174,9 +176,9 @@ def main():
         rows = []  # row index in sum_mat for each text
         file_missing_uid = 0
         file_empty_text = 0
+        file_skip_new_uid = 0
 
         # First pass: collect texts and assign row ids (cheap, no GPU).
-        new_uids = []
         for tw in items:
             user = tw.get("user") or {}
             uid = normalize_user_id(user.get("id"))
@@ -189,7 +191,12 @@ def main():
                 continue
             row = uid_to_row.get(uid)
             if row is None:
-                new_uids.append((uid, normalize_handle(user.get("screen_name"))))
+                if args.max_nodes > 0 and len(uid_to_row) >= args.max_nodes:
+                    file_skip_new_uid += 1
+                    continue
+                ensure_capacity(1)
+                uid_to_row[uid] = len(uid_to_row)
+                handles.append(normalize_handle(user.get("screen_name")))
             texts.append(text)
             rows.append(uid)  # temporarily store uid; resolve after capacity grow
 
@@ -200,13 +207,7 @@ def main():
             total_empty_text += file_empty_text
             continue
 
-        unique_new_user_count = len({uid for uid, _ in new_uids})
-        if new_uids:
-            ensure_capacity(len(new_uids))
-            for uid, handle in new_uids:
-                if uid not in uid_to_row:
-                    uid_to_row[uid] = len(uid_to_row)
-                    handles.append(handle)
+        unique_new_user_count = len({uid for uid in rows if cnt_arr[uid_to_row[uid]] == 0})
 
         row_idx = np.fromiter((uid_to_row[u] for u in rows), dtype=np.int64, count=len(rows))
 
@@ -227,12 +228,13 @@ def main():
         total_items += len(items)
         total_missing_uid += file_missing_uid
         total_empty_text += file_empty_text
+        total_skip_new_uid += file_skip_new_uid
         dt = time.time() - ft
         print(
             f"[{i}/{len(files)}] {os.path.basename(fpath)} "
             f"tweets={len(items):,} embedded={len(texts):,} "
             f"new_users={unique_new_user_count:,} users={len(uid_to_row):,} "
-            f"skip_uid={file_missing_uid:,} skip_empty={file_empty_text:,} "
+            f"skip_uid={file_missing_uid:,} skip_empty={file_empty_text:,} skip_new_uid={file_skip_new_uid:,} "
             f"file={dt:.1f}s "
             f"total={ (time.time()-t0)/60:.1f}m",
             flush=True,
@@ -268,6 +270,7 @@ def main():
         "embedding_dim": int(emb_dim),
         "users": int(n),
         "total_posts_embedded": int(total_posts),
+        "max_nodes": int(args.max_nodes),
         "max_seq_len": args.max_seq_len,
         "fp16": bool(args.fp16),
     }
@@ -279,7 +282,7 @@ def main():
     print(
         "Summary: "
         f"tweets_seen={total_items:,} embedded={total_posts:,} "
-        f"skip_uid={total_missing_uid:,} skip_empty={total_empty_text:,}",
+        f"skip_uid={total_missing_uid:,} skip_empty={total_empty_text:,} skip_new_uid={total_skip_new_uid:,}",
         flush=True,
     )
 
