@@ -126,6 +126,8 @@ def main():
 
     print(f"Model={args.model} device={args.device} fp16={args.fp16} "
           f"seq_len={args.max_seq_len} batch={args.batch_size} files={len(files)}")
+    print(f"Input glob={args.json_glob}")
+    print(f"Output={args.out}")
 
     # Dense accumulators, grown as new users appear.
     uid_to_row = {}
@@ -153,8 +155,12 @@ def main():
         cnt_arr = new_cnt
 
     total_posts = 0
+    total_items = 0
+    total_missing_uid = 0
+    total_empty_text = 0
     for i, fpath in enumerate(files, start=1):
         ft = time.time()
+        print(f"[{i}/{len(files)}] loading {os.path.basename(fpath)}", flush=True)
         try:
             items = load_json_items(fpath)
         except Exception as e:
@@ -166,6 +172,8 @@ def main():
 
         texts = []
         rows = []  # row index in sum_mat for each text
+        file_missing_uid = 0
+        file_empty_text = 0
 
         # First pass: collect texts and assign row ids (cheap, no GPU).
         new_uids = []
@@ -173,9 +181,11 @@ def main():
             user = tw.get("user") or {}
             uid = normalize_user_id(user.get("id"))
             if uid is None:
+                file_missing_uid += 1
                 continue
             text = build_text(tw)
             if not text:
+                file_empty_text += 1
                 continue
             row = uid_to_row.get(uid)
             if row is None:
@@ -185,8 +195,12 @@ def main():
 
         if not texts:
             print(f"[{i}/{len(files)}] no texts in {len(items):,} tweets", flush=True)
+            total_items += len(items)
+            total_missing_uid += file_missing_uid
+            total_empty_text += file_empty_text
             continue
 
+        unique_new_user_count = len({uid for uid, _ in new_uids})
         if new_uids:
             ensure_capacity(len(new_uids))
             for uid, handle in new_uids:
@@ -210,11 +224,16 @@ def main():
         np.add.at(cnt_arr, row_idx, 1)
 
         total_posts += len(texts)
+        total_items += len(items)
+        total_missing_uid += file_missing_uid
+        total_empty_text += file_empty_text
         dt = time.time() - ft
         print(
             f"[{i}/{len(files)}] {os.path.basename(fpath)} "
             f"tweets={len(items):,} embedded={len(texts):,} "
-            f"users={len(uid_to_row):,} file={dt:.1f}s "
+            f"new_users={unique_new_user_count:,} users={len(uid_to_row):,} "
+            f"skip_uid={file_missing_uid:,} skip_empty={file_empty_text:,} "
+            f"file={dt:.1f}s "
             f"total={ (time.time()-t0)/60:.1f}m",
             flush=True,
         )
@@ -257,6 +276,12 @@ def main():
 
     print(f"Saved {args.out} users={n:,} dim={emb_dim} posts={total_posts:,} "
           f"wall={(time.time()-t0)/60:.1f}m")
+    print(
+        "Summary: "
+        f"tweets_seen={total_items:,} embedded={total_posts:,} "
+        f"skip_uid={total_missing_uid:,} skip_empty={total_empty_text:,}",
+        flush=True,
+    )
 
 
 if __name__ == "__main__":
