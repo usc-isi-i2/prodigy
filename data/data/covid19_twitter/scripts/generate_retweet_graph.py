@@ -13,7 +13,7 @@ from torch_geometric.data import Data
 
 DEFAULT_JSON_GLOB = "/scratch1/eibl/data/covid19_twitter/raw/*/*.json"
 DEFAULT_OUT = "data/data/covid19_twitter/graphs/retweet_graph.pt"
-DEFAULT_HISTORY_FRACTION = 0.8
+DEFAULT_HISTORY_FRACTION = 0.3
 DEFAULT_LABELS_PARQUET_GLOB = "/scratch1/eibl/data/covid_masking/masking_2020-*.parquet"
 DEFAULT_LABEL_HANDLE_COL = "screen_name"
 DEFAULT_LABEL_VALUE_COL = "political_gen"

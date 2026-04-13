@@ -92,7 +92,7 @@ def parse_args():
     p.add_argument("--max_files", type=int, default=0)
     p.add_argument("--max_nodes", type=int, default=0, help="Trim the final graph to exactly this many nodes when possible (0 = no limit)")
     p.add_argument("--strict_dates", action="store_true")
-    p.add_argument("--history_fraction", type=float, default=0.8)
+    p.add_argument("--history_fraction", type=float, default=0.3)
     p.add_argument(
         "--future_target_mode",
         choices=["new_only", "all_future"],
