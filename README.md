@@ -53,7 +53,7 @@ WANDB_MODE=offline python experiments/run_single_experiment.py \
 
 ### Twitter datasets (this repo)
 
-Three Twitter retweet graphs are supported, each with its own data-preparation pipeline. See the dataset README for step-by-step instructions including how to build embeddings, build the graph, validate, and run experiments.
+Three Twitter retweet graphs are supported, each with its own data-preparation pipeline. See the dataset README for the current build commands, graph schema, validation steps, and training scripts.
 
 | Dataset | README | Raw format | Raw data location (cluster) |
 |---|---|---|---|
@@ -61,7 +61,7 @@ Three Twitter retweet graphs are supported, each with its own data-preparation p
 | Ukraine-Russia Twitter | [data/data/ukr_rus_twitter/README.md](data/data/ukr_rus_twitter/README.md) | CSV | `/project2/ll_774_951/uk_ru/twitter/data/*/*.csv` |
 | COVID-19 Twitter | [data/data/covid19_twitter/README.md](data/data/covid19_twitter/README.md) | JSON | `/scratch1/eibl/data/covid19_twitter/raw/*/*.json` |
 
-All three share the same graph schema (node features, edge features, temporal splits) and can be used interchangeably as `--dataset midterm`, `--dataset ukr_rus_twitter`, or `--dataset covid19_twitter`.
+All three now use numeric `user_ids` as canonical node ids, share the same high-level graph schema, and can be loaded interchangeably as `--dataset midterm`, `--dataset ukr_rus_twitter`, or `--dataset covid19_twitter`.
 
 ### Original PRODIGY datasets (arXiv, MAG240M, KG)
 
@@ -95,9 +95,10 @@ sbatch scripts/submit_train1_ukr_rus_twitter_pl.sh
 # COVID-19
 sbatch scripts/submit_train1_covid19_twitter_lp.sh
 sbatch scripts/submit_train1_covid19_twitter_nm.sh
+sbatch scripts/submit_train1_covid19_twitter_pl.sh
 ```
 
-> The scripts have hardcoded paths under `/scratch1/eibl/` and `/home1/eibl/`. Update `--root`, `--graph_filename`, and the `cd` / log paths to your own directories before submitting.
+> The scripts have hardcoded paths under `/scratch1/eibl/` and `/home1/eibl/`. Update `--root`, `--graph_filename`, and the `cd` / log paths to your own directories before submitting. The current graph builders also support exact `--max_nodes` caps and save `user_ids` plus `u2i` in the graph artifact.
 
 Cross-dataset transfer (train on one, eval on other) — see [CROSS_DATASET_EVAL.md](CROSS_DATASET_EVAL.md) for the full flow:
 

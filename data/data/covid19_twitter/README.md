@@ -1,183 +1,119 @@
 # COVID-19 Twitter Dataset
 
-Retweet graph built from a COVID-19 Twitter collection. Nodes are users, directed edges are retweet relationships. Raw data is JSON, typically newline-delimited JSON (one tweet object per line), though the loaders also accept JSON arrays and wrapper dicts.
+Retweet graph built from a COVID-19 Twitter collection. Nodes are keyed by `userid`. Raw data is JSON or NDJSON. The graph builder can attach text embeddings, build temporal views, and attach external political labels from masking parquet files.
 
 ## Raw data
 
-JSON files are expected under:
+Cluster path:
 
-```bash
+```text
 /scratch1/eibl/data/covid19_twitter/raw/*/*.json
 ```
 
-Example layout:
+The loader accepts:
+- one JSON object per line
+- JSON arrays
+- wrapper dicts containing `statuses` or `data`
 
-```text
-/scratch1/eibl/data/covid19_twitter/raw/
-  coronavirus-raw-2020-01-23/
-    coronavirus-raw-2020-01-23-18.json
-    coronavirus-raw-2020-01-23-19.json
-  coronavirus-raw-2020-01-24/
-    ...
-```
-
-Each tweet JSON object should contain at least:
-- `created_at`
-- `user.screen_name`
-- `user.id`
-
-Retweet edges are extracted from:
-- `retweeted_status.user.screen_name`
-- `retweeted_status.user.id`
-
-## Pipeline
-
-### Step 1 — Build user text embeddings
-
-Build one pooled MiniLM embedding per handle from tweet text plus profile description. The script supports checkpointing and resume for large runs.
+## Step 1: build user embeddings
 
 ```bash
 python data/data/covid19_twitter/scripts/build_user_embeddings.py \
   --json_glob "/scratch1/eibl/data/covid19_twitter/raw/*/*.json" \
-  --model "sentence-transformers/all-MiniLM-L6-v2" \
-  --out data/data/covid19_twitter/embeddings/user_embeddings_minilm.pt \
-  --checkpoint_path data/data/covid19_twitter/embeddings/user_embeddings_minilm.checkpoint.pkl \
-  --checkpoint_every 5 \
-  --resume
+  --out /scratch1/eibl/data/covid19_twitter/embeddings/user_embeddings_minilm.pt
 ```
 
-Useful options:
+Useful flags:
 
-| Argument | Default | Description |
-|---|---|---|
-| `--json_glob` | `/scratch1/eibl/data/covid19_twitter/raw/*/*.json` | Glob for raw JSON files |
-| `--model` | `sentence-transformers/all-MiniLM-L6-v2` | SentenceTransformer model |
-| `--out` | `data/data/covid19_twitter/embeddings/user_embeddings_minilm.pt` | Output embeddings file |
-| `--batch_size` | `256` | Encoding batch size |
-| `--max_files` | `0` | Limit number of files for sanity runs |
-| `--device` | auto | `cuda` or `cpu` |
-| `--checkpoint_path` | `...user_embeddings_minilm.checkpoint.pkl` | Checkpoint state for resume |
-| `--checkpoint_every` | `5` | Save checkpoint every N processed files |
-| `--resume` | off | Resume from existing checkpoint |
+| Flag | Meaning |
+|---|---|
+| `--max_files` | limit number of JSON files |
+| `--max_nodes` | cap the embedding artifact to exactly this many users when possible |
+| `--stop_after_max_nodes / --no-stop_after_max_nodes` | stop at the cap or keep scanning for already-admitted users |
+| `--batch_size` | encoder batch size |
+| `--max_seq_len` | sentence-transformer max sequence length |
 
-Output schema:
+Embedding artifact keys:
 
 | Key | Description |
 |---|---|
-| `handles` | sorted list of lowercased screen names |
-| `meanpool` | tensor `[N, D]` |
-| `maxpool` | tensor `[N, D]` |
-| `counts` | dict `handle -> number of embedded posts` |
-| `model` | model name string |
+| `user_ids` | canonical user ids |
+| `handles` | aligned screen names, kept only as embedding metadata |
+| `meanpool` | pooled embedding tensor `[N, D]` |
+| `counts` | posts embedded per user |
+| `model` | encoder name |
 
-### Step 2 — Build the retweet graph
-
-Construct the graph and optionally attach the embeddings from Step 1.
+## Step 2: build the graph
 
 ```bash
 python data/data/covid19_twitter/scripts/generate_retweet_graph.py \
   --json_glob "/scratch1/eibl/data/covid19_twitter/raw/*/*.json" \
-  --embeddings data/data/covid19_twitter/embeddings/user_embeddings_minilm.pt \
+  --embeddings /scratch1/eibl/data/covid19_twitter/embeddings/user_embeddings_minilm.pt \
   --embedding_pool meanpool \
   --history_fraction 0.3 \
-  --out data/data/covid19_twitter/graphs/retweet_graph_minilm_hf03.pt
+  --out /scratch1/eibl/data/covid19_twitter/graphs/retweet_graph_hf03_labeled.pt
 ```
 
-Useful options:
+Useful flags:
 
-| Argument | Default | Description |
-|---|---|---|
-| `--json_glob` | `/scratch1/eibl/data/covid19_twitter/raw/*/*.json` | Glob for raw JSON files |
-| `--out` | `data/data/covid19_twitter/graphs/retweet_graph.pt` | Output graph path |
-| `--embeddings` | empty | Optional embeddings file from Step 1 |
-| `--embedding_pool` | `meanpool` | `meanpool` or `maxpool` |
-| `--history_fraction` | `0.8` | Fraction of rows used as history for temporal LP |
-| `--future_target_mode` | `new_only` | Future LP targets: unseen only vs all future |
-| `--max_files` | `0` | Limit number of JSON files |
-| `--strict_dates` | off | Fail on bad timestamps instead of dropping them |
-| `--keep-isolates` | false | Keep nodes with zero in-degree and out-degree |
+| Flag | Meaning |
+|---|---|
+| `--max_files` | limit number of JSON files |
+| `--max_nodes` | trim the final graph to exactly this many nodes when possible |
+| `--history_fraction` | temporal split fraction for `temporal_history` |
+| `--future_target_mode` | `new_only` or `all_future` |
+| `--labels_parquet_glob` | external label parquet glob, defaulting to `/scratch1/eibl/data/covid_masking/masking_2020-*.parquet` |
+| `--keep-isolates / --no-keep-isolates` | keep or drop zero-degree nodes |
 
-Current graph artifact schema:
+Graph artifact keys:
 
-| Key | Shape | Description |
-|---|---|---|
-| `x` | `[N, F]` | Node features |
-| `edge_index` | `[2, E]` | Directed retweet edges |
-| `edge_attr` | `[E, 4]` | Edge features |
-| `handles` | `list[str]` | Node IDs |
-| `h2i` | `dict[str, int]` | Handle-to-index map |
-| `feature_names` | list | Node feature names |
-| `y` | `[N]` | Labels, currently all `-1` |
-| `label_names` | list | Currently empty |
-| `edge_index_views` | dict | Includes `temporal_history` |
-| `target_edge_index_views` | dict | Includes `temporal_new` |
-| `future_edge_index` | `[2, E_future]` | LP target edges |
-| `data` | PyG `Data` | Convenience copy for compatibility |
+| Key | Description |
+|---|---|
+| `x` | node features |
+| `edge_index` | directed retweet edges |
+| `edge_attr` | edge features |
+| `edge_attr_feature_names` | edge feature names |
+| `user_ids` | canonical node ids |
+| `u2i` | `user_id -> node_index` |
+| `feature_names` | node feature names |
+| `y` | external labels, `-1` for unlabeled |
+| `label_names` | inferred from `political_gen` values |
+| `edge_index_views` | includes `temporal_history` |
+| `target_edge_index_views` | includes `temporal_new` |
+| `future_edge_index` | LP target edges |
+| `data` | compatibility `torch_geometric.data.Data` object |
 
-Node features:
-- 11 graph/account stats:
-  `subscriber_count`, `verified`, `avg_favorites`, `avg_comments`, `avg_score`,
-  `avg_n_hashtags`, `avg_n_mentions`, `avg_has_media`, `post_count`, `in_degree`, `out_degree`
-- optional 384-dim MiniLM embeddings appended as `emb_0 ... emb_383`
-
-Edge features:
-- `first_retweet_time`
-- `n_retweets`
-- `avg_rt_fav`
-- `avg_rt_reply`
-
-### Step 3 — Validate and inspect
+## Step 3: validate and inspect
 
 ```bash
 python data/data/covid19_twitter/scripts/validate_graph.py \
-  --graph data/data/covid19_twitter/graphs/retweet_graph_minilm_hf03.pt
+  --graph /scratch1/eibl/data/covid19_twitter/graphs/retweet_graph_hf03_labeled.pt
 ```
 
 ```bash
 python data/data/covid19_twitter/scripts/inspect_graph.py \
-  --graph data/data/covid19_twitter/graphs/retweet_graph_minilm_hf03.pt \
+  --graph /scratch1/eibl/data/covid19_twitter/graphs/retweet_graph_hf03_labeled.pt \
   --topk 20
 ```
 
-## Running on the cluster
-
-```bash
-# Step 1: embeddings
-sbatch data/data/covid19_twitter/scripts/run_build_user_embeddings.sbatch
-
-# Step 2: graph
-sbatch data/data/covid19_twitter/scripts/run_generate_retweet_graph.sbatch
-```
-
-These `.sbatch` files currently use hardcoded paths under `/scratch1/eibl/` and `/home1/eibl/`.
-
-Notes:
-- `run_build_user_embeddings.sbatch` is configured for the raw JSON path and writes to `/scratch1/eibl/data/covid19_twitter/embeddings/`
-- `run_generate_retweet_graph.sbatch` is currently configured for the first `100` files with `history_fraction 0.3`, outputting `retweet_graph_minilm_first100_hf03.pt`
-
 ## Training
 
-Available task-1 scripts:
-
 ```bash
+sbatch scripts/submit_train1_covid19_twitter_pl.sh
 sbatch scripts/submit_train1_covid19_twitter_nm.sh
 sbatch scripts/submit_train1_covid19_twitter_lp.sh
 ```
 
-Supported tasks right now:
+Typical task settings used in recent comparable runs:
 
-| Task | `--task_name` | Notes |
+| Task | `--task_name` | Typical flags |
 |---|---|---|
-| Neighbor matching | `neighbor_matching` | supported |
-| Temporal link prediction | `temporal_link_prediction` | supported |
-| Classification | `classification` | not supported until labels are added |
+| Political labels | `classification` | `--n_way 2 --n_shots 3 --n_query 3 --midterm_label_downsample 50:50` |
+| Neighbor matching | `neighbor_matching` | `--midterm_edge_view temporal_history --n_way 3 --n_shots 1 --n_query 12` |
+| Temporal link prediction | `temporal_link_prediction` | `--midterm_edge_view temporal_history --midterm_target_edge_view temporal_new --n_way 1 --n_shots 1 --n_query 3` |
 
-The current training scripts assume:
-- `--midterm_feature_subset emb_only`
-- `--input_dim 384`
-
-If you are using the first-100-file sanity graph, make sure the script `--graph_filename` matches the graph you actually built, for example:
+For embedding-only runs, use:
 
 ```text
-retweet_graph_minilm_first100_hf03.pt
+--midterm_feature_subset emb_only --input_dim 384
 ```

@@ -1,119 +1,120 @@
 # Midterm Twitter Dataset
 
-Retweet graph built from the 2022 US midterm election Twitter dataset. Nodes are users, edges are retweet relationships. Node labels are political leaning (Democrat / Republican) inferred from hashtags.
+Retweet graph built from the 2022 US midterm election Twitter dataset. Nodes are keyed by `userid`. The graph builder can attach text embeddings, build temporal views for link prediction, and generate weak political labels.
 
 ## Raw data
 
-CSV files organised as `<dataset_root>/*/*.csv`. On the cluster the data lives at:
+Cluster path:
 
-```
+```text
 /project2/ll_774_951/midterm/*/*.csv
 ```
 
-Each CSV row is one tweet and must contain at minimum: `userid`, `screen_name`, `rt_userid`, `rt_screen`, `date`, `followers_count`, `verified`, `statuses_count`.
+Each CSV row is one tweet. The graph builder expects retweet-related columns such as `userid`, `rt_userid`, `date`, `followers_count`, `verified`, `statuses_count`, `rt_fav_count`, `rt_reply_count`, `description`, `urls` or `urls_list`, `hashtag`, `rt_hashtag`, `mentionsn`, and `media_urls`.
 
-## Pipeline
-
-Run the three steps below in order. The midterm dataset also has a convenience script [`scripts/run_pipeline.sh`](scripts/run_pipeline.sh) that chains all three steps.
-
-### Step 1 — Build user text embeddings
-
-Encodes each user's tweet/bio text with a sentence transformer and mean-pools them into a single vector per user.
+## Step 1: build user embeddings
 
 ```bash
 python data/data/midterm/scripts/build_user_embeddings.py \
   --csv_glob "/project2/ll_774_951/midterm/*/*.csv" \
-  --model "sentence-transformers/all-MiniLM-L6-v2" \
-  --out data/data/midterm/embeddings/embeddings_all-MiniLM-L6-v2.pt
+  --out /scratch1/eibl/data/midterm/embeddings/user_embeddings_minilm.pt
 ```
 
-| Argument | Default | Description |
-|---|---|---|
-| `--csv_glob` | `/project2/ll_774_951/midterm/*/*.csv` | Glob for raw CSV files |
-| `--model` | `sentence-transformers/all-MiniLM-L6-v2` | HuggingFace sentence-transformer model |
-| `--out` | `data/data/midterm/embeddings/embeddings_<model>.pt` | Output path |
-| `--batch_size` | 256 | Encoding batch size |
-| `--max_files` | 0 (all) | Limit number of CSV files (useful for testing) |
-| `--device` | auto | `cuda` or `cpu` |
+Useful flags:
 
-**Output:** a `.pt` file containing a dict with keys `user_ids` (list of user ID strings) and `meanpool` (tensor of shape `[num_users, emb_dim]`).
+| Flag | Meaning |
+|---|---|
+| `--max_files` | limit number of CSV files |
+| `--max_nodes` | cap the embedding artifact to exactly this many users when possible |
+| `--stop_after_max_nodes / --no-stop_after_max_nodes` | stop reading files once the cap is reached, or keep scanning later files for already-admitted users |
+| `--batch_size` | encoder batch size |
+| `--max_seq_len` | sentence-transformer max sequence length |
 
-### Step 2 — Build the retweet graph
+Embedding artifact keys:
 
-Constructs a PyG `Data` object from the raw CSVs. Optionally attaches the text embeddings from Step 1.
+| Key | Description |
+|---|---|
+| `user_ids` | canonical node ids |
+| `meanpool` | pooled embedding tensor `[N, D]` |
+| `counts` | posts embedded per user |
+| `model` | encoder name |
+
+## Step 2: build the graph
 
 ```bash
 python data/data/midterm/scripts/build_retweet_graph.py \
   --csv_glob "/project2/ll_774_951/midterm/*/*.csv" \
-  --embeddings data/data/midterm/embeddings/embeddings_all-MiniLM-L6-v2.pt \
+  --embeddings /scratch1/eibl/data/midterm/embeddings/user_embeddings_minilm.pt \
   --embedding_pool meanpool \
-  --out data/data/midterm/graphs/retweet_graph.pt
+  --history_fraction 0.3 \
+  --pseudo_label_margin 2 \
+  --out /scratch1/eibl/data/midterm/graphs/retweet_graph.pt
 ```
 
-| Argument | Default | Description |
-|---|---|---|
-| `--csv_glob` | `/project2/ll_774_951/midterm/*/*.csv` | Glob for raw CSV files |
-| `--out` | `data/data/midterm/graphs/retweet_graph.pt` | Output path |
-| `--embeddings` | `` (none) | Path to embeddings `.pt` from Step 1 |
-| `--embedding_pool` | `meanpool` | Which pool to use: `meanpool` or `maxpool` |
-| `--history_fraction` | 0.8 | Fraction of edges used as "history" for temporal LP |
-| `--label_source` | `political_leaning` | Node labels: `political_leaning` (hashtag-based R/D) or `state` |
-| `--future_target_mode` | `new_only` | LP target edges: `new_only` (unseen pairs) or `all_future` |
-| `--no_temporal_views` | off | Skip building temporal train/val/test edge splits |
-| `--max_files` | 0 (all) | Limit number of CSV files |
+Useful flags:
 
-**Output:** a `.pt` dict with keys:
+| Flag | Meaning |
+|---|---|
+| `--max_files` | limit number of CSV files |
+| `--max_nodes` | trim the final graph to exactly this many nodes when possible |
+| `--history_fraction` | temporal split fraction for `temporal_history` |
+| `--future_target_mode` | `new_only` or `all_future` for temporal LP targets |
+| `--pseudo_label_margin` | minimum one-sided weak-label evidence count |
+| `--keep-isolates / --no-keep-isolates` | keep or drop zero-degree nodes |
+| `--no_temporal_views` | skip temporal view construction |
 
-| Key | Shape | Description |
-|---|---|---|
-| `x` | `[N, F]` | Node features (11 numeric + optional 384-dim embeddings) |
-| `edge_index` | `[2, E]` | Retweet edges |
-| `edge_attr` | `[E, 4]` | Edge features: `first_retweet_time`, `n_retweets`, `avg_rt_fav`, `avg_rt_reply` |
-| `y` | `[N]` | Node labels |
-| `user_ids` | `[N]` | User ID strings |
-| `feature_names` | list | Names of the 11 numeric node features |
-| `label_names` | list | Label class names |
-| `temporal_*` | — | Temporal train/val/test edge masks (if `--no_temporal_views` is not set) |
+Graph artifact keys:
 
-Node features (11): `subscriber_count`, `verified`, `avg_favorites`, `avg_comments`, `avg_score`, `avg_n_hashtags`, `avg_n_mentions`, `avg_has_media`, `post_count`, `in_degree`, `out_degree`.
+| Key | Description |
+|---|---|
+| `x` | node features |
+| `edge_index` | directed retweet edges |
+| `edge_attr` | edge features |
+| `edge_attr_feature_names` | edge feature names |
+| `user_ids` | canonical node ids |
+| `u2i` | `user_id -> node_index` |
+| `feature_names` | node feature names |
+| `y` | weak labels, `-1` for unlabeled |
+| `label_names` | `["rep", "dem"]` |
+| `edge_index_views` | includes `temporal_history` |
+| `target_edge_index_views` | includes `temporal_new` |
+| `future_edge_index` | LP target edges |
+| `data` | compatibility `torch_geometric.data.Data` object |
 
-### Step 3 — Validate
+Node features are 11 graph/account stats plus optional embedding dimensions.
+
+## Step 3: validate and inspect
 
 ```bash
 python data/data/midterm/scripts/validate_graph.py \
-  --graph data/data/midterm/graphs/retweet_graph.pt
+  --graph /scratch1/eibl/data/midterm/graphs/retweet_graph.pt
 ```
-
-Prints a summary and exits non-zero if required keys are missing or shapes are inconsistent.
-
-## Running on the cluster
-
-Submit the SLURM scripts from the repo root. Update the paths in `--out` / `--root` to your scratch directory.
 
 ```bash
-# Embeddings (GPU, ~30 min)
-sbatch data/data/midterm/scripts/run_pipeline.sh
-
-# Or run the full pipeline as a shell script
-bash data/data/midterm/scripts/run_pipeline.sh
+python data/data/midterm/scripts/inspect_graph.py \
+  --graph /scratch1/eibl/data/midterm/graphs/retweet_graph.pt
 ```
 
-The experiment training scripts are in [`scripts/`](../../../scripts/):
+## Training
+
+Example task-1 scripts:
 
 ```bash
-sbatch scripts/submit_train1_midterm_lp.sh   # temporal link prediction
-sbatch scripts/submit_train1_midterm_nm.sh   # neighbor matching
-sbatch scripts/submit_train1_midterm_pl.sh   # political leaning classification
+sbatch scripts/submit_train1_midterm_pl.sh
+sbatch scripts/submit_train1_midterm_nm.sh
+sbatch scripts/submit_train1_midterm_lp.sh
 ```
 
-## Experiments
+Typical task settings used in recent comparable runs:
 
-Pass `--root <dir>` pointing to the folder that contains your graph `.pt` file and `--graph_filename <file>`.
-
-| Task | `--task_name` | Key flags |
+| Task | `--task_name` | Typical flags |
 |---|---|---|
-| Temporal link prediction | `temporal_link_prediction` | `--n_way 1 --n_shots 1 --n_query 3` |
-| Neighbor matching | `neighbor_matching` | `--n_way 3 --n_shots 3 --n_query 24` |
-| Political leaning classification | `classification` | `--n_way 2 --n_shots 4 --n_query 3 --midterm_label_downsample 50:50` |
+| Political labels | `classification` | `--n_way 2 --n_shots 3 --n_query 3 --midterm_label_downsample 50:50` |
+| Neighbor matching | `neighbor_matching` | `--midterm_edge_view temporal_history --n_way 3 --n_shots 1 --n_query 12` |
+| Temporal link prediction | `temporal_link_prediction` | `--midterm_edge_view temporal_history --midterm_target_edge_view temporal_new --n_way 1 --n_shots 1 --n_query 3` |
 
-Set `--midterm_feature_subset emb_only` and `--input_dim 384` when using text embeddings only.
+For embedding-only runs, use:
+
+```text
+--midterm_feature_subset emb_only --input_dim 384
+```

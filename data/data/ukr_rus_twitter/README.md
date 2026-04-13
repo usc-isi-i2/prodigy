@@ -1,134 +1,119 @@
 # Ukraine-Russia Twitter Dataset
 
-Retweet graph built from a Twitter dataset collected around the Ukraine-Russia conflict. Nodes are users, edges are retweet relationships. Structure and feature schema are identical to the midterm dataset.
+Retweet graph built from a Twitter dataset collected around the Ukraine-Russia conflict. Nodes are keyed by `userid`. The graph builder can attach text embeddings, build temporal views, and generate weak political labels.
 
 ## Raw data
 
-CSV files organised as `<dataset_root>/*/*.csv`. On the cluster:
+Cluster path:
 
-```
+```text
 /project2/ll_774_951/uk_ru/twitter/data/*/*.csv
 ```
 
-Each CSV row is one tweet and must contain at minimum: `userid`, `screen_name`, `rt_userid`, `rt_screen`, `date`, `followers_count`, `verified`, `statuses_count`.
+The CSV files use an interleaved format. The loader handles that directly.
 
-## Pipeline
-
-### Step 1 — Build user text embeddings
-
-Encodes each user's tweet/bio text with a sentence transformer and mean-pools them into a single vector per user. Supports checkpointing (`--resume`) for large datasets.
+## Step 1: build user embeddings
 
 ```bash
 python data/data/ukr_rus_twitter/scripts/build_user_embeddings.py \
   --csv_glob "/project2/ll_774_951/uk_ru/twitter/data/*/*.csv" \
-  --model "sentence-transformers/all-MiniLM-L6-v2" \
-  --out data/data/ukr_rus_twitter/embeddings/user_embeddings_minilm.pt \
-  --checkpoint_path data/data/ukr_rus_twitter/embeddings/user_embeddings_minilm.checkpoint.pkl \
-  --checkpoint_every 10 \
-  --resume
+  --out /scratch1/eibl/data/ukr_rus_twitter/embeddings/user_embeddings_minilm.pt
 ```
 
-| Argument | Default | Description |
-|---|---|---|
-| `--csv_glob` | `/project2/ll_774_951/uk_ru/twitter/data/*/*.csv` | Glob for raw CSV files |
-| `--model` | `sentence-transformers/all-MiniLM-L6-v2` | HuggingFace sentence-transformer model |
-| `--out` | `data/data/ukr_rus_twitter/embeddings/user_embeddings_minilm.pt` | Output path |
-| `--batch_size` | 256 | Encoding batch size |
-| `--max_files` | 0 (all) | Limit number of CSV files |
-| `--device` | auto | `cuda` or `cpu` |
-| `--checkpoint_path` | `...minilm.checkpoint.pkl` | Intermediate checkpoint for resuming |
-| `--checkpoint_every` | 5 | Save checkpoint every N files |
-| `--resume` | off | Resume from existing checkpoint |
+Useful flags:
 
-**Output schema:**
+| Flag | Meaning |
+|---|---|
+| `--max_files` | limit number of CSV files |
+| `--max_nodes` | cap the embedding artifact to exactly this many users when possible |
+| `--stop_after_max_nodes / --no-stop_after_max_nodes` | stop at the cap or keep scanning for already-admitted users |
+| `--batch_size` | encoder batch size |
+| `--max_seq_len` | sentence-transformer max sequence length |
+
+Embedding artifact keys:
 
 | Key | Description |
 |---|---|
-| `handles` | sorted list of lowercased screen names |
-| `meanpool` | tensor `[N, D]` |
-| `maxpool` | tensor `[N, D]` |
-| `counts` | dict `handle -> number of embedded posts` |
-| `model` | model name string |
+| `handles` | screen names aligned with the pooled rows |
+| `user_ids` | best-effort numeric user ids aligned with `handles` |
+| `meanpool` | pooled embedding tensor `[N, D]` |
+| `counts` | posts embedded per row |
+| `model` | encoder name |
 
-### Step 2 — Build the retweet graph
+## Step 2: build the graph
 
 ```bash
 python data/data/ukr_rus_twitter/scripts/generate_retweet_graph.py \
   --csv "/project2/ll_774_951/uk_ru/twitter/data/*/*.csv" \
-  --embeddings data/data/ukr_rus_twitter/embeddings/user_embeddings_minilm.pt \
+  --embeddings /scratch1/eibl/data/ukr_rus_twitter/embeddings/user_embeddings_minilm.pt \
   --embedding_pool meanpool \
   --history_fraction 0.3 \
-  --out data/data/ukr_rus_twitter/graphs/retweet_graph.pt
+  --pseudo-political-labels \
+  --pseudo-label-margin 2 \
+  --out /scratch1/eibl/data/ukr_rus_twitter/graphs/retweet_graph_hf03_political_labels.pt
 ```
 
-| Argument | Default | Description |
-|---|---|---|
-| `--csv` | `/project2/ll_774_951/uk_ru/twitter/data/*/*.csv` | Glob for raw CSV files |
-| `--out` | `data/data/ukr_rus_twitter/graphs/retweet_graph.pt` | Output path |
-| `--embeddings` | `` (none) | Path to embeddings `.pt` from Step 1 |
-| `--embedding_pool` | `meanpool` | `meanpool` or `maxpool` |
-| `--history_fraction` | 0.8 | Fraction of edges in the "history" split for temporal LP |
-| `--max_files` | 0 (all) | Limit number of CSV files |
+Useful flags:
 
-**Current graph artifact schema:**
+| Flag | Meaning |
+|---|---|
+| `--max_files` | limit number of CSV files |
+| `--max_nodes` | trim the final graph to exactly this many nodes when possible |
+| `--history_fraction` | temporal split fraction for `temporal_history` |
+| `--future_target_mode` | `new_only` or `all_future` |
+| `--pseudo-political-labels` | attach weak labels |
+| `--pseudo-label-margin` | minimum one-sided weak-label evidence count |
+| `--keep-isolates / --no-keep-isolates` | keep or drop zero-degree nodes |
 
-| Key | Shape | Description |
-|---|---|---|
-| `x` | `[N, F]` | Node features (11 numeric + optional 384-dim embeddings) |
-| `edge_index` | `[2, E]` | Directed retweet edges |
-| `edge_attr` | `[E, 4]` | `first_retweet_time`, `n_retweets`, `avg_rt_fav`, `avg_rt_reply` |
-| `handles` | `list[str]` | Node IDs |
-| `h2i` | `dict[str, int]` | Handle-to-index map |
-| `feature_names` | list | Node feature names |
-| `y` | `[N]` | Labels, currently all `-1` unless you add political labels |
-| `label_names` | list | Label class names, empty unless labels are attached |
-| `edge_index_views` | dict | Includes `temporal_history` |
-| `target_edge_index_views` | dict | Includes `temporal_new` |
-| `future_edge_index` | `[2, E_future]` | LP target edges |
-| `data` | PyG `Data` | Convenience copy for compatibility |
+Graph artifact keys:
 
-Node features (11): `subscriber_count`, `verified`, `avg_favorites`, `avg_comments`, `avg_score`, `avg_n_hashtags`, `avg_n_mentions`, `avg_has_media`, `post_count`, `in_degree`, `out_degree`.
+| Key | Description |
+|---|---|
+| `x` | node features |
+| `edge_index` | directed retweet edges |
+| `edge_attr` | edge features |
+| `edge_attr_feature_names` | edge feature names |
+| `user_ids` | canonical node ids |
+| `u2i` | `user_id -> node_index` |
+| `feature_names` | node feature names |
+| `y` | weak labels, `-1` for unlabeled |
+| `label_names` | `["left", "right"]` when labels are attached |
+| `edge_index_views` | includes `temporal_history` |
+| `target_edge_index_views` | includes `temporal_new` |
+| `future_edge_index` | LP target edges |
+| `data` | compatibility `torch_geometric.data.Data` object |
 
-### Step 3 — Validate
+## Step 3: validate and inspect
 
 ```bash
 python data/data/ukr_rus_twitter/scripts/validate_graph.py \
-  --graph data/data/ukr_rus_twitter/graphs/retweet_graph.pt
+  --graph /scratch1/eibl/data/ukr_rus_twitter/graphs/retweet_graph_hf03_political_labels.pt
 ```
 
 ```bash
 python data/data/ukr_rus_twitter/scripts/inspect_graph.py \
-  --graph data/data/ukr_rus_twitter/graphs/retweet_graph.pt \
+  --graph /scratch1/eibl/data/ukr_rus_twitter/graphs/retweet_graph_hf03_political_labels.pt \
   --topk 20
 ```
 
-## Running on the cluster
+## Training
 
 ```bash
-# Step 1: embeddings (GPU, ~90 min for 150 files)
-sbatch data/data/ukr_rus_twitter/scripts/run_build_user_embeddings.sbatch
-
-# Step 2: graph (CPU, ~60 min)
-sbatch data/data/ukr_rus_twitter/scripts/run_generate_retweet_graph.sbatch
+sbatch scripts/submit_train1_ukr_rus_twitter_pl.sh
+sbatch scripts/submit_train1_ukr_rus_twitter_nm.sh
+sbatch scripts/submit_train1_ukr_rus_twitter_lp.sh
 ```
 
-The `.sbatch` files have hardcoded output paths under `/scratch1/eibl/` — update those to your own scratch directory before submitting.
+Typical task settings used in recent comparable runs:
 
-Experiment training scripts are in [`scripts/`](../../../scripts/):
-
-```bash
-sbatch scripts/submit_train1_ukr_rus_twitter_lp.sh   # temporal link prediction
-sbatch scripts/submit_train1_ukr_rus_twitter_nm.sh   # neighbor matching
-sbatch scripts/submit_train1_ukr_rus_twitter_pl.sh   # political leaning classification
-```
-
-## Experiments
-
-| Task | `--task_name` | Key flags |
+| Task | `--task_name` | Typical flags |
 |---|---|---|
+| Political labels | `classification` | `--n_way 2 --n_shots 3 --n_query 3 --midterm_label_downsample 50:50` |
+| Neighbor matching | `neighbor_matching` | `--midterm_edge_view temporal_history --n_way 3 --n_shots 1 --n_query 12` |
 | Temporal link prediction | `temporal_link_prediction` | `--midterm_edge_view temporal_history --midterm_target_edge_view temporal_new --n_way 1 --n_shots 1 --n_query 3` |
-| Neighbor matching | `neighbor_matching` | `--midterm_edge_view temporal_history --n_way 3 --n_shots 3 --n_query 24` |
-| Classification | `classification` | requires a labeled graph such as `retweet_graph_150files_minilm_hf03_political_labels.pt` |
 
-Set `--midterm_feature_subset emb_only --input_dim 384` when using text embeddings only.
-The graph filename used in the current scripts is `retweet_graph_150files_minilm_hf03.pt` (150 CSV files, MiniLM embeddings, history fraction 0.3).
+For embedding-only runs, use:
+
+```text
+--midterm_feature_subset emb_only --input_dim 384
+```
