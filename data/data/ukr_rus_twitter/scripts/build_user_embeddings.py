@@ -138,6 +138,7 @@ def main():
 
     handle_to_row = {}
     handles = []
+    handle_to_userid = {}  # best-effort: screen_name -> userid
     cap = 1 << 16
     sum_mat = np.zeros((cap, emb_dim), dtype=np.float32)
     cnt_arr = np.zeros(cap, dtype=np.int32)
@@ -179,6 +180,8 @@ def main():
 
         df["screen_name"] = df["screen_name"].apply(normalize_handle)
         df = df[df["screen_name"].notna()].copy()
+        if "userid" in df.columns:
+            df["userid"] = pd.to_numeric(df["userid"], errors="coerce")
         total_items += len(df)
 
         texts = []
@@ -197,7 +200,8 @@ def main():
                 file_empty_text += 1
                 continue
             if handle not in handle_to_row:
-                new_handles.append(handle)
+                uid = r.get("userid")
+                new_handles.append((handle, int(uid) if pd.notna(uid) else None))
             texts.append(text)
             row_handles.append(handle)
 
@@ -206,13 +210,15 @@ def main():
             total_empty_text += file_empty_text
             continue
 
-        unique_new = len(set(new_handles))
+        unique_new = len({h for h, _ in new_handles})
         if new_handles:
             ensure_capacity(len(new_handles))
-            for h in new_handles:
+            for h, uid in new_handles:
                 if h not in handle_to_row:
                     handle_to_row[h] = len(handle_to_row)
                     handles.append(h)
+                if uid is not None and h not in handle_to_userid:
+                    handle_to_userid[h] = uid
 
         row_idx = np.fromiter((handle_to_row[h] for h in row_handles), dtype=np.int64, count=len(row_handles))
 
@@ -248,8 +254,11 @@ def main():
     norms[norms == 0] = 1.0
     meanpool = meanpool / norms
 
+    user_ids = [handle_to_userid.get(h) for h in handles]  # None if userid not found in CSVs
+
     out_obj = {
         "handles": handles,
+        "user_ids": user_ids,
         "meanpool": torch.from_numpy(meanpool),
         "counts": counts_final,
         "model": args.model,
