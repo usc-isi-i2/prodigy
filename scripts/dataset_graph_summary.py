@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional, Tuple
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 DATASET_MODULES = {
-    "midterm": REPO_ROOT / "data" / "data" / "midterm" / "scripts" / "build_retweet_graph.py",
+    "midterm": REPO_ROOT / "data" / "data" / "midterm" / "scripts" / "generate_retweet_graph.py",
     "ukr_rus_twitter": REPO_ROOT / "data" / "data" / "ukr_rus_twitter" / "scripts" / "generate_retweet_graph.py",
     "covid19_twitter": REPO_ROOT / "data" / "data" / "covid19_twitter" / "scripts" / "generate_retweet_graph.py",
 }
