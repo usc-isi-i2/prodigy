@@ -3,6 +3,8 @@ import csv
 import glob
 import json
 import os
+import shlex
+import sys
 import time
 
 import numpy as np
@@ -25,7 +27,15 @@ def parse_args():
     p.add_argument("--out", default=DEFAULT_OUT)
     p.add_argument("--batch_size", type=int, default=1024)
     p.add_argument("--max_files", type=int, default=0)
-    p.add_argument("--max_nodes", type=int, default=0, help="Stop loading files once this many unique users are seen (0 = no limit)")
+    p.add_argument("--max_nodes", type=int, default=0, help="Cap the embedding artifact to this many unique users (0 = no limit)")
+    p.add_argument(
+        "--stop_after_max_nodes",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Stop reading additional files after a file brings the admitted user count to max_nodes. "
+             "Disable with --no-stop_after_max_nodes if you want to keep scanning later files and aggregating posts "
+             "for already-admitted users.",
+    )
     p.add_argument("--device", default=("cuda" if torch.cuda.is_available() else "cpu"))
     p.add_argument("--max_seq_len", type=int, default=64)
     p.add_argument("--fp16", action="store_true", default=True)
@@ -115,6 +125,7 @@ def read_post_file(fpath: str) -> pd.DataFrame:
 def main():
     args = parse_args()
     t0 = time.time()
+    command = " ".join(shlex.quote(x) for x in [sys.executable, *sys.argv])
 
     files = sorted(glob.glob(args.csv_glob))
     if args.max_files > 0:
@@ -247,6 +258,13 @@ def main():
             f"file={dt:.1f}s total={(time.time()-t0)/60:.1f}m",
             flush=True,
         )
+        if args.stop_after_max_nodes and args.max_nodes > 0 and len(handle_to_row) >= args.max_nodes:
+            print(
+                f"Reached max_nodes={args.max_nodes:,} after file {i}/{len(files)}; "
+                "stopping additional file reads because --stop_after_max_nodes is set.",
+                flush=True,
+            )
+            break
 
     n = len(handle_to_row)
     counts_final = cnt_arr[:n].astype(np.int64)
@@ -275,6 +293,8 @@ def main():
         "users": int(n),
         "total_posts_embedded": int(total_posts),
         "max_nodes": int(args.max_nodes),
+        "stop_after_max_nodes": bool(args.stop_after_max_nodes),
+        "command": command,
         "max_seq_len": args.max_seq_len,
         "fp16": bool(args.fp16),
     }
