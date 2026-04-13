@@ -254,13 +254,15 @@ def build_pseudo_political_labels(
 # Raw data loading
 # ---------------------------------------------------------------------------
 
-def load_raw_rows(csv_glob: str, max_files: int) -> pd.DataFrame:
+def load_raw_rows(csv_glob: str, max_files: int, strict_dates: bool = False, max_nodes: int = 0) -> pd.DataFrame:
     files = sorted(glob.glob(csv_glob))
     if max_files > 0:
         files = files[:max_files]
     if not files:
         raise FileNotFoundError(f"No files matched: {csv_glob}")
-    chunks = []
+    chunks: List[pd.DataFrame] = []
+    seen_nodes = set()
+    stopped_early = False
     print(f"Found {len(files)} files")
     for i, fpath in enumerate(files, start=1):
         print(f"[{i}/{len(files)}] Loading {os.path.basename(fpath)}", flush=True)
@@ -269,8 +271,32 @@ def load_raw_rows(csv_glob: str, max_files: int) -> pd.DataFrame:
             if dfi.empty:
                 continue
             cols = [c for c in dfi.columns if c in USECOLS]
-            if cols:
-                chunks.append(dfi[cols].copy())
+            if not cols:
+                print("  [SKIP] no required columns", flush=True)
+                continue
+            chunk = dfi[cols].copy()
+            if max_nodes > 0:
+                try:
+                    file_rt = prepare_retweet_rows(chunk, strict_dates)
+                except RuntimeError:
+                    file_rt = pd.DataFrame(columns=["userid", "rt_userid"])
+                if not file_rt.empty:
+                    seen_nodes.update(file_rt["userid"].tolist())
+                    seen_nodes.update(file_rt["rt_userid"].tolist())
+                    print(
+                        f"  cleaned participants seen so far: {len(seen_nodes):,}",
+                        flush=True,
+                    )
+                    if len(seen_nodes) >= max_nodes:
+                        print(
+                            f"  reached max_nodes target during ingestion after file {i}/{len(files)}; "
+                            "stopping raw file loading before full corpus read",
+                            flush=True,
+                        )
+                        stopped_early = True
+                        chunks.append(chunk)
+                        break
+            chunks.append(chunk)
         except Exception as exc:
             print(f"  [WARN] failed {os.path.basename(fpath)}: {exc}", flush=True)
         if i % 10 == 0 or i == len(files):
@@ -279,6 +305,12 @@ def load_raw_rows(csv_glob: str, max_files: int) -> pd.DataFrame:
         raise RuntimeError("No valid rows parsed")
     df = pd.concat(chunks, ignore_index=True)
     print(f"Loaded rows: {len(df):,}")
+    if max_nodes > 0:
+        print(
+            f"Ingestion summary: cleaned participants seen={len(seen_nodes):,} "
+            f"(target={max_nodes:,}, early_stop={stopped_early})",
+            flush=True,
+        )
     return df
 
 
@@ -310,10 +342,31 @@ def parse_args():
 
 def main():
     args = parse_args()
+    out_dir = os.path.dirname(args.out)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+    print("Configuration")
+    print(f"  csv_glob: {args.csv}")
+    print(f"  out: {args.out}")
+    print(f"  embeddings: {args.embeddings or '<none>'}")
+    print(f"  embedding_pool: {args.embedding_pool}")
+    print(f"  max_files: {args.max_files if args.max_files > 0 else 'all'}")
+    print(f"  max_nodes: {args.max_nodes if args.max_nodes > 0 else 'all'}")
+    print(f"  history_fraction: {args.history_fraction}")
+    print(f"  future_target_mode: {args.future_target_mode}")
+    print(f"  keep_isolates: {args.keep_isolates}")
+    print(f"  pseudo_political_labels: {args.pseudo_political_labels}")
+    print(f"  pseudo_label_margin: {args.pseudo_label_margin}")
+    print()
 
-    raw = load_raw_rows(args.csv, args.max_files)
+    raw = load_raw_rows(args.csv, args.max_files, strict_dates=args.strict_dates, max_nodes=args.max_nodes)
+    print(f"Raw frame: rows={len(raw):,} cols={len(raw.columns):,}", flush=True)
     rt = prepare_retweet_rows(raw, args.strict_dates)
+    pretrim_nodes = len(set(rt["userid"].tolist()) | set(rt["rt_userid"].tolist()))
+    print(f"Cleaned retweets: rows={len(rt):,} unique_nodes={pretrim_nodes:,}", flush=True)
     rt = trim_rt_to_max_nodes(rt, args.max_nodes)
+    posttrim_nodes = len(set(rt["userid"].tolist()) | set(rt["rt_userid"].tolist()))
+    print(f"Post-trim retweets: rows={len(rt):,} unique_nodes={posttrim_nodes:,}", flush=True)
 
     user_ids, u2i = build_user_index(rt)
     handles = build_user_metadata(rt, user_ids)
