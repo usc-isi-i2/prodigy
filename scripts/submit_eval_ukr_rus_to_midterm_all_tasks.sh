@@ -1,10 +1,10 @@
 #!/bin/bash
+# Evaluate ukr_rus_twitter-trained models on the midterm graph.
+# Usage: submit_eval_ukr_rus_to_midterm_all_tasks.sh [shots_csv]
 set -euo pipefail
 
-SHOTS_CSV="${1:-0,1,2,5,10}"
-
-cd /home1/eibl/gfm/prodigy
-
-sbatch scripts/eval_midterm_model_list_all_tasks.sbatch \
-  scripts/ukr_rus_train1_eval_on_midterm_model_list.txt \
-  "$SHOTS_CSV"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+"${SCRIPT_DIR}/submit_eval.sh" \
+  midterm \
+  "${SCRIPT_DIR}/ukr_rus_train1_eval_on_midterm_model_list.txt" \
+  "${1:-0,1,2,5,10}"
