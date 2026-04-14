@@ -14,6 +14,17 @@ DATASET_MODULES = {
     "covid19_twitter": REPO_ROOT / "data" / "data" / "covid19_twitter" / "scripts" / "generate_retweet_graph.py",
 }
 
+DATASET_ALIASES = {
+    "midterm": "midterm",
+    "ukr_rus_twitter": "ukr_rus_twitter",
+    "ukr_rus": "ukr_rus_twitter",
+    "ukr": "ukr_rus_twitter",
+    "rus": "ukr_rus_twitter",
+    "covid19_twitter": "covid19_twitter",
+    "covid19": "covid19_twitter",
+    "covid": "covid19_twitter",
+}
+
 
 def parse_args():
     p = argparse.ArgumentParser(
@@ -25,7 +36,7 @@ def parse_args():
     p.add_argument(
         "--dataset",
         required=True,
-        choices=sorted(DATASET_MODULES.keys()),
+        choices=sorted(DATASET_ALIASES.keys()),
     )
     p.add_argument("--graph", required=True, help="Path to *.pt graph artifact")
     p.add_argument(
@@ -46,6 +57,16 @@ def parse_args():
         help="Output format.",
     )
     return p.parse_args()
+
+
+def canonicalize_dataset(dataset: str) -> str:
+    try:
+        return DATASET_ALIASES[dataset]
+    except KeyError as exc:
+        raise ValueError(
+            f"Unknown dataset alias: {dataset}. "
+            f"Expected one of: {', '.join(sorted(DATASET_ALIASES))}"
+        ) from exc
 
 
 def load_module_from_path(module_name: str, path: Path):
@@ -159,23 +180,24 @@ def summarize_graph(raw: Dict[str, Any]) -> Dict[str, Any]:
 
 def main():
     args = parse_args()
+    dataset = canonicalize_dataset(args.dataset)
     graph_path = Path(args.graph).expanduser().resolve()
     raw_glob, max_files = resolve_raw_source(
-        args.dataset,
+        dataset,
         graph_path,
         args.raw_glob,
         args.max_files,
     )
 
-    module = load_module_from_path(f"summary_{args.dataset}", DATASET_MODULES[args.dataset])
-    if args.dataset == "midterm":
+    module = load_module_from_path(f"summary_{dataset}", DATASET_MODULES[dataset])
+    if dataset == "midterm":
         n_tweets, n_users = count_raw_midterm(module, raw_glob, max_files)
-    elif args.dataset == "ukr_rus_twitter":
+    elif dataset == "ukr_rus_twitter":
         n_tweets, n_users = count_raw_ukr(module, raw_glob, max_files)
-    elif args.dataset == "covid19_twitter":
+    elif dataset == "covid19_twitter":
         n_tweets, n_users = count_raw_covid(module, raw_glob, max_files)
     else:
-        raise ValueError(f"Unsupported dataset: {args.dataset}")
+        raise ValueError(f"Unsupported dataset: {dataset}")
 
     import torch
 
@@ -189,7 +211,12 @@ def main():
         "max_files": int(max_files),
         "n_tweets": int(n_tweets),
         "n_users": int(n_users),
-        **graph_summary,
+        "n_nodes": graph_summary["n_nodes"],
+        "n_edges": graph_summary["n_edges"],
+        "mean_deg": graph_summary["mean_deg"],
+        "node_features": graph_summary["n_node_features"],
+        "edge_features": graph_summary["n_edge_features"],
+        "mean_centrality": graph_summary["mean_centrality"],
     }
 
     if args.format == "json":
@@ -202,8 +229,8 @@ def main():
             "n_nodes",
             "n_edges",
             "mean_deg",
-            "n_node_features",
-            "n_edge_features",
+            "node_features",
+            "edge_features",
             "mean_centrality",
         ]
         print("\t".join(keys))
