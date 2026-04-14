@@ -247,10 +247,12 @@ def trim_rt_to_max_nodes(rt: pd.DataFrame, max_nodes: int) -> pd.DataFrame:
 
     total_unique_nodes = len(set(rt["userid"].tolist()) | set(rt["rt_userid"].tolist()))
     if total_unique_nodes < max_nodes:
-        raise ValueError(
-            f"Requested max_nodes={max_nodes:,}, but only {total_unique_nodes:,} unique retweet nodes exist "
-            "after cleaning."
+        print(
+            f"Warning: requested max_nodes={max_nodes:,}, but only {total_unique_nodes:,} unique retweet nodes exist "
+            "after cleaning. Proceeding with all available cleaned nodes.",
+            flush=True,
         )
+        return rt
 
     src = rt["userid"].to_numpy(dtype=np.int64, copy=False)
     dst = rt["rt_userid"].to_numpy(dtype=np.int64, copy=False)
@@ -281,8 +283,10 @@ def trim_rt_to_max_nodes(rt: pd.DataFrame, max_nodes: int) -> pd.DataFrame:
         flush=True,
     )
     if len(actual_nodes) != max_nodes:
-        raise RuntimeError(
-            f"Exact max_nodes trim failed: requested {max_nodes:,}, got {len(actual_nodes):,} nodes"
+        print(
+            f"Warning: exact max_nodes trim requested {max_nodes:,}, got {len(actual_nodes):,} nodes. "
+            "Proceeding with the largest feasible trimmed graph.",
+            flush=True,
         )
     return rt2
 
