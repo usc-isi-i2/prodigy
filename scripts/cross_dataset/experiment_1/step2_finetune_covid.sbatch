@@ -18,7 +18,7 @@ set -euo pipefail
 : "${CKPT_PATH:?CKPT_PATH is required}"
 
 module purge || true
-source "$(conda info --base)/etc/profile.d/conda.sh"
+module load conda
 conda activate prodigy
 
 cd /home1/singhama/gfm/prodigy
