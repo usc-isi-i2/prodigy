@@ -19,14 +19,12 @@ set -euo pipefail
 
 module purge || true
 module load conda
-conda activate prodigy
 
 cd /home1/singhama/gfm/prodigy
 mkdir -p /scratch1/singhama/data/covid19_twitter/logs
-export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
 echo "=== Fine-tuning midterm NM checkpoint on covid19_twitter NM ==="
-python3 experiments/run_single_experiment.py \
+conda run -n prodigy --no-capture-output python3 experiments/run_single_experiment.py \
   --dataset              covid19_twitter \
   --root                 /scratch1/singhama/data/covid19_twitter/graphs \
   --graph_filename       retweet_graph_minilm_first100_hf03.pt \

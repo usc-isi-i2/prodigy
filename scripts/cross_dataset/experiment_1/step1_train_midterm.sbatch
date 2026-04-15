@@ -12,14 +12,12 @@ set -euo pipefail
 
 module purge || true
 module load conda
-conda activate prodigy
 
 cd /home1/singhama/gfm/prodigy
 mkdir -p logs
-export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
 echo "=== Pretraining on midterm NM ==="
-python3 experiments/run_single_experiment.py \
+conda run -n prodigy --no-capture-output python3 experiments/run_single_experiment.py \
   --dataset              midterm \
   --root                 /scratch1/eibl/data/midterm/graphs \
   --graph_filename       retweet_graph_1p5m.pt \
