@@ -403,7 +403,7 @@ def maybe_attach_embeddings(
     if not embeddings_path:
         return x, feature_names, {"matched_users": 0, "embedding_dim": 0}
 
-    emb = torch.load(embeddings_path, map_location="cpu")
+    emb = torch.load(embeddings_path, map_location="cpu", weights_only=False)
     emb_mat = emb.get(embedding_pool)
     if emb_mat is None:
         raise KeyError(f"Embeddings file must contain '{embedding_pool}'")

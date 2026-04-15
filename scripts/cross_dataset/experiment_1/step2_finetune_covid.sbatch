@@ -1,0 +1,49 @@
+#!/bin/bash
+# Step 2: Fine-tune a midterm NM checkpoint on covid19_twitter NM.
+# Submit via step2_submit_finetune_covid.sh — do not submit directly.
+#
+# Required env vars:
+#   CKPT_PATH — path to midterm NM state_dict file
+#SBATCH --job-name=train2_midterm_nm_to_covid_nm
+#SBATCH --output=/scratch1/singhama/data/covid19_twitter/logs/%x_%j.out
+#SBATCH --error=/scratch1/singhama/data/covid19_twitter/logs/%x_%j.err
+#SBATCH --partition=gpu
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=64G
+#SBATCH --time=02:00:00
+
+set -euo pipefail
+
+: "${CKPT_PATH:?CKPT_PATH is required}"
+
+module purge || true
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate prodigy-env
+
+cd /home1/singhama/gfm/prodigy
+mkdir -p /scratch1/singhama/data/covid19_twitter/logs
+export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
+
+echo "=== Fine-tuning midterm NM checkpoint on covid19_twitter NM ==="
+python3 experiments/run_single_experiment.py \
+  --dataset              covid19_twitter \
+  --root                 /scratch1/singhama/data/covid19_twitter/graphs \
+  --graph_filename       retweet_graph_minilm_first100_hf03.pt \
+  --task_name            neighbor_matching \
+  --midterm_feature_subset emb_only \
+  --midterm_edge_view    temporal_history \
+  --input_dim            384 \
+  --original_features    True \
+  --n_way                2 \
+  --n_shots              3 \
+  --n_query              8 \
+  --val_len_cap          500 \
+  --test_len_cap         500 \
+  --eval_step            1000 \
+  --checkpoint_step      1000 \
+  --workers              4 \
+  --device               0 \
+  --seed                 0 \
+  --pretrained_model_run "$CKPT_PATH" \
+  --prefix               "train2_midterm_nm_to_covid_nm"

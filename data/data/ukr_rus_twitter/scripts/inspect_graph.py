@@ -15,6 +15,6 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    raw = torch.load(args.graph, map_location="cpu")
+    raw = torch.load(args.graph, map_location="cpu", weights_only=False)
     print(f"Loaded: {args.graph}")
     inspect_graph(raw, topk=args.topk)
