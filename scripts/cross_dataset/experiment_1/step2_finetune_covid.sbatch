@@ -19,7 +19,7 @@ set -euo pipefail
 
 module purge || true
 source "$(conda info --base)/etc/profile.d/conda.sh"
-conda activate prodigy-env
+conda activate prodigy
 
 cd /home1/singhama/gfm/prodigy
 mkdir -p /scratch1/singhama/data/covid19_twitter/logs
