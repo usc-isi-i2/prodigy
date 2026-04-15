@@ -24,7 +24,7 @@ cd /home1/singhama/gfm/prodigy
 mkdir -p /scratch1/singhama/data/covid19_twitter/logs
 
 echo "=== Fine-tuning midterm NM checkpoint on covid19_twitter NM ==="
-conda run -n prodigy --no-capture-output python3 experiments/run_single_experiment.py \
+conda run -p /home1/singhama/.conda/envs/prodigy-env --no-capture-output python3 experiments/run_single_experiment.py \
   --dataset              covid19_twitter \
   --root                 /scratch1/singhama/data/covid19_twitter/graphs \
   --graph_filename       retweet_graph_minilm_first100_hf03.pt \
