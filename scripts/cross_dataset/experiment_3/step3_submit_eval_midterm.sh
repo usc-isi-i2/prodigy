@@ -16,11 +16,11 @@ if [[ ! -f "$CKPT" ]]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 MODEL_LIST="${SCRIPT_DIR}/step3_midterm_model_list.txt"
 
 cat > "$MODEL_LIST" <<EOF
 # Exp3: covid NM -> ukr_rus NM -> eval midterm (NM + LP + PL)
+# Format: <model_name> <checkpoint_path>
 covid_nm_to_ukr_rus_nm ${CKPT}
 EOF
 
@@ -28,6 +28,6 @@ echo "Model list written to ${MODEL_LIST}:"
 cat "$MODEL_LIST"
 echo ""
 
-echo "Submitting [Exp3] midterm eval (NM + LP + PL, 10-shot)..."
-sbatch "${REPO_ROOT}/eval_midterm_model_list_all_tasks.sbatch" "$MODEL_LIST" "1,5,10"
+echo "Submitting [Exp3] midterm eval (NM + LP + PL, shots=1,5,10)..."
+sbatch "${SCRIPT_DIR}/eval_midterm_model_list_all_tasks.sbatch" "$MODEL_LIST" "1,5,10"
 echo "Done. Monitor with: squeue -u \$USER"
