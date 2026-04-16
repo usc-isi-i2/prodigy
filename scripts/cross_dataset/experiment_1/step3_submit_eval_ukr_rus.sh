@@ -39,6 +39,6 @@ echo ""
 echo "Submitting ukr_rus eval (NM + LP + PL, 10-shot)..."
 sbatch "${SCRIPT_DIR}/eval_ukr_rus_twitter_model_list_all_tasks.sbatch" \
   "$MODEL_LIST" \
-  "10"
+  "1,5,10"
 
 echo "Done. Monitor with: squeue -u \$USER"

@@ -16,7 +16,6 @@ if [[ ! -f "$CKPT" ]]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 MODEL_LIST="${SCRIPT_DIR}/step3_covid_model_list.txt"
 
 cat > "$MODEL_LIST" <<EOF
@@ -29,5 +28,5 @@ cat "$MODEL_LIST"
 echo ""
 
 echo "Submitting [Exp2] covid eval (NM + LP, 10-shot)..."
-sbatch "${REPO_ROOT}/eval_covid19_twitter_model_list_all_tasks.sbatch" "$MODEL_LIST" "10"
+sbatch "${SCRIPT_DIR}/eval_covid19_twitter_model_list_all_tasks.sbatch" "$MODEL_LIST" "1,5,10"
 echo "Done. Monitor with: squeue -u \$USER"

@@ -29,5 +29,5 @@ cat "$MODEL_LIST"
 echo ""
 
 echo "Submitting [Exp3] midterm eval (NM + LP + PL, 10-shot)..."
-sbatch "${REPO_ROOT}/eval_midterm_model_list_all_tasks.sbatch" "$MODEL_LIST" "10"
+sbatch "${REPO_ROOT}/eval_midterm_model_list_all_tasks.sbatch" "$MODEL_LIST" "1,5,10"
 echo "Done. Monitor with: squeue -u \$USER"
