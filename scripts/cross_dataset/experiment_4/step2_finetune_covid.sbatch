@@ -38,7 +38,7 @@ conda run -p /home1/singhama/.conda/envs/prodigy-env --no-capture-output python3
   --n_shots                1 \
   --n_query                3 \
   --zero_shot              False \
-  --epochs                 5 \
+  --epochs                 3 \
   --val_len_cap            500 \
   --test_len_cap           500 \
   --eval_step              1000 \
