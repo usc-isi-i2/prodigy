@@ -15,7 +15,6 @@ module load conda
 
 cd /home1/singhama/gfm/prodigy
 mkdir -p /home1/singhama/gfm/prodigy/logs
-export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
 if [[ $# -lt 1 || $# -gt 2 ]]; then
   echo "Usage: sbatch $0 <model_list.txt> [shots_csv]" >&2
