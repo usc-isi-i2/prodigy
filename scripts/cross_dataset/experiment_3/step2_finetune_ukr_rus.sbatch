@@ -27,7 +27,7 @@ echo "=== [Exp3] Fine-tuning covid NM checkpoint on ukr_rus_twitter NM ==="
 conda run -p /home1/singhama/.conda/envs/prodigy-env --no-capture-output python3 experiments/run_single_experiment.py \
   --dataset              ukr_rus_twitter \
   --root                 /scratch1/eibl/data/ukr_rus_twitter/graphs \
-  --graph_filename       retweet_graph_150files_minilm_hf03.pt \
+  --graph_filename       retweet_graph_1p5m_hf03_political_labels.pt \
   --task_name            neighbor_matching \
   --midterm_feature_subset emb_only \
   --midterm_edge_view    temporal_history \
