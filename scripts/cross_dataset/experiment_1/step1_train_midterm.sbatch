@@ -30,6 +30,7 @@ conda run -p /home1/singhama/.conda/envs/prodigy-env --no-capture-output python3
   --n_query              24 \
   --val_len_cap          500 \
   --test_len_cap         500 \
+  --epochs               3 \
   --eval_step            1000 \
   --checkpoint_step      1000 \
   --workers              8 \
