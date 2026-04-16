@@ -26,8 +26,8 @@ mkdir -p /scratch1/singhama/data/covid19_twitter/logs
 echo "=== Fine-tuning midterm NM checkpoint on covid19_twitter NM ==="
 conda run -p /home1/singhama/.conda/envs/prodigy-env --no-capture-output python3 experiments/run_single_experiment.py \
   --dataset              covid19_twitter \
-  --root                 /scratch1/singhama/data/covid19_twitter/graphs \
-  --graph_filename       retweet_graph_minilm_first100_hf03.pt \
+  --root                 /scratch1/eibl/data/covid19_twitter/graphs \
+  --graph_filename       retweet_graph_1p5m_hf03_labeled.pt \
   --task_name            neighbor_matching \
   --midterm_feature_subset emb_only \
   --midterm_edge_view    temporal_history \
