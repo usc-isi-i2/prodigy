@@ -21,7 +21,7 @@ module purge || true
 module load conda
 
 cd /home1/singhama/gfm/prodigy
-mkdir -p logs
+mkdir -p /home1/singhama/gfm/prodigy/logs
 
 echo "=== [Exp6] Fine-tuning covid LP checkpoint on ukr_rus_twitter LP ==="
 conda run -p /home1/singhama/.conda/envs/prodigy-env --no-capture-output python3 experiments/run_single_experiment.py \

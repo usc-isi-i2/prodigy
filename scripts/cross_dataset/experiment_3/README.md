@@ -36,4 +36,9 @@ bash scripts/cross_dataset/experiment_3/step1_submit_train_covid.sh
 # Step 2 — fine-tune on ukr_rus NM
 bash scripts/cross_dataset/experiment_3/step2_submit_finetune_ukr_rus.sh \
   /home1/singhama/gfm/prodigy/state/exp3_train1_covid_nm_16_04_2026_10_36_14/state_dict
+# checkpoint: state/exp3_train2_covid_nm_to_ukr_rus_nm_16_04_2026_13_39_26/checkpoint/state_dict_30000.ckpt
+
+# Step 3 — eval on midterm (NM + LP + PL, shots=1,5,10)
+bash scripts/cross_dataset/experiment_3/step3_submit_eval_midterm.sh \
+  /home1/singhama/gfm/prodigy/state/exp3_train2_covid_nm_to_ukr_rus_nm_16_04_2026_13_39_26/checkpoint/state_dict_30000.ckpt
 ```

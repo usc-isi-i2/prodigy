@@ -5,8 +5,8 @@
 # Required env vars:
 #   CKPT_PATH — path to midterm NM state_dict file
 #SBATCH --job-name=train2_midterm_nm_to_covid_nm
-#SBATCH --output=/scratch1/singhama/data/covid19_twitter/logs/%x_%j.out
-#SBATCH --error=/scratch1/singhama/data/covid19_twitter/logs/%x_%j.err
+#SBATCH --output=/home1/singhama/gfm/prodigy/logs/%x_%j.out
+#SBATCH --error=/home1/singhama/gfm/prodigy/logs/%x_%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
@@ -21,7 +21,7 @@ module purge || true
 module load conda
 
 cd /home1/singhama/gfm/prodigy
-mkdir -p /scratch1/singhama/data/covid19_twitter/logs
+mkdir -p /home1/singhama/gfm/prodigy/logs
 
 echo "=== Fine-tuning midterm NM checkpoint on covid19_twitter NM ==="
 conda run -p /home1/singhama/.conda/envs/prodigy-env --no-capture-output python3 experiments/run_single_experiment.py \
