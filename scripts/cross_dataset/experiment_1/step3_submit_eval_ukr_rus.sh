@@ -24,7 +24,6 @@ if [[ ! -f "$CKPT" ]]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 MODEL_LIST="${SCRIPT_DIR}/step3_ukr_rus_model_list.txt"
 
 cat > "$MODEL_LIST" <<EOF
@@ -37,10 +36,8 @@ echo "Model list written to ${MODEL_LIST}:"
 cat "$MODEL_LIST"
 echo ""
 
-mkdir -p /scratch1/eibl/data/ukr_rus_twitter/logs
-
 echo "Submitting ukr_rus eval (NM + LP + PL, 10-shot)..."
-sbatch "${REPO_ROOT}/eval_ukr_rus_twitter_model_list_all_tasks.sbatch" \
+sbatch "${SCRIPT_DIR}/eval_ukr_rus_twitter_model_list_all_tasks.sbatch" \
   "$MODEL_LIST" \
   "10"
 
