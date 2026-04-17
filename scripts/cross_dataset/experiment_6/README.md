@@ -7,7 +7,7 @@ Sequential transfer learning using **link prediction (LP)** as the training task
 | Step | Dataset | Task | Epochs |
 |------|---------|------|--------|
 | Pretrain | covid19_twitter | temporal_link_prediction | 3 |
-| Fine-tune | ukr_rus_twitter | temporal_link_prediction | 5 |
+| Fine-tune | ukr_rus_twitter | temporal_link_prediction | 3 |
 | Eval (held-out) | midterm | NM + LP + PL | shots: 1, 5, 10 |
 
 ## Rationale
@@ -71,3 +71,20 @@ bash step3_submit_eval_midterm.sh <step2_ckpt>
 ```
 
 Results are logged to W&B project `graph-clip`.
+
+## Commands Run
+
+```bash
+# Step 1 — pretrain on covid LP
+bash scripts/cross_dataset/experiment_6/step1_submit_train_covid.sh
+# checkpoint: state/exp6_train1_covid_lp_16_04_2026_16_23_18/state_dict
+
+# Step 2 — fine-tune on ukr_rus LP
+bash scripts/cross_dataset/experiment_6/step2_submit_finetune_ukr_rus.sh \
+  /home1/singhama/gfm/prodigy/state/exp6_train1_covid_lp_16_04_2026_16_23_18/state_dict
+# checkpoint: state/exp6_train2_covid_lp_to_ukr_rus_lp_16_04_2026_17_24_43/state_dict
+
+# Step 3 — eval on midterm (NM + LP + PL, shots=1,5,10)
+bash scripts/cross_dataset/experiment_6/step3_submit_eval_midterm.sh \
+  /home1/singhama/gfm/prodigy/state/exp6_train2_covid_lp_to_ukr_rus_lp_16_04_2026_17_24_43/state_dict
+```
