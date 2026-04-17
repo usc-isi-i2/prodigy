@@ -1,29 +1,32 @@
-# Experiment 3: Sequential Cross-Dataset Training — Eval on midterm
+# Experiment 3: covid NM → ukr_rus NM → eval midterm
 
 ## Design
 
 ```
-Train: covid19_twitter (NM) → fine-tune: ukr_rus_twitter (NM) → eval: midterm (NM + LP + PL)
+Pretrain: covid19_twitter (NM) → Fine-tune: ukr_rus_twitter (NM) → Eval: midterm (NM + LP + PL)
 ```
 
-Part of a leave-one-out sweep across all three datasets:
-- Experiment 1: train midterm+covid, eval ukr_rus
-- Experiment 2: train midterm+ukr_rus, eval covid
-- **Experiment 3: train covid+ukr_rus, eval midterm**
+Leave-one-out NM block. Held-out dataset: midterm.
+
+| | Exp 1 | Exp 2 | Exp 3 |
+|-|-------|-------|-------|
+| Pretrain | midterm NM | midterm NM | covid NM |
+| Fine-tune | covid NM | ukr_rus NM | ukr_rus NM |
+| Eval | ukr_rus | covid | midterm |
 
 ## Pipeline
 
 ```bash
 # Step 1 — pretrain on covid NM
 bash step1_submit_train_covid.sh
-# → state/exp3_train1_covid_nm_*/checkpoint/
+# → state/exp3_train1_covid_nm_*/state_dict
 
 # Step 2 — fine-tune on ukr_rus NM
-bash step2_submit_finetune_ukr_rus.sh state/exp3_train1_covid_nm_<run>/checkpoint/state_dict_<best_step>.ckpt
-# → state/exp3_train2_covid_nm_to_ukr_rus_nm_*/checkpoint/
+bash step2_submit_finetune_ukr_rus.sh state/exp3_train1_covid_nm_<run>/state_dict
+# → state/exp3_train2_covid_nm_to_ukr_rus_nm_*/state_dict
 
 # Step 3 — eval on midterm (NM + LP + PL, shots=1,5,10)
-bash step3_submit_eval_midterm.sh state/exp3_train2_covid_nm_to_ukr_rus_nm_<run>/checkpoint/state_dict_<best_step>.ckpt
+bash step3_submit_eval_midterm.sh state/exp3_train2_covid_nm_to_ukr_rus_nm_<run>/state_dict
 ```
 
 ## Commands Run

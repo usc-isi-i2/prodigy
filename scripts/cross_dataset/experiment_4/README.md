@@ -1,32 +1,32 @@
-# Experiment 4: Sequential LP Training — Eval on ukr_rus_twitter
+# Experiment 4: midterm LP → covid LP → eval ukr_rus
 
 ## Design
 
 ```
-Train: midterm (LP) → fine-tune: covid19_twitter (LP) → eval: ukr_rus_twitter (NM + LP + PL)
+Pretrain: midterm (LP) → Fine-tune: covid19_twitter (LP) → Eval: ukr_rus_twitter (NM + LP + PL)
 ```
 
-LP counterpart to Experiment 1 (NM). Tests whether LP pretraining transfers to NM and PL tasks.
+Leave-one-out LP block. Held-out dataset: ukr_rus_twitter.
 
-| | Exp 1 | Exp 4 |
-|-|-------|-------|
-| Train task | NM | LP |
-| Train datasets | midterm + covid | midterm + covid |
-| Eval dataset | ukr_rus | ukr_rus |
+| | Exp 4 | Exp 5 | Exp 6 |
+|-|-------|-------|-------|
+| Pretrain | midterm LP | midterm LP | covid LP |
+| Fine-tune | covid LP | ukr_rus LP | ukr_rus LP |
+| Eval | ukr_rus | covid | midterm |
 
 ## Pipeline
 
 ```bash
 # Step 1 — pretrain on midterm LP
 bash step1_submit_train_midterm.sh
-# → state/exp4_train1_midterm_lp_*/checkpoint/
+# → state/exp4_train1_midterm_lp_*/state_dict
 
 # Step 2 — fine-tune on covid LP
-bash step2_submit_finetune_covid.sh state/exp4_train1_midterm_lp_<run>/checkpoint/state_dict_<best>.ckpt
-# → state/exp4_train2_midterm_lp_to_covid_lp_*/checkpoint/
+bash step2_submit_finetune_covid.sh state/exp4_train1_midterm_lp_<run>/state_dict
+# → state/exp4_train2_midterm_lp_to_covid_lp_*/state_dict
 
-# Step 3 — eval on ukr_rus (NM + LP + PL, 1,5,10-shot)
-bash step3_submit_eval_ukr_rus.sh state/exp4_train2_midterm_lp_to_covid_lp_<run>/checkpoint/state_dict_<best>.ckpt
+# Step 3 — eval on ukr_rus (NM + LP + PL, shots=1,5,10)
+bash step3_submit_eval_ukr_rus.sh state/exp4_train2_midterm_lp_to_covid_lp_<run>/state_dict
 ```
 
 ## Commands Run

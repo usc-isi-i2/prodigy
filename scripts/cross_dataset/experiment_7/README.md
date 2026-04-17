@@ -1,4 +1,4 @@
-# Experiment 7: Cross-Task Sequential Training — midterm NM → covid LP → eval ukr_rus
+# Experiment 7: midterm NM → covid LP → eval ukr_rus
 
 ## Design
 
@@ -6,15 +6,13 @@
 Pretrain: midterm (NM) → Fine-tune: covid19_twitter (LP) → Eval: ukr_rus_twitter (NM + LP + PL)
 ```
 
-Cross-task counterpart to Experiments 1 and 4. Tests whether switching task during fine-tuning
-helps or hurts compared to staying on the same task.
+Cross-task block. Held-out dataset: ukr_rus_twitter.
 
-| | Exp 1 | Exp 4 | **Exp 7** |
-|-|-------|-------|-----------|
-| Pretrain task | NM | LP | NM |
-| Fine-tune task | NM | LP | **LP** |
-| Train datasets | midterm + covid | midterm + covid | midterm + covid |
-| Eval dataset | ukr_rus | ukr_rus | ukr_rus |
+| | Exp 1 | Exp 4 | Exp 7 |
+|-|-------|-------|-------|
+| Pretrain | midterm NM | midterm LP | midterm NM |
+| Fine-tune | covid NM | covid LP | covid LP |
+| Eval | ukr_rus | ukr_rus | ukr_rus |
 
 ## Pipeline
 
@@ -29,15 +27,6 @@ bash step2_submit_finetune_covid.sh <midterm_nm_ckpt>
 # Step 3 — eval on ukr_rus (NM + LP + PL, shots=1,5,10)
 bash step3_submit_eval_ukr_rus.sh state/exp7_train2_midterm_nm_to_covid_lp_<run>/state_dict
 ```
-
-## Files
-
-| File | Purpose |
-|------|---------|
-| `step2_finetune_covid.sbatch` | Fine-tune on covid19_twitter LP (requires `CKPT_PATH`) |
-| `step2_submit_finetune_covid.sh` | Submit step 2 with checkpoint path |
-| `eval_ukr_rus_twitter_model_list_all_tasks.sbatch` | Eval sbatch: runs NM + LP + PL on ukr_rus |
-| `step3_submit_eval_ukr_rus.sh` | Build model list and submit eval job |
 
 ## Commands Run
 
