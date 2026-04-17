@@ -18,14 +18,14 @@ Cross-task block. Held-out dataset: ukr_rus_twitter.
 
 ```bash
 # Step 1 — skipped, reuse midterm NM checkpoint from Experiment 1
-# checkpoint: state/train1_midterm_nm_15_04_2026_16_00_44/checkpoint/state_dict_8000.ckpt
+# checkpoint: /home1/singhama/gfm/prodigy/state/train1_midterm_nm_15_04_2026_16_00_44/checkpoint/state_dict_8000.ckpt
 
 # Step 2 — fine-tune on covid LP
 bash step2_submit_finetune_covid.sh <midterm_nm_ckpt>
-# → state/exp7_train2_midterm_nm_to_covid_lp_*/state_dict
+# → /home1/singhama/gfm/prodigy/state/exp7_train2_midterm_nm_to_covid_lp_*/state_dict
 
 # Step 3 — eval on ukr_rus (NM + LP + PL, shots=1,5,10)
-bash step3_submit_eval_ukr_rus.sh state/exp7_train2_midterm_nm_to_covid_lp_<run>/state_dict
+bash step3_submit_eval_ukr_rus.sh /home1/singhama/gfm/prodigy/state/exp7_train2_midterm_nm_to_covid_lp_<run>/state_dict
 ```
 
 ## Commands Run
@@ -33,5 +33,5 @@ bash step3_submit_eval_ukr_rus.sh state/exp7_train2_midterm_nm_to_covid_lp_<run>
 ```bash
 # Step 2 — fine-tune on covid LP
 bash scripts/cross_dataset/experiment_7/step2_submit_finetune_covid.sh \
-  state/train1_midterm_nm_15_04_2026_16_00_44/checkpoint/state_dict_8000.ckpt
+  /home1/singhama/gfm/prodigy/state/train1_midterm_nm_15_04_2026_16_00_44/checkpoint/state_dict_8000.ckpt
 ```
