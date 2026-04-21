@@ -47,6 +47,7 @@ COMMON_ARGS=(
   --eval_test_before_train True
   --eval_val_before_train True
   --save_roc_curve True
+  --eval_random_query True
 )
 
 run_eval() {

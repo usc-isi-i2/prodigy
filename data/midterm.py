@@ -543,6 +543,7 @@ def midterm_task(
         split_labels: bool = True,
         train_cap: Optional[int] = None,
         linear_probe: bool = False,
+        random_query: bool = False,
 ) -> MulticlassTask:
     if label_set is not None:
         chosen_label_set = set(label_set)
@@ -578,7 +579,8 @@ def midterm_task(
                 disabled_idx = idx[train_cap:]
                 train_label[disabled_idx] = -1 - i
 
-    return MulticlassTask(labels, chosen_label_set, train_label, linear_probe)
+    return MulticlassTask(labels, chosen_label_set, train_label, linear_probe,
+                          random_query=random_query and split in {"val", "test"})
 
 
 def get_midterm_dataloader(
@@ -649,6 +651,7 @@ def get_midterm_dataloader(
             split_labels=False,
             train_cap=train_cap,
             linear_probe=linear_probe,
+            random_query=kwargs.get("eval_random_query", False),
         )
         task.original_graph_labels = graph.y.numpy().copy()
         task.split_masked_labels = labels.copy()
