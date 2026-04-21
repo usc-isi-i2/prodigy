@@ -23,7 +23,6 @@ python3 experiments/run_single_experiment.py \
   --graph_filename retweet_graph.pt \
   --task_name classification \
   --midterm_feature_subset emb_only \
-  --midterm_label_downsample 50:50 \
   --input_dim 384 \
   --n_way 2 \
   --n_shots 3 \
