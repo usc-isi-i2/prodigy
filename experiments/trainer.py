@@ -314,6 +314,11 @@ class TrainerFS():
             from data.covid_political import get_covid_political_dataloader
             kwargs["root"] = self.parameter["root"]
             get_dataloader = get_covid_political_dataloader
+        elif dataset_name in {"covid_mf", "election2020", "hate_bots05", "hate_bots08",
+                               "ukr_rus_hate", "ukr_rus_suspended"}:
+            from data import social_llm_dataset as _sld
+            kwargs["root"] = self.parameter["root"]
+            get_dataloader = getattr(_sld, f"get_{dataset_name}_dataloader")
         elif dataset_name == "instagram_mention":
             from data.instagram_mention import get_instagram_mention_dataloader
             kwargs["root"] = self.parameter["root"]
