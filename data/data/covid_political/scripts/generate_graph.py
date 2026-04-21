@@ -167,7 +167,7 @@ def main():
     G = load_graph(args.graph)
 
     print(f"Loading user_data from {args.csv}")
-    user_data = pd.read_csv(args.csv, index_col=0)
+    user_data = pd.read_csv(args.csv)
     print(f"user_data shape: {user_data.shape}")
 
     n_nodes = len(user_data)
