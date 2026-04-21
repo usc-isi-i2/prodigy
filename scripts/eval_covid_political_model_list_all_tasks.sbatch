@@ -1,12 +1,11 @@
 #!/bin/bash
 #SBATCH --job-name=eval_covid_political_all
 #SBATCH --output=/scratch1/eibl/logs/covid_political/%x_%j.out
-#SBATCH --error=/scratch1/eibl/logs/covid_political/%x_%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --time=01:00:00
+#SBATCH --time=02:00:00
 
 set -euo pipefail
 
@@ -25,7 +24,7 @@ if [[ $# -lt 1 || $# -gt 2 ]]; then
 fi
 
 MODEL_LIST="$1"
-SHOTS_CSV="${2:-0,1,3,10}"
+SHOTS_CSV="${2:-0,1,10}"
 if [[ ! -f "$MODEL_LIST" ]]; then
   echo "Model list not found: $MODEL_LIST" >&2
   exit 1
@@ -69,8 +68,8 @@ run_eval() {
         --n_query 12
         --zero_shot "$([[ "$shots" == "0" ]] && echo True || echo False)"
         --dataset_len_cap 5000
-        --val_len_cap 1000
-        --test_len_cap 1000
+        --val_len_cap 500
+        --test_len_cap 500
         --epochs 12
         --eval_step 2000
         --checkpoint_step 2000
@@ -88,8 +87,8 @@ run_eval() {
         --n_query 12
         --zero_shot "$([[ "$shots" == "0" ]] && echo True || echo False)"
         --dataset_len_cap 2000
-        --val_len_cap 1000
-        --test_len_cap 1000
+        --val_len_cap 500
+        --test_len_cap 500
         --epochs 12
         --eval_step 2000
         --checkpoint_step 2000
