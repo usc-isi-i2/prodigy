@@ -51,7 +51,7 @@ def main():
     command = " ".join(shlex.quote(x) for x in [sys.executable, *sys.argv])
 
     print(f"Loading user_data from {args.csv}")
-    user_data = pd.read_csv(args.csv, index_col=0)
+    user_data = pd.read_csv(args.csv)
     print(f"Loaded {len(user_data):,} users")
 
     out_dir = os.path.dirname(args.out)
