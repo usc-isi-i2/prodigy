@@ -234,6 +234,7 @@ def get_ukr_rus_twitter_dataloader(
             split_labels=False,
             train_cap=train_cap,
             linear_probe=linear_probe,
+            random_query=kwargs.get("eval_random_query", False),
         )
         task.original_graph_labels = graph.y.numpy().copy()
         task.split_masked_labels = labels.copy()

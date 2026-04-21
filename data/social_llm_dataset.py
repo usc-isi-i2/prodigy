@@ -151,6 +151,7 @@ def _get_dataloader(dataset_name: str, dataset: SubgraphDataset, split: str,
             labels=labels, num_classes=num_classes, split=split,
             label_set=label_set, split_labels=False,
             train_cap=train_cap, linear_probe=linear_probe,
+            random_query=kwargs.get("eval_random_query", False),
         )
         task.original_graph_labels = graph.y.numpy().copy()
         task.split_masked_labels = labels.copy()

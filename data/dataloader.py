@@ -108,20 +108,36 @@ class MultiTaskSplitBatch(TaskBase):
         return labels
 
 class MulticlassTask(TaskBase):
-    def __init__(self, labels, label_set, train_label=None, linear_probe=False):
+    def __init__(self, labels, label_set, train_label=None, linear_probe=False, random_query=False):
         """Multi-class classification
         `labels` is a numpy array
         `label_set` is the set of labels we interested in
+        `random_query`: if True, allocate query slots proportionally to class frequency
+                        instead of equal n_query per class (use for eval to reflect
+                        real-world class distribution in accumulated metrics).
         """
         self.labels = labels
         self.label_set = label_set
         self.train_label = train_label
         self.linear_probe = linear_probe
+        self.random_query = random_query
         self.label2idx = {label: np.where(labels == label)[0] for label in label_set}
         if train_label is not None:
             self.train_label2idx = {label: np.where(train_label == label)[0] for label in label_set}
-            print(self.train_label2idx )
+            print(self.train_label2idx)
+        if random_query:
+            total = sum(len(v) for v in self.label2idx.values())
+            self.class_weights = {l: len(self.label2idx[l]) / total for l in label_set}
 
+    def _proportional_query_counts(self, labels, num_query):
+        """Allocate total query slots (num_query * n_way) proportionally to class frequency."""
+        total = num_query * len(labels)
+        raw = [max(1, round(total * self.class_weights.get(l, 1.0 / len(labels)))) for l in labels]
+        diff = total - sum(raw)
+        for i in range(abs(diff)):
+            raw[i % len(raw)] += 1 if diff > 0 else -1
+            raw[i % len(raw)] = max(1, raw[i % len(raw)])
+        return {l: c for l, c in zip(labels, raw)}
 
     def get_label(self, graph_id):
         return self.labels[graph_id].item()
@@ -134,7 +150,15 @@ class MulticlassTask(TaskBase):
             labels = rng.sample(self.label_set, num_label)
 
         task = {}
-        if self.train_label is None:
+        if self.random_query:
+            query_counts = self._proportional_query_counts(labels, num_query)
+            for label in labels:
+                members = self.label2idx[label]
+                n_q = query_counts[label]
+                n_total = num_shot + n_q
+                sample_func = rng.choices if members.shape[0] < n_total else rng.sample
+                task[label] = members[sample_func(range(members.shape[0]), k=n_total)].tolist()
+        elif self.train_label is None:
             for label in labels:
                 members = self.label2idx[label]
                 if members.shape[0] < num_member:
@@ -146,8 +170,6 @@ class MulticlassTask(TaskBase):
             for label in labels:
                 members = self.label2idx[label]
                 train_members = self.train_label2idx[label]
-                #if members.shape[0] == 0:
-                #    continue
                 if members.shape[0] < num_query:
                     sample_func = rng.choices
                 else:

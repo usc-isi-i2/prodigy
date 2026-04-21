@@ -197,6 +197,16 @@ def get_params():
         ),
     )
     args.add_argument(
+        "--eval_random_query",
+        default=False,
+        type=str2bool,
+        help=(
+            "If True, allocate query slots in val/test episodes proportionally to class frequency "
+            "instead of equal n_query per class. Produces accumulated metrics that reflect the "
+            "real class distribution rather than a balanced one."
+        ),
+    )
+    args.add_argument(
         "--midterm_edge_view",
         default="default",
         type=str,
