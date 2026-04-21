@@ -35,7 +35,7 @@ IFS=',' read -r -a SHOT_LIST <<< "$SHOTS_CSV"
 
 COMMON_ARGS=(
   --dataset covid_political
-  --root /home1/eibl/gfm/prodigy/data/data/covid_political/graphs
+  --root /scratch1/eibl/data/covid_political/graphs
   --graph_filename retweet_graph.pt
   --midterm_feature_subset emb_only
   --input_dim 384

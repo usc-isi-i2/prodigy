@@ -18,7 +18,7 @@ export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
 python3 experiments/run_single_experiment.py \
   --dataset ukr_rus_suspended \
-  --root /home1/eibl/gfm/prodigy/data/data/ukr_rus_suspended/graphs \
+  --root /scratch1/eibl/data/ukr_rus_suspended/graphs \
   --graph_filename retweet_graph.pt \
   --task_name neighbor_matching \
   --midterm_feature_subset emb_only \
@@ -30,6 +30,8 @@ python3 experiments/run_single_experiment.py \
   --original_features True \
   --val_len_cap 500 \
   --test_len_cap 500 \
+  --dataset_len_cap 2000 \
+  --epochs 20 \
   --eval_step 1000 \
   --workers 4 \
   --device 0 \

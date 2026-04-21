@@ -13,7 +13,7 @@ source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate prodigy
 cd /home1/eibl/gfm/prodigy
 mkdir -p /scratch1/eibl/logs/ukr_rus_suspended
-mkdir -p data/data/ukr_rus_suspended/graphs
+mkdir -p /scratch1/eibl/data/ukr_rus_suspended/graphs
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
 python -u data/data/social_llm/scripts/generate_graph.py \
@@ -21,4 +21,4 @@ python -u data/data/social_llm/scripts/generate_graph.py \
   --csv   /project2/emiliofe_74/julie/social_llm_data/ukr_rus_suspended/user_data.csv \
   --embeddings /scratch1/eibl/data/ukr_rus_suspended/embeddings/user_embeddings_minilm.pt \
   --label_col label_suspended \
-  --out data/data/ukr_rus_suspended/graphs/retweet_graph.pt
+  --out /scratch1/eibl/data/ukr_rus_suspended/graphs/retweet_graph.pt

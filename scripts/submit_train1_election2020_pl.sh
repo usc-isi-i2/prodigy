@@ -18,7 +18,7 @@ export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
 python3 experiments/run_single_experiment.py \
   --dataset election2020 \
-  --root /home1/eibl/gfm/prodigy/data/data/election2020/graphs \
+  --root /scratch1/eibl/data/election2020/graphs \
   --graph_filename retweet_graph.pt \
   --task_name classification \
   --midterm_feature_subset emb_only \
@@ -30,6 +30,8 @@ python3 experiments/run_single_experiment.py \
   --original_features True \
   --val_len_cap 500 \
   --test_len_cap 500 \
+  --dataset_len_cap 2000 \
+  --epochs 20 \
   --eval_step 1000 \
   --workers 4 \
   --device 0 \
