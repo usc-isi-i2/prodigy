@@ -79,6 +79,7 @@ def main():
         show_progress_bar=True,
         convert_to_numpy=True,
         normalize_embeddings=True,
+        tqdm_kwargs={"file": sys.stdout, "dynamic_ncols": True},
     ).astype(np.float32)
 
     user_ids = user_data.index.to_numpy(dtype=np.int64)
