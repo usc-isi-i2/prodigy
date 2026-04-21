@@ -26,7 +26,7 @@ IFS=',' read -r -a SHOT_LIST <<< "$SHOTS_CSV"
 
 COMMON_ARGS=(
   --dataset election2020
-  --root /home1/eibl/gfm/prodigy/data/data/election2020/graphs
+  --root /scratch1/eibl/data/election2020/graphs
   --graph_filename retweet_graph.pt
   --midterm_feature_subset emb_only
   --input_dim 384

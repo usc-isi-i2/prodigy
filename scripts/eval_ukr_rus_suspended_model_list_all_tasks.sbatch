@@ -26,7 +26,7 @@ IFS=',' read -r -a SHOT_LIST <<< "$SHOTS_CSV"
 
 COMMON_ARGS=(
   --dataset ukr_rus_suspended
-  --root /home1/eibl/gfm/prodigy/data/data/ukr_rus_suspended/graphs
+  --root /scratch1/eibl/data/ukr_rus_suspended/graphs
   --graph_filename retweet_graph.pt
   --midterm_feature_subset emb_only
   --input_dim 384

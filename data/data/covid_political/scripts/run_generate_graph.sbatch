@@ -16,7 +16,7 @@ conda activate prodigy
 cd /home1/eibl/gfm/prodigy
 
 mkdir -p /scratch1/eibl/data/social_llm_covid/logs
-mkdir -p data/data/covid_political/graphs
+mkdir -p /scratch1/eibl/data/covid_political/graphs
 
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
@@ -24,4 +24,4 @@ python -u data/data/covid_political/scripts/generate_graph.py \
   --graph /project2/emiliofe_74/julie/social_llm_data/covid/graph.pickle \
   --csv /project2/emiliofe_74/julie/social_llm_data/covid/user_data.csv \
   --embeddings /scratch1/eibl/data/covid_political/embeddings/user_embeddings_minilm.pt \
-  --out data/data/covid_political/graphs/retweet_graph.pt
+  --out /scratch1/eibl/data/covid_political/graphs/retweet_graph.pt
