@@ -310,6 +310,10 @@ class TrainerFS():
             from data.covid19_twitter import get_covid19_twitter_dataloader
             kwargs["root"] = self.parameter["root"]
             get_dataloader = get_covid19_twitter_dataloader
+        elif dataset_name == "covid_political":
+            from data.covid_political import get_covid_political_dataloader
+            kwargs["root"] = self.parameter["root"]
+            get_dataloader = get_covid_political_dataloader
         elif dataset_name == "instagram_mention":
             from data.instagram_mention import get_instagram_mention_dataloader
             kwargs["root"] = self.parameter["root"]
