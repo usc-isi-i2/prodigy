@@ -164,6 +164,7 @@ def get_params():
 
     args.add_argument("-prefix", "--prefix", default="exp1", type=str) # prefix for the experiment name for wandb
     args.add_argument("-timestamp", "--timestamp", default=None, type=str)
+    args.add_argument("--tags", default=[], nargs="+", type=str, help="Tags to attach to the wandb run.")
 
     args.add_argument("-log_dir", "--log_dir", default="log", type=str)
     args.add_argument("-state_dir", "--state_dir", default="state", type=str)

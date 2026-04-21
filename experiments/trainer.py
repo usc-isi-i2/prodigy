@@ -32,7 +32,7 @@ def _log(msg):
 
 class TrainerFS():
     def __init__(self, dataset, parameter):
-        wandb.init(project="graph-clip", name=parameter["exp_name"])
+        wandb.init(project="graph-clip", name=parameter["exp_name"], tags=parameter.get("tags") or None)
         #wandb.run.log_code(".")
         wandb.run.summary["wandb_url"] = wandb.run.url
         _log("Initializing trainer")
