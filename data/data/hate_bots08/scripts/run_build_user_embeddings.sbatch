@@ -1,7 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=hate_bots08-emb
 #SBATCH --output=/scratch1/eibl/logs/hate_bots08/emb-%j.out
-#SBATCH --error=/scratch1/eibl/logs/hate_bots08/emb-%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8

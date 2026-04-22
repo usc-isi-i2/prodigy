@@ -1,7 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=election2020-emb
 #SBATCH --output=/scratch1/eibl/logs/election2020/emb-%j.out
-#SBATCH --error=/scratch1/eibl/logs/election2020/emb-%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8

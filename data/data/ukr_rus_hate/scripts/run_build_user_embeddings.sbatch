@@ -1,7 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=ukr_rus_hate-emb
 #SBATCH --output=/scratch1/eibl/logs/ukr_rus_hate/emb-%j.out
-#SBATCH --error=/scratch1/eibl/logs/ukr_rus_hate/emb-%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
