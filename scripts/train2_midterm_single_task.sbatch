@@ -1,7 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=train2_midterm
 #SBATCH --output=/home1/eibl/gfm/prodigy/logs/%x_%j.out
-#SBATCH --error=/home1/eibl/gfm/prodigy/logs/%x_%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
