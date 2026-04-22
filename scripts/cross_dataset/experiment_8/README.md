@@ -3,10 +3,10 @@
 ## Design
 
 ```
-Pretrain: midterm (NM) → Fine-tune: ukr_rus_twitter (LP) → Eval: covid19_twitter (NM + LP)
+Pretrain: midterm (NM) → Fine-tune: ukr_rus_twitter (LP) → Eval: covid19_twitter (NM + LP + PL)
 ```
 
-Cross-task block. Held-out dataset: covid19_twitter (no PL task).
+Cross-task block. Held-out dataset: covid19_twitter.
 
 | | Exp 2 | Exp 5 | Exp 8 |
 |-|-------|-------|-------|
@@ -24,7 +24,7 @@ Cross-task block. Held-out dataset: covid19_twitter (no PL task).
 bash step2_submit_finetune_ukr_rus.sh <midterm_nm_ckpt>
 # → /home1/singhama/gfm/prodigy/state/exp8_train2_midterm_nm_to_ukr_rus_lp_*/state_dict
 
-# Step 3 — eval on covid (NM + LP, shots=1,5,10)
+# Step 3 — eval on covid (NM + LP + PL, shots=1,5,10)
 bash step3_submit_eval_covid.sh /home1/singhama/gfm/prodigy/state/exp8_train2_midterm_nm_to_ukr_rus_lp_<run>/state_dict
 ```
 
