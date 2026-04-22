@@ -34,4 +34,8 @@ bash step3_submit_eval_midterm.sh /home1/singhama/gfm/prodigy/state/exp9_train2_
 # Step 2 — fine-tune on ukr_rus LP
 bash scripts/cross_dataset/experiment_9/step2_submit_finetune_ukr_rus.sh \
   /home1/singhama/gfm/prodigy/state/exp3_train1_covid_nm_16_04_2026_10_36_14/state_dict
+
+# Step 3 — eval on midterm (NM + LP + PL, shots=1,5,10)
+bash scripts/cross_dataset/experiment_9/step3_submit_eval_midterm.sh \
+  /home1/singhama/gfm/prodigy/state/exp9_train2_covid_nm_to_ukr_rus_lp_17_04_2026_16_36_23/state_dict
 ```

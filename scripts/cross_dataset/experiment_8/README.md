@@ -34,4 +34,8 @@ bash step3_submit_eval_covid.sh /home1/singhama/gfm/prodigy/state/exp8_train2_mi
 # Step 2 — fine-tune on ukr_rus LP
 bash scripts/cross_dataset/experiment_8/step2_submit_finetune_ukr_rus.sh \
   /home1/singhama/gfm/prodigy/state/train1_midterm_nm_15_04_2026_16_00_44/checkpoint/state_dict_8000.ckpt
+
+# Step 3 — eval on covid (NM + LP + PL, shots=1,5,10)
+bash scripts/cross_dataset/experiment_8/step3_submit_eval_covid.sh \
+  /home1/singhama/gfm/prodigy/state/exp8_train2_midterm_nm_to_ukr_rus_lp_17_04_2026_16_36_31/state_dict
 ```
