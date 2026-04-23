@@ -1,7 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=covid_mf-emb
 #SBATCH --output=/scratch1/eibl/logs/covid_mf/emb-%j.out
-#SBATCH --error=/scratch1/eibl/logs/covid_mf/emb-%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8

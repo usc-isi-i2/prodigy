@@ -1,7 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=hate_bots05-graph
 #SBATCH --output=/scratch1/eibl/logs/hate_bots05/graph-%j.out
-#SBATCH --error=/scratch1/eibl/logs/hate_bots05/graph-%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4

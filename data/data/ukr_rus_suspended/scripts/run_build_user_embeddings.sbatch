@@ -1,7 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=ukr_rus_suspended-emb
 #SBATCH --output=/scratch1/eibl/logs/ukr_rus_suspended/emb-%j.out
-#SBATCH --error=/scratch1/eibl/logs/ukr_rus_suspended/emb-%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8

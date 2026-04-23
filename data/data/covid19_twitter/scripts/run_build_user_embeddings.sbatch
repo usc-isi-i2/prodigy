@@ -1,7 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=covid19-twitter-emb
 #SBATCH --output=/scratch1/eibl/data/covid19_twitter/logs/covid19-twitter-emb-%j.out
-#SBATCH --error=/scratch1/eibl/data/covid19_twitter/logs/covid19-twitter-emb-%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8

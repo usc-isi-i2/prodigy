@@ -1,7 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=ukr-twitter-emb
 #SBATCH --output=/scratch1/eibl/data/ukr_rus_twitter/logs/ukr-twitter-emb-%j.out
-#SBATCH --error=/scratch1/eibl/data/ukr_rus_twitter/logs/ukr-twitter-emb-%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8

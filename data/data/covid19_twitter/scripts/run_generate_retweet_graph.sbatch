@@ -1,7 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=covid19-retweet
 #SBATCH --output=/scratch1/eibl/data/covid19_twitter/logs/covid19-retweet-%j.out
-#SBATCH --error=/scratch1/eibl/data/covid19_twitter/logs/covid19-retweet-%j.err
 #SBATCH --partition=main
 #SBATCH --time=02:00:00
 #SBATCH --cpus-per-task=16
