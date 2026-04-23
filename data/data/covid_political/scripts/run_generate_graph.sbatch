@@ -1,7 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=covid-pol-graph
 #SBATCH --output=/scratch1/eibl/data/social_llm_covid/logs/graph-%j.out
-#SBATCH --error=/scratch1/eibl/data/social_llm_covid/logs/graph-%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4

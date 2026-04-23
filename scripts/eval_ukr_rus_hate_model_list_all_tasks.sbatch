@@ -1,7 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=eval_ukr_rus_hate_all
 #SBATCH --output=/scratch1/eibl/logs/ukr_rus_hate/%x_%j.out
-#SBATCH --error=/scratch1/eibl/logs/ukr_rus_hate/%x_%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
