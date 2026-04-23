@@ -37,5 +37,5 @@ bash scripts/cross_dataset/experiment_10/step2_submit_finetune_covid.sh \
 
 # Step 3 — eval on ukr_rus (NM + LP + PL, shots=1,5,10)
 bash scripts/cross_dataset/experiment_10/step3_submit_eval_ukr_rus.sh \
-  /home1/singhama/gfm/prodigy/state/exp10_train2_midterm_lp_to_covid_nm_<run>/state_dict
+  /home1/singhama/gfm/prodigy/state/exp10_train2_midterm_lp_to_covid_nm_22_04_2026_13_24_06/state_dict
 ```
