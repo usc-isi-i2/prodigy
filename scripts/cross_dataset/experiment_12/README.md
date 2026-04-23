@@ -22,7 +22,7 @@ Cross-task block (LP→NM). Held-out dataset: midterm.
 
 # Step 2 — fine-tune on ukr_rus NM
 bash step2_submit_finetune_ukr_rus.sh <covid_lp_ckpt>
-# → /home1/singhama/gfm/prodigy/state/exp12_train2_covid_lp_to_ukr_rus_nm_*/state_dict
+# → /home1/singhama/gfm/prodigy/state/exp12_train2_covid_lp_to_ukr_rus_nm_22_04_2026_14_22_38/state_dict
 
 # Step 3 — eval on midterm (NM + LP + PL, shots=1,5,10)
 bash step3_submit_eval_midterm.sh /home1/singhama/gfm/prodigy/state/exp12_train2_covid_lp_to_ukr_rus_nm_<run>/state_dict
@@ -37,5 +37,5 @@ bash scripts/cross_dataset/experiment_12/step2_submit_finetune_ukr_rus.sh \
 
 # Step 3 — eval on midterm (NM + LP + PL, shots=1,5,10)
 bash scripts/cross_dataset/experiment_12/step3_submit_eval_midterm.sh \
-  /home1/singhama/gfm/prodigy/state/exp12_train2_covid_lp_to_ukr_rus_nm_<run>/state_dict
+  /home1/singhama/gfm/prodigy/state/exp12_train2_covid_lp_to_ukr_rus_nm_22_04_2026_14_22_38/state_dict
 ```
