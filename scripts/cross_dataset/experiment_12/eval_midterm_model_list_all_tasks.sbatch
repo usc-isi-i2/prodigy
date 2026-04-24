@@ -14,7 +14,8 @@ module purge || true
 module load conda
 
 cd /home1/singhama/gfm/prodigy
-mkdir -p /home1/singhama/gfm/prodigy/logs
+source scripts/cross_dataset/env.sh
+mkdir -p "$LOGS_DIR"
 
 if [[ $# -lt 1 || $# -gt 2 ]]; then
   echo "Usage: sbatch $0 <model_list.txt> [shots_csv]" >&2
@@ -41,8 +42,8 @@ fi
 
 COMMON_ARGS=(
   --dataset midterm
-  --root /scratch1/eibl/data/midterm/graphs
-  --graph_filename retweet_graph_1p5m.pt
+  --root "$MIDTERM_ROOT"
+  --graph_filename "$MIDTERM_GRAPH"
   --midterm_feature_subset emb_only
   --input_dim 384
   --original_features True
@@ -123,7 +124,7 @@ run_eval() {
   esac
 
   echo "=== Evaluating model=${model_name} task=${task_name} shots=${shots} ckpt=${ckpt_path} ==="
-  conda run -p /home1/singhama/.conda/envs/prodigy-env --no-capture-output \
+  conda run -p "$CONDA_ENV" --no-capture-output \
     python3 experiments/run_single_experiment.py \
     "${COMMON_ARGS[@]}" \
     --pretrained_model_run "$ckpt_path" \

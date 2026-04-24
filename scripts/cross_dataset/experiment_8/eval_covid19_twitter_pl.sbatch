@@ -14,7 +14,8 @@ module purge || true
 module load conda
 
 cd /home1/singhama/gfm/prodigy
-mkdir -p /home1/singhama/gfm/prodigy/logs
+source scripts/cross_dataset/env.sh
+mkdir -p "$LOGS_DIR"
 
 if [[ $# -lt 1 || $# -gt 2 ]]; then
   echo "Usage: sbatch $0 <model_list.txt> [shots_csv]" >&2
@@ -32,8 +33,8 @@ IFS=',' read -r -a SHOT_LIST <<< "$SHOTS_CSV"
 
 COMMON_ARGS=(
   --dataset covid19_twitter
-  --root /scratch1/eibl/data/covid19_twitter/graphs
-  --graph_filename retweet_graph_1p5m_hf03_labeled.pt
+  --root "$COVID_ROOT"
+  --graph_filename "$COVID_GRAPH"
   --midterm_feature_subset emb_only
   --midterm_edge_view temporal_history
   --input_dim 384
@@ -81,7 +82,7 @@ while IFS= read -r raw_line || [[ -n "$raw_line" ]]; do
 
   for shots in "${SHOT_LIST[@]}"; do
     echo "=== Evaluating model=${model_name} task=classification(PL) shots=${shots} ==="
-    conda run -p /home1/singhama/.conda/envs/prodigy-env --no-capture-output \
+    conda run -p "$CONDA_ENV" --no-capture-output \
       python3 experiments/run_single_experiment.py \
       "${COMMON_ARGS[@]}" \
       --n_shots "$shots" \

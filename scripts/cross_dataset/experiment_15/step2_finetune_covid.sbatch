@@ -21,13 +21,14 @@ module purge || true
 module load conda
 
 cd /home1/singhama/gfm/prodigy
-mkdir -p /home1/singhama/gfm/prodigy/logs
+source scripts/cross_dataset/env.sh
+mkdir -p "$LOGS_DIR"
 
 echo "=== [Exp15] Fine-tuning ukr_rus NM checkpoint on covid19_twitter NM ==="
-conda run -p /home1/singhama/.conda/envs/prodigy-env --no-capture-output python3 experiments/run_single_experiment.py \
+conda run -p "$CONDA_ENV" --no-capture-output python3 experiments/run_single_experiment.py \
   --dataset              covid19_twitter \
-  --root                 /scratch1/eibl/data/covid19_twitter/graphs \
-  --graph_filename       retweet_graph_1p5m_hf03_labeled.pt \
+  --root                 "$COVID_ROOT" \
+  --graph_filename       "$COVID_GRAPH" \
   --task_name            neighbor_matching \
   --midterm_feature_subset emb_only \
   --midterm_edge_view    temporal_history \

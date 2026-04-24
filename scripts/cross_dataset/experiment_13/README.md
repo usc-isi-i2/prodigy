@@ -22,10 +22,11 @@ Dataset-order reversal of Experiment 1. Held-out dataset: ukr_rus_twitter.
 
 # Step 2 — fine-tune on midterm NM
 bash step2_submit_finetune_midterm.sh <covid_nm_ckpt>
-# → /home1/singhama/gfm/prodigy/state/exp13_train2_covid_nm_to_midterm_nm_*/state_dict
+# → /home1/singhama/gfm/prodigy/state/exp13_train2_covid_nm_to_midterm_nm_23_04_2026_13_24_00/checkpoint/state_dict_15000.ckpt
+# Note: job hit time limit; using intermediate checkpoint state_dict_15000.ckpt
 
 # Step 3 — eval on ukr_rus (NM + LP + PL, shots=1,5,10)
-bash step3_submit_eval_ukr_rus.sh /home1/singhama/gfm/prodigy/state/exp13_train2_covid_nm_to_midterm_nm_<run>/state_dict
+bash step3_submit_eval_ukr_rus.sh /home1/singhama/gfm/prodigy/state/exp13_train2_covid_nm_to_midterm_nm_23_04_2026_13_24_00/checkpoint/state_dict_15000.ckpt
 ```
 
 ## Commands Run
@@ -37,5 +38,5 @@ bash scripts/cross_dataset/experiment_13/step2_submit_finetune_midterm.sh \
 
 # Step 3 — eval on ukr_rus (NM + LP + PL, shots=1,5,10)
 bash scripts/cross_dataset/experiment_13/step3_submit_eval_ukr_rus.sh \
-  /home1/singhama/gfm/prodigy/state/exp13_train2_covid_nm_to_midterm_nm_<run>/state_dict
+  /home1/singhama/gfm/prodigy/state/exp13_train2_covid_nm_to_midterm_nm_23_04_2026_13_24_00/checkpoint/state_dict_15000.ckpt
 ```

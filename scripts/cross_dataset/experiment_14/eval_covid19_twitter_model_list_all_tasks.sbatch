@@ -14,7 +14,8 @@ module purge || true
 module load conda
 
 cd /home1/singhama/gfm/prodigy
-mkdir -p /home1/singhama/gfm/prodigy/logs
+source scripts/cross_dataset/env.sh
+mkdir -p "$LOGS_DIR"
 
 if [[ $# -lt 1 || $# -gt 2 ]]; then
   echo "Usage: sbatch $0 <model_list.txt> [shots_csv]" >&2
@@ -41,7 +42,7 @@ fi
 
 COMMON_ARGS=(
   --dataset covid19_twitter
-  --root /scratch1/eibl/data/covid19_twitter/graphs
+  --root "$COVID_ROOT"
   --midterm_feature_subset emb_only
   --midterm_edge_view temporal_history
   --input_dim 384
@@ -67,7 +68,7 @@ run_eval() {
     neighbor_matching)
       task_tag="nm"
       extra_args=(
-        --graph_filename retweet_graph_1p5m_hf03_labeled.pt
+        --graph_filename "$COVID_GRAPH"
         --task_name neighbor_matching
         --n_way 2
         --n_shots "$shots"
@@ -83,7 +84,7 @@ run_eval() {
     temporal_link_prediction)
       task_tag="lp"
       extra_args=(
-        --graph_filename retweet_graph_1p5m_hf03_labeled.pt
+        --graph_filename "$COVID_GRAPH"
         --task_name temporal_link_prediction
         --n_way 1
         --n_shots "$shots"
@@ -101,7 +102,7 @@ run_eval() {
     classification)
       task_tag="pl"
       extra_args=(
-        --graph_filename retweet_graph_1p5m_hf03_labeled.pt
+        --graph_filename "$COVID_GRAPH"
         --task_name classification
         --ignore_label_embeddings False
         --linear_probe False
@@ -126,7 +127,7 @@ run_eval() {
   esac
 
   echo "=== Evaluating model=${model_name} task=${task_name} shots=${shots} ckpt=${ckpt_path} ==="
-  conda run -p /home1/singhama/.conda/envs/prodigy-env --no-capture-output \
+  conda run -p "$CONDA_ENV" --no-capture-output \
     python3 experiments/run_single_experiment.py \
     "${COMMON_ARGS[@]}" \
     --pretrained_model_run "$ckpt_path" \

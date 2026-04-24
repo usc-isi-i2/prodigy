@@ -14,13 +14,14 @@ module purge || true
 module load conda
 
 cd /home1/singhama/gfm/prodigy
-mkdir -p /home1/singhama/gfm/prodigy/logs
+source scripts/cross_dataset/env.sh
+mkdir -p "$LOGS_DIR"
 
 echo "=== [Exp2] Pretraining on midterm NM ==="
-conda run -p /home1/singhama/.conda/envs/prodigy-env --no-capture-output python3 experiments/run_single_experiment.py \
+conda run -p "$CONDA_ENV" --no-capture-output python3 experiments/run_single_experiment.py \
   --dataset              midterm \
-  --root                 /scratch1/eibl/data/midterm/graphs \
-  --graph_filename       retweet_graph_1p5m.pt \
+  --root                 "$MIDTERM_ROOT" \
+  --graph_filename       "$MIDTERM_GRAPH" \
   --task_name            neighbor_matching \
   --midterm_feature_subset emb_only \
   --input_dim            384 \
