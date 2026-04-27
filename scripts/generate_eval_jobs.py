@@ -5,8 +5,8 @@ import argparse
 
 
 # Models to evaluate - from your provided list
-# Base directory: /home1/eibl/gfm/prodigy/log or wherever your experiments are stored
-EXPERIMENT_BASE = "/home1/eibl/gfm/prodigy/log"
+# Base directory for the train2 experiment folders/checkpoints
+EXPERIMENT_BASE = "/scratch1/singhama/data/experiments"
 DEFAULT_PROJECT_ROOT = "/home1/eibl/gfm/prodigy"
 DEFAULT_OUTPUT_ROOT = f"{DEFAULT_PROJECT_ROOT}/eval_results"
 
@@ -46,11 +46,17 @@ def generate_eval_jobs(
     output_file="eval_jobs.txt",
     project_root=DEFAULT_PROJECT_ROOT,
     output_root=DEFAULT_OUTPUT_ROOT,
+    experiment_base=EXPERIMENT_BASE,
 ):
     """Generate the evaluation command list."""
     jobs = []
 
-    for model_path in MODELS:
+    models = [
+        model_path.replace(EXPERIMENT_BASE, experiment_base, 1)
+        for model_path in MODELS
+    ]
+
+    for model_path in models:
         for dataset in DATASETS:
             for task in TASKS:
                 job_cmd = (
@@ -179,6 +185,8 @@ if __name__ == "__main__":
                        help="Cluster path to the prodigy checkout")
     parser.add_argument("--output_root", type=str, default=DEFAULT_OUTPUT_ROOT,
                        help="Root directory for evaluation outputs")
+    parser.add_argument("--experiment_base", type=str, default=EXPERIMENT_BASE,
+                       help="Root directory containing the trained experiment folders")
     parser.add_argument("--partition", type=str, default="gpu",
                        help="SLURM partition name")
     parser.add_argument("--array_parallel", type=int, default=16,
@@ -208,6 +216,7 @@ if __name__ == "__main__":
         args.job_list,
         project_root=args.project_root,
         output_root=args.output_root,
+        experiment_base=args.experiment_base,
     )
     generate_sbatch_script(
         len(jobs),
