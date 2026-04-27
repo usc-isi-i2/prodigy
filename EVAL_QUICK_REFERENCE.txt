@@ -1,0 +1,238 @@
+================================================================================
+✅ CROSS-DATASET EVALUATION PIPELINE - SETUP COMPLETE
+================================================================================
+
+Your complete evaluation pipeline is ready to use on the cluster.
+
+📊 EVALUATION MATRIX
+================================================================================
+
+Configuration:
+  • 15 trained models (train2_* series)
+  • 3 datasets (midterm, covid19_twitter, ukr_rus_twitter)
+  • 2 tasks (node_masking, link_prediction)
+
+Total Evaluations: 15 × 3 × 2 = 90
+
+Breakdown:
+  • Per model:   6 evaluations (3 datasets × 2 tasks)
+  • Per dataset: 30 evaluations (15 models × 2 tasks)
+  • Per task:    45 evaluations (15 models × 3 datasets)
+
+🚀 QUICK START (3 COMMANDS)
+================================================================================
+
+1. Generate jobs:
+   cd /home1/eibl/gfm/prodigy
+   python scripts/generate_eval_jobs.py
+
+2. Submit to cluster:
+   sbatch eval_cross_dataset.sbatch
+
+3. After ~3 hours, aggregate:
+   python scripts/aggregate_eval_results.py --results_dir /home1/eibl/gfm/prodigy/eval_results
+
+📁 FILES CREATED
+================================================================================
+
+Core Scripts:
+  ✓ scripts/eval_cross_dataset.py        Main evaluation engine
+  ✓ scripts/generate_eval_jobs.py        Batch job generator
+  ✓ scripts/aggregate_eval_results.py    Results aggregator
+
+Documentation:
+  ✓ CROSS_DATASET_EVAL.md                Detailed guide
+  ✓ EVAL_SETUP_SUMMARY.md                Executive summary
+  ✓ EVAL_FILES_MANIFEST.md               File manifest
+  ✓ scripts/EVAL_QUICKSTART.sh           Quick commands
+  ✓ scripts/check_eval_setup.py          Setup validator
+
+📚 DOCUMENTATION
+================================================================================
+
+Start here: CROSS_DATASET_EVAL.md
+  → Complete setup guide
+  → Configuration options
+  → Troubleshooting
+  → Advanced usage
+
+Quick reference: scripts/EVAL_QUICKSTART.sh
+  → Copy-paste commands for common tasks
+
+File manifest: EVAL_FILES_MANIFEST.md
+  → All files and their purposes
+
+⏱️  EXPECTED TIMELINE
+================================================================================
+
+Generate jobs:           < 1 minute
+SLURM submission:        < 1 minute
+Evaluation (90 jobs):    2-4 hours (16 parallel)
+Results aggregation:     < 1 minute
+───────────────────────────────────
+TOTAL:                   ~3-5 hours
+
+📊 SLURM CONFIGURATION
+================================================================================
+
+Array job: --array=0-89%16
+  • 90 total tasks
+  • 16 jobs in parallel
+  • 1 GPU per job
+  • 4 hour time limit
+  • 8 CPU cores per job
+  • 32G memory
+
+Logs: /home1/eibl/gfm/prodigy/logs/eval_*.out
+
+🎯 EVALUATION DETAILS
+================================================================================
+
+For each (model, dataset, task) combination:
+  1. Load model checkpoint
+  2. Load dataset
+  3. Run evaluation on val set
+  4. Run evaluation on test set
+  5. Save metrics as JSON
+
+Metrics computed:
+  • Accuracy
+  • F1 Score
+  • AUC-ROC
+  • Loss (+ optional: MRR, HITS@K)
+
+Output per evaluation:
+  {
+    "model_path": "...",
+    "dataset": "midterm",
+    "task": "node_masking",
+    "timestamp": "...",
+    "val_results": {"accuracy": 0.92, ...},
+    "test_results": {"accuracy": 0.89, ...}
+  }
+
+📂 OUTPUT STRUCTURE
+================================================================================
+
+/home1/eibl/gfm/prodigy/eval_results/
+  ├── midterm/
+  │   ├── node_masking/
+  │   │   ├── eval_*.json (15 files, one per model)
+  │   │   └── ...
+  │   └── link_prediction/
+  │       └── eval_*.json (15 files)
+  ├── covid19_twitter/
+  │   ├── node_masking/
+  │   └── link_prediction/
+  ├── ukr_rus_twitter/
+  │   ├── node_masking/
+  │   └── link_prediction/
+  ├── summary.csv          ← For analysis in Excel/pandas
+  └── summary.json         ← For analysis in Python
+
+✅ VALIDATION
+================================================================================
+
+Run to verify setup:
+  python scripts/check_eval_setup.py
+
+Should show: ✓ for all files
+
+✨ KEY FEATURES
+================================================================================
+
+✓ Automatic job generation - no manual command building
+✓ Parallel execution - configurable array concurrency
+✓ GPU binding - each job uses local device 0 on its assigned GPU
+✓ Error handling - individual job failures don't block others
+✓ Results aggregation - automatic summary generation
+✓ Customizable - easily modify models, datasets, tasks
+✓ Resumable - re-run failed combinations
+✓ Validated - checks for common issues
+
+🔧 CUSTOMIZATION
+================================================================================
+
+Change which models/datasets/tasks to evaluate:
+  Edit: scripts/generate_eval_jobs.py
+    • MODELS = [...]
+    • DATASETS = [...]
+    • TASKS = [...]
+  Then regenerate: python scripts/generate_eval_jobs.py
+
+Adjust SLURM settings:
+  python scripts/generate_eval_jobs.py --array_parallel 8   (less parallel)
+  python scripts/generate_eval_jobs.py --mem 64G            (more memory)
+  python scripts/generate_eval_jobs.py --time_limit 6:00:00 (longer time)
+  python scripts/generate_eval_jobs.py --gpu_type p100      (typed GPU request)
+
+Test single evaluation:
+  python scripts/eval_cross_dataset.py \
+    --model_path /path/to/model \
+    --dataset midterm \
+    --task node_masking
+
+🎓 WHAT THIS MEASURES
+================================================================================
+
+Cross-Dataset Transfer Performance:
+  → How well do models trained on Dataset A generalize to Dataset B?
+
+Same-Task vs Cross-Task Transfer:
+  → Can models trained on node_masking work for link_prediction?
+
+Backward Transfer:
+  → Can models trained on target dataset help?
+
+Complete Coverage:
+  → Full evaluation matrix across all combinations
+
+📈 ANALYSIS EXAMPLES
+================================================================================
+
+Load results in Python:
+  import pandas as pd
+  import json
+  
+  df = pd.read_csv("/home1/eibl/gfm/prodigy/eval_results/summary.csv")
+  
+  # Best models on each dataset
+  for dataset in df["dataset"].unique():
+      best = df[df["dataset"] == dataset].nlargest(3, "test_accuracy")
+      print(f"{dataset}: {best}")
+
+🔗 RESOURCES
+================================================================================
+
+Documentation:
+  • CROSS_DATASET_EVAL.md (detailed guide)
+  • EVAL_SETUP_SUMMARY.md (executive summary)
+  • EVAL_FILES_MANIFEST.md (file reference)
+  • scripts/EVAL_QUICKSTART.sh (copy-paste commands)
+
+Source Code:
+  • experiments/trainer.py (do_eval method)
+  • experiments/params.py (parameters)
+  • data/data_loader_wrapper.py (dataset loading)
+
+================================================================================
+🎬 READY TO GO!
+================================================================================
+
+Next step: SSH to cluster and run:
+
+  cd /home1/eibl/gfm/prodigy
+  python scripts/generate_eval_jobs.py
+  sbatch eval_cross_dataset.sbatch
+
+Monitor:
+  squeue -u $USER
+  tail -f /home1/eibl/gfm/prodigy/logs/eval_*.out
+
+Get results (after ~3 hours):
+  python scripts/aggregate_eval_results.py --results_dir /home1/eibl/gfm/prodigy/eval_results
+
+================================================================================
+Created: 2026-04-26
+Status: ✅ READY FOR PRODUCTION
+================================================================================
