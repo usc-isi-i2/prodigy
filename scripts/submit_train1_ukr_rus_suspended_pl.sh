@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=train1_ukr_rus_suspended_pl
-#SBATCH --output=/scratch1/eibl/logs/ukr_rus_suspended/%x_%j.out
+#SBATCH --output=/home1/eibl/gfm/prodigy/logs/%x_%j.out
 #SBATCH --error=/scratch1/eibl/logs/ukr_rus_suspended/%x_%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
