@@ -68,7 +68,11 @@ def _build_covid19_twitter_graph(raw: dict, **kwargs):
         seed=int(kwargs.get("seed", 0) or 0),
     )
     graph = _apply_feature_subset(graph, kwargs.get("midterm_feature_subset", "all"))
-    graph = _apply_edge_feature_subset(graph, kwargs.get("midterm_edge_feature_subset", "all"), feature_names=edge_feature_names)
+    graph = _apply_edge_feature_subset(
+        graph,
+        kwargs.get("edge_feature_subset", kwargs.get("midterm_edge_feature_subset", "all")),
+        feature_names=edge_feature_names,
+    )
     return graph, resolved_edge_view
 
 

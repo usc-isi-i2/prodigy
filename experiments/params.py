@@ -220,10 +220,12 @@ def get_params():
         help="Named edge target view for midterm temporal link prediction (default uses 'future_edge_index').",
     )
     args.add_argument(
+        "--edge_feature_subset",
         "--midterm_edge_feature_subset",
+        dest="edge_feature_subset",
         default="all",
         type=str,
-        help="Midterm edge feature subset: all | none | keep:<f1,f2,...> | drop:<f1,f2,...>",
+        help="Edge feature subset: all | none | keep:<f1,f2,...> | drop:<f1,f2,...>",
     )
     args.add_argument(
         "--midterm_lp_neg_ratio",
@@ -232,10 +234,12 @@ def get_params():
         help="Negative:positive ratio for temporal_link_prediction binary sampling (e.g., 5 means 5 negatives per positive).",
     )
     args.add_argument(
+        "--use_edge_features",
         "--midterm_use_edge_features",
+        dest="use_edge_features",
         default=False,
         type=str2bool,
-        help="If True, configure the background GNN to consume midterm edge_attr features.",
+        help="If True, configure the background GNN to consume graph edge_attr features.",
     )
     args.add_argument(
         "--midterm_debug_print_episodes",
@@ -255,6 +259,8 @@ def get_params():
     params = {}
     for k, v in vars(args).items():
         params[k] = v
+    params["midterm_edge_feature_subset"] = params["edge_feature_subset"]
+    params["midterm_use_edge_features"] = params["use_edge_features"]
 
     if params["task_name"] is None:
         if params["dataset"] == "midterm":

@@ -72,7 +72,7 @@ def _build_covid_political_graph(raw: dict, **kwargs):
     graph = _apply_feature_subset(graph, kwargs.get("midterm_feature_subset", "all"))
     graph = _apply_edge_feature_subset(
         graph,
-        kwargs.get("midterm_edge_feature_subset", "all"),
+        kwargs.get("edge_feature_subset", kwargs.get("midterm_edge_feature_subset", "all")),
         feature_names=edge_feature_names,
     )
     return graph, resolved_edge_view
