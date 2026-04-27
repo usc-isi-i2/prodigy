@@ -23,14 +23,14 @@ Breakdown:
 ================================================================================
 
 1. Generate jobs:
-   cd /scratch1/singhama/prodigy
+   cd /home1/eibl/gfm/prodigy
    python scripts/generate_eval_jobs.py
 
 2. Submit to cluster:
    sbatch eval_cross_dataset.sbatch
 
 3. After ~3 hours, aggregate:
-   python scripts/aggregate_eval_results.py --results_dir /scratch1/singhama/data/eval_results
+   python scripts/aggregate_eval_results.py --results_dir /home1/eibl/gfm/prodigy/eval_results
 
 📁 FILES CREATED
 ================================================================================
@@ -67,7 +67,7 @@ File manifest: EVAL_FILES_MANIFEST.md
 
 Generate jobs:           < 1 minute
 SLURM submission:        < 1 minute
-Evaluation (90 jobs):    2-4 hours (40 parallel)
+Evaluation (90 jobs):    2-4 hours (16 parallel)
 Results aggregation:     < 1 minute
 ───────────────────────────────────
 TOTAL:                   ~3-5 hours
@@ -75,15 +75,15 @@ TOTAL:                   ~3-5 hours
 📊 SLURM CONFIGURATION
 ================================================================================
 
-Array job: --array=0-89%40
+Array job: --array=0-89%16
   • 90 total tasks
-  • 40 jobs in parallel
+  • 16 jobs in parallel
   • 1 GPU per job
   • 4 hour time limit
-  • 10 CPU cores per job
-  • 16GB memory
+  • 8 CPU cores per job
+  • 32G memory
 
-Logs: /scratch1/singhama/logs/eval_*.log
+Logs: /home1/eibl/gfm/prodigy/logs/eval_*.out
 
 🎯 EVALUATION DETAILS
 ================================================================================
@@ -114,7 +114,7 @@ Output per evaluation:
 📂 OUTPUT STRUCTURE
 ================================================================================
 
-/scratch1/singhama/data/eval_results/
+/home1/eibl/gfm/prodigy/eval_results/
   ├── midterm/
   │   ├── node_masking/
   │   │   ├── eval_*.json (15 files, one per model)
@@ -142,8 +142,8 @@ Should show: ✓ for all files
 ================================================================================
 
 ✓ Automatic job generation - no manual command building
-✓ Parallel execution - 40 jobs at once
-✓ GPU distribution - automatic GPU ID assignment
+✓ Parallel execution - configurable array concurrency
+✓ GPU binding - each job uses local device 0 on its assigned GPU
 ✓ Error handling - individual job failures don't block others
 ✓ Results aggregation - automatic summary generation
 ✓ Customizable - easily modify models, datasets, tasks
@@ -158,12 +158,13 @@ Change which models/datasets/tasks to evaluate:
     • MODELS = [...]
     • DATASETS = [...]
     • TASKS = [...]
-  Then regenerate: python generate_eval_jobs.py
+  Then regenerate: python scripts/generate_eval_jobs.py
 
 Adjust SLURM settings:
-  sbatch --array=0-89%80 eval_cross_dataset.sbatch  (more parallel)
-  sbatch --mem=32GB eval_cross_dataset.sbatch       (more memory)
-  sbatch --time=6:00:00 eval_cross_dataset.sbatch   (longer time)
+  python scripts/generate_eval_jobs.py --array_parallel 8   (less parallel)
+  python scripts/generate_eval_jobs.py --mem 64G            (more memory)
+  python scripts/generate_eval_jobs.py --time_limit 6:00:00 (longer time)
+  python scripts/generate_eval_jobs.py --gpu_type p100      (typed GPU request)
 
 Test single evaluation:
   python scripts/eval_cross_dataset.py \
@@ -193,7 +194,7 @@ Load results in Python:
   import pandas as pd
   import json
   
-  df = pd.read_csv("/scratch1/singhama/data/eval_results/summary.csv")
+  df = pd.read_csv("/home1/eibl/gfm/prodigy/eval_results/summary.csv")
   
   # Best models on each dataset
   for dataset in df["dataset"].unique():
@@ -220,16 +221,16 @@ Source Code:
 
 Next step: SSH to cluster and run:
 
-  cd /scratch1/singhama/prodigy
+  cd /home1/eibl/gfm/prodigy
   python scripts/generate_eval_jobs.py
   sbatch eval_cross_dataset.sbatch
 
 Monitor:
   squeue -u $USER
-  tail -f /scratch1/singhama/logs/eval_0.log
+  tail -f /home1/eibl/gfm/prodigy/logs/eval_*.out
 
 Get results (after ~3 hours):
-  python scripts/aggregate_eval_results.py --results_dir /scratch1/singhama/data/eval_results
+  python scripts/aggregate_eval_results.py --results_dir /home1/eibl/gfm/prodigy/eval_results
 
 ================================================================================
 Created: 2026-04-26
