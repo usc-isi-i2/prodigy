@@ -28,7 +28,7 @@ if [[ $# -lt 1 || $# -gt 2 ]]; then
 fi
 
 MODEL_LIST="$1"
-SHOTS_CSV="${2:-0,1,3,10}"
+SHOTS_CSV="${2:-0,3}"
 if [[ ! -f "$MODEL_LIST" ]]; then
   echo "Model list not found: $MODEL_LIST" >&2
   exit 1
