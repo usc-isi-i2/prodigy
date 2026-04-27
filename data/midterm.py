@@ -336,7 +336,7 @@ def _apply_feature_subset(graph: Data, subset_spec: str) -> Data:
 
     if spec == "emb_only_plus_label":
         if not emb_idx:
-            raise ValueError("midterm_feature_subset='emb_only_plus_label' requires embedding features.")
+            raise ValueError("feature_subset='emb_only_plus_label' requires embedding features.")
         leak, leak_names = build_label_leak()
         graph.x = torch.cat([graph.x[:, emb_idx], leak], dim=1)
         graph.feature_names = [feature_names[i] for i in emb_idx] + leak_names
@@ -361,13 +361,13 @@ def _apply_feature_subset(graph: Data, subset_spec: str) -> Data:
         indices = [i for i, name in enumerate(feature_names) if name not in drop_set]
     else:
         raise ValueError(
-            f"Unsupported midterm_feature_subset='{subset_spec}'. "
+            f"Unsupported feature_subset='{subset_spec}'. "
             f"Use one of: all, constant1, stats_only, emb_only, emb_only_plus_label, label_only, keep:<...>, drop:<...>."
         )
 
     if not indices:
         raise ValueError(
-            f"midterm_feature_subset='{subset_spec}' selected 0 columns out of {x_dim}."
+            f"feature_subset='{subset_spec}' selected 0 columns out of {x_dim}."
         )
 
     graph.x = graph.x[:, indices]
@@ -434,7 +434,7 @@ def _apply_edge_feature_subset(graph: Data, subset_spec: str, feature_names=None
 
 
 def _build_midterm_graph(raw: dict, **kwargs):
-    edge_view = _normalize_view_name(kwargs.get("midterm_edge_view", "default"))
+    edge_view = _normalize_view_name(kwargs.get("edge_view", kwargs.get("midterm_edge_view", "default")))
     edge_index, resolved_edge_view = _load_named_tensor(
         raw,
         edge_view,
@@ -479,7 +479,7 @@ def _build_midterm_graph(raw: dict, **kwargs):
         seed=int(kwargs.get("seed", 0) or 0),
     )
     graph.feature_names = raw.get('feature_names', [])
-    graph = _apply_feature_subset(graph, kwargs.get("midterm_feature_subset", "all"))
+    graph = _apply_feature_subset(graph, kwargs.get("feature_subset", kwargs.get("midterm_feature_subset", "all")))
     graph = _apply_edge_feature_subset(
         graph,
         kwargs.get("edge_feature_subset", kwargs.get("midterm_edge_feature_subset", "all")),
@@ -514,7 +514,10 @@ def get_midterm_dataset(
 
     task_name = kwargs.get("task_name", "")
     if task_name == "temporal_link_prediction":
-        target_view = _normalize_view_name(kwargs.get("midterm_target_edge_view", "future"), default="future")
+        target_view = _normalize_view_name(
+            kwargs.get("target_edge_view", kwargs.get("midterm_target_edge_view", "future")),
+            default="future",
+        )
         future_edge_index, resolved_target_view = _load_named_tensor(
             raw,
             target_view,
@@ -665,7 +668,7 @@ def get_midterm_dataloader(
         if not hasattr(dataset, "future_neighbor_sampler"):
             raise ValueError(
                 "temporal_link_prediction requires target edges, but no future edge view was found. "
-                "Provide --midterm_target_edge_view (or ensure 'future_edge_index' exists in graph_data.pt)."
+                "Provide --target_edge_view (or ensure 'future_edge_index' exists in graph_data.pt)."
             )
         neg_ratio = int(kwargs.get("midterm_lp_neg_ratio", 1))
         if isinstance(n_way, int):

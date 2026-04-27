@@ -44,8 +44,8 @@ COMMON_ARGS=(
   --dataset covid19_twitter
   --root /scratch1/eibl/data/covid19_twitter/graphs
   --graph_filename retweet_graph_1p5m_hf03_labeled.pt
-  --midterm_feature_subset emb_only
-  --midterm_edge_view temporal_history
+  --feature_subset emb_only
+  --edge_view temporal_history
   --input_dim 384
   --original_features True
   --workers 4
@@ -98,7 +98,7 @@ run_eval() {
         --epochs 12
         --eval_step 2000
         --checkpoint_step 2000
-        --midterm_target_edge_view temporal_new
+        --target_edge_view temporal_new
         --prefix "eval_${model_name}_to_${target_dataset}_${task_tag}_${shots}shot"
       )
       ;;

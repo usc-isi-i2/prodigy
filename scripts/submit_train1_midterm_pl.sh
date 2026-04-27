@@ -20,7 +20,7 @@ python3 experiments/run_single_experiment.py \
   --root /scratch1/eibl/data/midterm/graphs \
   --graph_filename retweet_graph_5050_all_future_political_leaning.pt \
   --task_name classification \
-  --midterm_feature_subset emb_only \
+  --feature_subset emb_only \
   --input_dim 384 \
   --original_features True \
   --ignore_label_embeddings False \

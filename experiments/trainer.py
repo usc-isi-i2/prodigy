@@ -132,7 +132,7 @@ class TrainerFS():
             if graph_edge_attr is None:
                 raise ValueError(
                     "use_edge_features=True but the loaded graph has no edge_attr. "
-                    "Check --midterm_edge_view / --edge_feature_subset and graph artifact contents."
+                    "Check --edge_view / --edge_feature_subset and graph artifact contents."
                 )
             edge_attr_dim = graph_edge_attr.shape[1] if graph_edge_attr.dim() > 1 else 1
             _log(f"Using graph edge features with edge_attr_dim={edge_attr_dim}")
@@ -276,11 +276,10 @@ class TrainerFS():
         kwargs["facebook_target_dim"] = self.parameter["facebook_target_dim"]
         kwargs["facebook_filter_to_uk_ru"] = self.parameter["facebook_filter_to_uk_ru"]
         kwargs["max_posts"] = self.parameter["facebook_max_posts"]
-        kwargs["midterm_feature_subset"] = self.parameter["midterm_feature_subset"]
-        kwargs["midterm_edge_view"] = self.parameter["midterm_edge_view"]
-        kwargs["midterm_target_edge_view"] = self.parameter["midterm_target_edge_view"]
+        kwargs["feature_subset"] = self.parameter["feature_subset"]
+        kwargs["edge_view"] = self.parameter["edge_view"]
+        kwargs["target_edge_view"] = self.parameter["target_edge_view"]
         kwargs["edge_feature_subset"] = self.parameter["edge_feature_subset"]
-        kwargs["midterm_edge_feature_subset"] = self.parameter["edge_feature_subset"]
         kwargs["neighbor_sampling_strategy"] = self.parameter["neighbor_sampling_strategy"]
         kwargs["midterm_lp_neg_ratio"] = self.parameter.get("midterm_lp_neg_ratio", 1)
         if self.parameter["all_test"]:

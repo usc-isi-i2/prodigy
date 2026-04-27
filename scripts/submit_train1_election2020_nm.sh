@@ -21,7 +21,7 @@ python3 experiments/run_single_experiment.py \
   --root /scratch1/eibl/data/election2020/graphs \
   --graph_filename retweet_graph.pt \
   --task_name neighbor_matching \
-  --midterm_feature_subset emb_only \
+  --feature_subset emb_only \
   --input_dim 384 \
   --n_way 3 \
   --n_shots 3 \

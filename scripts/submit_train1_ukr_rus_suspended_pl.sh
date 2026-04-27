@@ -21,7 +21,7 @@ python3 experiments/run_single_experiment.py \
   --root /scratch1/eibl/data/ukr_rus_suspended/graphs \
   --graph_filename retweet_graph.pt \
   --task_name classification \
-  --midterm_feature_subset emb_only \
+  --feature_subset emb_only \
   --input_dim 384 \
   --n_way 2 \
   --n_shots 3 \

@@ -179,11 +179,13 @@ def get_params():
     args.add_argument("-n_hop", "--n_hop", default=2, type=int)  # number of hops for subgraph extraction
     args.add_argument("--graph_filename", default="graph_data.pt", type=str)  # graph file to load from root
     args.add_argument(
+        "--feature_subset",
         "--midterm_feature_subset",
+        dest="feature_subset",
         default="all",
         type=str,
         help=(
-            "Feature subset spec for midterm node features. "
+            "Feature subset spec for graph node features. "
             "Supported: all | constant1 | stats_only | emb_only | emb_only_plus_label | label_only | "
             "keep:<f1,f2,...> | drop:<f1,f2,...>"
         ),
@@ -208,16 +210,20 @@ def get_params():
         ),
     )
     args.add_argument(
+        "--edge_view",
         "--midterm_edge_view",
+        dest="edge_view",
         default="default",
         type=str,
-        help="Named edge view for midterm background graph (default uses 'edge_index').",
+        help="Named edge view for the background graph (default uses 'edge_index').",
     )
     args.add_argument(
+        "--target_edge_view",
         "--midterm_target_edge_view",
+        dest="target_edge_view",
         default="future",
         type=str,
-        help="Named edge target view for midterm temporal link prediction (default uses 'future_edge_index').",
+        help="Named edge target view for temporal link prediction (default uses 'future_edge_index').",
     )
     args.add_argument(
         "--edge_feature_subset",
@@ -259,9 +265,6 @@ def get_params():
     params = {}
     for k, v in vars(args).items():
         params[k] = v
-    params["midterm_edge_feature_subset"] = params["edge_feature_subset"]
-    params["midterm_use_edge_features"] = params["use_edge_features"]
-
     if params["task_name"] is None:
         if params["dataset"] == "midterm":
             params["task_name"] = "neighbor_matching"

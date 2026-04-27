@@ -27,7 +27,7 @@ COMMON_ARGS=(
   --dataset ukr_rus_suspended
   --root /scratch1/eibl/data/ukr_rus_suspended/graphs
   --graph_filename retweet_graph.pt
-  --midterm_feature_subset emb_only
+  --feature_subset emb_only
   --input_dim 384
   --original_features True
   --workers 4
