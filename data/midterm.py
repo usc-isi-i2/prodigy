@@ -396,7 +396,7 @@ def _apply_edge_feature_subset(graph: Data, subset_spec: str, feature_names=None
     if spec == "none":
         graph.edge_attr = None
         graph.edge_attr_feature_names = []
-        print("Disabled midterm edge features (midterm_edge_feature_subset='none').")
+        print("Disabled graph edge features (edge_feature_subset='none').")
         return graph
 
     x_dim = graph.edge_attr.shape[1]
@@ -415,19 +415,19 @@ def _apply_edge_feature_subset(graph: Data, subset_spec: str, feature_names=None
         indices = [i for i, name in enumerate(names) if name not in drop_set]
     else:
         raise ValueError(
-            f"Unsupported midterm_edge_feature_subset='{subset_spec}'. "
+            f"Unsupported edge_feature_subset='{subset_spec}'. "
             "Use one of: all, none, keep:<...>, drop:<...>."
         )
 
     if not indices:
         raise ValueError(
-            f"midterm_edge_feature_subset='{subset_spec}' selected 0 columns out of {x_dim}."
+            f"edge_feature_subset='{subset_spec}' selected 0 columns out of {x_dim}."
         )
 
     graph.edge_attr = graph.edge_attr[:, indices]
     graph.edge_attr_feature_names = [names[i] for i in indices]
     print(
-        f"Applied midterm edge feature subset '{subset_spec}': "
+        f"Applied edge feature subset '{subset_spec}': "
         f"{x_dim} -> {graph.edge_attr.shape[1]} dims."
     )
     return graph
@@ -482,7 +482,7 @@ def _build_midterm_graph(raw: dict, **kwargs):
     graph = _apply_feature_subset(graph, kwargs.get("midterm_feature_subset", "all"))
     graph = _apply_edge_feature_subset(
         graph,
-        kwargs.get("midterm_edge_feature_subset", "all"),
+        kwargs.get("edge_feature_subset", kwargs.get("midterm_edge_feature_subset", "all")),
         feature_names=edge_feature_names,
     )
     return graph, resolved_edge_view

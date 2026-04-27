@@ -86,7 +86,8 @@ if __name__ == '__main__':
         midterm_label_downsample=params["midterm_label_downsample"],
         midterm_edge_view=params["midterm_edge_view"],
         midterm_target_edge_view=params["midterm_target_edge_view"],
-        midterm_edge_feature_subset=params["midterm_edge_feature_subset"],
+        edge_feature_subset=params["edge_feature_subset"],
+        midterm_edge_feature_subset=params["edge_feature_subset"],
         seed=params["seed"],
     )
 
