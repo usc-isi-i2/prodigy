@@ -57,7 +57,7 @@ python scripts/aggregate_eval_results.py \
 # ============================================================================
 
 python scripts/eval_cross_dataset.py \
-  --model_path /home1/eibl/gfm/prodigy/log/train2_midterm_nm_to_covid_nm_16_04_2026_10_07_00/state_dict \
+  --model_path /scratch1/singhama/data/experiments/train2_midterm_nm_to_covid_nm_16_04_2026_10_07_00/state_dict \
   --dataset covid19_twitter \
   --task node_masking \
   --device 0 \

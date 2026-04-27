@@ -166,7 +166,7 @@ To test a single model/dataset/task combination:
 
 ```bash
 python scripts/eval_cross_dataset.py \
-  --model_path /home1/eibl/gfm/prodigy/log/train2_midterm_nm_to_covid_nm_16_04_2026_10_07_00/state_dict \
+  --model_path /scratch1/singhama/data/experiments/train2_midterm_nm_to_covid_nm_16_04_2026_10_07_00/state_dict \
   --dataset covid19_twitter \
   --task node_masking \
   --output_dir /home1/eibl/gfm/prodigy/eval_results/covid19_twitter/node_masking \
@@ -215,7 +215,7 @@ Each evaluation generates a JSON file:
 
 ```json
 {
-  "model_path": "/home1/eibl/gfm/prodigy/log/train2_midterm_nm_to_covid_nm_16_04_2026_10_07_00/state_dict",
+  "model_path": "/scratch1/singhama/data/experiments/train2_midterm_nm_to_covid_nm_16_04_2026_10_07_00/state_dict",
   "dataset": "covid19_twitter",
   "task": "node_masking",
   "timestamp": "2026-04-26T15:30:45.123456",
