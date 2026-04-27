@@ -33,16 +33,24 @@ NODE_FEATURE_NAMES = [
 ]
 
 EDGE_FEATURE_NAMES = [
-    "first_retweet_time",
+    "first_interaction_time",
     "n_retweets",
-    "avg_rt_fav",
-    "avg_rt_reply",
+    "n_quotes",
+    "n_replies",
+    "n_mentions",
 ]
+
+INTERACTION_COUNT_COLUMNS = {
+    "retweet": "n_retweets",
+    "quote": "n_quotes",
+    "reply": "n_replies",
+    "mention": "n_mentions",
+}
 
 
 def parse_args():
     p = argparse.ArgumentParser(
-        description="Build unified covid19_twitter retweet graph with optional embeddings and temporal views."
+        description="Build unified covid19_twitter interaction graph with optional embeddings and temporal views."
     )
     p.add_argument("--json_glob", default=DEFAULT_JSON_GLOB)
     p.add_argument("--out", default=DEFAULT_OUT)
@@ -133,6 +141,26 @@ def _fast_list_lens(series: pd.Series) -> np.ndarray:
     )
 
 
+def extract_mentions(tweet: dict) -> Tuple[List[int], List[str]]:
+    mention_userids: List[int] = []
+    mention_screens: List[str] = []
+    seen = set()
+    for mention in tweet.get("entities", {}).get("user_mentions", []) or []:
+        if not isinstance(mention, dict):
+            continue
+        mention_id = normalize_user_id(mention.get("id"))
+        mention_handle = normalize_handle(mention.get("screen_name"))
+        if mention_id is None:
+            continue
+        key = (mention_id, mention_handle)
+        if key in seen:
+            continue
+        seen.add(key)
+        mention_userids.append(mention_id)
+        mention_screens.append(mention_handle)
+    return mention_userids, mention_screens
+
+
 def load_raw_rows(json_glob: str, max_files: int, strict_dates: bool = False, max_nodes: int = 0) -> pd.DataFrame:
     files = sorted(glob.glob(json_glob))
     if max_files > 0:
@@ -157,9 +185,14 @@ def load_raw_rows(json_glob: str, max_files: int, strict_dates: bool = False, ma
             user = tweet.get("user") or {}
             rt = tweet.get("retweeted_status") or {}
             rt_user = rt.get("user") or {}
+            quoted = tweet.get("quoted_status") or {}
+            quoted_user = quoted.get("user") or {}
+            mention_userids, mention_screens = extract_mentions(tweet)
 
             uid = normalize_user_id(user.get("id"))
             rt_uid = normalize_user_id(rt_user.get("id")) if rt else None
+            reply_uid = normalize_user_id(tweet.get("in_reply_to_user_id"))
+            quote_uid = normalize_user_id(quoted_user.get("id")) if quoted else None
 
             file_rows.append(
                 {
@@ -167,6 +200,10 @@ def load_raw_rows(json_glob: str, max_files: int, strict_dates: bool = False, ma
                     "userid": uid,
                     "rt_screen": normalize_handle(rt_user.get("screen_name")) if rt else None,
                     "rt_userid": rt_uid,
+                    "reply_screen": normalize_handle(tweet.get("in_reply_to_screen_name")),
+                    "reply_userid": reply_uid,
+                    "qtd_screen": normalize_handle(quoted_user.get("screen_name")) if quoted else None,
+                    "qtd_userid": quote_uid,
                     "date": tweet.get("created_at"),
                     "followers_count": user.get("followers_count"),
                     "verified": user.get("verified"),
@@ -176,6 +213,8 @@ def load_raw_rows(json_glob: str, max_files: int, strict_dates: bool = False, ma
                     "sent_vader": None,
                     "hashtag": tweet.get("entities", {}).get("hashtags", []),
                     "mentionsn": tweet.get("entities", {}).get("user_mentions", []),
+                    "mention_userids": mention_userids,
+                    "mention_screens": mention_screens,
                     "media_urls": (tweet.get("extended_entities") or {}).get("media", []),
                 }
             )
@@ -185,12 +224,12 @@ def load_raw_rows(json_glob: str, max_files: int, strict_dates: bool = False, ma
             if max_nodes > 0:
                 file_df = pd.DataFrame(file_rows)
                 try:
-                    file_rt = prepare_retweet_rows(file_df, strict_dates)
+                    file_interactions = prepare_interaction_rows(file_df, strict_dates)
                 except RuntimeError:
-                    file_rt = pd.DataFrame(columns=["userid", "rt_userid"])
-                if not file_rt.empty:
-                    seen_nodes.update(file_rt["userid"].tolist())
-                    seen_nodes.update(file_rt["rt_userid"].tolist())
+                    file_interactions = pd.DataFrame(columns=["userid", "target_userid"])
+                if not file_interactions.empty:
+                    seen_nodes.update(file_interactions["userid"].tolist())
+                    seen_nodes.update(file_interactions["target_userid"].tolist())
                     print(
                         f"  cleaned participants seen so far: {len(seen_nodes):,}",
                         flush=True,
@@ -220,9 +259,18 @@ def load_raw_rows(json_glob: str, max_files: int, strict_dates: bool = False, ma
     return df
 
 
-def prepare_retweet_rows(df: pd.DataFrame, strict_dates: bool) -> pd.DataFrame:
+def prepare_interaction_rows(df: pd.DataFrame, strict_dates: bool) -> pd.DataFrame:
     df = df.copy()
-    for col in ["userid", "rt_userid", "followers_count", "statuses_count", "rt_fav_count", "rt_reply_count"]:
+    for col in [
+        "userid",
+        "rt_userid",
+        "reply_userid",
+        "qtd_userid",
+        "followers_count",
+        "statuses_count",
+        "rt_fav_count",
+        "rt_reply_count",
+    ]:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
     if "verified" in df.columns:
@@ -245,32 +293,91 @@ def prepare_retweet_rows(df: pd.DataFrame, strict_dates: bool) -> pd.DataFrame:
         print(f"Dropping invalid timestamp rows: {n_bad:,}")
         df = df.loc[~bad_ts].copy()
 
-    rt = df.dropna(subset=["userid", "rt_userid"]).copy()
-    rt = rt[rt["userid"] != rt["rt_userid"]].copy()
-    rt["userid"] = rt["userid"].astype(np.int64)
-    rt["rt_userid"] = rt["rt_userid"].astype(np.int64)
-    if rt.empty:
-        raise RuntimeError("No valid retweet rows after cleaning")
-    return rt
+    common_cols = [
+        "userid",
+        "screen_name",
+        "timestamp",
+        "followers_count",
+        "verified",
+        "statuses_count",
+        "rt_fav_count",
+        "rt_reply_count",
+        "sent_vader",
+        "hashtag",
+        "mentionsn",
+        "media_urls",
+    ]
+    frames = []
+
+    retweet = df.dropna(subset=["userid", "rt_userid"]).copy()
+    if not retweet.empty:
+        retweet = retweet[retweet["userid"] != retweet["rt_userid"]].copy()
+        retweet["userid"] = retweet["userid"].astype(np.int64)
+        retweet["target_userid"] = retweet["rt_userid"].astype(np.int64)
+        retweet["target_screen"] = retweet["rt_screen"]
+        retweet["interaction_type"] = "retweet"
+        frames.append(retweet[common_cols + ["target_userid", "target_screen", "interaction_type"]])
+
+    reply = df.dropna(subset=["userid", "reply_userid"]).copy()
+    if not reply.empty:
+        reply = reply[reply["userid"] != reply["reply_userid"]].copy()
+        reply["userid"] = reply["userid"].astype(np.int64)
+        reply["target_userid"] = reply["reply_userid"].astype(np.int64)
+        reply["target_screen"] = reply["reply_screen"]
+        reply["interaction_type"] = "reply"
+        frames.append(reply[common_cols + ["target_userid", "target_screen", "interaction_type"]])
+
+    quote = df.dropna(subset=["userid", "qtd_userid"]).copy()
+    if not quote.empty:
+        quote = quote[quote["userid"] != quote["qtd_userid"]].copy()
+        quote["userid"] = quote["userid"].astype(np.int64)
+        quote["target_userid"] = quote["qtd_userid"].astype(np.int64)
+        quote["target_screen"] = quote["qtd_screen"]
+        quote["interaction_type"] = "quote"
+        frames.append(quote[common_cols + ["target_userid", "target_screen", "interaction_type"]])
+
+    mention = df[common_cols + ["mention_userids", "mention_screens"]].copy()
+    if not mention.empty:
+        mention["mention_userids"] = mention["mention_userids"].apply(lambda xs: xs if isinstance(xs, list) else [])
+        mention["mention_screens"] = mention["mention_screens"].apply(lambda xs: xs if isinstance(xs, list) else [])
+        mention = mention.explode(["mention_userids", "mention_screens"], ignore_index=True)
+        mention = mention.dropna(subset=["userid", "mention_userids"]).copy()
+        if not mention.empty:
+            mention["userid"] = mention["userid"].astype(np.int64)
+            mention["target_userid"] = pd.to_numeric(mention["mention_userids"], errors="coerce")
+            mention = mention.dropna(subset=["target_userid"]).copy()
+            mention["target_userid"] = mention["target_userid"].astype(np.int64)
+            mention = mention[mention["userid"] != mention["target_userid"]].copy()
+            mention["target_screen"] = mention["mention_screens"]
+            mention["interaction_type"] = "mention"
+            frames.append(mention[common_cols + ["target_userid", "target_screen", "interaction_type"]])
+
+    if not frames:
+        raise RuntimeError("No valid interaction rows after cleaning")
+
+    interactions = pd.concat(frames, ignore_index=True, copy=False)
+    if interactions.empty:
+        raise RuntimeError("No valid interaction rows after cleaning")
+    return interactions
 
 
-def trim_rt_to_max_nodes(rt: pd.DataFrame, max_nodes: int) -> pd.DataFrame:
+def trim_interactions_to_max_nodes(interactions: pd.DataFrame, max_nodes: int) -> pd.DataFrame:
     if max_nodes <= 0:
-        print("No max_nodes trim requested; keeping all cleaned retweet participants.", flush=True)
-        return rt
+        print("No max_nodes trim requested; keeping all cleaned interaction participants.", flush=True)
+        return interactions
 
-    total_unique_nodes = len(set(rt["userid"].tolist()) | set(rt["rt_userid"].tolist()))
+    total_unique_nodes = len(set(interactions["userid"].tolist()) | set(interactions["target_userid"].tolist()))
     if total_unique_nodes < max_nodes:
         print(
-            f"Warning: requested max_nodes={max_nodes:,}, but only {total_unique_nodes:,} unique retweet nodes exist "
+            f"Warning: requested max_nodes={max_nodes:,}, but only {total_unique_nodes:,} unique interaction nodes exist "
             "after cleaning. Proceeding with all available cleaned nodes.",
             flush=True,
         )
-        return rt
+        return interactions
 
-    src = rt["userid"].to_numpy(dtype=np.int64, copy=False)
-    dst = rt["rt_userid"].to_numpy(dtype=np.int64, copy=False)
-    keep_rows = np.zeros(len(rt), dtype=bool)
+    src = interactions["userid"].to_numpy(dtype=np.int64, copy=False)
+    dst = interactions["target_userid"].to_numpy(dtype=np.int64, copy=False)
+    keep_rows = np.zeros(len(interactions), dtype=bool)
     keep_nodes = set()
 
     for i, (u, v) in enumerate(zip(src, dst)):
@@ -288,10 +395,10 @@ def trim_rt_to_max_nodes(rt: pd.DataFrame, max_nodes: int) -> pd.DataFrame:
         if len(keep_nodes) == max_nodes:
             continue
 
-    rt2 = rt.loc[keep_rows].copy()
-    actual_nodes = sorted(set(rt2["userid"].tolist()) | set(rt2["rt_userid"].tolist()))
+    trimmed = interactions.loc[keep_rows].copy()
+    actual_nodes = sorted(set(trimmed["userid"].tolist()) | set(trimmed["target_userid"].tolist()))
     print(
-        f"Applied exact max_nodes={max_nodes:,}: kept rows={len(rt2):,} "
+        f"Applied exact max_nodes={max_nodes:,}: kept rows={len(trimmed):,} "
         f"nodes={len(actual_nodes):,}",
         flush=True,
     )
@@ -301,54 +408,59 @@ def trim_rt_to_max_nodes(rt: pd.DataFrame, max_nodes: int) -> pd.DataFrame:
             "Proceeding with the largest feasible trimmed graph.",
             flush=True,
         )
-    return rt2
+    return trimmed
 
 
-def build_user_index(rt: pd.DataFrame) -> Tuple[List[int], Dict[int, int]]:
-    user_ids = sorted(set(rt["userid"].tolist()) | set(rt["rt_userid"].tolist()))
+def build_user_index(interactions: pd.DataFrame) -> Tuple[List[int], Dict[int, int]]:
+    user_ids = sorted(set(interactions["userid"].tolist()) | set(interactions["target_userid"].tolist()))
     return user_ids, {int(user_id): i for i, user_id in enumerate(user_ids)}
 
 
-def build_user_metadata(raw: pd.DataFrame, user_ids: List[int]) -> List[str]:
-    # Take only what we need, pick the latest non-null handle per user_id
-    # via groupby-idxmax on timestamp. Avoids sorting a 2x-sized frame.
-    left = raw[["userid", "screen_name", "timestamp"]].rename(
+def build_user_metadata(interactions: pd.DataFrame, user_ids: List[int]) -> List[str]:
+    left = interactions[["userid", "screen_name", "timestamp"]].rename(
         columns={"userid": "user_id", "screen_name": "handle"}
     )
-    right = raw[["rt_userid", "rt_screen", "timestamp"]].rename(
-        columns={"rt_userid": "user_id", "rt_screen": "handle"}
+    right = interactions[["target_userid", "target_screen", "timestamp"]].rename(
+        columns={"target_userid": "user_id", "target_screen": "handle"}
     )
     meta = pd.concat([left, right], ignore_index=True, copy=False)
     meta = meta.dropna(subset=["user_id", "handle"])
     if meta.empty:
         return [None] * len(user_ids)
     meta["user_id"] = meta["user_id"].astype(np.int64)
-    # idxmax of timestamp per user_id -> row with latest timestamp
     latest_idx = meta.groupby("user_id")["timestamp"].idxmax()
     latest = meta.loc[latest_idx, ["user_id", "handle"]]
     handle_map = dict(zip(latest["user_id"].to_numpy(), latest["handle"].to_numpy()))
     return [handle_map.get(int(user_id)) for user_id in user_ids]
 
 
-def aggregate_edge_features(rt: pd.DataFrame) -> pd.DataFrame:
-    edge_grp = rt.groupby(["userid", "rt_userid"], as_index=False).agg(
+def aggregate_edge_features(interactions: pd.DataFrame) -> pd.DataFrame:
+    edge_grp = interactions.groupby(["userid", "target_userid"], as_index=False).agg(
         first_ts=("timestamp", "min"),
-        n_retweets=("timestamp", "size"),
-        avg_rt_fav=("rt_fav_count", "mean"),
-        avg_rt_reply=("rt_reply_count", "mean"),
     )
+    type_counts = (
+        interactions.groupby(["userid", "target_userid", "interaction_type"])
+        .size()
+        .unstack(fill_value=0)
+        .reset_index()
+    )
+    edge_grp = edge_grp.merge(type_counts, on=["userid", "target_userid"], how="left")
     min_ns = int(edge_grp["first_ts"].min().value)
-    edge_grp["first_retweet_time"] = (edge_grp["first_ts"].astype("int64") - min_ns) / 3_600_000_000_000.0
-    edge_grp["n_retweets"] = np.log1p(edge_grp["n_retweets"].astype(float))
-    edge_grp["avg_rt_fav"] = np.log1p(pd.to_numeric(edge_grp["avg_rt_fav"], errors="coerce").fillna(0).clip(lower=0))
-    edge_grp["avg_rt_reply"] = np.log1p(pd.to_numeric(edge_grp["avg_rt_reply"], errors="coerce").fillna(0).clip(lower=0))
+    edge_grp["first_interaction_time"] = (edge_grp["first_ts"].astype("int64") - min_ns) / 3_600_000_000_000.0
+    for interaction_type, feature_name in INTERACTION_COUNT_COLUMNS.items():
+        counts = (
+            edge_grp[interaction_type]
+            if interaction_type in edge_grp.columns
+            else pd.Series(0.0, index=edge_grp.index)
+        )
+        edge_grp[feature_name] = np.log1p(pd.to_numeric(counts, errors="coerce").fillna(0).astype(float))
     return edge_grp
 
 
 def to_edge_tensors(edge_df: pd.DataFrame, u2i: Dict[int, int]) -> Tuple[torch.Tensor, torch.Tensor]:
     tmp = edge_df.copy()
     tmp["src"] = tmp["userid"].map(u2i)
-    tmp["dst"] = tmp["rt_userid"].map(u2i)
+    tmp["dst"] = tmp["target_userid"].map(u2i)
     tmp = tmp.dropna(subset=["src", "dst"]).copy()
     tmp[["src", "dst"]] = tmp[["src", "dst"]].astype(int)
     edge_index = torch.tensor(tmp[["src", "dst"]].values.T, dtype=torch.long)
@@ -356,8 +468,8 @@ def to_edge_tensors(edge_df: pd.DataFrame, u2i: Dict[int, int]) -> Tuple[torch.T
     return edge_index, edge_attr
 
 
-def build_node_features(rt: pd.DataFrame, u2i: Dict[int, int], edge_df: pd.DataFrame):
-    base = rt.copy()
+def build_node_features(raw: pd.DataFrame, u2i: Dict[int, int], edge_df: pd.DataFrame):
+    base = raw.copy()
     # Fast list-length extraction (avoids .apply on millions of rows).
     base["n_hashtags"] = _fast_list_lens(base["hashtag"]) if "hashtag" in base.columns else 0
     base["n_mentions"] = _fast_list_lens(base["mentionsn"]) if "mentionsn" in base.columns else 0
@@ -384,7 +496,7 @@ def build_node_features(rt: pd.DataFrame, u2i: Dict[int, int], edge_df: pd.DataF
         node_agg[col] = np.log1p(pd.to_numeric(node_agg[col], errors="coerce").fillna(0).clip(lower=0))
 
     # Degrees from the aggregated edge frame. Merge once; no Python loops.
-    in_deg = edge_df.groupby("rt_userid").size().rename("in_degree")
+    in_deg = edge_df.groupby("target_userid").size().rename("in_degree")
     out_deg = edge_df.groupby("userid").size().rename("out_degree")
     node_agg = node_agg.merge(out_deg, left_on="userid", right_index=True, how="left")
     node_agg = node_agg.merge(in_deg, left_on="userid", right_index=True, how="left")
@@ -547,21 +659,21 @@ def main():
 
     raw = load_raw_rows(args.json_glob, args.max_files, strict_dates=args.strict_dates, max_nodes=args.max_nodes)
     print(f"Raw frame: rows={len(raw):,} cols={len(raw.columns):,}", flush=True)
-    rt = prepare_retweet_rows(raw, args.strict_dates)
-    pretrim_nodes = len(set(rt["userid"].tolist()) | set(rt["rt_userid"].tolist()))
-    print(f"Cleaned retweets: rows={len(rt):,} unique_nodes={pretrim_nodes:,}", flush=True)
-    rt = trim_rt_to_max_nodes(rt, args.max_nodes)
-    posttrim_nodes = len(set(rt["userid"].tolist()) | set(rt["rt_userid"].tolist()))
-    print(f"Post-trim retweets: rows={len(rt):,} unique_nodes={posttrim_nodes:,}", flush=True)
-    user_ids, u2i = build_user_index(rt)
-    handles = build_user_metadata(rt, user_ids)
+    interactions = prepare_interaction_rows(raw, args.strict_dates)
+    pretrim_nodes = len(set(interactions["userid"].tolist()) | set(interactions["target_userid"].tolist()))
+    print(f"Cleaned interactions: rows={len(interactions):,} unique_nodes={pretrim_nodes:,}", flush=True)
+    interactions = trim_interactions_to_max_nodes(interactions, args.max_nodes)
+    posttrim_nodes = len(set(interactions["userid"].tolist()) | set(interactions["target_userid"].tolist()))
+    print(f"Post-trim interactions: rows={len(interactions):,} unique_nodes={posttrim_nodes:,}", flush=True)
+    user_ids, u2i = build_user_index(interactions)
+    handles = build_user_metadata(interactions, user_ids)
     print(f"Nodes: {len(user_ids):,}")
 
-    edge_all_df = aggregate_edge_features(rt)
+    edge_all_df = aggregate_edge_features(interactions)
     edge_index, edge_attr = to_edge_tensors(edge_all_df, u2i)
     print(f"Directed edges: {edge_index.shape[1]:,}")
 
-    x, feature_names = build_node_features(rt, u2i, edge_all_df)
+    x, feature_names = build_node_features(raw, u2i, edge_all_df)
     x, feature_names, emb_stats = maybe_attach_embeddings(
         x, feature_names, user_ids, handles, args.embeddings, args.embedding_pool
     )
@@ -608,36 +720,48 @@ def main():
 
     temporal_stats = {}
     if not args.no_temporal_views:
-        rt_sorted = rt.sort_values("timestamp").reset_index(drop=True)
-        cutoff_idx = int(len(rt_sorted) * args.history_fraction)
-        cutoff_idx = max(1, min(len(rt_sorted) - 1, cutoff_idx))
-        hist_rt = rt_sorted.iloc[:cutoff_idx].copy()
-        fut_rt = rt_sorted.iloc[cutoff_idx:].copy()
-        hist_edges_df = aggregate_edge_features(hist_rt)
-        fut_edges_df = aggregate_edge_features(fut_rt)
+        interactions_sorted = interactions.sort_values("timestamp").reset_index(drop=True)
+        cutoff_idx = int(len(interactions_sorted) * args.history_fraction)
+        cutoff_idx = max(1, min(len(interactions_sorted) - 1, cutoff_idx))
+        hist_interactions = interactions_sorted.iloc[:cutoff_idx].copy()
+        fut_interactions = interactions_sorted.iloc[cutoff_idx:].copy()
+        hist_edges_df = aggregate_edge_features(hist_interactions)
+        fut_edges_df = aggregate_edge_features(fut_interactions)
         hist_edge_index, hist_edge_attr = to_edge_tensors(hist_edges_df, u2i)
-        hist_pairs = set(zip(hist_edges_df["userid"], hist_edges_df["rt_userid"]))
-        fut_pairs = set(zip(fut_edges_df["userid"], fut_edges_df["rt_userid"]))
+        hist_pairs = set(zip(hist_edges_df["userid"], hist_edges_df["target_userid"]))
+        fut_pairs = set(zip(fut_edges_df["userid"], fut_edges_df["target_userid"]))
         target_pairs = fut_pairs - hist_pairs if args.future_target_mode == "new_only" else fut_pairs
         if target_pairs:
-            target_df = pd.DataFrame(sorted(list(target_pairs)), columns=["userid", "rt_userid"])
+            target_df = pd.DataFrame(sorted(list(target_pairs)), columns=["userid", "target_userid"])
             target_df["src"] = target_df["userid"].map(u2i)
-            target_df["dst"] = target_df["rt_userid"].map(u2i)
+            target_df["dst"] = target_df["target_userid"].map(u2i)
             target_df = target_df.dropna(subset=["src", "dst"])
             target_new_edge_index = torch.tensor(target_df[["src", "dst"]].astype(int).values.T, dtype=torch.long)
         else:
             target_new_edge_index = torch.zeros((2, 0), dtype=torch.long)
 
-        graph_obj["edge_index_views"] = {"retweet_all": edge_index, "temporal_history": hist_edge_index}
-        graph_obj["edge_attr_views"] = {"retweet_all": edge_attr, "temporal_history": hist_edge_attr}
-        graph_obj["edge_attr_feature_names_views"] = {"retweet_all": EDGE_FEATURE_NAMES, "temporal_history": EDGE_FEATURE_NAMES}
+        graph_obj["edge_index_views"] = {
+            "interaction_all": edge_index,
+            "retweet_all": edge_index,
+            "temporal_history": hist_edge_index,
+        }
+        graph_obj["edge_attr_views"] = {
+            "interaction_all": edge_attr,
+            "retweet_all": edge_attr,
+            "temporal_history": hist_edge_attr,
+        }
+        graph_obj["edge_attr_feature_names_views"] = {
+            "interaction_all": EDGE_FEATURE_NAMES,
+            "retweet_all": EDGE_FEATURE_NAMES,
+            "temporal_history": EDGE_FEATURE_NAMES,
+        }
         graph_obj["target_edge_index_views"] = {"temporal_new": target_new_edge_index}
         graph_obj["future_edge_index"] = target_new_edge_index
         temporal_stats = {
             "history_fraction": args.history_fraction,
             "future_target_mode": args.future_target_mode,
-            "history_rows": int(len(hist_rt)),
-            "future_rows": int(len(fut_rt)),
+            "history_rows": int(len(hist_interactions)),
+            "future_rows": int(len(fut_interactions)),
             "history_edges": int(hist_edge_index.shape[1]),
             "future_edges": int(len(fut_pairs)),
             "future_overlap_edges": int(len(hist_pairs & fut_pairs)),
