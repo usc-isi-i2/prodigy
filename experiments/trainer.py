@@ -414,13 +414,25 @@ class TrainerFS():
         for key, module in self.all_saveable_modules.items():
             module.load_state_dict(state_dict[key], strict=False)
 
-    def _maybe_save_roc_curve(self, y_true_matrix, y_pred_matrix, split_name, step=None):
+    def _maybe_save_roc_curve(self, y_true_matrix, y_pred_matrix, split_name, step=None, global_eval=None):
         if not self.parameter.get("save_roc_curve", False):
             return
         if self.is_multiway:
-            return
-        y_true = y_true_matrix.detach().cpu().reshape(-1).numpy()
-        y_score = y_pred_matrix.detach().cpu().reshape(-1).numpy()
+            if (
+                self.parameter.get("task_name") != "classification"
+                or global_eval is None
+                or "y_true" not in global_eval
+                or "probs" not in global_eval
+            ):
+                return
+            probs = global_eval["probs"].numpy()
+            if probs.ndim != 2 or probs.shape[1] != 2:
+                return
+            y_true = global_eval["y_true"].numpy().astype(int)
+            y_score = probs[:, 1]
+        else:
+            y_true = y_true_matrix.detach().cpu().reshape(-1).numpy()
+            y_score = y_pred_matrix.detach().cpu().reshape(-1).numpy()
         if y_true.size == 0:
             return
         if len(np.unique(y_true)) < 2:
@@ -455,6 +467,60 @@ class TrainerFS():
             )
         except Exception as ex:
             _log(f"Failed to save ROC curve for {split_name}: {ex}")
+
+    def _extract_global_classification_eval(self, batch, y_true_matrix, y_pred_matrix):
+        if self.parameter.get("task_name") != "classification":
+            return None
+        if y_true_matrix is None or y_pred_matrix is None:
+            return None
+        if y_pred_matrix.ndim != 2 or y_pred_matrix.shape[1] <= 1:
+            return None
+
+        graph = batch[0]
+        task_label_map = getattr(graph, "task_label_map", None)
+        task_id_per_sample = getattr(graph, "task_id_per_sample", None)
+        if task_label_map is None or task_id_per_sample is None:
+            return None
+        if task_label_map.ndim != 2:
+            return None
+
+        num_labels = int(y_pred_matrix.shape[1])
+        if int(task_label_map.shape[1]) != num_labels:
+            return None
+
+        query_mask = batch[5]
+        query_rows = torch.where(query_mask.reshape(-1, num_labels)[:, 0] == 1)[0]
+        if int(query_rows.numel()) != int(y_true_matrix.shape[0]):
+            return None
+
+        sample_task_ids = task_id_per_sample[query_rows].long()
+        local_to_global = task_label_map[sample_task_ids].long()
+        global_num_classes = int(task_label_map.max().item()) + 1
+        if global_num_classes <= 1:
+            return None
+
+        probs_local = torch.softmax(y_pred_matrix.detach(), dim=1)
+        probs_global = torch.zeros(
+            (probs_local.shape[0], global_num_classes),
+            device=probs_local.device,
+            dtype=probs_local.dtype,
+        )
+        probs_global.scatter_add_(1, local_to_global, probs_local)
+
+        if y_true_matrix.ndim > 1 and y_true_matrix.shape[1] > 1:
+            y_true_local = torch.argmax(y_true_matrix.detach(), dim=1).long()
+        else:
+            y_true_local = y_true_matrix.detach().reshape(-1).long()
+
+        row_idx = torch.arange(y_true_local.shape[0], device=y_true_local.device)
+        y_true_global = local_to_global[row_idx, y_true_local]
+        y_pred_global = torch.argmax(probs_global, dim=1).long()
+
+        return {
+            "y_true": y_true_global.detach().cpu(),
+            "y_pred": y_pred_global.detach().cpu(),
+            "probs": probs_global.detach().cpu(),
+        }
 
     def _maybe_print_debug_example(self, batch, yt, yp, graph, split_name, printed_attr, require_flag=False, raw_graph=None):
         if split_name == "train" and getattr(self, printed_attr):
@@ -773,7 +839,7 @@ class TrainerFS():
 
         wandb.log(diag, step=0 if step is None else step)
 
-    def _compute_eval_metrics(self, y_true_matrix, y_pred_matrix):
+    def _compute_eval_metrics(self, y_true_matrix, y_pred_matrix, global_eval=None):
         metrics = {}
         if y_true_matrix is None or y_pred_matrix is None:
             return metrics
@@ -794,18 +860,23 @@ class TrainerFS():
                 return metrics
 
             # Multi-logit classification case.
-            if yt.ndim > 1 and yt.shape[1] > 1:
-                y_true = torch.argmax(yt, dim=1).numpy().astype(int)
+            if global_eval is not None:
+                y_true = global_eval["y_true"].numpy().astype(int)
+                y_pred = global_eval["y_pred"].numpy().astype(int)
+                probs = global_eval["probs"].numpy()
             else:
-                y_true = yt.reshape(-1).numpy().astype(int)
+                if yt.ndim > 1 and yt.shape[1] > 1:
+                    y_true = torch.argmax(yt, dim=1).numpy().astype(int)
+                else:
+                    y_true = yt.reshape(-1).numpy().astype(int)
+                y_pred = torch.argmax(yp, dim=1).numpy().astype(int)
+                probs = torch.softmax(yp, dim=1).numpy()
 
-            y_pred = torch.argmax(yp, dim=1).numpy().astype(int)
             metrics["accuracy"] = float(accuracy_score(y_true, y_pred))
 
-            avg = "binary" if yp.shape[1] == 2 else "macro"
+            avg = "binary" if probs.shape[1] == 2 else "macro"
             metrics["f1"] = float(f1_score(y_true, y_pred, average=avg, zero_division=0))
 
-            probs = torch.softmax(yp, dim=1).numpy()
             n_classes = int(probs.shape[1])
             if n_classes == 2:
                 if len(np.unique(y_true)) >= 2:
@@ -1110,6 +1181,7 @@ class TrainerFS():
         if self.calc_ranks:
             ranks = []
         ytrueall, ypredall = None, None
+        global_eval_parts = []
         all_aux_loss = []
         acc_all = []
         printed_debug_this_eval = False
@@ -1134,6 +1206,9 @@ class TrainerFS():
             loss, acc = self.get_loss_and_acc(yt, yp)  # get loss
             acc_all.append(acc)
             aux_loss = self.get_aux_loss(graph)
+            global_eval_batch = self._extract_global_classification_eval(batch, yt, yp)
+            if global_eval_batch is not None:
+                global_eval_parts.append(global_eval_batch)
             if self.calc_ranks:
                 task_mask = batch[9]
                 query_set_mask = batch[5]
@@ -1150,9 +1225,21 @@ class TrainerFS():
                 ypredall = torch.cat((ypredall, yp), dim=0)
             all_aux_loss.append(aux_loss.item())
         loss_global, acc_global = self.get_loss_and_acc(ytrueall, ypredall)
-        eval_metrics = self._compute_eval_metrics(ytrueall, ypredall)
+        global_eval = None
+        if global_eval_parts:
+            global_eval = {
+                key: torch.cat([part[key] for part in global_eval_parts], dim=0)
+                for key in global_eval_parts[0].keys()
+            }
+        eval_metrics = self._compute_eval_metrics(ytrueall, ypredall, global_eval=global_eval)
         self._maybe_log_eval_diagnostics(ytrueall, ypredall, split_name=split_name, step=step)
-        self._maybe_save_roc_curve(ytrueall, ypredall, split_name=split_name, step=step)
+        self._maybe_save_roc_curve(
+            ytrueall,
+            ypredall,
+            split_name=split_name,
+            step=step,
+            global_eval=global_eval,
+        )
         self._log_eval_metrics(eval_metrics, split_name=split_name, step=step)
         acc_batch_std = np.std(acc_all)
         aux_loss_global = sum(all_aux_loss) / len(all_aux_loss)
