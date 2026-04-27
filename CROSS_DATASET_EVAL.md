@@ -115,7 +115,9 @@ TASKS = [
 
 Then regenerate:
 ```bash
-python scripts/generate_eval_jobs.py --job_list eval_jobs.txt --sbatch_script eval_cross_dataset.sbatch
+python scripts/generate_eval_jobs.py \
+  --job_list eval_jobs.txt \
+  --sbatch_script eval_cross_dataset.sbatch
 ```
 
 ---
@@ -127,30 +129,34 @@ python scripts/generate_eval_jobs.py --job_list eval_jobs.txt --sbatch_script ev
 The generated `eval_cross_dataset.sbatch` is configured with:
 
 ```
---array=0-89%40          # 90 jobs, max 40 parallel
+--array=0-89%16          # 90 jobs, max 16 parallel
 --nodes=1
 --ntasks=1
---cpus-per-task=10
+--cpus-per-task=8
 --gres=gpu:1             # 1 GPU per job
 --time=4:00:00           # 4 hours per job
---mem=16GB
+--mem=32G
 ```
 
 ### Customize for Your Cluster
 
 ```bash
-# Run only 10 jobs in parallel
-sbatch --array=0-89%10 eval_cross_dataset.sbatch
+# Request a specific GPU type if the generic request is rejected
+python scripts/generate_eval_jobs.py --gpu_type p100
 
-# Use 2 GPUs per job (if available)
-sbatch --gres=gpu:2 eval_cross_dataset.sbatch
-
-# Extend time limit to 6 hours
-sbatch --time=6:00:00 eval_cross_dataset.sbatch
+# Run fewer jobs in parallel
+python scripts/generate_eval_jobs.py --array_parallel 8
 
 # Increase memory
-sbatch --mem=32GB eval_cross_dataset.sbatch
+python scripts/generate_eval_jobs.py --mem 64G
+
+# Extend time limit to 6 hours
+python scripts/generate_eval_jobs.py --time_limit 6:00:00
 ```
+
+Notes:
+- Each array task runs with `--device 0`. SLURM usually exposes the allocated GPU as local device `0` through `CUDA_VISIBLE_DEVICES`.
+- If your cluster rejects `--gres=gpu:1`, regenerate with a typed request such as `--gpu_type p100`, `--gpu_type a100`, or another GPU type available on your partition.
 
 ---
 
@@ -254,10 +260,10 @@ squeue -u $USER
 squeue -j <job_id>
 
 # Stream specific log
-tail -f /scratch1/singhama/logs/eval_0.log
+tail -f /home1/eibl/gfm/prodigy/logs/eval_*.out
 
 # Count completed evaluations
-find /scratch1/singhama/data/eval_results -name "*.json" | wc -l
+find /home1/eibl/gfm/prodigy/eval_results -name "*.json" | wc -l
 
 # Monitor all jobs
 watch -n 5 "squeue -u \$USER"
@@ -444,4 +450,3 @@ python scripts/aggregate_eval_results.py --results_dir /scratch1/singhama/data/e
 - [CLAUDE.md](CLAUDE.md) - Code overview
 - [experiments/trainer.py](experiments/trainer.py) - Model training/evaluation code
 - [experiments/params.py](experiments/params.py) - Parameter definitions
-

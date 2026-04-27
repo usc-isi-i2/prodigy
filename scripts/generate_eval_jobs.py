@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
-"""
-Generate cross-dataset evaluation jobs for all model/dataset/task combinations.
-Creates a SLURM batch script with all evaluation commands.
-"""
+"""Generate cross-dataset evaluation jobs and a matching SLURM array script."""
 
-import sys
-import os
-from pathlib import Path
-from datetime import datetime
+import argparse
 
 
 # Models to evaluate - from your provided list
 # Base directory: /home1/eibl/gfm/prodigy/log or wherever your experiments are stored
 EXPERIMENT_BASE = "/home1/eibl/gfm/prodigy/log"
+DEFAULT_PROJECT_ROOT = "/home1/eibl/gfm/prodigy"
+DEFAULT_OUTPUT_ROOT = f"{DEFAULT_PROJECT_ROOT}/eval_results"
 
 MODELS = [
     f"{EXPERIMENT_BASE}/train2_midterm_nm_to_covid_nm_16_04_2026_10_07_00/state_dict",
@@ -46,124 +42,200 @@ TASKS = [
 ]
 
 
-def generate_eval_jobs(output_file="eval_jobs.txt"):
-    """Generate evaluation job list."""
-    
+def generate_eval_jobs(
+    output_file="eval_jobs.txt",
+    project_root=DEFAULT_PROJECT_ROOT,
+    output_root=DEFAULT_OUTPUT_ROOT,
+):
+    """Generate the evaluation command list."""
     jobs = []
-    
+
     for model_path in MODELS:
         for dataset in DATASETS:
             for task in TASKS:
                 job_cmd = (
-                    f"python /home1/eibl/gfm/prodigy/scripts/eval_cross_dataset.py "
+                    f"python {project_root}/scripts/eval_cross_dataset.py "
                     f"--model_path {model_path} "
                     f"--dataset {dataset} "
                     f"--task {task} "
-                    f"--device $((SLURM_ARRAY_TASK_ID % 4)) "  # Distribute GPU IDs
-                    f"--output_dir /home1/eibl/gfm/prodigy/eval_results/{dataset}/{task}"
+                    f"--device 0 "
+                    f"--output_dir {output_root}/{dataset}/{task}"
                 )
                 jobs.append(job_cmd)
-    
-    # Save to file
-    with open(output_file, 'w') as f:
+
+    with open(output_file, "w") as f:
         for i, job in enumerate(jobs, 1):
             f.write(f"# Job {i}/{len(jobs)}\n")
             f.write(job + "\n\n")
-    
+
     print(f"Generated {len(jobs)} evaluation jobs")
     print(f"Saved to {output_file}")
-    
     return jobs
 
 
-def generate_sbatch_script(num_jobs, output_file="eval_cross_dataset.sbatch"):
-    """Generate SLURM batch submission script."""
-    
-    sbatch_content = f"""#!/bin/bash
-#SBATCH --job-name=cross_eval
-#SBATCH --array=0-{num_jobs-1}%40
-#SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=10
-#SBATCH --gres=gpu:1
-#SBATCH --time=4:00:00
-#SBATCH --output=/home1/eibl/gfm/prodigy/logs/eval_%a.log
-#SBATCH --error=/home1/eibl/gfm/prodigy/logs/eval_%a.err
-#SBATCH --mail-type=FAIL
-#SBATCH --mail-user=${{USER}}@example.com
+def generate_sbatch_script(
+    num_jobs,
+    output_file="eval_cross_dataset.sbatch",
+    job_list_file="eval_jobs.txt",
+    project_root=DEFAULT_PROJECT_ROOT,
+    partition="gpu",
+    array_parallel=16,
+    cpus_per_task=8,
+    mem="32G",
+    time_limit="4:00:00",
+    gpus_per_task=1,
+    gpu_type=None,
+    conda_env="prodigy",
+    cuda_module=None,
+    mail_type=None,
+    mail_user=None,
+):
+    """Generate the SLURM array submission script."""
+    logs_dir = f"{project_root}/logs"
+    gres_value = f"gpu:{gpus_per_task}"
+    if gpu_type:
+        gres_value = f"gpu:{gpu_type}:{gpus_per_task}"
 
-# Create log directory
-mkdir -p /home1/eibl/gfm/prodigy/logs
+    sbatch_lines = [
+        "#!/bin/bash",
+        "#SBATCH --job-name=cross_eval",
+        f"#SBATCH --partition={partition}",
+        f"#SBATCH --array=0-{num_jobs - 1}%{array_parallel}",
+        "#SBATCH --nodes=1",
+        "#SBATCH --ntasks=1",
+        f"#SBATCH --cpus-per-task={cpus_per_task}",
+        f"#SBATCH --mem={mem}",
+        f"#SBATCH --gres={gres_value}",
+        f"#SBATCH --time={time_limit}",
+        f"#SBATCH --output={logs_dir}/eval_%A_%a.out",
+        f"#SBATCH --error={logs_dir}/eval_%A_%a.err",
+    ]
 
-# Load environment
-module load cuda/11.8
+    if mail_type and mail_user:
+        sbatch_lines.append(f"#SBATCH --mail-type={mail_type}")
+        sbatch_lines.append(f"#SBATCH --mail-user={mail_user}")
 
-# Activate conda
-source /home/${{USER}}/.bashrc
-conda activate prodigy
+    sbatch_lines.extend(
+        [
+            "",
+            "set -euo pipefail",
+            "",
+            f"mkdir -p {logs_dir}",
+        ]
+    )
 
-# Set working directory
-cd /home1/eibl/gfm/prodigy
+    if cuda_module:
+        sbatch_lines.append(f"module load {cuda_module}")
 
-# Run job from the list
-JOB_COMMANDS=(
-"""
-    
-    # Read job commands from file
-    with open("eval_jobs.txt", 'r') as f:
-        lines = f.readlines()
-        for line in lines:
-            line = line.strip()
-            if line and not line.startswith('#'):
-                sbatch_content += f'  "{line}"\n'
-    
-    sbatch_content += f"""
-)
+    sbatch_lines.extend(
+        [
+            'source "$(conda info --base)/etc/profile.d/conda.sh"',
+            f"conda activate {conda_env}",
+            "",
+            f"cd {project_root}",
+            "",
+            "JOB_COMMANDS=(",
+        ]
+    )
 
-# Get the command for this array task
-COMMAND="${{JOB_COMMANDS[${{SLURM_ARRAY_TASK_ID}}]}}"
+    with open(job_list_file, "r") as f:
+        for raw_line in f:
+            line = raw_line.strip()
+            if line and not line.startswith("#"):
+                sbatch_lines.append(f'  "{line}"')
 
-echo "Running task ${{SLURM_ARRAY_TASK_ID}}: $COMMAND"
-eval "$COMMAND"
-EXIT_CODE=$?
+    sbatch_lines.extend(
+        [
+            ")",
+            "",
+            'COMMAND="${JOB_COMMANDS[${SLURM_ARRAY_TASK_ID}]}"',
+            "",
+            'echo "Running task ${SLURM_ARRAY_TASK_ID}: $COMMAND"',
+            'echo "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-unset}"',
+            'eval "$COMMAND"',
+            "EXIT_CODE=$?",
+            "",
+            'echo "Task ${SLURM_ARRAY_TASK_ID} completed with exit code $EXIT_CODE"',
+            "exit $EXIT_CODE",
+            "",
+        ]
+    )
 
-echo "Task ${{SLURM_ARRAY_TASK_ID}} completed with exit code $EXIT_CODE"
-exit $EXIT_CODE
-"""
-    
-    with open(output_file, 'w') as f:
+    sbatch_content = "\n".join(sbatch_lines)
+    with open(output_file, "w") as f:
         f.write(sbatch_content)
-    
+
     print(f"Generated SLURM script: {output_file}")
     return sbatch_content
 
 
 if __name__ == "__main__":
-    import argparse
-    
     parser = argparse.ArgumentParser(description="Generate cross-dataset evaluation jobs")
     parser.add_argument("--job_list", type=str, default="eval_jobs.txt",
                        help="Output file for job list")
     parser.add_argument("--sbatch_script", type=str, default="eval_cross_dataset.sbatch",
                        help="Output SLURM batch script")
-    
+    parser.add_argument("--project_root", type=str, default=DEFAULT_PROJECT_ROOT,
+                       help="Cluster path to the prodigy checkout")
+    parser.add_argument("--output_root", type=str, default=DEFAULT_OUTPUT_ROOT,
+                       help="Root directory for evaluation outputs")
+    parser.add_argument("--partition", type=str, default="gpu",
+                       help="SLURM partition name")
+    parser.add_argument("--array_parallel", type=int, default=16,
+                       help="Maximum number of array tasks to run concurrently")
+    parser.add_argument("--cpus_per_task", type=int, default=8,
+                       help="CPU cores per evaluation task")
+    parser.add_argument("--mem", type=str, default="32G",
+                       help="Memory request per evaluation task")
+    parser.add_argument("--time_limit", type=str, default="4:00:00",
+                       help="Wall clock limit per evaluation task")
+    parser.add_argument("--gpus_per_task", type=int, default=1,
+                       help="GPUs requested per evaluation task")
+    parser.add_argument("--gpu_type", type=str, default=None,
+                       help="Optional GPU type, e.g. a100, a40, v100, p100, l40s")
+    parser.add_argument("--conda_env", type=str, default="prodigy",
+                       help="Conda environment to activate")
+    parser.add_argument("--cuda_module", type=str, default=None,
+                       help="Optional CUDA module to load before activation")
+    parser.add_argument("--mail_type", type=str, default=None,
+                       help="Optional SLURM mail type, e.g. FAIL")
+    parser.add_argument("--mail_user", type=str, default=None,
+                       help="Optional SLURM mail recipient")
+
     args = parser.parse_args()
-    
-    # Generate jobs
-    jobs = generate_eval_jobs(args.job_list)
-    
-    # Generate SLURM script
-    generate_sbatch_script(len(jobs), args.sbatch_script)
-    
-    print("\n" + "="*80)
+
+    jobs = generate_eval_jobs(
+        args.job_list,
+        project_root=args.project_root,
+        output_root=args.output_root,
+    )
+    generate_sbatch_script(
+        len(jobs),
+        args.sbatch_script,
+        job_list_file=args.job_list,
+        project_root=args.project_root,
+        partition=args.partition,
+        array_parallel=args.array_parallel,
+        cpus_per_task=args.cpus_per_task,
+        mem=args.mem,
+        time_limit=args.time_limit,
+        gpus_per_task=args.gpus_per_task,
+        gpu_type=args.gpu_type,
+        conda_env=args.conda_env,
+        cuda_module=args.cuda_module,
+        mail_type=args.mail_type,
+        mail_user=args.mail_user,
+    )
+
+    print("\n" + "=" * 80)
     print(f"Total evaluation jobs: {len(jobs)}")
     print(f"Models: {len(MODELS)}")
     print(f"Datasets: {len(DATASETS)}")
     print(f"Tasks: {len(TASKS)}")
     print(f"Total combinations: {len(MODELS) * len(DATASETS) * len(TASKS)}")
-    print("="*80)
-    
-    print(f"\nNext steps:")
+    print("=" * 80)
+
+    print("\nNext steps:")
     print(f"1. Review {args.job_list} to verify job commands")
     print(f"2. Submit jobs: sbatch {args.sbatch_script}")
-    print(f"3. Monitor: squeue -u $USER")
+    print("3. Monitor: squeue -u $USER")
