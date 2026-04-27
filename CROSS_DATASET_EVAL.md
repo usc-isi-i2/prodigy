@@ -1,144 +1,447 @@
 # Cross-Dataset Transfer Evaluation
 
-This guide explains how to train a model on one Twitter dataset and evaluate it on another — the standard way to test out-of-distribution generalization in this repo.
+This guide explains how to evaluate trained models across multiple datasets and tasks on the cluster.
 
 ## Overview
 
-The full flow is:
+The complete evaluation pipeline:
 
-1. **Train** on a source dataset (e.g. Midterm) using the normal training scripts.
-2. **Record** the checkpoint path(s) in a model list file.
-3. **Run** the eval sbatch script, pointing it at the model list and the target dataset.
+1. **Collect** all trained model paths
+2. **Generate** evaluation jobs for all model × dataset × task combinations
+3. **Submit** jobs to cluster via SLURM array job
+4. **Monitor** job progress in real-time
+5. **Aggregate** results and analyze cross-dataset performance
 
-The eval script loads each checkpoint, freezes the model weights (`--eval_only True`), and runs inference on the target dataset across all three tasks (neighbor matching, temporal link prediction, political leaning classification) and across multiple shot counts (default: 0, 1, 2, 5, 10).
+This is the standard way to test out-of-distribution generalization in this repo.
 
 ---
 
-## Step 1: Train on the source dataset
+## Quick Start
 
-Use the standard training scripts (see [README.md](README.md)):
+### 1. Generate Evaluation Jobs
 
 ```bash
-# Train on Midterm
-sbatch scripts/submit_train1_midterm_lp.sh
-sbatch scripts/submit_train1_midterm_nm.sh
-sbatch scripts/submit_train1_midterm_pl.sh
-
-# Train on Ukraine-Russia
-sbatch scripts/submit_train1_ukr_rus_twitter_lp.sh
-sbatch scripts/submit_train1_ukr_rus_twitter_nm.sh
-sbatch scripts/submit_train1_ukr_rus_twitter_pl.sh
-
-# Train on COVID-19
-sbatch scripts/submit_train1_covid19_twitter_lp.sh
-sbatch scripts/submit_train1_covid19_twitter_nm.sh
+cd /home1/eibl/gfm/prodigy
+python scripts/generate_eval_jobs.py
 ```
 
-Checkpoints are saved to `state/<PREFIX>_<timestamp>/checkpoint/`.
+This creates:
+- `eval_jobs.txt` - List of all evaluation commands (90 jobs total)
+- `eval_cross_dataset.sbatch` - SLURM batch submission script
 
----
-
-## Step 2: Create or update a model list file
-
-A model list file is a plain text file where each non-blank, non-comment line identifies one checkpoint to evaluate. Two formats are supported:
-
-```
-# Format 1: checkpoint path only (model name derived from parent directory)
-state/train1_midterm_lp_24_03_2026_12_11_22/checkpoint/state_dict_7000.ckpt
-
-# Format 2: explicit model name + checkpoint path (recommended)
-lp state/train1_midterm_lp_24_03_2026_12_11_22/checkpoint/state_dict_7000.ckpt
-nm state/train1_midterm_nm_24_03_2026_12_15_40/checkpoint/state_dict_1000.ckpt
-pl state/train1_midterm_pl_24_03_2026_12_15_40/checkpoint/state_dict_2000.ckpt
-```
-
-The model name appears in W&B run prefixes and output filenames as `trained_on_<model_name>_eval_on_<task>_<shots>_shot`.
-
-Existing model list files for reference:
-
-| File | Source training | Target eval dataset |
-|---|---|---|
-| `scripts/midterm_train1_eval_on_ukr_rus_model_list.txt` | Midterm | Ukraine-Russia |
-| `scripts/ukr_rus_train1_eval_on_midterm_model_list.txt` | Ukraine-Russia | Midterm |
-| `scripts/ukr_rus_train1_eval_model_list.txt` | Ukraine-Russia | Ukraine-Russia (in-domain) |
-| `scripts/eval1_model_list.txt` | Midterm | COVID-19 |
-
----
-
-## Step 3: Submit the eval job
-
-Pick the sbatch script that corresponds to the **target** dataset you want to evaluate on:
-
-| Target dataset | sbatch script |
-|---|---|
-| Midterm | `scripts/eval_midterm_model_list_all_tasks.sbatch` |
-| Ukraine-Russia | `scripts/eval_ukr_rus_twitter_model_list_all_tasks.sbatch` |
-| COVID-19 | `scripts/eval_covid19_twitter_model_list_all_tasks.sbatch` |
-
-Pass your model list file as the first argument. The second argument (optional) is a comma-separated list of shot counts:
+### 2. Submit to Cluster
 
 ```bash
-# Midterm-trained models → evaluate on Ukraine-Russia (default shots: 0,1,2,5,10)
-sbatch scripts/submit_eval_midterm_to_ukr_rus_all_tasks.sh
+# Review the job list first
+cat eval_jobs.txt
 
-# Same, but only 1- and 5-shot
-sbatch scripts/eval_ukr_rus_twitter_model_list_all_tasks.sbatch \
-  scripts/midterm_train1_eval_on_ukr_rus_model_list.txt \
-  1,5
-
-# Ukraine-Russia-trained models → evaluate on Midterm
-sbatch scripts/submit_eval_ukr_rus_to_midterm_all_tasks.sh
-
-# Any model list → evaluate on COVID-19
-sbatch scripts/eval_covid19_twitter_model_list_all_tasks.sbatch \
-  scripts/eval1_model_list.txt \
-  0,1,2,5,10
+# Submit array job
+sbatch eval_cross_dataset.sbatch
 ```
 
-The convenience wrappers `submit_eval_midterm_to_ukr_rus_all_tasks.sh` and `submit_eval_ukr_rus_to_midterm_all_tasks.sh` just call the corresponding sbatch with the pre-existing model list files and accept the optional shots argument too:
+### 3. Monitor Progress
 
 ```bash
-# Override shots via the wrapper
-bash scripts/submit_eval_midterm_to_ukr_rus_all_tasks.sh 1,5
+# Check job status
+squeue -u $USER
+
+# Stream logs
+tail -f /home1/eibl/gfm/prodigy/logs/eval_*.log
+
+# Count completed results
+find /home1/eibl/gfm/prodigy/eval_results -name "*.json" | wc -l
+```
+
+### 4. Aggregate Results
+
+```bash
+python scripts/aggregate_eval_results.py \
+  --results_dir /home1/eibl/gfm/prodigy/eval_results
 ```
 
 ---
 
-## What the eval script does
+## Detailed Setup
 
-For each checkpoint × task × shot count combination the script calls:
+### Your Models
 
-```bash
-python3 experiments/run_single_experiment.py \
-  --dataset <target_dataset> \
-  --root <target_data_root> \
-  --pretrained_model_run <ckpt_path> \
-  --eval_only True \
-  --eval_test_before_train True \
-  --eval_val_before_train True \
-  --save_roc_curve True \
-  --task_name <neighbor_matching|temporal_link_prediction|classification> \
-  --n_shots <shots> \
-  --zero_shot <True if shots==0> \
-  --prefix "trained_on_<model_name>_eval_on_<task_tag>_<shots>_shot" \
-  ...  # task-specific args
+You have 15 trained models to evaluate:
+
+| # | Model | Source→Target | Task |
+|---|-------|---------------|------|
+| 1 | train2_midterm_nm_to_covid_nm | midterm→covid | node_masking |
+| 2 | exp2_train2_midterm_nm_to_ukr_rus_nm | midterm→ukr_rus | node_masking |
+| 3 | exp3_train2_covid_nm_to_ukr_rus_nm | covid→ukr_rus | node_masking |
+| 4 | exp4_train2_midterm_lp_to_covid_lp | midterm→covid | link_prediction |
+| 5 | exp5_train2_midterm_lp_to_ukr_rus_lp | midterm→ukr_rus | link_prediction |
+| 6 | exp6_train2_covid_lp_to_ukr_rus_lp | covid→ukr_rus | link_prediction |
+| 7 | exp7_train2_midterm_nm_to_covid_lp | midterm→covid | cross-task |
+| 8 | exp8_train2_midterm_nm_to_ukr_rus_lp | midterm→ukr_rus | cross-task |
+| 9 | exp9_train2_covid_nm_to_ukr_rus_lp | covid→ukr_rus | cross-task |
+| 10 | exp10_train2_midterm_lp_to_covid_nm | midterm→covid | cross-task |
+| 11 | exp11_train2_midterm_lp_to_ukr_rus_nm | midterm→ukr_rus | cross-task |
+| 12 | exp12_train2_covid_lp_to_ukr_rus_nm | covid→ukr_rus | cross-task |
+| 13 | exp13_train2_covid_nm_to_midterm_nm | covid→midterm | node_masking |
+| 14 | exp14_train2_ukr_rus_nm_to_midterm_nm | ukr_rus→midterm | node_masking |
+| 15 | exp15_train2_ukr_rus_nm_to_covid_nm | ukr_rus→covid | node_masking |
+
+### Evaluation Configuration
+
+By default, all 15 models are evaluated on:
+- **Datasets**: midterm, covid19_twitter, ukr_rus_twitter
+- **Tasks**: node_masking, link_prediction
+- **Total jobs**: 15 × 3 × 2 = **90 evaluations**
+
+To customize, edit `scripts/generate_eval_jobs.py`:
+
+```python
+MODELS = [
+    # Add/remove model paths here
+]
+
+DATASETS = [
+    # Change which datasets to evaluate on
+    "midterm",
+    "covid19_twitter",
+    "ukr_rus_twitter",
+]
+
+TASKS = [
+    # Change which tasks to evaluate on
+    "node_masking",
+    "link_prediction",
+]
 ```
 
-Key points:
-- `--eval_only True` freezes weights — no gradient updates happen on the target dataset.
-- `--eval_test_before_train True` / `--eval_val_before_train True` run evaluation before any (hypothetical) training loop, so this is a pure zero/few-shot transfer.
-- ROC curves are saved alongside the W&B logs.
-- The prefix encodes the full provenance: which model was trained on what, evaluated on which task and how many shots.
+Then regenerate:
+```bash
+python scripts/generate_eval_jobs.py --job_list eval_jobs.txt --sbatch_script eval_cross_dataset.sbatch
+```
 
 ---
 
-## Adding a new source–target pair
+## Cluster Configuration
 
-1. Train on the new source dataset (or reuse an existing checkpoint).
-2. Create a new model list file, e.g. `scripts/covid_train1_eval_on_midterm_model_list.txt`.
-3. Submit directly against the target's sbatch script:
-   ```bash
-   sbatch scripts/eval_midterm_model_list_all_tasks.sbatch \
-     scripts/covid_train1_eval_on_midterm_model_list.txt
-   ```
-   No new script is needed unless you want a convenience wrapper.
+### SLURM Settings
+
+The generated `eval_cross_dataset.sbatch` is configured with:
+
+```
+--array=0-89%40          # 90 jobs, max 40 parallel
+--nodes=1
+--ntasks=1
+--cpus-per-task=10
+--gres=gpu:1             # 1 GPU per job
+--time=4:00:00           # 4 hours per job
+--mem=16GB
+```
+
+### Customize for Your Cluster
+
+```bash
+# Run only 10 jobs in parallel
+sbatch --array=0-89%10 eval_cross_dataset.sbatch
+
+# Use 2 GPUs per job (if available)
+sbatch --gres=gpu:2 eval_cross_dataset.sbatch
+
+# Extend time limit to 6 hours
+sbatch --time=6:00:00 eval_cross_dataset.sbatch
+
+# Increase memory
+sbatch --mem=32GB eval_cross_dataset.sbatch
+```
+
+---
+
+## Single Job Evaluation (Testing)
+
+To test a single model/dataset/task combination:
+
+```bash
+python scripts/eval_cross_dataset.py \
+  --model_path /home1/eibl/gfm/prodigy/log/train2_midterm_nm_to_covid_nm_16_04_2026_10_07_00/state_dict \
+  --dataset covid19_twitter \
+  --task node_masking \
+  --output_dir /home1/eibl/gfm/prodigy/eval_results/covid19_twitter/node_masking \
+  --device 0 \
+  --batch_size 5 \
+  --dataset_len_cap 10000
+```
+
+**Options:**
+- `--model_path` (required): Path to checkpoint
+- `--dataset` (required): Dataset name
+- `--task` (required): Task name
+- `--device`: GPU ID (default: 0)
+- `--batch_size`: Evaluation batch size (default: 5)
+- `--dataset_len_cap`: Number of samples to evaluate (default: 10000)
+- `--output_dir`: Where to save results (default: ./eval_results)
+- `--force_cache`: Use cached dataset (default: false)
+- `--root`: Root data directory (default: /home1/eibl/gfm/prodigy/FSdatasets)
+
+---
+
+## Results
+
+### Output Structure
+
+```
+/home1/eibl/gfm/prodigy/eval_results/
+├── midterm/
+│   ├── node_masking/
+│   │   └── eval_midterm_node_masking_DD_MM_YYYY_HH_MM_SS.json
+│   └── link_prediction/
+│       └── eval_midterm_link_prediction_DD_MM_YYYY_HH_MM_SS.json
+├── covid19_twitter/
+│   ├── node_masking/
+│   └── link_prediction/
+├── ukr_rus_twitter/
+│   ├── node_masking/
+│   └── link_prediction/
+├── summary.csv           # Aggregated table
+└── summary.json          # Structured summary
+```
+
+### Result Files
+
+Each evaluation generates a JSON file:
+
+```json
+{
+  "model_path": "/home1/eibl/gfm/prodigy/log/train2_midterm_nm_to_covid_nm_16_04_2026_10_07_00/state_dict",
+  "dataset": "covid19_twitter",
+  "task": "node_masking",
+  "timestamp": "2026-04-26T15:30:45.123456",
+  "val_results": {
+    "accuracy": 0.92,
+    "f1_score": 0.89,
+    "auc_roc": 0.94
+  },
+  "test_results": {
+    "accuracy": 0.89,
+    "f1_score": 0.86,
+    "auc_roc": 0.91
+  }
+}
+```
+
+### Aggregate Summary
+
+After all jobs complete, run:
+
+```bash
+python scripts/aggregate_eval_results.py \
+  --results_dir /home1/eibl/gfm/prodigy/eval_results
+```
+
+This generates:
+- **summary.csv**: Tabular format with all results
+- **summary.json**: Structured JSON with model rankings
+- **Console output**: High-level statistics
+
+---
+
+## Monitoring & Troubleshooting
+
+### Monitor Jobs
+
+```bash
+# Check job status
+squeue -u $USER
+
+# Check specific job
+squeue -j <job_id>
+
+# Stream specific log
+tail -f /scratch1/singhama/logs/eval_0.log
+
+# Count completed evaluations
+find /scratch1/singhama/data/eval_results -name "*.json" | wc -l
+
+# Monitor all jobs
+watch -n 5 "squeue -u \$USER"
+```
+
+### Common Issues
+
+**Jobs stuck in PENDING**
+```bash
+# Check for resource constraints
+sinfo
+squeue -u $USER -O "NAME,CPUS,MIN_CPUS,MIN_TMP_DISK,MIN_MEMORY,NODES,PRIORITY,STATE"
+```
+
+**Out of memory errors**
+```bash
+# Check GPU usage
+nvidia-smi
+
+# Run with smaller batch size
+python scripts/eval_cross_dataset.py --batch_size 2 --dataset_len_cap 5000
+```
+
+**Model checkpoint not found**
+```bash
+# Verify checkpoint exists
+ls -la /scratch1/singhama/data/experiments/MODEL_NAME/state_dict
+ls -la /scratch1/singhama/data/experiments/MODEL_NAME/checkpoint/*.ckpt
+```
+
+**Dataset loading errors**
+```bash
+# Check if dataset is cached
+ls -la /scratch1/singhama/data/FSdatasets/
+
+# Clear cache and try again
+python scripts/eval_cross_dataset.py --force_cache false --dataset midterm ...
+```
+
+**Cancel running jobs**
+```bash
+# Cancel all array jobs
+scancel -n cross_eval
+
+# Cancel specific job
+scancel <job_id>
+
+# Cancel range of jobs
+scancel 12345-12350
+```
+
+---
+
+## Advanced Usage
+
+### Resume Interrupted Evaluations
+
+If some jobs failed, check which combinations were completed:
+
+```bash
+# List all completed evaluations
+python -c "
+import json, os
+from pathlib import Path
+completed = set()
+for f in Path('/scratch1/singhama/data/eval_results').rglob('*.json'):
+    try:
+        data = json.load(open(f))
+        key = (data['model_path'], data['dataset'], data['task'])
+        completed.add(key)
+    except: pass
+print(f'Completed: {len(completed)} evaluations')
+for k in sorted(completed)[:10]:
+    print(f'  {k[0][-30:]:30} {k[1]:20} {k[2]}')
+"
+```
+
+Then rerun missing combinations:
+
+```bash
+# Run a single missing combination
+python scripts/eval_cross_dataset.py \
+  --model_path /scratch1/singhama/data/experiments/... \
+  --dataset midterm \
+  --task node_masking
+```
+
+### Analyze Results Programmatically
+
+```python
+import pandas as pd
+import json
+from pathlib import Path
+
+# Load all results
+results = []
+for f in Path("/home1/eibl/gfm/prodigy/eval_results").rglob("*.json"):
+    try:
+        data = json.load(open(f))
+        model_name = data["model_path"].split("/")[-2]
+        results.append({
+            "model": model_name,
+            "dataset": data["dataset"],
+            "task": data["task"],
+            "test_acc": data["test_results"].get("accuracy", 0),
+            "test_f1": data["test_results"].get("f1_score", 0),
+        })
+    except:
+        pass
+
+df = pd.DataFrame(results)
+
+# Best models on each dataset
+for dataset in df["dataset"].unique():
+    print(f"\n{dataset}:")
+    best = df[df["dataset"] == dataset].nlargest(3, "test_acc")
+    print(best[["model", "task", "test_acc"]])
+
+# Cross-task transfer analysis
+print("\n=== Cross-task transfer ===")
+nm_models = df[df["task"] == "node_masking"]["model"].unique()
+print(f"Trained on node_masking, tested on link_prediction:")
+lp_results = df[(df["task"] == "link_prediction") & (df["model"].isin(nm_models))]
+print(lp_results[["model", "dataset", "test_acc"]])
+```
+
+---
+
+## Expected Runtime
+
+- **Per job**: 5-15 minutes (depends on dataset size and GPU)
+- **All 90 jobs**: ~2-3 hours (with 40 parallel jobs)
+- **Aggregation**: <1 minute
+
+Total wall-clock time: ~4 hours from submission to results
+
+---
+
+## File Organization
+
+Essential scripts:
+
+| File | Purpose |
+|------|---------|
+| [scripts/eval_cross_dataset.py](scripts/eval_cross_dataset.py) | Main evaluation script |
+| [scripts/generate_eval_jobs.py](scripts/generate_eval_jobs.py) | Generate job list and SLURM script |
+| [scripts/aggregate_eval_results.py](scripts/aggregate_eval_results.py) | Summarize results |
+| eval_cross_dataset.sbatch | Generated SLURM batch script |
+| eval_jobs.txt | Generated job command list |
+
+Generated during execution:
+
+```
+/scratch1/singhama/data/eval_results/
+├── {dataset}/{task}/
+│   └── eval_*.json (per evaluation)
+├── summary.csv
+└── summary.json
+```
+
+---
+
+## Quick Reference
+
+```bash
+# One-liner: full pipeline
+cd /scratch1/singhama/prodigy && \
+python scripts/generate_eval_jobs.py && \
+sbatch eval_cross_dataset.sbatch && \
+echo "Jobs submitted! Monitor with: squeue -u \$USER"
+
+# Monitor
+watch -n 5 "squeue -u \$USER; echo; find /scratch1/singhama/data/eval_results -name '*.json' | wc -l"
+
+# Results
+python scripts/aggregate_eval_results.py --results_dir /scratch1/singhama/data/eval_results
+```
+
+---
+
+## See Also
+
+- [README.md](README.md) - Main documentation
+- [CLAUDE.md](CLAUDE.md) - Code overview
+- [experiments/trainer.py](experiments/trainer.py) - Model training/evaluation code
+- [experiments/params.py](experiments/params.py) - Parameter definitions
+
