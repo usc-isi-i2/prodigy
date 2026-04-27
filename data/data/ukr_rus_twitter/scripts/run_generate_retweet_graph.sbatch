@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=ukr-retweet
-#SBATCH --output=/scratch1/eibl/data/ukr_rus_twitter/logs/ukr-retweet-%j.out
+#SBATCH --output=/home1/eibl/gfm/prodigy/logs/%x_%j.out
 #SBATCH --partition=main
 #SBATCH --time=01:00:00
 #SBATCH --cpus-per-task=16

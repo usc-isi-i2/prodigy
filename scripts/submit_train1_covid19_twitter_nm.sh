@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=train1_covid19_twitter_nm
-#SBATCH --output=/scratch1/eibl/data/covid19_twitter/logs/%x_%j.out
+#SBATCH --output=/home1/eibl/gfm/prodigy/logs/%x_%j.out
 #SBATCH --error=/scratch1/eibl/data/covid19_twitter/logs/%x_%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
