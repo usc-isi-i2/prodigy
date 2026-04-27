@@ -24,7 +24,7 @@ from .midterm import (
 
 
 def _build_covid_political_graph(raw: dict, **kwargs):
-    edge_view = _normalize_view_name(kwargs.get("midterm_edge_view", "default"))
+    edge_view = _normalize_view_name(kwargs.get("edge_view", kwargs.get("midterm_edge_view", "default")))
     edge_index, resolved_edge_view = _load_named_tensor(
         raw,
         edge_view,
@@ -69,7 +69,7 @@ def _build_covid_political_graph(raw: dict, **kwargs):
         kwargs.get("midterm_label_downsample", ""),
         seed=int(kwargs.get("seed", 0) or 0),
     )
-    graph = _apply_feature_subset(graph, kwargs.get("midterm_feature_subset", "all"))
+    graph = _apply_feature_subset(graph, kwargs.get("feature_subset", kwargs.get("midterm_feature_subset", "all")))
     graph = _apply_edge_feature_subset(
         graph,
         kwargs.get("edge_feature_subset", kwargs.get("midterm_edge_feature_subset", "all")),

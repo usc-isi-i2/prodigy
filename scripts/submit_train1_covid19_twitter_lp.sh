@@ -22,9 +22,9 @@ python3 experiments/run_single_experiment.py \
   --root /scratch1/eibl/data/covid19_twitter/graphs \
   --graph_filename retweet_graph_minilm_first100_hf03.pt \
   --task_name temporal_link_prediction \
-  --midterm_feature_subset emb_only \
-  --midterm_edge_view temporal_history \
-  --midterm_target_edge_view temporal_new \
+  --feature_subset emb_only \
+  --edge_view temporal_history \
+  --target_edge_view temporal_new \
   --input_dim 384 \
   --original_features True \
   --n_way 1 \

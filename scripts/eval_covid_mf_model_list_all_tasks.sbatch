@@ -27,7 +27,7 @@ COMMON_ARGS=(
   --dataset covid_mf
   --root /home1/eibl/gfm/prodigy/data/data/covid_mf/graphs
   --graph_filename retweet_graph.pt
-  --midterm_feature_subset emb_only
+  --feature_subset emb_only
   --input_dim 384
   --original_features True
   --workers 4

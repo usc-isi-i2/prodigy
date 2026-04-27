@@ -20,7 +20,7 @@ python3 experiments/run_single_experiment.py \
   --root /scratch1/eibl/data/midterm/graphs \
   --graph_filename retweet_graph_5050_all_future_political_leaning.pt \
   --task_name temporal_link_prediction \
-  --midterm_feature_subset emb_only \
+  --feature_subset emb_only \
   --input_dim 384 \
   --original_features True \
   --n_way 1 \
@@ -35,5 +35,5 @@ python3 experiments/run_single_experiment.py \
   --workers 8 \
   --device 0 \
   --seed 0 \
-  --midterm_target_edge_view default \
+  --target_edge_view default \
   --prefix train1_midterm_lp

@@ -24,8 +24,8 @@ python3 experiments/run_single_experiment.py \
   --root /scratch1/eibl/data/ukr_rus_twitter/graphs \
   --graph_filename retweet_graph_150files_minilm_hf03.pt \
   --task_name neighbor_matching \
-  --midterm_feature_subset emb_only \
-  --midterm_edge_view temporal_history \
+  --feature_subset emb_only \
+  --edge_view temporal_history \
   --input_dim 384 \
   --n_way 3 \
   --n_shots 3 \

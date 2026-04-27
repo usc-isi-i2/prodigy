@@ -23,7 +23,7 @@ COMMON_ARGS=(
   --dataset midterm
   --root /scratch1/eibl/data/midterm/graphs
   --graph_filename retweet_graph_5050_all_future_political_leaning.pt
-  --midterm_feature_subset emb_only
+  --feature_subset emb_only
   --input_dim 384
   --original_features True
   --workers 8
@@ -58,7 +58,7 @@ case "$TARGET_TASK" in
       --epochs 3
       --eval_step 1000
       --checkpoint_step 1000
-      --midterm_target_edge_view default
+      --target_edge_view default
       --prefix "train2_${SOURCE_MODEL}_to_lp"
     )
     ;;

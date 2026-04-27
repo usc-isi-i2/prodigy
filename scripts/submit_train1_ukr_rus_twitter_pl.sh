@@ -24,8 +24,8 @@ args=(
   --root /scratch1/eibl/data/ukr_rus_twitter/graphs
   --graph_filename retweet_graph_150files_minilm_hf03_political_labels.pt
   --task_name classification
-  --midterm_feature_subset emb_only
-  --midterm_edge_view retweet_all
+  --feature_subset emb_only
+  --edge_view retweet_all
   --input_dim 384
   --original_features True
   --ignore_label_embeddings False

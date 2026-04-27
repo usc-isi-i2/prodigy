@@ -26,7 +26,7 @@ from .midterm import (
 
 
 def _build_ukr_rus_twitter_graph(raw: dict, **kwargs):
-    edge_view = _normalize_view_name(kwargs.get("midterm_edge_view", "default"))
+    edge_view = _normalize_view_name(kwargs.get("edge_view", kwargs.get("midterm_edge_view", "default")))
     edge_index, resolved_edge_view = _load_named_tensor(
         raw,
         edge_view,
@@ -76,7 +76,7 @@ def _build_ukr_rus_twitter_graph(raw: dict, **kwargs):
         seed=int(kwargs.get("seed", 0) or 0),
     )
 
-    graph = _apply_feature_subset(graph, kwargs.get("midterm_feature_subset", "all"))
+    graph = _apply_feature_subset(graph, kwargs.get("feature_subset", kwargs.get("midterm_feature_subset", "all")))
     graph = _apply_edge_feature_subset(
         graph,
         kwargs.get("edge_feature_subset", kwargs.get("midterm_edge_feature_subset", "all")),
@@ -110,7 +110,10 @@ def get_ukr_rus_twitter_dataset(
 
     task_name = kwargs.get("task_name", "")
     if task_name == "temporal_link_prediction":
-        target_view = _normalize_view_name(kwargs.get("midterm_target_edge_view", "future"), default="future")
+        target_view = _normalize_view_name(
+            kwargs.get("target_edge_view", kwargs.get("midterm_target_edge_view", "future")),
+            default="future",
+        )
         future_edge_index, resolved_target_view = _load_named_tensor(
             raw,
             target_view,
@@ -174,7 +177,7 @@ def get_ukr_rus_twitter_dataloader(
         if not hasattr(dataset, "future_neighbor_sampler"):
             raise ValueError(
                 "temporal_link_prediction requires target edges, but no future edge view was found. "
-                "Provide --midterm_target_edge_view (or ensure 'future_edge_index' exists in graph_data.pt)."
+                "Provide --target_edge_view (or ensure 'future_edge_index' exists in graph_data.pt)."
             )
         neg_ratio = int(kwargs.get("midterm_lp_neg_ratio", 1))
         if isinstance(n_way, int):

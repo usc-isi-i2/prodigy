@@ -161,11 +161,11 @@ def main():
             max_posts=eval_params.get("facebook_max_posts"),
             n_hop=eval_params.get("n_hop", 2),
             graph_filename=eval_params.get("graph_filename", ""),
-            midterm_feature_subset=eval_params.get("midterm_feature_subset", ""),
+            feature_subset=eval_params.get("feature_subset", eval_params.get("midterm_feature_subset", "")),
             midterm_label_downsample=eval_params.get("midterm_label_downsample", 1),
-            midterm_edge_view=eval_params.get("midterm_edge_view", ""),
-            midterm_target_edge_view=eval_params.get("midterm_target_edge_view", ""),
-            midterm_edge_feature_subset=eval_params.get("midterm_edge_feature_subset", ""),
+            edge_view=eval_params.get("edge_view", eval_params.get("midterm_edge_view", "")),
+            target_edge_view=eval_params.get("target_edge_view", eval_params.get("midterm_target_edge_view", "")),
+            edge_feature_subset=eval_params.get("edge_feature_subset", eval_params.get("midterm_edge_feature_subset", "")),
             seed=eval_params.get("seed"),
         )
         
