@@ -17,7 +17,7 @@ python -u data/data/covid19_twitter/scripts/generate_user_graph.py \
 && python -u data/data/midterm/scripts/generate_user_graph.py \
     --graph_mode retweet \
     --csv_glob "/project2/ll_774_951/midterm/*/*.csv" \
-    --embeddings /scratch1/eibl/data/midterm/embeddings/user_embeddings_minilm_1p5m.pt.pt \
+    --embeddings /scratch1/eibl/data/midterm/embeddings/user_embeddings_minilm_1p5m.pt \
     --embedding_pool meanpool \
     --max_nodes 250000 \
     --history_fraction 0.3 \
@@ -26,7 +26,7 @@ python -u data/data/covid19_twitter/scripts/generate_user_graph.py \
 && python -u data/data/midterm/scripts/generate_user_graph.py \
     --graph_mode interaction \
     --csv_glob "/project2/ll_774_951/midterm/*/*.csv" \
-    --embeddings /scratch1/eibl/data/midterm/embeddings/user_embeddings_minilm_1p5m.pt.pt \
+    --embeddings /scratch1/eibl/data/midterm/embeddings/user_embeddings_minilm_1p5m.pt \
     --embedding_pool meanpool \
     --max_nodes 250000 \
     --history_fraction 0.3 \
