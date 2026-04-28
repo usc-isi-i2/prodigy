@@ -277,9 +277,11 @@ def _parse_int_list_field(val) -> List[int]:
 def prepare_retweet_rows(df: pd.DataFrame, strict_dates: bool) -> pd.DataFrame:
     df = normalize_ids_and_timestamps(df, strict_dates)
     common_cols = [
-        "userid", "timestamp", "state", "followers_count", "verified", "statuses_count", "sent_vader",
-        "hashtag", "rt_hashtag", "mentionsn", "media_urls", "rt_fav_count", "rt_reply_count", "description",
-        "urls", "urls_list",
+        c for c in [
+            "userid", "timestamp", "state", "followers_count", "verified", "statuses_count", "sent_vader",
+            "hashtag", "rt_hashtag", "mentionsn", "media_urls", "rt_fav_count", "rt_reply_count", "description",
+            "urls", "urls_list",
+        ] if c in df.columns
     ]
     rt = df.dropna(subset=["userid", "rt_userid"]).copy()
     rt["userid"] = rt["userid"].astype(np.int64)
@@ -295,9 +297,11 @@ def prepare_retweet_rows(df: pd.DataFrame, strict_dates: bool) -> pd.DataFrame:
 def prepare_interaction_rows(df: pd.DataFrame, strict_dates: bool) -> pd.DataFrame:
     df = normalize_ids_and_timestamps(df, strict_dates)
     common_cols = [
-        "userid", "timestamp", "state", "followers_count", "verified", "statuses_count", "sent_vader",
-        "hashtag", "rt_hashtag", "mentionsn", "media_urls", "rt_fav_count", "rt_reply_count", "description",
-        "urls", "urls_list",
+        c for c in [
+            "userid", "timestamp", "state", "followers_count", "verified", "statuses_count", "sent_vader",
+            "hashtag", "rt_hashtag", "mentionsn", "media_urls", "rt_fav_count", "rt_reply_count", "description",
+            "urls", "urls_list",
+        ] if c in df.columns
     ]
     frames = []
     try:
@@ -587,6 +591,7 @@ def build_political_leaning_labels(
     elif "urls" in base.columns:
         url_source = base["urls"]
     else:
+        print("[WARN] Neither 'urls_list' nor 'urls' column found — URL-based label scoring will be skipped", flush=True)
         url_source = pd.Series(index=base.index, dtype=object)
     label_df["url_source"] = url_source
     label_df["description"] = base.get("description", "").fillna("").astype(str).str.lower()
