@@ -115,6 +115,34 @@ class TrainerFS():
                 self.parameter["input_dim"] = kg_embedding_dim + 2  # add 2 to flag head and tail nodes
         if self.dataset_name in ["CSG"]:
             edge_attr_dim = 128
+        original_feature_graph_datasets = {
+            "twitter",
+            "midterm",
+            "ukr_rus_twitter",
+            "covid19_twitter",
+            "covid_political",
+            "covid_mf",
+            "election2020",
+            "hate_bots05",
+            "hate_bots08",
+            "ukr_rus_hate",
+            "ukr_rus_suspended",
+            "instagram_mention",
+        }
+        if (
+            self.original_features
+            and self.dataset_name in original_feature_graph_datasets
+            and hasattr(dataset, "graph")
+            and getattr(dataset.graph, "x", None) is not None
+        ):
+            inferred_input_dim = int(dataset.graph.x.shape[1])
+            if self.parameter["input_dim"] != inferred_input_dim:
+                _log(
+                    "Overriding input_dim from "
+                    f"{self.parameter['input_dim']} to {inferred_input_dim} "
+                    "based on loaded graph features after feature subsetting."
+                )
+            self.parameter["input_dim"] = inferred_input_dim
         edge_feature_datasets = {
             "midterm",
             "covid19_twitter",
@@ -181,7 +209,7 @@ class TrainerFS():
         bert_model_name = self.parameter["bert_emb_model"]
         # Twitter/midterm + numerical features does not need sentence embeddings and can
         # run with random label embeddings in the dataloader.
-        if self.dataset_name in {"twitter", "midterm", "instagram_mention"} and self.original_features:
+        if self.dataset_name in original_feature_graph_datasets and self.original_features:
             self.Bert = None
         else:
             self.Bert = SentenceEmb(
