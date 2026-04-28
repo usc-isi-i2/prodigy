@@ -753,11 +753,11 @@ def main():
     handles = build_user_metadata(events, user_ids)
     print(f"Nodes: {len(user_ids):,}")
 
-    edge_all_df = edge_all_df(events)
-    edge_index, edge_attr = to_edge_tensors(edge_all_df, u2i, edge_feature_names)
+    edges_df = edge_all_df(events)
+    edge_index, edge_attr = to_edge_tensors(edges_df, u2i, edge_feature_names)
     print(f"Directed edges: {edge_index.shape[1]:,}")
 
-    x, feature_names = build_node_features(raw, u2i, edge_all_df)
+    x, feature_names = build_node_features(raw, u2i, edges_df)
     x, feature_names, emb_stats = maybe_attach_embeddings(
         x, feature_names, user_ids, handles, args.embeddings, args.embedding_pool
     )
