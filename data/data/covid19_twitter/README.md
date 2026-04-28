@@ -46,7 +46,7 @@ Embedding artifact keys:
 ## Step 2: build the graph
 
 ```bash
-python data/data/covid19_twitter/scripts/generate_retweet_graph.py \
+python data/data/covid19_twitter/scripts/generate_user_graph.py \
   --json_glob "/scratch1/eibl/data/covid19_twitter/raw/*/*.json" \
   --embeddings /scratch1/eibl/data/covid19_twitter/embeddings/user_embeddings_minilm.pt \
   --embedding_pool meanpool \
@@ -70,7 +70,7 @@ Graph artifact keys:
 | Key | Description |
 |---|---|
 | `x` | node features |
-| `edge_index` | directed retweet edges |
+| `edge_index` | directed user-user edges |
 | `edge_attr` | edge features |
 | `edge_attr_feature_names` | edge feature names |
 | `user_ids` | canonical node ids |

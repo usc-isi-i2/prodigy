@@ -42,7 +42,7 @@ Embedding artifact keys:
 ## Step 2: build the graph
 
 ```bash
-python data/data/midterm/scripts/generate_retweet_graph.py \
+python data/data/midterm/scripts/generate_user_graph.py \
   --csv_glob "/project2/ll_774_951/midterm/*/*.csv" \
   --embeddings /scratch1/eibl/data/midterm/embeddings/user_embeddings_minilm.pt \
   --embedding_pool meanpool \
@@ -68,7 +68,7 @@ Graph artifact keys:
 | Key | Description |
 |---|---|
 | `x` | node features |
-| `edge_index` | directed retweet edges |
+| `edge_index` | directed user-user edges |
 | `edge_attr` | edge features |
 | `edge_attr_feature_names` | edge feature names |
 | `user_ids` | canonical node ids |
