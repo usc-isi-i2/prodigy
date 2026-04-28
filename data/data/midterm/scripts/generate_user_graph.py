@@ -333,7 +333,8 @@ def prepare_interaction_rows(df: pd.DataFrame, strict_dates: bool) -> pd.DataFra
         if not quote.empty:
             frames.append(quote[common_cols + ["target_userid", "target_screen", "interaction_type"]])
 
-    mention = df.reindex(columns=common_cols + ["mentionid", "mentionsn"]).copy()
+    extra_mention_cols = [c for c in ["mentionid", "mentionsn"] if c not in common_cols]
+    mention = df.reindex(columns=common_cols + extra_mention_cols).copy()
     if not mention.empty:
         mention["mention_userids"] = mention["mentionid"].apply(_parse_int_list_field)
         mention["mention_screens"] = mention["mentionsn"].apply(_parse_list_field)
