@@ -14,7 +14,7 @@ python data/data/midterm/scripts/build_user_embeddings.py \
   --model "sentence-transformers/${MODEL}" \
   --out "$EMB_PATH"
 
-python data/data/midterm/scripts/generate_retweet_graph.py \
+python data/data/midterm/scripts/generate_user_graph.py \
   --csv_glob "$CSV_GLOB" \
   --embeddings "$EMB_PATH" \
   --embedding_pool meanpool \
