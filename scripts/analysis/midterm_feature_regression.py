@@ -86,6 +86,10 @@ def main():
     x_sel, names = select_features(x_lab, feature_names, args.features)
     print(f"\nFeature mode: {args.features}  ({len(names)} dims)\n")
 
+    if len(names) == 0:
+        print(f"No features for mode '{args.features}' — skipping.")
+        return
+
     scaler = StandardScaler()
     x_scaled = scaler.fit_transform(x_sel)
 
