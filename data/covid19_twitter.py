@@ -80,6 +80,12 @@ def get_covid19_twitter_dataset(root: str, n_hop: int = 1, graph_filename: str =
     graph_path = os.path.join(root, graph_filename)
     print(f"Loading covid19_twitter graph from {graph_path}...")
     raw = torch.load(graph_path, map_location="cpu")
+
+    task_name = kwargs.get("task_name", "")
+    if task_name == "temporal_link_prediction" and not kwargs.get("edge_view") and not kwargs.get("midterm_edge_view"):
+        kwargs = {**kwargs, "edge_view": "temporal_history"}
+        print("temporal_link_prediction: defaulting to 'temporal_history' edge view for subgraph construction.")
+
     graph, resolved_edge_view = _build_covid19_twitter_graph(raw, **kwargs)
     print(f"Graph: {graph.num_nodes} nodes, {graph.edge_index.shape[1]} edges, {graph.x.shape[1]} node features")
     print("Building neighbor sampler (CSR preprocessing)...", flush=True)
@@ -89,7 +95,6 @@ def get_covid19_twitter_dataset(root: str, n_hop: int = 1, graph_filename: str =
     if hasattr(graph, "edge_attr") and graph.edge_attr is not None:
         print(f"Edge features: {graph.edge_attr.shape[1]} dims from edge view '{resolved_edge_view}'")
 
-    task_name = kwargs.get("task_name", "")
     if task_name == "temporal_link_prediction":
         target_view = _normalize_view_name(
             kwargs.get("target_edge_view", kwargs.get("midterm_target_edge_view", "future")),
