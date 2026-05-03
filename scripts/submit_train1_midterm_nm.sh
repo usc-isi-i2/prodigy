@@ -21,6 +21,7 @@ python3 experiments/run_single_experiment.py \
   --graph_filename retweet_graph_1p5m.pt \
   --task_name neighbor_matching \
   --feature_subset emb_only \
+  --edge_view temporal_history \
   --input_dim 384 \
   --n_way 3 \
   --n_shots 3 \

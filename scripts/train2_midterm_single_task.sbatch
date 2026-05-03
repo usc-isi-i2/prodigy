@@ -24,6 +24,7 @@ COMMON_ARGS=(
   --root /scratch1/eibl/data/midterm/graphs
   --graph_filename retweet_graph_1p5m.pt
   --feature_subset emb_only
+  --edge_view temporal_history
   --input_dim 384
   --original_features True
   --workers 8
@@ -58,7 +59,7 @@ case "$TARGET_TASK" in
       --epochs 3
       --eval_step 1000
       --checkpoint_step 1000
-      --target_edge_view default
+      --target_edge_view temporal_new
       --prefix "train2_${SOURCE_MODEL}_to_lp"
     )
     ;;
