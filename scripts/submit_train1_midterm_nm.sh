@@ -18,7 +18,7 @@ mkdir -p logs
 python3 experiments/run_single_experiment.py \
   --dataset midterm \
   --root /scratch1/eibl/data/midterm/graphs \
-  --graph_filename retweet_graph_5050_all_future_political_leaning.pt \
+  --graph_filename retweet_graph_1p5m.pt \
   --task_name neighbor_matching \
   --feature_subset emb_only \
   --input_dim 384 \
