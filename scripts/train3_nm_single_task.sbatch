@@ -38,7 +38,7 @@ case "$TARGET_DATASET" in
     DATASET_ARGS=(
       --dataset midterm
       --root /scratch1/eibl/data/midterm/graphs
-      --graph_filename retweet_graph_5050_all_future_political_leaning.pt
+      --graph_filename retweet_graph_1p5m.pt
       --n_way 3
       --n_shots 3
       --n_query 24
