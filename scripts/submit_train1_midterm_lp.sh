@@ -21,6 +21,7 @@ python3 experiments/run_single_experiment.py \
   --graph_filename retweet_graph_1p5m.pt \
   --task_name temporal_link_prediction \
   --feature_subset emb_only \
+  --edge_view temporal_history \
   --input_dim 384 \
   --original_features True \
   --n_way 1 \
@@ -35,5 +36,5 @@ python3 experiments/run_single_experiment.py \
   --workers 8 \
   --device 0 \
   --seed 0 \
-  --target_edge_view default \
+  --target_edge_view temporal_new \
   --prefix train1_midterm_lp
