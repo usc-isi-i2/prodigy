@@ -36,4 +36,5 @@ python3 experiments/run_single_experiment.py \
   --seed 0 \
   --augmentation NZ0.3 \
   --attr_regression_weight 1000 \
+  --tags aug nfr \
   --prefix train1_midterm_nm_aug
