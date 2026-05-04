@@ -17,8 +17,8 @@ export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 cd /home1/eibl/gfm/prodigy
 mkdir -p /scratch1/eibl/data/midterm/logs
 
-if [[ $# -lt 1 || $# -gt 2 ]]; then
-  echo "Usage: sbatch $0 <model_list.txt> [shots_csv]" >&2
+if [[ $# -lt 1 || $# -gt 3 ]]; then
+  echo "Usage: sbatch $0 <model_list.txt> [shots_csv] [tags_csv]" >&2
   echo "Each non-empty, non-comment line may be either:" >&2
   echo "  <ckpt_path>" >&2
   echo "or" >&2
@@ -35,6 +35,12 @@ if [[ ! -f "$MODEL_LIST" ]]; then
 fi
 
 IFS=',' read -r -a SHOT_LIST <<< "$SHOTS_CSV"
+
+TAGS_ARGS=()
+if [[ -n "${3:-}" ]]; then
+  IFS=',' read -r -a _tag_list <<< "$3"
+  TAGS_ARGS=(--tags "${_tag_list[@]}")
+fi
 if [[ ${#SHOT_LIST[@]} -eq 0 ]]; then
   echo "No shots provided via shots_csv='${SHOTS_CSV}'" >&2
   exit 1
@@ -133,7 +139,8 @@ run_eval() {
   python3 experiments/run_single_experiment.py \
     "${COMMON_ARGS[@]}" \
     --pretrained_model_run "$ckpt_path" \
-    "${extra_args[@]}"
+    "${extra_args[@]}" \
+    "${TAGS_ARGS[@]}"
 }
 
 while IFS= read -r raw_line || [[ -n "$raw_line" ]]; do

@@ -15,13 +15,19 @@ cd /home1/eibl/gfm/prodigy
 mkdir -p /scratch1/eibl/logs/ukr_rus_suspended
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
-if [[ $# -lt 1 || $# -gt 2 ]]; then
-  echo "Usage: sbatch $0 <model_list.txt> [shots_csv]" >&2; exit 1
+if [[ $# -lt 1 || $# -gt 3 ]]; then
+  echo "Usage: sbatch $0 <model_list.txt> [shots_csv] [tags_csv]" >&2; exit 1
 fi
 MODEL_LIST="$1"
 SHOTS_CSV="${2:-0,3}"
 [[ -f "$MODEL_LIST" ]] || { echo "Model list not found: $MODEL_LIST" >&2; exit 1; }
 IFS=',' read -r -a SHOT_LIST <<< "$SHOTS_CSV"
+
+TAGS_ARGS=()
+if [[ -n "${3:-}" ]]; then
+  IFS=',' read -r -a _tag_list <<< "$3"
+  TAGS_ARGS=(--tags "${_tag_list[@]}")
+fi
 
 COMMON_ARGS=(
   --dataset ukr_rus_suspended
@@ -61,7 +67,7 @@ run_eval() {
   esac
   echo "=== model=${model_name} task=${task_name} shots=${shots} ==="
   python3 experiments/run_single_experiment.py "${COMMON_ARGS[@]}" \
-    --pretrained_model_run "$ckpt_path" "${extra_args[@]}"
+    --pretrained_model_run "$ckpt_path" "${extra_args[@]}" "${TAGS_ARGS[@]}"
 }
 
 while IFS= read -r raw_line || [[ -n "$raw_line" ]]; do
