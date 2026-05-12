@@ -10,10 +10,10 @@ from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 from sklearn.preprocessing import StandardScaler
 from torch_geometric.data import Data
 
-from data.midterm import (
-    _apply_feature_subset,
-    _apply_label_downsample,
-    _build_stratified_node_splits,
+from rapids.graph.eval import (
+    apply_feature_subset as _apply_feature_subset,
+    apply_label_downsample as _apply_label_downsample,
+    build_stratified_node_splits as _build_stratified_node_splits,
 )
 
 

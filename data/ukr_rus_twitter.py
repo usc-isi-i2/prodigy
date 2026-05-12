@@ -93,7 +93,7 @@ def get_ukr_rus_twitter_dataset(
 ) -> SubgraphDataset:
     graph_path = os.path.join(root, graph_filename)
     print(f"Loading ukr_rus_twitter graph from {graph_path}...")
-    raw = torch.load(graph_path, map_location="cpu")
+    raw = torch.load(graph_path, map_location="cpu", weights_only=False)
 
     graph, resolved_edge_view = _build_ukr_rus_twitter_graph(raw, **kwargs)
 

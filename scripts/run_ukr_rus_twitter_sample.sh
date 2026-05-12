@@ -1,0 +1,20 @@
+python3 experiments/run_single_experiment.py \
+  --dataset ukr_rus_twitter \
+  --root /tmp/ukr_rus \
+  --graph_filename retweet_graph.pt \
+  --task_name neighbor_matching \
+  --midterm_feature_subset emb_only \
+  --midterm_edge_view temporal_history \
+  --input_dim 384 \
+  --n_way 3 \
+  --n_shots 3 \
+  --n_query 24 \
+  --checkpoint_step 1000 \
+  --original_features True \
+  --val_len_cap 500 \
+  --test_len_cap 500 \
+  --eval_step 1000 \
+  --workers 0 \
+  --device 123 \
+  --seed 0 \
+  --prefix train1_ukr_rus_twitter_nm
