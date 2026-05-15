@@ -151,12 +151,26 @@ def maybe_attach_embeddings(x, feature_names, user_ids, embeddings_path, embeddi
     return x_out, names_out, {"matched_users": matched, "embedding_dim": emb_dim}
 
 
+def _is_continuous(series: "pd.Series") -> bool:
+    return pd.api.types.is_float_dtype(series) and series.nunique() > 20
+
+
 def build_labels(user_data, label_col):
-    y_np = user_data[label_col].fillna(-1).to_numpy(dtype=np.int64)
-    y = torch.from_numpy(y_np)
-    labeled = int((y_np >= 0).sum())
-    vals, counts = np.unique(y_np[y_np >= 0], return_counts=True)
-    print(f"Labels ({label_col}): {labeled:,} labeled  dist={dict(zip(vals.tolist(), counts.tolist()))}")
+    s = user_data[label_col]
+    if _is_continuous(s):
+        fill_val = float(s.median())
+        y_np = s.fillna(fill_val).to_numpy(dtype=np.float32)
+        y = torch.from_numpy(y_np)
+        print(f"Labels ({label_col}): regression  "
+              f"min={y_np.min():.4f}  max={y_np.max():.4f}  "
+              f"mean={y_np.mean():.4f}  nulls_filled={int(s.isna().sum())}")
+    else:
+        y_np = s.fillna(-1).to_numpy(dtype=np.int64)
+        y = torch.from_numpy(y_np)
+        labeled = int((y_np >= 0).sum())
+        vals, counts = np.unique(y_np[y_np >= 0], return_counts=True)
+        print(f"Labels ({label_col}): {labeled:,} labeled  "
+              f"dist={dict(zip(vals.tolist(), counts.tolist()))}")
     return y
 
 
@@ -193,8 +207,12 @@ def main():
     x, feature_names, emb_stats = maybe_attach_embeddings(
         x, feature_names, user_ids, args.embeddings, args.embedding_pool
     )
-    label_names = _label_names_from_col(label_col)
     y = build_labels(user_data, label_col)
+    label_names = (
+        [label_col[len("label_"):]]
+        if _is_continuous(user_data[label_col])
+        else _label_names_from_col(label_col)
+    )
 
     graph_obj = {
         "x": x,
@@ -215,6 +233,7 @@ def main():
     graph_obj["data"] = data
     torch.save(graph_obj, args.out)
 
+    is_reg = _is_continuous(user_data[label_col])
     meta = {
         "graph": args.graph,
         "csv": args.csv,
@@ -223,7 +242,8 @@ def main():
         "feature_cols": feature_cols,
         "label_col": label_col,
         "label_names": label_names,
-        "labeled_nodes": int((y.numpy() >= 0).sum()),
+        "label_type": "regression" if is_reg else "classification",
+        "labeled_nodes": int(len(y)) if is_reg else int((y.numpy() >= 0).sum()),
         "all_label_cols": all_label_cols,
         "embeddings": args.embeddings,
         "embedding_dim": emb_stats["embedding_dim"],
