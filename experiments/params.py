@@ -271,6 +271,15 @@ def get_params():
         type=int,
         help="If >0, print full first-eval episode details for this many LP episodes.",
     )
+    args.add_argument(
+        "--debug_print_predictions",
+        default=0,
+        type=int,
+        help=(
+            "If >0, print this many eval query predictions from the first val/test batch. "
+            "For regression, prints input features, prediction, target, and error."
+        ),
+    )
 
     args.add_argument("-smalldataset", "--small_dataset", default=False,
                       type=str2bool)  # use for debugging  - very small dataset
