@@ -24,6 +24,7 @@ from .midterm import (
     _normalize_view_name,
     _load_named_tensor,
     _load_edge_feature_names,
+    _select_target_from_feature,
     _apply_feature_subset,
     _apply_edge_feature_subset,
     _build_stratified_node_splits,
@@ -76,6 +77,7 @@ def _build_graph(raw: dict, **kwargs):
             else "classification"
         )
     graph.user_ids = raw.get("user_ids", [])
+    graph = _select_target_from_feature(graph, kwargs.get("target_feature", ""))
     if graph.label_type != "regression":
         graph.y = _apply_label_downsample(
             graph.y, graph.label_names,
