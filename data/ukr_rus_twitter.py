@@ -8,16 +8,18 @@ from torch_geometric.data import Data
 
 from experiments.sampler import NeighborSampler
 from .augment import get_aug
-from .dataloader import ParamSampler, BatchSampler, Collator, NeighborTask
+from .dataloader import ParamSampler, BatchSampler, Collator, NeighborTask, RegressionTask
 from .dataset import SubgraphDataset
 from .midterm import (
     BinaryFutureLinkTask,
     _normalize_view_name,
     _load_named_tensor,
     _load_edge_feature_names,
+    _select_target_from_feature,
     _apply_feature_subset,
     _apply_edge_feature_subset,
     _build_stratified_node_splits,
+    _build_regression_node_splits,
     _mask_labels_to_node_split,
     _apply_label_downsample,
     midterm_task,
@@ -68,13 +70,20 @@ def _build_ukr_rus_twitter_graph(raw: dict, **kwargs):
     graph.edge_attr_feature_names = edge_feature_names
     graph.feature_names = raw.get("feature_names", [])
     graph.label_names = raw.get("label_names", [])
+    graph.label_type = raw.get("label_type", "classification")
     graph.user_ids = raw.get("user_ids", [])
-    graph.y = _apply_label_downsample(
-        graph.y,
-        graph.label_names,
-        kwargs.get("midterm_label_downsample", ""),
-        seed=int(kwargs.get("seed", 0) or 0),
+    graph = _select_target_from_feature(
+        graph,
+        kwargs.get("target_feature", ""),
+        keep_in_x=bool(kwargs.get("target_feature_keep_in_x", False)),
     )
+    if graph.label_type != "regression":
+        graph.y = _apply_label_downsample(
+            graph.y,
+            graph.label_names,
+            kwargs.get("midterm_label_downsample", ""),
+            seed=int(kwargs.get("seed", 0) or 0),
+        )
 
     graph = _apply_feature_subset(graph, kwargs.get("feature_subset", kwargs.get("midterm_feature_subset", "all")))
     graph = _apply_edge_feature_subset(
@@ -207,6 +216,10 @@ def get_ukr_rus_twitter_dataloader(
         label_embeddings = torch.zeros(1, 768).expand(graph.num_nodes, -1)
         is_multiway = False
     elif task_name == "classification":
+        if getattr(graph, "label_type", "classification") == "regression":
+            raise ValueError(
+                "ukr_rus_twitter graph stores regression labels; use --task_name regression, not classification."
+            )
         label_names = list(getattr(graph, "label_names", []))
         num_classes = len(label_names)
         if num_classes == 0:
@@ -248,6 +261,43 @@ def get_ukr_rus_twitter_dataloader(
             seed=seed,
         )
         is_multiway = True
+    elif task_name == "regression":
+        if getattr(graph, "label_type", "classification") != "regression":
+            raise ValueError(
+                f"ukr_rus_twitter regression requires a graph with regression labels; "
+                f"got label_type={getattr(graph, 'label_type', None)!r}."
+            )
+        if n_way != 1:
+            raise ValueError(f"ukr_rus_twitter regression only supports n_way=1, got {n_way}.")
+
+        labels = graph.y.detach().cpu().numpy().astype(np.float32)
+        if not hasattr(dataset, "_regression_node_splits"):
+            dataset._regression_node_splits = _build_regression_node_splits(labels, seed=0)
+
+        split_key = (node_split or "").strip() or split
+        node_splits = dataset._regression_node_splits
+        if split_key not in node_splits:
+            raise ValueError(
+                f"Unknown ukr_rus_twitter regression node split '{split_key}'. "
+                f"Available: {sorted(node_splits.keys())}"
+            )
+        split_idx = node_splits[split_key]
+        if split_idx.size == 0:
+            raise ValueError(
+                f"ukr_rus_twitter regression split '{split_key}' has no labeled nodes."
+            )
+
+        task = RegressionTask(labels=labels, node_indices=split_idx)
+        task.original_graph_labels = labels.copy()
+        task.split_masked_labels = labels.copy()
+        sampler = BatchSampler(
+            batch_count,
+            task,
+            ParamSampler(batch_size, 1, n_shot, n_query, 1),
+            seed=seed,
+        )
+        label_embeddings = torch.zeros((1, 768), dtype=torch.float)
+        is_multiway = False
     else:
         raise ValueError(f"Unknown task for ukr_rus_twitter: {task_name}")
 
@@ -256,5 +306,5 @@ def get_ukr_rus_twitter_dataloader(
         dataset,
         batch_sampler=sampler,
         num_workers=num_workers,
-        collate_fn=Collator(label_embeddings, aug=aug_fn, is_multiway=is_multiway),
+        collate_fn=Collator(label_embeddings, aug=aug_fn, is_multiway=is_multiway, task_name=task_name),
     )
