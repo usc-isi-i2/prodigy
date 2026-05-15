@@ -2,4 +2,4 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-bash "${SCRIPT_DIR}/submit_train3_same_dataset_all.sh" midterm "${SCRIPT_DIR}/train1_midterm_1p5m_model_list.txt"
+bash "${SCRIPT_DIR}/submit_train3_from_train2_all.sh" midterm "${SCRIPT_DIR}/model_lists/train2_all_models.txt"
