@@ -227,7 +227,10 @@ class TrainerFS():
         params = list(self.model.parameters())
         if hasattr(self, "aux_header"):
             params += list(self.aux_header.parameters())
-        if not self.parameter["not_freeze_learned_label_embedding"]:
+        if (
+            not self.parameter["not_freeze_learned_label_embedding"]
+            and hasattr(self.model, "learned_label_embedding")
+        ):
             for param in self.model.learned_label_embedding.parameters():
                 param.requires_grad = False
 
