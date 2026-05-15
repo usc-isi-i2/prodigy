@@ -83,6 +83,7 @@ if __name__ == '__main__':
         n_hop=params["n_hop"],
         graph_filename=params["graph_filename"],
         target_feature=params["target_feature"],
+        target_feature_keep_in_x=params["target_feature_keep_in_x"],
         feature_subset=params["feature_subset"],
         midterm_label_downsample=params["midterm_label_downsample"],
         edge_view=params["edge_view"],
