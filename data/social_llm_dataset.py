@@ -11,13 +11,14 @@ a graph for a specific label, then use --graph_filename to select it at train ti
 import os
 from typing import Optional, Set, Union
 
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from torch_geometric.data import Data
 
 from experiments.sampler import NeighborSampler
 from .augment import get_aug
-from .dataloader import ParamSampler, BatchSampler, Collator, NeighborTask
+from .dataloader import ParamSampler, BatchSampler, Collator, NeighborTask, RegressionTask
 from .dataset import SubgraphDataset
 from .midterm import (
     _normalize_view_name,
@@ -67,12 +68,20 @@ def _build_graph(raw: dict, **kwargs):
     graph.edge_attr_feature_names = edge_feature_names
     graph.feature_names = raw.get("feature_names", [])
     graph.label_names = raw.get("label_names", [])
+    graph.label_type = raw.get("label_type")
+    if graph.label_type is None:
+        graph.label_type = (
+            "regression"
+            if torch.is_floating_point(graph.y) and len(graph.label_names) <= 1
+            else "classification"
+        )
     graph.user_ids = raw.get("user_ids", [])
-    graph.y = _apply_label_downsample(
-        graph.y, graph.label_names,
-        kwargs.get("midterm_label_downsample", ""),
-        seed=int(kwargs.get("seed", 0) or 0),
-    )
+    if graph.label_type != "regression":
+        graph.y = _apply_label_downsample(
+            graph.y, graph.label_names,
+            kwargs.get("midterm_label_downsample", ""),
+            seed=int(kwargs.get("seed", 0) or 0),
+        )
     graph = _apply_feature_subset(graph, kwargs.get("feature_subset", kwargs.get("midterm_feature_subset", "all")))
     graph = _apply_edge_feature_subset(
         graph, kwargs.get("edge_feature_subset", kwargs.get("midterm_edge_feature_subset", "all")),
@@ -97,6 +106,37 @@ def _get_dataset(dataset_name: str, root: str, n_hop: int = 1,
         print(f"Edge features: {graph.edge_attr.shape[1]} dims from '{resolved_edge_view}'")
     dataset.future_edge_view = None
     return dataset
+
+
+def _build_regression_node_splits(
+        labels: np.ndarray,
+        *,
+        seed: int = 0,
+        train_frac: float = 0.6,
+        val_frac: float = 0.2,
+):
+    labels = np.asarray(labels, dtype=np.float32)
+    labeled_idx = np.where(np.isfinite(labels))[0]
+    rng = np.random.default_rng(seed)
+    if labeled_idx.size:
+        rng.shuffle(labeled_idx)
+
+    n = int(labeled_idx.size)
+    n_train = int(round(n * train_frac))
+    n_val = int(round(n * val_frac))
+    if n >= 3:
+        n_train = min(max(1, n_train), n - 2)
+        n_val = min(max(1, n_val), n - n_train - 1)
+    elif n == 2:
+        n_train, n_val = 1, 0
+    elif n == 1:
+        n_train, n_val = 1, 0
+
+    return {
+        "train": labeled_idx[:n_train],
+        "val": labeled_idx[n_train:n_train + n_val],
+        "test": labeled_idx[n_train + n_val:],
+    }
 
 
 def _get_dataloader(dataset_name: str, dataset: SubgraphDataset, split: str,
@@ -124,6 +164,10 @@ def _get_dataloader(dataset_name: str, dataset: SubgraphDataset, split: str,
         is_multiway = True
 
     elif task_name == "classification":
+        if getattr(graph, "label_type", "classification") == "regression":
+            raise ValueError(
+                f"{dataset_name} graph stores regression labels; use --task_name regression, not classification."
+            )
         label_names = list(getattr(graph, "label_names", []))
         num_classes = len(label_names)
         if num_classes == 0:
@@ -162,13 +206,50 @@ def _get_dataloader(dataset_name: str, dataset: SubgraphDataset, split: str,
         )
         is_multiway = True
 
+    elif task_name == "regression":
+        if getattr(graph, "label_type", "classification") != "regression":
+            raise ValueError(
+                f"{dataset_name} regression requires a graph with regression labels; "
+                f"got label_type={getattr(graph, 'label_type', None)!r}."
+            )
+        if n_way != 1:
+            raise ValueError(f"{dataset_name} regression only supports n_way=1, got {n_way}.")
+
+        labels = graph.y.detach().cpu().numpy().astype(np.float32)
+        if not hasattr(dataset, "_regression_node_splits"):
+            dataset._regression_node_splits = _build_regression_node_splits(labels, seed=0)
+
+        split_key = (node_split or "").strip() or split
+        node_splits = dataset._regression_node_splits
+        if split_key not in node_splits:
+            raise ValueError(
+                f"Unknown {dataset_name} split '{split_key}'. "
+                f"Available: {sorted(node_splits.keys())}"
+            )
+        split_idx = node_splits[split_key]
+        if split_idx.size == 0:
+            raise ValueError(
+                f"{dataset_name} regression split '{split_key}' has no labeled nodes."
+            )
+
+        task = RegressionTask(labels=labels, node_indices=split_idx)
+        task.original_graph_labels = labels.copy()
+        task.split_masked_labels = labels.copy()
+        label_embeddings = torch.zeros((1, 768), dtype=torch.float)
+        sampler = BatchSampler(
+            batch_count, task,
+            ParamSampler(batch_size, 1, n_shot, n_query, 1),
+            seed=seed,
+        )
+        is_multiway = False
+
     else:
         raise ValueError(f"Unknown task for {dataset_name}: {task_name}")
 
     aug_fn = get_aug(aug, graph.x) if (split == "train" or aug_test) else get_aug("")
     return DataLoader(
         dataset, batch_sampler=sampler, num_workers=num_workers,
-        collate_fn=Collator(label_embeddings, aug=aug_fn, is_multiway=is_multiway),
+        collate_fn=Collator(label_embeddings, aug=aug_fn, is_multiway=is_multiway, task_name=task_name),
     )
 
 

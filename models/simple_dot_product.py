@@ -16,6 +16,12 @@ class SimpleDotProdModel(torch.nn.Module):
         self.logit_scale = torch.nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
         if params is not None:
             self.params = params
+        if self.params.get("task_name") == "regression":
+            self.regression_head = torch.nn.Sequential(
+                torch.nn.Linear(params["input_dim"], params["emb_dim"]),
+                torch.nn.ReLU(),
+                torch.nn.Linear(params["emb_dim"], 1),
+            )
 
     def decode(self, input_x, label_x, metagraph_edge_index, edgelist_bipartite=False):
         if edgelist_bipartite:
@@ -42,9 +48,11 @@ class SimpleDotProdModel(torch.nn.Module):
         supernode_idx = graph.supernode + graph.ptr[:-1]
         supernode_edge_index = graph.edge_index_supernode
         x_input = scatter_mean(src=graph.x[supernode_edge_index[0]], index=supernode_edge_index[1], dim=0)[supernode_idx, :]
-        y_pred_matrix = self.decode(x_input, x_label, metagraph_edge_index, edgelist_bipartite=False).reshape(
-            y_true_matrix.shape)
+        if self.params.get("task_name") == "regression":
+            y_pred_matrix = self.regression_head(x_input).reshape(y_true_matrix.shape)
+        else:
+            y_pred_matrix = self.decode(x_input, x_label, metagraph_edge_index, edgelist_bipartite=False).reshape(
+                y_true_matrix.shape)
 
         qry_idx = torch.where(query_set_mask.reshape(-1, y_true_matrix.shape[1])[:, 0] == 1)[0]
         return y_true_matrix[qry_idx, :], y_pred_matrix[qry_idx, :], graph
-

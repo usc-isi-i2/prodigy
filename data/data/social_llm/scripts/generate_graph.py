@@ -158,12 +158,21 @@ def _is_continuous(series: "pd.Series") -> bool:
 def build_labels(user_data, label_col):
     s = user_data[label_col]
     if _is_continuous(s):
-        fill_val = float(s.median())
-        y_np = s.fillna(fill_val).to_numpy(dtype=np.float32)
+        y_np = s.to_numpy(dtype=np.float32, na_value=np.nan)
         y = torch.from_numpy(y_np)
+        labeled = int(np.isfinite(y_np).sum())
+        if labeled > 0:
+            min_val = float(np.nanmin(y_np))
+            max_val = float(np.nanmax(y_np))
+            mean_val = float(np.nanmean(y_np))
+        else:
+            min_val = float("nan")
+            max_val = float("nan")
+            mean_val = float("nan")
         print(f"Labels ({label_col}): regression  "
-              f"min={y_np.min():.4f}  max={y_np.max():.4f}  "
-              f"mean={y_np.mean():.4f}  nulls_filled={int(s.isna().sum())}")
+              f"min={min_val:.4f}  max={max_val:.4f}  "
+              f"mean={mean_val:.4f}  labeled={labeled:,}  "
+              f"nulls={int(s.isna().sum())}")
     else:
         y_np = s.fillna(-1).to_numpy(dtype=np.int64)
         y = torch.from_numpy(y_np)
@@ -214,12 +223,14 @@ def main():
         else _label_names_from_col(label_col)
     )
 
+    label_type = "regression" if _is_continuous(user_data[label_col]) else "classification"
     graph_obj = {
         "x": x,
         "edge_index": edge_index,
         "edge_attr": edge_attr,
         "edge_attr_feature_names": EDGE_FEATURE_NAMES,
         "y": y,
+        "label_type": label_type,
         "label_names": label_names,
         "feature_names": feature_names,
         "user_ids": user_ids,
@@ -229,11 +240,12 @@ def main():
     data.feature_names = feature_names
     data.edge_attr_feature_names = EDGE_FEATURE_NAMES
     data.label_names = label_names
+    data.label_type = graph_obj["label_type"]
     data.user_ids = user_ids
     graph_obj["data"] = data
     torch.save(graph_obj, args.out)
 
-    is_reg = _is_continuous(user_data[label_col])
+    is_reg = label_type == "regression"
     meta = {
         "graph": args.graph,
         "csv": args.csv,
@@ -243,7 +255,7 @@ def main():
         "label_col": label_col,
         "label_names": label_names,
         "label_type": "regression" if is_reg else "classification",
-        "labeled_nodes": int(len(y)) if is_reg else int((y.numpy() >= 0).sum()),
+        "labeled_nodes": int(np.isfinite(y.numpy()).sum()) if is_reg else int((y.numpy() >= 0).sum()),
         "all_label_cols": all_label_cols,
         "embeddings": args.embeddings,
         "embedding_dim": emb_stats["embedding_dim"],
