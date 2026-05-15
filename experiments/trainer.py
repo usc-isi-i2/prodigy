@@ -279,6 +279,12 @@ class TrainerFS():
         # Data loader creation.
         self.train_dataloader, self.train_val_dataloader, self.val_dataloader, self.test_dataloader = self._build_dataloaders(dataset, self.dataset_name)
 
+    def _score_label(self):
+        return "score" if self.is_regression else "acc"
+
+    def _score_key(self, split_prefix: str):
+        return f"{split_prefix}_{self._score_label()}"
+
     def _build_dataloaders(self, dataset, dataset_name):
         kwargs = {}
         kwargs["root"] = os.path.join(self.parameter["root"], dataset_name)
@@ -1084,8 +1090,14 @@ class TrainerFS():
             with torch.no_grad():
                 _log("Pre-training eval on test set...")
                 test_loss, test_acc, test_acc_std, test_aux_loss, ranks = self.do_eval(self.test_dataloader, split_name="test", step=0)
-                _log(f"  [pre-train test]  acc={_to_float(test_acc):.4f} ± {_to_float(test_acc_std):.4f}  loss={_to_float(test_loss):.4f}")
-                start_log_dict = {"start_test_acc": test_acc, "start_test_acc_std": test_acc_std}
+                _log(
+                    f"  [pre-train test]  {self._score_label()}={_to_float(test_acc):.4f} "
+                    f"± {_to_float(test_acc_std):.4f}  loss={_to_float(test_loss):.4f}"
+                )
+                start_log_dict = {
+                    f"start_test_{self._score_label()}": test_acc,
+                    f"start_test_{self._score_label()}_std": test_acc_std,
+                }
                 if ranks is not None:
                     for key in ranks:
                         start_log_dict["start_test_" + key] = ranks[key]
@@ -1100,8 +1112,14 @@ class TrainerFS():
             with torch.no_grad():
                 _log("Pre-training eval on val set...")
                 val_loss, val_acc, val_acc_std, val_aux_loss, ranks = self.do_eval(self.val_dataloader, split_name="val", step=0)
-                _log(f"  [pre-train val]   acc={_to_float(val_acc):.4f} ± {_to_float(val_acc_std):.4f}  loss={_to_float(val_loss):.4f}")
-                start_log_dict = {"start_val_acc": val_acc, "start_val_acc_std": val_acc_std}
+                _log(
+                    f"  [pre-train val]   {self._score_label()}={_to_float(val_acc):.4f} "
+                    f"± {_to_float(val_acc_std):.4f}  loss={_to_float(val_loss):.4f}"
+                )
+                start_log_dict = {
+                    f"start_val_{self._score_label()}": val_acc,
+                    f"start_val_{self._score_label()}_std": val_acc_std,
+                }
                 if ranks is not None:
                     for key in ranks:
                         start_log_dict["start_val_" + key] = ranks[key]
@@ -1147,7 +1165,7 @@ class TrainerFS():
             wandb.log(
                 {
                     "train_loss": _to_float(loss),
-                    "train_acc": _to_float(acc),
+                    self._score_key("train"): _to_float(acc),
                     "train_aux_loss": _to_float(aux_loss),
                     "train_total_loss": _to_float(total_loss),
                 },
@@ -1157,7 +1175,7 @@ class TrainerFS():
             t_one_step += t3 - t2
             pbar.set_postfix(
                 loss=f"{_to_float(loss):.4f}",
-                acc=f"{_to_float(acc):.4f}",
+                **{self._score_label(): f"{_to_float(acc):.4f}"},
                 aux=f"{_to_float(aux_loss):.4f}",
                 load=f"{(t2-t1):.2f}s",
                 step=f"{(t3-t2):.2f}s",
@@ -1181,28 +1199,48 @@ class TrainerFS():
                     self.save_checkpoint(best_step)  # save the best checkpoint
                 else:
                     bad_counts += 1
-                    pbar.write(f"[{time.strftime('%H:%M:%S')}] [step {e}] val acc did not improve ({bad_counts} checks without improvement)")
+                    pbar.write(
+                        f"[{time.strftime('%H:%M:%S')}] [step {e}] val {self._score_label()} "
+                        f"did not improve ({bad_counts} checks without improvement)"
+                    )
                     should_stop = bad_counts >= self.early_stopping_patience
 
-                pbar.write(f"[{time.strftime('%H:%M:%S')}] [step {e}] val  acc={_to_float(val_acc):.4f} ± {_to_float(val_acc_std):.4f}  loss={_to_float(val_loss):.4f}  aux={_to_float(val_aux_loss):.4f}")
-                wandb.log({"valid_loss": _to_float(val_loss), "valid_acc": _to_float(val_acc), "valid_aux_loss": _to_float(val_aux_loss)},
-                          step=e)
+                pbar.write(
+                    f"[{time.strftime('%H:%M:%S')}] [step {e}] val  "
+                    f"{self._score_label()}={_to_float(val_acc):.4f} ± {_to_float(val_acc_std):.4f}  "
+                    f"loss={_to_float(val_loss):.4f}  aux={_to_float(val_aux_loss):.4f}"
+                )
+                wandb.log(
+                    {
+                        "valid_loss": _to_float(val_loss),
+                        self._score_key("valid"): _to_float(val_acc),
+                        "valid_aux_loss": _to_float(val_aux_loss),
+                    },
+                    step=e,
+                )
 
                 if self.train_val_dataloader is not None:
                     with torch.no_grad():
                         self.model.eval()
                         tval_loss, tval_acc, tval_acc_std, tval_aux_loss, ranks = self.do_eval(self.train_val_dataloader, split_name="train_val", step=e)
-                        wandb.log({"train_val_loss": _to_float(tval_loss), "train_val_acc": _to_float(tval_acc), "train_val_aux_loss": _to_float(tval_aux_loss)}, step=e)
+                        wandb.log(
+                            {
+                                "train_val_loss": _to_float(tval_loss),
+                                self._score_key("train_val"): _to_float(tval_acc),
+                                "train_val_aux_loss": _to_float(tval_aux_loss),
+                            },
+                            step=e,
+                        )
 
                 # Also evaluate on test set
                 with torch.no_grad():
                     self.model.eval()
                     test_loss, test_acc, test_acc_std, test_aux_loss, ranks = self.do_eval(self.test_dataloader, split_name="test", step=e)
                     log_dict = {
-                        "test_acc": _to_float(test_acc),
+                        self._score_key("test"): _to_float(test_acc),
                         "test_loss": _to_float(test_loss),
                         "test_aux_loss": _to_float(test_aux_loss),
-                        "test_acc_std": _to_float(test_acc_std),
+                        f"test_{self._score_label()}_std": _to_float(test_acc_std),
                     }
                     #print("Logging", log_dict)
                     #wandb.log(log_dict, step=e)
@@ -1210,7 +1248,11 @@ class TrainerFS():
                         ranks_dict = prefix_dict(ranks, "test_")
                         log_dict.update(ranks_dict)
                     wandb.log(log_dict, step=e)
-                    pbar.write(f"[{time.strftime('%H:%M:%S')}] [step {e}] test acc={_to_float(test_acc):.4f} ± {_to_float(test_acc_std):.4f}  loss={_to_float(test_loss):.4f}")
+                    pbar.write(
+                        f"[{time.strftime('%H:%M:%S')}] [step {e}] test "
+                        f"{self._score_label()}={_to_float(test_acc):.4f} ± {_to_float(test_acc_std):.4f}  "
+                        f"loss={_to_float(test_loss):.4f}"
+                    )
                     best_test_acc = max(best_test_acc, test_acc)
                     if e == best_step:
                         test_acc_on_best_val = test_acc
@@ -1221,13 +1263,13 @@ class TrainerFS():
                     break
         _log("Training finished")
         print(f"  best step:             {best_step}", flush=True)
-        print(f"  best val acc:          {_to_float(best_val):.4f}", flush=True)
-        print(f"  best test acc:         {_to_float(best_test_acc):.4f}", flush=True)
-        print(f"  test acc @ best val:   {_to_float(test_acc_on_best_val):.4f}", flush=True)
+        print(f"  best val {self._score_label()}:          {_to_float(best_val):.4f}", flush=True)
+        print(f"  best test {self._score_label()}:         {_to_float(best_test_acc):.4f}", flush=True)
+        print(f"  test {self._score_label()} @ best val:   {_to_float(test_acc_on_best_val):.4f}", flush=True)
         wandb.run.summary["best_step"] = best_step
-        wandb.run.summary["best_test_acc"] = best_test_acc
-        wandb.run.summary["test_acc_on_best_val"] = test_acc_on_best_val
-        wandb.run.summary["final_validation_acc"] = best_val
+        wandb.run.summary[f"best_test_{self._score_label()}"] = best_test_acc
+        wandb.run.summary[f"test_{self._score_label()}_on_best_val"] = test_acc_on_best_val
+        wandb.run.summary[f"final_validation_{self._score_label()}"] = best_val
         if other_metrics_on_best is not None:
               for key in other_metrics_on_best:
                   wandb.run.summary["final_test_" + key] = other_metrics_on_best[key]
