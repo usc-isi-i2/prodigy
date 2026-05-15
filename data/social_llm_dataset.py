@@ -77,7 +77,11 @@ def _build_graph(raw: dict, **kwargs):
             else "classification"
         )
     graph.user_ids = raw.get("user_ids", [])
-    graph = _select_target_from_feature(graph, kwargs.get("target_feature", ""))
+    graph = _select_target_from_feature(
+        graph,
+        kwargs.get("target_feature", ""),
+        keep_in_x=bool(kwargs.get("target_feature_keep_in_x", False)),
+    )
     if graph.label_type != "regression":
         graph.y = _apply_label_downsample(
             graph.y, graph.label_names,

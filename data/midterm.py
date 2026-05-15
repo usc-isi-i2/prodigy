@@ -383,7 +383,7 @@ def _apply_feature_subset(graph: Data, subset_spec: str) -> Data:
     return graph
 
 
-def _select_target_from_feature(graph: Data, target_feature: str) -> Data:
+def _select_target_from_feature(graph: Data, target_feature: str, *, keep_in_x: bool = False) -> Data:
     feature_name = (target_feature or "").strip()
     if feature_name == "":
         if not hasattr(graph, "label_type"):
@@ -404,16 +404,22 @@ def _select_target_from_feature(graph: Data, target_feature: str) -> Data:
 
     target_idx = feature_names.index(feature_name)
     graph.y = graph.x[:, target_idx].detach().clone().float()
-    keep_idx = [i for i in range(x_dim) if i != target_idx]
-    graph.x = graph.x[:, keep_idx]
-    graph.feature_names = [feature_names[i] for i in keep_idx]
     graph.label_names = [feature_name]
     graph.label_type = "regression"
     graph.target_feature = feature_name
-    print(
-        f"Using feature '{feature_name}' as regression target: "
-        f"removed column {target_idx} from x ({x_dim} -> {graph.x.shape[1]} dims)."
-    )
+    if keep_in_x:
+        print(
+            f"Using feature '{feature_name}' as regression target and keeping it in x "
+            f"for leakage/sanity testing ({x_dim} dims unchanged)."
+        )
+    else:
+        keep_idx = [i for i in range(x_dim) if i != target_idx]
+        graph.x = graph.x[:, keep_idx]
+        graph.feature_names = [feature_names[i] for i in keep_idx]
+        print(
+            f"Using feature '{feature_name}' as regression target: "
+            f"removed column {target_idx} from x ({x_dim} -> {graph.x.shape[1]} dims)."
+        )
     return graph
 
 
@@ -512,7 +518,11 @@ def _build_midterm_graph(raw: dict, **kwargs):
     graph.user_ids = raw.get("user_ids", [])
     graph.u2i = raw.get("u2i", {})
     graph.feature_names = raw.get('feature_names', [])
-    graph = _select_target_from_feature(graph, kwargs.get("target_feature", ""))
+    graph = _select_target_from_feature(
+        graph,
+        kwargs.get("target_feature", ""),
+        keep_in_x=bool(kwargs.get("target_feature_keep_in_x", False)),
+    )
     if graph.label_type != "regression":
         graph.y = _apply_label_downsample(
             graph.y,

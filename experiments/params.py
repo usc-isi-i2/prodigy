@@ -188,6 +188,15 @@ def get_params():
         ),
     )
     args.add_argument(
+        "--target_feature_keep_in_x",
+        default=False,
+        type=str2bool,
+        help=(
+            "If True, keep --target_feature inside graph.x instead of removing it. "
+            "Useful only as a leakage/sanity test."
+        ),
+    )
+    args.add_argument(
         "--feature_subset",
         "--midterm_feature_subset",
         dest="feature_subset",
