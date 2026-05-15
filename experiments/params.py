@@ -179,6 +179,15 @@ def get_params():
     args.add_argument("-n_hop", "--n_hop", default=2, type=int)  # number of hops for subgraph extraction
     args.add_argument("--graph_filename", default="graph_data.pt", type=str)  # graph file to load from root
     args.add_argument(
+        "--target_feature",
+        default="",
+        type=str,
+        help=(
+            "Optional node feature name to use as the regression target at load time. "
+            "The selected feature column is removed from graph.x to avoid leakage."
+        ),
+    )
+    args.add_argument(
         "--feature_subset",
         "--midterm_feature_subset",
         dest="feature_subset",

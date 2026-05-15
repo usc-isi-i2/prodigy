@@ -9,7 +9,7 @@ from torch_geometric.data import Data
 
 from experiments.sampler import NeighborSampler
 from .augment import get_aug
-from .dataloader import MulticlassTask, ParamSampler, BatchSampler, Collator, NeighborTask
+from .dataloader import MulticlassTask, ParamSampler, BatchSampler, Collator, NeighborTask, RegressionTask
 from .dataset import SubgraphDataset
 
 
@@ -313,6 +313,10 @@ def _apply_feature_subset(graph: Data, subset_spec: str) -> Data:
     n_label = max(1, len(label_names))
 
     def build_label_leak():
+        if getattr(graph, "label_type", "classification") == "regression":
+            raise ValueError(
+                f"feature_subset='{spec}' is not supported when using regression targets."
+            )
         leak = torch.zeros((graph.x.shape[0], n_label), dtype=graph.x.dtype, device=graph.x.device)
         y = getattr(graph, "y", None)
         if y is not None:
@@ -375,6 +379,40 @@ def _apply_feature_subset(graph: Data, subset_spec: str) -> Data:
     print(
         f"Applied midterm feature subset '{subset_spec}': "
         f"{x_dim} -> {graph.x.shape[1]} dims."
+    )
+    return graph
+
+
+def _select_target_from_feature(graph: Data, target_feature: str) -> Data:
+    feature_name = (target_feature or "").strip()
+    if feature_name == "":
+        if not hasattr(graph, "label_type"):
+            graph.label_type = "classification"
+        return graph
+
+    feature_names = list(getattr(graph, "feature_names", []))
+    x_dim = int(graph.x.shape[1])
+    if not feature_names or len(feature_names) != x_dim:
+        raise ValueError(
+            "target_feature requires graph.feature_names aligned with graph.x."
+        )
+    if feature_name not in feature_names:
+        raise ValueError(
+            f"Unknown target_feature='{feature_name}'. "
+            f"Available features: {feature_names}"
+        )
+
+    target_idx = feature_names.index(feature_name)
+    graph.y = graph.x[:, target_idx].detach().clone().float()
+    keep_idx = [i for i in range(x_dim) if i != target_idx]
+    graph.x = graph.x[:, keep_idx]
+    graph.feature_names = [feature_names[i] for i in keep_idx]
+    graph.label_names = [feature_name]
+    graph.label_type = "regression"
+    graph.target_feature = feature_name
+    print(
+        f"Using feature '{feature_name}' as regression target: "
+        f"removed column {target_idx} from x ({x_dim} -> {graph.x.shape[1]} dims)."
     )
     return graph
 
@@ -470,15 +508,18 @@ def _build_midterm_graph(raw: dict, **kwargs):
     graph.edge_attr_feature_names = edge_feature_names
 
     graph.label_names = raw['label_names']
+    graph.label_type = raw.get("label_type", "classification")
     graph.user_ids = raw.get("user_ids", [])
     graph.u2i = raw.get("u2i", {})
-    graph.y = _apply_label_downsample(
-        graph.y,
-        graph.label_names,
-        kwargs.get("midterm_label_downsample", ""),
-        seed=int(kwargs.get("seed", 0) or 0),
-    )
     graph.feature_names = raw.get('feature_names', [])
+    graph = _select_target_from_feature(graph, kwargs.get("target_feature", ""))
+    if graph.label_type != "regression":
+        graph.y = _apply_label_downsample(
+            graph.y,
+            graph.label_names,
+            kwargs.get("midterm_label_downsample", ""),
+            seed=int(kwargs.get("seed", 0) or 0),
+        )
     graph = _apply_feature_subset(graph, kwargs.get("feature_subset", kwargs.get("midterm_feature_subset", "all")))
     graph = _apply_edge_feature_subset(
         graph,
@@ -590,6 +631,37 @@ def midterm_task(
                           random_query=random_query and split in {"val", "test"})
 
 
+def _build_regression_node_splits(
+        labels: np.ndarray,
+        *,
+        seed: int = 0,
+        train_frac: float = 0.6,
+        val_frac: float = 0.2,
+):
+    labels = np.asarray(labels, dtype=np.float32)
+    labeled_idx = np.where(np.isfinite(labels))[0]
+    rng = np.random.default_rng(seed)
+    if labeled_idx.size:
+        rng.shuffle(labeled_idx)
+
+    n = int(labeled_idx.size)
+    n_train = int(round(n * train_frac))
+    n_val = int(round(n * val_frac))
+    if n >= 3:
+        n_train = min(max(1, n_train), n - 2)
+        n_val = min(max(1, n_val), n - n_train - 1)
+    elif n == 2:
+        n_train, n_val = 1, 0
+    elif n == 1:
+        n_train, n_val = 1, 0
+
+    return {
+        "train": labeled_idx[:n_train],
+        "val": labeled_idx[n_train:n_train + n_val],
+        "test": labeled_idx[n_train + n_val:],
+    }
+
+
 def get_midterm_dataloader(
         dataset: SubgraphDataset,
         split: str,
@@ -630,6 +702,10 @@ def get_midterm_dataloader(
         )
         label_embeddings = torch.zeros(1, 768).expand(graph.num_nodes, -1)
     elif task_name == "classification":
+        if getattr(graph, "label_type", "classification") == "regression":
+            raise ValueError(
+                "midterm graph stores regression labels; use --task_name regression, not classification."
+            )
         label_names = list(getattr(graph, 'label_names', []))
         num_classes = len(label_names)
 
@@ -668,6 +744,42 @@ def get_midterm_dataloader(
             ParamSampler(batch_size, n_way, n_shot, n_query, 1),
             seed=seed,
         )
+    elif task_name == "regression":
+        if getattr(graph, "label_type", "classification") != "regression":
+            raise ValueError(
+                f"midterm regression requires a graph with regression labels; "
+                f"got label_type={getattr(graph, 'label_type', None)!r}."
+            )
+        if n_way != 1:
+            raise ValueError(f"midterm regression only supports n_way=1, got {n_way}.")
+
+        labels = graph.y.detach().cpu().numpy().astype(np.float32)
+        if not hasattr(dataset, "_regression_node_splits"):
+            dataset._regression_node_splits = _build_regression_node_splits(labels, seed=0)
+
+        split_key = (node_split or "").strip() or split
+        node_splits = dataset._regression_node_splits
+        if split_key not in node_splits:
+            raise ValueError(
+                f"Unknown midterm regression node split '{split_key}'. "
+                f"Available: {sorted(node_splits.keys())}"
+            )
+        split_idx = node_splits[split_key]
+        if split_idx.size == 0:
+            raise ValueError(
+                f"midterm regression split '{split_key}' has no labeled nodes."
+            )
+
+        task = RegressionTask(labels=labels, node_indices=split_idx)
+        task.original_graph_labels = labels.copy()
+        task.split_masked_labels = labels.copy()
+        sampler = BatchSampler(
+            batch_count,
+            task,
+            ParamSampler(batch_size, 1, n_shot, n_query, 1),
+            seed=seed,
+        )
+        label_embeddings = torch.zeros((1, 768), dtype=torch.float)
     elif task_name == "temporal_link_prediction":
         if not hasattr(dataset, "future_neighbor_sampler"):
             raise ValueError(
@@ -704,11 +816,11 @@ def get_midterm_dataloader(
         raise ValueError(f"Unknown task for midterm: {task_name}")
 
     aug_fn = get_aug(aug, dataset.graph.x) if (split == "train" or aug_test) else get_aug("")
-    is_multiway = task_name != "temporal_link_prediction"
+    is_multiway = task_name not in {"temporal_link_prediction", "regression"}
 
     return DataLoader(
         dataset,
         batch_sampler=sampler,
         num_workers=num_workers,
-        collate_fn=Collator(label_embeddings, aug=aug_fn, is_multiway=is_multiway),
+        collate_fn=Collator(label_embeddings, aug=aug_fn, is_multiway=is_multiway, task_name=task_name),
     )
