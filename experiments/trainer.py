@@ -737,6 +737,42 @@ class TrainerFS():
             if feat_str is not None:
                 center0 = int(center_nodes[0]) if center_nodes is not None and len(center_nodes) > 0 else "na"
                 print(f"[debug-features] split={split_name} sample=0 center_node={center0} {feat_str}")
+            if self.parameter.get("task_name", "") == "regression":
+                try:
+                    max_print = int(self.parameter.get("debug_print_predictions", 0) or 0)
+                    if max_print > 0 and split_name != "train":
+                        labels_all = batch[2].detach().cpu().reshape(-1)
+                        query_mask_all = batch[5].detach().cpu().reshape(-1).bool()
+                        query_indices = torch.where(query_mask_all)[0].tolist()
+                        raw_ptr = raw_graph.get("ptr") if isinstance(raw_graph, dict) else None
+
+                        def center_row_for_sample(sample_idx: int):
+                            if raw_ptr is not None and sample_idx < int(raw_ptr.numel()) - 1:
+                                return int(raw_ptr[sample_idx].item())
+                            return sample_idx
+
+                        print(f"[debug-regression] first {min(max_print, len(query_indices))} {split_name} query sample(s)")
+                        for out_idx, batch_idx in enumerate(query_indices[:max_print]):
+                            if out_idx >= int(ytrue.numel()) or out_idx >= int(ypred.numel()):
+                                break
+                            center_row = center_row_for_sample(batch_idx)
+                            center_i = int(center_nodes[batch_idx]) if center_nodes is not None and batch_idx < len(center_nodes) else "na"
+                            gt_i = float(labels_all[batch_idx].item())
+                            pred_i = float(ypred[out_idx].reshape(-1)[0].item())
+                            err_i = pred_i - gt_i
+                            feat_i = self._format_debug_node_features(
+                                raw_graph if raw_graph is not None else graph,
+                                sample_idx=center_row,
+                                emb_preview=4,
+                            )
+                            print(
+                                f"  Q{out_idx + 1}: idx={batch_idx} center_row={center_row} center={center_i} "
+                                f"pred={pred_i:.6f} gt={gt_i:.6f} err={err_i:.6f}"
+                            )
+                            if feat_i is not None:
+                                print(f"    input: {feat_i}")
+                except Exception as ex:
+                    print(f"[debug-regression] failed to print regression predictions: {ex}")
             if self.parameter.get("task_name", "") == "temporal_link_prediction":
                 try:
                     if (
