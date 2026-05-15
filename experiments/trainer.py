@@ -9,7 +9,7 @@ import time
 from tqdm import tqdm, trange
 import shutil
 from sklearn.metrics import roc_curve
-from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+from sklearn.metrics import accuracy_score, f1_score, mean_absolute_error, mean_squared_error, r2_score, roc_auc_score
 
 sys.path.extend(os.path.join(os.path.dirname(__file__), "../../"))
 
@@ -74,7 +74,13 @@ class TrainerFS():
                 f"Use --n_way 1, got n_way={self.ways}."
             )
 
-        if self.ways > 1:
+        self.is_regression = parameter["task_name"] == "regression"
+        if self.is_regression:
+            if self.ways != 1:
+                raise ValueError(f"regression only supports n_way=1, got n_way={self.ways}.")
+            self.loss = torch.nn.MSELoss()
+            self.is_multiway = False
+        elif self.ways > 1:
             self.loss = torch.nn.CrossEntropyLoss()
             self.is_multiway = True
         elif self.ways == 1:
@@ -395,6 +401,9 @@ class TrainerFS():
         
 
     def get_loss_and_acc(self, y_true_matrix, y_pred_matrix):
+        if self.is_regression:
+            loss = self.loss(y_pred_matrix.float(), y_true_matrix.float())
+            return loss, -float(loss.detach().cpu().item())
         loss = self.loss(y_pred_matrix, y_true_matrix.float())
         if not self.is_multiway:
             p_score = y_pred_matrix[y_true_matrix == 1]
@@ -456,6 +465,8 @@ class TrainerFS():
 
     def _maybe_save_roc_curve(self, y_true_matrix, y_pred_matrix, split_name, step=None, global_eval=None):
         if not self.parameter.get("save_roc_curve", False):
+            return
+        if self.is_regression:
             return
         if self.is_multiway:
             if (
@@ -888,6 +899,17 @@ class TrainerFS():
         yp = y_pred_matrix.detach().cpu()
 
         try:
+            if self.is_regression:
+                y_true = yt.reshape(-1).numpy().astype(np.float32)
+                y_pred = yp.reshape(-1).numpy().astype(np.float32)
+                mse = float(mean_squared_error(y_true, y_pred))
+                metrics["mse"] = mse
+                metrics["rmse"] = float(np.sqrt(mse))
+                metrics["mae"] = float(mean_absolute_error(y_true, y_pred))
+                if y_true.size >= 2 and not np.allclose(y_true, y_true[0]):
+                    metrics["r2"] = float(r2_score(y_true, y_pred))
+                return metrics
+
             if yp.ndim == 1 or (yp.ndim == 2 and yp.shape[1] == 1):
                 # Binary single-logit case (e.g. temporal_link_prediction).
                 y_true = yt.reshape(-1).numpy().astype(int)
@@ -1039,7 +1061,7 @@ class TrainerFS():
 
         # initialization
         best_step = 0
-        best_val = 0
+        best_val = float("-inf")
         test_acc_on_best_val = 0
         best_test_acc = 0
         other_metrics_on_best = {}

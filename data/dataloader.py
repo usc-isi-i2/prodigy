@@ -181,6 +181,25 @@ class MulticlassTask(TaskBase):
                 task[label] = train_members[train_sample_func(range(train_members.shape[0]), k=num_shot)].tolist() + members[sample_func(range(members.shape[0]), k=num_query)].tolist()
         return task
 
+
+class RegressionTask(TaskBase):
+    def __init__(self, labels, node_indices):
+        self.labels = np.asarray(labels, dtype=np.float32)
+        self.node_indices = np.asarray(node_indices, dtype=np.int64)
+        if self.node_indices.size == 0:
+            raise ValueError("RegressionTask requires at least one labeled node.")
+
+    def get_label(self, graph_id):
+        return float(self.labels[graph_id])
+
+    def sample(self, num_label, num_member, num_shot, num_query, rng):
+        del num_label, num_shot, num_query
+        if self.node_indices.size < num_member:
+            chosen = rng.choices(self.node_indices.tolist(), k=num_member)
+        else:
+            chosen = rng.sample(self.node_indices.tolist(), num_member)
+        return {0: chosen}
+
 class ContrastiveTask(TaskBase):
     def __init__(self, size):
         self.size = size
@@ -358,10 +377,11 @@ def linearize(mask, inputs_idx, output_idx, batch_rand_perm = None):
     return seqs.transpose(2,1).reshape(seqs.shape[0], -1), batch_rand_perm
 
 class Collator:
-    def __init__(self, label_meta, aug=Identity(), is_multiway=True):
+    def __init__(self, label_meta, aug=Identity(), is_multiway=True, task_name=None):
         self.label_meta = label_meta
         self.aug = aug
         self.is_multiway = is_multiway
+        self.task_name = task_name
 
     def process_one_task(self, task, batch_param):
         label_map = list(task) # Looks like this: (0, 'task1'), (1, 'task2'), ...
@@ -397,6 +417,45 @@ class Collator:
         b_mask = torch.stack(query_mask)
         query_mask = torch.cat(query_mask)
         label_map = list(chain(*label_map))
+        if self.task_name == "regression":
+            # One dummy label node per task; support edges carry the observed scalar target.
+            center_rows = graphs.ptr[:-1]
+            y_values = graphs.y[center_rows].float().reshape(-1, 1)
+            metagraph_edge_source = torch.arange(y_values.size(0))
+            metagraph_edge_target = labels.size(0) + torch.arange(num_task).repeat_interleave(task_len)
+            metagraph_edge_index = torch.stack([metagraph_edge_source, metagraph_edge_target], dim=0)
+            metagraph_edge_mask = query_mask
+            metagraph_edge_value = y_values.reshape(-1) * (~metagraph_edge_mask).float()
+            metagraph_edge_attr = torch.stack([metagraph_edge_mask, metagraph_edge_value], dim=1)
+
+            if isinstance(self.label_meta, torch.Tensor):
+                if self.label_meta.ndim == 1:
+                    label_embeddings = self.label_meta.unsqueeze(0).repeat(num_task, 1)
+                else:
+                    label_embeddings = self.label_meta[0].unsqueeze(0).repeat(num_task, 1)
+            else:
+                label_embeddings = torch.zeros((num_task, 768), dtype=torch.float)
+
+            inputs_idx = metagraph_edge_index.reshape(2, len(b_mask), -1)[0]
+            output_idx = metagraph_edge_index.reshape(2, len(b_mask), -1)[1]
+            input_seqs, _ = linearize(~b_mask, inputs_idx, output_idx)
+            query_seqs, batch_rand_perm = linearize(
+                b_mask,
+                inputs_idx,
+                torch.ones(output_idx.shape, dtype=torch.int) * (metagraph_edge_index.max() + 1),
+            )
+            query_seqs_gt, _ = linearize(b_mask, inputs_idx, output_idx, batch_rand_perm)
+            return (
+                graphs,
+                label_embeddings,
+                y_values,
+                metagraph_edge_index,
+                metagraph_edge_attr,
+                metagraph_edge_mask,
+                input_seqs,
+                query_seqs,
+                query_seqs_gt,
+            )
         if label_map and not isinstance(label_map[0], tuple):
             try:
                 graphs.task_label_map = torch.tensor(label_map).reshape(num_task, num_labels)
