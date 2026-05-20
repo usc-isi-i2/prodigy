@@ -49,14 +49,14 @@ run_eval() {
   case "$task_name" in
     neighbor_matching)
       task_tag="nm"
-      extra_args=(--task_name neighbor_matching --n_way 3 --n_shots "$shots" --n_query 4
+      extra_args=(--task_name neighbor_matching --n_way 3 --n_shots "$shots" --n_query 1
         --zero_shot "$zero_shot" --dataset_len_cap 5000 --val_len_cap 500 --test_len_cap 500
         --epochs 12 --eval_step 2000 --checkpoint_step 2000
         --prefix "eval_${model_name}_to_election2020_${task_tag}_${shots}shot") ;;
     classification)
       task_tag="pl"
       extra_args=(--task_name classification --ignore_label_embeddings False --linear_probe False
-        --n_way 2 --n_shots "$shots" --n_query 4 --zero_shot "$zero_shot"
+        --n_way 2 --n_shots "$shots" --n_query 1 --zero_shot "$zero_shot"
         --dataset_len_cap 2000 --val_len_cap 500 --test_len_cap 500
         --epochs 12 --eval_step 2000 --checkpoint_step 2000
         --prefix "eval_${model_name}_to_election2020_${task_tag}_${shots}shot") ;;
