@@ -22,6 +22,8 @@ MODEL_LIST="$1"
 SHOTS_CSV="${2:-0,3}"
 [[ -f "$MODEL_LIST" ]] || { echo "Model list not found: $MODEL_LIST" >&2; exit 1; }
 IFS=',' read -r -a SHOT_LIST <<< "$SHOTS_CSV"
+EVAL_WORKERS="${EVAL_WORKERS:-0}"
+EVAL_BATCH_SIZE="${EVAL_BATCH_SIZE:-5}"
 
 COMMON_ARGS=(
   --dataset election2020
@@ -30,7 +32,8 @@ COMMON_ARGS=(
   --feature_subset emb_only
   --input_dim 384
   --original_features True
-  --workers 4
+  --workers "$EVAL_WORKERS"
+  --batch_size "$EVAL_BATCH_SIZE"
   --device 0
   --seed 0
   --eval_only True
