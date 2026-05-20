@@ -24,6 +24,7 @@ SHOTS_CSV="${2:-0,3}"
 IFS=',' read -r -a SHOT_LIST <<< "$SHOTS_CSV"
 EVAL_WORKERS="${EVAL_WORKERS:-4}"
 EVAL_BATCH_SIZE="${EVAL_BATCH_SIZE:-1}"
+EVAL_SEED="${EVAL_SEED:-0}"
 
 TAGS_ARGS=()
 if [[ -n "${3:-}" ]]; then
@@ -41,7 +42,7 @@ COMMON_ARGS=(
   --workers "$EVAL_WORKERS"
   --batch_size "$EVAL_BATCH_SIZE"
   --device 0
-  --seed 0
+  --seed "$EVAL_SEED"
   --eval_only True
   --eval_test_before_train True
   --eval_val_before_train True
