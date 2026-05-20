@@ -67,7 +67,7 @@ def get_params():
     args.add_argument("-prt_step", "--print_step", default=2000, type=int)
     args.add_argument("-eval_step", "--eval_step", default=2000, type=int)
     args.add_argument("-ckpt_step", "--checkpoint_step", default=2000, type=int)
-    args.add_argument("-bs", "--batch_size", default=5, type=int) 
+    args.add_argument("-bs", "--batch_size", default=1, type=int) 
     args.add_argument("-weight_decay", "--weight_decay", default=0.001, type=float)
     args.add_argument("-dropout", "--dropout", default=0, type=float)
     args.add_argument("-txt_dropout", "--text_features_dropout", default=0, type=float)  # additionally drop out text features
