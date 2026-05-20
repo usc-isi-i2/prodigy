@@ -69,13 +69,15 @@ def _build_graph(raw: dict, **kwargs):
     graph.edge_attr_feature_names = edge_feature_names
     graph.feature_names = raw.get("feature_names", [])
     graph.label_names = raw.get("label_names", [])
-    graph.label_type = raw.get("label_type")
-    if graph.label_type is None:
-        graph.label_type = (
+
+    label_type = raw.get("label_type")
+    if label_type is None:
+        label_type = (
             "regression"
             if torch.is_floating_point(graph.y) and len(graph.label_names) <= 1
             else "classification"
         )
+    graph.label_type = label_type
     graph.user_ids = raw.get("user_ids", [])
     graph = _select_target_from_feature(
         graph,
