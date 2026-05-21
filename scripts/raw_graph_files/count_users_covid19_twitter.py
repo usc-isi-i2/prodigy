@@ -2,9 +2,12 @@ import glob
 import json
 import os
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 
 JSON_GLOB = "/scratch1/eibl/data/covid19_twitter/raw/*/*.json"
+DEFAULT_WORKERS = min(4, os.cpu_count() or 1)
+DEFAULT_BATCH_SIZE = 25
 
 
 def normalize_user_id(user_id):
@@ -45,6 +48,11 @@ def load_json_items(path: str):
         return items
 
 
+def batched(seq, size):
+    for i in range(0, len(seq), size):
+        yield seq[i : i + size]
+
+
 def iter_user_ids(tweet):
     user = tweet.get("user") or {}
     rt = tweet.get("retweeted_status") or {}
@@ -73,35 +81,66 @@ def iter_user_ids(tweet):
             yield user_id
 
 
-files = sorted(glob.glob(JSON_GLOB))
-print(f"Found {len(files)} files", flush=True)
+def process_file_batch(paths):
+    total_tweets = 0
+    unique_ids = set()
+    skipped = []
 
-total_tweets = 0
-unique_ids = set()
-start = time.time()
+    for path in paths:
+        try:
+            items = load_json_items(path)
+            total_tweets += len(items)
+            for tweet in items:
+                for user_id in iter_user_ids(tweet):
+                    unique_ids.add(user_id)
+        except Exception as exc:
+            skipped.append((path, str(exc)))
 
-for i, path in enumerate(files, 1):
-    try:
-        items = load_json_items(path)
-        total_tweets += len(items)
-        for tweet in items:
-            for user_id in iter_user_ids(tweet):
-                unique_ids.add(user_id)
-    except Exception as exc:
-        print(f"  skipped {path}: {exc}", flush=True)
+    return total_tweets, unique_ids, skipped
 
-    if i % 10 == 0 or i == len(files):
-        elapsed = time.time() - start
-        rate = i / elapsed if elapsed > 0 else 0
-        eta = (len(files) - i) / rate if rate > 0 else 0
-        print(
-            f"[{i:>4}/{len(files)}] "
-            f"tweets={total_tweets:>12,}  "
-            f"unique_users={len(unique_ids):>10,}  "
-            f"elapsed={elapsed/60:5.1f}m  "
-            f"eta={eta/60:5.1f}m",
-            flush=True,
-        )
 
-print(f"\nFinal: {total_tweets:,} tweets, {len(unique_ids):,} unique user ids")
-print(f"Took {(time.time() - start)/60:.1f} minutes")
+def main():
+    files = sorted(glob.glob(JSON_GLOB))
+    print(f"Found {len(files)} files", flush=True)
+
+    workers = int(os.environ.get("COUNT_USERS_WORKERS", DEFAULT_WORKERS))
+    batch_size = int(os.environ.get("COUNT_USERS_BATCH_SIZE", DEFAULT_BATCH_SIZE))
+    total_tweets = 0
+    unique_ids = set()
+    start = time.time()
+    done_files = 0
+
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        futures = {
+            executor.submit(process_file_batch, batch): batch
+            for batch in batched(files, batch_size)
+        }
+
+        for future in as_completed(futures):
+            batch = futures[future]
+            batch_tweets, batch_user_ids, skipped = future.result()
+            total_tweets += batch_tweets
+            unique_ids.update(batch_user_ids)
+            done_files += len(batch)
+
+            for path, exc in skipped:
+                print(f"  skipped {path}: {exc}", flush=True)
+
+            elapsed = time.time() - start
+            rate = done_files / elapsed if elapsed > 0 else 0
+            eta = (len(files) - done_files) / rate if rate > 0 else 0
+            print(
+                f"[{done_files:>4}/{len(files)}] "
+                f"tweets={total_tweets:>12,}  "
+                f"unique_users={len(unique_ids):>10,}  "
+                f"elapsed={elapsed/60:5.1f}m  "
+                f"eta={eta/60:5.1f}m",
+                flush=True,
+            )
+
+    print(f"\nFinal: {total_tweets:,} tweets, {len(unique_ids):,} unique user ids")
+    print(f"Took {(time.time() - start)/60:.1f} minutes")
+
+
+if __name__ == "__main__":
+    main()
