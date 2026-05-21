@@ -7,7 +7,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 
 JSON_GLOB = "/scratch1/eibl/data/covid19_twitter/raw/*/*.json"
 DEFAULT_WORKERS = min(10, os.cpu_count() or 1)
-DEFAULT_BATCH_SIZE = 25
+DEFAULT_BATCH_SIZE = 1
 
 
 def normalize_user_id(user_id):
