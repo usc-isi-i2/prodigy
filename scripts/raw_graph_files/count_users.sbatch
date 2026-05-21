@@ -11,6 +11,8 @@
 
 set -euo pipefail
 
+SCRIPT_PATH="${1:-scripts/raw_graph_files/count_users_ukr_rus.py}"
+
 module purge || true
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate prodigy
@@ -18,4 +20,4 @@ conda activate prodigy
 cd /home1/eibl/gfm/prodigy
 mkdir -p /home1/eibl/gfm/prodigy/logs
 
-python -u scripts/raw_graph_files/count_users_ukr_rus.py
+python -u "$SCRIPT_PATH"
