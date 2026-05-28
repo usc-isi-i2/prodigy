@@ -8,9 +8,9 @@ All files created for cross-dataset evaluation on cluster. Last updated: 2026-04
 
 | File | Purpose | Usage |
 |------|---------|-------|
-| `scripts/eval_cross_dataset.py` | Main evaluation engine | `python eval_cross_dataset.py --model_path X --dataset Y --task Z` |
-| `scripts/generate_eval_jobs.py` | Generate batch jobs | `python generate_eval_jobs.py` |
-| `scripts/aggregate_eval_results.py` | Summarize results | `python aggregate_eval_results.py --results_dir DIR` |
+| `scripts/experiments/eval/eval_cross_dataset.py` | Main evaluation engine | `python eval_cross_dataset.py --model_path X --dataset Y --task Z` |
+| `scripts/experiments/eval/generate_eval_jobs.py` | Generate batch jobs | `python generate_eval_jobs.py` |
+| `scripts/experiments/eval/aggregate_eval_results.py` | Summarize results | `python aggregate_eval_results.py --results_dir DIR` |
 
 ### Generated on Cluster
 
@@ -25,8 +25,8 @@ All files created for cross-dataset evaluation on cluster. Last updated: 2026-04
 |------|------|----------|
 | `CROSS_DATASET_EVAL.md` | MD | Detailed guide (updated) |
 | `EVAL_SETUP_SUMMARY.md` | MD | Executive summary & next steps |
-| `scripts/EVAL_QUICKSTART.sh` | Bash | Quick reference commands |
-| `scripts/check_eval_setup.py` | Python | Setup validator |
+| `scripts/experiments/eval/EVAL_QUICKSTART.sh` | Bash | Quick reference commands |
+| `scripts/experiments/eval/check_eval_setup.py` | Python | Setup validator |
 | `EVAL_FILES_MANIFEST.md` | MD | This file |
 
 ### Output Locations
@@ -96,7 +96,7 @@ aggregate_eval_results.py
 2. **Generate jobs**
    ```bash
    cd /scratch1/singhama/prodigy
-   python scripts/generate_eval_jobs.py
+   python scripts/experiments/eval/generate_eval_jobs.py
    ```
 
 3. **Submit batch**
@@ -112,7 +112,7 @@ aggregate_eval_results.py
 
 5. **Aggregate results**
    ```bash
-   python scripts/aggregate_eval_results.py \
+   python scripts/experiments/eval/aggregate_eval_results.py \
      --results_dir /scratch1/singhama/data/eval_results
    ```
 
@@ -143,7 +143,7 @@ All 15 models included in evaluation:
 Run this to verify setup:
 ```bash
 cd /Users/philipp/projects/gfm/prodigy
-python scripts/check_eval_setup.py
+python scripts/experiments/eval/check_eval_setup.py
 ```
 
 Should show all ✓ marks.
@@ -154,7 +154,7 @@ Should show all ✓ marks.
 |----------|---------|
 | [CROSS_DATASET_EVAL.md](CROSS_DATASET_EVAL.md) | Full setup guide & troubleshooting |
 | [EVAL_SETUP_SUMMARY.md](EVAL_SETUP_SUMMARY.md) | Executive summary |
-| [scripts/EVAL_QUICKSTART.sh](scripts/EVAL_QUICKSTART.sh) | Copy-paste commands |
+| [scripts/experiments/eval/EVAL_QUICKSTART.sh](scripts/experiments/eval/EVAL_QUICKSTART.sh) | Copy-paste commands |
 | [README.md](README.md) | Project overview |
 
 ## 🔗 Related Code

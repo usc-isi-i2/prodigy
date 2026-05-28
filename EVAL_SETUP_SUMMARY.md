@@ -14,7 +14,7 @@ You provided:
 
 ### 1. **eval_cross_dataset.py** - Core Evaluation Script
 ```bash
-python scripts/eval_cross_dataset.py \
+python scripts/experiments/eval/eval_cross_dataset.py \
   --model_path <checkpoint_path> \
   --dataset <dataset_name> \
   --task <task_name> \
@@ -31,7 +31,7 @@ python scripts/eval_cross_dataset.py \
 
 ### 2. **generate_eval_jobs.py** - Batch Job Creator
 ```bash
-python scripts/generate_eval_jobs.py
+python scripts/experiments/eval/generate_eval_jobs.py
 ```
 
 **Creates:**
@@ -43,7 +43,7 @@ Edit the script to change which models, datasets, or tasks to evaluate
 
 ### 3. **aggregate_eval_results.py** - Results Aggregator
 ```bash
-python scripts/aggregate_eval_results.py \
+python scripts/experiments/eval/aggregate_eval_results.py \
   --results_dir /scratch1/singhama/data/eval_results
 ```
 
@@ -67,7 +67,7 @@ Copy-paste commands for common operations
 ### Step 1: Generate Jobs (on cluster)
 ```bash
 cd /scratch1/singhama/prodigy
-python scripts/generate_eval_jobs.py
+python scripts/experiments/eval/generate_eval_jobs.py
 ```
 
 This creates two files:
@@ -92,7 +92,7 @@ squeue -u $USER
 watch -n 5 "find /scratch1/singhama/data/eval_results -name '*.json' | wc -l"
 
 # After all jobs complete (2-4 hours)
-python scripts/aggregate_eval_results.py --results_dir /scratch1/singhama/data/eval_results
+python scripts/experiments/eval/aggregate_eval_results.py --results_dir /scratch1/singhama/data/eval_results
 ```
 
 ## 📊 Evaluation Matrix
@@ -150,7 +150,7 @@ Each JSON file contains:
 ## 🎚️ Customization
 
 ### Run Specific Combinations
-Edit `scripts/generate_eval_jobs.py`:
+Edit `scripts/experiments/eval/generate_eval_jobs.py`:
 ```python
 MODELS = [
     "/path/to/model1",
@@ -176,7 +176,7 @@ sbatch --mem=32GB eval_cross_dataset.sbatch
 
 ### Test Single Evaluation First
 ```bash
-python scripts/eval_cross_dataset.py \
+python scripts/experiments/eval/eval_cross_dataset.py \
   --model_path /scratch1/singhama/data/experiments/train2_midterm_nm_to_covid_nm_16_04_2026_10_07_00/state_dict \
   --dataset covid19_twitter \
   --task node_masking \
@@ -218,8 +218,8 @@ print(nm_results[["model", "dataset", "test_accuracy"]])
 ## 📚 Documentation
 
 - **[CROSS_DATASET_EVAL.md](CROSS_DATASET_EVAL.md)** - Full guide with examples
-- **[scripts/EVAL_QUICKSTART.sh](scripts/EVAL_QUICKSTART.sh)** - Copy-paste commands
-- **[scripts/eval_cross_dataset.py](scripts/eval_cross_dataset.py)** - Source code with inline docs
+- **[scripts/experiments/eval/EVAL_QUICKSTART.sh](scripts/experiments/eval/EVAL_QUICKSTART.sh)** - Copy-paste commands
+- **[scripts/experiments/eval/eval_cross_dataset.py](scripts/experiments/eval/eval_cross_dataset.py)** - Source code with inline docs
 - **[experiments/trainer.py](../experiments/trainer.py)** - Evaluation implementation
 
 ## ✅ Validation Checklist
@@ -257,7 +257,7 @@ These metrics tell you:
 
 ```bash
 cd /scratch1/singhama/prodigy
-python scripts/generate_eval_jobs.py
+python scripts/experiments/eval/generate_eval_jobs.py
 sbatch eval_cross_dataset.sbatch
 echo "Submitted $(grep -c 'python' eval_jobs.txt) evaluation jobs!"
 ```
@@ -269,4 +269,4 @@ watch -n 5 "squeue -u $USER; echo '---'; find /scratch1/singhama/data/eval_resul
 
 ---
 
-**Questions?** Check [CROSS_DATASET_EVAL.md](CROSS_DATASET_EVAL.md) or [scripts/EVAL_QUICKSTART.sh](scripts/EVAL_QUICKSTART.sh)
+**Questions?** Check [CROSS_DATASET_EVAL.md](CROSS_DATASET_EVAL.md) or [scripts/experiments/eval/EVAL_QUICKSTART.sh](scripts/experiments/eval/EVAL_QUICKSTART.sh)
