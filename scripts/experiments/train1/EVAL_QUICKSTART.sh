@@ -6,7 +6,7 @@
 # ============================================================================
 
 cd /home1/eibl/gfm/prodigy
-python scripts/generate_eval_jobs.py
+python scripts/experiments/eval/generate_eval_jobs.py
 
 # Creates:
 # - eval_jobs.txt          (list of 90 evaluation commands)
@@ -44,7 +44,7 @@ squeue -u $USER -O "JOBID,ARRAY_TASK_ID,STATE,TIME,NODELIST"
 # STEP 4: Aggregate Results (after jobs finish)
 # ============================================================================
 
-python scripts/aggregate_eval_results.py \
+python scripts/experiments/eval/aggregate_eval_results.py \
   --results_dir /home1/eibl/gfm/prodigy/eval_results
 
 # Generates:
@@ -56,7 +56,7 @@ python scripts/aggregate_eval_results.py \
 # OPTIONAL: Run Single Evaluation (for testing)
 # ============================================================================
 
-python scripts/eval_cross_dataset.py \
+python scripts/experiments/eval/eval_cross_dataset.py \
   --model_path /scratch1/singhama/data/experiments/train2_midterm_nm_to_covid_nm_16_04_2026_10_07_00/state_dict \
   --dataset covid19_twitter \
   --task node_masking \
