@@ -8,7 +8,7 @@
 set -euo pipefail
 
 SRC_ROOT=/project2/ll_774_951/uk_ru/twitter/data
-OUT_ROOT=/scratch1/eibl/data/covid19_twitter/parquet
+OUT_ROOT=/scratch1/eibl/data/ukr_rus_twitter/parquet
 
 manifest="${MANIFEST:?pass MANIFEST=/path/to/files.txt via sbatch --export}"
 in=$(sed -n "$((SLURM_ARRAY_TASK_ID + 1))p" "$manifest")
