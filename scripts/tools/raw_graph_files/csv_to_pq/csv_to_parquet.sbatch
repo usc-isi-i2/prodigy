@@ -3,6 +3,7 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=8G
 #SBATCH --time=01:00:00
+#SBATCH --output=logs/%x-%A_%a.out
 
 set -euo pipefail
 
