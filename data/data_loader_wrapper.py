@@ -40,6 +40,9 @@ def get_dataset_wrap(root, dataset, **kwargs):
     if dataset == "instagram_mention":
         from data.instagram_mention import get_instagram_mention_dataset
         return get_instagram_mention_dataset(root=root, **kwargs)
+    if dataset == "merged":
+        from data.merged import get_merged_dataset
+        return get_merged_dataset(root=root, **kwargs)
     if dataset in ["Wiki", "WikiKG90M"]:
         from data.kg import get_kg_dataset
         return get_kg_dataset(root=root, name=dataset, **kwargs)
