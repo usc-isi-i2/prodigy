@@ -1,0 +1,223 @@
+# Experiment configuration for cross-dataset leave-k-out generator.
+# Referenced by generate_experiments.py.
+
+global:
+  project_root: /home1/singhama/gfm/prodigy
+  conda_env: /home1/singhama/.conda/envs/prodigy-env
+  input_dim: 384
+  original_features: True
+  midterm_feature_subset: emb_only
+  device: 0
+  seed: 0
+
+datasets:
+  midterm:
+    dataset_arg: midterm
+    root_var: MIDTERM_ROOT        # sourced from env.sh
+    graph_var: MIDTERM_GRAPH
+    mem_train: 32G
+    mem_eval: 32G
+    workers_train: 8
+    workers_eval: 8
+    time_train: "02:00:00"
+    time_eval: "04:00:00"
+    common_args: {}               # no midterm_edge_view when training ON midterm
+
+    # Training parameters per task (used when this dataset is a training step)
+    train_tasks:
+      NM:
+        task_name: neighbor_matching
+        n_way: 3
+        n_shots: 3
+        n_query: 24
+        val_len_cap: 500
+        test_len_cap: 500
+        epochs: 3
+        eval_step: 1000
+        checkpoint_step: 1000
+      LP:
+        task_name: temporal_link_prediction
+        n_way: 1
+        n_shots: 1
+        n_query: 3
+        zero_shot: False
+        val_len_cap: 500
+        test_len_cap: 500
+        epochs: 3
+        eval_step: 1000
+        checkpoint_step: 1000
+        midterm_target_edge_view: default
+
+    # Evaluation parameters per task (used when this dataset is held out)
+    eval_tasks:
+      NM:
+        task_name: neighbor_matching
+        n_way: 3
+        n_query: 24
+        val_len_cap: 500
+        test_len_cap: 500
+        eval_step: 1000
+        checkpoint_step: 1000
+      LP:
+        task_name: temporal_link_prediction
+        n_way: 1
+        n_query: 3
+        val_len_cap: 500
+        test_len_cap: 500
+        epochs: 3
+        eval_step: 1000
+        checkpoint_step: 1000
+        midterm_target_edge_view: default
+      PL:
+        task_name: classification
+        n_way: 2
+        n_query: 3
+        dataset_len_cap: 2000
+        val_len_cap: 500
+        test_len_cap: 500
+        epochs: 3
+        eval_step: 1000
+        checkpoint_step: 1000
+        ignore_label_embeddings: False
+        linear_probe: False
+        midterm_label_downsample: "50:50"
+
+  covid:
+    dataset_arg: covid19_twitter
+    root_var: COVID_ROOT
+    graph_var: COVID_GRAPH
+    mem_train: 64G
+    mem_eval: 64G
+    workers_train: 4
+    workers_eval: 4
+    time_train: "02:00:00"
+    time_eval: "04:00:00"
+    common_args:
+      midterm_edge_view: temporal_history
+
+    train_tasks:
+      NM:
+        task_name: neighbor_matching
+        n_way: 2
+        n_shots: 3
+        n_query: 8
+        val_len_cap: 500
+        test_len_cap: 500
+        epochs: 3
+        eval_step: 1000
+        checkpoint_step: 1000
+      LP:
+        task_name: temporal_link_prediction
+        n_way: 1
+        n_shots: 1
+        n_query: 3
+        zero_shot: False
+        val_len_cap: 500
+        test_len_cap: 500
+        epochs: 3
+        eval_step: 1000
+        checkpoint_step: 1000
+        midterm_target_edge_view: temporal_new
+
+    eval_tasks:
+      NM:
+        task_name: neighbor_matching
+        n_way: 2
+        n_query: 8
+        val_len_cap: 500
+        test_len_cap: 500
+        eval_step: 1000
+        checkpoint_step: 1000
+      LP:
+        task_name: temporal_link_prediction
+        n_way: 1
+        n_query: 3
+        val_len_cap: 500
+        test_len_cap: 500
+        epochs: 3
+        eval_step: 1000
+        checkpoint_step: 1000
+        midterm_target_edge_view: temporal_new
+      PL:
+        task_name: classification
+        n_way: 2
+        n_query: 3
+        dataset_len_cap: 2000
+        val_len_cap: 500
+        test_len_cap: 500
+        epochs: 3
+        eval_step: 1000
+        checkpoint_step: 1000
+        ignore_label_embeddings: False
+        linear_probe: False
+        midterm_label_downsample: "50:50"
+
+  ukr_rus:
+    dataset_arg: ukr_rus_twitter
+    root_var: UKR_RUS_ROOT
+    graph_var: UKR_RUS_GRAPH
+    mem_train: 64G
+    mem_eval: 64G
+    workers_train: 4
+    workers_eval: 4
+    time_train: "02:00:00"
+    time_eval: "04:00:00"
+    common_args:
+      midterm_edge_view: temporal_history
+
+    train_tasks:
+      NM:
+        task_name: neighbor_matching
+        n_way: 2
+        n_shots: 3
+        n_query: 8
+        val_len_cap: 500
+        test_len_cap: 500
+        epochs: 3
+        eval_step: 1000
+        checkpoint_step: 1000
+      LP:
+        task_name: temporal_link_prediction
+        n_way: 1
+        n_shots: 1
+        n_query: 3
+        zero_shot: False
+        val_len_cap: 500
+        test_len_cap: 500
+        epochs: 3
+        eval_step: 1000
+        checkpoint_step: 1000
+        midterm_target_edge_view: temporal_new
+
+    eval_tasks:
+      NM:
+        task_name: neighbor_matching
+        n_way: 2
+        n_query: 8
+        val_len_cap: 500
+        test_len_cap: 500
+        eval_step: 1000
+        checkpoint_step: 1000
+      LP:
+        task_name: temporal_link_prediction
+        n_way: 1
+        n_query: 3
+        val_len_cap: 500
+        test_len_cap: 500
+        epochs: 3
+        eval_step: 1000
+        checkpoint_step: 1000
+        midterm_target_edge_view: temporal_new
+      PL:
+        task_name: classification
+        n_way: 2
+        n_query: 3
+        dataset_len_cap: 2000
+        val_len_cap: 500
+        test_len_cap: 500
+        epochs: 3
+        eval_step: 1000
+        checkpoint_step: 1000
+        ignore_label_embeddings: False
+        linear_probe: False
+        midterm_label_downsample: "50:50"
