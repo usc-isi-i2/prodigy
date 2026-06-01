@@ -137,6 +137,11 @@ def get_merged_dataset(
             "Re-run merge-graphs (rapids-experiments) to regenerate it with --test-ratio."
         )
 
+    # _build_midterm_graph expects label_names; the merged graph stores them
+    # per-dataset in dataset_info, so inject a generic placeholder here.
+    if "label_names" not in raw:
+        raw = {**raw, "label_names": ["class_0", "class_1"]}
+
     graph, resolved_edge_view = _build_midterm_graph(raw, **kwargs)
 
     print(f"Merged graph: {graph.num_nodes:,} nodes, {graph.edge_index.shape[1]:,} edges")
