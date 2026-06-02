@@ -18,6 +18,7 @@ Outputs include:
 - `source_files.parquet`
 - `shards/shard-000000.emb.npy`
 - `shards/shard-000000.meta.parquet`
+- `shards/shard-000000.manifest.json`
 - `skipped_rows/shard-000000.skipped.parquet`
 - `logs/*.log`
 
@@ -27,9 +28,10 @@ Embeddings are `float16`, 768-dimensional, L2-normalized vectors from `Alibaba-N
 
 The pipeline creates one canonical content embedding per source row:
 
-- Pure retweet: embed `rt_text`, because it captures the endorsed content.
-- Quote tweet: embed `text`, because it captures the user's framing/commentary.
+- Quote tweet: embed `text` when present, because it captures the user's framing/commentary. A row is treated as a quote when `tweet_type` contains `quote`, `qtd_tweetid` is present, or `qtd_text` is present.
+- Retweet: embed `rt_text` when present, because it captures the endorsed content. A row is treated as a retweet when `tweet_type` contains `retweet`, `rt_tweetid` is present, or `text` starts with `RT `.
 - Original tweet or reply: embed `text`.
+- Fallback order: use `text`, then `rt_text`, then `qtd_text` if the classified source text is absent.
 
 Before tokenization it applies Unicode NFKC normalization, replaces URLs with `<URL>`, replaces handles with `<USER>`, collapses whitespace, and preserves case, punctuation, hashtags, emojis, and multilingual characters.
 
@@ -56,7 +58,7 @@ git pull --ff-only origin tweet-embeddings-v001
 git rev-parse HEAD
 ```
 
-Confirm the checkout is at commit `f63f007` or newer.
+Confirm the checkout is at the current `tweet-embeddings-v001` branch tip before running on tucker.
 
 The embedding manifest records the git commit SHA, command line, package versions, CUDA/Torch runtime, model id/revision, config, source-data fingerprint, and shard checksums.
 
@@ -81,7 +83,7 @@ The run manifest records the actual package and CUDA versions used.
 
 ## GPU Selection
 
-This job should use physical GPUs `0,1,2,3` on tucker. Do not use GPUs `1,2,3,4` unless the allocation changes.
+This job defaults to physical GPUs `0,1,2,3` on tucker. Use a different GPU set only if the allocation changes.
 
 CUDA remaps visible GPUs inside Python. With:
 
@@ -98,7 +100,7 @@ worker rank 2 device=cuda:2 -> physical GPU 2
 worker rank 3 device=cuda:3 -> physical GPU 3
 ```
 
-The `--gpus` argument is recorded in config and also sets `CUDA_VISIBLE_DEVICES`, so keep both aligned in the commands below.
+The `--gpus` argument defaults to `0,1,2,3`, is recorded in config, and also sets `CUDA_VISIBLE_DEVICES`, so keep both aligned in the commands below.
 
 ## Verify Staged Parquet
 
@@ -209,7 +211,7 @@ Reconnect later:
 tmux attach -t tweet-embeddings
 ```
 
-The run is resumable. A shard is skipped only when its embedding file, metadata file, manifest, shape, dtype, row counts, and checksums validate.
+The run is resumable. A shard is skipped only when its embedding file, metadata file, and shard manifest exist; embedding and metadata checksums match; the skipped-row checksum matches when that sidecar exists; embedding shape and dtype match; and metadata row count equals embedding row count.
 
 If a worker OOMs, rerun the same full command with:
 
