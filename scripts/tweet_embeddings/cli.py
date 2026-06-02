@@ -64,7 +64,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--revision", default=DEFAULT_REVISION)
     parser.add_argument("--cache-folder", default="")
-    parser.add_argument("--gpus", default="1,2,3,4", help="Recorded GPU list; also sets CUDA_VISIBLE_DEVICES.")
+    parser.add_argument("--gpus", default="0,1,2,3", help="Recorded GPU list; also sets CUDA_VISIBLE_DEVICES.")
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--worker-rank", type=int, default=-1, help="Run only one worker rank.")
     parser.add_argument("--cpu", action="store_true")
