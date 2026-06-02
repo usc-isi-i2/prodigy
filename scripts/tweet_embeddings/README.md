@@ -79,6 +79,27 @@ python -c "import torch; print(torch.__version__, torch.cuda.is_available(), tor
 
 The run manifest records the actual package and CUDA versions used.
 
+## GPU Selection
+
+This job should use physical GPUs `0,1,2,3` on tucker. Do not use GPUs `1,2,3,4` unless the allocation changes.
+
+CUDA remaps visible GPUs inside Python. With:
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3
+```
+
+the worker log devices map like this:
+
+```text
+worker rank 0 device=cuda:0 -> physical GPU 0
+worker rank 1 device=cuda:1 -> physical GPU 1
+worker rank 2 device=cuda:2 -> physical GPU 2
+worker rank 3 device=cuda:3 -> physical GPU 3
+```
+
+The `--gpus` argument is recorded in config and also sets `CUDA_VISIBLE_DEVICES`, so keep both aligned in the commands below.
+
 ## Verify Staged Parquet
 
 The staged local mirror must pass verification before embedding:
@@ -115,11 +136,11 @@ cd /dataMeR2/phil/gfm/prodigy
 Then run:
 
 ```bash
-CUDA_VISIBLE_DEVICES=1 python -u scripts/tweet_embeddings/embed_tweets.py \
+CUDA_VISIBLE_DEVICES=0 python -u scripts/tweet_embeddings/embed_tweets.py \
   --input-root /dataMeR2/phil/data/ukr_rus_twitter/parquet \
   --output-root /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001_smoke \
   --source-files /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/source_files.v001.parquet \
-  --gpus 1 \
+  --gpus 0 \
   --num-workers 1 \
   --smoke-shards 1 \
   --batch-size 2048
@@ -166,11 +187,11 @@ cd /dataMeR2/phil/gfm/prodigy
 Then run the 4-GPU job:
 
 ```bash
-CUDA_VISIBLE_DEVICES=1,2,3,4 python -u scripts/tweet_embeddings/embed_tweets.py \
+CUDA_VISIBLE_DEVICES=0,1,2,3 python -u scripts/tweet_embeddings/embed_tweets.py \
   --input-root /dataMeR2/phil/data/ukr_rus_twitter/parquet \
   --output-root /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001 \
   --source-files /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/source_files.v001.parquet \
-  --gpus 1,2,3,4 \
+  --gpus 0,1,2,3 \
   --num-workers 4 \
   --batch-size 2048
 ```
@@ -227,6 +248,14 @@ Watch GPUs:
 ```bash
 watch -n 2 nvidia-smi
 ```
+
+The process list should show Python processes on physical GPUs `0,1,2,3`. If a run was accidentally started on the wrong GPUs, stop it with `Ctrl-c` inside tmux. To start the full output fresh, remove only:
+
+```bash
+rm -rf /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001
+```
+
+Do not remove `source_files.v001.parquet`, the staged-Parquet verification JSON, or the smoke output unless you intentionally want to redo those steps.
 
 At the observed smoke speed, the 4-GPU run should take roughly 7.5 to 8 hours if all four GPUs sustain similar throughput.
 
