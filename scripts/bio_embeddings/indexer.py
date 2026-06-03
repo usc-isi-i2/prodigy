@@ -418,6 +418,16 @@ def _fetch_dicts(conn: Any, query: str) -> list[dict[str, Any]]:
     return table.to_pylist()
 
 
+ROLE_STAT_COUNT_KEYS = (
+    "n_observations",
+    "n_null_bio",
+    "n_empty_raw_bio",
+    "n_nonempty_normalized_bio",
+    "n_distinct_bio_hashes",
+    "n_user_bio_pairs",
+)
+
+
 def _build_summary(
     conn: Any,
     output_root: Path,
@@ -476,6 +486,8 @@ def _build_summary(
         valid = valid_role_stats.get(row["source_role"], {})
         for key in ("n_nonempty_normalized_bio", "n_distinct_bio_hashes", "n_user_bio_pairs"):
             row[key] = int(valid.get(key) or 0)
+        for key in ROLE_STAT_COUNT_KEYS:
+            row[key] = int(row.get(key) or 0)
 
     scalar = conn.execute(
         """
