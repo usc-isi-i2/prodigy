@@ -132,7 +132,7 @@ python -u scripts/bio_embeddings/embed_bios.py \
   --source-files /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/source_files.v001.parquet \
   --index-only \
   --rebuild-bio-index \
-  --source-checksums false \
+  --no-source-checksums \
   --duckdb-memory-limit 200GB \
   --duckdb-threads 32 \
   --keep-work-dir
