@@ -10,13 +10,23 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import sys
 import time
+from types import SimpleNamespace
 from typing import Any
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 import numpy as np
 import pyarrow as pa
 import torch
-from torch_geometric.data import Data
+
+try:
+    from torch_geometric.data import Data as PyGData
+except ImportError:  # pragma: no cover - depends on environment.
+    PyGData = None
 
 from scripts.bio_embeddings.constants import DEFAULT_OUTPUT_ROOT as DEFAULT_BIO_EMBEDDINGS_ROOT
 from scripts.tweet_embeddings.constants import DEFAULT_INPUT_ROOT as DEFAULT_PARQUET_ROOT
@@ -41,9 +51,25 @@ def _require_duckdb() -> Any:
     except ImportError as exc:  # pragma: no cover - exercised only without dependency.
         raise RuntimeError(
             "duckdb is required to build the parquet retweet graph. "
-            "Install the dataset environment with duckdb, pyarrow, torch, and torch-geometric."
+            "Install the dataset environment with duckdb, pyarrow, and torch."
         ) from exc
     return duckdb
+
+
+def _make_data_object(
+    x: torch.Tensor,
+    edge_index: torch.Tensor,
+    edge_attr: torch.Tensor,
+    y: torch.Tensor,
+) -> Any:
+    if PyGData is not None:
+        return PyGData(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
+    return SimpleNamespace(
+        x=x,
+        edge_index=edge_index,
+        edge_attr=edge_attr,
+        y=y,
+    )
 
 
 def _sql_literal(value: str | Path) -> str:
@@ -643,7 +669,7 @@ def main() -> None:
             }
 
         y = torch.full((len(user_ids),), -1, dtype=torch.long)
-        data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
+        data = _make_data_object(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
         data.feature_names = feature_names
         data.edge_attr_feature_names = EDGE_ATTR_FEATURE_NAMES
         data.user_ids = list(user_ids)

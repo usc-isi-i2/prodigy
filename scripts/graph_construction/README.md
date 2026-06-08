@@ -151,6 +151,9 @@ cd /Users/philipp/projects/gfm/prodigy
 python scripts/graph_construction/generate_retweet_graph_from_parquet.py
 ```
 
+The script now adds the repo root to `sys.path` automatically, so it can also be
+run from outside the repo root as long as the file path is correct.
+
 Run with explicit input and output roots:
 
 ```bash
@@ -208,9 +211,13 @@ The script requires:
 - `pyarrow`
 - `numpy`
 - `torch`
+
+Optional:
 - `torch-geometric`
 
 If `duckdb` is missing, the script fails immediately with an explicit error.
+If `torch-geometric` is unavailable, the script falls back to a standard-library
+attribute container for `raw["data"]` and still writes the same top-level graph tensors.
 
 ### Notes
 
