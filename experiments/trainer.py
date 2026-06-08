@@ -3,6 +3,7 @@ import numpy as np
 import sys
 import os
 import json
+import shlex
 import wandb
 import torch.optim as optim
 import time
@@ -34,6 +35,9 @@ class TrainerFS():
     def __init__(self, dataset, parameter):
         wandb.init(project="graph-clip", name=parameter["exp_name"], tags=parameter.get("tags") or None)
         #wandb.run.log_code(".")
+        command = " ".join(shlex.quote(arg) for arg in [sys.executable, *sys.argv])
+        _log("Command: " + command)
+        wandb.run.summary["command"] = command
         wandb.run.summary["wandb_url"] = wandb.run.url
         _log("Initializing trainer")
         print("---------- Parameters ----------", flush=True)
