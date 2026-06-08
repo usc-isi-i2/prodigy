@@ -188,6 +188,40 @@ python scripts/graph_construction/generate_retweet_graph_from_parquet.py \
   --duckdb-temp-dir /tmp/duckdb_ukr_rus_graph
 ```
 
+Run the full build in `tmux`:
+
+```bash
+tmux new -s ukr-rus-graph
+cd /dataMeR2/phil/gfm/prodigy
+conda activate bio-embeddings-v001
+python scripts/graph_construction/generate_retweet_graph_from_parquet.py \
+  --parquet-root /dataMeR2/phil/data/ukr_rus_twitter/parquet \
+  --bio-embeddings-root /dataMeR2/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
+  --out /dataMeR2/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.pt \
+  --duckdb-threads 32 \
+  --duckdb-memory-limit 200GB
+```
+
+Detach from `tmux` with `Ctrl-b d`.
+
+Reattach later with:
+
+```bash
+tmux attach -t ukr-rus-graph
+```
+
+If you want a saved log as well:
+
+```bash
+python scripts/graph_construction/generate_retweet_graph_from_parquet.py \
+  --parquet-root /dataMeR2/phil/data/ukr_rus_twitter/parquet \
+  --bio-embeddings-root /dataMeR2/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
+  --out /dataMeR2/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.pt \
+  --duckdb-threads 32 \
+  --duckdb-memory-limit 200GB \
+  2>&1 | tee /dataMeR2/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.log
+```
+
 ### Main CLI Arguments
 
 - `--parquet-root`: recursive root for parquet discovery
