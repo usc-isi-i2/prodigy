@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-DEST_ROOT="/dataMeR2/phil/data/covid19_twitter/raw"
-SRC_ROOT="eibl@hpc-transfer1.usc.edu:/scratch1/eibl/data/covid19_twitter/raw/"
+DEST_ROOT="/dataMeR2/phil/data/covid19_twitter/parquet"
+SRC_ROOT="eibl@hpc-transfer1.usc.edu:/scratch1/eibl/data/covid19_twitter/parquet/"
 
 mkdir -p "${DEST_ROOT}"
 

@@ -17,15 +17,15 @@ bash scripts/transfer_files/transfer_ukr_rus_parquet_to_tucker.sh
 
 ## COVID-19 Twitter
 
-Uses the same transfer logic for the raw COVID JSON tree:
+Transfers the staged parquet tree from CARC storage to Tucker:
 
-- source: `/scratch1/eibl/data/covid19_twitter/raw/`
-- destination: `/dataMeR2/phil/data/covid19_twitter/raw/`
+- source: `/scratch1/eibl/data/covid19_twitter/parquet/`
+- destination: `/dataMeR2/phil/data/covid19_twitter/parquet/`
 
 Run:
 
 ```bash
-bash scripts/transfer_files/transfer_covid19_raw_to_tucker.sh
+bash scripts/transfer_files/transfer_covid19_parquet_to_tucker.sh
 ```
 
 ## Notes
