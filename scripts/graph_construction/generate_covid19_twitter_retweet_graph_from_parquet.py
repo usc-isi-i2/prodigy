@@ -27,7 +27,7 @@ DEFAULT_PARQUET_ROOT = "/dataMeR2/phil/data/covid19_twitter/parquet"
 DEFAULT_BIO_EMBEDDINGS_ROOT = "/dataMeR2/phil/data/covid19_twitter/bio_embeddings/gte-multilingual-base/version=v001"
 DEFAULT_OUT = "data/data/covid19_twitter/graphs/retweet_graph_parquet.pt"
 DEFAULT_HISTORY_FRACTION = 0.3
-DEFAULT_LABELS_PARQUET_GLOB = "/scratch1/eibl/data/covid_masking/masking_2020-*.parquet"
+DEFAULT_LABELS_PARQUET_GLOB = ""
 
 
 def _log_progress(message: str) -> None:
@@ -94,7 +94,7 @@ def _load_covid_graph_module() -> Any:
 
 COVID_GRAPH = _load_covid_graph_module()
 Data = COVID_GRAPH.Data
-RETWEET_EDGE_FEATURE_NAMES = list(COVID_GRAPH.RETWEET_EDGE_FEATURE_NAMES)
+EDGE_ATTR_FEATURE_NAMES = ["n_retweets"]
 
 
 def parse_args() -> argparse.Namespace:
@@ -380,15 +380,20 @@ def resolve_bio_embeddings(
         features[node_rows] = np.asarray(shard_vectors[shard_rows], dtype=np.float32)
         matched_users += len(entries)
 
-    feature_names = [f"emb_{idx}" for idx in range(embedding_dim)]
+    feature_names = [f"bio_emb_{idx}" for idx in range(embedding_dim)]
     stats = {
+        "policy": "latest_observed_bio_at_or_before_cutoff" if graph_cutoff else "latest_observed_bio_overall",
         "matched_users": int(matched_users),
         "missing_users": int(len(user_ids) - matched_users),
-        "missing_bio_users": int(missing_bio),
+        "selected_users": int(len(selected)),
+        "missing_embedding_rows": int(missing_bio),
         "embedding_dim": int(embedding_dim),
-        "source": "bio_embeddings",
-        "elapsed_seconds": round(time.monotonic() - phase_started, 3),
     }
+    _log_progress(
+        "finished bio feature resolution in "
+        f"{_format_elapsed(time.monotonic() - phase_started)} "
+        f"(matched={matched_users:,}, missing={len(user_ids) - matched_users:,})"
+    )
     return torch.from_numpy(features).float(), feature_names, stats
 
 
@@ -539,7 +544,6 @@ def build_temporal_views(
     events: pd.DataFrame,
     edge_index: torch.Tensor,
     edge_attr: torch.Tensor,
-    edge_feature_names: list[str],
     u2i: dict[int, int],
     history_fraction: float,
     future_target_mode: str,
@@ -549,7 +553,7 @@ def build_temporal_views(
         return (
             {"retweet_all": edge_index, "temporal_history": edge_index},
             {"retweet_all": edge_attr, "temporal_history": edge_attr},
-            {"retweet_all": edge_feature_names, "temporal_history": edge_feature_names},
+            {"retweet_all": EDGE_ATTR_FEATURE_NAMES, "temporal_history": EDGE_ATTR_FEATURE_NAMES},
             {
                 "history_rows": int(len(events)),
                 "future_rows": 0,
@@ -567,9 +571,25 @@ def build_temporal_views(
     hist_events = events_sorted.iloc[:cutoff_idx].copy()
     fut_events = events_sorted.iloc[cutoff_idx:].copy()
 
-    hist_edges_df = COVID_GRAPH.aggregate_retweet_edge_features(hist_events)
-    fut_edges_df = COVID_GRAPH.aggregate_retweet_edge_features(fut_events)
-    hist_edge_index, hist_edge_attr = COVID_GRAPH.to_edge_tensors(hist_edges_df, u2i, edge_feature_names)
+    hist_edges_df = (
+        hist_events.groupby(["userid", "target_userid"], as_index=False)
+        .size()
+        .rename(columns={"size": "n_retweets"})
+        .sort_values(["userid", "target_userid"], kind="stable")
+    )
+    fut_edges_df = (
+        fut_events.groupby(["userid", "target_userid"], as_index=False)
+        .size()
+        .rename(columns={"size": "n_retweets"})
+        .sort_values(["userid", "target_userid"], kind="stable")
+    )
+    src = hist_edges_df["userid"].to_numpy(dtype=np.int64, copy=False)
+    dst = hist_edges_df["target_userid"].to_numpy(dtype=np.int64, copy=False)
+    weight = hist_edges_df["n_retweets"].to_numpy(dtype=np.float32, copy=False)
+    src_idx = np.fromiter((u2i[int(user_id)] for user_id in src), dtype=np.int64, count=len(src))
+    dst_idx = np.fromiter((u2i[int(user_id)] for user_id in dst), dtype=np.int64, count=len(dst))
+    hist_edge_index = torch.from_numpy(np.vstack([src_idx, dst_idx])).long()
+    hist_edge_attr = torch.from_numpy(weight.reshape(-1, 1)).float()
     hist_pairs = set(zip(hist_edges_df["userid"], hist_edges_df["target_userid"]))
     fut_pairs = set(zip(fut_edges_df["userid"], fut_edges_df["target_userid"]))
     target_pairs = fut_pairs - hist_pairs if future_target_mode == "new_only" else fut_pairs
@@ -586,7 +606,7 @@ def build_temporal_views(
     return (
         {"retweet_all": edge_index, "temporal_history": hist_edge_index},
         {"retweet_all": edge_attr, "temporal_history": hist_edge_attr},
-        {"retweet_all": edge_feature_names, "temporal_history": edge_feature_names},
+        {"retweet_all": EDGE_ATTR_FEATURE_NAMES, "temporal_history": EDGE_ATTR_FEATURE_NAMES},
         {
             "history_rows": int(len(hist_events)),
             "future_rows": int(len(fut_events)),
@@ -669,9 +689,19 @@ def main() -> None:
         handles = COVID_GRAPH.build_user_metadata(events, user_ids)
         print(f"Nodes: {len(user_ids):,}", flush=True)
 
-        edge_feature_names = list(RETWEET_EDGE_FEATURE_NAMES)
-        edges_df = COVID_GRAPH.aggregate_retweet_edge_features(events)
-        edge_index, edge_attr = COVID_GRAPH.to_edge_tensors(edges_df, u2i, edge_feature_names)
+        edges_df = (
+            events.groupby(["userid", "target_userid"], as_index=False)
+            .size()
+            .rename(columns={"size": "n_retweets"})
+            .sort_values(["userid", "target_userid"], kind="stable")
+        )
+        src = edges_df["userid"].to_numpy(dtype=np.int64, copy=False)
+        dst = edges_df["target_userid"].to_numpy(dtype=np.int64, copy=False)
+        weight = edges_df["n_retweets"].to_numpy(dtype=np.float32, copy=False)
+        src_idx = np.fromiter((u2i[int(user_id)] for user_id in src), dtype=np.int64, count=len(src))
+        dst_idx = np.fromiter((u2i[int(user_id)] for user_id in dst), dtype=np.int64, count=len(dst))
+        edge_index = torch.from_numpy(np.vstack([src_idx, dst_idx])).long()
+        edge_attr = torch.from_numpy(weight.reshape(-1, 1)).float()
         print(f"Directed edges: {edge_index.shape[1]:,}", flush=True)
 
         requested_bio_root = args.bio_embeddings_root.strip()
@@ -688,7 +718,7 @@ def main() -> None:
             feature_source = "bio_embeddings"
         elif requested_bio_root and requested_bio_root != DEFAULT_BIO_EMBEDDINGS_ROOT:
             raise FileNotFoundError(f"Bio embeddings root does not exist: {bio_root}")
-        else:
+        elif args.embeddings:
             x, feature_names = COVID_GRAPH.build_node_features(raw, u2i, edges_df)
             x, feature_names, emb_stats = COVID_GRAPH.maybe_attach_embeddings(
                 x,
@@ -698,7 +728,11 @@ def main() -> None:
                 args.embeddings,
                 args.embedding_pool,
             )
-            feature_source = "legacy_embeddings" if args.embeddings else "legacy_tabular"
+            feature_source = "legacy_embeddings"
+        else:
+            raise FileNotFoundError(
+                "Bio embeddings root does not exist and no legacy --embeddings artifact was provided."
+            )
 
         print(
             f"Feature source={feature_source} dims={x.shape[1]} "
@@ -721,26 +755,33 @@ def main() -> None:
     else:
         isolated_dropped = 0
 
-    label_info = COVID_GRAPH.load_external_labels(args.labels_parquet_glob)
-    y, label_names, label_stats = COVID_GRAPH.build_node_labels(handles, label_info)
-    if label_info:
-        print(
-            f"Attached labels: labeled_nodes={label_stats['labeled_nodes']:,} "
-            f"label_count={label_stats['label_count']} labels={label_names}",
-            flush=True,
-        )
+    if args.labels_parquet_glob:
+        label_info = COVID_GRAPH.load_external_labels(args.labels_parquet_glob)
+        y, label_names, label_stats = COVID_GRAPH.build_node_labels(handles, label_info)
+        if label_info:
+            print(
+                f"Attached labels: labeled_nodes={label_stats['labeled_nodes']:,} "
+                f"label_count={label_stats['label_count']} labels={label_names}",
+                flush=True,
+            )
+    else:
+        y = torch.full((len(user_ids),), -1, dtype=torch.long)
+        label_names = []
+        label_stats = {"label_count": 0, "labeled_nodes": 0}
 
     graph_obj = {
         "x": x,
         "edge_index": edge_index,
         "edge_attr": edge_attr,
-        "edge_attr_feature_names": edge_feature_names,
+        "edge_attr_feature_names": EDGE_ATTR_FEATURE_NAMES,
         "user_ids": user_ids,
         "u2i": u2i,
         "feature_names": feature_names,
+        "handles": handles,
         "y": y,
         "label_names": label_names,
         "label_type": "classification",
+        "bio_embedding_policy": emb_stats.get("policy", ""),
     }
 
     temporal_stats: dict[str, Any] = {}
@@ -750,7 +791,6 @@ def main() -> None:
             events=events,
             edge_index=edge_index,
             edge_attr=edge_attr,
-            edge_feature_names=edge_feature_names,
             u2i=u2i,
             history_fraction=args.history_fraction,
             future_target_mode=args.future_target_mode,
@@ -772,7 +812,7 @@ def main() -> None:
 
     data = _make_data_object(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
     data.feature_names = feature_names
-    data.edge_attr_feature_names = edge_feature_names
+    data.edge_attr_feature_names = EDGE_ATTR_FEATURE_NAMES
     data.label_names = label_names
     data.user_ids = list(user_ids)
     graph_obj["data"] = data
@@ -790,7 +830,7 @@ def main() -> None:
         "nodes": int(len(user_ids)),
         "edges": int(edge_index.shape[1]),
         "node_feature_dim": int(x.shape[1]),
-        "edge_feature_names": edge_feature_names,
+        "edge_feature_names": EDGE_ATTR_FEATURE_NAMES,
         "feature_source": feature_source,
         "bio_embeddings_root": args.bio_embeddings_root,
         "embedding_pool": args.embedding_pool,
