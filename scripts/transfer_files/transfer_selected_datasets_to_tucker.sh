@@ -7,14 +7,13 @@ SRC_BASE="/scratch1/eibl/data"
 DEST_BASE="/dataMeR2/phil/data"
 
 DATASETS=(
-  "covid19_twitter"
   "ed"
-  "ukr_rus_suspended"
   "covid_masking"
-  "election2020"
   "covid_political"
-  "immigration_julia"
+  "ukr_rus_suspended"
+  "election2020"
   "social_llm_covid"
+  "immigration_julia"
 )
 
 for dataset in "${DATASETS[@]}"; do
