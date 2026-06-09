@@ -22,7 +22,7 @@ To mirror the newer `ukr-rus` parquet pipeline, use the shared bio embedding sto
 ```bash
 cd /Users/philipp/projects/gfm/prodigy
 CUDA_VISIBLE_DEVICES=0,1,2,3 python -u scripts/bio_embeddings/embed_bios.py \
-  --input-root /dataMeR2/phil/data/covid19_twitter/parquet/raw_nested \
+  --input-root /dataMeR2/phil/data/covid19_twitter/parquet \
   --output-root /dataMeR2/phil/data/covid19_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
   --gpus 0,1,2,3 \
   --num-workers 4 \
@@ -90,6 +90,14 @@ Useful flags:
 | `--future_target_mode` | `new_only` or `all_future` |
 | `--labels_parquet_glob` | external label parquet glob, defaulting to `/scratch1/eibl/data/covid_masking/masking_2020-*.parquet` |
 | `--keep-isolates / --no-keep-isolates` | keep or drop zero-degree nodes |
+
+For the parquet-backed graph builder that mirrors the `ukr_rus_twitter/scripts` layout:
+
+```bash
+python data/data/covid19_twitter/scripts/generate_retweet_graph_from_parquet.py \
+  --parquet-root /dataMeR2/phil/data/covid19_twitter/parquet \
+  --out /dataMeR2/phil/data/covid19_twitter/graphs/retweet_graph_parquet.pt
+```
 
 Graph artifact keys:
 
