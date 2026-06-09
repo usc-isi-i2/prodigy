@@ -23,7 +23,8 @@ REPO_ROOT = Path("/Users/philipp/projects/gfm/prodigy")
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-DEFAULT_PARQUET_ROOT = "/dataMeR2/phil/data/covid19_twitter/parquet/raw_nested"
+DEFAULT_PARQUET_ROOT = "/dataMeR2/phil/data/covid19_twitter/parquet"
+DEFAULT_BIO_EMBEDDINGS_ROOT = "/dataMeR2/phil/data/covid19_twitter/bio_embeddings/gte-multilingual-base/version=v001"
 DEFAULT_OUT = "data/data/covid19_twitter/graphs/retweet_graph_parquet.pt"
 DEFAULT_HISTORY_FRACTION = 0.3
 DEFAULT_LABELS_PARQUET_GLOB = "/scratch1/eibl/data/covid_masking/masking_2020-*.parquet"
@@ -103,7 +104,7 @@ def parse_args() -> argparse.Namespace:
             "while preserving the existing covid graph schema."
         )
     )
-    parser.add_argument("--parquet-root", default=DEFAULT_PARQUET_ROOT)
+    parser.add_argument("--parquet-root", default="/dataMeR2/phil/data/covid19_twitter/parquet")
     parser.add_argument(
         "--parquet-path",
         action="append",
@@ -111,6 +112,11 @@ def parse_args() -> argparse.Namespace:
         help="Optional parquet file or directory path. Repeatable. Defaults to --parquet-root recursively.",
     )
     parser.add_argument("--out", default=DEFAULT_OUT)
+    parser.add_argument(
+        "--bio-embeddings-root",
+        default=DEFAULT_BIO_EMBEDDINGS_ROOT,
+        help="Bio embedding store root matching the ukr-rus parquet graph flow.",
+    )
     parser.add_argument("--embeddings", default="", help="Optional user_embeddings_*.pt artifact.")
     parser.add_argument("--embedding-pool", choices=["meanpool", "maxpool"], default="meanpool")
     parser.add_argument(
@@ -193,8 +199,25 @@ def _source_columns(conn: Any, parquet_files: list[str]) -> set[str]:
     return {str(row[0]) for row in rows}
 
 
+def _column_exists(columns: set[str], expr: str) -> bool:
+    return expr.split(".", 1)[0] in columns
+
+
+def _varchar_expr(columns: set[str], expr: str) -> str | None:
+    if not _column_exists(columns, expr):
+        return None
+    if "." not in expr:
+        return f"CAST({expr} AS VARCHAR)"
+    top_level, remainder = expr.split(".", 1)
+    return f"json_extract_string(to_json({top_level}), '$.{remainder}')"
+
+
 def _coalesce_try_cast(columns: set[str], candidates: list[str], target_type: str) -> str:
-    exprs = [f"try_cast({expr} AS {target_type})" for expr in candidates if expr.split(".", 1)[0] in columns]
+    exprs = []
+    for expr in candidates:
+        varchar_expr = _varchar_expr(columns, expr)
+        if varchar_expr is not None:
+            exprs.append(f"try_cast({varchar_expr} AS {target_type})")
     if not exprs:
         return "NULL"
     if len(exprs) == 1:
@@ -203,11 +226,11 @@ def _coalesce_try_cast(columns: set[str], candidates: list[str], target_type: st
 
 
 def _coalesce_handle(columns: set[str], candidates: list[str]) -> str:
-    exprs = [
-        f"NULLIF(lower(trim(CAST({expr} AS VARCHAR))), '')"
-        for expr in candidates
-        if expr.split(".", 1)[0] in columns
-    ]
+    exprs = []
+    for expr in candidates:
+        varchar_expr = _varchar_expr(columns, expr)
+        if varchar_expr is not None:
+            exprs.append(f"NULLIF(lower(trim({varchar_expr})), '')")
     if not exprs:
         return "NULL"
     if len(exprs) == 1:
@@ -235,9 +258,138 @@ def _timestamp_expr(columns: set[str]) -> str:
 
 def _first_available_expr(columns: set[str], candidates: list[str], default: str = "NULL") -> str:
     for expr in candidates:
-        if expr.split(".", 1)[0] in columns:
+        if _column_exists(columns, expr):
             return expr
     return default
+
+
+def _make_data_object(
+    x: torch.Tensor,
+    edge_index: torch.Tensor,
+    edge_attr: torch.Tensor,
+    y: torch.Tensor,
+) -> Any:
+    return Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
+
+
+def resolve_bio_embeddings(
+    conn: Any,
+    user_ids: list[int],
+    bio_embeddings_root: Path,
+    graph_cutoff: str,
+) -> tuple[torch.Tensor, list[str], dict[str, Any]]:
+    phase_started = time.monotonic()
+    user_bio_path = bio_embeddings_root / "user_bio_observations.parquet"
+    bio_index_path = bio_embeddings_root / "bio_embedding_index.parquet"
+    if not user_bio_path.exists():
+        raise FileNotFoundError(f"Missing bio observations parquet: {user_bio_path}")
+    if not bio_index_path.exists():
+        raise FileNotFoundError(f"Missing bio embedding index parquet: {bio_index_path}")
+
+    conn.register("graph_nodes", pd.DataFrame({"userid": user_ids}))
+    cutoff_filter = ""
+    effective_last_seen = "COALESCE(last_seen_at, first_seen_at)"
+    if graph_cutoff:
+        cutoff_sql = f"CAST({_sql_literal(graph_cutoff)} AS TIMESTAMP)"
+        cutoff_filter = f"AND COALESCE(first_seen_at, last_seen_at) <= {cutoff_sql}"
+        effective_last_seen = f"LEAST(COALESCE(last_seen_at, first_seen_at), {cutoff_sql})"
+
+    try:
+        selected = conn.execute(
+            f"""
+            WITH candidate_bios AS (
+                SELECT
+                    CAST(userid AS BIGINT) AS userid,
+                    CAST(bio_hash AS VARCHAR) AS bio_hash,
+                    try_cast(first_seen_at AS TIMESTAMP) AS first_seen_at,
+                    try_cast(last_seen_at AS TIMESTAMP) AS last_seen_at
+                FROM read_parquet({_sql_literal(user_bio_path)})
+                WHERE CAST(userid AS BIGINT) IN (SELECT userid FROM graph_nodes)
+                    AND bio_hash IS NOT NULL
+                    AND trim(CAST(bio_hash AS VARCHAR)) <> ''
+                    {cutoff_filter}
+            ),
+            ranked AS (
+                SELECT
+                    userid,
+                    bio_hash,
+                    row_number() OVER (
+                        PARTITION BY userid
+                        ORDER BY {effective_last_seen} DESC NULLS LAST, bio_hash DESC
+                    ) AS rn
+                FROM candidate_bios
+            )
+            SELECT
+                r.userid,
+                r.bio_hash,
+                i.embedding_shard,
+                i.embedding_row,
+                i.embedding_dim
+            FROM ranked AS r
+            LEFT JOIN read_parquet({_sql_literal(bio_index_path)}) AS i
+                ON r.bio_hash = i.bio_hash
+            WHERE r.rn = 1
+            ORDER BY r.userid
+            """
+        ).fetchdf()
+    finally:
+        conn.unregister("graph_nodes")
+
+    embedding_dims = [int(value) for value in selected["embedding_dim"].tolist() if pd.notna(value)] if not selected.empty else []
+    if not embedding_dims:
+        embedding_dim_row = conn.execute(
+            f"""
+            SELECT max(CAST(embedding_dim AS BIGINT))
+            FROM read_parquet({_sql_literal(bio_index_path)})
+            """
+        ).fetchone()
+        if embedding_dim_row and embedding_dim_row[0] is not None:
+            embedding_dims = [int(embedding_dim_row[0])]
+    if not embedding_dims:
+        raise RuntimeError("Could not resolve embedding dimensions from bio_embedding_index.")
+
+    embedding_dim = max(embedding_dims)
+    features = np.zeros((len(user_ids), embedding_dim), dtype=np.float32)
+    u2i = {int(user_id): idx for idx, user_id in enumerate(user_ids)}
+
+    shard_to_nodes: dict[str, list[tuple[int, int]]] = {}
+    missing_bio = 0
+    for row in selected.itertuples(index=False):
+        if pd.isna(row.embedding_shard) or pd.isna(row.embedding_row):
+            missing_bio += 1
+            continue
+        shard_to_nodes.setdefault(str(row.embedding_shard), []).append((u2i[int(row.userid)], int(row.embedding_row)))
+
+    _log_progress(
+        "resolved bio selections for "
+        f"{len(selected):,} users; loading {len(shard_to_nodes):,} embedding shard(s)"
+    )
+    matched_users = 0
+    total_shards = len(shard_to_nodes)
+    for shard_idx, (shard_path, entries) in enumerate(sorted(shard_to_nodes.items()), start=1):
+        _log_progress(
+            f"loading bio shard {shard_idx:,}/{total_shards:,} "
+            f"for {len(entries):,} user(s)"
+        )
+        shard_abs = Path(shard_path)
+        if not shard_abs.is_absolute():
+            shard_abs = bio_embeddings_root / shard_abs
+        shard_vectors = np.load(shard_abs, mmap_mode="r")
+        node_rows = np.fromiter((node_idx for node_idx, _ in entries), dtype=np.int64, count=len(entries))
+        shard_rows = np.fromiter((row_idx for _, row_idx in entries), dtype=np.int64, count=len(entries))
+        features[node_rows] = np.asarray(shard_vectors[shard_rows], dtype=np.float32)
+        matched_users += len(entries)
+
+    feature_names = [f"emb_{idx}" for idx in range(embedding_dim)]
+    stats = {
+        "matched_users": int(matched_users),
+        "missing_users": int(len(user_ids) - matched_users),
+        "missing_bio_users": int(missing_bio),
+        "embedding_dim": int(embedding_dim),
+        "source": "bio_embeddings",
+        "elapsed_seconds": round(time.monotonic() - phase_started, 3),
+    }
+    return torch.from_numpy(features).float(), feature_names, stats
 
 
 def _build_source_scan(conn: Any, parquet_files: list[str]) -> None:
@@ -474,6 +626,7 @@ def main() -> None:
     print(f"  parquet_root: {args.parquet_root}")
     print(f"  parquet_paths: {args.parquet_path or '<none>'}")
     print(f"  out: {args.out}")
+    print(f"  bio_embeddings_root: {args.bio_embeddings_root or '<none>'}")
     print(f"  embeddings: {args.embeddings or '<none>'}")
     print(f"  embedding_pool: {args.embedding_pool}")
     print(f"  labels_parquet_glob: {args.labels_parquet_glob or '<none>'}")
@@ -501,43 +654,59 @@ def main() -> None:
 
         _log_progress("loading normalized parquet rows")
         raw = load_raw_rows(conn, args.graph_cutoff)
+        if raw.empty:
+            raise RuntimeError("No usable parquet rows remained after normalization.")
+        print(f"Raw frame: rows={len(raw):,} cols={len(raw.columns):,}", flush=True)
+
+        events = build_retweet_events(raw)
+        print(
+            f"Cleaned retweet events: rows={len(events):,} "
+            f"unique_nodes={len(set(events['userid'].tolist()) | set(events['target_userid'].tolist())):,}",
+            flush=True,
+        )
+
+        user_ids, u2i = COVID_GRAPH.build_user_index(events)
+        handles = COVID_GRAPH.build_user_metadata(events, user_ids)
+        print(f"Nodes: {len(user_ids):,}", flush=True)
+
+        edge_feature_names = list(RETWEET_EDGE_FEATURE_NAMES)
+        edges_df = COVID_GRAPH.aggregate_retweet_edge_features(events)
+        edge_index, edge_attr = COVID_GRAPH.to_edge_tensors(edges_df, u2i, edge_feature_names)
+        print(f"Directed edges: {edge_index.shape[1]:,}", flush=True)
+
+        requested_bio_root = args.bio_embeddings_root.strip()
+        bio_root = Path(requested_bio_root) if requested_bio_root else None
+        bio_root_exists = bio_root is not None and bio_root.exists()
+        if bio_root_exists:
+            _log_progress("resolving node features from bio embeddings")
+            x, feature_names, emb_stats = resolve_bio_embeddings(
+                conn=conn,
+                user_ids=user_ids,
+                bio_embeddings_root=bio_root,
+                graph_cutoff=args.graph_cutoff,
+            )
+            feature_source = "bio_embeddings"
+        elif requested_bio_root and requested_bio_root != DEFAULT_BIO_EMBEDDINGS_ROOT:
+            raise FileNotFoundError(f"Bio embeddings root does not exist: {bio_root}")
+        else:
+            x, feature_names = COVID_GRAPH.build_node_features(raw, u2i, edges_df)
+            x, feature_names, emb_stats = COVID_GRAPH.maybe_attach_embeddings(
+                x,
+                feature_names,
+                user_ids,
+                handles,
+                args.embeddings,
+                args.embedding_pool,
+            )
+            feature_source = "legacy_embeddings" if args.embeddings else "legacy_tabular"
+
+        print(
+            f"Feature source={feature_source} dims={x.shape[1]} "
+            f"matched_users={emb_stats['matched_users']:,} embedding_dim={emb_stats['embedding_dim']}",
+            flush=True,
+        )
     finally:
         conn.close()
-
-    if raw.empty:
-        raise RuntimeError("No usable parquet rows remained after normalization.")
-    print(f"Raw frame: rows={len(raw):,} cols={len(raw.columns):,}", flush=True)
-
-    events = build_retweet_events(raw)
-    print(
-        f"Cleaned retweet events: rows={len(events):,} "
-        f"unique_nodes={len(set(events['userid'].tolist()) | set(events['target_userid'].tolist())):,}",
-        flush=True,
-    )
-
-    user_ids, u2i = COVID_GRAPH.build_user_index(events)
-    handles = COVID_GRAPH.build_user_metadata(events, user_ids)
-    print(f"Nodes: {len(user_ids):,}", flush=True)
-
-    edge_feature_names = list(RETWEET_EDGE_FEATURE_NAMES)
-    edges_df = COVID_GRAPH.aggregate_retweet_edge_features(events)
-    edge_index, edge_attr = COVID_GRAPH.to_edge_tensors(edges_df, u2i, edge_feature_names)
-    print(f"Directed edges: {edge_index.shape[1]:,}", flush=True)
-
-    x, feature_names = COVID_GRAPH.build_node_features(raw, u2i, edges_df)
-    x, feature_names, emb_stats = COVID_GRAPH.maybe_attach_embeddings(
-        x,
-        feature_names,
-        user_ids,
-        handles,
-        args.embeddings,
-        args.embedding_pool,
-    )
-    print(
-        f"After attaching embeddings: {x.shape[1]} dims total, "
-        f"matched_users={emb_stats['matched_users']:,}, embedding_dim={emb_stats['embedding_dim']}",
-        flush=True,
-    )
 
     n_nodes = len(user_ids)
     out_deg_t = torch.bincount(edge_index[0], minlength=n_nodes)
@@ -601,7 +770,7 @@ def main() -> None:
             flush=True,
         )
 
-    data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
+    data = _make_data_object(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
     data.feature_names = feature_names
     data.edge_attr_feature_names = edge_feature_names
     data.label_names = label_names
@@ -622,6 +791,8 @@ def main() -> None:
         "edges": int(edge_index.shape[1]),
         "node_feature_dim": int(x.shape[1]),
         "edge_feature_names": edge_feature_names,
+        "feature_source": feature_source,
+        "bio_embeddings_root": args.bio_embeddings_root,
         "embedding_pool": args.embedding_pool,
         "embeddings": args.embeddings,
         "embedding_dim": emb_stats["embedding_dim"],
