@@ -28,18 +28,20 @@ Run:
 bash scripts/transfer_files/transfer_covid19_parquet_to_tucker.sh
 ```
 
-## Selected Graph Batch Transfer
+## Selected Dataset Batch Transfer
 
-Transfers only the `graphs` directories for the following datasets from CARC storage to Tucker:
+Transfers the following dataset trees from CARC storage to Tucker:
 
-- `/scratch1/eibl/data/covid19_twitter/graphs/`
-- `/scratch1/eibl/data/covid_political/graphs/`
-- `/scratch1/eibl/data/election2020/graphs/`
-- `/scratch1/eibl/data/midterm/graphs/`
-- `/scratch1/eibl/data/ukr_rus_suspended/graphs/`
-- `/scratch1/eibl/data/ukr_rus_twitter/graphs/`
+- `/scratch1/eibl/data/covid19_twitter/`
+- `/scratch1/eibl/data/ed/`
+- `/scratch1/eibl/data/ukr_rus_suspended/`
+- `/scratch1/eibl/data/covid_masking/`
+- `/scratch1/eibl/data/election2020/`
+- `/scratch1/eibl/data/covid_political/`
+- `/scratch1/eibl/data/immigration_julia/`
+- `/scratch1/eibl/data/social_llm_covid/`
 
-Each dataset is copied into the matching destination under `/dataMeR2/eibl/data/<dataset>/graphs/`.
+Each dataset is copied into the matching destination under `/dataMeR2/phil/data/<dataset>/`.
 
 Run:
 
