@@ -5,7 +5,7 @@ This directory contains graph builders for staged social graph artifacts.
 ## Ukraine/Russia Retweet Graph Builder
 
 Script:
-`/Users/philipp/projects/gfm/prodigy/scripts/graph_construction/generate_retweet_graph_from_parquet.py`
+`/Users/philipp/projects/gfm/prodigy/scripts/graph_construction/generate_ukr_rus_retweet_graph_from_parquet.py`
 
 ### What It Builds
 
@@ -148,7 +148,7 @@ From the repo root:
 
 ```bash
 cd /Users/philipp/projects/gfm/prodigy
-python scripts/graph_construction/generate_retweet_graph_from_parquet.py
+python scripts/graph_construction/generate_ukr_rus_retweet_graph_from_parquet.py
 ```
 
 The script now adds the repo root to `sys.path` automatically, so it can also be
@@ -157,7 +157,7 @@ run from outside the repo root as long as the file path is correct.
 Run with explicit input and output roots:
 
 ```bash
-python scripts/graph_construction/generate_retweet_graph_from_parquet.py \
+python scripts/graph_construction/generate_ukr_rus_retweet_graph_from_parquet.py \
   --parquet-root /dataMeR2/phil/data/ukr_rus_twitter/parquet \
   --bio-embeddings-root /dataMeR2/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
   --out data/data/ukr_rus_twitter/graphs/retweet_graph_parquet.pt
@@ -166,7 +166,7 @@ python scripts/graph_construction/generate_retweet_graph_from_parquet.py \
 Run a small smoke test:
 
 ```bash
-python scripts/graph_construction/generate_retweet_graph_from_parquet.py \
+python scripts/graph_construction/generate_ukr_rus_retweet_graph_from_parquet.py \
   --max-files 10 \
   --out /tmp/retweet_graph_parquet_smoke.pt
 ```
@@ -174,7 +174,7 @@ python scripts/graph_construction/generate_retweet_graph_from_parquet.py \
 Build a cutoff graph:
 
 ```bash
-python scripts/graph_construction/generate_retweet_graph_from_parquet.py \
+python scripts/graph_construction/generate_ukr_rus_retweet_graph_from_parquet.py \
   --graph-cutoff "2022-06-01 00:00:00" \
   --out data/data/ukr_rus_twitter/graphs/retweet_graph_parquet_2022-06-01.pt
 ```
@@ -182,7 +182,7 @@ python scripts/graph_construction/generate_retweet_graph_from_parquet.py \
 Build with explicit DuckDB settings:
 
 ```bash
-python scripts/graph_construction/generate_retweet_graph_from_parquet.py \
+python scripts/graph_construction/generate_ukr_rus_retweet_graph_from_parquet.py \
   --duckdb-threads 32 \
   --duckdb-memory-limit 200GB \
   --duckdb-temp-dir /tmp/duckdb_ukr_rus_graph
@@ -194,7 +194,7 @@ Run the full build in `tmux`:
 tmux new -s ukr-rus-graph
 cd /dataMeR2/phil/gfm/prodigy
 conda activate bio-embeddings-v001
-python scripts/graph_construction/generate_retweet_graph_from_parquet.py \
+python scripts/graph_construction/generate_ukr_rus_retweet_graph_from_parquet.py \
   --parquet-root /dataMeR2/phil/data/ukr_rus_twitter/parquet \
   --bio-embeddings-root /dataMeR2/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
   --out /dataMeR2/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.pt \
@@ -213,7 +213,7 @@ tmux attach -t ukr-rus-graph
 If you want a saved log as well:
 
 ```bash
-python scripts/graph_construction/generate_retweet_graph_from_parquet.py \
+python scripts/graph_construction/generate_ukr_rus_retweet_graph_from_parquet.py \
   --parquet-root /dataMeR2/phil/data/ukr_rus_twitter/parquet \
   --bio-embeddings-root /dataMeR2/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
   --out /dataMeR2/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.pt \

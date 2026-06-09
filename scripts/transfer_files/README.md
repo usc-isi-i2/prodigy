@@ -28,8 +28,29 @@ Run:
 bash scripts/transfer_files/transfer_covid19_parquet_to_tucker.sh
 ```
 
+## Selected Dataset Batch Transfer
+
+Transfers the following staged dataset trees from CARC storage to Tucker:
+
+- `/scratch1/eibl/data/covid19_twitter/`
+- `/scratch1/eibl/data/covid_masking/`
+- `/scratch1/eibl/data/covid_political/`
+- `/scratch1/eibl/data/ed/`
+- `/scratch1/eibl/data/election2020/`
+- `/scratch1/eibl/data/immigration_julia/`
+- `/scratch1/eibl/data/social_llm_covid/`
+- `/scratch1/eibl/data/ukr_rus_suspended/`
+
+Each dataset is copied into the matching destination under `/dataMeR2/phil/data/`.
+
+Run:
+
+```bash
+bash scripts/transfer_files/transfer_selected_datasets_to_tucker.sh
+```
+
 ## Notes
 
-- Both scripts use `hpc-transfer1.usc.edu` and `rsync --partial --info=progress2`.
+- All scripts use `hpc-transfer1.usc.edu` and `rsync --partial --info=progress2`.
 - The trailing `/` on the source path copies the source directory contents into the destination directory.
 - Update the username or paths if the cluster layout changes.
