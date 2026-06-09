@@ -104,8 +104,18 @@ def _column_exists(columns: set[str], expr: str) -> bool:
     return expr.split(".", 1)[0] in columns
 
 
+def _varchar_expr(columns: set[str], expr: str) -> str | None:
+    if not _column_exists(columns, expr):
+        return None
+    if "." not in expr:
+        return f"CAST({expr} AS VARCHAR)"
+    top_level, remainder = expr.split(".", 1)
+    json_path = "$." + remainder
+    return f"json_extract_string(to_json({top_level}), '{json_path}')"
+
+
 def _coalesce_varchar(columns: set[str], candidates: list[str]) -> str:
-    exprs = [f"CAST({expr} AS VARCHAR)" for expr in candidates if _column_exists(columns, expr)]
+    exprs = [resolved for expr in candidates if (resolved := _varchar_expr(columns, expr)) is not None]
     if not exprs:
         return "NULL"
     if len(exprs) == 1:
@@ -115,16 +125,17 @@ def _coalesce_varchar(columns: set[str], candidates: list[str]) -> str:
 
 def _first_varchar(columns: set[str], candidates: list[str]) -> str:
     for expr in candidates:
-        if _column_exists(columns, expr):
-            return f"CAST({expr} AS VARCHAR)"
+        resolved = _varchar_expr(columns, expr)
+        if resolved is not None:
+            return resolved
     return "NULL"
 
 
 def _nonempty_varchar_predicate(columns: set[str], candidates: list[str]) -> str:
     predicates = [
-        f"NULLIF(trim(COALESCE(CAST({expr} AS VARCHAR), '')), '') IS NOT NULL"
+        f"NULLIF(trim(COALESCE({resolved}, '')), '') IS NOT NULL"
         for expr in candidates
-        if _column_exists(columns, expr)
+        if (resolved := _varchar_expr(columns, expr)) is not None
     ]
     if not predicates:
         return "FALSE"
