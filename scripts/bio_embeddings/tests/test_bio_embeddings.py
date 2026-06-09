@@ -217,6 +217,136 @@ def test_duckdb_bio_index_fixture(tmp_path: Path) -> None:
     assert by_user_bio[("q2", nested_hash)]["source_roles"] == "retweeted_quoted_author"
 
 
+def _write_nested_fixture(input_root: Path) -> list[dict[str, object]]:
+    pa, pq = _parquet_modules()
+    partition = input_root / "date=2022-02-22"
+    partition.mkdir(parents=True)
+    path = partition / "fixture.parquet"
+    rows = [
+        {
+            "id_str": "1",
+            "created_at": TWITTER_DATE_0,
+            "text": "hello",
+            "user": {"id_str": "u1", "description": "COVID news @abc https://example.com"},
+        },
+        {
+            "id_str": "2",
+            "created_at": TWITTER_DATE_1,
+            "text": "quote",
+            "is_quote_status": True,
+            "user": {"id_str": "u2", "description": "COVID news @xyz https://example.org"},
+            "quoted_status": {
+                "id_str": "q100",
+                "text": "quoted text",
+                "user": {"id_str": "q1", "description": "Quoted analyst"},
+            },
+        },
+        {
+            "id_str": "3",
+            "created_at": TWITTER_DATE_2,
+            "text": "RT @rt1: something",
+            "user": {"id_str": "u1", "description": "Changed bio"},
+            "retweeted_status": {
+                "id_str": "rt100",
+                "text": "retweeted text",
+                "user": {"id_str": "rt1", "description": "Retweeted author"},
+                "quoted_status": {
+                    "id_str": "q200",
+                    "text": "nested quoted text",
+                    "user": {"id_str": "q2", "description": "Nested quote author"},
+                },
+            },
+        },
+        {
+            "id_str": "4",
+            "created_at": TWITTER_DATE_3,
+            "text": "RT @rt1: something again",
+            "user": {"id_str": "u3", "description": "   "},
+            "retweeted_status": {
+                "id_str": "rt101",
+                "text": "retweeted text again",
+                "user": {"id_str": "rt1", "description": "Retweeted author"},
+            },
+        },
+        {
+            "id_str": "5",
+            "created_at": "not a date",
+            "text": "quote again",
+            "is_quote_status": True,
+            "user": {"id_str": "u1", "description": "Changed bio"},
+            "quoted_status": {
+                "id_str": "q101",
+                "text": "quoted text again",
+                "user": {"id_str": "q1", "description": "Quoted analyst"},
+            },
+        },
+    ]
+    table = pa.Table.from_pylist(rows)
+    pq.write_table(table, path, compression="zstd")
+    return [
+        {
+            "source_file_index": 0,
+            "relative_path": "date=2022-02-22/fixture.parquet",
+            "row_count": len(rows),
+            "first_global_row_id": 0,
+            "size_bytes": path.stat().st_size,
+            "mtime_ns": path.stat().st_mtime_ns,
+            "sha256": "",
+        }
+    ]
+
+
+def test_duckdb_bio_index_nested_fixture(tmp_path: Path) -> None:
+    _, pq = _parquet_modules()
+    pytest.importorskip("duckdb")
+    from scripts.bio_embeddings.indexer import build_bio_index
+
+    input_root = tmp_path / "input"
+    output_root = tmp_path / "out"
+    source_rows = _write_nested_fixture(input_root)
+    cfg = {
+        "duckdb_temp_dir": str(tmp_path / "duckdb_tmp"),
+        "duckdb_memory_limit": "",
+        "duckdb_threads": 1,
+        "normalization_batch_size": 2,
+        "index_parquet_row_group_size": 2,
+        "keep_work_dir": False,
+    }
+    logger = logging.getLogger("test-bio-index-nested")
+    logger.handlers.clear()
+    logger.addHandler(logging.NullHandler())
+
+    summary = build_bio_index(input_root, output_root, source_rows, cfg, logger)
+    bio_texts = pq.read_table(output_root / "bio_texts.parquet").to_pylist()
+    user_bios = pq.read_table(output_root / "user_bio_observations.parquet").to_pylist()
+
+    assert summary["source_rows"] == 5
+    assert summary["bio_observations"] == 10
+    assert summary["distinct_bio_texts"] == 5
+    assert summary["user_bio_pairs"] == 6
+    assert summary["invalid_date_observations"] == 2
+    assert not (output_root / "_work").exists()
+
+    assert {row["normalized_bio_text"] for row in bio_texts} == {
+        "COVID news <USER> <URL>",
+        "Changed bio",
+        "Quoted analyst",
+        "Retweeted author",
+        "Nested quote author",
+    }
+
+    by_user_bio = {(row["userid"], row["bio_hash"]): row for row in user_bios}
+    changed_hash = bio_hash(normalize_bio_text("Changed bio"))
+    quoted_hash = bio_hash(normalize_bio_text("Quoted analyst"))
+    rt_hash = bio_hash(normalize_bio_text("Retweeted author"))
+    nested_hash = bio_hash(normalize_bio_text("Nested quote author"))
+
+    assert by_user_bio[("u1", changed_hash)]["n_author_observations"] == 2
+    assert by_user_bio[("q1", quoted_hash)]["n_quoted_author_observations"] == 2
+    assert by_user_bio[("rt1", rt_hash)]["n_retweeted_author_observations"] == 2
+    assert by_user_bio[("q2", nested_hash)]["source_roles"] == "retweeted_quoted_author"
+
+
 def test_validate_basic_shard(tmp_path: Path) -> None:
     _parquet_modules()
     from scripts.bio_embeddings.schemas import BIO_SHARD_META_SCHEMA

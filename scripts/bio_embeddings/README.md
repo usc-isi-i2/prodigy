@@ -1,8 +1,13 @@
 # Bio Embedding Pipeline
 
-This directory contains the reproducible bio-level embedding pipeline for the staged Ukraine-Russia Twitter Parquet corpus on tucker.
+This directory contains the reproducible bio-level embedding pipeline for staged Twitter Parquet corpora on tucker.
 
 The pipeline stores one embedding per distinct normalized bio text, keyed by `bio_hash`, and stores user/time/source-role provenance separately. It does not modify or depend on existing tweet embedding outputs.
+
+Supported source layouts today:
+
+- flat `ukr_rus_twitter` parquet with columns such as `description`, `rt_user_description`, and `qtd_user_description`
+- nested `covid19_twitter/parquet/raw_nested` parquet with Twitter JSON structs such as `user.description`, `retweeted_status.user.description`, and `quoted_status.user.description`
 
 ## What It Produces
 
@@ -224,3 +229,20 @@ Watch GPUs:
 ```bash
 watch -n 2 nvidia-smi
 ```
+
+## COVID-19 Twitter Run
+
+For the nested COVID parquet mirror, point the same pipeline at `raw_nested` and a COVID output root:
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3 python -u scripts/bio_embeddings/embed_bios.py \
+  --input-root /dataMeR2/phil/data/covid19_twitter/parquet/raw_nested \
+  --output-root /dataMeR2/phil/data/covid19_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
+  --gpus 0,1,2,3 \
+  --num-workers 4 \
+  --batch-size 2048 \
+  --duckdb-memory-limit 200GB \
+  --duckdb-threads 32
+```
+
+If you already have a verified `source_files.parquet` for the COVID parquet mirror, pass it with `--source-files` the same way as the Ukraine/Russia run.

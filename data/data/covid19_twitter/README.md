@@ -15,7 +15,33 @@ The loader accepts:
 - JSON arrays
 - wrapper dicts containing `statuses` or `data`
 
-## Step 1: build user embeddings
+## Step 1: build bio embeddings
+
+To mirror the newer `ukr-rus` parquet pipeline, use the shared bio embedding store rather than the older per-user tweet-text meanpool artifact:
+
+```bash
+cd /Users/philipp/projects/gfm/prodigy
+CUDA_VISIBLE_DEVICES=0,1,2,3 python -u scripts/bio_embeddings/embed_bios.py \
+  --input-root /dataMeR2/phil/data/covid19_twitter/parquet/raw_nested \
+  --output-root /dataMeR2/phil/data/covid19_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
+  --gpus 0,1,2,3 \
+  --num-workers 4 \
+  --batch-size 2048 \
+  --duckdb-memory-limit 200GB \
+  --duckdb-threads 32
+```
+
+Validate:
+
+```bash
+python -u scripts/bio_embeddings/validate_bio_embeddings.py \
+  --output-root /dataMeR2/phil/data/covid19_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
+  --summary-json /dataMeR2/phil/data/covid19_twitter/bio_embeddings/gte-multilingual-base/version=v001/validation.json
+```
+
+The bio embedding store contains normalized distinct bios plus user-time provenance, matching the artifact contract already used by the `ukr-rus` parquet graph builder.
+
+## Legacy step 1: build user tweet embeddings
 
 ```bash
 python data/data/covid19_twitter/scripts/build_user_embeddings.py \

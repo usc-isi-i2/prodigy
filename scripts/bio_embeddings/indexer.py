@@ -92,8 +92,161 @@ def _configure_duckdb(conn: Any, cfg: dict[str, Any], work_dir: Path) -> None:
         conn.execute(f"SET threads={int(cfg['duckdb_threads'])}")
 
 
+def _source_columns(conn: Any, input_root: Path) -> set[str]:
+    parquet_glob = input_root.as_posix().rstrip("/") + "/**/*.parquet"
+    rows = conn.execute(
+        f"DESCRIBE SELECT * FROM read_parquet({_sql_literal(parquet_glob)})"
+    ).fetchall()
+    return {str(row[0]) for row in rows}
+
+
+def _column_exists(columns: set[str], expr: str) -> bool:
+    return expr.split(".", 1)[0] in columns
+
+
+def _coalesce_varchar(columns: set[str], candidates: list[str]) -> str:
+    exprs = [f"CAST({expr} AS VARCHAR)" for expr in candidates if _column_exists(columns, expr)]
+    if not exprs:
+        return "NULL"
+    if len(exprs) == 1:
+        return exprs[0]
+    return f"COALESCE({', '.join(exprs)})"
+
+
+def _first_varchar(columns: set[str], candidates: list[str]) -> str:
+    for expr in candidates:
+        if _column_exists(columns, expr):
+            return f"CAST({expr} AS VARCHAR)"
+    return "NULL"
+
+
+def _nonempty_varchar_predicate(columns: set[str], candidates: list[str]) -> str:
+    predicates = [
+        f"NULLIF(trim(COALESCE(CAST({expr} AS VARCHAR), '')), '') IS NOT NULL"
+        for expr in candidates
+        if _column_exists(columns, expr)
+    ]
+    if not predicates:
+        return "FALSE"
+    return "(" + " OR ".join(predicates) + ")"
+
+
+def _timestamp_expr(columns: set[str]) -> str:
+    exprs: list[str] = []
+    if "created_ts" in columns:
+        exprs.append("try_cast(created_ts AS TIMESTAMP)")
+    if "created_at" in columns:
+        exprs.append("try_strptime(CAST(created_at AS VARCHAR), '%a %b %d %H:%M:%S +0000 %Y')")
+    if "date" in columns:
+        exprs.append("try_strptime(CAST(date AS VARCHAR), '%a %b %d %H:%M:%S +0000 %Y')")
+        exprs.append("try_cast(date AS TIMESTAMP)")
+    if not exprs:
+        return "NULL"
+    if len(exprs) == 1:
+        return exprs[0]
+    return f"COALESCE({', '.join(exprs)})"
+
+
 def _create_source_scan(conn: Any, input_root: Path) -> None:
     parquet_glob = input_root.as_posix().rstrip("/") + "/**/*.parquet"
+    columns = _source_columns(conn, input_root)
+    tweetid_expr = _coalesce_varchar(columns, ["tweetid", "id_str", "id", "tweet_id", "tweet_id_num"])
+    date_expr = _first_varchar(columns, ["created_at", "date", "created_ts"])
+    tweet_text_expr = _coalesce_varchar(columns, ["extended_tweet.full_text", "full_text", "text"])
+    userid_expr = _coalesce_varchar(columns, ["userid", "user.id_str", "user.id", "user_id"])
+    description_expr = _coalesce_varchar(columns, ["description", "user.description", "user_description"])
+    rt_userid_expr = _coalesce_varchar(
+        columns,
+        ["rt_userid", "retweeted_status.user.id_str", "retweeted_status.user.id", "retweeted_user_id"],
+    )
+    rt_user_description_expr = _coalesce_varchar(
+        columns,
+        ["rt_user_description", "retweeted_status.user.description"],
+    )
+    rt_tweetid_expr = _coalesce_varchar(
+        columns,
+        ["rt_tweetid", "retweeted_status.id_str", "retweeted_status.id", "retweeted_tweet_id"],
+    )
+    rt_text_expr = _coalesce_varchar(
+        columns,
+        [
+            "rt_text",
+            "retweeted_status.extended_tweet.full_text",
+            "retweeted_status.full_text",
+            "retweeted_status.text",
+            "retweeted_text",
+        ],
+    )
+    qtd_userid_expr = _coalesce_varchar(
+        columns,
+        [
+            "qtd_userid",
+            "retweeted_status.quoted_status.user.id_str",
+            "retweeted_status.quoted_status.user.id",
+            "quoted_status.user.id_str",
+            "quoted_status.user.id",
+        ],
+    )
+    qtd_user_description_expr = _coalesce_varchar(
+        columns,
+        [
+            "qtd_user_description",
+            "retweeted_status.quoted_status.user.description",
+            "quoted_status.user.description",
+        ],
+    )
+    qtd_tweetid_expr = _coalesce_varchar(
+        columns,
+        [
+            "qtd_tweetid",
+            "retweeted_status.quoted_status.id_str",
+            "retweeted_status.quoted_status.id",
+            "quoted_status.id_str",
+            "quoted_status.id",
+        ],
+    )
+    qtd_text_expr = _coalesce_varchar(
+        columns,
+        [
+            "qtd_text",
+            "retweeted_status.quoted_status.extended_tweet.full_text",
+            "retweeted_status.quoted_status.full_text",
+            "retweeted_status.quoted_status.text",
+            "quoted_status.extended_tweet.full_text",
+            "quoted_status.full_text",
+            "quoted_status.text",
+        ],
+    )
+    observed_at_expr = _timestamp_expr(columns)
+    retweet_presence_predicate = _nonempty_varchar_predicate(
+        columns,
+        ["rt_tweetid", "retweeted_status.id_str", "retweeted_status.id", "retweeted_tweet_id"],
+    )
+    quote_presence_predicate = (
+        _nonempty_varchar_predicate(
+            columns,
+            [
+                "qtd_tweetid",
+                "retweeted_status.quoted_status.id_str",
+                "retweeted_status.quoted_status.id",
+                "quoted_status.id_str",
+                "quoted_status.id",
+            ],
+        )
+    )
+    if "is_quote_status" in columns:
+        quote_presence_predicate = f"({quote_presence_predicate} OR COALESCE(try_cast(is_quote_status AS BOOLEAN), FALSE))"
+    derived_tweet_type_expr = (
+        "CASE "
+        f"WHEN {retweet_presence_predicate} OR COALESCE({tweet_text_expr}, '') LIKE 'RT %' THEN 'retweet' "
+        f"WHEN {quote_presence_predicate} THEN 'quote' "
+        "ELSE 'original' END"
+    )
+    tweet_type_expr = (
+        f"COALESCE(CAST(tweet_type AS VARCHAR), {derived_tweet_type_expr})"
+        if "tweet_type" in columns
+        else derived_tweet_type_expr
+    )
     conn.execute(
         f"""
         CREATE OR REPLACE VIEW source_scan AS
@@ -102,35 +255,32 @@ def _create_source_scan(conn: Any, input_root: Path) -> None:
             CAST(s.relative_path AS VARCHAR) AS source_file,
             CAST(p.file_row_number AS BIGINT) AS source_offset,
             CAST(s.first_global_row_id + p.file_row_number AS BIGINT) AS global_row_id,
-            CAST(p.tweetid AS VARCHAR) AS tweetid,
-            CAST(p.date AS VARCHAR) AS date,
-            COALESCE(
-                try_strptime(CAST(p.date AS VARCHAR), '%a %b %d %H:%M:%S +0000 %Y'),
-                try_cast(p.date AS TIMESTAMP)
-            ) AS observed_at,
-            CAST(p.userid AS VARCHAR) AS userid,
-            CAST(p.description AS VARCHAR) AS description,
-            CAST(p.rt_userid AS VARCHAR) AS rt_userid,
-            CAST(p.rt_user_description AS VARCHAR) AS rt_user_description,
-            CAST(p.rt_tweetid AS VARCHAR) AS rt_tweetid,
-            CAST(p.rt_text AS VARCHAR) AS rt_text,
-            CAST(p.qtd_userid AS VARCHAR) AS qtd_userid,
-            CAST(p.qtd_user_description AS VARCHAR) AS qtd_user_description,
-            CAST(p.qtd_tweetid AS VARCHAR) AS qtd_tweetid,
-            CAST(p.qtd_text AS VARCHAR) AS qtd_text,
-            CAST(p.tweet_type AS VARCHAR) AS tweet_type,
-            CAST(p.text AS VARCHAR) AS text,
+            {tweetid_expr} AS tweetid,
+            {date_expr} AS date,
+            {observed_at_expr} AS observed_at,
+            {userid_expr} AS userid,
+            {description_expr} AS description,
+            {rt_userid_expr} AS rt_userid,
+            {rt_user_description_expr} AS rt_user_description,
+            {rt_tweetid_expr} AS rt_tweetid,
+            {rt_text_expr} AS rt_text,
+            {qtd_userid_expr} AS qtd_userid,
+            {qtd_user_description_expr} AS qtd_user_description,
+            {qtd_tweetid_expr} AS qtd_tweetid,
+            {qtd_text_expr} AS qtd_text,
+            {tweet_type_expr} AS tweet_type,
+            {tweet_text_expr} AS text,
             (
-                lower(COALESCE(CAST(p.tweet_type AS VARCHAR), '')) LIKE '%retweet%'
-                OR NULLIF(trim(COALESCE(CAST(p.rt_tweetid AS VARCHAR), '')), '') IS NOT NULL
-                OR NULLIF(trim(COALESCE(CAST(p.rt_text AS VARCHAR), '')), '') IS NOT NULL
-                OR COALESCE(CAST(p.text AS VARCHAR), '') LIKE 'RT %'
+                lower(COALESCE({tweet_type_expr}, '')) LIKE '%retweet%'
+                OR NULLIF(trim(COALESCE({rt_tweetid_expr}, '')), '') IS NOT NULL
+                OR NULLIF(trim(COALESCE({rt_text_expr}, '')), '') IS NOT NULL
+                OR COALESCE({tweet_text_expr}, '') LIKE 'RT %'
             ) AS is_retweet_like,
             (
-                NULLIF(trim(COALESCE(CAST(p.qtd_userid AS VARCHAR), '')), '') IS NOT NULL
-                OR NULLIF(trim(COALESCE(CAST(p.qtd_user_description AS VARCHAR), '')), '') IS NOT NULL
-                OR NULLIF(trim(COALESCE(CAST(p.qtd_tweetid AS VARCHAR), '')), '') IS NOT NULL
-                OR NULLIF(trim(COALESCE(CAST(p.qtd_text AS VARCHAR), '')), '') IS NOT NULL
+                NULLIF(trim(COALESCE({qtd_userid_expr}, '')), '') IS NOT NULL
+                OR NULLIF(trim(COALESCE({qtd_user_description_expr}, '')), '') IS NOT NULL
+                OR NULLIF(trim(COALESCE({qtd_tweetid_expr}, '')), '') IS NOT NULL
+                OR NULLIF(trim(COALESCE({qtd_text_expr}, '')), '') IS NOT NULL
             ) AS has_quoted_author
         FROM read_parquet(
             {_sql_literal(parquet_glob)},
