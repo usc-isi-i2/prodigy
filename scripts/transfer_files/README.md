@@ -49,6 +49,19 @@ Run:
 bash scripts/transfer_files/transfer_selected_datasets_to_tucker.sh
 ```
 
+## Social LLM Data
+
+Transfers the `social_llm_data` directory from CARC project storage to Tucker:
+
+- source: `/project2/emiliofe_74/julie/social_llm_data`
+- destination: `/dataMeR2/phil/data/social_llm_data`
+
+Run:
+
+```bash
+bash scripts/transfer_files/transfer_social_llm_data_to_tucker.sh
+```
+
 ## Notes
 
 - All scripts use `hpc-transfer1.usc.edu` and `rsync --partial --info=progress2`.
