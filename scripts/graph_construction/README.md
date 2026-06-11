@@ -179,6 +179,51 @@ python scripts/graph_construction/generate_ukr_rus_retweet_graph_from_parquet.py
   --out data/data/ukr_rus_twitter/graphs/retweet_graph_parquet_2022-06-01.pt
 ```
 
+## Merging Disjoint Graph Artifacts
+
+Script:
+`/Users/philipp/projects/gfm/prodigy/scripts/graph_construction/merge_disjoint_graph_pt.py`
+
+Use this when multiple generated `.pt` graph artifacts should live in one file
+for training, but should remain separate graph components. The script offsets
+node indices from each input graph, concatenates `x`, `edge_index`, `edge_attr`,
+`y`, and matching edge views, and writes provenance fields such as `graph_id`,
+`source_node_offsets`, and `source_edge_offsets`.
+
+The merge is strict: input graphs must have matching node feature names,
+matching node feature dimensions, matching edge feature names, and matching
+edge-view keys.
+
+Example:
+
+```yaml
+inputs:
+  - name: ukr_rus
+    path: /dataMeR2/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.pt
+  - name: covid
+    path: /dataMeR2/phil/data/covid19_twitter/graphs/retweet_graph_parquet.pt
+out: /dataMeR2/phil/data/social_llm/graphs/ukr_rus_covid_retweet_graph.pt
+```
+
+Save that as:
+
+```text
+scripts/graph_construction/merge_ukr_rus_covid.yaml
+```
+
+Run:
+
+```bash
+python scripts/graph_construction/merge_disjoint_graph_pt.py \
+  scripts/graph_construction/merge_ukr_rus_covid.yaml
+```
+
+The script namespaces `user_ids` as `source_name:raw_user_id` so overlapping
+Twitter IDs across sources still remain disjoint nodes. Original values are
+preserved in `raw_user_ids`.
+
+The active Python environment needs `torch` and `PyYAML`.
+
 Build with explicit DuckDB settings:
 
 ```bash
