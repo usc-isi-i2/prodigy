@@ -6,6 +6,11 @@ import os
 from datetime import datetime
 sys.path.extend(os.path.join(os.path.dirname(__file__), "../../"))
 
+try:
+    import yaml
+except ImportError:  # pragma: no cover - depends on environment.
+    yaml = None
+
 
 def str2bool(value):
     if isinstance(value, bool):
@@ -18,9 +23,73 @@ def str2bool(value):
     raise argparse.ArgumentTypeError(f"Boolean value expected, got '{value}'.")
 
 
+def _load_yaml_config(path):
+    if yaml is None:
+        raise RuntimeError("PyYAML is required to load --config.")
+    with open(path, "r", encoding="utf-8") as handle:
+        config = yaml.safe_load(handle) or {}
+    if not isinstance(config, dict):
+        raise TypeError(f"{path} must contain a YAML mapping.")
+    if "params" in config:
+        config = config["params"]
+        if not isinstance(config, dict):
+            raise TypeError(f"{path}: 'params' must be a YAML mapping.")
+    return config
+
+
+def _coerce_config_value(action, value):
+    if value is None:
+        return None
+    if isinstance(action, argparse._StoreTrueAction) or isinstance(action, argparse._StoreFalseAction):
+        return str2bool(value) if isinstance(value, str) else bool(value)
+    if action.nargs in {"+", "*"}:
+        values = value
+        if isinstance(values, str):
+            values = values.split()
+        if not isinstance(values, (list, tuple)):
+            raise TypeError(f"Config value for '{action.dest}' must be a list.")
+        if action.type is None:
+            return list(values)
+        return [action.type(item) for item in values]
+    if action.type is None:
+        return value
+    if action.type is str2bool:
+        return str2bool(value)
+    if isinstance(value, action.type):
+        return value
+    return action.type(value)
+
+
+def _apply_config_defaults(parser, config):
+    action_by_dest = {
+        action.dest: action
+        for action in parser._actions
+        if action.dest not in {argparse.SUPPRESS, "help"}
+    }
+    unknown = sorted(set(config) - set(action_by_dest))
+    if unknown:
+        raise ValueError(
+            "Unknown config option(s): "
+            f"{unknown}. Use argparse destination names, e.g. 'dataset_len_cap'."
+        )
+    for key, value in config.items():
+        action = action_by_dest[key]
+        coerced = _coerce_config_value(action, value)
+        if action.choices is not None:
+            values = coerced if isinstance(coerced, list) else [coerced]
+            invalid = [item for item in values if item not in action.choices]
+            if invalid:
+                raise ValueError(
+                    f"Invalid config value for '{key}': {invalid}. "
+                    f"Allowed values: {list(action.choices)}"
+                )
+        action.default = coerced
+
+
 def get_params():
     args = argparse.ArgumentParser()
 
+    args.add_argument("--config", default="", type=str, help="Optional YAML config. CLI args override config values.")
     args.add_argument("-root", "--root", default="./FSdatasets", type=str)
     args.add_argument("-dataset", "--dataset", default="arxiv", type=str)
     args.add_argument("--csv_filename", default="twitter_data.csv", type=str)
@@ -286,6 +355,10 @@ def get_params():
 
     args.add_argument("-exptype", "--experiment_type", default="metagraph")
 
+
+    config_args, _ = args.parse_known_args()
+    if config_args.config:
+        _apply_config_defaults(args, _load_yaml_config(config_args.config))
 
     args = args.parse_args()
 

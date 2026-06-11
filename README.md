@@ -77,6 +77,27 @@ For arXiv and MAG240M the data is downloaded automatically. For knowledge graphs
 
 Checkpoints are saved to `state/<PREFIX>_<timestamp>/checkpoint/` and logged to W&B.
 
+You can put any `experiments/run_single_experiment.py` argument in a YAML file
+using argparse destination names, then run with `--config`. Existing CLI
+commands remain valid, and explicit CLI flags override YAML values:
+
+```bash
+python3 experiments/run_single_experiment.py \
+  --config scripts/experiments/train1/merged_ukr_rus_covid_nm.yaml \
+  --n_query 8 \
+  --prefix merged_ukr_rus_covid_nm_smoke
+```
+
+The YAML shape is flat:
+
+```yaml
+dataset: covid19_twitter
+root: /dataMeR2/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_retweet_graph.pt
+task_name: neighbor_matching
+original_features: true
+```
+
 ### Twitter datasets
 
 Training scripts are in `scripts/`. Each is a self-contained SLURM `.sbatch` script — submit from the repo root:
