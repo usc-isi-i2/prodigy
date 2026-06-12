@@ -59,5 +59,7 @@ Run on Tucker from the repo root:
 CUDA_VISIBLE_DEVICES=1 bash scripts/social_llm/build_gte_graphs_tucker.sh
 ```
 
-Use whichever GPU is free. The script defaults to all supported social_llm
-datasets and writes under `/dataMeR2/phil/data/<dataset>/`.
+Use whichever GPU is free. The script defaults to `covid_political`,
+`election2020`, and `ukr_rus_suspended`, writes under
+`/dataMeR2/phil/data/<dataset>/`, and moves any existing graph directory to
+`graphs.backup_before_gte_<timestamp>` before writing new graph artifacts.
