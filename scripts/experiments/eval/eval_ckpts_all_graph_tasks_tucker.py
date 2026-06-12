@@ -44,8 +44,8 @@ DATASETS = {
         supports_lp=True,
         nm_n_query=12,
         pl_n_query=12,
-        val_cap=1000,
-        test_cap=1000,
+        val_cap=500,
+        test_cap=500,
     ),
     "covid19_twitter": DatasetConfig(
         name="covid19_twitter",
@@ -54,8 +54,8 @@ DATASETS = {
         supports_lp=True,
         nm_n_query=12,
         pl_n_query=12,
-        val_cap=1000,
-        test_cap=1000,
+        val_cap=500,
+        test_cap=500,
     ),
     "ukr_rus_twitter": DatasetConfig(
         name="ukr_rus_twitter",
@@ -64,8 +64,8 @@ DATASETS = {
         supports_lp=True,
         nm_n_query=12,
         pl_n_query=12,
-        val_cap=1000,
-        test_cap=1000,
+        val_cap=500,
+        test_cap=500,
     ),
     "covid_political": DatasetConfig(
         name="covid_political",
@@ -352,13 +352,20 @@ def run_job_queue(
     continue_on_error: bool,
 ) -> int:
     if not jobs:
+        print("[progress] no eval jobs selected", flush=True)
         return 0
     if not gpus:
         gpus = [""]
 
+    print(
+        f"[progress] starting eval queue jobs={len(jobs)} parallel_slots={len(gpus)} "
+        f"gpus={','.join(gpus) if any(gpus) else '<inherit>'}",
+        flush=True,
+    )
     running: list[tuple[subprocess.Popen, str, str]] = []
     failures = 0
     next_job = 0
+    completed = 0
 
     while next_job < len(jobs) or running:
         while next_job < len(jobs) and len(running) < len(gpus):
@@ -369,7 +376,11 @@ def run_job_queue(
                 env["CUDA_VISIBLE_DEVICES"] = gpu
             printable = " ".join(shlex.quote(part) for part in cmd)
             prefix = f"CUDA_VISIBLE_DEVICES={gpu} " if gpu else ""
-            print(f"[run] {prefix}{printable}", flush=True)
+            print(
+                f"[launch {next_job + 1}/{len(jobs)}] gpu={gpu or '<inherit>'} {label}",
+                flush=True,
+            )
+            print(f"[cmd] {prefix}{printable}", flush=True)
             next_job += 1
             if dry_run:
                 continue
@@ -381,6 +392,7 @@ def run_job_queue(
 
         process, label, gpu = running.pop(0)
         returncode = process.wait()
+        completed += 1
         if returncode != 0:
             failures += 1
             print(
@@ -391,6 +403,11 @@ def run_job_queue(
                 for other_process, _, _ in running:
                     other_process.terminate()
                 return returncode
+        else:
+            print(
+                f"[done {completed}/{len(jobs)}] gpu={gpu or '<inherit>'} {label}",
+                flush=True,
+            )
 
     return 1 if failures else 0
 
@@ -421,8 +438,8 @@ def main() -> int:
     parser.add_argument("--nm-dataset-len-cap", type=int, default=5000)
     parser.add_argument("--lp-dataset-len-cap", type=int, default=2500)
     parser.add_argument("--pl-dataset-len-cap", type=int, default=2000)
-    parser.add_argument("--parquet-val-cap", type=int, default=1000)
-    parser.add_argument("--parquet-test-cap", type=int, default=1000)
+    parser.add_argument("--parquet-val-cap", type=int, default=500)
+    parser.add_argument("--parquet-test-cap", type=int, default=500)
     parser.add_argument("--lp-n-query", type=int, default=12)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--continue-on-error", action="store_true")
@@ -436,6 +453,12 @@ def main() -> int:
     selected_tasks = [TASK_ALIASES[task] for task in parse_csv(args.tasks)]
     shots = parse_csv(args.shots)
     models = parse_model_list(Path(args.model_list))
+    print(
+        "[progress] eval selection "
+        f"datasets={selected_datasets} tasks={selected_tasks} shots={shots} "
+        f"models={len(models)}",
+        flush=True,
+    )
     torch_mod = load_torch()
 
     jobs: list[tuple[list[str], str]] = []
@@ -447,7 +470,13 @@ def main() -> int:
         if not graph_path.exists():
             print(f"[skip] {dataset.name}: missing graph {graph_path}", flush=True)
             continue
+        print(f"[progress] inspecting {dataset.name} graph={graph_path}", flush=True)
         info = graph_info(torch_mod, graph_path)
+        print(
+            f"[progress] {dataset.name}: x_dim={info['x_dim']} "
+            f"labels={info['has_labels']} future_edges={info['has_future_edges']}",
+            flush=True,
+        )
         if info["x_dim"] != 768:
             print(f"[warn] {dataset.name}: graph x_dim={info['x_dim']} expected 768", flush=True)
 
