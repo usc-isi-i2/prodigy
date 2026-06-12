@@ -28,6 +28,19 @@ Run:
 bash scripts/transfer_files/transfer_covid19_parquet_to_tucker.sh
 ```
 
+## Midterm Twitter
+
+Transfers the staged parquet tree from CARC storage to Tucker:
+
+- source: `/scratch1/eibl/data/midterm/parquet/`
+- destination: `/dataMeR2/phil/data/midterm/parquet/`
+
+Run:
+
+```bash
+bash scripts/transfer_files/transfer_midterm_parquet_to_tucker.sh
+```
+
 ## Selected Dataset Batch Transfer
 
 Transfers the following dataset trees from CARC storage to Tucker:
