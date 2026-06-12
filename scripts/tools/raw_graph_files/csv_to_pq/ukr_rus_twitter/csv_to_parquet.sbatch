@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=csv_to_parquet
+#SBATCH --job-name=ukr_rus_csv_to_parquet
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=8G
 #SBATCH --time=01:00:00
