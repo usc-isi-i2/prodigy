@@ -306,7 +306,7 @@ def _apply_feature_subset(graph: Data, subset_spec: str) -> Data:
     if not feature_names or len(feature_names) != x_dim:
         feature_names = [f"f{i}" for i in range(x_dim)]
 
-    emb_mask = [name.startswith("emb_") for name in feature_names]
+    emb_mask = [name.startswith(("emb_", "bio_emb_")) for name in feature_names]
     stats_idx = [i for i, is_emb in enumerate(emb_mask) if not is_emb]
     emb_idx = [i for i, is_emb in enumerate(emb_mask) if is_emb]
     label_names = list(getattr(graph, "label_names", []))
