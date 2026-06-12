@@ -47,8 +47,17 @@ For compatibility with existing scripts, the first label graph is also copied to
 /dataMeR2/phil/data/<dataset>/graphs/retweet_graph.pt
 ```
 
+The Tucker GTE build uses `--embeddings-only` and
+`--embedding_feature_prefix bio_emb`, so `data.x` is expected to be
+768-dimensional GTE bio features (`bio_emb_0` ... `bio_emb_767`) without
+numeric `user_data.csv` statistics. This keeps the social_llm graphs
+feature-compatible with the parquet bio-embedding graphs.
+
 Run on Tucker from the repo root:
 
 ```bash
-sbatch scripts/social_llm/build_gte_graphs_tucker.sbatch
+CUDA_VISIBLE_DEVICES=1 bash scripts/social_llm/build_gte_graphs_tucker.sh
 ```
+
+Use whichever GPU is free. The script defaults to all supported social_llm
+datasets and writes under `/dataMeR2/phil/data/<dataset>/`.
