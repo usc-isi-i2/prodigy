@@ -7,6 +7,7 @@ MODEL="${MODEL:-Alibaba-NLP/gte-multilingual-base}"
 REVISION="${REVISION:-9bbca17d9273fd0d03d5725c7a4b0f6b45142062}"
 EMB_NAME="${EMB_NAME:-user_bio_embeddings_gte_multilingual_base.pt}"
 BATCH_SIZE="${BATCH_SIZE:-1024}"
+BACKUP_TS="${BACKUP_TS:-$(date +%Y%m%d_%H%M%S)}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -16,11 +17,7 @@ cd "${REPO_ROOT}"
 
 DATASETS=(
   "covid:covid_political"
-  "covid_mf:covid_mf"
   "election2020:election2020"
-  "hate_bots05:hate_bots05"
-  "hate_bots08:hate_bots08"
-  "ukr_rus_hate:ukr_rus_hate"
   "ukr_rus_suspended:ukr_rus_suspended"
 )
 
@@ -36,7 +33,7 @@ for item in "${DATASETS[@]}"; do
   echo "Building ${src_name} -> ${out_name}"
   echo "=========================================="
 
-  mkdir -p "${out_dir}/embeddings" "${out_dir}/graphs" "${bio_root}"
+  mkdir -p "${out_dir}/embeddings" "${bio_root}"
 
   conda activate bio-embeddings-v001
   export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
@@ -50,6 +47,10 @@ for item in "${DATASETS[@]}"; do
 
   conda activate prodigy
   export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
+  if [ -d "${out_dir}/graphs" ] && [ ! -e "${out_dir}/graphs.backup_before_gte_${BACKUP_TS}" ]; then
+    mv "${out_dir}/graphs" "${out_dir}/graphs.backup_before_gte_${BACKUP_TS}"
+  fi
+  mkdir -p "${out_dir}/graphs"
   python -u scripts/social_llm/generate_graph.py \
     --graph "${src_dir}/graph.pickle" \
     --csv "${src_dir}/user_data.csv" \
