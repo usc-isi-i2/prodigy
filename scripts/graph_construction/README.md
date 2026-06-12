@@ -179,6 +179,65 @@ python scripts/graph_construction/generate_ukr_rus_retweet_graph_from_parquet.py
   --out data/data/ukr_rus_twitter/graphs/retweet_graph_parquet_2022-06-01.pt
 ```
 
+## Midterm Retweet Graph Builder
+
+Script:
+`/Users/philipp/projects/gfm/prodigy/scripts/graph_construction/generate_midterm_retweet_graph_from_parquet.py`
+
+This builder follows the same graph contract as the Ukraine/Russia and
+COVID-19 parquet builders, with defaults for the midterm corpus:
+
+```text
+/dataMeR2/phil/data/midterm/parquet
+/dataMeR2/phil/data/midterm/bio_embeddings/gte-multilingual-base/version=v001
+data/data/midterm/graphs/retweet_graph_parquet.pt
+```
+
+It normalizes several common Twitter parquet schemas into:
+
+```text
+userid
+rt_userid
+rt_screen
+observed_at
+```
+
+Accepted source-user aliases include `userid`, `user_id`, `user_id_str`,
+`uid`, `author_id`, `from_user_id`, `screen_userid`, and nested `user.id` /
+`user.id_str` fields. Accepted retweeted-user aliases include `rt_userid`,
+`rt_user_id`, `retweeted_userid`, `retweeted_user_id`, `retweet_user_id`,
+`retweeted_author_id`, `retweeted_status_user_id`, and nested
+`retweeted_status.user.id` / `retweeted_status.user.id_str` fields.
+Timestamp aliases include `observed_at`, `timestamp`, `created_ts`,
+`created_time`, `created`, `tweet_created_at`, `created_at`, and `date`.
+Timestamp parsing accepts Twitter API date strings, directly castable timestamp
+strings, epoch seconds, and epoch milliseconds.
+
+Run:
+
+```bash
+python scripts/graph_construction/generate_midterm_retweet_graph_from_parquet.py
+```
+
+Run a smoke test:
+
+```bash
+python scripts/graph_construction/generate_midterm_retweet_graph_from_parquet.py \
+  --max-files 10 \
+  --out /tmp/midterm_retweet_graph_parquet_smoke.pt
+```
+
+Build with explicit DuckDB settings:
+
+```bash
+python scripts/graph_construction/generate_midterm_retweet_graph_from_parquet.py \
+  --parquet-root /dataMeR2/phil/data/midterm/parquet \
+  --bio-embeddings-root /dataMeR2/phil/data/midterm/bio_embeddings/gte-multilingual-base/version=v001 \
+  --out /dataMeR2/phil/data/midterm/graphs/retweet_graph_parquet.pt \
+  --duckdb-threads 32 \
+  --duckdb-memory-limit 200GB
+```
+
 ## Merging Disjoint Graph Artifacts
 
 Script:
