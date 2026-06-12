@@ -90,13 +90,14 @@ def _quote_identifier(name: str) -> str:
     return '"' + name.replace('"', '""') + '"'
 
 
-def parse_args() -> argparse.Namespace:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Build a directed midterm retweet graph from staged parquet input "
             "with bio-embedding node features."
         )
     )
+    parser.add_argument("--config", default="", help="Optional YAML config to load before CLI overrides.")
     parser.add_argument("--parquet-root", default=DEFAULT_PARQUET_ROOT)
     parser.add_argument(
         "--parquet-path",
@@ -129,6 +130,32 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--duckdb-memory-limit", default="")
     parser.add_argument("--duckdb-threads", type=int, default=0)
     parser.add_argument("--duckdb-temp-dir", default="")
+    return parser
+
+
+def _load_yaml_config(path: str) -> dict[str, Any]:
+    try:
+        import yaml
+    except ImportError as exc:  # pragma: no cover - depends on environment.
+        raise RuntimeError("PyYAML is required to load --config") from exc
+    with Path(path).open("r", encoding="utf-8") as handle:
+        loaded = yaml.safe_load(handle) or {}
+    if not isinstance(loaded, dict):
+        raise ValueError(f"Config must be a YAML mapping: {path}")
+    return loaded
+
+
+def parse_args() -> argparse.Namespace:
+    parser = build_parser()
+    config_only, _ = parser.parse_known_args()
+    if config_only.config:
+        known_dests = {action.dest for action in parser._actions}
+        config_defaults = {
+            key: value
+            for key, value in _load_yaml_config(config_only.config).items()
+            if key in known_dests
+        }
+        parser.set_defaults(**config_defaults)
     return parser.parse_args()
 
 

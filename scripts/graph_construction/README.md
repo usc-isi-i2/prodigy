@@ -216,7 +216,8 @@ strings, epoch seconds, and epoch milliseconds.
 Run:
 
 ```bash
-python scripts/graph_construction/generate_midterm_retweet_graph_from_parquet.py
+python scripts/graph_construction/generate_midterm_retweet_graph_from_parquet.py \
+  --config scripts/graph_construction/configs/midterm_retweet_graph.yaml
 ```
 
 Run a smoke test:
