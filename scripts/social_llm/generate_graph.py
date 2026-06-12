@@ -105,7 +105,13 @@ def parse_args():
         "--feature_cols", default="",
         help="Comma-sep feature columns. Auto-detected from numeric non-label cols if empty.",
     )
+    p.add_argument(
+        "--embeddings-only",
+        action="store_true",
+        help="Use only attached embedding features and skip numeric user_data features.",
+    )
     p.add_argument("--embeddings", default="", help="Optional user_embeddings_*.pt path.")
+    p.add_argument("--embedding_feature_prefix", default="emb")
     p.add_argument("--embedding_pool", choices=["meanpool", "maxpool"], default="meanpool")
     p.add_argument(
         "--edge_view_aliases",
@@ -188,7 +194,7 @@ def build_node_features(user_data, feature_cols):
     return torch.tensor(x_np, dtype=torch.float), list(feature_cols)
 
 
-def maybe_attach_embeddings(x, feature_names, user_ids, embeddings_path, embedding_pool):
+def maybe_attach_embeddings(x, feature_names, user_ids, embeddings_path, embedding_pool, feature_prefix):
     if not embeddings_path:
         return x, feature_names, {"matched_users": 0, "embedding_dim": 0}
 
@@ -216,7 +222,7 @@ def maybe_attach_embeddings(x, feature_names, user_ids, embeddings_path, embeddi
 
     # If there were no structural features, replace the zero placeholder entirely.
     x_out = extra if not feature_names else torch.cat([x, extra], dim=1)
-    names_out = feature_names + [f"emb_{k}" for k in range(emb_dim)]
+    names_out = feature_names + [f"{feature_prefix}_{k}" for k in range(emb_dim)]
     print(f"Embeddings attached: matched={matched:,}/{len(user_ids):,} dim={emb_dim}")
     return x_out, names_out, {"matched_users": matched, "embedding_dim": emb_dim}
 
@@ -392,10 +398,15 @@ def main():
     if unknown:
         raise ValueError(f"Unknown label columns: {unknown}")
 
-    feature_cols = (
-        [c.strip() for c in args.feature_cols.split(",") if c.strip()]
-        if args.feature_cols else _detect_feature_cols(user_data, all_label_cols)
-    )
+    if args.embeddings_only:
+        if not args.embeddings:
+            raise ValueError("--embeddings-only requires --embeddings")
+        feature_cols = []
+    else:
+        feature_cols = (
+            [c.strip() for c in args.feature_cols.split(",") if c.strip()]
+            if args.feature_cols else _detect_feature_cols(user_data, all_label_cols)
+        )
     print(f"Label cols: {label_cols}")
     print(f"Feature cols: {feature_cols}")
 
@@ -405,7 +416,12 @@ def main():
     edge_index, edge_attr = build_edge_tensors(G)
     x, feature_names = build_node_features(user_data, feature_cols)
     x, feature_names, emb_stats = maybe_attach_embeddings(
-        x, feature_names, user_ids, args.embeddings, args.embedding_pool
+        x,
+        feature_names,
+        user_ids,
+        args.embeddings,
+        args.embedding_pool,
+        args.embedding_feature_prefix,
     )
 
     written = []
