@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+import os
 from pathlib import Path
 import shlex
 import subprocess
@@ -343,6 +344,57 @@ def build_command(
     return common + extra + args.extra_args
 
 
+def run_job_queue(
+    jobs: list[tuple[list[str], str]],
+    *,
+    gpus: list[str],
+    dry_run: bool,
+    continue_on_error: bool,
+) -> int:
+    if not jobs:
+        return 0
+    if not gpus:
+        gpus = [""]
+
+    running: list[tuple[subprocess.Popen, str, str]] = []
+    failures = 0
+    next_job = 0
+
+    while next_job < len(jobs) or running:
+        while next_job < len(jobs) and len(running) < len(gpus):
+            cmd, label = jobs[next_job]
+            gpu = gpus[next_job % len(gpus)]
+            env = os.environ.copy()
+            if gpu:
+                env["CUDA_VISIBLE_DEVICES"] = gpu
+            printable = " ".join(shlex.quote(part) for part in cmd)
+            prefix = f"CUDA_VISIBLE_DEVICES={gpu} " if gpu else ""
+            print(f"[run] {prefix}{printable}", flush=True)
+            next_job += 1
+            if dry_run:
+                continue
+            process = subprocess.Popen(cmd, env=env)
+            running.append((process, label, gpu))
+
+        if dry_run:
+            continue
+
+        process, label, gpu = running.pop(0)
+        returncode = process.wait()
+        if returncode != 0:
+            failures += 1
+            print(
+                f"[error] returncode={returncode} gpu={gpu or '<inherit>'} {label}",
+                flush=True,
+            )
+            if not continue_on_error:
+                for other_process, _, _ in running:
+                    other_process.terminate()
+                return returncode
+
+    return 1 if failures else 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model-list", default=DEFAULT_MODEL_LIST)
@@ -351,6 +403,14 @@ def main() -> int:
     parser.add_argument("--tasks", default="neighbor_matching,temporal_link_prediction,classification")
     parser.add_argument("--shots", default="0,3")
     parser.add_argument("--python", default="python3")
+    parser.add_argument(
+        "--gpus",
+        default="",
+        help=(
+            "Comma-separated physical GPU ids for parallel eval, e.g. 1,3. "
+            "Each subprocess sees one GPU and uses --device 0."
+        ),
+    )
     parser.add_argument("--device", default="0")
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--batch-size", type=int, default=1)
@@ -378,7 +438,7 @@ def main() -> int:
     models = parse_model_list(Path(args.model_list))
     torch_mod = load_torch()
 
-    failures = 0
+    jobs: list[tuple[list[str], str]] = []
     for dataset_name in selected_datasets:
         if dataset_name not in DATASETS:
             raise ValueError(f"Unknown dataset {dataset_name!r}. Known: {sorted(DATASETS)}")
@@ -404,21 +464,15 @@ def main() -> int:
                     continue
                 for shot in shots:
                     cmd = build_command(args, dataset, model_name, ckpt_path, task, shot)
-                    printable = " ".join(shlex.quote(part) for part in cmd)
-                    print(f"[run] {printable}", flush=True)
-                    if args.dry_run:
-                        continue
-                    result = subprocess.run(cmd, check=False)
-                    if result.returncode != 0:
-                        failures += 1
-                        print(
-                            f"[error] returncode={result.returncode} dataset={dataset.name} "
-                            f"model={model_name} task={task} shot={shot}",
-                            flush=True,
-                        )
-                        if not args.continue_on_error:
-                            return result.returncode
-    return 1 if failures else 0
+                    label = f"dataset={dataset.name} model={model_name} task={task} shot={shot}"
+                    jobs.append((cmd, label))
+
+    return run_job_queue(
+        jobs,
+        gpus=parse_csv(args.gpus),
+        dry_run=args.dry_run,
+        continue_on_error=args.continue_on_error,
+    )
 
 
 if __name__ == "__main__":
