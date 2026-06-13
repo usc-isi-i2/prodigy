@@ -25,12 +25,13 @@ class IsomorphismTask(TaskBase):
         `ids` may be a list or a range object, specifying IDs of graphs
         """
         self.ids = ids
+        self.ids_seq = sorted(ids) if isinstance(ids, set) else ids
 
     def get_label(self, graph_id):
         return graph_id
 
     def sample(self, num_label, num_member, rng):
-        labels = rng.sample(self.ids, num_label)
+        labels = rng.sample(self.ids_seq, num_label)
         return {label: [label] * num_member for label in labels}
 
 class MultiTaskSplitWay(TaskBase):
@@ -118,6 +119,7 @@ class MulticlassTask(TaskBase):
         """
         self.labels = labels
         self.label_set = label_set
+        self.label_seq = sorted(label_set)
         self.train_label = train_label
         self.linear_probe = linear_probe
         self.random_query = random_query
@@ -144,10 +146,10 @@ class MulticlassTask(TaskBase):
 
     def sample(self, num_label, num_member, num_shot, num_query, rng):
         if self.linear_probe:
-            labels = self.label_set
+            labels = self.label_seq
             assert len(labels) == num_label
         else:
-            labels = rng.sample(self.label_set, num_label)
+            labels = rng.sample(self.label_seq, num_label)
 
         task = {}
         if self.random_query:
