@@ -163,7 +163,12 @@ def numeric_metrics(payload: dict[str, Any], split: str) -> dict[str, float]:
     return metrics
 
 
-def collect_rows(run_dirs: list[Path], datasets: list[str]) -> list[dict[str, Any]]:
+def collect_rows(
+    run_dirs: list[Path],
+    datasets: list[str],
+    *,
+    missing_metrics_policy: str,
+) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for run_dir in run_dirs:
         if not run_dir.is_dir():
@@ -171,7 +176,11 @@ def collect_rows(run_dirs: list[Path], datasets: list[str]) -> list[dict[str, An
         run_meta = parse_run_name(run_dir.name, datasets)
         metrics_paths = sorted((run_dir / "data").glob("metrics_*.json"))
         if not metrics_paths:
-            raise FileNotFoundError(f"No metrics_*.json files found under: {run_dir / 'data'}")
+            msg = f"No metrics_*.json files found under: {run_dir / 'data'}"
+            if missing_metrics_policy == "skip":
+                print(f"[skip] {msg}")
+                continue
+            raise FileNotFoundError(msg)
         for metrics_path in metrics_paths:
             split = split_from_metrics_path(metrics_path)
             payload = json.loads(metrics_path.read_text(encoding="utf-8"))
@@ -313,6 +322,12 @@ def main() -> int:
     parser.add_argument("--tasks", default="nm,lp,pl")
     parser.add_argument("--plot", action="store_true", help="Also write heatmap PNGs.")
     parser.add_argument(
+        "--missing-metrics-policy",
+        choices=("skip", "error"),
+        default="skip",
+        help="How to handle eval run directories that have no metrics_*.json files.",
+    )
+    parser.add_argument(
         "--duplicate-policy",
         choices=("error", "first", "latest", "mean"),
         default="error",
@@ -340,7 +355,13 @@ def main() -> int:
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    rows = collect_rows(run_dirs, datasets)
+    rows = collect_rows(
+        run_dirs,
+        datasets,
+        missing_metrics_policy=args.missing_metrics_policy,
+    )
+    if not rows:
+        raise ValueError("No metric rows found after applying missing-metrics policy.")
     df = pd.DataFrame(rows)
     df = apply_duplicate_policy(df, args.duplicate_policy)
     csv_path = out_dir / "eval_results.csv"
