@@ -32,6 +32,7 @@ from .midterm import (
     _apply_label_downsample,
     midterm_task,
     _deterministic_label_embeddings,
+    _label_embedding_texts,
 )
 
 
@@ -182,7 +183,9 @@ def _get_dataloader(dataset_name: str, dataset: SubgraphDataset, split: str,
             raise ValueError(f"{dataset_name} classification requires graph.label_names.")
 
         label_embeddings = (
-            bert.get_sentence_embeddings(label_names)
+            bert.get_sentence_embeddings(
+                _label_embedding_texts(label_names, kwargs.get("label_emb_texts", ""))
+            )
             if bert is not None
             else _deterministic_label_embeddings(label_names, dim=768)
         )

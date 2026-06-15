@@ -212,6 +212,34 @@ def _deterministic_label_embeddings(label_names, dim: int = 768) -> torch.Tensor
     return torch.stack(rows, dim=0)
 
 
+def _label_embedding_texts(label_names, override_spec: str = ""):
+    label_names = list(label_names)
+    spec = (override_spec or "").strip()
+    if spec == "":
+        return label_names
+
+    overrides = {}
+    for entry in spec.split(";"):
+        entry = entry.strip()
+        if not entry:
+            continue
+        if "=" not in entry:
+            raise ValueError(
+                f"Invalid --label_emb_texts entry {entry!r}. "
+                "Use semicolon-separated 'label_name=text' pairs."
+            )
+        key, value = entry.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        if not key or not value:
+            raise ValueError(f"Invalid --label_emb_texts entry {entry!r}.")
+        overrides[key] = value
+
+    # Ignore overrides for labels absent from this graph so one mapping can be
+    # reused across multi-dataset eval sweeps.
+    return [overrides.get(name, name) for name in label_names]
+
+
 def _apply_label_downsample(
         labels: torch.Tensor,
         label_names,
@@ -720,7 +748,8 @@ def get_midterm_dataloader(
         num_classes = len(label_names)
 
         if bert is not None:
-            label_embeddings = bert.get_sentence_embeddings(label_names)
+            label_texts = _label_embedding_texts(label_names, kwargs.get("label_emb_texts", ""))
+            label_embeddings = bert.get_sentence_embeddings(label_texts)
         else:
             label_embeddings = _deterministic_label_embeddings(label_names, dim=768)
 

@@ -24,6 +24,7 @@ from .midterm import (
     _apply_label_downsample,
     midterm_task,
     _deterministic_label_embeddings,
+    _label_embedding_texts,
 )
 
 
@@ -226,7 +227,8 @@ def get_ukr_rus_twitter_dataloader(
             raise ValueError("ukr_rus_twitter classification requires graph.label_names to be populated.")
 
         if bert is not None:
-            label_embeddings = bert.get_sentence_embeddings(label_names)
+            label_texts = _label_embedding_texts(label_names, kwargs.get("label_emb_texts", ""))
+            label_embeddings = bert.get_sentence_embeddings(label_texts)
         else:
             label_embeddings = _deterministic_label_embeddings(label_names, dim=768)
 
