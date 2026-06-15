@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run checkpoint evaluation on Tucker without Slurm.
 
-The runner targets the GTE-compatible graph artifacts under /dataMeR2/phil/data.
+The runner targets the GTE-compatible graph artifacts under /dataMeR1/phil/data.
 It inspects each graph and skips classification when no labels are present, and
 skips temporal LP when no future-edge target view is present.
 """
@@ -477,7 +477,7 @@ def main() -> int:
         default="",
         help="Optional model-name prefix for --checkpoint-run-dir rows.",
     )
-    parser.add_argument("--data-root", default="/dataMeR2/phil/data")
+    parser.add_argument("--data-root", default="/dataMeR1/phil/data")
     parser.add_argument("--datasets", default=",".join(DATASETS))
     parser.add_argument("--tasks", default="neighbor_matching,temporal_link_prediction,classification")
     parser.add_argument("--shots", default="0,3,10")

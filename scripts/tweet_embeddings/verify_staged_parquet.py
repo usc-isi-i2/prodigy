@@ -13,7 +13,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 
-DEFAULT_INPUT_ROOT = "/dataMeR2/phil/data/ukr_rus_twitter/parquet"
+DEFAULT_INPUT_ROOT = "/dataMeR1/phil/data/ukr_rus_twitter/parquet"
 EXPECTED_FILES = {"2022-02": 158, "2022-03": 719, "2022-04": 621}
 EXPECTED_ROWS = {
     "2022-02": 27_830_486,

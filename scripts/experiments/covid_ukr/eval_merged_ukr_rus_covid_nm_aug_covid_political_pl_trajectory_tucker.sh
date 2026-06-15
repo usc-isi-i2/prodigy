@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
-RUN_DIR="${RUN_DIR:-/dataMeR2/phil/gfm/prodigy/state/merged_ukr_rus_covid_nm_aug_15_06_2026_15_22_07}"
+RUN_DIR="${RUN_DIR:-/dataMeR1/phil/gfm/prodigy/state/merged_ukr_rus_covid_nm_aug_15_06_2026_15_22_07}"
 
 cmd=(
   python3 scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py

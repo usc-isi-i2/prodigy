@@ -3,13 +3,13 @@
 The Tucker build script creates graph artifacts from:
 
 ```text
-/dataMeR2/phil/data/social_llm_data
+/dataMeR1/phil/data/social_llm_data
 ```
 
 It writes outputs under:
 
 ```text
-/dataMeR2/phil/data/<dataset>/
+/dataMeR1/phil/data/<dataset>/
 ```
 
 `covid` is mapped to the repo dataset/output name `covid_political`.
@@ -28,7 +28,7 @@ bio-text-v001 normalization
 The row-aligned embedding artifact is:
 
 ```text
-/dataMeR2/phil/data/<dataset>/embeddings/user_bio_embeddings_gte_multilingual_base.pt
+/dataMeR1/phil/data/<dataset>/embeddings/user_bio_embeddings_gte_multilingual_base.pt
 ```
 
 ## Graph Outputs
@@ -36,7 +36,7 @@ The row-aligned embedding artifact is:
 The graph builder emits one graph per `label_*` column:
 
 ```text
-/dataMeR2/phil/data/<dataset>/graphs/retweet_graph_<label>.pt
+/dataMeR1/phil/data/<dataset>/graphs/retweet_graph_<label>.pt
 ```
 
 Binary `0/1` labels are classification graphs. Continuous labels stay continuous and are emitted as regression graphs.
@@ -44,7 +44,7 @@ Binary `0/1` labels are classification graphs. Continuous labels stay continuous
 For compatibility with existing scripts, the first label graph is also copied to:
 
 ```text
-/dataMeR2/phil/data/<dataset>/graphs/retweet_graph.pt
+/dataMeR1/phil/data/<dataset>/graphs/retweet_graph.pt
 ```
 
 The Tucker GTE build uses `--embeddings-only` and
@@ -61,5 +61,5 @@ CUDA_VISIBLE_DEVICES=1 bash scripts/social_llm/build_gte_graphs_tucker.sh
 
 Use whichever GPU is free. The script defaults to `covid_political`,
 `election2020`, and `ukr_rus_suspended`, writes under
-`/dataMeR2/phil/data/<dataset>/`, and moves any existing graph directory to
+`/dataMeR1/phil/data/<dataset>/`, and moves any existing graph directory to
 `graphs.backup_before_gte_<timestamp>` before writing new graph artifacts.

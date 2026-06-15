@@ -5,7 +5,7 @@ Preferred usage is with a frozen run-list manifest:
 
     python scripts/analysis/export_eval_results_csv.py \
       --run-list scripts/analysis/manifests/merged_ukr_rus_covid_nm_eval_runs_v1.txt \
-      --out-dir /dataMeR2/phil/gfm/prodigy/log/eval_merged_ukr_rus_covid_nm_csv_v1
+      --out-dir /dataMeR1/phil/gfm/prodigy/log/eval_merged_ukr_rus_covid_nm_csv_v1
 
 The manifest should contain one eval log directory per line. Lines beginning
 with "#" are ignored.

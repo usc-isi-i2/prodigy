@@ -1,8 +1,8 @@
 """Constants for the tweet embedding pipeline."""
 
-DEFAULT_INPUT_ROOT = "/dataMeR2/phil/data/ukr_rus_twitter/parquet"
+DEFAULT_INPUT_ROOT = "/dataMeR1/phil/data/ukr_rus_twitter/parquet"
 DEFAULT_OUTPUT_ROOT = (
-    "/dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/"
+    "/dataMeR1/phil/data/ukr_rus_twitter/tweet_embeddings/"
     "gte-multilingual-base/version=v001"
 )
 DEFAULT_MODEL = "Alibaba-NLP/gte-multilingual-base"

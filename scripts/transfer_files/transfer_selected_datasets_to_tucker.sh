@@ -4,7 +4,7 @@ set -euo pipefail
 
 REMOTE_HOST="eibl@hpc-transfer1.usc.edu"
 SRC_BASE="/scratch1/eibl/data"
-DEST_BASE="/dataMeR2/phil/data"
+DEST_BASE="/dataMeR1/phil/data"
 
 DATASETS=(
   "ed"

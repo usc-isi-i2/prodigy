@@ -7,7 +7,7 @@ This directory contains the reproducible tweet-level embedding pipeline for the 
 The full run writes deterministic shard artifacts to:
 
 ```text
-/dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001/
+/dataMeR1/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001/
 ```
 
 Outputs include:
@@ -51,7 +51,7 @@ git push -u origin tweet-embeddings-v001
 On tucker:
 
 ```bash
-cd /dataMeR2/phil/gfm/prodigy
+cd /dataMeR1/phil/gfm/prodigy
 git fetch origin
 git switch tweet-embeddings-v001
 git pull --ff-only origin tweet-embeddings-v001
@@ -107,13 +107,13 @@ The `--gpus` argument defaults to `0,1,2,3`, is recorded in config, and also set
 The staged local mirror must pass verification before embedding:
 
 ```bash
-mkdir -p /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings
+mkdir -p /dataMeR1/phil/data/ukr_rus_twitter/tweet_embeddings
 
 python -u scripts/tweet_embeddings/verify_staged_parquet.py \
-  --input-root /dataMeR2/phil/data/ukr_rus_twitter/parquet \
+  --input-root /dataMeR1/phil/data/ukr_rus_twitter/parquet \
   --checksum \
-  --output-source-files /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/source_files.v001.parquet \
-  --summary-json /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/verify_staged_parquet.v001.json
+  --output-source-files /dataMeR1/phil/data/ukr_rus_twitter/tweet_embeddings/source_files.v001.parquet \
+  --summary-json /dataMeR1/phil/data/ukr_rus_twitter/tweet_embeddings/verify_staged_parquet.v001.json
 ```
 
 Expected gate:
@@ -132,16 +132,16 @@ Run a one-shard, one-GPU smoke test before the full run. This writes to a separa
 ```bash
 tmux new -s tweet-embeddings-smoke
 conda activate tweet-embeddings-v001
-cd /dataMeR2/phil/gfm/prodigy
+cd /dataMeR1/phil/gfm/prodigy
 ```
 
 Then run:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 python -u scripts/tweet_embeddings/embed_tweets.py \
-  --input-root /dataMeR2/phil/data/ukr_rus_twitter/parquet \
-  --output-root /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001_smoke \
-  --source-files /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/source_files.v001.parquet \
+  --input-root /dataMeR1/phil/data/ukr_rus_twitter/parquet \
+  --output-root /dataMeR1/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001_smoke \
+  --source-files /dataMeR1/phil/data/ukr_rus_twitter/tweet_embeddings/source_files.v001.parquet \
   --gpus 0 \
   --num-workers 1 \
   --smoke-shards 1 \
@@ -153,17 +153,17 @@ If the smoke test OOMs, rerun only the smoke test with `--batch-size 1024`.
 Monitor smoke logs from another shell:
 
 ```bash
-tail -f /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001_smoke/logs/worker-0.log
+tail -f /dataMeR1/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001_smoke/logs/worker-0.log
 ```
 
 Validate smoke output:
 
 ```bash
 python -u scripts/tweet_embeddings/validate_tweet_embeddings.py \
-  --output-root /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001_smoke \
+  --output-root /dataMeR1/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001_smoke \
   --shards 0 \
   --norm-sample 0 \
-  --summary-json /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001_smoke/validation.json
+  --summary-json /dataMeR1/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001_smoke/validation.json
 ```
 
 The smoke gate passes when the validator reports shape `[N, 768]`, dtype `float16`, finite values, L2 norms within tolerance, metadata alignment, checksum agreement, and no failed shards.
@@ -183,16 +183,16 @@ After the smoke gate passes, start a long-running tmux session:
 ```bash
 tmux new -s tweet-embeddings
 conda activate tweet-embeddings-v001
-cd /dataMeR2/phil/gfm/prodigy
+cd /dataMeR1/phil/gfm/prodigy
 ```
 
 Then run the 4-GPU job:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0,1,2,3 python -u scripts/tweet_embeddings/embed_tweets.py \
-  --input-root /dataMeR2/phil/data/ukr_rus_twitter/parquet \
-  --output-root /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001 \
-  --source-files /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/source_files.v001.parquet \
+  --input-root /dataMeR1/phil/data/ukr_rus_twitter/parquet \
+  --output-root /dataMeR1/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001 \
+  --source-files /dataMeR1/phil/data/ukr_rus_twitter/tweet_embeddings/source_files.v001.parquet \
   --gpus 0,1,2,3 \
   --num-workers 4 \
   --batch-size 2048
@@ -224,19 +224,19 @@ If a worker OOMs, rerun the same full command with:
 Follow all worker logs:
 
 ```bash
-tail -f /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001/logs/worker-*.log
+tail -f /dataMeR1/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001/logs/worker-*.log
 ```
 
 Follow the run-level log:
 
 ```bash
-tail -f /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001/logs/run.log
+tail -f /dataMeR1/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001/logs/run.log
 ```
 
 Count completed shards:
 
 ```bash
-ls /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001/shards/*.manifest.json | wc -l
+ls /dataMeR1/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001/shards/*.manifest.json | wc -l
 ```
 
 Expected full-run shard count:
@@ -254,7 +254,7 @@ watch -n 2 nvidia-smi
 The process list should show Python processes on physical GPUs `0,1,2,3`. If a run was accidentally started on the wrong GPUs, stop it with `Ctrl-c` inside tmux. To start the full output fresh, remove only:
 
 ```bash
-rm -rf /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001
+rm -rf /dataMeR1/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001
 ```
 
 Do not remove `source_files.v001.parquet`, the staged-Parquet verification JSON, or the smoke output unless you intentionally want to redo those steps.
@@ -267,9 +267,9 @@ Run validation after the full job:
 
 ```bash
 python -u scripts/tweet_embeddings/validate_tweet_embeddings.py \
-  --output-root /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001 \
+  --output-root /dataMeR1/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001 \
   --norm-sample 10000 \
-  --summary-json /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001/validation.json
+  --summary-json /dataMeR1/phil/data/ukr_rus_twitter/tweet_embeddings/gte-multilingual-base/version=v001/validation.json
 ```
 
 For a slower complete norm check, use `--norm-sample 0`.

@@ -28,9 +28,9 @@ except ImportError:  # pragma: no cover - depends on environment.
     PyGData = None
 
 
-DEFAULT_PARQUET_ROOT = "/dataMeR2/phil/data/midterm/parquet"
+DEFAULT_PARQUET_ROOT = "/dataMeR1/phil/data/midterm/parquet"
 DEFAULT_BIO_EMBEDDINGS_ROOT = (
-    "/dataMeR2/phil/data/midterm/bio_embeddings/"
+    "/dataMeR1/phil/data/midterm/bio_embeddings/"
     "gte-multilingual-base/version=v001"
 )
 DEFAULT_OUT = "data/data/midterm/graphs/retweet_graph_parquet.pt"

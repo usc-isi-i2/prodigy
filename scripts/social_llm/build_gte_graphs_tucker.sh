@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-RAW_ROOT="${RAW_ROOT:-/dataMeR2/phil/data/social_llm_data}"
-OUT_ROOT="${OUT_ROOT:-/dataMeR2/phil/data}"
+RAW_ROOT="${RAW_ROOT:-/dataMeR1/phil/data/social_llm_data}"
+OUT_ROOT="${OUT_ROOT:-/dataMeR1/phil/data}"
 MODEL="${MODEL:-Alibaba-NLP/gte-multilingual-base}"
 REVISION="${REVISION:-9bbca17d9273fd0d03d5725c7a4b0f6b45142062}"
 EMB_NAME="${EMB_NAME:-user_bio_embeddings_gte_multilingual_base.pt}"
