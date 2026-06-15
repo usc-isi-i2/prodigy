@@ -251,6 +251,17 @@ def get_params():
         ),
     )
     args.add_argument(
+        "--label_emb_texts",
+        default="",
+        type=str,
+        help=(
+            "Optional semicolon-separated label text overrides for embeddings, "
+            "e.g. 'not_conservative=not conservative political user;"
+            "conservative=conservative political user'. Graph label names and "
+            "class ids are unchanged."
+        ),
+    )
+    args.add_argument(
         "--label_emb_revision",
         default="",
         type=str,

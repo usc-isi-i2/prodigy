@@ -163,6 +163,21 @@ def has_classification_labels(raw: dict[str, Any], torch_mod: Any) -> bool:
     return bool((y >= 0).any().item())
 
 
+def classification_label_count(raw: dict[str, Any]) -> int:
+    label_names = list(raw.get("label_names") or [])
+    if label_names:
+        return len(label_names)
+    y = raw.get("y")
+    if y is None and "data" in raw:
+        y = getattr(raw["data"], "y", None)
+    if y is None:
+        return 0
+    valid = y[y >= 0]
+    if valid.numel() == 0:
+        return 0
+    return int(valid.max().item()) + 1
+
+
 def has_future_edges(raw: dict[str, Any]) -> bool:
     future = raw.get("future_edge_index")
     if future is not None and getattr(future, "numel", lambda: 0)() > 0:
@@ -184,6 +199,7 @@ def graph_info(torch_mod: Any, path: Path) -> dict[str, Any]:
     return {
         "x_dim": x_dim,
         "has_labels": has_classification_labels(raw, torch_mod),
+        "label_count": classification_label_count(raw),
         "has_future_edges": has_future_edges(raw),
     }
 
@@ -207,6 +223,7 @@ def build_command(
     ckpt_path: str,
     task: str,
     shots: str,
+    classification_n_way: int | None = None,
 ) -> list[str]:
     root = Path(args.data_root) / dataset.root_name / "graphs"
     common = [
@@ -307,6 +324,7 @@ def build_command(
             prefix,
         ]
     elif task == "classification":
+        n_way = classification_n_way if classification_n_way is not None else 2
         extra = [
             "--task_name",
             "classification",
@@ -315,7 +333,7 @@ def build_command(
             "--linear_probe",
             "False",
             "--n_way",
-            "2",
+            str(n_way),
             "--n_shots",
             shots,
             "--n_query",
@@ -418,7 +436,7 @@ def main() -> int:
     parser.add_argument("--data-root", default="/dataMeR2/phil/data")
     parser.add_argument("--datasets", default=",".join(DATASETS))
     parser.add_argument("--tasks", default="neighbor_matching,temporal_link_prediction,classification")
-    parser.add_argument("--shots", default="0,3")
+    parser.add_argument("--shots", default="0,3,10")
     parser.add_argument("--python", default="python3")
     parser.add_argument(
         "--gpus",
@@ -474,7 +492,8 @@ def main() -> int:
         info = graph_info(torch_mod, graph_path)
         print(
             f"[progress] {dataset.name}: x_dim={info['x_dim']} "
-            f"labels={info['has_labels']} future_edges={info['has_future_edges']}",
+            f"labels={info['has_labels']} label_count={info['label_count']} "
+            f"future_edges={info['has_future_edges']}",
             flush=True,
         )
         if info["x_dim"] != 768:
@@ -492,7 +511,15 @@ def main() -> int:
                     print(f"[skip] {dataset.name}: no classification labels", flush=True)
                     continue
                 for shot in shots:
-                    cmd = build_command(args, dataset, model_name, ckpt_path, task, shot)
+                    cmd = build_command(
+                        args,
+                        dataset,
+                        model_name,
+                        ckpt_path,
+                        task,
+                        shot,
+                        classification_n_way=info["label_count"] if task == "classification" else None,
+                    )
                     label = f"dataset={dataset.name} model={model_name} task={task} shot={shot}"
                     jobs.append((cmd, label))
 
