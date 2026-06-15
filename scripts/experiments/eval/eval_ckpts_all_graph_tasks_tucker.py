@@ -12,6 +12,7 @@ import argparse
 from dataclasses import dataclass
 import os
 from pathlib import Path
+import re
 import shlex
 import subprocess
 import sys
@@ -140,6 +141,35 @@ def parse_model_list(path: Path) -> list[tuple[str, str]]:
     if not rows:
         raise ValueError(f"No checkpoints found in {path}")
     return rows
+
+
+def parse_checkpoint_step(path: Path) -> int | None:
+    match = re.fullmatch(r"state_dict_(\d+)\.ckpt", path.name)
+    if match is None:
+        return None
+    return int(match.group(1))
+
+
+def discover_checkpoint_run_dir(run_dir: Path, name_prefix: str | None = None) -> list[tuple[str, str]]:
+    checkpoint_dir = run_dir / "checkpoint"
+    if not checkpoint_dir.is_dir():
+        raise FileNotFoundError(f"Checkpoint directory does not exist: {checkpoint_dir}")
+
+    checkpoints: list[tuple[int, Path]] = []
+    for path in checkpoint_dir.glob("state_dict_*.ckpt"):
+        step = parse_checkpoint_step(path)
+        if step is not None:
+            checkpoints.append((step, path))
+    checkpoints.sort(key=lambda item: item[0])
+
+    if not checkpoints:
+        raise ValueError(f"No state_dict_<step>.ckpt checkpoints found in {checkpoint_dir}")
+
+    prefix = name_prefix or run_dir.name
+    return [
+        (f"{prefix}_step{step}", checkpoint_path.as_posix())
+        for step, checkpoint_path in checkpoints
+    ]
 
 
 def torch_load_graph(torch_mod: Any, path: Path) -> dict[str, Any]:
@@ -433,6 +463,20 @@ def run_job_queue(
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model-list", default=DEFAULT_MODEL_LIST)
+    parser.add_argument(
+        "--checkpoint-run-dir",
+        default="",
+        help=(
+            "Training run directory containing checkpoint/state_dict_<step>.ckpt files. "
+            "When provided, checkpoints are discovered in numeric step order and "
+            "--model-list is ignored."
+        ),
+    )
+    parser.add_argument(
+        "--checkpoint-name-prefix",
+        default="",
+        help="Optional model-name prefix for --checkpoint-run-dir rows.",
+    )
     parser.add_argument("--data-root", default="/dataMeR2/phil/data")
     parser.add_argument("--datasets", default=",".join(DATASETS))
     parser.add_argument("--tasks", default="neighbor_matching,temporal_link_prediction,classification")
@@ -470,7 +514,13 @@ def main() -> int:
     selected_datasets = parse_csv(args.datasets)
     selected_tasks = [TASK_ALIASES[task] for task in parse_csv(args.tasks)]
     shots = parse_csv(args.shots)
-    models = parse_model_list(Path(args.model_list))
+    if args.checkpoint_run_dir:
+        models = discover_checkpoint_run_dir(
+            Path(args.checkpoint_run_dir),
+            args.checkpoint_name_prefix or None,
+        )
+    else:
+        models = parse_model_list(Path(args.model_list))
     print(
         "[progress] eval selection "
         f"datasets={selected_datasets} tasks={selected_tasks} shots={shots} "
