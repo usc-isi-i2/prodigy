@@ -14,7 +14,7 @@ Supported source layouts today:
 The full run writes deterministic artifacts to:
 
 ```text
-/dataMeR2/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001/
+/dataMeR1/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001/
 ```
 
 Core outputs include:
@@ -127,14 +127,14 @@ Run an index-only smoke on a separate output root first:
 ```bash
 tmux new -s bio-embeddings-smoke
 conda activate bio-embeddings-v001
-cd /dataMeR2/phil/gfm/prodigy
+cd /dataMeR1/phil/gfm/prodigy
 ```
 
 ```bash
 python -u scripts/bio_embeddings/embed_bios.py \
-  --input-root /dataMeR2/phil/data/ukr_rus_twitter/parquet \
-  --output-root /dataMeR2/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001_smoke \
-  --source-files /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/source_files.v001.parquet \
+  --input-root /dataMeR1/phil/data/ukr_rus_twitter/parquet \
+  --output-root /dataMeR1/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001_smoke \
+  --source-files /dataMeR1/phil/data/ukr_rus_twitter/tweet_embeddings/source_files.v001.parquet \
   --index-only \
   --rebuild-bio-index \
   --no-source-checksums \
@@ -151,9 +151,9 @@ After the smoke index succeeds:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 python -u scripts/bio_embeddings/embed_bios.py \
-  --input-root /dataMeR2/phil/data/ukr_rus_twitter/parquet \
-  --output-root /dataMeR2/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001_smoke \
-  --source-files /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/source_files.v001.parquet \
+  --input-root /dataMeR1/phil/data/ukr_rus_twitter/parquet \
+  --output-root /dataMeR1/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001_smoke \
+  --source-files /dataMeR1/phil/data/ukr_rus_twitter/tweet_embeddings/source_files.v001.parquet \
   --gpus 0 \
   --num-workers 1 \
   --smoke-shards 1 \
@@ -164,10 +164,10 @@ Validate:
 
 ```bash
 python -u scripts/bio_embeddings/validate_bio_embeddings.py \
-  --output-root /dataMeR2/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001_smoke \
+  --output-root /dataMeR1/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001_smoke \
   --shards 0 \
   --norm-sample 0 \
-  --summary-json /dataMeR2/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001_smoke/validation.json
+  --summary-json /dataMeR1/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001_smoke/validation.json
 ```
 
 If the smoke embedding OOMs, rerun with `--batch-size 1024`.
@@ -179,14 +179,14 @@ After the smoke gate passes:
 ```bash
 tmux new -s bio-embeddings
 conda activate bio-embeddings-v001
-cd /dataMeR2/phil/gfm/prodigy
+cd /dataMeR1/phil/gfm/prodigy
 ```
 
 ```bash
 CUDA_VISIBLE_DEVICES=0,1,2,3 python -u scripts/bio_embeddings/embed_bios.py \
-  --input-root /dataMeR2/phil/data/ukr_rus_twitter/parquet \
-  --output-root /dataMeR2/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
-  --source-files /dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/source_files.v001.parquet \
+  --input-root /dataMeR1/phil/data/ukr_rus_twitter/parquet \
+  --output-root /dataMeR1/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
+  --source-files /dataMeR1/phil/data/ukr_rus_twitter/tweet_embeddings/source_files.v001.parquet \
   --gpus 0,1,2,3 \
   --num-workers 4 \
   --batch-size 2048 \
@@ -200,8 +200,8 @@ Validate the completed store:
 
 ```bash
 python -u scripts/bio_embeddings/validate_bio_embeddings.py \
-  --output-root /dataMeR2/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
-  --summary-json /dataMeR2/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001/validation.json
+  --output-root /dataMeR1/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
+  --summary-json /dataMeR1/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001/validation.json
 ```
 
 ## Monitoring
@@ -209,19 +209,19 @@ python -u scripts/bio_embeddings/validate_bio_embeddings.py \
 Follow worker logs:
 
 ```bash
-tail -f /dataMeR2/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001/logs/worker-*.log
+tail -f /dataMeR1/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001/logs/worker-*.log
 ```
 
 Follow the run log:
 
 ```bash
-tail -f /dataMeR2/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001/logs/run.log
+tail -f /dataMeR1/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001/logs/run.log
 ```
 
 Count completed shards:
 
 ```bash
-ls /dataMeR2/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001/shards/*.manifest.json | wc -l
+ls /dataMeR1/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001/shards/*.manifest.json | wc -l
 ```
 
 Watch GPUs:
@@ -236,8 +236,8 @@ For the nested COVID parquet mirror, point the same pipeline at `raw_nested` and
 
 ```bash
 CUDA_VISIBLE_DEVICES=0,1,2,3 python -u scripts/bio_embeddings/embed_bios.py \
-  --input-root /dataMeR2/phil/data/covid19_twitter/parquet/raw_nested \
-  --output-root /dataMeR2/phil/data/covid19_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
+  --input-root /dataMeR1/phil/data/covid19_twitter/parquet/raw_nested \
+  --output-root /dataMeR1/phil/data/covid19_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
   --gpus 0,1,2,3 \
   --num-workers 4 \
   --batch-size 2048 \

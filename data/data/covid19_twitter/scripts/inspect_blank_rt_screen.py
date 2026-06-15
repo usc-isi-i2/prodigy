@@ -31,7 +31,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--parquet-root",
-        default="/dataMeR2/phil/data/covid19_twitter/parquet",
+        default="/dataMeR1/phil/data/covid19_twitter/parquet",
     )
     parser.add_argument("--sample", type=int, default=20)
     parser.add_argument("--duckdb-threads", type=int, default=16)

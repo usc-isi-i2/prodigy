@@ -7,7 +7,7 @@ Small helper scripts for transferring large dataset trees onto Tucker.
 Transfers the staged parquet tree from CARC storage to Tucker:
 
 - source: `/scratch1/eibl/data/ukr_rus_twitter/parquet/`
-- destination: `/dataMeR2/phil/data/ukr_rus_twitter/parquet/`
+- destination: `/dataMeR1/phil/data/ukr_rus_twitter/parquet/`
 
 Run:
 
@@ -20,7 +20,7 @@ bash scripts/transfer_files/transfer_ukr_rus_parquet_to_tucker.sh
 Transfers the staged parquet tree from CARC storage to Tucker:
 
 - source: `/scratch1/eibl/data/covid19_twitter/parquet/`
-- destination: `/dataMeR2/phil/data/covid19_twitter/parquet/`
+- destination: `/dataMeR1/phil/data/covid19_twitter/parquet/`
 
 Run:
 
@@ -33,7 +33,7 @@ bash scripts/transfer_files/transfer_covid19_parquet_to_tucker.sh
 Transfers the staged parquet tree from CARC storage to Tucker:
 
 - source: `/scratch1/eibl/data/midterm/parquet/`
-- destination: `/dataMeR2/phil/data/midterm/parquet/`
+- destination: `/dataMeR1/phil/data/midterm/parquet/`
 
 Run:
 
@@ -54,7 +54,7 @@ Transfers the following dataset trees from CARC storage to Tucker:
 - `/scratch1/eibl/data/immigration_julia/`
 - `/scratch1/eibl/data/social_llm_covid/`
 
-Each dataset is copied into the matching destination under `/dataMeR2/phil/data/<dataset>/`.
+Each dataset is copied into the matching destination under `/dataMeR1/phil/data/<dataset>/`.
 
 Run:
 
@@ -67,7 +67,7 @@ bash scripts/transfer_files/transfer_selected_datasets_to_tucker.sh
 Transfers the `social_llm_data` directory from CARC project storage to Tucker:
 
 - source: `/project2/emiliofe_74/julie/social_llm_data`
-- destination: `/dataMeR2/phil/data/social_llm_data`
+- destination: `/dataMeR1/phil/data/social_llm_data`
 
 Run:
 

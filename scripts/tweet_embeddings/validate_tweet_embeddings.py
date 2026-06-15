@@ -14,7 +14,7 @@ import pyarrow.parquet as pq
 
 
 DEFAULT_OUTPUT_ROOT = (
-    "/dataMeR2/phil/data/ukr_rus_twitter/tweet_embeddings/"
+    "/dataMeR1/phil/data/ukr_rus_twitter/tweet_embeddings/"
     "gte-multilingual-base/version=v001"
 )
 

@@ -35,7 +35,7 @@ Bio selection policy:
 By default the script reads from:
 
 ```text
-/dataMeR2/phil/data/ukr_rus_twitter/parquet
+/dataMeR1/phil/data/ukr_rus_twitter/parquet
 ```
 
 It expects at least these parquet columns:
@@ -63,7 +63,7 @@ date
 By default the script reads from:
 
 ```text
-/dataMeR2/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001
+/dataMeR1/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001
 ```
 
 It expects these artifacts to exist under that root:
@@ -158,8 +158,8 @@ Run with explicit input and output roots:
 
 ```bash
 python scripts/graph_construction/generate_ukr_rus_retweet_graph_from_parquet.py \
-  --parquet-root /dataMeR2/phil/data/ukr_rus_twitter/parquet \
-  --bio-embeddings-root /dataMeR2/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
+  --parquet-root /dataMeR1/phil/data/ukr_rus_twitter/parquet \
+  --bio-embeddings-root /dataMeR1/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
   --out data/data/ukr_rus_twitter/graphs/retweet_graph_parquet.pt
 ```
 
@@ -188,8 +188,8 @@ This builder follows the same graph contract as the Ukraine/Russia and
 COVID-19 parquet builders, with defaults for the midterm corpus:
 
 ```text
-/dataMeR2/phil/data/midterm/parquet
-/dataMeR2/phil/data/midterm/bio_embeddings/gte-multilingual-base/version=v001
+/dataMeR1/phil/data/midterm/parquet
+/dataMeR1/phil/data/midterm/bio_embeddings/gte-multilingual-base/version=v001
 data/data/midterm/graphs/retweet_graph_parquet.pt
 ```
 
@@ -232,9 +232,9 @@ Build with explicit DuckDB settings:
 
 ```bash
 python scripts/graph_construction/generate_midterm_retweet_graph_from_parquet.py \
-  --parquet-root /dataMeR2/phil/data/midterm/parquet \
-  --bio-embeddings-root /dataMeR2/phil/data/midterm/bio_embeddings/gte-multilingual-base/version=v001 \
-  --out /dataMeR2/phil/data/midterm/graphs/retweet_graph_parquet.pt \
+  --parquet-root /dataMeR1/phil/data/midterm/parquet \
+  --bio-embeddings-root /dataMeR1/phil/data/midterm/bio_embeddings/gte-multilingual-base/version=v001 \
+  --out /dataMeR1/phil/data/midterm/graphs/retweet_graph_parquet.pt \
   --duckdb-threads 32 \
   --duckdb-memory-limit 200GB
 ```
@@ -259,10 +259,10 @@ Example:
 ```yaml
 inputs:
   - name: ukr_rus
-    path: /dataMeR2/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.pt
+    path: /dataMeR1/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.pt
   - name: covid
-    path: /dataMeR2/phil/data/covid19_twitter/graphs/retweet_graph_parquet.pt
-out: /dataMeR2/phil/data/social_llm/graphs/ukr_rus_covid_retweet_graph.pt
+    path: /dataMeR1/phil/data/covid19_twitter/graphs/retweet_graph_parquet.pt
+out: /dataMeR1/phil/data/social_llm/graphs/ukr_rus_covid_retweet_graph.pt
 ```
 
 Save that as:
@@ -297,12 +297,12 @@ Run the full build in `tmux`:
 
 ```bash
 tmux new -s ukr-rus-graph
-cd /dataMeR2/phil/gfm/prodigy
+cd /dataMeR1/phil/gfm/prodigy
 conda activate bio-embeddings-v001
 python scripts/graph_construction/generate_ukr_rus_retweet_graph_from_parquet.py \
-  --parquet-root /dataMeR2/phil/data/ukr_rus_twitter/parquet \
-  --bio-embeddings-root /dataMeR2/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
-  --out /dataMeR2/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.pt \
+  --parquet-root /dataMeR1/phil/data/ukr_rus_twitter/parquet \
+  --bio-embeddings-root /dataMeR1/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
+  --out /dataMeR1/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.pt \
   --duckdb-threads 32 \
   --duckdb-memory-limit 200GB
 ```
@@ -319,12 +319,12 @@ If you want a saved log as well:
 
 ```bash
 python scripts/graph_construction/generate_ukr_rus_retweet_graph_from_parquet.py \
-  --parquet-root /dataMeR2/phil/data/ukr_rus_twitter/parquet \
-  --bio-embeddings-root /dataMeR2/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
-  --out /dataMeR2/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.pt \
+  --parquet-root /dataMeR1/phil/data/ukr_rus_twitter/parquet \
+  --bio-embeddings-root /dataMeR1/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
+  --out /dataMeR1/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.pt \
   --duckdb-threads 32 \
   --duckdb-memory-limit 200GB \
-  2>&1 | tee /dataMeR2/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.log
+  2>&1 | tee /dataMeR1/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.log
 ```
 
 ### Main CLI Arguments

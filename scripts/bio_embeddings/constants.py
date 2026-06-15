@@ -8,7 +8,7 @@ from scripts.tweet_embeddings.constants import (
 )
 
 DEFAULT_OUTPUT_ROOT = (
-    "/dataMeR2/phil/data/ukr_rus_twitter/bio_embeddings/"
+    "/dataMeR1/phil/data/ukr_rus_twitter/bio_embeddings/"
     "gte-multilingual-base/version=v001"
 )
 

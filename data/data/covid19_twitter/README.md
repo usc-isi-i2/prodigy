@@ -22,8 +22,8 @@ To mirror the newer `ukr-rus` parquet pipeline, use the shared bio embedding sto
 ```bash
 cd /Users/philipp/projects/gfm/prodigy
 CUDA_VISIBLE_DEVICES=0,1,2,3 python -u scripts/bio_embeddings/embed_bios.py \
-  --input-root /dataMeR2/phil/data/covid19_twitter/parquet \
-  --output-root /dataMeR2/phil/data/covid19_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
+  --input-root /dataMeR1/phil/data/covid19_twitter/parquet \
+  --output-root /dataMeR1/phil/data/covid19_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
   --gpus 0,1,2,3 \
   --num-workers 4 \
   --batch-size 2048 \
@@ -35,8 +35,8 @@ Validate:
 
 ```bash
 python -u scripts/bio_embeddings/validate_bio_embeddings.py \
-  --output-root /dataMeR2/phil/data/covid19_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
-  --summary-json /dataMeR2/phil/data/covid19_twitter/bio_embeddings/gte-multilingual-base/version=v001/validation.json
+  --output-root /dataMeR1/phil/data/covid19_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
+  --summary-json /dataMeR1/phil/data/covid19_twitter/bio_embeddings/gte-multilingual-base/version=v001/validation.json
 ```
 
 The bio embedding store contains normalized distinct bios plus user-time provenance, matching the artifact contract already used by the `ukr-rus` parquet graph builder.
@@ -95,8 +95,8 @@ For the parquet-backed graph builder that mirrors the `ukr_rus_twitter/scripts` 
 
 ```bash
 python data/data/covid19_twitter/scripts/generate_retweet_graph_from_parquet.py \
-  --parquet-root /dataMeR2/phil/data/covid19_twitter/parquet \
-  --out /dataMeR2/phil/data/covid19_twitter/graphs/retweet_graph_parquet.pt
+  --parquet-root /dataMeR1/phil/data/covid19_twitter/parquet \
+  --out /dataMeR1/phil/data/covid19_twitter/graphs/retweet_graph_parquet.pt
 ```
 
 Graph artifact keys:
