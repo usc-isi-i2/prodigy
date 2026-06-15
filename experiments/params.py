@@ -240,6 +240,37 @@ def get_params():
 
     args.add_argument("-bert", "--bert_emb_model", default="multi-qa-distilbert-cos-v1")
     args.add_argument("-bert_cache", "--bert_cache", default="multi-qa-distilbert-cos-v1")
+    args.add_argument(
+        "--label_emb_model",
+        default="",
+        type=str,
+        help=(
+            "Optional sentence-transformer model used only for class label embeddings. "
+            "This is independent of --original_features, so graph node features can stay "
+            "precomputed while zero-shot classification labels use a matching text encoder."
+        ),
+    )
+    args.add_argument(
+        "--label_emb_revision",
+        default="",
+        type=str,
+        help="Optional model revision for --label_emb_model.",
+    )
+    args.add_argument(
+        "--label_emb_trust_remote_code",
+        default=True,
+        type=str2bool,
+        help="Passed to SentenceTransformer when --label_emb_model is set.",
+    )
+    args.add_argument(
+        "--label_emb_normalize",
+        default=True,
+        type=str2bool,
+        help=(
+            "If True, L2-normalize --label_emb_model outputs. Keep True for GTE "
+            "graph features generated with normalized embeddings."
+        ),
+    )
 
     args.add_argument("-kg_emb", "--kg_emb_model", default="", type=str)   #  "TransE", "ComplEx", etc.
     args.add_argument("-pretrained", "--pretrained_model_run", default="", type=str)

@@ -217,9 +217,23 @@ class TrainerFS():
             self.aux_loss.to(self.device)
 
         bert_model_name = self.parameter["bert_emb_model"]
-        # Twitter/midterm + numerical features does not need sentence embeddings and can
-        # run with random label embeddings in the dataloader.
-        if self.dataset_name in original_feature_graph_datasets and self.original_features:
+        label_emb_model_name = (self.parameter.get("label_emb_model") or "").strip()
+        if label_emb_model_name:
+            _log(
+                "Using label embedding model "
+                f"{label_emb_model_name!r} while preserving loaded node features."
+            )
+            self.Bert = SentenceEmb(
+                label_emb_model_name,
+                device=self.device,
+                cache_folder=os.path.join(self.parameter["root"], "sbert"),
+                revision=(self.parameter.get("label_emb_revision") or "").strip() or None,
+                trust_remote_code=self.parameter.get("label_emb_trust_remote_code", True),
+                normalize_embeddings=self.parameter.get("label_emb_normalize", True),
+            )
+        elif self.dataset_name in original_feature_graph_datasets and self.original_features:
+            # Twitter/midterm + original graph features does not need sentence
+            # embeddings unless --label_emb_model explicitly requests them.
             self.Bert = None
         else:
             self.Bert = SentenceEmb(
