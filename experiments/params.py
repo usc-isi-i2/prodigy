@@ -287,7 +287,7 @@ def get_params():
     args.add_argument("-pretrained", "--pretrained_model_run", default="", type=str)
     #  Name of WanDB run to pull the best model from.
 
-    args.add_argument("-n_hop", "--n_hop", default=2, type=int)  # number of hops for subgraph extraction
+    args.add_argument("-n_hop", "--n_hop", default=1, type=int)  # number of hops for subgraph extraction
     args.add_argument("--graph_filename", default="graph_data.pt", type=str)  # graph file to load from root
     args.add_argument(
         "--target_feature",
