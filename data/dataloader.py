@@ -221,7 +221,7 @@ class ContrastiveTask(TaskBase):
         return task
 
 class NeighborTask(TaskBase):
-    def __init__(self, neighbor_sampler, size, direction, sampling_strategy="strict"):
+    def __init__(self, neighbor_sampler, size, direction, sampling_strategy="strict", strata=None):
         self.neighbor_sampler = neighbor_sampler
         self.size = size
         self.direction = direction
@@ -231,30 +231,94 @@ class NeighborTask(TaskBase):
                 "Use 'strict' or 'replacement'."
             )
         self.sampling_strategy = sampling_strategy
+        self.strata = None
+        if strata is not None:
+            self.strata = [
+                [int(node_idx) for node_idx in stratum]
+                for stratum in strata
+                if len(stratum) > 0
+            ]
+            if not self.strata:
+                raise ValueError("NeighborTask strata must contain at least one non-empty stratum.")
 
-    def sample(self, num_label, num_member, num_shot, num_query, rng):
-        # Task is dict
-        # Key: center node (int)
-        # Value: list of nodes (list of int), list of nodes is the members of the task
+    @staticmethod
+    def _balanced_counts(total, num_groups):
+        base = total // num_groups
+        counts = [base] * num_groups
+        for i in range(total % num_groups):
+            counts[i] += 1
+        return counts
+
+    def _sample_center_members(self, center, num_member, rng):
+        node_idx = torch.ones(num_member * 10, dtype=torch.long) * center
+        node_idx = self.neighbor_sampler.random_walk(node_idx, self.direction)
+        if node_idx.numel() == 0:
+            return None
+        unique_node_idx = torch.unique(node_idx)
+        if unique_node_idx.size(0) >= num_member:
+            return unique_node_idx[:num_member].tolist()
+        if self.sampling_strategy == "replacement":
+            sampled = unique_node_idx.tolist()
+            while len(sampled) < num_member:
+                sampled.append(rng.choice(sampled))
+            return sampled[:num_member]
+        return None
+
+    def _sample_uniform(self, num_label, num_member, rng):
         task = {}
         while len(task) < num_label:
             center = rng.randrange(self.size)
             if center in task:
                 continue
-            node_idx = torch.ones(num_member * 10, dtype=torch.long) * center
-            node_idx = self.neighbor_sampler.random_walk(node_idx, self.direction)
-            if node_idx.numel() == 0:
-                continue
-            unique_node_idx = torch.unique(node_idx)
-            if unique_node_idx.size(0) >= num_member:
-                task[center] = unique_node_idx[:num_member].tolist()
-            elif self.sampling_strategy == "replacement":
-                sampled = unique_node_idx.tolist()
-                while len(sampled) < num_member:
-                    sampled.append(rng.choice(sampled))
-                task[center] = sampled[:num_member]
-
+            members = self._sample_center_members(center, num_member, rng)
+            if members is not None:
+                task[center] = members
         return task
+
+    def _sample_stratified(self, num_label, num_member, rng):
+        stratum_order = list(range(len(self.strata)))
+        rng.shuffle(stratum_order)
+        counts = self._balanced_counts(num_label, len(stratum_order))
+        task = {}
+        used = set()
+        max_attempts = max(1000, num_label * 1000)
+
+        for stratum_idx, count in zip(stratum_order, counts):
+            candidates = list(self.strata[stratum_idx])
+            attempts = 0
+            sampled_from_stratum = 0
+            while sampled_from_stratum < count and attempts < max_attempts:
+                attempts += 1
+                center = rng.choice(candidates)
+                if center in used:
+                    continue
+                members = self._sample_center_members(center, num_member, rng)
+                if members is None:
+                    continue
+                task[center] = members
+                used.add(center)
+                sampled_from_stratum += 1
+            if sampled_from_stratum < count:
+                raise RuntimeError(
+                    f"Could only sample {sampled_from_stratum} centers from neighbor stratum "
+                    f"{stratum_idx}, needed {count}. Try neighbor_sampling_strategy='replacement' "
+                    "or lower n_way."
+                )
+
+        if len(task) < num_label:
+            raise RuntimeError(
+                f"Could only sample {len(task)} stratified neighbor labels out of {num_label}. "
+                "Try neighbor_sampling_strategy='replacement' or lower n_way."
+            )
+        return task
+
+    def sample(self, num_label, num_member, num_shot, num_query, rng):
+        # Task is dict
+        # Key: center node (int)
+        # Value: list of nodes (list of int), list of nodes is the members of the task
+        if self.strata is not None:
+            return self._sample_stratified(num_label, num_member, rng)
+        return self._sample_uniform(num_label, num_member, rng)
 
 class KGNeighborTask(TaskBase):
     def __init__(self, dataset, neighbor_sampler, size, direction, is_multiway):

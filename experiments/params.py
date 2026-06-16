@@ -219,6 +219,15 @@ def get_params():
             "'strict' rejects the center; 'replacement' reuses sampled neighbors with replacement."
         ),
     )
+    args.add_argument(
+        "--neighbor_sampling_strata",
+        default="",
+        choices=["", "graph_id"],
+        help=(
+            "Optional strata used for neighbor-matching center-node sampling. "
+            "'graph_id' balances centers across disjoint merged source graphs."
+        ),
+    )
 
     args.add_argument("-way_u", "--n_way_upper", default=-1, type=int) # If defined, will set the upper bound for n_way
     args.add_argument("-shot_u", "--n_shots_upper", default=-1, type=int) # If defined, will set the upper bound for n_shots
