@@ -66,6 +66,9 @@ def _build_covid19_twitter_graph(raw: dict, **kwargs):
     graph.label_names = raw.get("label_names", [])
     graph.label_type = raw.get("label_type", "classification")
     graph.user_ids = raw.get("user_ids", [])
+    if "graph_id" in raw:
+        graph.graph_id = raw["graph_id"]
+    graph.source_graph_names = raw.get("source_graph_names", [])
     graph = _select_target_from_feature(
         graph,
         kwargs.get("target_feature", ""),
@@ -158,9 +161,30 @@ def get_covid19_twitter_dataloader(
     graph = dataset.graph
     task_name = kwargs.get("task_name", "neighbor_matching")
     if task_name == "neighbor_matching":
+        strata = None
+        if kwargs.get("neighbor_sampling_strata", "") == "graph_id":
+            if not hasattr(graph, "graph_id"):
+                raise ValueError("neighbor_sampling_strata='graph_id' requires graph.graph_id metadata.")
+            graph_ids = graph.graph_id.detach().cpu().numpy()
+            strata = [np.where(graph_ids == graph_id)[0].tolist() for graph_id in sorted(set(graph_ids.tolist()))]
+            source_names = list(getattr(graph, "source_graph_names", []))
+            if source_names:
+                summary = ", ".join(
+                    f"{source_names[i] if i < len(source_names) else i}:{len(stratum)}"
+                    for i, stratum in enumerate(strata)
+                )
+            else:
+                summary = ", ".join(f"{i}:{len(stratum)}" for i, stratum in enumerate(strata))
+            print(f"Neighbor sampling strata graph_id: {summary}", flush=True)
         sampler = BatchSampler(
             batch_count,
-            NeighborTask(dataset.neighbor_sampler, graph.num_nodes, "inout", kwargs.get("neighbor_sampling_strategy", "strict")),
+            NeighborTask(
+                dataset.neighbor_sampler,
+                graph.num_nodes,
+                "inout",
+                kwargs.get("neighbor_sampling_strategy", "strict"),
+                strata=strata,
+            ),
             ParamSampler(batch_size, n_way, n_shot, n_query, 1),
             seed=seed,
         )

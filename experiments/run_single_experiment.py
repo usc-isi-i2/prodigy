@@ -87,6 +87,8 @@ if __name__ == '__main__':
         edge_view=params["edge_view"],
         target_edge_view=params["target_edge_view"],
         edge_feature_subset=params["edge_feature_subset"],
+        neighbor_sampling_strategy=params["neighbor_sampling_strategy"],
+        neighbor_sampling_strata=params["neighbor_sampling_strata"],
         seed=params["seed"],
     )
 
