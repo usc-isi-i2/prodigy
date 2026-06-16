@@ -4,6 +4,7 @@ import sys
 import os
 import json
 import shlex
+from pathlib import Path
 import wandb
 import torch.optim as optim
 import time
@@ -20,6 +21,12 @@ from models.general_gnn import SingleLayerGeneralGNN
 from models.sentence_embedding import SentenceEmb
 from experiments.layers import get_module_list
 
+try:
+    import yaml
+except ImportError:  # pragma: no cover - depends on environment.
+    yaml = None
+
+
 def _to_float(v):
     if isinstance(v, torch.Tensor):
         if v.numel() == 1:
@@ -31,9 +38,71 @@ def _log(msg):
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
+def _config_safe_value(value):
+    if isinstance(value, torch.device):
+        return str(value)
+    if isinstance(value, Path):
+        return value.as_posix()
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    if isinstance(value, (list, tuple)):
+        return [_config_safe_value(item) for item in value]
+    if isinstance(value, dict):
+        return {str(key): _config_safe_value(item) for key, item in value.items()}
+    return str(value)
+
+
+def _write_yaml_config(path, payload):
+    with open(path, "w", encoding="utf-8") as handle:
+        if yaml is not None:
+            yaml.safe_dump(payload, handle, sort_keys=True)
+        else:
+            json.dump(payload, handle, indent=2, sort_keys=True)
+            handle.write("\n")
+
+
+def _save_config_to_wandb_files(parameter):
+    try:
+        generated_path = Path(wandb.run.dir) / "effective_config.yaml"
+        generated_payload = {
+            "params": {
+                str(key): _config_safe_value(value)
+                for key, value in sorted(parameter.items())
+            }
+        }
+        _write_yaml_config(generated_path, generated_payload)
+        wandb.save(generated_path.as_posix(), base_path=wandb.run.dir, policy="now")
+        wandb.run.summary["effective_config_file"] = generated_path.name
+        _log(f"Saved effective config YAML to W&B files: {generated_path}")
+    except Exception as exc:
+        _log(f"Could not save effective config YAML to W&B files: {exc}")
+
+    config_path = str(parameter.get("config") or "").strip()
+    if not config_path:
+        return
+    source = Path(config_path).expanduser()
+    if not source.is_absolute():
+        source = Path.cwd() / source
+    source = source.resolve()
+    if not source.is_file():
+        _log(f"Config file not found; skipping W&B file save: {source}")
+        return
+
+    try:
+        destination = Path(wandb.run.dir) / source.name
+        if source != destination.resolve():
+            shutil.copy2(source, destination)
+        wandb.save(destination.as_posix(), base_path=wandb.run.dir, policy="now")
+        wandb.run.summary["source_config_file"] = source.as_posix()
+        _log(f"Saved source config YAML to W&B files: {destination}")
+    except Exception as exc:
+        _log(f"Could not save source config YAML to W&B files: {exc}")
+
+
 class TrainerFS():
     def __init__(self, dataset, parameter):
         wandb.init(project="graph-clip", name=parameter["exp_name"], tags=parameter.get("tags") or None)
+        _save_config_to_wandb_files(parameter)
         #wandb.run.log_code(".")
         command = " ".join(shlex.quote(arg) for arg in [sys.executable, *sys.argv])
         _log("Command: " + command)
