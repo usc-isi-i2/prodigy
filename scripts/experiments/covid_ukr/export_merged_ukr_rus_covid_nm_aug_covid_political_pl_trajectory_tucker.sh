@@ -4,9 +4,24 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
-LOG_ROOT="${LOG_ROOT:-/dataMeR2/phil/gfm/prodigy/log}"
 OUT_DIR="${OUT_DIR:-${REPO_ROOT}/scripts/plotting/covid_political_pl_trajectory_aug}"
 RUN_GLOB="${RUN_GLOB:-eval_merged_ukr_rus_covid_nm_aug_15_06_2026_15_22_07_step*_to_covid_political_pl_3shot_*}"
+
+if [[ -z "${LOG_ROOT:-}" ]]; then
+  for candidate in \
+    /dataMeR1/phil/gfm/prodigy/log \
+    /dataMeR2/phil/gfm/prodigy/log \
+    "${REPO_ROOT}/log"
+  do
+    matches=("${candidate}"/${RUN_GLOB})
+    if [[ -e "${matches[0]}" ]]; then
+      LOG_ROOT="${candidate}"
+      break
+    fi
+  done
+fi
+
+LOG_ROOT="${LOG_ROOT:-/dataMeR1/phil/gfm/prodigy/log}"
 
 cmd=(
   python3 scripts/analysis/export_eval_results_csv.py
