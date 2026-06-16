@@ -5,15 +5,31 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
 RUN_DIR="${RUN_DIR:-/dataMeR1/phil/gfm/prodigy/state/merged_ukr_rus_covid_nm_aug_15_06_2026_15_22_07}"
+DATA_ROOT="${DATA_ROOT:-/dataMeR1/phil/data}"
+DATASETS="${DATASETS:-covid_political}"
+TASKS="${TASKS:-pl}"
+SHOTS="${SHOTS:-3}"
+GPUS="${GPUS:-}"
+CHECKPOINT_NAME_PREFIX="${CHECKPOINT_NAME_PREFIX:-}"
 
 cmd=(
   python3 scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py
   --checkpoint-run-dir "${RUN_DIR}"
-  --datasets covid_political
-  --tasks pl
-  --shots 3
-  "$@"
+  --data-root "${DATA_ROOT}"
+  --datasets "${DATASETS}"
+  --tasks "${TASKS}"
+  --shots "${SHOTS}"
 )
+
+if [[ -n "${GPUS}" ]]; then
+  cmd+=(--gpus "${GPUS}")
+fi
+
+if [[ -n "${CHECKPOINT_NAME_PREFIX}" ]]; then
+  cmd+=(--checkpoint-name-prefix "${CHECKPOINT_NAME_PREFIX}")
+fi
+
+cmd+=("$@")
 
 if [[ "${DRY_RUN:-0}" == "1" ]]; then
   printf 'DRY:'
