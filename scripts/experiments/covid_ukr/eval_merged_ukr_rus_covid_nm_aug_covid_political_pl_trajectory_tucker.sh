@@ -11,6 +11,9 @@ TASKS="${TASKS:-pl}"
 SHOTS="${SHOTS:-3}"
 GPUS="${GPUS:-}"
 CHECKPOINT_NAME_PREFIX="${CHECKPOINT_NAME_PREFIX:-}"
+EMB_DIM="${EMB_DIM:-512}"
+LAYERS="${LAYERS:-S2,U,M2}"
+MODEL_DROPOUT="${MODEL_DROPOUT:-0.1}"
 
 cmd=(
   python3 scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py
@@ -30,6 +33,12 @@ if [[ -n "${CHECKPOINT_NAME_PREFIX}" ]]; then
 fi
 
 cmd+=("$@")
+cmd+=(
+  --
+  --emb_dim "${EMB_DIM}"
+  --layers "${LAYERS}"
+  --dropout "${MODEL_DROPOUT}"
+)
 
 if [[ "${DRY_RUN:-0}" == "1" ]]; then
   printf 'DRY:'
