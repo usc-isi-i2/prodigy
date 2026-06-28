@@ -221,7 +221,8 @@ class ContrastiveTask(TaskBase):
         return task
 
 class NeighborTask(TaskBase):
-    def __init__(self, neighbor_sampler, size, direction, sampling_strategy="strict", strata=None):
+    def __init__(self, neighbor_sampler, size, direction, sampling_strategy="strict", strata=None,
+                 confine_to_single_stratum=False):
         self.neighbor_sampler = neighbor_sampler
         self.size = size
         self.direction = direction
@@ -240,6 +241,16 @@ class NeighborTask(TaskBase):
             ]
             if not self.strata:
                 raise ValueError("NeighborTask strata must contain at least one non-empty stratum.")
+        # When True, every episode is drawn entirely from ONE stratum (e.g. one merged
+        # source graph). The stratum is chosen proportional to its node count, so the
+        # per-node center marginal is identical to naive uniform sampling -- the only
+        # thing that changes is that an episode's negatives all share a source.
+        self.confine_to_single_stratum = bool(confine_to_single_stratum) and self.strata is not None
+        self.stratum_weights = None
+        if self.confine_to_single_stratum:
+            sizes = [len(stratum) for stratum in self.strata]
+            total = float(sum(sizes))
+            self.stratum_weights = [size / total for size in sizes]
 
     @staticmethod
     def _balanced_counts(total, num_groups):
@@ -312,10 +323,39 @@ class NeighborTask(TaskBase):
             )
         return task
 
+    def _sample_confined(self, num_label, num_member, rng):
+        # Pick ONE stratum (source) proportional to its size, then draw the whole
+        # episode from it so every center/negative shares a source.
+        stratum_idx = rng.choices(range(len(self.strata)), weights=self.stratum_weights, k=1)[0]
+        candidates = self.strata[stratum_idx]
+        task = {}
+        used = set()
+        max_attempts = max(1000, num_label * 1000)
+        attempts = 0
+        while len(task) < num_label and attempts < max_attempts:
+            attempts += 1
+            center = rng.choice(candidates)
+            if center in used:
+                continue
+            members = self._sample_center_members(center, num_member, rng)
+            if members is None:
+                continue
+            task[center] = members
+            used.add(center)
+        if len(task) < num_label:
+            raise RuntimeError(
+                f"Could only sample {len(task)} centers from single-source stratum {stratum_idx} "
+                f"({len(candidates)} nodes), needed {num_label}. Try "
+                "neighbor_sampling_strategy='replacement' or lower n_way."
+            )
+        return task
+
     def sample(self, num_label, num_member, num_shot, num_query, rng):
         # Task is dict
         # Key: center node (int)
         # Value: list of nodes (list of int), list of nodes is the members of the task
+        if self.confine_to_single_stratum:
+            return self._sample_confined(num_label, num_member, rng)
         if self.strata is not None:
             return self._sample_stratified(num_label, num_member, rng)
         return self._sample_uniform(num_label, num_member, rng)

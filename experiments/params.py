@@ -228,6 +228,17 @@ def get_params():
             "'graph_id' balances centers across disjoint merged source graphs."
         ),
     )
+    args.add_argument(
+        "--neighbor_sampling_episode_source",
+        default="",
+        choices=["", "graph_id"],
+        help=(
+            "If 'graph_id', confine every neighbor-matching episode to a SINGLE merged "
+            "source graph (source picked proportional to its node count, so the per-node "
+            "center marginal matches naive proportional sampling). Removes cross-source "
+            "negatives so the model cannot exploit a source-discrimination shortcut."
+        ),
+    )
 
     args.add_argument("-way_u", "--n_way_upper", default=-1, type=int) # If defined, will set the upper bound for n_way
     args.add_argument("-shot_u", "--n_shots_upper", default=-1, type=int) # If defined, will set the upper bound for n_shots

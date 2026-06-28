@@ -162,11 +162,18 @@ def get_covid19_twitter_dataloader(
     task_name = kwargs.get("task_name", "neighbor_matching")
     if task_name == "neighbor_matching":
         strata = None
-        if kwargs.get("neighbor_sampling_strata", "") == "graph_id":
+        confine_to_single_stratum = False
+        # Two graph_id-based modes (mutually exclusive in practice):
+        #   neighbor_sampling_strata="graph_id"          -> balance sources WITHIN each episode
+        #   neighbor_sampling_episode_source="graph_id"  -> confine each episode to ONE source
+        strata_mode = kwargs.get("neighbor_sampling_strata", "")
+        episode_source = kwargs.get("neighbor_sampling_episode_source", "")
+        if strata_mode == "graph_id" or episode_source == "graph_id":
             if not hasattr(graph, "graph_id"):
-                raise ValueError("neighbor_sampling_strata='graph_id' requires graph.graph_id metadata.")
+                raise ValueError("graph_id neighbor sampling requires graph.graph_id metadata.")
             graph_ids = graph.graph_id.detach().cpu().numpy()
             strata = [np.where(graph_ids == graph_id)[0].tolist() for graph_id in sorted(set(graph_ids.tolist()))]
+            confine_to_single_stratum = episode_source == "graph_id"
             source_names = list(getattr(graph, "source_graph_names", []))
             if source_names:
                 summary = ", ".join(
@@ -175,7 +182,8 @@ def get_covid19_twitter_dataloader(
                 )
             else:
                 summary = ", ".join(f"{i}:{len(stratum)}" for i, stratum in enumerate(strata))
-            print(f"Neighbor sampling strata graph_id: {summary}", flush=True)
+            mode = "confine-to-one-source" if confine_to_single_stratum else "balance-within-episode"
+            print(f"Neighbor sampling graph_id strata ({mode}): {summary}", flush=True)
         sampler = BatchSampler(
             batch_count,
             NeighborTask(
@@ -184,6 +192,7 @@ def get_covid19_twitter_dataloader(
                 "inout",
                 kwargs.get("neighbor_sampling_strategy", "strict"),
                 strata=strata,
+                confine_to_single_stratum=confine_to_single_stratum,
             ),
             ParamSampler(batch_size, n_way, n_shot, n_query, 1),
             seed=seed,

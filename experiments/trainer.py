@@ -411,6 +411,8 @@ class TrainerFS():
         kwargs["target_edge_view"] = self.parameter["target_edge_view"]
         kwargs["edge_feature_subset"] = self.parameter["edge_feature_subset"]
         kwargs["neighbor_sampling_strategy"] = self.parameter["neighbor_sampling_strategy"]
+        kwargs["neighbor_sampling_strata"] = self.parameter.get("neighbor_sampling_strata", "")
+        kwargs["neighbor_sampling_episode_source"] = self.parameter.get("neighbor_sampling_episode_source", "")
         kwargs["label_emb_texts"] = self.parameter.get("label_emb_texts", "")
         kwargs["midterm_lp_neg_ratio"] = self.parameter.get("midterm_lp_neg_ratio", 1)
         if self.parameter["all_test"]:
