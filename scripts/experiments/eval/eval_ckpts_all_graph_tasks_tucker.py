@@ -68,6 +68,16 @@ DATASETS = {
         val_cap=500,
         test_cap=500,
     ),
+    "merged_ukr_rus_covid": DatasetConfig(
+        name="merged_ukr_rus_covid",
+        root_name="merged",
+        graph_filename="ukr_rus_covid_retweet_graph.pt",
+        supports_lp=False,
+        nm_n_query=12,
+        pl_n_query=12,
+        val_cap=500,
+        test_cap=500,
+    ),
     "covid_political": DatasetConfig(
         name="covid_political",
         root_name="covid_political",
