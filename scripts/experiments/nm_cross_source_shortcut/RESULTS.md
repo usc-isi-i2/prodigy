@@ -12,12 +12,21 @@ neighborhood structure. Confining each episode to one source removes the shortcu
 
 ## Comparison (3-shot, 30-way)
 
+Accuracy (most discriminative; f1 ≈ accuracy for balanced episodes):
+```
+regime                  test:ukr   test:covid
+single ukr               0.5151     0.6142
+single covid             0.4589     0.6641
+merged proportional      0.4888     0.6536
+merged within-source     0.5077     0.6666   <- best or tied on both
+```
+AUC (same ordering, near ceiling):
 ```
 regime                  test:ukr   test:covid
 single ukr               0.9497     0.9741
 single covid             0.9245     0.9815
 merged proportional      0.9411     0.9801
-merged within-source     0.9468     0.9819   <- best or tied on both
+merged within-source     0.9468     0.9819
 ```
 
 ## Comparison (3-shot, 3-way, near ceiling)
@@ -34,8 +43,9 @@ merged within-source     0.9620     0.9912   <- best or tied on both
 
 Within-source episodes beat the proportional merged baseline on **both** domains and
 match/exceed the best single-source model on each — directionally exactly what the
-cross-source-shortcut hypothesis predicts. Effect (30-way): **+0.006 on test:ukr,
-+0.002 on test:covid**.
+cross-source-shortcut hypothesis predicts. Effect (30-way): **+0.019 acc on test:ukr,
++0.013 acc on test:covid** (AUC: +0.006 / +0.002 — smaller because AUC is near the
+ceiling; accuracy is the more discriminative metric here).
 
 **But the effect is small and not yet significant:**
 - 1 seed; deltas are ~0.002–0.006 AUC.

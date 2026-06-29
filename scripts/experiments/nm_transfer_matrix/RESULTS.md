@@ -8,7 +8,22 @@ Checkpoints: single-source step 50000, merged step 90000 (runs stopped short of 
 > accuracy collapses to chance and `roc_auc ≈ 0.5` — this made an earlier eval look
 > like every model was random. It was an eval artifact, not a training failure.
 
-## AUC (3-shot, 30-way) — the discriminative view
+## Accuracy (3-shot, 30-way) — most discriminative, full 3x3
+
+```
+train\test   ukr     covid   merged
+ukr          0.5151  0.6142  0.6156
+covid        0.4589  0.6641  0.6238
+merged       0.4888  0.6536  0.6872
+```
+- test ukr:   merged 0.4888 vs single-covid 0.4589 (**+0.030**)
+- test covid: merged 0.6536 vs single-ukr 0.6142 (**+0.039**)
+- merged is also best in-domain on its own (mixed) test (0.6872).
+
+f1 is within ~0.0002 of accuracy everywhere (balanced n-way episodes), so it adds
+nothing beyond accuracy; omitted here. Use `--metric all` to print all three.
+
+## AUC (3-shot, 30-way) — same ordering, near ceiling (less discriminative)
 
 ```
 train\test    ukr       covid
@@ -31,10 +46,10 @@ merged       0.9567    0.9897
 **The original "single-source beats merged cross-domain" inversion does NOT
 reproduce** under a fair comparison (identical plain architecture, no augmentation,
 matched per-domain episode budget, correct 3-shot eval). On both cross-domain cells,
-**merged ≥ single-source**:
+**merged ≥ single-source** — clearest in accuracy:
 
-- test covid: merged 0.9801 vs single-ukr 0.9741 (**+0.006**)
-- test ukr:   merged 0.9411 vs single-covid 0.9245 (**+0.017**)
+- test covid: merged 0.654 vs single-ukr 0.614 acc (**+0.039**) / 0.980 vs 0.974 AUC
+- test ukr:   merged 0.489 vs single-covid 0.459 acc (**+0.030**) / 0.941 vs 0.925 AUC
 
 The original effect was almost certainly an artifact of (a) comparing against an
 *augmented, larger-architecture* merged model rather than a matched one, and/or
