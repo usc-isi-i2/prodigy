@@ -39,10 +39,11 @@ def step_of(p: Path) -> int:
     return int(m.group(1)) if m else -1
 
 
-def latest_auc(run_dir: Path):
+def latest_metric(run_dir: Path, metric: str):
+    key = f"test_{metric}"
     for p in sorted((run_dir / "data").glob("metrics_test*.json"), key=step_of, reverse=True):
         try:
-            v = json.loads(p.read_text()).get("test_roc_auc")
+            v = json.loads(p.read_text()).get(key)
         except (OSError, json.JSONDecodeError):
             continue
         if v is not None:
@@ -50,7 +51,7 @@ def latest_auc(run_dir: Path):
     return None
 
 
-def collect(log_root: Path, shots: str = "3", nway: str = "30"):
+def collect(log_root: Path, shots: str = "3", nway: str = "30", metric: str = "roc_auc"):
     cells = {}
     for run_dir in sorted(log_root.glob(f"eval_*_to_*_nm_{shots}shot_{nway}way*")):
         if not run_dir.is_dir():
@@ -58,24 +59,15 @@ def collect(log_root: Path, shots: str = "3", nway: str = "30"):
         m = RUN_RE.match(run_dir.name)
         if not m or m["model"] not in MODELS or m["dataset"] not in DATASETS:
             continue
-        auc = latest_auc(run_dir)
-        if auc is not None:
-            cells[(m["model"], m["dataset"])] = auc
+        v = latest_metric(run_dir, metric)
+        if v is not None:
+            cells[(m["model"], m["dataset"])] = v
     return cells
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--log-root", default="log")
-    ap.add_argument("--shots", default="3", help="Which n_shot eval to read (NM is degenerate at 0-shot).")
-    ap.add_argument("--n-way", default="30", help="Which n_way eval to read (3-way is near-ceiling; 30 is discriminative).")
-    args = ap.parse_args()
-
-    cells = collect(Path(args.log_root), args.shots, args.n_way)
-    if not cells:
-        raise SystemExit(f"No matching eval dirs under {args.log_root}")
-
+def report(cells, metric: str) -> None:
     dcols = list(DATASETS)
+    print(f"\n=== {metric} ===")
     print(f"{'regime':<24}" + "".join(f"{DATASETS[d]:>14}" for d in dcols))
     print("-" * (24 + 14 * len(dcols)))
     for model, label in MODELS.items():
@@ -87,7 +79,6 @@ def main() -> int:
 
     # Verdict: on each TEST domain, does within-source beat proportional and
     # approach the single-source ceiling? (cross-domain is the telling case)
-    print()
     pairs = [("covid19_twitter", "nm_matrix_ukr", "test covid (single=ukr-trained)"),
              ("ukr_rus_twitter", "nm_matrix_covid", "test ukr (single=covid-trained)")]
     for dset, single_model, desc in pairs:
@@ -96,11 +87,33 @@ def main() -> int:
         single = cells.get((single_model, dset))
         if prop is None or within is None:
             continue
-        msg = f"{desc}: proportional={prop:.4f}  within-source={within:.4f}  (Δ={within - prop:+.4f})"
+        msg = f"  {desc}: proportional={prop:.4f}  within-source={within:.4f}  (Δ={within - prop:+.4f})"
         if single is not None:
             msg += f"  single-ceiling={single:.4f}"
         verdict = "shortcut SUPPORTED" if within > prop else "no improvement"
         print(f"{msg} -> {verdict}")
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--log-root", default="log")
+    ap.add_argument("--shots", default="3", help="Which n_shot eval to read (NM is degenerate at 0-shot).")
+    ap.add_argument("--n-way", default="30", help="Which n_way eval to read (3-way is near-ceiling; 30 is discriminative).")
+    ap.add_argument("--metric", default="all", choices=["roc_auc", "accuracy", "f1", "all"],
+                    help="Which test metric(s) to report (default: all three).")
+    args = ap.parse_args()
+
+    metrics = ["roc_auc", "accuracy", "f1"] if args.metric == "all" else [args.metric]
+    found = False
+    for metric in metrics:
+        cells = collect(Path(args.log_root), args.shots, args.n_way, metric)
+        if not cells:
+            print(f"[warn] no eval dirs with test_{metric}")
+            continue
+        found = True
+        report(cells, metric)
+    if not found:
+        raise SystemExit(f"No matching eval dirs under {args.log_root}")
     return 0
 
 
