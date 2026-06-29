@@ -58,9 +58,9 @@ def latest_test_auc(run_dir: Path) -> float | None:
     return None
 
 
-def collect(log_root: Path) -> dict[tuple[str, str], float]:
+def collect(log_root: Path, shots: str = "3") -> dict[tuple[str, str], float]:
     cells: dict[tuple[str, str], float] = {}
-    for run_dir in sorted(log_root.glob("eval_nm_matrix_*_to_*_nm_*shot*")):
+    for run_dir in sorted(log_root.glob(f"eval_nm_matrix_*_to_*_nm_{shots}shot*")):
         if not run_dir.is_dir():
             continue
         m = RUN_RE.match(run_dir.name)
@@ -89,13 +89,14 @@ def main() -> int:
         help="Directory holding eval_* run dirs (default: ./log).",
     )
     ap.add_argument("--out-csv", default=None, help="Optional path to write the matrix CSV.")
+    ap.add_argument("--shots", default="3", help="Which n_shot eval to read (NM is degenerate at 0-shot).")
     args = ap.parse_args()
 
     log_root = Path(args.log_root)
     if not log_root.is_dir():
         raise SystemExit(f"log-root not found: {log_root}")
 
-    cells = collect(log_root)
+    cells = collect(log_root, args.shots)
     if not cells:
         raise SystemExit(f"No NM transfer-matrix eval dirs found under {log_root}")
 

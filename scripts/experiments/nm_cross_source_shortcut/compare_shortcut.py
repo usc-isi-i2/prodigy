@@ -50,9 +50,9 @@ def latest_auc(run_dir: Path):
     return None
 
 
-def collect(log_root: Path):
+def collect(log_root: Path, shots: str = "3"):
     cells = {}
-    for run_dir in sorted(log_root.glob("eval_*_to_*_nm_*shot*")):
+    for run_dir in sorted(log_root.glob(f"eval_*_to_*_nm_{shots}shot*")):
         if not run_dir.is_dir():
             continue
         m = RUN_RE.match(run_dir.name)
@@ -67,9 +67,10 @@ def collect(log_root: Path):
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--log-root", default="log")
+    ap.add_argument("--shots", default="3", help="Which n_shot eval to read (NM is degenerate at 0-shot).")
     args = ap.parse_args()
 
-    cells = collect(Path(args.log_root))
+    cells = collect(Path(args.log_root), args.shots)
     if not cells:
         raise SystemExit(f"No matching eval dirs under {args.log_root}")
 

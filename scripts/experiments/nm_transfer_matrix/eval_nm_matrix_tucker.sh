@@ -17,5 +17,5 @@ python3 scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py \
   --model-list "${SCRIPT_DIR}/model_list.txt" \
   --datasets ukr_rus_twitter,covid19_twitter,merged_ukr_rus_covid \
   --tasks nm \
-  --shots 0 \
+  --shots 3 \
   "$@"
