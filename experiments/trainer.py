@@ -451,7 +451,8 @@ class TrainerFS():
             from data.ukr_rus_twitter import get_ukr_rus_twitter_dataloader
             kwargs["root"] = self.parameter["root"]
             get_dataloader = get_ukr_rus_twitter_dataloader
-        elif dataset_name == "covid19_twitter":
+        elif dataset_name in {"covid19_twitter", "merged_ukr_rus_covid"}:
+            # merged graph reuses the covid19_twitter dataloader (same dict format).
             from data.covid19_twitter import get_covid19_twitter_dataloader
             kwargs["root"] = self.parameter["root"]
             get_dataloader = get_covid19_twitter_dataloader

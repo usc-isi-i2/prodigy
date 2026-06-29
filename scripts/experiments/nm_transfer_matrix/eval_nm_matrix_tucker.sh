@@ -18,4 +18,5 @@ python3 scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py \
   --datasets ukr_rus_twitter,covid19_twitter,merged_ukr_rus_covid \
   --tasks nm \
   --shots 3 \
+  --nm-n-way 30 \
   "$@"

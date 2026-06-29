@@ -306,11 +306,13 @@ def build_command(
     tag = task_tag(task)
     prefix = f"eval_{model_name}_to_{dataset.name}_{tag}_{shots}shot"
     if task == "neighbor_matching":
+        # encode n_way so 3-way and 30-way evals don't collide in the same run dir
+        prefix = f"{prefix}_{args.nm_n_way}way"
         extra = [
             "--task_name",
             "neighbor_matching",
             "--n_way",
-            "3",
+            str(args.nm_n_way),
             "--n_shots",
             shots,
             "--n_query",
@@ -507,6 +509,9 @@ def main() -> int:
     parser.add_argument("--epochs", type=int, default=12)
     parser.add_argument("--eval-step", type=int, default=2000)
     parser.add_argument("--checkpoint-step", type=int, default=2000)
+    parser.add_argument("--nm-n-way", type=int, default=3,
+                        help="N-way for NM eval episodes. 3-way 3-shot is near-ceiling; "
+                             "use 30 for a more discriminative comparison.")
     parser.add_argument("--nm-dataset-len-cap", type=int, default=5000)
     parser.add_argument("--lp-dataset-len-cap", type=int, default=2500)
     parser.add_argument("--pl-dataset-len-cap", type=int, default=2000)
