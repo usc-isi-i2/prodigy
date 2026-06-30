@@ -11,6 +11,17 @@ seed 0, **1 seed only**. Accuracy shown (most discriminative; AUC saturates ~0.9
 | 1. ukr / covid (balanced-ish: ukr ≈ 31% of merge) | ukr_rus + covid | [nm_transfer_matrix](nm_transfer_matrix/RESULTS.md), [nm_cross_source_shortcut](nm_cross_source_shortcut/RESULTS.md) |
 | 2. covid / midterm (extreme: midterm ≈ 1.5% of merge) | covid + midterm | [nm_covid_midterm](nm_covid_midterm/RESULTS.md) |
 
+### `@match` vs `@full` (compute axis)
+
+Single-source runs train 60k steps; merged runs train 120k. So we report merged at
+two checkpoints:
+- **`@match`** — same step count as single-source (final ≈ 50k) → *matched total compute*.
+- **`@full`** — merged's final (≈ 110k) → *matched per-domain exposure* (~2× compute).
+
+Experiment 2 evaluates both. Experiment 1 (below) used a single late checkpoint (no
+`@match`/`@full` split — that methodology was added for Exp 2), so treat its merged
+rows as roughly `@full`.
+
 ## Experiment 1 — ukr / covid (30-way, 3-shot, accuracy)
 
 ```
@@ -27,22 +38,28 @@ merged within-source     0.5077     0.6666
 - **Within-source helps, marginally:** beats naive merged on both domains (+0.019 ukr,
   +0.013 covid) and matches/edges the best single-source model. Small (~1–2 pts).
 
-## Experiment 2 — covid / midterm (30-way, 3-shot, accuracy, @full = per-domain exposure)
+## Experiment 2 — covid / midterm (30-way, 3-shot, accuracy)
+
+Both compute points shown. `—` = not applicable (single-source has only its 50k run).
 
 ```
-train \ test            test:midterm   test:covid
-single midterm           0.4171         0.3183
-single covid             0.3176         0.6616
-merged-naive             0.3285         0.6728
-merged-within            0.3373         0.6724
-merged-within-balanced   0.4269         0.6511
+                         test:midterm        test:covid
+train                    @match   @full      @match   @full
+single midterm           0.4171    —          0.3183    —
+single covid             0.3176    —          0.6616    —
+merged-naive             0.3137  0.3285       0.6626  0.6728
+merged-within            0.3269  0.3373       0.6617  0.6724
+merged-within-balanced   0.4048  0.4269       0.6377  0.6511
 ```
-- **Big domain (covid):** replicates Exp 1 — merged ≥ single (0.673 vs 0.662).
-- **Small domain (midterm):** naive merged **collapses** (0.329 vs single 0.417) —
-  but this is an **exposure artifact** (midterm is ~1.5% of the merge, so naive/
-  proportional sampling barely trains on it), not a real merged deficit.
-- **Balanced within-source rescues it:** 0.427 on midterm, *above* single-midterm
-  (0.417), for a small covid cost (−0.02). Equal episode share fixes the starvation.
+- **Big domain (covid):** replicates Exp 1. At matched compute merged-naive ties single
+  (0.663 vs 0.662); at full it slightly beats (0.673).
+- **Small domain (midterm):** naive merged **collapses** (0.31–0.33 vs single 0.417) at
+  both compute points — an **exposure artifact** (midterm is ~1.5% of the merge), not a
+  real merged deficit. Proportional within-source barely helps.
+- **Balanced within-source rescues it:** 0.405 @match (recovers most of the gap to
+  single's 0.417) and **0.427 @full — above single-midterm** — for a small covid cost
+  (−0.02). The *beats-single* win needs the full exposure budget; at matched compute it
+  recovers but doesn't exceed single.
 
 ## Unified conclusions
 
