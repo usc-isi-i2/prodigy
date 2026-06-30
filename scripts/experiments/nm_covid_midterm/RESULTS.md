@@ -92,4 +92,8 @@ cat model_list.txt
 ./eval_tucker.sh --device 0 --continue-on-error                   # 3-shot, 30-way; 8 models x 3 test sets
 python3 build_matrix.py --log-root /dataMeR1/phil/gfm/prodigy/log \
   --shots 3 --n-way 30 --metric all --out-csv matrix.csv
+
+# figures (grouped bars, @match vs @full) -> results_<metric>.png
+python3 plot_results.py --csv matrix.csv --metric accuracy
+python3 plot_results.py --csv matrix.csv --metric roc_auc
 ```
