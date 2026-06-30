@@ -27,14 +27,16 @@ RUN_RE = re.compile(
 MODEL_LABELS = {
     "nm_matrix_ukr": "ukr",
     "nm_matrix_covid": "covid",
-    "nm_matrix_merged": "merged",
+    "nm_matrix_merged_match": "merged @match",
+    "nm_matrix_merged_full": "merged @full",
+    "nm_matrix_merged": "merged",  # fallback (single-checkpoint runs)
 }
 DATASET_LABELS = {
     "ukr_rus_twitter": "ukr",
     "covid19_twitter": "covid",
     "merged_ukr_rus_covid": "merged",
 }
-ROW_ORDER = ["ukr", "covid", "merged"]
+ROW_ORDER = ["ukr", "covid", "merged @match", "merged @full", "merged"]
 COL_ORDER = ["ukr", "covid", "merged"]
 
 
@@ -127,13 +129,17 @@ def main() -> int:
                 if cell(r, c) is not None:
                     csv_rows.append([metric, r, c, f"{cell(r, c):.6f}"])
 
-        # Highlight the inversion of interest (single vs merged, cross-domain)
+        # Highlight the inversion of interest (single vs merged, cross-domain).
+        # Check whichever merged rows are present (@match / @full / plain).
+        merged_rows = [m for m in ("merged @match", "merged @full", "merged") if any(k[0] == m for k in cells)]
         for tgt, single in (("covid", "ukr"), ("ukr", "covid")):
-            s, mg = cell(single, tgt), cell("merged", tgt)
-            if s is not None and mg is not None:
-                verdict = "INVERSION reproduced" if s > mg else "no inversion"
-                print(f"  test={tgt}: single({single})={s:.4f} vs merged={mg:.4f} "
-                      f"(Δ={s - mg:+.4f}) -> {verdict}")
+            s = cell(single, tgt)
+            for mrow in merged_rows:
+                mg = cell(mrow, tgt)
+                if s is not None and mg is not None:
+                    verdict = "INVERSION reproduced" if s > mg else "no inversion"
+                    print(f"  test={tgt}: single({single})={s:.4f} vs {mrow}={mg:.4f} "
+                          f"(Δ={s - mg:+.4f}) -> {verdict}")
 
     if args.out_csv and csv_rows:
         out = Path(args.out_csv)

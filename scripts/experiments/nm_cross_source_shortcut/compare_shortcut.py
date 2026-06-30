@@ -23,10 +23,16 @@ import json
 import re
 from pathlib import Path
 
-# model run-name -> display label
+# model run-name -> display label. Merged models appear at two checkpoints:
+# @match (matched total compute) and @full (per-domain exposure).
 MODELS = {
     "nm_matrix_ukr": "single ukr",
     "nm_matrix_covid": "single covid",
+    "nm_matrix_merged_match": "merged proportional @match",
+    "nm_matrix_merged_full": "merged proportional @full",
+    "nm_xsrc_within_source_match": "merged within-source @match",
+    "nm_xsrc_within_source_full": "merged within-source @full",
+    # fallbacks (single-checkpoint runs)
     "nm_matrix_merged": "merged proportional",
     "nm_xsrc_within_source": "merged within-source",
 }
@@ -68,30 +74,37 @@ def collect(log_root: Path, shots: str = "3", nway: str = "30", metric: str = "r
 def report(cells, metric: str) -> None:
     dcols = list(DATASETS)
     print(f"\n=== {metric} ===")
-    print(f"{'regime':<24}" + "".join(f"{DATASETS[d]:>14}" for d in dcols))
-    print("-" * (24 + 14 * len(dcols)))
+    print(f"{'regime':<30}" + "".join(f"{DATASETS[d]:>14}" for d in dcols))
+    print("-" * (30 + 14 * len(dcols)))
     for model, label in MODELS.items():
-        row = f"{label:<24}"
+        if not any((model, d) in cells for d in dcols):
+            continue
+        row = f"{label:<30}"
         for d in dcols:
             v = cells.get((model, d))
             row += f"{v:>14.4f}" if v is not None else f"{'-':>14}"
         print(row)
 
-    # Verdict: on each TEST domain, does within-source beat proportional and
-    # approach the single-source ceiling? (cross-domain is the telling case)
+    # Verdict: on each TEST domain, does within-source beat proportional, at each
+    # compute level (@match / @full)? (cross-domain is the telling case)
     pairs = [("covid19_twitter", "nm_matrix_ukr", "test covid (single=ukr-trained)"),
              ("ukr_rus_twitter", "nm_matrix_covid", "test ukr (single=covid-trained)")]
     for dset, single_model, desc in pairs:
-        prop = cells.get(("nm_matrix_merged", dset))
-        within = cells.get(("nm_xsrc_within_source", dset))
         single = cells.get((single_model, dset))
-        if prop is None or within is None:
-            continue
-        msg = f"  {desc}: proportional={prop:.4f}  within-source={within:.4f}  (Δ={within - prop:+.4f})"
-        if single is not None:
-            msg += f"  single-ceiling={single:.4f}"
-        verdict = "shortcut SUPPORTED" if within > prop else "no improvement"
-        print(f"{msg} -> {verdict}")
+        for suffix in ("_match", "_full"):
+            prop = cells.get((f"nm_matrix_merged{suffix}", dset))
+            within = cells.get((f"nm_xsrc_within_source{suffix}", dset))
+            if prop is None or within is None:
+                # fall back to single-checkpoint names
+                prop = prop if prop is not None else cells.get(("nm_matrix_merged", dset))
+                within = within if within is not None else cells.get(("nm_xsrc_within_source", dset))
+                if prop is None or within is None:
+                    continue
+            tag = suffix.lstrip("_")
+            msg = f"  {desc} @{tag}: proportional={prop:.4f}  within-source={within:.4f}  (Δ={within - prop:+.4f})"
+            if single is not None:
+                msg += f"  single-ceiling={single:.4f}"
+            print(f"{msg} -> {'shortcut SUPPORTED' if within > prop else 'no improvement'}")
 
 
 def main() -> int:
