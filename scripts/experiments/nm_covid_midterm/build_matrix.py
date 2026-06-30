@@ -19,9 +19,19 @@ from pathlib import Path
 
 RUN_RE = re.compile(r"^eval_(?P<model>.+?)_to_(?P<dataset>.+?)_nm_(?P<shots>\d+)shot_(?P<nway>\d+)way(?:_.*)?$")
 
+# Merged models are evaluated at two checkpoints: @match (same step count as the
+# single-source runs = matched total compute) and @full (final = matched per-domain
+# exposure). Single-source models exist only at their final step.
 MODEL_LABELS = {
     "nm_cm_midterm": "midterm",
     "nm_cm_covid": "covid",
+    "nm_cm_merged_match": "merged-naive @match",
+    "nm_cm_merged_full": "merged-naive @full",
+    "nm_cm_within_match": "merged-within @match",
+    "nm_cm_within_full": "merged-within @full",
+    "nm_cm_within_balanced_match": "merged-within-bal @match",
+    "nm_cm_within_balanced_full": "merged-within-bal @full",
+    # fall back to single-checkpoint names if make_model_list wasn't used
     "nm_cm_merged": "merged-naive",
     "nm_cm_within": "merged-within",
     "nm_cm_within_balanced": "merged-within-balanced",
@@ -31,7 +41,13 @@ DATASET_LABELS = {
     "covid19_twitter": "covid",
     "merged_covid_midterm": "merged",
 }
-ROW_ORDER = ["midterm", "covid", "merged-naive", "merged-within", "merged-within-balanced"]
+ROW_ORDER = [
+    "midterm", "covid",
+    "merged-naive @match", "merged-naive @full",
+    "merged-within @match", "merged-within @full",
+    "merged-within-bal @match", "merged-within-bal @full",
+    "merged-naive", "merged-within", "merged-within-balanced",
+]
 COL_ORDER = ["midterm", "covid", "merged"]
 
 

@@ -64,4 +64,18 @@ python3 build_matrix.py --log-root /dataMeR1/phil/gfm/prodigy/log \
 `build_matrix.py` prints accuracy, f1, and AUC tables (train rows × test cols:
 midterm / covid / merged). Reuse `--metric accuracy` etc. for a single table.
 
+### Fair compute: merged evaluated at two checkpoints
+
+Single-source runs train 60k steps; merged runs train 120k. To compare fairly,
+`make_model_list.sh` emits **two** checkpoints per merged model, so each appears as
+two rows:
+- **`@match`** — same step count as the single-source runs → *matched total compute*
+  (the apples-to-apples comparison: merged@match vs single).
+- **`@full`** — the merged model's final checkpoint → *matched per-domain exposure*
+  (2× compute, but each domain seen ~as often as in its single-source run).
+
+(Because the checkpoint cadence is 0-indexed, the single-source final lands at ~50k
+and the merged final at ~110k; `@match` uses whatever the single-source final step
+actually is, so the two sides always have identical step counts.)
+
 > Reminder: NM is degenerate at 0-shot (chance / AUC≈0.5) — always eval at shots ≥ 3.
