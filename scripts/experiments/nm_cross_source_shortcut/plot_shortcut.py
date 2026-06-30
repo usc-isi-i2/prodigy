@@ -25,7 +25,8 @@ SERIES = [
     ("merged proportional", "merged-naive", "#2a78d6"),
     ("merged within-source", "merged-within", "#1baf7a"),
 ]
-TESTS = [("test:ukr", "test: ukr"), ("test:covid", "test: covid")]
+TESTS = [("test:ukr", "test: ukr"), ("test:covid", "test: covid"),
+         ("test:midterm*", "test: midterm (held-out)")]
 SINGLE_BY_TEST = {"test:ukr": "single ukr", "test:covid": "single covid"}
 
 
@@ -47,10 +48,11 @@ def plot_panel(ax, cells, metric, suffix, title):
     import numpy as np
     x = np.arange(len(TESTS)); n = len(SERIES); width = 0.8 / n
     for i, (base, label, colour) in enumerate(SERIES):
-        vals = [value(cells, metric, base, suffix, t) or 0.0 for t, _ in TESTS]
+        raw = [value(cells, metric, base, suffix, t) for t, _ in TESTS]
+        vals = [v if v is not None else 0.0 for v in raw]
         bars = ax.bar(x + (i - (n - 1) / 2) * width, vals, width, label=label, color=colour)
-        for b, v in zip(bars, vals):
-            if v:
+        for b, v in zip(bars, raw):
+            if v is not None:  # skip held-out cells with no in-domain single
                 ax.text(b.get_x() + b.get_width() / 2, v + 0.008, f"{v:.3f}", ha="center", va="bottom", fontsize=7)
     ax.set_xticks(x); ax.set_xticklabels([lbl for _, lbl in TESTS], fontsize=9)
     ax.set_ylim(0, 0.75 if metric != "roc_auc" else 1.0)

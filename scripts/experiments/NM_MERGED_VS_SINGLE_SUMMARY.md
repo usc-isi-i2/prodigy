@@ -20,90 +20,92 @@ two checkpoints:
 
 Both experiments evaluate both compute points.
 
-All tables: rows = train regime, columns = test domain × compute point. `—` = not
-applicable (single-source has only its 50k run). f1 ≈ accuracy throughout (balanced
-n-way episodes), so it adds little beyond accuracy — included for completeness.
+All tables: rows = train regime (merged at `@match`/`@full`), columns = test domain ×
+compute point. `—` = not applicable (single-source has only its 50k run). The **`*`
+column is held-out (OOD)** — no model in that experiment trained on it. f1 ≈ accuracy
+throughout (balanced n-way episodes); included for completeness.
 
-## Experiment 1 — ukr / covid (30-way, 3-shot)
+## Experiment 1 — ukr / covid (30-way, 3-shot) · held-out = midterm
 
 accuracy
 ```
-                         test:ukr            test:covid
-train                    @match   @full      @match   @full
-single ukr (in-domain)   0.5151    —          0.6142    —
-single covid (in-domain) 0.4589    —          0.6641    —
-merged proportional      0.4790  0.4955       0.6374  0.6574
-merged within-source     0.4998  0.5090       0.6592  0.6698
+                         test:ukr        test:covid      test:midterm* (held-out)
+train                    @match  @full   @match  @full   @match  @full
+single ukr               0.5151   —      0.6142   —      0.3079   —
+single covid             0.4589   —      0.6641   —      0.3126   —
+merged proportional      0.4790 0.4955   0.6374 0.6574   0.2968 0.3048
+merged within-source     0.4998 0.5090   0.6592 0.6698   0.3069 0.3144
 ```
 f1
 ```
-                         test:ukr            test:covid
-train                    @match   @full      @match   @full
-single ukr               0.5151    —          0.6142    —
-single covid             0.4591    —          0.6641    —
-merged proportional      0.4790  0.4954       0.6374  0.6574
-merged within-source     0.4998  0.5090       0.6592  0.6698
+                         test:ukr        test:covid      test:midterm* (held-out)
+train                    @match  @full   @match  @full   @match  @full
+single ukr               0.5151   —      0.6142   —      0.3081   —
+single covid             0.4591   —      0.6641   —      0.3143   —
+merged proportional      0.4790 0.4954   0.6374 0.6574   0.2976 0.3052
+merged within-source     0.4998 0.5090   0.6592 0.6698   0.3072 0.3146
 ```
 roc_auc
 ```
-                         test:ukr            test:covid
-train                    @match   @full      @match   @full
-single ukr               0.9497    —          0.9741    —
-single covid             0.9245    —          0.9815    —
-merged proportional      0.9373  0.9433       0.9778  0.9807
-merged within-source     0.9447  0.9472       0.9811  0.9822
+                         test:ukr        test:covid      test:midterm* (held-out)
+train                    @match  @full   @match  @full   @match  @full
+single ukr               0.9497   —      0.9741   —      0.8840   —
+single covid             0.9245   —      0.9815   —      0.8837   —
+merged proportional      0.9373 0.9433   0.9778 0.9807   0.8746 0.8755
+merged within-source     0.9447 0.9472   0.9811 0.9822   0.8835 0.8847
 ```
 - **No inversion — even at matched compute.** Merged ≥ single cross-domain at `@match`
   (test ukr: 0.479 vs single-covid 0.459, +0.020; test covid: 0.637 vs single-ukr
-  0.614, +0.023). So the merged advantage is not an artifact of 2× training. The
-  original "single beats merged" result was an artifact of an unfair architecture/aug
-  mismatch (and a degenerate zero-shot eval).
+  0.614, +0.023). The original "single beats merged" result was an artifact of an
+  unfair architecture/aug mismatch (and a degenerate zero-shot eval).
 - **Within-source > proportional at both compute levels** (+0.02 @match, +0.012–0.016
-  @full), approaching the in-domain single ceiling.
-- `@full` beats `@match` by ~0.02 (more compute helps both). AUC saturates (~0.98 on
-  covid) — read accuracy.
+  @full).
+- **Held-out (midterm):** all ukr/cov models land ~0.30–0.31 (vs an in-domain
+  midterm-trained model's 0.417 — see Exp 2). Merging gives **no OOD bonus**; merged
+  within-source @full (0.314) is marginally best but within noise.
 
-## Experiment 2 — covid / midterm (30-way, 3-shot)
+## Experiment 2 — covid / midterm (30-way, 3-shot) · held-out = ukr
 
 accuracy
 ```
-                         test:midterm        test:covid
-train                    @match   @full      @match   @full
-single midterm           0.4171    —          0.3183    —
-single covid             0.3176    —          0.6616    —
-merged-naive             0.3137  0.3285       0.6626  0.6728
-merged-within            0.3269  0.3373       0.6617  0.6724
-merged-within-balanced   0.4048  0.4269       0.6377  0.6511
+                         test:midterm    test:covid      test:ukr* (held-out)
+train                    @match  @full   @match  @full   @match  @full
+single midterm           0.4171   —      0.3183   —      0.2256   —
+single covid             0.3176   —      0.6616   —      0.4625   —
+merged-naive             0.3137 0.3285   0.6626 0.6728   0.4598 0.4610
+merged-within            0.3269 0.3373   0.6617 0.6724   0.4586 0.4586
+merged-within-balanced   0.4048 0.4269   0.6377 0.6511   0.4480 0.4476
 ```
 f1
 ```
-                         test:midterm        test:covid
-train                    @match   @full      @match   @full
-single midterm           0.4171    —          0.3183    —
-single covid             0.3191    —          0.6641    —
-merged-naive             0.3141  0.3285       0.6626  0.6728
-merged-within            0.3271  0.3374       0.6616  0.6724
-merged-within-balanced   0.4048  0.4269       0.6377  0.6511
+                         test:midterm    test:covid      test:ukr* (held-out)
+train                    @match  @full   @match  @full   @match  @full
+single midterm           0.4171   —      0.3183   —      0.2256   —
+single covid             0.3191   —      0.6616   —      0.4626   —
+merged-naive             0.3141 0.3285   0.6626 0.6728   0.4598 0.4611
+merged-within            0.3271 0.3374   0.6616 0.6724   0.4588 0.4588
+merged-within-balanced   0.4048 0.4269   0.6377 0.6511   0.4480 0.4476
 ```
 roc_auc
 ```
-                         test:midterm        test:covid
-train                    @match   @full      @match   @full
-single midterm           0.9260    —          0.8792    —
-single covid             0.8860    —          0.9813    —
-merged-naive             0.8849  0.8899       0.9810  0.9827
-merged-within            0.8943  0.8984       0.9814  0.9828
-merged-within-balanced   0.9231  0.9291       0.9780  0.9796
+                         test:midterm    test:covid      test:ukr* (held-out)
+train                    @match  @full   @match  @full   @match  @full
+single midterm           0.9260   —      0.8792   —      0.7935   —
+single covid             0.8860   —      0.9813   —      0.9257   —
+merged-naive             0.8849 0.8899   0.9810 0.9827   0.9249 0.9240
+merged-within            0.8943 0.8984   0.9814 0.9828   0.9243 0.9244
+merged-within-balanced   0.9231 0.9291   0.9780 0.9796   0.9216 0.9212
 ```
-- **Big domain (covid):** replicates Exp 1. At matched compute merged-naive ties single
-  (0.663 vs 0.662); at full it slightly beats (0.673).
-- **Small domain (midterm):** naive merged **collapses** (0.31–0.33 vs single 0.417) at
-  both compute points — an **exposure artifact** (midterm is ~1.5% of the merge), not a
-  real merged deficit. Proportional within-source barely helps.
-- **Balanced within-source rescues it:** 0.405 @match (recovers most of the gap to
-  single's 0.417) and **0.427 @full — above single-midterm** — for a small covid cost
-  (−0.02). The *beats-single* win needs the full exposure budget; at matched compute it
-  recovers but doesn't exceed single.
+- **Big domain (covid):** replicates Exp 1 — merged ties single @match (0.663 vs 0.662),
+  slightly beats @full.
+- **Small domain (midterm):** naive merged **collapses** (0.31–0.33 vs single 0.417) —
+  an **exposure artifact** (midterm ~1.5% of the merge). **Balanced within-source
+  rescues it:** 0.405 @match, **0.427 @full — above single-midterm (0.417)**, for a
+  small covid cost (−0.02). The beats-single win needs the full exposure budget.
+- **Held-out (ukr):** transfer is carried by covid — single-covid 0.463 ≈ merged-naive
+  0.461; single-midterm transfers terribly (0.226). Merging gives **no OOD bonus**, and
+  **balanced is the *weakest* OOD (0.448)** because it down-weights the covid signal
+  that carries cross-graph transfer. (In-domain ukr ceiling: 0.515.)
 
 ## Unified conclusions
 
@@ -118,6 +120,13 @@ merged-within-balanced   0.9231  0.9291       0.9780  0.9796
    the imbalance is extreme).
 4. **Compute:** at matched total compute (`@match`) the within-source gains shrink;
    the "balanced beats single-midterm" win needs the full 2× exposure budget (`@full`).
+5. **No generalization bonus from merging (held-out / OOD).** On a graph *no* model
+   trained on, merged transfers no better than the best single source — transfer is
+   carried by the largest/most-similar source (covid drives ukr; combining adds
+   nothing). And **balanced sampling, best in-distribution, is slightly worst OOD**,
+   because rebalancing down-weights the source that carries cross-graph signal. So the
+   in-distribution wins (no inversion; balanced rescues small domains) do **not** imply
+   better transfer to unseen graphs.
 
 ## Caveats / next step
 
