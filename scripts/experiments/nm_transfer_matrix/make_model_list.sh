@@ -17,7 +17,7 @@ for prefix in nm_matrix_ukr nm_matrix_covid nm_matrix_merged; do
     continue
   fi
   ckpt="$(ls "${run_dir}checkpoint/"state_dict_*.ckpt 2>/dev/null \
-    | sort -t_ -k3 -n | tail -n1 || true)"
+    | sed -E 's#.*/state_dict_([0-9]+)\.ckpt$#\1 &#' | sort -n -k1,1 | tail -n1 | cut -d' ' -f2- || true)"
   if [[ -z "${ckpt}" ]]; then
     echo "WARN: no checkpoint in ${run_dir}checkpoint/" >&2
     continue

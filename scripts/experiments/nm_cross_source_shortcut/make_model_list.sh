@@ -10,7 +10,7 @@ OUT="${SCRIPT_DIR}/model_list.txt"
 prefix="nm_xsrc_within_source"
 run_dir="$(ls -dt "${STATE_DIR}/${prefix}_"*/ 2>/dev/null | head -n1 || true)"
 [[ -z "${run_dir}" ]] && { echo "no run dir for ${prefix} under ${STATE_DIR}" >&2; exit 1; }
-ckpt="$(ls "${run_dir}checkpoint/"state_dict_*.ckpt 2>/dev/null | sort -t_ -k3 -n | tail -n1 || true)"
+ckpt="$(ls "${run_dir}checkpoint/"state_dict_*.ckpt 2>/dev/null | sed -E 's#.*/state_dict_([0-9]+)\.ckpt$#\1 &#' | sort -n -k1,1 | tail -n1 | cut -d' ' -f2- || true)"
 [[ -z "${ckpt}" ]] && { echo "no checkpoint in ${run_dir}checkpoint/" >&2; exit 1; }
 echo "${prefix} ${ckpt}" > "${OUT}"
 echo "wrote ${OUT}:" >&2; cat "${OUT}" >&2

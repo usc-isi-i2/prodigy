@@ -16,8 +16,11 @@ OUT="${SCRIPT_DIR}/model_list.txt"
 
 run_dir_of() { ls -dt "${STATE_DIR}/$1_"*/ 2>/dev/null | head -n1 || true; }
 final_ckpt() {  # prefix -> highest-step ckpt path
+  # Sort by the numeric step in the BASENAME (the full path has underscores in the
+  # run-dir timestamp, so `sort -t_ -k3` would sort by the wrong field).
   local d; d="$(run_dir_of "$1")"; [[ -z "$d" ]] && return 1
-  ls "${d}checkpoint/"state_dict_*.ckpt 2>/dev/null | sort -t_ -k3 -n | tail -n1
+  ls "${d}checkpoint/"state_dict_*.ckpt 2>/dev/null \
+    | sed -E 's#.*/state_dict_([0-9]+)\.ckpt$#\1 &#' | sort -n -k1,1 | tail -n1 | cut -d' ' -f2-
 }
 step_of() { basename "$1" | sed -E 's/state_dict_([0-9]+)\.ckpt/\1/'; }
 ckpt_at() {  # prefix step -> path (if exists)
