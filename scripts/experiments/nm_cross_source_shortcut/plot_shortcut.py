@@ -40,7 +40,8 @@ def load(csv_path: Path) -> dict:
 
 def value(cells, metric, base, suffix, test):
     if base == "single":
-        return cells.get((metric, SINGLE_BY_TEST[test], test))  # single only has one ckpt
+        single = SINGLE_BY_TEST.get(test)  # no in-domain single for the held-out column
+        return cells.get((metric, single, test)) if single else None
     return cells.get((metric, f"{base} {suffix}", test))
 
 
