@@ -413,6 +413,7 @@ class TrainerFS():
         kwargs["neighbor_sampling_strategy"] = self.parameter["neighbor_sampling_strategy"]
         kwargs["neighbor_sampling_strata"] = self.parameter.get("neighbor_sampling_strata", "")
         kwargs["neighbor_sampling_episode_source"] = self.parameter.get("neighbor_sampling_episode_source", "")
+        kwargs["neighbor_sampling_episode_source_weighting"] = self.parameter.get("neighbor_sampling_episode_source_weighting", "proportional")
         kwargs["label_emb_texts"] = self.parameter.get("label_emb_texts", "")
         kwargs["midterm_lp_neg_ratio"] = self.parameter.get("midterm_lp_neg_ratio", 1)
         if self.parameter["all_test"]:

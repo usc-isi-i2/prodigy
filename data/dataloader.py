@@ -222,7 +222,7 @@ class ContrastiveTask(TaskBase):
 
 class NeighborTask(TaskBase):
     def __init__(self, neighbor_sampler, size, direction, sampling_strategy="strict", strata=None,
-                 confine_to_single_stratum=False):
+                 confine_to_single_stratum=False, stratum_weighting="proportional"):
         self.neighbor_sampler = neighbor_sampler
         self.size = size
         self.direction = direction
@@ -242,15 +242,27 @@ class NeighborTask(TaskBase):
             if not self.strata:
                 raise ValueError("NeighborTask strata must contain at least one non-empty stratum.")
         # When True, every episode is drawn entirely from ONE stratum (e.g. one merged
-        # source graph). The stratum is chosen proportional to its node count, so the
-        # per-node center marginal is identical to naive uniform sampling -- the only
-        # thing that changes is that an episode's negatives all share a source.
+        # source graph), so an episode's negatives all share a source. The per-episode
+        # source is chosen by stratum_weighting:
+        #   "proportional" -> P(source) proportional to node count; the per-node center
+        #                     marginal then matches naive uniform sampling (only the
+        #                     cross-source-negative structure changes).
+        #   "balanced"     -> P(source) uniform across sources; gives a small source
+        #                     equal episode share (also rebalances per-domain exposure).
         self.confine_to_single_stratum = bool(confine_to_single_stratum) and self.strata is not None
         self.stratum_weights = None
         if self.confine_to_single_stratum:
-            sizes = [len(stratum) for stratum in self.strata]
-            total = float(sum(sizes))
-            self.stratum_weights = [size / total for size in sizes]
+            n = len(self.strata)
+            if stratum_weighting == "balanced":
+                self.stratum_weights = [1.0 / n] * n
+            elif stratum_weighting == "proportional":
+                sizes = [len(stratum) for stratum in self.strata]
+                total = float(sum(sizes))
+                self.stratum_weights = [size / total for size in sizes]
+            else:
+                raise ValueError(
+                    f"Unknown stratum_weighting={stratum_weighting!r}; use 'proportional' or 'balanced'."
+                )
 
     @staticmethod
     def _balanced_counts(total, num_groups):

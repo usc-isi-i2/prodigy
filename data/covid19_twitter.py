@@ -193,6 +193,7 @@ def get_covid19_twitter_dataloader(
                 kwargs.get("neighbor_sampling_strategy", "strict"),
                 strata=strata,
                 confine_to_single_stratum=confine_to_single_stratum,
+                stratum_weighting=kwargs.get("neighbor_sampling_episode_source_weighting", "proportional"),
             ),
             ParamSampler(batch_size, n_way, n_shot, n_query, 1),
             seed=seed,

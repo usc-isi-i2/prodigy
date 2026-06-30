@@ -234,9 +234,20 @@ def get_params():
         choices=["", "graph_id"],
         help=(
             "If 'graph_id', confine every neighbor-matching episode to a SINGLE merged "
-            "source graph (source picked proportional to its node count, so the per-node "
-            "center marginal matches naive proportional sampling). Removes cross-source "
-            "negatives so the model cannot exploit a source-discrimination shortcut."
+            "source graph. Removes cross-source negatives so the model cannot exploit a "
+            "source-discrimination shortcut. Source-selection weighting is controlled by "
+            "--neighbor_sampling_episode_source_weighting."
+        ),
+    )
+    args.add_argument(
+        "--neighbor_sampling_episode_source_weighting",
+        default="proportional",
+        choices=["proportional", "balanced"],
+        help=(
+            "How the per-episode source is chosen when confining episodes "
+            "(--neighbor_sampling_episode_source=graph_id). 'proportional' -> P(source) "
+            "proportional to node count (per-node marginal matches naive sampling); "
+            "'balanced' -> uniform over sources (gives small sources equal episode share)."
         ),
     )
 

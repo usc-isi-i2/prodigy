@@ -1,0 +1,35 @@
+# cov/mid validation — MERGED-WITHIN-BALANCED. Each episode confined to one source,
+# source picked UNIFORMLY (50/50) instead of by size. Because midterm is only ~1.5%
+# of the merge, this also rebalances per-domain exposure (midterm gets equal episode
+# share) on top of removing cross-source negatives. Identical to merged_within_nm.yaml
+# except the weighting. See README.
+dataset: merged_covid_midterm
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: covid_midterm_retweet_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+n_hop: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+epochs: 12
+
+# >>> confine each episode to one source; source uniform (balanced) <<<
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+
+eval_step: 10000
+checkpoint_step: 10000
+workers: 16
+device: 0
+seed: 0
+tags: [nm_covid_midterm, merged, within_source, balanced, plain]
+prefix: nm_cm_within_balanced
