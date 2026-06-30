@@ -45,6 +45,12 @@ merged-within-bal @full    0.9291    0.9796    0.9801
 (The `merged` test column ≈ the covid column — the merged test set is 98.5% covid —
 so it is not independently informative.)
 
+## Figure
+
+![cov/mid accuracy, @match vs @full](results_accuracy.png)
+
+(also `results_roc_auc.png`; regenerate with `plot_results.py` — see Reproduce.)
+
 ## Conclusions
 
 The story splits by domain size, and the answer depends on the compute budget.

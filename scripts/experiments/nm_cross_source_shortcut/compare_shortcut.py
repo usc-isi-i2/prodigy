@@ -114,10 +114,12 @@ def main() -> int:
     ap.add_argument("--n-way", default="30", help="Which n_way eval to read (3-way is near-ceiling; 30 is discriminative).")
     ap.add_argument("--metric", default="all", choices=["roc_auc", "accuracy", "f1", "all"],
                     help="Which test metric(s) to report (default: all three).")
+    ap.add_argument("--out-csv", default=None, help="Optional long-format CSV (metric,regime,test,value).")
     args = ap.parse_args()
 
     metrics = ["roc_auc", "accuracy", "f1"] if args.metric == "all" else [args.metric]
     found = False
+    csv_rows = []
     for metric in metrics:
         cells = collect(Path(args.log_root), args.shots, args.n_way, metric)
         if not cells:
@@ -125,8 +127,15 @@ def main() -> int:
             continue
         found = True
         report(cells, metric)
+        for (model, dset), v in cells.items():
+            csv_rows.append([metric, MODELS.get(model, model), DATASETS.get(dset, dset), f"{v:.6f}"])
     if not found:
         raise SystemExit(f"No matching eval dirs under {args.log_root}")
+    if args.out_csv and csv_rows:
+        import csv as _csv
+        with open(args.out_csv, "w", newline="", encoding="utf-8") as f:
+            w = _csv.writer(f); w.writerow(["metric", "regime", "test", "value"]); w.writerows(csv_rows)
+        print(f"\nwrote {args.out_csv}")
     return 0
 
 
