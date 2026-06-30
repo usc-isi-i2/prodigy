@@ -1,69 +1,60 @@
 # Results — NM transfer matrix (fair single-vs-merged)
 
-**Run date:** 2026-06-28/29 · **Seed:** 0 · **1 seed only.**
-Checkpoints: single-source step 50000, merged step 90000 (runs stopped short of the
-60k/120k budget — see Caveats). Eval: 3-shot, both 3-way and 30-way.
+**Run date:** 2026-06-28/30 · **Seed:** 0 · **1 seed only.**
+Checkpoints: single-source step 50000; merged at **50000 (`@match` = matched total
+compute)** and **110000 (`@full` = per-domain exposure)**. Eval: 3-shot, 30-way.
+(See ../NM_MERGED_VS_SINGLE_SUMMARY.md for the cross-experiment view.)
 
 > ⚠️ **Always eval NM at shots ≥ 3.** Zero-shot NM has no support prototypes, so
 > accuracy collapses to chance and `roc_auc ≈ 0.5` — this made an earlier eval look
 > like every model was random. It was an eval artifact, not a training failure.
 
-## Accuracy (3-shot, 30-way) — most discriminative, full 3x3
+## Accuracy (3-shot, 30-way)
 
 ```
-train\test   ukr     covid   merged
-ukr          0.5151  0.6142  0.6156
-covid        0.4589  0.6641  0.6238
-merged       0.4888  0.6536  0.6872
-```
-- test ukr:   merged 0.4888 vs single-covid 0.4589 (**+0.030**)
-- test covid: merged 0.6536 vs single-ukr 0.6142 (**+0.039**)
-- merged is also best in-domain on its own (mixed) test (0.6872).
-
-f1 is within ~0.0002 of accuracy everywhere (balanced n-way episodes), so it adds
-nothing beyond accuracy; omitted here. Use `--metric all` to print all three.
-
-## AUC (3-shot, 30-way) — same ordering, near ceiling (less discriminative)
-
-```
-train\test    ukr       covid
-ukr          0.9497    0.9741
-covid        0.9245    0.9815
-merged       0.9411    0.9801
+train             test:ukr   test:covid
+ukr (in-domain)   0.5151     0.6142
+covid (in-domain) 0.4589     0.6641
+merged @match     0.4790     0.6374
+merged @full      0.4955     0.6574
 ```
 
-## AUC (3-shot, 3-way) — near ceiling, less discriminative
+## AUC (3-shot, 30-way) — near ceiling, less discriminative
 
 ```
-train\test    ukr       covid
-ukr          0.9621    0.9857
-covid        0.9464    0.9911
-merged       0.9567    0.9897
+train             test:ukr   test:covid
+ukr               0.9497     0.9741
+covid             0.9245     0.9815
+merged @match     0.9373     0.9778
+merged @full      0.9433     0.9807
 ```
+
+f1 ≈ accuracy to ~1e-3 (balanced episodes); use `build_auc_matrix.py --metric all`.
 
 ## Conclusion
 
 **The original "single-source beats merged cross-domain" inversion does NOT
 reproduce** under a fair comparison (identical plain architecture, no augmentation,
-matched per-domain episode budget, correct 3-shot eval). On both cross-domain cells,
-**merged ≥ single-source** — clearest in accuracy:
+correct 3-shot eval). **Merged ≥ single-source cross-domain even at matched compute**
+(`@match`):
 
-- test covid: merged 0.654 vs single-ukr 0.614 acc (**+0.039**) / 0.980 vs 0.974 AUC
-- test ukr:   merged 0.489 vs single-covid 0.459 acc (**+0.030**) / 0.941 vs 0.925 AUC
+- test covid: merged @match 0.637 vs single-ukr 0.614 acc (**+0.023**); @full 0.657
+- test ukr:   merged @match 0.479 vs single-covid 0.459 acc (**+0.020**); @full 0.496
 
-The original effect was almost certainly an artifact of (a) comparing against an
-*augmented, larger-architecture* merged model rather than a matched one, and/or
-(b) the degenerate zero-shot eval.
+So the merged advantage is not an artifact of 2× training. The original effect was
+almost certainly an artifact of (a) comparing against an *augmented, larger-arch*
+merged model rather than a matched one, and/or (b) the degenerate zero-shot eval.
 
 ## Caveats
 
 - **1 seed.** Deltas at 3-way are sub-1% (within noise); 30-way deltas are larger
   and consistent but still single-seed. Multi-seed needed for significance.
-- **Checkpoints stopped early** (50k/90k vs 60k/120k budget) — likely early-stopping
-  or the accidental duplicate-launch kill. Conclusions are unlikely to flip, but a
-  clean full-budget re-run would be tidier.
-- **Merged-as-test (3rd column)** is supported now (loader registered) but slow
-  (33M-node graph); it's a bonus and not needed for the inversion question.
+- **Checkpoint cadence is 0-indexed**, so the final saved checkpoints are 50k (single)
+  and 110k (merged), not the nominal 60k/120k. `@match` matches on the actual
+  single-source final step (50k), so both sides have identical step counts.
+- **Merged-as-test (3rd column)** is supported (loader registered) but slow (33M-node
+  graph), so the @match/@full re-eval was run on ukr+covid only; it's not needed for
+  the inversion question (the merged test column ≈ the covid column anyway).
 
 ## Reproduce
 

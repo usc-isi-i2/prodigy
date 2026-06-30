@@ -1,8 +1,9 @@
 # Results — NM cross-source-shortcut test
 
-**Run date:** 2026-06-29 · **Seed:** 0 · **1 seed only.**
-Within-source checkpoint step 90000 (matches the merged proportional baseline's 90000
-→ fair head-to-head). Eval: 3-shot, both 3-way and 30-way.
+**Run date:** 2026-06-29/30 · **Seed:** 0 · **1 seed only.**
+Merged models evaluated at two checkpoints: `@match` (step 50000 = matched total
+compute vs the single-source runs) and `@full` (step 110000 = per-domain exposure).
+Eval: 3-shot, 30-way.
 
 Hypothesis: naive merged sampling lets an episode's negatives come from the *other*
 source, so the model exploits a source-discrimination shortcut instead of within-source
@@ -12,43 +13,35 @@ neighborhood structure. Confining each episode to one source removes the shortcu
 
 ## Comparison (3-shot, 30-way)
 
-Accuracy (most discriminative; f1 ≈ accuracy for balanced episodes):
+accuracy (most discriminative; f1 ≈ accuracy for balanced episodes)
 ```
-regime                  test:ukr   test:covid
-single ukr               0.5151     0.6142
-single covid             0.4589     0.6641
-merged proportional      0.4888     0.6536
-merged within-source     0.5077     0.6666   <- best or tied on both
+regime                       test:ukr            test:covid
+                             @match   @full      @match   @full
+single ukr (in-domain)       0.5151    —          0.6142    —
+single covid (in-domain)     0.4589    —          0.6641    —
+merged proportional          0.4790  0.4955       0.6374  0.6574
+merged within-source         0.4998  0.5090       0.6592  0.6698
 ```
-AUC (same ordering, near ceiling):
+roc_auc (near ceiling)
 ```
-regime                  test:ukr   test:covid
-single ukr               0.9497     0.9741
-single covid             0.9245     0.9815
-merged proportional      0.9411     0.9801
-merged within-source     0.9468     0.9819
-```
-
-## Comparison (3-shot, 3-way, near ceiling)
-
-```
-regime                  test:ukr   test:covid
-single ukr               0.9621     0.9857
-single covid             0.9464     0.9911
-merged proportional      0.9567     0.9897
-merged within-source     0.9620     0.9912   <- best or tied on both
+regime                       test:ukr            test:covid
+                             @match   @full      @match   @full
+single ukr                   0.9497    —          0.9741    —
+single covid                 0.9245    —          0.9815    —
+merged proportional          0.9373  0.9433       0.9778  0.9807
+merged within-source         0.9447  0.9472       0.9811  0.9822
 ```
 
 ## Conclusion
 
-Within-source episodes beat the proportional merged baseline on **both** domains and
-match/exceed the best single-source model on each — directionally exactly what the
-cross-source-shortcut hypothesis predicts. Effect (30-way): **+0.019 acc on test:ukr,
-+0.013 acc on test:covid** (AUC: +0.006 / +0.002 — smaller because AUC is near the
-ceiling; accuracy is the more discriminative metric here).
+Within-source episodes beat the proportional merged baseline on **both** domains at
+**both compute levels**, and match/approach the best single-source model — exactly what
+the cross-source-shortcut hypothesis predicts. Effect: **@match +0.021 (ukr) / +0.022
+(covid)**; **@full +0.014 (ukr) / +0.012 (covid)** in accuracy. (AUC smaller, +0.002 to
++0.007, because it saturates ~0.98.)
 
 **But the effect is small and not yet significant:**
-- 1 seed; deltas are ~0.002–0.006 AUC.
+- 1 seed; within-vs-proportional deltas are ~0.012–0.022 accuracy (~0.002–0.007 AUC).
 - Context matters: the proportional merged model was *already not worse* than
   single-source (no inversion — see ../nm_transfer_matrix/RESULTS.md), so there was
   little deficit for the within-source variant to recover. The improvement is real in

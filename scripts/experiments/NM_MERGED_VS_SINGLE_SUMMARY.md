@@ -20,8 +20,13 @@ two checkpoints:
 
 Both experiments evaluate both compute points.
 
-## Experiment 1 — ukr / covid (30-way, 3-shot, accuracy)
+All tables: rows = train regime, columns = test domain × compute point. `—` = not
+applicable (single-source has only its 50k run). f1 ≈ accuracy throughout (balanced
+n-way episodes), so it adds little beyond accuracy — included for completeness.
 
+## Experiment 1 — ukr / covid (30-way, 3-shot)
+
+accuracy
 ```
                          test:ukr            test:covid
 train                    @match   @full      @match   @full
@@ -30,6 +35,24 @@ single covid (in-domain) 0.4589    —          0.6641    —
 merged proportional      0.4790  0.4955       0.6374  0.6574
 merged within-source     0.4998  0.5090       0.6592  0.6698
 ```
+f1
+```
+                         test:ukr            test:covid
+train                    @match   @full      @match   @full
+single ukr               0.5151    —          0.6142    —
+single covid             0.4591    —          0.6641    —
+merged proportional      0.4790  0.4954       0.6374  0.6574
+merged within-source     0.4998  0.5090       0.6592  0.6698
+```
+roc_auc
+```
+                         test:ukr            test:covid
+train                    @match   @full      @match   @full
+single ukr               0.9497    —          0.9741    —
+single covid             0.9245    —          0.9815    —
+merged proportional      0.9373  0.9433       0.9778  0.9807
+merged within-source     0.9447  0.9472       0.9811  0.9822
+```
 - **No inversion — even at matched compute.** Merged ≥ single cross-domain at `@match`
   (test ukr: 0.479 vs single-covid 0.459, +0.020; test covid: 0.637 vs single-ukr
   0.614, +0.023). So the merged advantage is not an artifact of 2× training. The
@@ -37,12 +60,12 @@ merged within-source     0.4998  0.5090       0.6592  0.6698
   mismatch (and a degenerate zero-shot eval).
 - **Within-source > proportional at both compute levels** (+0.02 @match, +0.012–0.016
   @full), approaching the in-domain single ceiling.
-- `@full` beats `@match` by ~0.02 (more compute helps both).
+- `@full` beats `@match` by ~0.02 (more compute helps both). AUC saturates (~0.98 on
+  covid) — read accuracy.
 
-## Experiment 2 — covid / midterm (30-way, 3-shot, accuracy)
+## Experiment 2 — covid / midterm (30-way, 3-shot)
 
-Both compute points shown. `—` = not applicable (single-source has only its 50k run).
-
+accuracy
 ```
                          test:midterm        test:covid
 train                    @match   @full      @match   @full
@@ -51,6 +74,26 @@ single covid             0.3176    —          0.6616    —
 merged-naive             0.3137  0.3285       0.6626  0.6728
 merged-within            0.3269  0.3373       0.6617  0.6724
 merged-within-balanced   0.4048  0.4269       0.6377  0.6511
+```
+f1
+```
+                         test:midterm        test:covid
+train                    @match   @full      @match   @full
+single midterm           0.4171    —          0.3183    —
+single covid             0.3191    —          0.6641    —
+merged-naive             0.3141  0.3285       0.6626  0.6728
+merged-within            0.3271  0.3374       0.6616  0.6724
+merged-within-balanced   0.4048  0.4269       0.6377  0.6511
+```
+roc_auc
+```
+                         test:midterm        test:covid
+train                    @match   @full      @match   @full
+single midterm           0.9260    —          0.8792    —
+single covid             0.8860    —          0.9813    —
+merged-naive             0.8849  0.8899       0.9810  0.9827
+merged-within            0.8943  0.8984       0.9814  0.9828
+merged-within-balanced   0.9231  0.9291       0.9780  0.9796
 ```
 - **Big domain (covid):** replicates Exp 1. At matched compute merged-naive ties single
   (0.663 vs 0.662); at full it slightly beats (0.673).
