@@ -36,7 +36,7 @@ MODELS = {
     "nm_matrix_merged": "merged proportional",
     "nm_xsrc_within_source": "merged within-source",
 }
-DATASETS = {"ukr_rus_twitter": "test:ukr", "covid19_twitter": "test:covid"}
+DATASETS = {"ukr_rus_twitter": "test:ukr", "covid19_twitter": "test:covid", "midterm": "test:midterm*"}
 RUN_RE = re.compile(r"^eval_(?P<model>.+?)_to_(?P<dataset>.+?)_nm_(?P<shots>\d+)shot(?:_.*)?$")
 
 

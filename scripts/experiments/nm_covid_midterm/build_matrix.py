@@ -39,6 +39,7 @@ MODEL_LABELS = {
 DATASET_LABELS = {
     "midterm": "midterm",
     "covid19_twitter": "covid",
+    "ukr_rus_twitter": "ukr (held-out)",
     "merged_covid_midterm": "merged",
 }
 ROW_ORDER = [
@@ -48,7 +49,7 @@ ROW_ORDER = [
     "merged-within-bal @match", "merged-within-bal @full",
     "merged-naive", "merged-within", "merged-within-balanced",
 ]
-COL_ORDER = ["midterm", "covid", "merged"]
+COL_ORDER = ["midterm", "covid", "ukr (held-out)", "merged"]
 
 
 def step_of(p: Path) -> int:

@@ -12,7 +12,7 @@ cd "${REPO_ROOT}"
 
 python3 scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py \
   --model-list "${SCRIPT_DIR}/model_list.txt" \
-  --datasets covid19_twitter,midterm,merged_covid_midterm \
+  --datasets covid19_twitter,midterm,ukr_rus_twitter,merged_covid_midterm \
   --tasks nm \
   --shots 3 \
   --nm-n-way 30 \
