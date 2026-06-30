@@ -18,25 +18,26 @@ two checkpoints:
 - **`@match`** — same step count as single-source (final ≈ 50k) → *matched total compute*.
 - **`@full`** — merged's final (≈ 110k) → *matched per-domain exposure* (~2× compute).
 
-Experiment 2 evaluates both. Experiment 1 (below) used a single late checkpoint (no
-`@match`/`@full` split — that methodology was added for Exp 2), so treat its merged
-rows as roughly `@full`.
+Both experiments evaluate both compute points.
 
 ## Experiment 1 — ukr / covid (30-way, 3-shot, accuracy)
 
 ```
-train \ test            test:ukr   test:covid
-single ukr               0.5151     0.6142
-single covid             0.4589     0.6641
-merged (naive)           0.4888     0.6536
-merged within-source     0.5077     0.6666
+                         test:ukr            test:covid
+train                    @match   @full      @match   @full
+single ukr (in-domain)   0.5151    —          0.6142    —
+single covid (in-domain) 0.4589    —          0.6641    —
+merged proportional      0.4790  0.4955       0.6374  0.6574
+merged within-source     0.4998  0.5090       0.6592  0.6698
 ```
-- **No inversion.** Merged ≥ single cross-domain (test ukr: 0.489 vs 0.459; test
-  covid: 0.654 vs 0.614). The original "single beats merged" result did not survive a
-  fair comparison — it was an artifact of an unfair architecture/aug mismatch (and a
-  degenerate zero-shot eval).
-- **Within-source helps, marginally:** beats naive merged on both domains (+0.019 ukr,
-  +0.013 covid) and matches/edges the best single-source model. Small (~1–2 pts).
+- **No inversion — even at matched compute.** Merged ≥ single cross-domain at `@match`
+  (test ukr: 0.479 vs single-covid 0.459, +0.020; test covid: 0.637 vs single-ukr
+  0.614, +0.023). So the merged advantage is not an artifact of 2× training. The
+  original "single beats merged" result was an artifact of an unfair architecture/aug
+  mismatch (and a degenerate zero-shot eval).
+- **Within-source > proportional at both compute levels** (+0.02 @match, +0.012–0.016
+  @full), approaching the in-domain single ceiling.
+- `@full` beats `@match` by ~0.02 (more compute helps both).
 
 ## Experiment 2 — covid / midterm (30-way, 3-shot, accuracy)
 
