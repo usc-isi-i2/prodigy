@@ -36,22 +36,24 @@ Built by `scripts/graph_construction/merge_covid_midterm.yaml` →
 
 ## Run (Tucker, prodigy env, tmux)
 
+Only GPUs 0-3 are available; the 5 regimes are scheduled across them (the two fast
+single-source runs share GPU 0). Run under tmux so it survives closing the laptop.
+
 ```bash
 cd scripts/experiments/nm_covid_midterm
 
-# Train (one per free GPU; merged variants are 2x the single-source budget).
-# Smoke-test a merged-within first to confirm the strata banner prints:
-DRY_RUN=0 ./train_nm_tucker.sh merged_within_balanced_nm.yaml --device 3 \
-  --epochs 1 -ds_cap 20 -eval_step 20 -ckpt_step 20 --prefix nm_cm_smoke
+# (optional) smoke-test the balanced flag first — confirms the strata banner prints:
+source /home/mhchu/miniconda3/etc/profile.d/conda.sh && conda activate prodigy
+WANDB_MODE=offline ./train_nm_tucker.sh merged_within_balanced_nm.yaml --device 0 \
+  --epochs 1 -ds_cap 20 -eval_step 20 -ckpt_step 20 --val_len_cap 5 --test_len_cap 5 --prefix nm_cm_smoke
 #   look for: "Neighbor sampling graph_id strata (confine-to-one-source): covid:..., midterm:..."
 
-./train_nm_tucker.sh midterm_nm.yaml --device 0
-./train_nm_tucker.sh covid_nm.yaml   --device 1
-./train_nm_tucker.sh merged_nm.yaml  --device 2
-./train_nm_tucker.sh merged_within_nm.yaml --device 3
-./train_nm_tucker.sh merged_within_balanced_nm.yaml --device 4
+# train all 5 across GPUs 0-3 (parallel lanes; survives laptop close):
+tmux new -s cm
+./run_all_train_tucker.sh    # GPU0: midterm->covid | GPU1: merged | GPU2: within | GPU3: within-balanced
+#   detach: Ctrl-b d   reattach: tmux attach -t cm   watch: tail -f run_logs/*.log
 
-# Eval all 5 on covid + midterm + merged (3-shot, 30-way), then build tables.
+# after training: eval all 5 on covid + midterm + merged (3-shot, 30-way), then tables.
 STATE_DIR=/dataMeR1/phil/gfm/prodigy/state ./make_model_list.sh
 cat model_list.txt
 ./eval_tucker.sh --device 0 --continue-on-error
