@@ -7,7 +7,7 @@ shift || true
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="${REPO_ROOT:-/dataMeR1/phil/gfm/prodigy}"
 COVID_ROOT="${COVID_ROOT:-/dataMeR1/phil/data/covid19_twitter/graphs}"
-GRAPH_FILENAME="${GRAPH_FILENAME:-retweet_graph_minilm_first100_hf03.pt}"
+GRAPH_FILENAME="${GRAPH_FILENAME:-retweet_graph_parquet.pt}"
 DEVICE="${DEVICE:-0}"
 
 case "${TASK}" in

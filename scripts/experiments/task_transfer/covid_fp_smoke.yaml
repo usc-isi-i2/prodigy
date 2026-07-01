@@ -1,12 +1,12 @@
 dataset: covid19_twitter
 root: /dataMeR1/phil/data/covid19_twitter/graphs
-graph_filename: retweet_graph_minilm_first100_hf03.pt
+graph_filename: retweet_graph_parquet.pt
 task_name: fp
 
 edge_view: temporal_history
-feature_subset: emb_only
+feature_subset: all
 original_features: true
-input_dim: 384
+input_dim: 768
 
 fp_mask_ratio: 0.3
 fp_mask_strategy: zero
