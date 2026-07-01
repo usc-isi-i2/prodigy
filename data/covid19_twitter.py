@@ -8,7 +8,14 @@ from torch_geometric.data import Data
 
 from experiments.sampler import NeighborSampler
 from .augment import get_aug
-from .dataloader import ParamSampler, BatchSampler, Collator, NeighborTask, RegressionTask
+from .dataloader import (
+    ParamSampler,
+    BatchSampler,
+    Collator,
+    ContrastiveTask,
+    NeighborTask,
+    RegressionTask,
+)
 from .dataset import SubgraphDataset
 from .midterm import (
     BinaryFutureLinkTask,
@@ -200,6 +207,15 @@ def get_covid19_twitter_dataloader(
         )
         label_embeddings = torch.zeros(1, 768).expand(graph.num_nodes, -1)
         is_multiway = True
+    elif task_name in {"contrastive", "masked_feature_prediction"}:
+        sampler = BatchSampler(
+            batch_count,
+            ContrastiveTask(graph.num_nodes),
+            ParamSampler(batch_size, n_way, n_shot, n_query, 1),
+            seed=seed,
+        )
+        label_embeddings = torch.zeros(1, 768).expand(graph.num_nodes, -1)
+        is_multiway = True
     elif task_name == "temporal_link_prediction":
         if not hasattr(dataset, "future_neighbor_sampler"):
             raise ValueError("temporal_link_prediction requires target edges, but no future edge view was found.")
@@ -309,7 +325,21 @@ def get_covid19_twitter_dataloader(
     else:
         raise ValueError(f"Unknown task for covid19_twitter: {task_name}")
 
-    aug_fn = get_aug(aug, graph.x) if (split == "train" or aug_test) else get_aug("")
+    if task_name == "masked_feature_prediction":
+        mask_ratio = float(kwargs.get("fp_mask_ratio", 0.3))
+        mask_strategy = kwargs.get("fp_mask_strategy", "zero")
+        if mask_strategy == "zero":
+            fp_aug = f"NZ{mask_ratio}"
+        elif mask_strategy == "random":
+            fp_aug = f"NR{mask_ratio}"
+        else:
+            raise ValueError(
+                f"Unknown fp_mask_strategy={mask_strategy!r}; use 'zero' or 'random'."
+            )
+        aug_spec = aug or fp_aug
+        aug_fn = get_aug(aug_spec, graph.x)
+    else:
+        aug_fn = get_aug(aug, graph.x) if (split == "train" or aug_test) else get_aug("")
     return DataLoader(
         dataset,
         batch_sampler=sampler,

@@ -260,6 +260,18 @@ def get_params():
     args.add_argument("-aug", "--augmentation", default="", type=str)
     args.add_argument("-aug_test", "--augment_test", default=False, type=str2bool)  # if set, the valid set and the test set are also augmented
     args.add_argument("-attr", "--attr_regression_weight", default=0.0, type=float)
+    args.add_argument(
+        "--fp_mask_ratio",
+        default=0.3,
+        type=float,
+        help="Node feature mask ratio for task_name=masked_feature_prediction.",
+    )
+    args.add_argument(
+        "--fp_mask_strategy",
+        default="zero",
+        choices=["zero", "random"],
+        help="How masked node features are corrupted for task_name=masked_feature_prediction.",
+    )
 
 
     args.add_argument("-prefix", "--prefix", default="exp1", type=str) # prefix for the experiment name for wandb
@@ -443,6 +455,14 @@ def get_params():
             params["task_name"] = "neighbor_matching"
         else:
             params["task_name"] = "classification"
+    task_aliases = {
+        "nm": "neighbor_matching",
+        "cl": "contrastive",
+        "same_graph": "contrastive",
+        "fp": "masked_feature_prediction",
+        "mfp": "masked_feature_prediction",
+    }
+    params["task_name"] = task_aliases.get(params["task_name"], params["task_name"])
 
     if args.device == 123:
         params["device"] = torch.device('cpu')

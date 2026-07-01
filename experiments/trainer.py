@@ -148,6 +148,7 @@ class TrainerFS():
             )
 
         self.is_regression = parameter["task_name"] == "regression"
+        self.is_feature_prediction = parameter["task_name"] == "masked_feature_prediction"
         if self.is_regression:
             if self.ways != 1:
                 raise ValueError(f"regression only supports n_way=1, got n_way={self.ways}.")
@@ -273,7 +274,7 @@ class TrainerFS():
         wandb.run.summary["num_params"] = num_params
 
         # create a header to predict masked node attribute
-        if self.parameter["attr_regression_weight"]:
+        if self.parameter["attr_regression_weight"] or self.is_feature_prediction:
             embed_dim = self.emb_dim
             output_dim = self.parameter["input_dim"]
             self.aux_header = torch.nn.Sequential(
@@ -361,6 +362,8 @@ class TrainerFS():
         self.all_saveable_modules = {
             "model": self.model
         }
+        if hasattr(self, "aux_header"):
+            self.all_saveable_modules["aux_header"] = self.aux_header
         self.pretrained_model_run = self.parameter["pretrained_model_run"]
         if self.pretrained_model_run != "":
             _log(f"Reloading state dict from {self.pretrained_model_run}")
@@ -370,7 +373,7 @@ class TrainerFS():
         self.train_dataloader, self.train_val_dataloader, self.val_dataloader, self.test_dataloader = self._build_dataloaders(dataset, self.dataset_name)
 
     def _score_label(self):
-        return "score" if self.is_regression else "acc"
+        return "score" if (self.is_regression or self.is_feature_prediction) else "acc"
 
     def _score_key(self, split_prefix: str):
         return f"{split_prefix}_{self._score_label()}"
@@ -416,6 +419,8 @@ class TrainerFS():
         kwargs["neighbor_sampling_episode_source_weighting"] = self.parameter.get("neighbor_sampling_episode_source_weighting", "proportional")
         kwargs["label_emb_texts"] = self.parameter.get("label_emb_texts", "")
         kwargs["midterm_lp_neg_ratio"] = self.parameter.get("midterm_lp_neg_ratio", 1)
+        kwargs["fp_mask_ratio"] = self.parameter.get("fp_mask_ratio", 0.3)
+        kwargs["fp_mask_strategy"] = self.parameter.get("fp_mask_strategy", "zero")
         if self.parameter["all_test"]:
             kwargs["all_test"] = True
         if self.parameter["label_set"]:
@@ -555,6 +560,22 @@ class TrainerFS():
             return loss
         return torch.zeros(1, device=self.device)
 
+    def get_feature_prediction_loss_and_score(self, graph):
+        if not hasattr(graph, "node_attr_mask") or not hasattr(graph, "x_orig"):
+            raise ValueError(
+                "masked_feature_prediction requires feature masking augmentation "
+                "that sets graph.node_attr_mask and graph.x_orig."
+            )
+        mask = ~graph.node_attr_mask
+        if hasattr(graph, "node_mask"):
+            mask = mask.logical_and(graph.node_mask)
+        if mask.sum() == 0:
+            raise ValueError("masked_feature_prediction batch has no masked nodes.")
+        target = graph.x_orig[mask]
+        output = self.aux_header(graph.x[mask])
+        loss = self.aux_loss(output, target)
+        return loss, -float(loss.detach().cpu().item())
+
     def save_checkpoint(self, step):
         state_dict = {key: value.state_dict() for key, value in self.all_saveable_modules.items()}
         torch.save(state_dict, os.path.join(self.ckpt_dir, 'state_dict_' + str(step) + '.ckpt'))
@@ -562,6 +583,9 @@ class TrainerFS():
     def load_checkpoint(self, path):
         state_dict = torch.load(path, map_location=self.device)
         for key, module in self.all_saveable_modules.items():
+            if key not in state_dict:
+                _log(f"Checkpoint {path} has no module '{key}'; leaving it initialized.")
+                continue
             module.load_state_dict(state_dict[key], strict=False)
 
     def _maybe_save_roc_curve(self, y_true_matrix, y_pred_matrix, split_name, step=None, global_eval=None):
@@ -1036,6 +1060,9 @@ class TrainerFS():
         yp = y_pred_matrix.detach().cpu()
 
         try:
+            if self.is_feature_prediction:
+                return metrics
+
             if self.is_regression:
                 y_true = yt.reshape(-1).numpy().astype(np.float32)
                 y_pred = yp.reshape(-1).numpy().astype(np.float32)
@@ -1282,10 +1309,15 @@ class TrainerFS():
                 require_flag=True,
                 raw_graph=raw_debug_graph,
             )
-            loss, acc = self.get_loss_and_acc(yt, yp) # get loss
-            aux_loss = self.get_aux_loss(graph)
-            weight = self.parameter["attr_regression_weight"]
-            total_loss = loss + aux_loss * weight
+            if self.is_feature_prediction:
+                loss, acc = self.get_feature_prediction_loss_and_score(graph)
+                aux_loss = torch.zeros(1, device=self.device)
+                total_loss = loss
+            else:
+                loss, acc = self.get_loss_and_acc(yt, yp) # get loss
+                aux_loss = self.get_aux_loss(graph)
+                weight = self.parameter["attr_regression_weight"]
+                total_loss = loss + aux_loss * weight
             total_loss.backward()
             self.optimizer.step()
             # self.scheduler.step()
@@ -1438,7 +1470,10 @@ class TrainerFS():
                 printed_debug_this_eval = True
             if self.calc_ranks:
                 assert len(batch) == 10, "Not using the right batch structure; need to include task_mask"
-            loss, acc = self.get_loss_and_acc(yt, yp)  # get loss
+            if self.is_feature_prediction:
+                loss, acc = self.get_feature_prediction_loss_and_score(graph)
+            else:
+                loss, acc = self.get_loss_and_acc(yt, yp)  # get loss
             acc_all.append(acc)
             aux_loss = self.get_aux_loss(graph)
             global_eval_batch = self._extract_global_classification_eval(batch, yt, yp)
@@ -1459,7 +1494,15 @@ class TrainerFS():
                 ytrueall = torch.cat((ytrueall, yt), dim=0)
                 ypredall = torch.cat((ypredall, yp), dim=0)
             all_aux_loss.append(aux_loss.item())
-        loss_global, acc_global = self.get_loss_and_acc(ytrueall, ypredall)
+        if self.is_feature_prediction:
+            loss_global = torch.tensor(
+                float(np.mean(acc_all)) * -1.0,
+                device=self.device,
+                dtype=torch.float,
+            )
+            acc_global = float(np.mean(acc_all))
+        else:
+            loss_global, acc_global = self.get_loss_and_acc(ytrueall, ypredall)
         global_eval = None
         if global_eval_parts:
             global_eval = {
