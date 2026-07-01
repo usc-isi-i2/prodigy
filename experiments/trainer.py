@@ -1227,7 +1227,7 @@ class TrainerFS():
         best_step = 0
         best_val = float("-inf")
         test_acc_on_best_val = 0
-        best_test_acc = 0
+        best_test_acc = float("-inf")
         other_metrics_on_best = {}
         bad_counts = 0
 
