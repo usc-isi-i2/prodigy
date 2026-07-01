@@ -34,6 +34,12 @@ def get_dataset_wrap(root, dataset, **kwargs):
     if dataset == "covid19_twitter":
         from data.covid19_twitter import get_covid19_twitter_dataset
         return get_covid19_twitter_dataset(root=root, **kwargs)
+    if dataset in {"election2020", "covid_political", "ukr_rus_suspended"}:
+        # Same generic retweet-graph .pt schema (x/y/edge_index/edge_attr/
+        # feature_names/label_names/user_ids) as covid19_twitter, so the
+        # loader is reused as-is rather than duplicated per dataset.
+        from data.covid19_twitter import get_covid19_twitter_dataset
+        return get_covid19_twitter_dataset(root=root, **kwargs)
     if dataset in {"facebook-uk_ru", "facebook_uk_ru"}:
         from data.facebook_uk_ru import get_facebook_uk_ru_dataset
         return get_facebook_uk_ru_dataset(root=root, **kwargs)

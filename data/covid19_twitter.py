@@ -75,7 +75,7 @@ def _build_covid19_twitter_graph(raw: dict, **kwargs):
 def get_covid19_twitter_dataset(root: str, n_hop: int = 1, graph_filename: str = "retweet_graph.pt", **kwargs) -> SubgraphDataset:
     graph_path = os.path.join(root, graph_filename)
     print(f"Loading covid19_twitter graph from {graph_path}...")
-    raw = torch.load(graph_path, map_location="cpu")
+    raw = torch.load(graph_path, map_location="cpu", weights_only=False)
     graph, resolved_edge_view = _build_covid19_twitter_graph(raw, **kwargs)
     print(f"Graph: {graph.num_nodes} nodes, {graph.edge_index.shape[1]} edges, {graph.x.shape[1]} node features")
     print("Building neighbor sampler (CSR preprocessing)...", flush=True)
