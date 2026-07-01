@@ -310,6 +310,12 @@ class TrainerFS():
             from data.covid19_twitter import get_covid19_twitter_dataloader
             kwargs["root"] = self.parameter["root"]
             get_dataloader = get_covid19_twitter_dataloader
+        elif dataset_name in {"election2020", "covid_political", "ukr_rus_suspended"}:
+            # Same generic retweet-graph schema as covid19_twitter (see
+            # data_loader_wrapper.py), so the dataloader is reused as-is.
+            from data.covid19_twitter import get_covid19_twitter_dataloader
+            kwargs["root"] = self.parameter["root"]
+            get_dataloader = get_covid19_twitter_dataloader
         elif dataset_name == "instagram_mention":
             from data.instagram_mention import get_instagram_mention_dataloader
             kwargs["root"] = self.parameter["root"]
