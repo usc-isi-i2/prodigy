@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """Aggregate COVID task-transfer eval logs into train-task x eval-task tables.
 
-Reads eval dirs produced by eval_task_matrix_tucker.sh:
+Reads zero-adaptation eval dirs produced by eval_task_matrix_tucker.sh:
 
     eval_covid_task_transfer_<train>_to_<eval>_<timestamp>/
+
+or fixed-adaptation dirs produced by adapt_task_matrix_tucker.sh:
+
+    adapt_covid_task_transfer_<train>_to_<eval>_<timestamp>/
 
 For NM/CL, classifier metrics are read from metrics_test_step0.json. For FP,
 the primary score is read from scores_test_step0.json (`test_score`, negative
@@ -18,11 +22,10 @@ import re
 from pathlib import Path
 
 
-RUN_RE = re.compile(
-    r"^eval_covid_task_transfer_(?P<train>nm|cl|fp)_to_(?P<eval>nm|cl|fp)(?:_(?P<ts>\d.*))?$"
-)
+RUN_RE_TEMPLATE = r"^{prefix}_(?P<train>scratch|nm|cl|fp)_to_(?P<eval>nm|cl|fp)(?:_(?P<ts>\d.*))?$"
 TASKS = ["nm", "cl", "fp"]
-TASK_LABELS = {"nm": "NM", "cl": "CL", "fp": "FP"}
+ROW_TASKS = ["scratch", "nm", "cl", "fp"]
+TASK_LABELS = {"scratch": "scratch", "nm": "NM", "cl": "CL", "fp": "FP"}
 
 
 def read_json(path: Path) -> dict:
@@ -32,17 +35,25 @@ def read_json(path: Path) -> dict:
         return {}
 
 
+def step_of(path: Path) -> int:
+    match = re.search(r"_step(\d+)\.json$", path.name)
+    if match:
+        return int(match.group(1))
+    return -1
+
+
 def latest_file(run_dir: Path, pattern: str) -> Path | None:
-    files = sorted((run_dir / "data").glob(pattern))
+    files = sorted((run_dir / "data").glob(pattern), key=step_of)
     return files[-1] if files else None
 
 
-def collect(log_root: Path) -> dict[tuple[str, str], dict[str, float | str]]:
+def collect(log_root: Path, run_prefix: str) -> dict[tuple[str, str], dict[str, float | str]]:
+    run_re = re.compile(RUN_RE_TEMPLATE.format(prefix=re.escape(run_prefix)))
     cells: dict[tuple[str, str], dict[str, float | str]] = {}
-    for run_dir in sorted(log_root.glob("eval_covid_task_transfer_*_to_*")):
+    for run_dir in sorted(log_root.glob(f"{run_prefix}_*_to_*")):
         if not run_dir.is_dir():
             continue
-        match = RUN_RE.match(run_dir.name)
+        match = run_re.match(run_dir.name)
         if not match:
             continue
 
@@ -76,7 +87,8 @@ def print_matrix(cells: dict[tuple[str, str], dict[str, float | str]], metric: s
     header = "train\\eval".ljust(12) + "".join(TASK_LABELS[t].ljust(12) for t in TASKS)
     print(header)
     print("-" * len(header))
-    for train in TASKS:
+    rows = [row for row in ROW_TASKS if any(key[0] == row for key in cells)]
+    for train in rows:
         line = TASK_LABELS[train].ljust(12)
         for eval_task in TASKS:
             value = cells.get((train, eval_task), {}).get(metric)
@@ -89,6 +101,12 @@ def main() -> int:
     parser.add_argument("--log-root", default="log")
     parser.add_argument("--out-csv", default=None)
     parser.add_argument(
+        "--protocol",
+        default="zero",
+        choices=["zero", "adapt"],
+        help="Read zero-adaptation eval dirs or fixed-adaptation dirs.",
+    )
+    parser.add_argument(
         "--metric",
         default="all",
         choices=["primary", "accuracy", "f1", "roc_auc", "score", "loss", "all"],
@@ -99,7 +117,12 @@ def main() -> int:
     if not log_root.is_dir():
         raise SystemExit(f"log-root not found: {log_root}")
 
-    cells = collect(log_root)
+    run_prefix = {
+        "zero": "eval_covid_task_transfer",
+        "adapt": "adapt_covid_task_transfer",
+    }[args.protocol]
+
+    cells = collect(log_root, run_prefix)
     if not cells:
         raise SystemExit(f"No task-transfer eval dirs found under {log_root}")
 
@@ -109,8 +132,9 @@ def main() -> int:
             print_matrix(cells, metric)
 
     if args.out_csv:
-        rows: list[list[str]] = []
-        for train in TASKS:
+        csv_rows: list[list[str]] = []
+        task_rows = [row for row in ROW_TASKS if any(key[0] == row for key in cells)]
+        for train in task_rows:
             for eval_task in TASKS:
                 cell = cells.get((train, eval_task))
                 if not cell:
@@ -118,12 +142,12 @@ def main() -> int:
                 for key, value in cell.items():
                     if key == "run_dir" or not isinstance(value, float):
                         continue
-                    rows.append([train, eval_task, key, f"{value:.10g}", str(cell["run_dir"])])
+                    csv_rows.append([train, eval_task, key, f"{value:.10g}", str(cell["run_dir"])])
         out = Path(args.out_csv)
         with out.open("w", newline="", encoding="utf-8") as handle:
             writer = csv.writer(handle)
             writer.writerow(["train_task", "eval_task", "metric", "value", "run_dir"])
-            writer.writerows(rows)
+            writer.writerows(csv_rows)
         print(f"\nwrote {out}")
 
     return 0

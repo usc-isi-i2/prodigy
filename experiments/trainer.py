@@ -1441,6 +1441,50 @@ class TrainerFS():
                 if should_stop:
                     pbar.write(f"[{time.strftime('%H:%M:%S')}] Early stopping at step {e}")
                     break
+        if bool(self.parameter.get("eval_after_train", False)):
+            final_step = self.steps
+            with torch.no_grad():
+                self.model.eval()
+                val_loss, val_acc, val_acc_std, val_aux_loss, ranks = self.do_eval(
+                    self.val_dataloader,
+                    split_name="val",
+                    step=final_step,
+                )
+                wandb.log(
+                    {
+                        "valid_loss": _to_float(val_loss),
+                        self._score_key("valid"): _to_float(val_acc),
+                        "valid_aux_loss": _to_float(val_aux_loss),
+                    },
+                    step=final_step,
+                )
+                test_loss, test_acc, test_acc_std, test_aux_loss, ranks = self.do_eval(
+                    self.test_dataloader,
+                    split_name="test",
+                    step=final_step,
+                )
+                log_dict = {
+                    self._score_key("test"): _to_float(test_acc),
+                    "test_loss": _to_float(test_loss),
+                    "test_aux_loss": _to_float(test_aux_loss),
+                    f"test_{self._score_label()}_std": _to_float(test_acc_std),
+                }
+                if ranks is not None:
+                    log_dict.update(prefix_dict(ranks, "test_"))
+                wandb.log(log_dict, step=final_step)
+                _log(
+                    f"[final step {final_step}] test "
+                    f"{self._score_label()}={_to_float(test_acc):.4f} "
+                    f"± {_to_float(test_acc_std):.4f} loss={_to_float(test_loss):.4f}"
+                )
+
+            if val_acc >= best_val:
+                best_val = val_acc
+                best_step = final_step
+                test_acc_on_best_val = test_acc
+                if ranks is not None:
+                    other_metrics_on_best = ranks
+            best_test_acc = max(best_test_acc, test_acc)
         _log("Training finished")
         print(f"  best step:             {best_step}", flush=True)
         print(f"  best val {self._score_label()}:          {_to_float(best_val):.4f}", flush=True)

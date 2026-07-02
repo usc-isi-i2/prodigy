@@ -195,6 +195,12 @@ def get_params():
         type=str2bool,
         help="If True, run a validation-set evaluation before training starts.",
     )
+    args.add_argument(
+        "--eval_after_train",
+        default=False,
+        type=str2bool,
+        help="If True, run validation/test evaluation once after the final training step.",
+    )
     args.add_argument("-meta_pos", "--meta_gnn_pos_only", default=False, type=str2bool)  # Whether to use only positive edges for meta graph
 
     ###  Few-shot task parameters  ###

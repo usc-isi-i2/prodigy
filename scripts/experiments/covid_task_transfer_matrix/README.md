@@ -34,7 +34,35 @@ The existing shared eval runner, `scripts/experiments/eval/eval_ckpts_all_graph_
 only supports `nm/lp/pl`, so this folder uses a dedicated launcher for
 `nm/cl/fp`.
 
-## How to Run on Tucker
+## Protocols
+
+### Zero-Adaptation Compatibility
+
+This is the quick diagnostic matrix already used first. It loads each checkpoint
+and immediately evaluates it on every task:
+
+```bash
+cd /dataMeR1/phil/gfm/prodigy/scripts/experiments/covid_task_transfer_matrix
+
+STATE_DIR=/dataMeR1/phil/gfm/prodigy/state ./make_model_list.sh
+
+DRY_RUN=1 ./eval_task_matrix_tucker.sh
+./eval_task_matrix_tucker.sh
+
+python3 build_task_matrix.py \
+  --protocol zero \
+  --log-root /dataMeR1/phil/gfm/prodigy/log \
+  --out-csv task_matrix_zero.csv
+```
+
+This is not a fair transfer matrix for FP because `NM -> FP` and `CL -> FP`
+evaluate with a newly initialized FP reconstruction head.
+
+### Fixed-Adaptation Transfer
+
+This is the fairer transfer protocol. Each cell loads the source checkpoint,
+trains on the eval task for the same number of updates, then evaluates once at
+the final step. A `scratch` row is included as a baseline.
 
 ```bash
 cd /dataMeR1/phil/gfm/prodigy/scripts/experiments/covid_task_transfer_matrix
@@ -42,20 +70,21 @@ cd /dataMeR1/phil/gfm/prodigy/scripts/experiments/covid_task_transfer_matrix
 # 1. Build rows from the latest best checkpoints.
 STATE_DIR=/dataMeR1/phil/gfm/prodigy/state ./make_model_list.sh
 
-# 2. Preview the 3x3 eval commands.
-DRY_RUN=1 ./eval_task_matrix_tucker.sh
+# 2. Preview the 4x3 adaptation commands.
+ADAPT_STEPS=1000 DRY_RUN=1 ./adapt_task_matrix_tucker.sh
 
-# 3. Run the 3x3 eval jobs.
-./eval_task_matrix_tucker.sh
+# 3. Run fixed-budget adaptation. Use GPUS to parallelize if desired.
+ADAPT_STEPS=1000 GPUS=0,1,2 ./adapt_task_matrix_tucker.sh
 
 # 4. Build the matrix.
 python3 build_task_matrix.py \
+  --protocol adapt \
   --log-root /dataMeR1/phil/gfm/prodigy/log \
-  --out-csv task_matrix.csv
+  --out-csv task_matrix_adapt_1000.csv
 ```
 
 Set `GPUS=0,1,2` to run up to three eval jobs in parallel. With no `GPUS`, the
-script runs sequentially on `DEVICE`.
+scripts run sequentially on `DEVICE`.
 
 ## Notes
 
@@ -63,6 +92,5 @@ script runs sequentially on `DEVICE`.
   (`accuracy`, `f1`, `roc_auc`).
 - FP cells report the scalar feature-prediction score from
   `scores_test_step0.json`. This is negative MSE, so higher is better.
-- Cross-task FP cells where the checkpoint has no trained `aux_header` will use
-  the initialized FP head from the eval run. Treat those cells as encoder-plus-
-  untrained-head diagnostics, not fully trained FP transfer.
+- In the fixed-adaptation protocol, every eval task gets the same adaptation
+  budget, so `NM/CL -> FP` train the FP `aux_header` before scoring.
