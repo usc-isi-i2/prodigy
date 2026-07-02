@@ -1,0 +1,50 @@
+# TwiBot-20 transfer
+
+Experiments treating **TwiBot-20** (Twitter bot detection) as a
+node-classification domain in the cross-task/cross-dataset transfer study.
+
+The graph is the reconstructed **retweet** graph with bio-embedding node
+features (see `data/data/twibot20/README.md`): 162,990 nodes, 2,010,925 directed
+edges, 768-d zero-filled bio features, labels `["human", "bot"]` (11,826
+labeled; the rest are unlabeled `support` context).
+
+## Phase 1 — Train-on-TwiBot-20 smoke
+
+Validates that TwiBot-20 trains end-to-end through the PRODIGY dataloader as a
+binary (bot-vs-human) classification task, and produces a first TwiBot-20 source
+checkpoint. Config: [`twibot20_cls_smoke.yaml`](twibot20_cls_smoke.yaml)
+(`task_name: classification`, `n_way: 2`, tiny caps, `epochs: 2`).
+
+```bash
+# Preview the command:
+DRY_RUN=1 bash scripts/experiments/twibot20_transfer/train_twibot20_tucker.sh
+
+# Run the smoke (pick a free GPU first with nvidia-smi):
+DEVICE=0 bash scripts/experiments/twibot20_transfer/train_twibot20_tucker.sh
+```
+
+Override the config for a fuller run, e.g.:
+
+```bash
+CONFIG_PATH=scripts/experiments/twibot20_transfer/twibot20_cls_smoke.yaml \
+DEVICE=0 bash scripts/experiments/twibot20_transfer/train_twibot20_tucker.sh \
+  --epochs 12 --dataset_len_cap 10000 --prefix twibot20_cls
+```
+
+Checkpoints land under `state/twibot20_cls_smoke_<timestamp>/`, logs under `log/`.
+
+## Notes
+
+- Splits: the classification path builds its own stratified node splits
+  (seed=0), not TwiBot-20's official `split.csv` (which is preserved on the graph
+  as `data.{train,val,test,support}_mask`). This matches the protocol used by the
+  other transfer datasets, keeping comparisons apples-to-apples.
+- `input_dim` is auto-inferred from the graph's 768-d features.
+- Edge features (`n_retweets`) are off by default; add `--use_edge_features true`
+  to enable them.
+
+## Next (not yet scaffolded)
+
+- Transfer INTO TwiBot-20: evaluate checkpoints trained on other datasets on
+  TwiBot-20 classification (zero- and fixed-adaptation), mirroring
+  `scripts/experiments/covid_task_transfer_matrix/`.

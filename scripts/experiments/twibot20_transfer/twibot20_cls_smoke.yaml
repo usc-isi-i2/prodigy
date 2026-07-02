@@ -1,0 +1,28 @@
+dataset: twibot20
+root: /dataMeR1/phil/data/twibot20/graphs
+graph_filename: retweet_graph.pt
+task_name: classification
+
+edge_view: default
+feature_subset: all
+original_features: true
+input_dim: 768
+
+# Binary bot-vs-human episodes (label_names = ["human", "bot"]).
+n_way: 2
+n_shots: 3
+n_query: 8
+batch_size: 8
+
+# Tiny caps for a fast end-to-end smoke.
+dataset_len_cap: 20
+val_len_cap: 10
+test_len_cap: 10
+epochs: 2
+
+eval_step: 20
+checkpoint_step: 20
+workers: 4
+device: 0
+seed: 0
+prefix: twibot20_cls_smoke
