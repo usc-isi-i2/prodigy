@@ -1134,6 +1134,23 @@ class TrainerFS():
         msg = " ".join(f"{k}={v:.4f}" for k, v in prefix_metrics.items())
         _log(f"[metrics] {msg}")
 
+    def _log_eval_scores(self, loss, score, score_std, aux_loss, split_name, step=None):
+        prefix = f"{split_name}_{self._score_label()}"
+        payload = {
+            prefix: _to_float(score),
+            f"{prefix}_std": _to_float(score_std),
+            f"{split_name}_loss": _to_float(loss),
+            f"{split_name}_aux_loss": _to_float(aux_loss),
+        }
+
+        suffix = split_name if step is None else f"{split_name}_step{step}"
+        out_path = os.path.join(self.logging_dir, f"scores_{suffix}.json")
+        try:
+            with open(out_path, "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=2, sort_keys=True)
+        except Exception as ex:
+            _log(f"Failed to save score file {out_path}: {ex}")
+
     def _format_debug_node_features(self, graph, sample_idx: int = 0, emb_preview: int = 8):
         try:
             if isinstance(graph, dict):
@@ -1518,9 +1535,17 @@ class TrainerFS():
             step=step,
             global_eval=global_eval,
         )
-        self._log_eval_metrics(eval_metrics, split_name=split_name, step=step)
         acc_batch_std = np.std(acc_all)
         aux_loss_global = sum(all_aux_loss) / len(all_aux_loss)
+        self._log_eval_metrics(eval_metrics, split_name=split_name, step=step)
+        self._log_eval_scores(
+            loss_global,
+            acc_global,
+            acc_batch_std,
+            aux_loss_global,
+            split_name=split_name,
+            step=step,
+        )
         torch.set_grad_enabled(True)
         if ranks is not None:
             ranks = {key: np.average([r[0][key] for r in ranks], weights=[r[1] for r in ranks]) for key in ranks[0][0]}
