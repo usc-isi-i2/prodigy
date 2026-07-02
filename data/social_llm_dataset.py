@@ -308,3 +308,10 @@ def get_ukr_rus_suspended_dataset(root, **kwargs):
 
 def get_ukr_rus_suspended_dataloader(*args, **kwargs):
     return _get_dataloader("ukr_rus_suspended", *args, **kwargs)
+
+
+def get_twibot20_dataset(root, **kwargs):
+    return _get_dataset("twibot20", root, **kwargs)
+
+def get_twibot20_dataloader(*args, **kwargs):
+    return _get_dataloader("twibot20", *args, **kwargs)

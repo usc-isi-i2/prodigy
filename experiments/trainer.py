@@ -207,6 +207,7 @@ class TrainerFS():
             "hate_bots08",
             "ukr_rus_hate",
             "ukr_rus_suspended",
+            "twibot20",
             "instagram_mention",
         }
         if (
@@ -234,6 +235,7 @@ class TrainerFS():
             "hate_bots08",
             "ukr_rus_hate",
             "ukr_rus_suspended",
+            "twibot20",
         }
         if self.dataset_name in edge_feature_datasets and self.parameter.get("use_edge_features", False):
             graph_edge_attr = getattr(dataset.graph, "edge_attr", None)
@@ -467,7 +469,7 @@ class TrainerFS():
             kwargs["root"] = self.parameter["root"]
             get_dataloader = get_covid_political_dataloader
         elif dataset_name in {"covid_mf", "election2020", "hate_bots05", "hate_bots08",
-                               "ukr_rus_hate", "ukr_rus_suspended"}:
+                               "ukr_rus_hate", "ukr_rus_suspended", "twibot20"}:
             from data import social_llm_dataset as _sld
             kwargs["root"] = self.parameter["root"]
             get_dataloader = getattr(_sld, f"get_{dataset_name}_dataloader")
