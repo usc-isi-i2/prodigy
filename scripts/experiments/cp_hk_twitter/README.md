@@ -70,3 +70,37 @@ The runner performs:
 
 Use `DRY_RUN=1` to print the commands. `GPUS` must be a comma-separated subset
 of physical GPUs `0,1,2,3`.
+
+### 2026-07-02 CP-HK Transfer Results
+
+Model: `/dataMeR1/phil/gfm/prodigy/state/cp_hk_twitter_nm_bio_02_07_2026_08_58_57/state_dict`
+
+Queue log: `/dataMeR1/phil/logs/cp_hk_transfer_eval_20260702_101456.log`
+
+CP-HK is not primarily COVID-related. A raw-shard term sample is dominated by
+Hong Kong/protest terms (`HongKong`, `FreeHongKong`, police, protest, CCP,
+China); COVID terms appear much less often and are likely incidental to the 2020
+collection window.
+
+| Task | Dataset | n-way | Test acc | Test F1 | Test ROC-AUC |
+|------|---------|------:|---------:|--------:|-------------:|
+| NM | covid19_twitter | 3 | 0.6334 | 0.6333 | 0.8226 |
+| NM | ukr_rus_twitter | 3 | 0.7112 | 0.7111 | 0.8798 |
+| NM | midterm | 3 | 0.5845 | 0.5844 | 0.8131 |
+| NM | cp_hk_twitter | 3 | 0.6663 | 0.6663 | 0.8627 |
+| NM | twibot20 | 3 | 0.6399 | 0.6398 | 0.8238 |
+| NM | covid_political | 3 | 0.5112 | 0.5110 | 0.7165 |
+| NM | election2020 | 3 | 0.4920 | 0.4918 | 0.6731 |
+| NM | ukr_rus_suspended | 3 | 0.5087 | 0.5083 | 0.7085 |
+| NM | covid19_twitter | 30 | 0.1416 | 0.1399 | 0.7530 |
+| NM | ukr_rus_twitter | 30 | 0.1702 | 0.1675 | 0.8045 |
+| NM | midterm | 30 | 0.1382 | 0.1384 | 0.7310 |
+| NM | cp_hk_twitter | 30 | 0.1382 | 0.1343 | 0.7910 |
+| NM | twibot20 | 30 | 0.1240 | 0.1207 | 0.7627 |
+| NM | covid_political | 30 | 0.0788 | 0.0757 | 0.6675 |
+| NM | election2020 | 30 | 0.0702 | 0.0692 | 0.6323 |
+| NM | ukr_rus_suspended | 30 | 0.0833 | 0.0809 | 0.6481 |
+| NC | twibot20 | 2 | 0.5725 | 0.5964 | 0.6090 |
+| NC | covid_political | 2 | 0.5803 | 0.6057 | 0.6054 |
+| NC | election2020 | 2 | 0.5380 | 0.5157 | 0.5308 |
+| NC | ukr_rus_suspended | 2 | 0.6520 | 0.6258 | 0.6973 |
