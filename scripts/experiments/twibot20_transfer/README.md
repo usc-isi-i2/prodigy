@@ -23,15 +23,23 @@ DRY_RUN=1 bash scripts/experiments/twibot20_transfer/train_twibot20_tucker.sh
 DEVICE=0 bash scripts/experiments/twibot20_transfer/train_twibot20_tucker.sh
 ```
 
-Override the config for a fuller run, e.g.:
+Checkpoints land under `state/twibot20_cls_smoke_<timestamp>/`, logs under `log/`.
+
+## Phase 2 — Full train-on-TwiBot-20 run
+
+Real run via [`twibot20_cls.yaml`](twibot20_cls.yaml) (12 epochs x 10k episodes =
+120k steps; eval/checkpoint once per epoch). No CLI overrides needed:
 
 ```bash
-CONFIG_PATH=scripts/experiments/twibot20_transfer/twibot20_cls_smoke.yaml \
-DEVICE=0 bash scripts/experiments/twibot20_transfer/train_twibot20_tucker.sh \
-  --epochs 12 --dataset_len_cap 10000 --prefix twibot20_cls
+CONFIG_PATH=scripts/experiments/twibot20_transfer/twibot20_cls.yaml \
+DEVICE=0 bash scripts/experiments/twibot20_transfer/train_twibot20_tucker.sh
 ```
 
-Checkpoints land under `state/twibot20_cls_smoke_<timestamp>/`, logs under `log/`.
+`eval_step`/`checkpoint_step` are baked into the YAML at `10000` (= one
+`dataset_len_cap` epoch), so eval runs ~12 times over the run. If you change
+`dataset_len_cap`, change `eval_step`/`checkpoint_step` to match — a step is one
+batch, total steps = `epochs x dataset_len_cap`, and eval fires on
+`step % eval_step == 0`. Checkpoints land under `state/twibot20_cls_<timestamp>/`.
 
 ## Notes
 
