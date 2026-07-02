@@ -398,13 +398,16 @@ def build_command(
         ]
     elif task == "classification":
         n_way = classification_n_way if classification_n_way is not None else 2
+        if args.pl_linear_probe:
+            # keep linear-probe run dirs distinct from few-shot pl runs
+            prefix = f"{prefix}_lp{args.pl_train_cap}" if args.pl_train_cap > 0 else f"{prefix}_lp"
         extra = [
             "--task_name",
             "classification",
             "--ignore_label_embeddings",
             "False",
             "--linear_probe",
-            "False",
+            "True" if args.pl_linear_probe else "False",
             "--n_way",
             str(n_way),
             "--n_shots",
@@ -430,6 +433,8 @@ def build_command(
             "--prefix",
             prefix,
         ]
+        if args.pl_linear_probe and args.pl_train_cap > 0:
+            extra += ["--train_cap", str(args.pl_train_cap)]
     else:
         raise ValueError(f"Unsupported task: {task}")
     return common + extra + args.extra_args
@@ -546,6 +551,11 @@ def main() -> int:
     parser.add_argument("--nm-dataset-len-cap", type=int, default=5000)
     parser.add_argument("--lp-dataset-len-cap", type=int, default=2500)
     parser.add_argument("--pl-dataset-len-cap", type=int, default=2000)
+    parser.add_argument("--pl-linear-probe", action="store_true",
+                        help="Run classification eval as a linear probe (--linear_probe True, all classes "
+                             "per episode). Pair with a larger --shots (e.g. 20,50) for full-support readout.")
+    parser.add_argument("--pl-train-cap", type=int, default=0,
+                        help="With --pl-linear-probe, cap labeled support examples per class (0 = uncapped).")
     parser.add_argument("--parquet-val-cap", type=int, default=500)
     parser.add_argument("--parquet-test-cap", type=int, default=500)
     parser.add_argument("--lp-n-query", type=int, default=12)

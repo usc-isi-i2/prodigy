@@ -41,6 +41,27 @@ DEVICE=0 bash scripts/experiments/twibot20_transfer/train_twibot20_tucker.sh
 batch, total steps = `epochs x dataset_len_cap`, and eval fires on
 `step % eval_step == 0`. Checkpoints land under `state/twibot20_cls_<timestamp>/`.
 
+## Linear-probe classification (the real bot-detection signal)
+
+Few-shot (3-shot) classification on frozen NM features lands near chance (~0.55
+AUC) for **every** source — including the in-domain TwiBot-20 model — so 3-shot is
+measurement-limited, not transfer-limited. The linear-probe variant re-runs
+classification with `--linear_probe True` and a larger many-shot support
+(`SHOTS`, default 20) to read out representation quality properly.
+
+```bash
+# transfer-IN (9 merged models -> twibot20), linear probe:
+SHOTS=20 bash scripts/experiments/twibot20_transfer/eval_merged_on_twibot20_lp_tucker.sh --gpus 0,1,2
+
+# transfer-OUT (twibot20 model -> labeled targets), linear probe:
+SHOTS=20 bash scripts/experiments/twibot20_transfer/eval_source_lp_tucker.sh --gpus 0,1,2
+```
+
+Linear-probe runs land in `log/eval_*_pl_<SHOTS>shot_lp*` (the `_lp` suffix keeps
+them distinct from the 3-shot `pl` runs). `SHOTS` and `TRAIN_CAP` are env-overridable;
+raise `SHOTS` (e.g. 50) for a fuller probe. Under the hood these pass
+`--pl-linear-probe`/`--pl-train-cap` to the shared eval harness.
+
 ## Notes
 
 - Config alignment: `twibot20_cls.yaml` mirrors the merged-graph NM setup
