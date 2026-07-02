@@ -1,7 +1,8 @@
 """
 Generic dataset/dataloader for social_llm_* graph datasets.
 
-Supports: covid_mf, election2020, hate_bots05, hate_bots08, ukr_rus_hate, ukr_rus_suspended.
+Supports: covid_mf, cp_hk_twitter, election2020, hate_bots05, hate_bots08,
+ukr_rus_hate, ukr_rus_suspended.
 
 Each dataset's graph .pt is built by data/data/social_llm/scripts/generate_graph.py.
 For multi-label datasets (covid_mf, hate_bots05/08, ukr_rus_hate), re-run
@@ -273,6 +274,13 @@ def get_covid_mf_dataset(root, **kwargs):
 
 def get_covid_mf_dataloader(*args, **kwargs):
     return _get_dataloader("covid_mf", *args, **kwargs)
+
+
+def get_cp_hk_twitter_dataset(root, **kwargs):
+    return _get_dataset("cp_hk_twitter", root, **kwargs)
+
+def get_cp_hk_twitter_dataloader(*args, **kwargs):
+    return _get_dataloader("cp_hk_twitter", *args, **kwargs)
 
 
 def get_election2020_dataset(root, **kwargs):
