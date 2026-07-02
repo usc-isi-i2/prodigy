@@ -50,3 +50,23 @@ From the local machine, transfer raw files with:
 ```bash
 bash scripts/experiments/cp_hk_twitter/transfer_cp_hk_raw_to_tucker.sh
 ```
+
+## Transfer Evaluation
+
+Evaluate the CP-HK NM checkpoint on the requested transfer grid with:
+
+```bash
+GPUS=1 bash scripts/experiments/cp_hk_twitter/eval_cp_hk_transfer_tucker.sh
+```
+
+The runner performs:
+
+- NM, 3-shot, 3-way on `covid19_twitter`, `ukr_rus_twitter`, `midterm`,
+  `cp_hk_twitter`, `twibot20`, `covid_political`, `election2020`,
+  `ukr_rus_suspended`.
+- NM, 3-shot, 30-way on the same graph list.
+- NC, 3-shot on `twibot20`, `covid_political`, `election2020`,
+  `ukr_rus_suspended`.
+
+Use `DRY_RUN=1` to print the commands. `GPUS` must be a comma-separated subset
+of physical GPUs `0,1,2,3`.

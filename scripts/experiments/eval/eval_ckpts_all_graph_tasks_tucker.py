@@ -99,6 +99,16 @@ DATASETS = {
         test_cap=500,
         eval_random_query=True,
     ),
+    "cp_hk_twitter": DatasetConfig(
+        name="cp_hk_twitter",
+        root_name="cp_hk_twitter",
+        graph_filename="retweet_graph.pt",
+        supports_lp=True,
+        nm_n_query=4,
+        pl_n_query=4,
+        val_cap=500,
+        test_cap=500,
+    ),
     "election2020": DatasetConfig(
         name="election2020",
         root_name="election2020",
@@ -133,6 +143,7 @@ DATASETS = {
 
 TASK_ALIASES = {
     "nm": "neighbor_matching",
+    "nc": "classification",
     "lp": "temporal_link_prediction",
     "pl": "classification",
     "neighbor_matching": "neighbor_matching",
