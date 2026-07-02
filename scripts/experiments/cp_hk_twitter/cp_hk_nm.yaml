@@ -1,0 +1,27 @@
+dataset: cp_hk_twitter
+root: /dataMeR1/phil/data/cp_hk_twitter/graphs
+graph_filename: retweet_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+edge_feature_subset: none
+original_features: true
+input_dim: 768
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+n_hop: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+
+epochs: 6
+eval_step: 10000
+checkpoint_step: 10000
+workers: 16
+device: 1
+seed: 0
+prefix: cp_hk_twitter_nm_bio

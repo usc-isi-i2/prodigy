@@ -468,7 +468,7 @@ class TrainerFS():
             from data.covid_political import get_covid_political_dataloader
             kwargs["root"] = self.parameter["root"]
             get_dataloader = get_covid_political_dataloader
-        elif dataset_name in {"covid_mf", "election2020", "hate_bots05", "hate_bots08",
+        elif dataset_name in {"covid_mf", "cp_hk_twitter", "election2020", "hate_bots05", "hate_bots08",
                                "ukr_rus_hate", "ukr_rus_suspended", "twibot20"}:
             from data import social_llm_dataset as _sld
             kwargs["root"] = self.parameter["root"]
