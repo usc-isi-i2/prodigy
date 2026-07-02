@@ -10,6 +10,7 @@ GPU_ID="${GPU_ID:-1}"
 BUILD_ONLY="${BUILD_ONLY:-0}"
 TRAIN_ONLY="${TRAIN_ONLY:-0}"
 MAX_RECORDS="${MAX_RECORDS:-0}"
+CP_HK_RAW_FILES="${CP_HK_RAW_FILES:-an_cp-hk.twitter.v7-ground-truth.2020-04-07_2020-08-23.json.gz an_cp-hk.twitter.v7-ground-truth.2020-08-24_2020-09-13.json.gz}"
 
 RAW_DIR="${DATA_ROOT}/raw"
 PARQUET_DIR="${DATA_ROOT}/parquet"
@@ -30,10 +31,11 @@ if [[ "${TRAIN_ONLY}" != "1" ]]; then
   export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
   export CUDA_VISIBLE_DEVICES="${GPU_ID}"
 
-  inputs=(
-    "${RAW_DIR}/an_cp-hk.twitter.v7-ground-truth.2020-04-07_2020-08-23.json.gz"
-    "${RAW_DIR}/an_cp-hk.twitter.v7-ground-truth.2020-08-24_2020-09-13.json.gz"
-  )
+  read -r -a raw_files <<< "${CP_HK_RAW_FILES}"
+  inputs=()
+  for raw_file in "${raw_files[@]}"; do
+    inputs+=("${RAW_DIR}/${raw_file}")
+  done
   for input in "${inputs[@]}"; do
     if [[ ! -s "${input}" ]]; then
       echo "Missing raw input: ${input}" >&2
@@ -41,9 +43,12 @@ if [[ "${TRAIN_ONLY}" != "1" ]]; then
     fi
   done
 
+  convert_args=()
+  for input in "${inputs[@]}"; do
+    convert_args+=(--input "${input}")
+  done
   python -u scripts/graph_construction/cp_hk_json_to_parquet.py \
-    --input "${inputs[0]}" \
-    --input "${inputs[1]}" \
+    "${convert_args[@]}" \
     --out-dir "${PARQUET_DIR}" \
     --max-records "${MAX_RECORDS}"
 

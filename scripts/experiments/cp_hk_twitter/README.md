@@ -33,6 +33,18 @@ The build pipeline is:
 Tucker does not use Slurm for this workflow. Use `run_cp_hk_nm_tucker.sh`, which
 launches build/train phases directly and can be wrapped in `nohup`.
 
+GPU use is restricted to physical GPUs `0,1,2,3`. Set `GPU_ID` to one of those
+values; the runner masks to that single GPU and the training config uses
+`device: 0` inside the masked process.
+
+For the first overnight run, it is acceptable to build from only the smaller
+CP-HK shard while the larger shard is still expensive to transfer:
+
+```bash
+CP_HK_RAW_FILES="an_cp-hk.twitter.v7-ground-truth.2020-08-24_2020-09-13.json.gz" \
+GPU_ID=1 bash scripts/experiments/cp_hk_twitter/run_cp_hk_nm_tucker.sh
+```
+
 From the local machine, transfer raw files with:
 
 ```bash
