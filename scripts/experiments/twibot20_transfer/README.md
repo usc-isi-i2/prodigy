@@ -43,6 +43,13 @@ batch, total steps = `epochs x dataset_len_cap`, and eval fires on
 
 ## Notes
 
+- Config alignment: `twibot20_cls.yaml` mirrors the merged-graph NM setup
+  (`scripts/experiments/nm_transfer_matrix/merged_nm.yaml`) as closely as
+  classification allows — `batch_size: 1`, `n_hop: 1`, `n_shots: 3`,
+  `n_query: 4`, `dataset_len_cap: 10000`, `val/test_len_cap: 500`,
+  `workers: 16`, `epochs: 12`. The one forced difference is `n_way: 2` (capped at
+  the 2 labels; merged NM uses `n_way: 30`). Keep `batch_size` at 1 — using 8
+  runs 8x the episodes per epoch and makes iterations look very slow.
 - Splits: the classification path builds its own stratified node splits
   (seed=0), not TwiBot-20's official `split.csv` (which is preserved on the graph
   as `data.{train,val,test,support}_mask`). This matches the protocol used by the

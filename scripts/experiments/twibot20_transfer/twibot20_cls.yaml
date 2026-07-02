@@ -8,25 +8,29 @@ feature_subset: all
 original_features: true
 input_dim: 768
 
-# Binary bot-vs-human episodes (label_names = ["human", "bot"]).
+# Matches the merged-graph NM experiment setup as closely as classification
+# allows. The one forced difference: n_way is capped at the 2 labels
+# (bot/human); the merged NM runs use n_way: 30, which only applies to
+# neighbor matching.
 n_way: 2
 n_shots: 3
-n_query: 8
-batch_size: 8
+n_query: 4
+batch_size: 1
+n_hop: 1
 
-# Full run: 12 epochs x 10k episodes = 120,000 steps.
+# Same budget/caps as merged_nm.yaml.
 epochs: 12
 dataset_len_cap: 10000
-val_len_cap: 100
+val_len_cap: 500
 test_len_cap: 500
 
-# Eval / checkpoint once per epoch (every dataset_len_cap steps). Keep these in
-# sync with dataset_len_cap: a step is one batch, total steps = epochs x
-# dataset_len_cap, and eval fires on `step % eval_step == 0`.
+# Eval / checkpoint once per epoch (every dataset_len_cap steps). A step is one
+# batch; total steps = epochs x dataset_len_cap; eval fires on
+# `step % eval_step == 0`. Keep these in sync with dataset_len_cap.
 eval_step: 10000
 checkpoint_step: 10000
 
-workers: 4
+workers: 16
 device: 0
 seed: 0
 prefix: twibot20_cls
