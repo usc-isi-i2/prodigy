@@ -58,8 +58,48 @@ batch, total steps = `epochs x dataset_len_cap`, and eval fires on
 - Edge features (`n_retweets`) are off by default; add `--use_edge_features true`
   to enable them.
 
-## Next (not yet scaffolded)
+## Experiment (a) — Train NM on TwiBot-20, eval everywhere (transfer OUT)
 
-- Transfer INTO TwiBot-20: evaluate checkpoints trained on other datasets on
-  TwiBot-20 classification (zero- and fixed-adaptation), mirroring
-  `scripts/experiments/covid_task_transfer_matrix/`.
+Train a neighbor-matching model on the TwiBot-20 retweet graph, then evaluate
+that checkpoint on every other graph/task. Config
+[`twibot20_nm.yaml`](twibot20_nm.yaml) mirrors `nm_transfer_matrix/merged_nm.yaml`
+(NM, 30-way, batch_size 1, 12 epochs x 10k = 120k steps).
+
+```bash
+# 1. Train (GPU; pick a free device):
+CONFIG_PATH=scripts/experiments/twibot20_transfer/twibot20_nm.yaml \
+DEVICE=0 bash scripts/experiments/twibot20_transfer/train_twibot20_tucker.sh
+
+# 2. Build the model list from the trained run's final checkpoint:
+STATE_DIR=/dataMeR1/phil/gfm/prodigy/state \
+  bash scripts/experiments/twibot20_transfer/make_model_list_source.sh
+
+# 3. Eval on all graphs/tasks (NM 30-way 3-shot + classification; LP auto-skipped):
+bash scripts/experiments/twibot20_transfer/eval_source_everywhere_tucker.sh
+#    add --gpus 0,1,2 to parallelize, --dry-run to preview.
+```
+
+## Experiment (b) — Eval merged-strategy models on TwiBot-20 (transfer IN)
+
+Evaluate the checkpoints from the merged-vs-single NM study on TwiBot-20 (NM +
+bot-vs-human classification). The 9 models:
+
+- ukr/covid: `nm_matrix_ukr`, `nm_matrix_covid`, `nm_matrix_merged`,
+  `nm_xsrc_within_source`
+- covid/midterm: `nm_cm_covid`, `nm_cm_midterm`, `nm_cm_merged`, `nm_cm_within`,
+  `nm_cm_within_balanced`
+
+```bash
+# 1. Build the model list from those runs' final checkpoints:
+STATE_DIR=/dataMeR1/phil/gfm/prodigy/state \
+  bash scripts/experiments/twibot20_transfer/make_model_list_merged.sh
+
+# 2. Eval them on TwiBot-20:
+bash scripts/experiments/twibot20_transfer/eval_merged_on_twibot20_tucker.sh
+#    add --gpus 0,1,2 to parallelize, --dry-run to preview.
+```
+
+Both experiments require `twibot20` in the shared eval harness `DATASETS`
+(`scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py`) — added here.
+Results land under `log/eval_*_to_twibot20_*` (b) and `log/eval_nm_twibot20_to_*`
+(a); parse them with the same tooling as the other transfer matrices.

@@ -119,6 +119,16 @@ DATASETS = {
         val_cap=500,
         test_cap=500,
     ),
+    "twibot20": DatasetConfig(
+        name="twibot20",
+        root_name="twibot20",
+        graph_filename="retweet_graph.pt",
+        supports_lp=False,  # no temporal edge views
+        nm_n_query=12,
+        pl_n_query=12,  # bot-vs-human classification auto-detected (2 classes)
+        val_cap=500,
+        test_cap=500,
+    ),
 }
 
 TASK_ALIASES = {
