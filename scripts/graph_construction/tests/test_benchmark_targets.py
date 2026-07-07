@@ -109,9 +109,54 @@ def test_attach_creates_views():
     print("ok: attach_benchmark_targets creates node_targets + static views")
 
 
+def test_enrich_graph_obj_static_only():
+    """cp_hk path: no profile adapter -> static views added, node_targets skipped."""
+    import enrich_graph_targets as egt
+
+    edge_index = torch.tensor([[0, 1, 2, 3, 4], [1, 2, 3, 4, 0]], dtype=torch.long)
+    graph_obj = {
+        "user_ids": [100, 101, 102, 103, 104],
+        "edge_index": edge_index,
+        "edge_attr": torch.arange(5, dtype=torch.float).reshape(-1, 1),
+        "edge_attr_feature_names": ["n_retweets"],
+    }
+    stats = egt.enrich_graph_obj(graph_obj, "cp_hk_twitter", holdout_frac=0.25, seed=3)
+
+    assert "node_targets" not in graph_obj                      # no metrics for cp_hk
+    assert stats["profile"].get("skipped") is True
+    assert "static_background" in graph_obj["edge_index_views"]
+    assert "static_holdout" in graph_obj["target_edge_index_views"]
+    assert graph_obj["benchmark_target_stats"]["static_split"]["holdout_edges"] >= 1
+    print("ok: enrich_graph_obj adds static views and skips regression for cp_hk")
+
+
+def test_enrich_graph_obj_with_targets():
+    """Regression path via an injected fake adapter result (no duckdb needed)."""
+    import enrich_graph_targets as egt
+
+    orig = egt._fetch_raw_by_user
+    egt._fetch_raw_by_user = lambda dataset, user_ids, **kw: {
+        uid: {"followers_count": uid * 10, "created_at": "Wed Oct 10 20:19:24 +0000 2018"}
+        for uid in user_ids
+    }
+    try:
+        edge_index = torch.tensor([[0, 1, 2], [1, 2, 0]], dtype=torch.long)
+        graph_obj = {"user_ids": [1, 2, 3], "edge_index": edge_index}
+        egt.enrich_graph_obj(graph_obj, "midterm", holdout_frac=0.34, seed=0)
+    finally:
+        egt._fetch_raw_by_user = orig
+
+    assert graph_obj["node_target_names"][0] == "followers_count"
+    fol = graph_obj["node_targets"]["followers_count"]
+    assert fol.tolist() == [10.0, 20.0, 30.0]
+    print("ok: enrich_graph_obj builds node_targets when an adapter is present")
+
+
 if __name__ == "__main__":
     test_profile_targets_alignment_and_missing()
     test_static_split_no_undirected_leakage()
     test_static_split_reproducible()
     test_attach_creates_views()
+    test_enrich_graph_obj_static_only()
+    test_enrich_graph_obj_with_targets()
     print("\nAll benchmark_targets tests passed.")
