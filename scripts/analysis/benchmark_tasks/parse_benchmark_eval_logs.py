@@ -25,8 +25,15 @@ import re
 from pathlib import Path
 from typing import Any, Optional
 
-REG_RE = re.compile(r"^eval_(?P<model>.+?)_to_(?P<dataset>.+?)_reg_(?P<target>.+?)_(?P<shots>\d+)shot")
-SLP_RE = re.compile(r"^eval_(?P<model>.+?)_to_(?P<dataset>.+?)_slp_(?P<shots>\d+)shot")
+# Run dirs: eval_<model>_to_<dataset>_reg_<shots>shot_<target>_<DD_MM_YYYY_HH_MM_SS>
+#           eval_<model>_to_<dataset>_slp_<shots>shot_<DD_MM_YYYY_HH_MM_SS>
+_TS = r"_\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2}$"
+REG_RE = re.compile(
+    r"^eval_(?P<model>.+?)_to_(?P<dataset>.+?)_reg_(?P<shots>\d+)shot_(?P<target>.+?)" + _TS
+)
+SLP_RE = re.compile(
+    r"^eval_(?P<model>.+?)_to_(?P<dataset>.+?)_slp_(?P<shots>\d+)shot" + _TS
+)
 
 REG_METRICS = ("spearman", "rmse", "mae", "r2", "mse")
 SLP_METRICS = ("roc_auc", "accuracy", "f1")
@@ -48,10 +55,13 @@ def _numeric_metrics(payload: dict[str, Any], split: str) -> dict[str, float]:
 
 
 def _latest_metrics(run_dir: Path, split: str) -> dict[str, float]:
-    """Return the highest-step metrics for a split (falls back to unstepped)."""
+    """Return the highest-step metrics for a split (falls back to unstepped).
+
+    Eval writes metrics under ``<run_dir>/data/metrics_<split>[_step<N>].json``.
+    """
     best_step = -1
     best: dict[str, float] = {}
-    for path in run_dir.glob(f"metrics_{split}*.json"):
+    for path in (run_dir / "data").glob(f"metrics_{split}*.json"):
         if _split_of(path) != split:
             continue
         m = re.search(r"_step(\d+)\.json$", path.name)
