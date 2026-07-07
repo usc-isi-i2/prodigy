@@ -1,0 +1,132 @@
+#!/usr/bin/env python3
+"""Collect node-regression and static-LP eval metrics into tidy CSVs.
+
+Parses eval log directories produced by the shared runner
+(``eval_<model>_to_<dataset>_<tag>_..._<shots>shot_<timestamp>/``) and their
+``metrics_<split>[_step<N>].json`` files (same layout as
+``scripts/analysis/export_eval_results_csv.py``), keeping only the two new tasks:
+
+  * ``reg`` -> node_regression.csv  (spearman, rmse, mae, r2)
+  * ``slp`` -> static_link_prediction.csv  (roc_auc, accuracy, f1)
+
+Usage (laptop or Tucker, needs pandas):
+
+    python scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py \
+        --log-root /dataMeR2/phil/gfm/prodigy/log \
+        --out-dir scripts/plotting
+"""
+
+from __future__ import annotations
+
+import argparse
+import glob
+import json
+import re
+from pathlib import Path
+from typing import Any, Optional
+
+REG_RE = re.compile(r"^eval_(?P<model>.+?)_to_(?P<dataset>.+?)_reg_(?P<target>.+?)_(?P<shots>\d+)shot")
+SLP_RE = re.compile(r"^eval_(?P<model>.+?)_to_(?P<dataset>.+?)_slp_(?P<shots>\d+)shot")
+
+REG_METRICS = ("spearman", "rmse", "mae", "r2", "mse")
+SLP_METRICS = ("roc_auc", "accuracy", "f1")
+
+
+def _split_of(path: Path) -> Optional[str]:
+    m = re.match(r"metrics_(?P<split>.+?)(?:_step\d+)?\.json$", path.name)
+    return m.group("split") if m else None
+
+
+def _numeric_metrics(payload: dict[str, Any], split: str) -> dict[str, float]:
+    out: dict[str, float] = {}
+    prefix = f"{split}_"
+    for key, value in payload.items():
+        if not isinstance(value, (int, float)):
+            continue
+        out[key[len(prefix):] if key.startswith(prefix) else key] = float(value)
+    return out
+
+
+def _latest_metrics(run_dir: Path, split: str) -> dict[str, float]:
+    """Return the highest-step metrics for a split (falls back to unstepped)."""
+    best_step = -1
+    best: dict[str, float] = {}
+    for path in run_dir.glob(f"metrics_{split}*.json"):
+        if _split_of(path) != split:
+            continue
+        m = re.search(r"_step(\d+)\.json$", path.name)
+        step = int(m.group(1)) if m else 0
+        if step >= best_step:
+            try:
+                payload = json.loads(path.read_text())
+            except (json.JSONDecodeError, OSError):
+                continue
+            best_step, best = step, _numeric_metrics(payload, split)
+    return best
+
+
+def _rows_for_run(run_dir: Path) -> list[dict[str, Any]]:
+    name = run_dir.name
+    reg = REG_RE.match(name)
+    slp = SLP_RE.match(name)
+    rows: list[dict[str, Any]] = []
+    for split in ("test", "val"):
+        metrics = _latest_metrics(run_dir, split)
+        if not metrics:
+            continue
+        if reg:
+            row = {**reg.groupdict(), "task": "regression", "split": split, "run": name}
+            row["shots"] = int(row["shots"])
+            for k in REG_METRICS:
+                row[k] = metrics.get(k)
+            rows.append(row)
+        elif slp:
+            row = {**slp.groupdict(), "target": "", "task": "static_link_prediction",
+                   "split": split, "run": name}
+            row["shots"] = int(row["shots"])
+            for k in SLP_METRICS:
+                row[k] = metrics.get(k)
+            rows.append(row)
+    return rows
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--log-root", required=True, help="Directory containing eval_* run dirs.")
+    ap.add_argument("--out-dir", default="scripts/plotting",
+                    help="Base dir; CSVs land under <out-dir>/{node_regression,static_link_prediction}/data.")
+    ap.add_argument("--reg-glob", default="eval_*_reg_*")
+    ap.add_argument("--slp-glob", default="eval_*_slp_*")
+    args = ap.parse_args()
+
+    import pandas as pd
+
+    log_root = Path(args.log_root)
+    run_dirs = sorted(
+        {Path(p) for p in glob.glob(str(log_root / args.reg_glob))}
+        | {Path(p) for p in glob.glob(str(log_root / args.slp_glob))}
+    )
+    print(f"[parse] {len(run_dirs)} candidate run dirs under {log_root}")
+
+    reg_rows, slp_rows = [], []
+    for run_dir in run_dirs:
+        if not run_dir.is_dir():
+            continue
+        for row in _rows_for_run(run_dir):
+            (reg_rows if row["task"] == "regression" else slp_rows).append(row)
+
+    out_base = Path(args.out_dir)
+    written = []
+    for name, rows in (("node_regression", reg_rows), ("static_link_prediction", slp_rows)):
+        data_dir = out_base / name / "data"
+        data_dir.mkdir(parents=True, exist_ok=True)
+        csv_path = data_dir / f"{name}.csv"
+        pd.DataFrame(rows).to_csv(csv_path, index=False)
+        written.append((csv_path, len(rows)))
+    for path, n in written:
+        print(f"[parse] wrote {n:>4} rows -> {path}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
