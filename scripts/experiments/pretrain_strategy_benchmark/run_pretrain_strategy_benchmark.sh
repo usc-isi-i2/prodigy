@@ -16,28 +16,34 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
-source "$(conda info --base)/etc/profile.d/conda.sh"
-conda activate prodigy
-export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
+# Prefer an activated conda env; otherwise fall back to the prodigy env python
+# directly (robust in a detached tmux where conda isn't initialised). Override
+# the fallback with PRODIGY_PY=/path/to/env/bin/python.
+if command -v conda >/dev/null 2>&1 && [ -n "${CONDA_PREFIX:-}" ]; then
+  PY=python3
+else
+  PY="${PRODIGY_PY:-/home/mhchu/miniconda3/envs/prodigy/bin/python}"
+  export LD_LIBRARY_PATH="$(dirname "$(dirname "${PY}")")/lib:${LD_LIBRARY_PATH:-}"
+fi
 cd "${REPO_ROOT}"
 
 RUNNER=scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py
 ML="${SCRIPT_DIR}/model_list.txt"
-COMMON=(--model-list "${ML}" --python python3
+COMMON=(--model-list "${ML}" --python "${PY}"
         --data-root /dataMeR1/phil/data
         --datasets midterm,ukr_rus_twitter,covid19_twitter,cp_hk_twitter,twibot20
         --continue-on-error)
 
 # node regression (log1p, full profile panel; 10-shot)
-python3 "${RUNNER}" "${COMMON[@]}" --tasks reg --shots 10 --reg-transform log1p "$@"
+"${PY}" "${RUNNER}" "${COMMON[@]}" --tasks reg --shots 10 --reg-transform log1p "$@"
 
 # static link prediction (zero-shot + small n_query so sparse graphs qualify)
-python3 "${RUNNER}" "${COMMON[@]}" --tasks slp --shots 0 --slp-n-query 4 "$@"
+"${PY}" "${RUNNER}" "${COMMON[@]}" --tasks slp --shots 0 --slp-n-query 4 "$@"
 
 # neighbor matching + classification baselines (3-shot)
-python3 "${RUNNER}" "${COMMON[@]}" --tasks nm,pl --shots 3 "$@"
+"${PY}" "${RUNNER}" "${COMMON[@]}" --tasks nm,pl --shots 3 "$@"
 
 # parse the new-task results (reg + slp) into the plotting CSVs
-python3 scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py \
+"${PY}" scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py \
   --log-root /dataMeR1/phil/gfm/prodigy/log --out-dir scripts/plotting
 echo "PRETRAIN_STRATEGY_BENCHMARK_DONE"
