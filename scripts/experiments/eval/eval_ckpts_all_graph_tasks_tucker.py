@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Run checkpoint evaluation on Tucker without Slurm.
 
-The runner targets the GTE-compatible graph artifacts under /dataMeR1/phil/data.
-It inspects each graph and skips classification when no labels are present, and
-skips temporal LP when no future-edge target view is present.
+The runner targets the GTE-compatible graph artifacts under /dataMeR2/phil/data.
+It inspects each graph and gates tasks accordingly: classification is skipped when
+no labels are present, temporal LP when no future-edge target view is present,
+static LP when no ``static_holdout`` view is present, and regression is fanned out
+over the profile targets actually stored in the graph (``node_target_names``).
 """
 
 from __future__ import annotations
@@ -146,10 +148,24 @@ TASK_ALIASES = {
     "nc": "classification",
     "lp": "temporal_link_prediction",
     "pl": "classification",
+    "slp": "static_link_prediction",
+    "reg": "regression",
     "neighbor_matching": "neighbor_matching",
     "temporal_link_prediction": "temporal_link_prediction",
+    "static_link_prediction": "static_link_prediction",
     "classification": "classification",
+    "regression": "regression",
 }
+
+# Full profile regression panel (see scripts/graph_construction/benchmark_targets.py).
+DEFAULT_REG_TARGETS = (
+    "followers_count",
+    "friends_count",
+    "statuses_count",
+    "favourites_count",
+    "listed_count",
+    "account_age_days",
+)
 
 
 def load_torch() -> Any:
@@ -261,6 +277,22 @@ def has_future_edges(raw: dict[str, Any]) -> bool:
     return False
 
 
+def has_static_holdout(raw: dict[str, Any]) -> bool:
+    views = raw.get("target_edge_index_views") or {}
+    value = views.get("static_holdout")
+    return value is not None and getattr(value, "numel", lambda: 0)() > 0
+
+
+def node_target_names(raw: dict[str, Any]) -> list[str]:
+    names = raw.get("node_target_names")
+    if names:
+        return list(names)
+    node_targets = raw.get("node_targets")
+    if isinstance(node_targets, dict):
+        return list(node_targets.keys())
+    return []
+
+
 def graph_info(torch_mod: Any, path: Path) -> dict[str, Any]:
     raw = torch_load_graph(torch_mod, path)
     x = raw.get("x")
@@ -272,6 +304,8 @@ def graph_info(torch_mod: Any, path: Path) -> dict[str, Any]:
         "has_labels": has_classification_labels(raw, torch_mod),
         "label_count": classification_label_count(raw),
         "has_future_edges": has_future_edges(raw),
+        "has_static_holdout": has_static_holdout(raw),
+        "node_target_names": node_target_names(raw),
     }
 
 
@@ -283,7 +317,9 @@ def task_tag(task: str) -> str:
     return {
         "neighbor_matching": "nm",
         "temporal_link_prediction": "lp",
+        "static_link_prediction": "slp",
         "classification": "pl",
+        "regression": "reg",
     }[task]
 
 
@@ -295,6 +331,7 @@ def build_command(
     task: str,
     shots: str,
     classification_n_way: int | None = None,
+    reg_target: str | None = None,
 ) -> list[str]:
     root = Path(args.data_root) / dataset.root_name / "graphs"
     common = [
@@ -387,6 +424,76 @@ def build_command(
             str(args.parquet_val_cap),
             "--test_len_cap",
             str(args.parquet_test_cap),
+            "--epochs",
+            str(args.epochs),
+            "--eval_step",
+            str(args.eval_step),
+            "--checkpoint_step",
+            str(args.checkpoint_step),
+            "--prefix",
+            prefix,
+        ]
+    elif task == "static_link_prediction":
+        extra = [
+            "--task_name",
+            "static_link_prediction",
+            "--edge_view",
+            "static_background",
+            "--target_edge_view",
+            "static_holdout",
+            "--hard_negatives",
+            "True" if args.slp_hard_negatives else "False",
+            "--midterm_lp_neg_ratio",
+            str(args.slp_neg_ratio),
+            "--n_way",
+            "1",
+            "--n_shots",
+            shots,
+            "--n_query",
+            str(args.slp_n_query),
+            "--zero_shot",
+            zero_shot(shots),
+            "--dataset_len_cap",
+            str(args.lp_dataset_len_cap),
+            "--val_len_cap",
+            str(args.parquet_val_cap),
+            "--test_len_cap",
+            str(args.parquet_test_cap),
+            "--epochs",
+            str(args.epochs),
+            "--eval_step",
+            str(args.eval_step),
+            "--checkpoint_step",
+            str(args.checkpoint_step),
+            "--prefix",
+            prefix,
+        ]
+    elif task == "regression":
+        if not reg_target:
+            raise ValueError("regression task requires a reg_target")
+        # encode the target name so per-target runs don't collide in the run dir
+        prefix = f"{prefix}_{reg_target}"
+        extra = [
+            "--task_name",
+            "regression",
+            "--target_feature",
+            reg_target,
+            "--target_transform",
+            args.reg_transform,
+            "--n_way",
+            "1",
+            "--n_shots",
+            shots,
+            "--n_query",
+            str(dataset.pl_n_query),
+            "--zero_shot",
+            zero_shot(shots),
+            "--dataset_len_cap",
+            str(args.pl_dataset_len_cap),
+            "--val_len_cap",
+            str(dataset.val_cap),
+            "--test_len_cap",
+            str(dataset.test_cap),
             "--epochs",
             str(args.epochs),
             "--eval_step",
@@ -525,7 +632,7 @@ def main() -> int:
         default="",
         help="Optional model-name prefix for --checkpoint-run-dir rows.",
     )
-    parser.add_argument("--data-root", default="/dataMeR1/phil/data")
+    parser.add_argument("--data-root", default="/dataMeR2/phil/data")
     parser.add_argument("--datasets", default=",".join(DATASETS))
     parser.add_argument("--tasks", default="neighbor_matching,temporal_link_prediction,classification")
     parser.add_argument("--shots", default="0,3,10")
@@ -559,6 +666,18 @@ def main() -> int:
     parser.add_argument("--parquet-val-cap", type=int, default=500)
     parser.add_argument("--parquet-test-cap", type=int, default=500)
     parser.add_argument("--lp-n-query", type=int, default=12)
+    # static link prediction
+    parser.add_argument("--slp-n-query", type=int, default=12)
+    parser.add_argument("--slp-neg-ratio", type=int, default=1,
+                        help="Negatives per positive for static LP episodes.")
+    parser.add_argument("--slp-hard-negatives", type=lambda s: s.lower() not in {"0", "false", "no"},
+                        default=True,
+                        help="Draw static-LP negatives from the 2-hop shell (True) or random (False).")
+    # node regression
+    parser.add_argument("--reg-targets", default=",".join(DEFAULT_REG_TARGETS),
+                        help="Comma-separated profile targets to evaluate; one eval run per target.")
+    parser.add_argument("--reg-transform", default="log1p", choices=["none", "log1p"],
+                        help="Transform applied to regression targets (log1p for heavy-tailed counts).")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--continue-on-error", action="store_true")
     parser.add_argument("extra_args", nargs=argparse.REMAINDER)
@@ -596,10 +715,14 @@ def main() -> int:
             continue
         print(f"[progress] inspecting {dataset.name} graph={graph_path}", flush=True)
         info = graph_info(torch_mod, graph_path)
+        reg_targets_available = [
+            t for t in parse_csv(args.reg_targets) if t in set(info["node_target_names"])
+        ]
         print(
             f"[progress] {dataset.name}: x_dim={info['x_dim']} "
             f"labels={info['has_labels']} label_count={info['label_count']} "
-            f"future_edges={info['has_future_edges']}",
+            f"future_edges={info['has_future_edges']} static_holdout={info['has_static_holdout']} "
+            f"reg_targets={reg_targets_available}",
             flush=True,
         )
         if info["x_dim"] != 768:
@@ -613,21 +736,36 @@ def main() -> int:
                     if not dataset.supports_lp or not info["has_future_edges"]:
                         print(f"[skip] {dataset.name}: no temporal LP target edges", flush=True)
                         continue
+                if task == "static_link_prediction" and not info["has_static_holdout"]:
+                    print(f"[skip] {dataset.name}: no static_holdout view (enrich the graph)", flush=True)
+                    continue
                 if task == "classification" and not info["has_labels"]:
                     print(f"[skip] {dataset.name}: no classification labels", flush=True)
                     continue
-                for shot in shots:
-                    cmd = build_command(
-                        args,
-                        dataset,
-                        model_name,
-                        ckpt_path,
-                        task,
-                        shot,
-                        classification_n_way=info["label_count"] if task == "classification" else None,
-                    )
-                    label = f"dataset={dataset.name} model={model_name} task={task} shot={shot}"
-                    jobs.append((cmd, label))
+                if task == "regression" and not reg_targets_available:
+                    print(f"[skip] {dataset.name}: no node regression targets present", flush=True)
+                    continue
+
+                # regression fans out over one job per profile target
+                target_iter = reg_targets_available if task == "regression" else [None]
+                for reg_target in target_iter:
+                    for shot in shots:
+                        cmd = build_command(
+                            args,
+                            dataset,
+                            model_name,
+                            ckpt_path,
+                            task,
+                            shot,
+                            classification_n_way=info["label_count"] if task == "classification" else None,
+                            reg_target=reg_target,
+                        )
+                        tgt = f" target={reg_target}" if reg_target else ""
+                        label = (
+                            f"dataset={dataset.name} model={model_name} "
+                            f"task={task}{tgt} shot={shot}"
+                        )
+                        jobs.append((cmd, label))
 
     return run_job_queue(
         jobs,
