@@ -21,9 +21,13 @@ export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 
 cd "${REPO_ROOT}"
 
+# Retweet graphs are sparse: a static-LP episode needs (n_shots + n_query) held-out
+# edges on one center, so use zero-shot + small n_query so low-degree centers qualify.
+# (twibot20 is dense enough for a few-shot variant; add --shots 0,3 if desired.)
 python3 scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py \
   --tasks slp \
   --datasets midterm,ukr_rus_twitter,covid19_twitter,cp_hk_twitter,twibot20 \
   --slp-hard-negatives True \
-  --shots 10 \
+  --slp-n-query 4 \
+  --shots 0 \
   "$@"

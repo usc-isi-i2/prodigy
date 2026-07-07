@@ -685,8 +685,10 @@ def main() -> int:
     parser.add_argument("--parquet-val-cap", type=int, default=500)
     parser.add_argument("--parquet-test-cap", type=int, default=500)
     parser.add_argument("--lp-n-query", type=int, default=12)
-    # static link prediction
-    parser.add_argument("--slp-n-query", type=int, default=12)
+    # static link prediction. Episodes need (n_shots + n_query) held-out edges on a
+    # single center; retweet graphs are sparse/power-law, so keep n_query small and
+    # prefer zero-shot (--shots 0) so low-degree centers still qualify.
+    parser.add_argument("--slp-n-query", type=int, default=4)
     parser.add_argument("--slp-neg-ratio", type=int, default=1,
                         help="Negatives per positive for static LP episodes.")
     parser.add_argument("--slp-hard-negatives", type=lambda s: s.lower() not in {"0", "false", "no"},

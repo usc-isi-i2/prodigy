@@ -19,6 +19,15 @@ temporal split that `temporal_link_prediction` requires.
 - **Encoder input**: `--edge_view static_background` — the model never aggregates
   over the edges it is scored on.
 
+## Episode sizing (sparse graphs)
+
+An episode needs `n_shots + n_query` held-out edges on a **single center node**.
+Retweet graphs are power-law/sparse (midterm avg degree ≈ 2.7), so large values
+fail with "could not find a center with >= N held-out positive edges". Use
+**zero-shot (`--shots 0`) with small `--slp-n-query` (default 4)** so low-degree
+centers qualify; denser graphs (e.g. twibot20, avg degree ≈ 12) also support a
+few-shot variant. Note this evaluates on sufficiently-connected centers.
+
 ## Metrics
 
 Binary scoring of held-out edges vs. hard negatives: **ROC-AUC** (headline, with
