@@ -19,7 +19,23 @@ TASKS="${TASKS:-neighbor_matching,temporal_link_prediction,classification}"
 SHOTS="${SHOTS:-3}"
 MODES="${MODES:-none zero permute}"
 
-source "$(conda info --base)/etc/profile.d/conda.sh"
+# Robustly locate conda: detached tmux / non-login shells often don't have conda
+# on PATH, so `conda info --base` fails. Fall back to common install locations.
+if command -v conda >/dev/null 2>&1; then
+  CONDA_SH="$(conda info --base)/etc/profile.d/conda.sh"
+else
+  for base in "${CONDA_BASE:-}" "$HOME/miniconda3" "$HOME/anaconda3" /opt/conda; do
+    if [[ -n "${base}" && -f "${base}/etc/profile.d/conda.sh" ]]; then
+      CONDA_SH="${base}/etc/profile.d/conda.sh"; break
+    fi
+  done
+fi
+if [[ -z "${CONDA_SH:-}" || ! -f "${CONDA_SH}" ]]; then
+  echo "Could not locate conda.sh; set CONDA_BASE to your conda install dir." >&2
+  exit 1
+fi
+# shellcheck source=/dev/null
+source "${CONDA_SH}"
 conda activate prodigy
 export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 cd "${REPO_ROOT}"
