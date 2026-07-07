@@ -415,7 +415,17 @@ def get_params():
         "--midterm_lp_neg_ratio",
         default=1,
         type=int,
-        help="Negative:positive ratio for temporal_link_prediction binary sampling (e.g., 5 means 5 negatives per positive).",
+        help="Negative:positive ratio for temporal/static link-prediction binary sampling (e.g., 5 means 5 negatives per positive).",
+    )
+    args.add_argument(
+        "--hard_negatives",
+        default=True,
+        type=str2bool,
+        help=(
+            "static_link_prediction only: draw negatives from the center's 2-hop "
+            "(but not 1-hop) neighborhood in the background graph. False = random "
+            "negatives (task becomes much easier / AUC saturates)."
+        ),
     )
     args.add_argument(
         "--use_edge_features",
@@ -467,6 +477,8 @@ def get_params():
         "same_graph": "contrastive",
         "fp": "masked_feature_prediction",
         "mfp": "masked_feature_prediction",
+        "slp": "static_link_prediction",
+        "reg": "regression",
     }
     params["task_name"] = task_aliases.get(params["task_name"], params["task_name"])
 

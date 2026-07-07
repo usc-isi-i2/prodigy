@@ -89,6 +89,98 @@ class BinaryFutureLinkTask:
         return {(0, center): neg, (1, center): pos}
 
 
+class StaticLinkTask:
+    """Binary *static* link-prediction episodes on held-out edges with hard negatives.
+
+    Unlike :class:`BinaryFutureLinkTask` (which uses a temporal future split), this
+    predicts existence of edges held out from the same graph:
+    - positives: held-out edges incident to a sampled center node (from the
+      ``static_holdout`` neighbor sampler).
+    - negatives: by default *hard* negatives — nodes two hops from the center in the
+      ``static_background`` graph but not direct neighbors — falling back to random
+      non-neighbors when the 2-hop shell is too small. Hard negatives keep the task
+      discriminative (random negatives make AUC saturate near 1.0).
+
+    The held-out edges are removed from the background message-passing graph at
+    construction time, so the encoder never sees the edges it is asked to predict.
+    """
+
+    def __init__(self, holdout_neighbor_sampler, background_neighbor_sampler, size: int,
+                 neg_ratio: int = 1, hard_negatives: bool = True):
+        self.size = size
+        self.neg_ratio = max(1, int(neg_ratio))
+        self.hard_negatives = bool(hard_negatives)
+        self.h_rowptr, self.h_col, _ = holdout_neighbor_sampler.whole_adj.csr()
+        self.b_rowptr, self.b_col, _ = background_neighbor_sampler.whole_adj.csr()
+        self._all_nodes = list(range(size))
+
+    def _neighbors(self, rowptr, col, node: int):
+        start = int(rowptr[node].item())
+        end = int(rowptr[node + 1].item())
+        if end <= start:
+            return col[0:0].tolist()
+        return col[start:end].tolist()
+
+    def _holdout_positives(self, center: int):
+        neigh = self._neighbors(self.h_rowptr, self.h_col, center)
+        return [int(n) for n in set(neigh) if int(n) != center]
+
+    def _sample_hard_negatives(self, center: int, forbidden: set, k: int, rng):
+        one_hop = set(int(n) for n in self._neighbors(self.b_rowptr, self.b_col, center))
+        two_hop = set()
+        for nb in one_hop:
+            two_hop.update(int(n) for n in self._neighbors(self.b_rowptr, self.b_col, nb))
+        cands = [n for n in two_hop if n not in one_hop and n not in forbidden and n != center]
+        rng.shuffle(cands)
+        return cands[:k]
+
+    def sample(self, num_label, num_member, num_shot, num_query, rng):
+        del num_label, num_shot, num_query
+        center = None
+        positives = []
+        for _ in range(2000):
+            candidate = rng.randrange(self.size)
+            curr = self._holdout_positives(candidate)
+            if len(curr) >= num_member:
+                center = candidate
+                positives = curr
+                break
+        if center is None:
+            raise RuntimeError(
+                f"StaticLinkTask could not find a center with >= {num_member} held-out "
+                "positive edges. Try reducing n_shots or n_query."
+            )
+
+        pos = rng.sample(positives, num_member)
+        neg_target = num_member * self.neg_ratio
+        forbidden = set(positives)
+        forbidden.add(center)
+
+        neg = []
+        if self.hard_negatives:
+            neg = self._sample_hard_negatives(center, forbidden, neg_target, rng)
+
+        # Top up with random non-neighbor negatives when hard negatives are exhausted.
+        forbidden_neg = forbidden | set(neg)
+        trials = 0
+        max_trials = max(100, neg_target * 100)
+        while len(neg) < neg_target and trials < max_trials:
+            cand = rng.randrange(self.size)
+            if cand not in forbidden_neg:
+                neg.append(cand)
+                forbidden_neg.add(cand)
+            trials += 1
+        if len(neg) < neg_target:
+            remaining = [n for n in self._all_nodes if n not in forbidden]
+            if not remaining:
+                raise RuntimeError("StaticLinkTask found no valid negative candidates.")
+            while len(neg) < neg_target:
+                neg.append(remaining[len(neg) % len(remaining)])
+
+        # Order matters for Collator(is_multiway=False): negatives first, positives second.
+        return {(0, center): neg, (1, center): pos}
+
+
 def _normalize_view_name(view_name: Optional[str], default: str = "default") -> str:
     name = (view_name or "").strip()
     return default if name == "" else name
@@ -581,6 +673,9 @@ def get_midterm_dataset(
     if task_name == "temporal_link_prediction" and not kwargs.get("edge_view") and not kwargs.get("midterm_edge_view"):
         kwargs = {**kwargs, "edge_view": "temporal_history"}
         print("temporal_link_prediction: defaulting to 'temporal_history' edge view for subgraph construction.")
+    if task_name == "static_link_prediction" and not kwargs.get("edge_view") and not kwargs.get("midterm_edge_view"):
+        kwargs = {**kwargs, "edge_view": "static_background"}
+        print("static_link_prediction: defaulting to 'static_background' edge view for subgraph construction.")
 
     graph, resolved_edge_view = _build_midterm_graph(raw, **kwargs)
 
@@ -596,10 +691,11 @@ def get_midterm_dataset(
     if hasattr(graph, "edge_attr") and graph.edge_attr is not None:
         print(f"Edge features: {graph.edge_attr.shape[1]} dims from edge view '{resolved_edge_view}'")
 
-    if task_name == "temporal_link_prediction":
+    if task_name in ("temporal_link_prediction", "static_link_prediction"):
+        default_target = "static_holdout" if task_name == "static_link_prediction" else "future"
         target_view = _normalize_view_name(
-            kwargs.get("target_edge_view", kwargs.get("midterm_target_edge_view", "future")),
-            default="future",
+            kwargs.get("target_edge_view", kwargs.get("midterm_target_edge_view", default_target)),
+            default=default_target,
         )
         future_edge_index, resolved_target_view = _load_named_tensor(
             raw,
@@ -609,11 +705,11 @@ def get_midterm_dataset(
             legacy_prefix="future_edge_index",
         )
         if future_edge_index is not None:
-            print("Building future neighbor sampler...", flush=True)
+            print("Building target-edge neighbor sampler...", flush=True)
             future_graph = Data(edge_index=future_edge_index, num_nodes=graph.num_nodes)
             dataset.future_neighbor_sampler = NeighborSampler(future_graph, num_hops=n_hop)
             dataset.future_edge_view = resolved_target_view
-            print("Future neighbor sampler ready.", flush=True)
+            print("Target-edge neighbor sampler ready.", flush=True)
         else:
             dataset.future_edge_view = None
     else:
@@ -851,11 +947,41 @@ def get_midterm_dataloader(
             seed=seed,
         )
         label_embeddings = torch.zeros(1, 768).expand(graph.num_nodes, -1)
+    elif task_name == "static_link_prediction":
+        if not hasattr(dataset, "future_neighbor_sampler"):
+            raise ValueError(
+                "static_link_prediction requires a 'static_holdout' target edge view, but "
+                "none was found. Rebuild/enrich the graph with benchmark targets "
+                "(see scripts/graph_construction/enrich_graph_targets.py)."
+            )
+        neg_ratio = int(kwargs.get("midterm_lp_neg_ratio", 1))
+        hard_negatives = bool(kwargs.get("hard_negatives", True))
+        invalid_n_way = (n_way != 1) if isinstance(n_way, int) else any(v != 1 for v in n_way)
+        if invalid_n_way:
+            raise ValueError(f"static_link_prediction only supports n_way=1, got n_way={n_way}.")
+        print(
+            f"Using static LP sampler (held-out edges vs "
+            f"{'hard 2-hop' if hard_negatives else 'random'} negatives, neg_ratio={neg_ratio}:1)."
+        )
+        task = StaticLinkTask(
+            dataset.future_neighbor_sampler,
+            dataset.neighbor_sampler,
+            graph.num_nodes,
+            neg_ratio=neg_ratio,
+            hard_negatives=hard_negatives,
+        )
+        sampler = BatchSampler(
+            batch_count,
+            task,
+            ParamSampler(batch_size, n_way, n_shot, n_query, 1),
+            seed=seed,
+        )
+        label_embeddings = torch.zeros(1, 768).expand(graph.num_nodes, -1)
     else:
         raise ValueError(f"Unknown task for midterm: {task_name}")
 
     aug_fn = get_aug(aug, dataset.graph.x) if (split == "train" or aug_test) else get_aug("")
-    is_multiway = task_name not in {"temporal_link_prediction", "regression"}
+    is_multiway = task_name not in {"temporal_link_prediction", "static_link_prediction", "regression"}
 
     return DataLoader(
         dataset,

@@ -22,6 +22,7 @@ from .augment import get_aug
 from .dataloader import ParamSampler, BatchSampler, Collator, NeighborTask, RegressionTask
 from .dataset import SubgraphDataset
 from .midterm import (
+    StaticLinkTask,
     _normalize_view_name,
     _load_named_tensor,
     _load_edge_feature_names,
@@ -105,6 +106,12 @@ def _get_dataset(dataset_name: str, root: str, n_hop: int = 1,
     graph_path = os.path.join(root, graph_filename)
     print(f"Loading {dataset_name} graph from {graph_path}...")
     raw = torch.load(graph_path, map_location="cpu")
+
+    task_name = kwargs.get("task_name", "")
+    if task_name == "static_link_prediction" and not kwargs.get("edge_view") and not kwargs.get("midterm_edge_view"):
+        kwargs = {**kwargs, "edge_view": "static_background"}
+        print("static_link_prediction: defaulting to 'static_background' edge view for subgraph construction.")
+
     graph, resolved_edge_view = _build_graph(raw, **kwargs)
     print(f"Graph: {graph.num_nodes} nodes, {graph.edge_index.shape[1]} edges, "
           f"{graph.x.shape[1]} node features  labels={graph.label_names}")
@@ -114,7 +121,25 @@ def _get_dataset(dataset_name: str, root: str, n_hop: int = 1,
     dataset = SubgraphDataset(graph, neighbor_sampler, bidirectional=False)
     if hasattr(graph, "edge_attr") and graph.edge_attr is not None:
         print(f"Edge features: {graph.edge_attr.shape[1]} dims from '{resolved_edge_view}'")
+
     dataset.future_edge_view = None
+    if task_name == "static_link_prediction":
+        target_view = _normalize_view_name(
+            kwargs.get("target_edge_view", kwargs.get("midterm_target_edge_view", "static_holdout")),
+            default="static_holdout",
+        )
+        holdout_edge_index, resolved_target_view = _load_named_tensor(
+            raw, target_view,
+            default_key="future_edge_index",
+            views_key="target_edge_index_views",
+            legacy_prefix="future_edge_index",
+        )
+        if holdout_edge_index is not None:
+            print("Building static-holdout neighbor sampler...", flush=True)
+            holdout_graph = Data(edge_index=holdout_edge_index, num_nodes=graph.num_nodes)
+            dataset.future_neighbor_sampler = NeighborSampler(holdout_graph, num_hops=n_hop)
+            dataset.future_edge_view = resolved_target_view
+            print("Static-holdout neighbor sampler ready.", flush=True)
     return dataset
 
 
@@ -251,6 +276,36 @@ def _get_dataloader(dataset_name: str, dataset: SubgraphDataset, split: str,
         sampler = BatchSampler(
             batch_count, task,
             ParamSampler(batch_size, 1, n_shot, n_query, 1),
+            seed=seed,
+        )
+        is_multiway = False
+
+    elif task_name == "static_link_prediction":
+        if not hasattr(dataset, "future_neighbor_sampler"):
+            raise ValueError(
+                f"{dataset_name} static_link_prediction requires a 'static_holdout' target "
+                "edge view; enrich the graph with benchmark targets (enrich_graph_targets.py)."
+            )
+        neg_ratio = int(kwargs.get("midterm_lp_neg_ratio", 1))
+        hard_negatives = bool(kwargs.get("hard_negatives", True))
+        invalid_n_way = (n_way != 1) if isinstance(n_way, int) else any(v != 1 for v in n_way)
+        if invalid_n_way:
+            raise ValueError(f"static_link_prediction only supports n_way=1, got n_way={n_way}.")
+        print(
+            f"Using static LP sampler (held-out edges vs "
+            f"{'hard 2-hop' if hard_negatives else 'random'} negatives, neg_ratio={neg_ratio}:1)."
+        )
+        task = StaticLinkTask(
+            dataset.future_neighbor_sampler,
+            dataset.neighbor_sampler,
+            graph.num_nodes,
+            neg_ratio=neg_ratio,
+            hard_negatives=hard_negatives,
+        )
+        label_embeddings = torch.zeros(1, 768).expand(graph.num_nodes, -1)
+        sampler = BatchSampler(
+            batch_count, task,
+            ParamSampler(batch_size, n_way, n_shot, n_query, 1),
             seed=seed,
         )
         is_multiway = False

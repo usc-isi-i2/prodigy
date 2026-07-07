@@ -19,6 +19,7 @@ from .dataloader import (
 from .dataset import SubgraphDataset
 from .midterm import (
     BinaryFutureLinkTask,
+    StaticLinkTask,
     _normalize_view_name,
     _load_named_tensor,
     _load_edge_feature_names,
@@ -106,6 +107,9 @@ def get_covid19_twitter_dataset(root: str, n_hop: int = 1, graph_filename: str =
     if task_name == "temporal_link_prediction" and not kwargs.get("edge_view") and not kwargs.get("midterm_edge_view"):
         kwargs = {**kwargs, "edge_view": "temporal_history"}
         print("temporal_link_prediction: defaulting to 'temporal_history' edge view for subgraph construction.")
+    if task_name == "static_link_prediction" and not kwargs.get("edge_view") and not kwargs.get("midterm_edge_view"):
+        kwargs = {**kwargs, "edge_view": "static_background"}
+        print("static_link_prediction: defaulting to 'static_background' edge view for subgraph construction.")
 
     graph, resolved_edge_view = _build_covid19_twitter_graph(raw, **kwargs)
     print(f"Graph: {graph.num_nodes} nodes, {graph.edge_index.shape[1]} edges, {graph.x.shape[1]} node features")
@@ -116,10 +120,11 @@ def get_covid19_twitter_dataset(root: str, n_hop: int = 1, graph_filename: str =
     if hasattr(graph, "edge_attr") and graph.edge_attr is not None:
         print(f"Edge features: {graph.edge_attr.shape[1]} dims from edge view '{resolved_edge_view}'")
 
-    if task_name == "temporal_link_prediction":
+    if task_name in ("temporal_link_prediction", "static_link_prediction"):
+        default_target = "static_holdout" if task_name == "static_link_prediction" else "future"
         target_view = _normalize_view_name(
-            kwargs.get("target_edge_view", kwargs.get("midterm_target_edge_view", "future")),
-            default="future",
+            kwargs.get("target_edge_view", kwargs.get("midterm_target_edge_view", default_target)),
+            default=default_target,
         )
         future_edge_index, resolved_target_view = _load_named_tensor(
             raw,
@@ -129,11 +134,11 @@ def get_covid19_twitter_dataset(root: str, n_hop: int = 1, graph_filename: str =
             legacy_prefix="future_edge_index",
         )
         if future_edge_index is not None:
-            print("Building future neighbor sampler...", flush=True)
+            print("Building target-edge neighbor sampler...", flush=True)
             future_graph = Data(edge_index=future_edge_index, num_nodes=graph.num_nodes)
             dataset.future_neighbor_sampler = NeighborSampler(future_graph, num_hops=n_hop)
             dataset.future_edge_view = resolved_target_view
-            print("Future neighbor sampler ready.", flush=True)
+            print("Target-edge neighbor sampler ready.", flush=True)
         else:
             dataset.future_edge_view = None
     elif task_name == "classification":
@@ -230,6 +235,32 @@ def get_covid19_twitter_dataloader(
                 f"Use --n_way 1, got n_way={n_way}."
             )
         task = BinaryFutureLinkTask(dataset.future_neighbor_sampler, graph.num_nodes, neg_ratio=neg_ratio)
+        sampler = BatchSampler(
+            batch_count,
+            task,
+            ParamSampler(batch_size, n_way, n_shot, n_query, 1),
+            seed=seed,
+        )
+        label_embeddings = torch.zeros(1, 768).expand(graph.num_nodes, -1)
+        is_multiway = False
+    elif task_name == "static_link_prediction":
+        if not hasattr(dataset, "future_neighbor_sampler"):
+            raise ValueError(
+                "static_link_prediction requires a 'static_holdout' target edge view; "
+                "enrich the graph with benchmark targets (enrich_graph_targets.py)."
+            )
+        neg_ratio = int(kwargs.get("midterm_lp_neg_ratio", 1))
+        hard_negatives = bool(kwargs.get("hard_negatives", True))
+        invalid_n_way = (n_way != 1) if isinstance(n_way, int) else any(v != 1 for v in n_way)
+        if invalid_n_way:
+            raise ValueError(f"static_link_prediction only supports n_way=1, got n_way={n_way}.")
+        task = StaticLinkTask(
+            dataset.future_neighbor_sampler,
+            dataset.neighbor_sampler,
+            graph.num_nodes,
+            neg_ratio=neg_ratio,
+            hard_negatives=hard_negatives,
+        )
         sampler = BatchSampler(
             batch_count,
             task,
