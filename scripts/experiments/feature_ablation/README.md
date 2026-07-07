@@ -82,10 +82,23 @@ To rule out "the features are broken", logistic regression from raw features to
 the node label (no graph): AUC 0.95 (election2020), 0.91 (covid_political), 0.71
 (twibot20), 0.60 (ukr_rus_suspended). The bio embeddings carry strong,
 linearly-decodable signal — so the NM result is an **inductive-bias** story
-(NM ignores usable feature content), not a feature bug. Implication: to exploit
-the content NM leaves on the table, add a task whose labels depend on feature
-*content* (feature-defined classification, masked-feature prediction), rather
-than a purely structural task.
+(NM ignores usable feature content), not a feature bug.
+
+**Phase B — classification linear-probe on the frozen NM representation** (20-shot).
+Every graph is permute-invariant too, so the disuse is baked into the *encoder*,
+not just the NM head:
+- election2020 (label-homophily 0.95): intact AUC 0.979, zero 0.503, permute 0.978
+- covid_political (0.94): intact 0.912, zero 0.613, permute 0.911
+- twibot20 (0.40): intact 0.680, zero 0.715, permute 0.673  — vs raw-feature logreg 0.707
+The political graphs' high accuracy is topology-derived (collapses under zero,
+untouched by permute). On twibot20 (topology can't shortcut) the frozen
+representation (0.680) is invariant to feature ablation and does not even beat a
+raw-feature logreg (0.707): the encoder discards the informative bios.
+
+**Implication.** Features are good; the NM-pretrained encoder represents nodes by
+topology + node-distinctness and strips semantic feature content. To use it, add
+a pretraining task whose labels depend on feature *content* (feature-defined
+classification, masked-feature prediction) — not a purely structural task.
 
 ## Files
 
