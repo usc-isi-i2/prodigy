@@ -389,8 +389,13 @@ def build_command(
     ]
     if dataset.eval_random_query:
         common.extend(["--eval_random_query", "True"])
+    if args.ablate_features != "none":
+        common.extend(["--ablate_features", args.ablate_features])
 
     tag = task_tag(task)
+    if args.ablate_features != "none":
+        # keep intact vs. ablated eval runs in separate run dirs
+        tag = f"{tag}_abl{ {'zero': 'Z', 'permute': 'P'}[args.ablate_features] }"
     prefix = f"eval_{model_name}_to_{dataset.name}_{tag}_{shots}shot"
     if task == "neighbor_matching":
         # encode n_way so 3-way and 30-way evals don't collide in the same run dir
@@ -699,6 +704,10 @@ def main() -> int:
                         help="Comma-separated profile targets to evaluate; one eval run per target.")
     parser.add_argument("--reg-transform", default="log1p", choices=["none", "log1p"],
                         help="Transform applied to regression targets (log1p for heavy-tailed counts).")
+    parser.add_argument("--ablate-features", default="none", choices=["none", "zero", "permute"],
+                        help="Eval-time feature ablation (feature vs. topology reliance). 'zero' zeroes all "
+                             "node features; 'permute' shuffles feature rows across nodes per subgraph. "
+                             "Ablated runs get a distinct _ablZ/_ablP tag so they don't collide with intact runs.")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--continue-on-error", action="store_true")
     parser.add_argument("extra_args", nargs=argparse.REMAINDER)
