@@ -265,6 +265,17 @@ def get_params():
     ### data augmentation parameters ###
     args.add_argument("-aug", "--augmentation", default="", type=str)
     args.add_argument("-aug_test", "--augment_test", default=False, type=str2bool)  # if set, the valid set and the test set are also augmented
+    args.add_argument(
+        "-ablate_feat", "--ablate_features", default="none",
+        choices=["none", "zero", "permute"],
+        help=(
+            "Controlled eval-time feature ablation for measuring feature vs. topology "
+            "reliance. 'zero' replaces all node features with zeros; 'permute' shuffles "
+            "feature rows across nodes within each subgraph. When set, the corresponding "
+            "aug token (FZ/FP) is appended to --augmentation and --augment_test is forced "
+            "on. Intended for -eval_only True runs on a fixed checkpoint."
+        ),
+    )
     args.add_argument("-attr", "--attr_regression_weight", default=0.0, type=float)
     args.add_argument(
         "--fp_mask_ratio",
@@ -490,6 +501,21 @@ def get_params():
         "reg": "regression",
     }
     params["task_name"] = task_aliases.get(params["task_name"], params["task_name"])
+
+    # Feature-ablation intervention: compose the ablation aug into the eval path.
+    # Meant for -eval_only True runs; if used during training it would also ablate
+    # the training augmentations, so we warn when that combination is requested.
+    if params["ablate_features"] != "none":
+        token = {"zero": "FZ", "permute": "FP"}[params["ablate_features"]]
+        existing = params["augmentation"]
+        params["augmentation"] = f"{existing},{token}" if existing else token
+        params["augment_test"] = True
+        if not params.get("eval_only", False):
+            print(
+                f"[params] WARNING: --ablate_features={params['ablate_features']} set without "
+                "-eval_only True; the ablation aug will also be applied during training.",
+                flush=True,
+            )
 
     if args.device == 123:
         params["device"] = torch.device('cpu')
