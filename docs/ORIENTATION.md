@@ -1,7 +1,8 @@
 # Orientation for new sessions
 
 ## Compute
-- Heavy work (training, eval) runs on a shared GPU cluster called **Tucker** — ssh in to use it. The repo, data, and checkpoints all live there too, under **`/dataMeR2`** (older `/dataMeR1` paths are deprecated — don't use them), with conda envs already set up.
+- Heavy work (training, eval) runs on a shared GPU cluster called **Tucker** — ssh in to use it. The repo, data, and checkpoints all live there too, under **`/dataMeR1`**, with conda envs already set up.
+- **Reaching Tucker requires the USC VPN active (or being on USC wifi)** — otherwise ssh hangs/times out. If an ssh command to Tucker stalls, first check/ask whether the VPN is connected before debugging further.
 - **Tucker conda envs**: use **`prodigy`** for training/eval (and model code generally); use **`bio-embeddings-v001`** for graph construction and embedding/feature generation.
 - **We own GPUs 0–3**; the rest belong to another group. Check what's free and stay on ours. Long jobs run in tmux; the user kicks off the big/long ones.
 - **Read vs. write on Tucker**: reading on Tucker (ssh in to inspect files, list dirs, check logs, load graphs read-only) is fine — go ahead. For **write ops** (launching training/eval, building artifacts, moving/deleting files), the user generally prefers to run the commands himself — hand him the exact command rather than executing it.

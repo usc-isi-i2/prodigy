@@ -4,9 +4,9 @@
 
 - This repo is for graph foundation model experiments on social-media graph datasets.
 - Most training and evaluation work runs on Tucker/HPC nodes, not only on the local laptop.
-- The project has moved to `/dataMeR2` because `/dataMeR1` ran out of storage.
-- Prefer `/dataMeR2/...` paths for current experiment state, logs, and data. Treat `/dataMeR1/...` references as stale unless the user explicitly asks about old runs.
-- Do not assume `/dataMeR2/...` or `/scratch1/...` paths are mounted locally.
+- Current experiment state, logs, and data all live under `/dataMeR1`.
+- Prefer `/dataMeR1/...` paths for current experiment state, logs, and data.
+- Do not assume `/dataMeR1/...` or `/scratch1/...` paths are mounted locally.
 
 ## Environment
 
@@ -26,8 +26,8 @@ export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 - Eval runner: `scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py`
 - Analysis/export scripts: `scripts/analysis/`
 - Plotting notebooks/results: `scripts/plotting/`
-- Tucker repo path: `/dataMeR2/phil/gfm/prodigy`
-- Tucker data root: `/dataMeR2/phil/data`
+- Tucker repo path: `/dataMeR1/phil/gfm/prodigy`
+- Tucker data root: `/dataMeR1/phil/data`
 
 ## Experiment Conventions
 
