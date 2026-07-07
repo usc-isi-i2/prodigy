@@ -230,10 +230,14 @@ def discover_checkpoint_run_dir(run_dir: Path, name_prefix: str | None = None) -
 
 
 def torch_load_graph(torch_mod: Any, path: Path) -> dict[str, Any]:
+    # mmap keeps RAM low when inspecting the multi-GB graphs.
     try:
-        return torch_mod.load(path, map_location="cpu", weights_only=False)
+        return torch_mod.load(path, map_location="cpu", weights_only=False, mmap=True)
     except TypeError:
-        return torch_mod.load(path, map_location="cpu")
+        try:
+            return torch_mod.load(path, map_location="cpu", weights_only=False)
+        except TypeError:
+            return torch_mod.load(path, map_location="cpu")
 
 
 def has_classification_labels(raw: dict[str, Any], torch_mod: Any) -> bool:
@@ -293,6 +297,20 @@ def node_target_names(raw: dict[str, Any]) -> list[str]:
     return []
 
 
+def node_target_coverage(raw: dict[str, Any], torch_mod: Any) -> dict[str, int]:
+    """Count non-NaN (labeled) nodes per regression target, so all-missing targets
+    (e.g. favourites_count on twibot20) can be skipped instead of failing at runtime."""
+    node_targets = raw.get("node_targets")
+    coverage: dict[str, int] = {}
+    if isinstance(node_targets, dict):
+        for name, tensor in node_targets.items():
+            try:
+                coverage[name] = int(torch_mod.isfinite(tensor).sum().item())
+            except Exception:
+                coverage[name] = 0
+    return coverage
+
+
 def graph_info(torch_mod: Any, path: Path) -> dict[str, Any]:
     raw = torch_load_graph(torch_mod, path)
     x = raw.get("x")
@@ -306,6 +324,7 @@ def graph_info(torch_mod: Any, path: Path) -> dict[str, Any]:
         "has_future_edges": has_future_edges(raw),
         "has_static_holdout": has_static_holdout(raw),
         "node_target_names": node_target_names(raw),
+        "node_target_coverage": node_target_coverage(raw, torch_mod),
     }
 
 
@@ -716,7 +735,8 @@ def main() -> int:
         print(f"[progress] inspecting {dataset.name} graph={graph_path}", flush=True)
         info = graph_info(torch_mod, graph_path)
         reg_targets_available = [
-            t for t in parse_csv(args.reg_targets) if t in set(info["node_target_names"])
+            t for t in parse_csv(args.reg_targets)
+            if info["node_target_coverage"].get(t, 0) > 0
         ]
         print(
             f"[progress] {dataset.name}: x_dim={info['x_dim']} "
