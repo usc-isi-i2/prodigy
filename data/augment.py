@@ -92,6 +92,38 @@ class RandomNodeAttr(AugBase):
         return graph
 
 
+class AblateAllFeatures(AugBase):
+    """Deterministically remove *all* node-feature information from a subgraph.
+
+    Unlike ``ZeroNodeAttr`` / ``RandomNodeAttr`` (stochastic, per-node, tied to the
+    training aug pipeline), this ablates every node's features and is meant as a
+    controlled eval-time intervention: comparing intact vs. ablated eval accuracy
+    isolates how much a task relies on node features vs. graph topology.
+
+    mode="zero"    -> replace every node feature with zeros.
+    mode="permute" -> permute feature rows across nodes within the subgraph. This
+                      preserves the feature *distribution* of the subgraph while
+                      destroying the node<->feature alignment, so any residual
+                      signal must come from topology, not from which node holds
+                      which feature.
+    """
+
+    def __init__(self, mode="zero"):
+        if mode not in ("zero", "permute"):
+            raise ValueError(f"AblateAllFeatures mode must be 'zero' or 'permute', got {mode}")
+        self.mode = mode
+
+    def __call__(self, graph):
+        graph = copy.copy(graph)
+        graph.x_orig = graph.x
+        if self.mode == "zero":
+            graph.x = torch.zeros_like(graph.x)
+        else:  # permute
+            perm = torch.randperm(graph.x.size(0))
+            graph.x = graph.x[perm]
+        return graph
+
+
 def get_aug(aug_spec, node_feature_distribution=None):
     if not aug_spec:
         return Identity()
@@ -105,6 +137,10 @@ def get_aug(aug_spec, node_feature_distribution=None):
             if node_feature_distribution is None:
                 raise ValueError(f"node_feature_distribution not defined for RandomNodeAttr")
             augs.append(RandomNodeAttr(node_feature_distribution, float(spec[2:])))
+        elif spec == "FZ":  # ablate all features -> zero
+            augs.append(AblateAllFeatures("zero"))
+        elif spec == "FP":  # ablate all features -> within-subgraph permutation
+            augs.append(AblateAllFeatures("permute"))
         else:
             raise ValueError(f"Unknown augmentation {spec}")
     return Compose(augs)
