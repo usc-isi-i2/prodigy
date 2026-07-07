@@ -421,6 +421,7 @@ class TrainerFS():
         kwargs["neighbor_sampling_episode_source_weighting"] = self.parameter.get("neighbor_sampling_episode_source_weighting", "proportional")
         kwargs["label_emb_texts"] = self.parameter.get("label_emb_texts", "")
         kwargs["midterm_lp_neg_ratio"] = self.parameter.get("midterm_lp_neg_ratio", 1)
+        kwargs["hard_negatives"] = self.parameter.get("hard_negatives", True)
         kwargs["fp_mask_ratio"] = self.parameter.get("fp_mask_ratio", 0.3)
         kwargs["fp_mask_strategy"] = self.parameter.get("fp_mask_strategy", "zero")
         if self.parameter["all_test"]:

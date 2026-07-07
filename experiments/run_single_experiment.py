@@ -82,6 +82,7 @@ if __name__ == '__main__':
         graph_filename=params["graph_filename"],
         target_feature=params["target_feature"],
         target_feature_keep_in_x=params["target_feature_keep_in_x"],
+        target_transform=params["target_transform"],
         feature_subset=params["feature_subset"],
         midterm_label_downsample=params["midterm_label_downsample"],
         edge_view=params["edge_view"],
