@@ -16,8 +16,8 @@ All files created for cross-dataset evaluation on cluster. Last updated: 2026-04
 
 | File | Created By | Purpose |
 |------|-----------|---------|
-| `eval_jobs.txt` | generate_eval_jobs.py | List of 90 evaluation commands |
-| `eval_cross_dataset.sbatch` | generate_eval_jobs.py | SLURM batch submission script |
+| `scripts/experiments/legacy_cross_dataset_eval/eval_jobs.txt` | generate_eval_jobs.py | List of 90 evaluation commands |
+| `scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch` | generate_eval_jobs.py | SLURM batch submission script |
 
 ### Documentation
 
@@ -44,9 +44,9 @@ All files created for cross-dataset evaluation on cluster. Last updated: 2026-04
 ```
 generate_eval_jobs.py
     ↓
-    Creates: eval_jobs.txt + eval_cross_dataset.sbatch
+    Creates: scripts/experiments/legacy_cross_dataset_eval/eval_jobs.txt + scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch
     ↓
-sbatch eval_cross_dataset.sbatch
+sbatch scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch
     ↓
     Submits 90 parallel jobs
     ↓
@@ -101,7 +101,7 @@ aggregate_eval_results.py
 
 3. **Submit batch**
    ```bash
-   sbatch eval_cross_dataset.sbatch
+   sbatch scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch
    ```
 
 4. **Monitor progress**

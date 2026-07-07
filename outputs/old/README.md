@@ -4,7 +4,7 @@ A pretraining framework for few-shot, in-context learning over graphs — pretra
 
 Paper: [PRODIGY: Enabling In-context Learning Over Graphs](https://arxiv.org/abs/2305.12600) (SPIGM @ ICML 2023)
 
-![In-context few-shot prompting over graphs with prompt graph for edge classification in PRODIGY.](fig.png)
+![In-context few-shot prompting over graphs with prompt graph for edge classification in PRODIGY.](docs/assets/readme/fig.png)
 
 ---
 

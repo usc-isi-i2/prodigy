@@ -38,7 +38,7 @@ def check_setup():
     print("On your cluster, run:\n")
     print("  cd /home1/eibl/gfm/prodigy")
     print("  python scripts/experiments/eval/generate_eval_jobs.py")
-    print("  sbatch eval_cross_dataset.sbatch\n")
+    print("  sbatch scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch\n")
     
     print("="*80)
     print("EVALUATION CONFIGURATION")
@@ -69,7 +69,7 @@ def check_setup():
     print("1. SSH to cluster")
     print("2. cd /home1/eibl/gfm/prodigy")
     print("3. python scripts/experiments/eval/generate_eval_jobs.py")
-    print("4. sbatch eval_cross_dataset.sbatch")
+    print("4. sbatch scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch")
     print("5. Monitor: squeue -u $USER")
     print("6. Aggregate: python scripts/experiments/eval/aggregate_eval_results.py --results_dir /home1/eibl/gfm/prodigy/eval_results")
     print()

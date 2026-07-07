@@ -27,7 +27,7 @@ Breakdown:
    python scripts/generate_eval_jobs.py
 
 2. Submit to cluster:
-   sbatch eval_cross_dataset.sbatch
+   sbatch scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch
 
 3. After ~3 hours, aggregate:
    python scripts/aggregate_eval_results.py --results_dir /home1/eibl/gfm/prodigy/eval_results
@@ -223,7 +223,7 @@ Next step: SSH to cluster and run:
 
   cd /home1/eibl/gfm/prodigy
   python scripts/generate_eval_jobs.py
-  sbatch eval_cross_dataset.sbatch
+  sbatch scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch
 
 Monitor:
   squeue -u $USER

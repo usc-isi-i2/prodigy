@@ -35,8 +35,8 @@ python scripts/experiments/eval/generate_eval_jobs.py
 ```
 
 **Creates:**
-- `eval_jobs.txt` - List of all 90 evaluation commands
-- `eval_cross_dataset.sbatch` - SLURM batch submission script
+- `scripts/experiments/legacy_cross_dataset_eval/eval_jobs.txt` - List of all 90 evaluation commands
+- `scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch` - SLURM batch submission script
 
 **Customizable:**
 Edit the script to change which models, datasets, or tasks to evaluate
@@ -71,12 +71,12 @@ python scripts/experiments/eval/generate_eval_jobs.py
 ```
 
 This creates two files:
-- `eval_jobs.txt` - 90 evaluation commands (review if needed)
-- `eval_cross_dataset.sbatch` - SLURM submission script
+- `scripts/experiments/legacy_cross_dataset_eval/eval_jobs.txt` - 90 evaluation commands (review if needed)
+- `scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch` - SLURM submission script
 
 ### Step 2: Submit to Cluster
 ```bash
-sbatch eval_cross_dataset.sbatch
+sbatch scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch
 ```
 
 SLURM will:
@@ -165,13 +165,13 @@ TASKS = ["node_masking"]  # Only node masking
 ### Adjust SLURM Settings
 ```bash
 # More parallel jobs
-sbatch --array=0-89%80 eval_cross_dataset.sbatch
+sbatch --array=0-89%80 scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch
 
 # Different time limit
-sbatch --time=6:00:00 eval_cross_dataset.sbatch
+sbatch --time=6:00:00 scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch
 
 # Different memory
-sbatch --mem=32GB eval_cross_dataset.sbatch
+sbatch --mem=32GB scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch
 ```
 
 ### Test Single Evaluation First
@@ -258,8 +258,8 @@ These metrics tell you:
 ```bash
 cd /scratch1/singhama/prodigy
 python scripts/experiments/eval/generate_eval_jobs.py
-sbatch eval_cross_dataset.sbatch
-echo "Submitted $(grep -c 'python' eval_jobs.txt) evaluation jobs!"
+sbatch scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch
+echo "Submitted $(grep -c 'python' scripts/experiments/legacy_cross_dataset_eval/eval_jobs.txt) evaluation jobs!"
 ```
 
 Monitor with:

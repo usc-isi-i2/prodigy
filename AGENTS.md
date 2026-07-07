@@ -1,4 +1,7 @@
-# AGENTS.md
+# Agent Instructions
+
+This is the canonical instruction file for AI coding agents in this repo.
+Claude should read this via `CLAUDE.md`; Codex/GPT reads this file directly.
 
 ## Project Context
 
@@ -7,10 +10,28 @@
 - Current experiment state, logs, and data all live under `/dataMeR1`.
 - Prefer `/dataMeR1/...` paths for current experiment state, logs, and data.
 - Do not assume `/dataMeR1/...` or `/scratch1/...` paths are mounted locally.
+- Heavy work runs on Tucker; the laptop is for light code edits, notebooks, and plots.
+- Studying how graph-foundation-model representations transfer across social-media graphs and tasks, including bot detection as a held-out benchmark.
+
+## Compute
+
+- Reaching Tucker requires the USC VPN active, or being on USC wifi. If ssh to Tucker stalls, first check whether VPN is connected.
+- Use Tucker for training, eval, graph construction, embedding generation, and any GPU-heavy workflow.
+- We own GPUs 0-3 on Tucker; the rest belong to another group. Check availability and stay on ours.
+- Long jobs run in tmux. The user generally kicks off big or long-running jobs.
+- Reading on Tucker is fine: inspect files, list dirs, check logs, and load graphs read-only.
+- For write operations on Tucker, such as launching training/eval, building artifacts, or moving/deleting files, prefer giving the exact command for the user to run unless they explicitly ask you to execute it.
+
+## Laptop/Cluster Workflow
+
+- Use git to move code between laptop and cluster: commit/push from laptop, pull on Tucker.
+- Do not hand-copy source files between laptop and cluster unless explicitly requested.
+- The working branch shifts over time and multiple agents may be active at once. Check branch and status before committing.
 
 ## Environment
 
 - Use the `prodigy` conda environment for training and evaluation commands.
+- On Tucker, use `bio-embeddings-v001` for graph construction and embedding/feature generation.
 - Before running Python experiment scripts on Tucker:
 
 ```bash
@@ -18,6 +39,10 @@ source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate prodigy
 export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 ```
+
+- For local plotting/notebooks, use the Homebrew conda Python 3.11 at `/opt/homebrew/bin/python3.11`; it has numpy/pandas/matplotlib.
+- For local model-code checks, use the local `prodigy` env, but do not run training locally.
+- Avoid other local conda envs unless the user explicitly asks.
 
 ## Important Paths
 
@@ -31,6 +56,11 @@ export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 
 ## Experiment Conventions
 
+- Keep experiments atomized: each experiment should be self-contained, with config, runner, and notes in its own subfolder.
+- Experiment code belongs under `scripts/experiments/`.
+- Analysis and plots belong under `scripts/plotting/` as notebooks or plotting scripts.
+- Pull results from cluster logs into a notebook rather than leaving loose result files at the repo root.
+- Prefer the shared train/eval harness over one-off scripts.
 - Tasks:
   - `nm` = `neighbor_matching`
   - `lp` = `temporal_link_prediction`

@@ -9,18 +9,18 @@ cd /home1/eibl/gfm/prodigy
 python scripts/experiments/eval/generate_eval_jobs.py
 
 # Creates:
-# - eval_jobs.txt          (list of 90 evaluation commands)
-# - eval_cross_dataset.sbatch  (SLURM submission script)
+# - scripts/experiments/legacy_cross_dataset_eval/eval_jobs.txt          (list of 90 evaluation commands)
+# - scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch  (SLURM submission script)
 
 # ============================================================================
 # STEP 2: Submit to Cluster
 # ============================================================================
 
 # Review jobs
-cat eval_jobs.txt | head -20
+head -20 scripts/experiments/legacy_cross_dataset_eval/eval_jobs.txt
 
 # Submit
-sbatch eval_cross_dataset.sbatch
+sbatch scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch
 
 # Check submission
 squeue -u $USER
