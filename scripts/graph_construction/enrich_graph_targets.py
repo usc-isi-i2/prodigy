@@ -26,11 +26,28 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
 import torch
+
+
+def _load_graph(path: Path) -> Any:
+    """Load a graph artifact, preferring mmap to keep RAM low for large graphs."""
+    try:
+        return torch.load(path, map_location="cpu", weights_only=False, mmap=True)
+    except TypeError:
+        return torch.load(path, map_location="cpu", weights_only=False)
+
+
+def _atomic_save(obj: Any, out_path: Path) -> None:
+    """torch.save via a temp file + os.replace so an interrupted write never
+    corrupts an existing artifact (important for the multi-GB graphs)."""
+    tmp = out_path.with_suffix(out_path.suffix + ".tmp")
+    torch.save(obj, tmp)
+    os.replace(tmp, out_path)
 
 try:
     from . import profile_adapters as pa_adapters
@@ -171,7 +188,7 @@ def main() -> int:
     reference_date = datetime.fromisoformat(args.reference_date) if args.reference_date else None
 
     print(f"[enrich] loading {graph_path}")
-    graph_obj = torch.load(graph_path, map_location="cpu", weights_only=False)
+    graph_obj = _load_graph(graph_path)
 
     conn = None
     scan_sql = None
@@ -195,7 +212,7 @@ def main() -> int:
     print(json.dumps(stats, indent=2, default=str))
 
     print(f"[enrich] writing {out_path}")
-    torch.save(graph_obj, out_path)
+    _atomic_save(graph_obj, out_path)
 
     meta_path = out_path.with_suffix(".benchmark_targets.json")
     with meta_path.open("w", encoding="utf-8") as handle:
