@@ -28,6 +28,17 @@ from typing import Any, Optional
 # Run dirs: eval_<model>_to_<dataset>_reg_<shots>shot_<target>_<DD_MM_YYYY_HH_MM_SS>
 #           eval_<model>_to_<dataset>_slp_<shots>shot_<DD_MM_YYYY_HH_MM_SS>
 _TS = r"_\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2}$"
+_TS_RE = re.compile(r"_(\d{2})_(\d{2})_(\d{4})_(\d{2})_(\d{2})_(\d{2})$")
+
+
+def _run_timestamp(run_name: str) -> tuple:
+    """Sortable key from the trailing _DD_MM_YYYY_HH_MM_SS so the latest run of a
+    config wins (the log dir can hold reruns from several sweeps)."""
+    m = _TS_RE.search(run_name)
+    if not m:
+        return (0,) * 6
+    dd, mm, yyyy, hh, mi, ss = (int(g) for g in m.groups())
+    return (yyyy, mm, dd, hh, mi, ss)
 REG_RE = re.compile(
     r"^eval_(?P<model>.+?)_to_(?P<dataset>.+?)_reg_(?P<shots>\d+)shot_(?P<target>.+?)" + _TS
 )
@@ -127,12 +138,23 @@ def main() -> int:
 
     out_base = Path(args.out_dir)
     written = []
+    dedup_keys = {
+        "node_regression": ["model", "dataset", "target", "shots", "split"],
+        "static_link_prediction": ["model", "dataset", "shots", "split"],
+    }
     for name, rows in (("node_regression", reg_rows), ("static_link_prediction", slp_rows)):
         data_dir = out_base / name / "data"
         data_dir.mkdir(parents=True, exist_ok=True)
         csv_path = data_dir / f"{name}.csv"
-        pd.DataFrame(rows).to_csv(csv_path, index=False)
-        written.append((csv_path, len(rows)))
+        df = pd.DataFrame(rows)
+        if not df.empty:
+            # keep the latest run per config (reruns from earlier sweeps are dropped)
+            df["_ts"] = df["run"].map(_run_timestamp)
+            df = (df.sort_values("_ts")
+                    .drop_duplicates(dedup_keys[name], keep="last")
+                    .drop(columns="_ts"))
+        df.to_csv(csv_path, index=False)
+        written.append((csv_path, len(df)))
     for path, n in written:
         print(f"[parse] wrote {n:>4} rows -> {path}")
     return 0
