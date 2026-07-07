@@ -54,6 +54,24 @@ def test_profile_targets_alignment_and_missing():
     print("ok: profile targets alignment + missing handling")
 
 
+def test_profile_targets_string_ids():
+    """twibot20 uses string ids ('u123…'); targets must align without int() casts."""
+    user_ids = ["u17461978", "u999", "u5"]
+    raw = {
+        "u17461978": {"followers_count": 15349596, "listed_count": 45568,
+                      "created_at": "Tue Nov 18 10:27:25 +0000 2008"},
+        # u999 missing, u5 present with only statuses
+        "u5": {"statuses_count": 42},
+    }
+    ref = datetime(2020, 1, 1, tzinfo=timezone.utc)
+    targets, stats = bt.build_profile_node_targets(user_ids, raw, reference_date=ref)
+    assert targets["followers_count"].numpy()[0] == 15349596.0
+    assert np.isnan(targets["followers_count"].numpy()[1])
+    assert targets["statuses_count"].numpy()[2] == 42.0
+    assert stats["coverage"]["followers_count"] == 1
+    print("ok: profile targets align with string (twibot20) ids")
+
+
 def test_static_split_no_undirected_leakage():
     # Reciprocated pair (0,1)/(1,0) plus a chain, 8 undirected pairs total.
     edges = [
@@ -154,6 +172,7 @@ def test_enrich_graph_obj_with_targets():
 
 if __name__ == "__main__":
     test_profile_targets_alignment_and_missing()
+    test_profile_targets_string_ids()
     test_static_split_no_undirected_leakage()
     test_static_split_reproducible()
     test_attach_creates_views()

@@ -44,6 +44,7 @@ except ImportError:  # pragma: no cover - depends on environment.
 DEFAULT_EDGES = "/dataMeR1/phil/data/twibot20/graph_build/retweet_edges.parquet"
 DEFAULT_LABELS = "/dataMeR1/phil/data/twibot20/raw/Twibot-20/label.csv"
 DEFAULT_SPLITS = "/dataMeR1/phil/data/twibot20/raw/Twibot-20/split.csv"
+DEFAULT_NODE_JSON = "/dataMeR1/phil/data/twibot20/raw/Twibot-20/node.json"
 DEFAULT_BIO_ROOT = (
     "/dataMeR1/phil/data/twibot20/bio_embeddings/gte-multilingual-base/version=v001"
 )
@@ -198,6 +199,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--edges", default=DEFAULT_EDGES)
     parser.add_argument("--labels", default=DEFAULT_LABELS)
     parser.add_argument("--splits", default=DEFAULT_SPLITS)
+    parser.add_argument("--node-json", default=DEFAULT_NODE_JSON,
+                        help="TwiBot-20 node.json for profile regression targets.")
     parser.add_argument("--bio-embeddings-root", default=DEFAULT_BIO_ROOT)
     parser.add_argument("--out", default=DEFAULT_OUT)
     return parser.parse_args()
@@ -283,6 +286,19 @@ def main() -> int:
 
     _log("validating graph artifact in memory")
     validate_graph_artifact(graph_obj)
+
+    # Benchmark targets: node-regression profile panel (from node.json public_metrics)
+    # + static-LP edge views. Opt out with SKIP_BENCHMARK_TARGETS=1.
+    try:
+        import os
+
+        if os.environ.get("SKIP_BENCHMARK_TARGETS", "") not in {"1", "true", "True"}:
+            from enrich_graph_targets import enrich_graph_obj
+
+            bt_stats = enrich_graph_obj(graph_obj, "twibot20", node_json=args.node_json)
+            _log(f"benchmark targets attached: static={bt_stats['static_split']}")
+    except Exception as exc:  # noqa: BLE001 - enrichment must not break a build
+        _log(f"[warn] benchmark-target enrichment failed: {exc}")
 
     _log(f"writing graph artifact to {out_path}")
     torch.save(graph_obj, out_path)

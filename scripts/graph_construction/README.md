@@ -363,3 +363,48 @@ attribute container for `raw["data"]` and still writes the same top-level graph 
 - This builder uses parquet directly and does not use the legacy CSV pipeline.
 - The primary edge weight is always raw `n_retweets`.
 - Handle metadata is best-effort and comes from `rt_screen`.
+
+## Benchmark targets (node regression + static link prediction)
+
+All retweet-graph artifacts carry two extra benchmark-task payloads, added either
+by the generators (on by default) or by a standalone enrichment pass. The shared
+logic lives in `benchmark_targets.py` (source-agnostic core), `profile_adapters.py`
+(per-dataset profile fetch), and `enrich_graph_targets.py` (orchestration + CLI).
+
+### Added artifact fields
+
+- `node_targets`: `{name -> FloatTensor[num_nodes]}` — the fixed profile
+  regression panel: `followers_count, friends_count, statuses_count,
+  favourites_count, listed_count, account_age_days`. Raw values; `NaN` for users
+  with no profile data. Stored **separately from `x`** so the bio-embedding matrix
+  stays pure and NaN-safe. `node_target_names` lists the order.
+- `edge_index_views["static_background"]` + `target_edge_index_views["static_holdout"]`:
+  a seeded (~85/15) split of existing edges over **undirected pairs** — held-out
+  edges are removed from the background (message-passing) view, so a static-LP
+  model never sees the edges it must predict, and `(u,v)` can't leak via `(v,u)`.
+
+### Per-dataset regression feasibility (verified against raw parquet)
+
+| dataset          | profile source                         | node regression |
+|------------------|----------------------------------------|-----------------|
+| midterm          | flat columns                           | yes             |
+| ukr_rus_twitter  | flat columns                           | yes             |
+| covid19_twitter  | nested `user` / `retweeted_status.user`| yes             |
+| twibot20         | `node.json` `public_metrics`           | yes (no favourites) |
+| cp_hk_twitter    | bios are free text — no metrics        | **static-LP only** |
+
+### Running the standalone enrichment (no full rebuild)
+
+Use the graph-construction env (has `duckdb` + `pyarrow`, e.g. `bio-embeddings-v001`):
+
+```bash
+python scripts/graph_construction/enrich_graph_targets.py \
+    --dataset midterm \
+    --graph-path /dataMeR2/phil/data/midterm/graphs/retweet_graph_parquet.pt \
+    --parquet-glob '/dataMeR2/phil/data/midterm/parquet/*/*.parquet'
+# twibot20: pass --node-json instead of --parquet-glob
+# cp_hk_twitter: neither needed (static-LP only)
+```
+
+The generators call the same `enrich_graph_obj(...)` before saving, so future
+builds emit these fields automatically. Set `SKIP_BENCHMARK_TARGETS=1` to opt out.

@@ -884,6 +884,24 @@ def main() -> None:
         validate_graph_artifact(graph_obj)
         _log_progress(f"artifact validation complete in {_format_elapsed(time.monotonic() - phase_started)}")
 
+        # Benchmark targets: node-regression profile panel + static-LP edge views,
+        # so future builds emit them by default. Opt out with SKIP_BENCHMARK_TARGETS=1.
+        try:
+            import os
+
+            if os.environ.get("SKIP_BENCHMARK_TARGETS", "") not in {"1", "true", "True"}:
+                from enrich_graph_targets import enrich_graph_obj, parquet_scan_sql
+
+                bt_stats = enrich_graph_obj(
+                    graph_obj,
+                    "midterm",
+                    conn=conn,
+                    scan_sql=parquet_scan_sql(parquet_files),
+                )
+                _log_progress(f"benchmark targets attached: static={bt_stats['static_split']}")
+        except Exception as exc:  # noqa: BLE001 - enrichment must not break a build
+            _log_progress(f"[warn] benchmark-target enrichment failed: {exc}")
+
         phase_started = time.monotonic()
         _log_progress(f"writing graph artifact to {out_path}")
         torch.save(graph_obj, out_path)

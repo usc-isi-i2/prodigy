@@ -123,7 +123,9 @@ def build_profile_node_targets(
         ``PROFILE_TARGET_NAMES`` to a float32 tensor of shape [num_nodes] with
         NaN for missing values.
     """
-    user_ids = [int(u) for u in user_ids]
+    # ids may be ints (topical retweet nets) or strings ("u123…" for twibot20);
+    # match raw_by_user by equality of whatever id type the graph uses.
+    user_ids = list(user_ids)
     n = len(user_ids)
     counts = {name: np.full(n, np.nan, dtype=np.float32) for name in PROFILE_COUNT_FIELDS}
     creation_dt: list[Optional[datetime]] = [None] * n

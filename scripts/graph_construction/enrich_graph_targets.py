@@ -51,6 +51,16 @@ except ImportError:  # running as a plain script
     )
 
 
+def parquet_scan_sql(parquet_files) -> str:
+    """Build a ``read_parquet([...])`` FROM-expression from a list of paths.
+
+    Convenience for generators that already resolved their input file list and
+    want to pass it straight to an adapter as ``scan_sql``.
+    """
+    files = ", ".join("'" + str(p).replace("'", "''") + "'" for p in parquet_files)
+    return f"read_parquet([{files}])"
+
+
 def _read_edge_index(graph_obj: dict[str, Any]) -> torch.Tensor:
     ei = graph_obj.get("edge_index")
     if ei is None and "data" in graph_obj:

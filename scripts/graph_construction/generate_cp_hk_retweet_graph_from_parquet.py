@@ -178,6 +178,19 @@ def main() -> None:
         },
     }
 
+    # Benchmark targets: static-LP edge views only (cp_hk has no profile metrics,
+    # so node regression is skipped automatically). Opt out with SKIP_BENCHMARK_TARGETS=1.
+    try:
+        import os
+
+        if os.environ.get("SKIP_BENCHMARK_TARGETS", "") not in {"1", "true", "True"}:
+            from enrich_graph_targets import enrich_graph_obj
+
+            bt_stats = enrich_graph_obj(graph_obj, "cp_hk_twitter")
+            print(f"benchmark targets attached: static={bt_stats['static_split']}", flush=True)
+    except Exception as exc:  # noqa: BLE001 - enrichment must not break a build
+        print(f"[warn] benchmark-target enrichment failed: {exc}", flush=True)
+
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(graph_obj, out_path)

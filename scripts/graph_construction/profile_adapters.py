@@ -158,25 +158,20 @@ def fetch_profiles_covid19(
 
 def fetch_profiles_twibot20(
     node_json_path: str,
-    user_ids: Sequence[int],
+    user_ids: Sequence[str],
     *,
-    id_to_raw: Optional[Mapping[str, int]] = None,
-) -> dict[int, dict[str, Any]]:
+    id_to_raw: Optional[Mapping[str, Any]] = None,
+) -> dict[Any, dict[str, Any]]:
     """twibot20: ``node.json`` ``public_metrics`` block.
 
-    TwiBot-20 ids are strings like ``"u17461978"``. ``id_to_raw`` maps that string
-    id to the integer node id used in the graph's ``user_ids``; if omitted, the
-    numeric suffix of the id is used. ``favourites_count`` has no v2 equivalent and
-    is left missing (NaN downstream).
+    TwiBot-20 ids are strings like ``"u17461978"`` throughout the graph
+    (``user_ids``, edges, labels), so the result is keyed by that string id to
+    match directly. ``id_to_raw`` may remap the node.json id to a different graph
+    id if ever needed. ``favourites_count`` has no v2 equivalent and is left
+    missing (NaN downstream).
     """
-    wanted: Optional[set[int]] = {int(u) for u in user_ids} if user_ids is not None else None
-    out: dict[int, dict[str, Any]] = {}
-
-    def _to_int_id(str_id: str) -> Optional[int]:
-        if id_to_raw is not None:
-            return id_to_raw.get(str_id)
-        digits = "".join(ch for ch in str_id if ch.isdigit())
-        return int(digits) if digits else None
+    wanted: Optional[set] = {str(u) for u in user_ids} if user_ids is not None else None
+    out: dict[Any, dict[str, Any]] = {}
 
     with open(node_json_path, "r", encoding="utf-8") as handle:
         nodes = json.load(handle)
@@ -187,8 +182,8 @@ def fetch_profiles_twibot20(
         str_id = rec.get("id")
         if str_id is None:
             continue
-        uid = _to_int_id(str(str_id))
-        if uid is None or (wanted is not None and uid not in wanted):
+        key = id_to_raw.get(str(str_id)) if id_to_raw is not None else str(str_id)
+        if key is None or (wanted is not None and str(key) not in wanted):
             continue
         pm = rec.get("public_metrics") or {}
         entry: dict[str, Any] = {}
@@ -202,7 +197,7 @@ def fetch_profiles_twibot20(
             entry["listed_count"] = pm["listed_count"]
         if rec.get("created_at") is not None:
             entry["account_creation"] = rec["created_at"]
-        out[uid] = entry
+        out[key] = entry
 
     return out
 
