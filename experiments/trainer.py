@@ -1075,6 +1075,16 @@ class TrainerFS():
                 metrics["mae"] = float(mean_absolute_error(y_true, y_pred))
                 if y_true.size >= 2 and not np.allclose(y_true, y_true[0]):
                     metrics["r2"] = float(r2_score(y_true, y_pred))
+                    # Spearman rank correlation is the headline metric for
+                    # heavy-tailed profile targets (robust to the tail; scale-free).
+                    try:
+                        from scipy.stats import spearmanr
+
+                        rho, _ = spearmanr(y_true, y_pred)
+                        if rho == rho:  # not NaN
+                            metrics["spearman"] = float(rho)
+                    except Exception:
+                        pass
                 return metrics
 
             if yp.ndim == 1 or (yp.ndim == 2 and yp.shape[1] == 1):

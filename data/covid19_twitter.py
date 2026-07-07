@@ -77,10 +77,12 @@ def _build_covid19_twitter_graph(raw: dict, **kwargs):
     if "graph_id" in raw:
         graph.graph_id = raw["graph_id"]
     graph.source_graph_names = raw.get("source_graph_names", [])
+    graph.node_targets = raw.get("node_targets", None)
     graph = _select_target_from_feature(
         graph,
         kwargs.get("target_feature", ""),
         keep_in_x=bool(kwargs.get("target_feature_keep_in_x", False)),
+        transform=kwargs.get("target_transform", "none"),
     )
     if graph.label_type != "regression":
         graph.y = _apply_label_downsample(

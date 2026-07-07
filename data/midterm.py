@@ -503,27 +503,66 @@ def _apply_feature_subset(graph: Data, subset_spec: str) -> Data:
     return graph
 
 
-def _select_target_from_feature(graph: Data, target_feature: str, *, keep_in_x: bool = False) -> Data:
+def _apply_target_transform(y: torch.Tensor, transform: str) -> torch.Tensor:
+    """Apply an optional target transform for regression.
+
+    'log1p' is the right default for the heavy-tailed profile counts (follower
+    count etc.). NaN (missing) values are preserved so regression splits drop them.
+    """
+    spec = (transform or "none").strip().lower()
+    if spec in {"", "none"}:
+        return y
+    if spec == "log1p":
+        return torch.log1p(y)
+    raise ValueError(f"Unknown target_transform='{transform}'. Use 'none' or 'log1p'.")
+
+
+def _select_target_from_feature(
+    graph: Data,
+    target_feature: str,
+    *,
+    keep_in_x: bool = False,
+    transform: str = "none",
+) -> Data:
     feature_name = (target_feature or "").strip()
     if feature_name == "":
         if not hasattr(graph, "label_type"):
             graph.label_type = "classification"
         return graph
 
+    # Preferred source: a named node-regression target stored outside x
+    # (benchmark profile panel: followers_count, account_age_days, ...). These
+    # carry NaN for missing users and never entered the encoder features.
+    node_targets = getattr(graph, "node_targets", None)
+    if isinstance(node_targets, dict) and feature_name in node_targets:
+        y = node_targets[feature_name].detach().clone().float()
+        graph.y = _apply_target_transform(y, transform)
+        graph.label_names = [feature_name]
+        graph.label_type = "regression"
+        graph.target_feature = feature_name
+        finite = int(torch.isfinite(graph.y).sum().item())
+        print(
+            f"Using node target '{feature_name}' (transform={transform}) as regression "
+            f"target: {finite}/{graph.y.numel()} labeled nodes; x left unchanged."
+        )
+        return graph
+
     feature_names = list(getattr(graph, "feature_names", []))
     x_dim = int(graph.x.shape[1])
     if not feature_names or len(feature_names) != x_dim:
         raise ValueError(
-            "target_feature requires graph.feature_names aligned with graph.x."
+            "target_feature requires graph.feature_names aligned with graph.x, "
+            "or a matching entry in graph.node_targets."
         )
     if feature_name not in feature_names:
+        available = list(node_targets.keys()) if isinstance(node_targets, dict) else []
         raise ValueError(
             f"Unknown target_feature='{feature_name}'. "
-            f"Available features: {feature_names}"
+            f"Available node_targets: {available}; x features: {feature_names}"
         )
 
     target_idx = feature_names.index(feature_name)
-    graph.y = graph.x[:, target_idx].detach().clone().float()
+    graph.y = _apply_target_transform(graph.x[:, target_idx].detach().clone().float(), transform)
     graph.label_names = [feature_name]
     graph.label_type = "regression"
     graph.target_feature = feature_name
@@ -638,10 +677,12 @@ def _build_midterm_graph(raw: dict, **kwargs):
     graph.user_ids = raw.get("user_ids", [])
     graph.u2i = raw.get("u2i", {})
     graph.feature_names = raw.get('feature_names', [])
+    graph.node_targets = raw.get("node_targets", None)
     graph = _select_target_from_feature(
         graph,
         kwargs.get("target_feature", ""),
         keep_in_x=bool(kwargs.get("target_feature_keep_in_x", False)),
+        transform=kwargs.get("target_transform", "none"),
     )
     if graph.label_type != "regression":
         graph.y = _apply_label_downsample(

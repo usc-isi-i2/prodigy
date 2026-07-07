@@ -357,6 +357,15 @@ def get_params():
         ),
     )
     args.add_argument(
+        "--target_transform",
+        default="none",
+        type=str,
+        help=(
+            "Optional transform applied to the regression target: none | log1p. "
+            "Use log1p for heavy-tailed profile counts (follower count, etc.)."
+        ),
+    )
+    args.add_argument(
         "--feature_subset",
         "--midterm_feature_subset",
         dest="feature_subset",

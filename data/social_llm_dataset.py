@@ -82,10 +82,12 @@ def _build_graph(raw: dict, **kwargs):
         )
     graph.label_type = label_type
     graph.user_ids = raw.get("user_ids", [])
+    graph.node_targets = raw.get("node_targets", None)
     graph = _select_target_from_feature(
         graph,
         kwargs.get("target_feature", ""),
         keep_in_x=bool(kwargs.get("target_feature_keep_in_x", False)),
+        transform=kwargs.get("target_transform", "none"),
     )
     if graph.label_type != "regression":
         graph.y = _apply_label_downsample(
