@@ -69,10 +69,30 @@ python3 scripts/experiments/feature_ablation/parse_feature_ablation.py \
 The intact (`none`) pass reuses the standard eval path, so if matching intact
 runs already exist in `log/` you can skip `none` via `MODES="zero permute"`.
 
+## Findings so far
+
+**Phase A — NM (30-way, `nm_matrix_covid`)** → `feature_ablation_results.csv`.
+Zeroing features collapses NM to ~chance (in-domain covid 0.664 → 0.073), but
+permuting features across nodes barely moves it (0.664 → 0.626). Consistent on
+midterm and twibot20. NM uses features only as **node-distinguishing tokens**,
+not semantic content.
+
+**Feature-quality probe** (`feature_label_probe.py` → `feature_label_probe_results.csv`).
+To rule out "the features are broken", logistic regression from raw features to
+the node label (no graph): AUC 0.95 (election2020), 0.91 (covid_political), 0.71
+(twibot20), 0.60 (ukr_rus_suspended). The bio embeddings carry strong,
+linearly-decodable signal — so the NM result is an **inductive-bias** story
+(NM ignores usable feature content), not a feature bug. Implication: to exploit
+the content NM leaves on the table, add a task whose labels depend on feature
+*content* (feature-defined classification, masked-feature prediction), rather
+than a purely structural task.
+
 ## Files
 
 - `run_feature_ablation_tucker.sh` — loops `none/zero/permute` over the driver.
 - `parse_feature_ablation.py` — pairs intact↔ablated run dirs, writes the gap CSV.
+- `feature_label_probe.py` — feature→label logreg (feature-quality check).
+- `feature_ablation_results.csv`, `feature_label_probe_results.csv` — results.
 - `model_list.txt` — (you create) checkpoints to probe.
 
 ## Caveats
