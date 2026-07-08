@@ -22,8 +22,8 @@ from pathlib import Path
 
 # trailing run timestamp: _DD_MM_YYYY_HH_MM_SS
 TIMESTAMP_RE = re.compile(r"_\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2}$")
-ABL_RE = re.compile(r"_abl([ZP])")
-ABL_NAME = {"Z": "zero", "P": "permute"}
+ABL_RE = re.compile(r"_abl([ZPN])")
+ABL_NAME = {"Z": "zero", "P": "permute", "N": "noise"}
 
 
 def config_key_and_mode(run_name: str) -> tuple[str, str]:
@@ -78,7 +78,7 @@ def main() -> int:
         intact = by_mode.get("intact")
         if intact is None:
             continue  # no baseline to compare against
-        for mode in ("zero", "permute"):
+        for mode in ("zero", "permute", "noise"):
             ablated = by_mode.get(mode)
             if ablated is None:
                 continue
