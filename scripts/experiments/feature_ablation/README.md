@@ -100,6 +100,22 @@ topology + node-distinctness and strips semantic feature content. To use it, add
 a pretraining task whose labels depend on feature *content* (feature-defined
 classification, masked-feature prediction) — not a purely structural task.
 
+**Feature-only NM probe** (`feature_only_nm_probe.py` → `feature_only_nm_results.csv`).
+Is there any neighborhood signal in the bios for NM to use, or is content
+genuinely irrelevant to the NM target? Prototype nearest-neighbor in raw feature
+space (no model, no training), 30-way / 3-shot:
+- twibot20: real acc 0.169 (AUC 0.66) · permuted 0.035 (AUC 0.50) · chance 0.033 · model NM 0.406
+- midterm:  real acc 0.103 (AUC 0.61) · permuted 0.032 (AUC 0.50) · chance 0.033 · model NM 0.313
+Features alone do NM **well above chance** (5× / 3×), and the permuted-feature
+control collapses to chance — so bio content carries *genuine*
+neighborhood-discriminative signal (community-level separation, despite low edge
+homophily). It is much weaker than topology (model 0.41 / 0.31), but it is real
+and the model discards it. This **updates** the earlier "content is uninformative
+for NM" guess: content is informative for NM, just secondary — so forcing feature
+use could plausibly help NM itself (not only downstream), strengthening the case
+for a feature-content pretraining objective. (Prototype NN is a crude classifier,
+so 0.17/0.10 is a lower bound on extractable feature-only NM signal.)
+
 ## Files
 
 - `run_feature_ablation_tucker.sh` — loops `none/zero/permute` over the driver.
