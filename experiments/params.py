@@ -267,13 +267,17 @@ def get_params():
     args.add_argument("-aug_test", "--augment_test", default=False, type=str2bool)  # if set, the valid set and the test set are also augmented
     args.add_argument(
         "-ablate_feat", "--ablate_features", default="none",
-        choices=["none", "zero", "permute"],
+        choices=["none", "zero", "permute", "noise"],
         help=(
             "Controlled eval-time feature ablation for measuring feature vs. topology "
             "reliance. 'zero' replaces all node features with zeros; 'permute' shuffles "
-            "feature rows across nodes within each subgraph. When set, the corresponding "
-            "aug token (FZ/FP) is appended to --augmentation and --augment_test is forced "
-            "on. Intended for -eval_only True runs on a fixed checkpoint."
+            "feature rows across nodes within each subgraph (preserves the subgraph's "
+            "feature multiset, breaks the node<->feature binding); 'noise' resamples every "
+            "node's features from the full graph's feature distribution (destroys the local "
+            "neighborhood content while keeping nodes distinct and in-distribution). "
+            "'permute' vs 'noise' distinguishes features-as-distinguishers from "
+            "features-as-content. The corresponding aug token (FZ/FP/NR1.0) is appended to "
+            "--augmentation and --augment_test is forced on. For -eval_only True runs."
         ),
     )
     args.add_argument("-attr", "--attr_regression_weight", default=0.0, type=float)
@@ -506,7 +510,7 @@ def get_params():
     # Meant for -eval_only True runs; if used during training it would also ablate
     # the training augmentations, so we warn when that combination is requested.
     if params["ablate_features"] != "none":
-        token = {"zero": "FZ", "permute": "FP"}[params["ablate_features"]]
+        token = {"zero": "FZ", "permute": "FP", "noise": "NR1.0"}[params["ablate_features"]]
         existing = params["augmentation"]
         params["augmentation"] = f"{existing},{token}" if existing else token
         params["augment_test"] = True

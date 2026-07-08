@@ -395,7 +395,7 @@ def build_command(
     tag = task_tag(task)
     if args.ablate_features != "none":
         # keep intact vs. ablated eval runs in separate run dirs
-        tag = f"{tag}_abl{ {'zero': 'Z', 'permute': 'P'}[args.ablate_features] }"
+        tag = f"{tag}_abl{ {'zero': 'Z', 'permute': 'P', 'noise': 'N'}[args.ablate_features] }"
     prefix = f"eval_{model_name}_to_{dataset.name}_{tag}_{shots}shot"
     if task == "neighbor_matching":
         # encode n_way so 3-way and 30-way evals don't collide in the same run dir
@@ -704,10 +704,11 @@ def main() -> int:
                         help="Comma-separated profile targets to evaluate; one eval run per target.")
     parser.add_argument("--reg-transform", default="log1p", choices=["none", "log1p"],
                         help="Transform applied to regression targets (log1p for heavy-tailed counts).")
-    parser.add_argument("--ablate-features", default="none", choices=["none", "zero", "permute"],
+    parser.add_argument("--ablate-features", default="none", choices=["none", "zero", "permute", "noise"],
                         help="Eval-time feature ablation (feature vs. topology reliance). 'zero' zeroes all "
-                             "node features; 'permute' shuffles feature rows across nodes per subgraph. "
-                             "Ablated runs get a distinct _ablZ/_ablP tag so they don't collide with intact runs.")
+                             "node features; 'permute' shuffles feature rows across nodes per subgraph; "
+                             "'noise' resamples features from the full-graph distribution (destroys local "
+                             "content, keeps distinctness). Ablated runs get a distinct _ablZ/_ablP/_ablN tag.")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--continue-on-error", action="store_true")
     parser.add_argument("extra_args", nargs=argparse.REMAINDER)
