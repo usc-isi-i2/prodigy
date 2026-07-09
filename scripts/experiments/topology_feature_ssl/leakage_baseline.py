@@ -21,6 +21,7 @@ Run on Tucker (prodigy env; needs torch, scikit-learn, scipy, networkx).
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -30,6 +31,8 @@ from sklearn.linear_model import Ridge
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import StandardScaler
 
+# repo root on sys.path so `data.*` imports work when run as a script
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from data.structural_features import compute_structural_features, structural_feature_names
 
 # dataset -> (root_name, graph_filename); the focused datasets that carry node_targets.
