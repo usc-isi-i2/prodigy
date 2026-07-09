@@ -48,4 +48,7 @@ python3 scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py --log-root
 python3 "$DIR/parse_2x2.py" --log-root "$LOG_ROOT" --model-list "$DIR/model_list.txt" --out scripts/plotting/topology_feature_ssl/data/ablation_2x2.csv || say "2x2 parse FAILED"
 python3 "$DIR/parse_capability_probes.py" --log-root "$LOG_ROOT" --model-list "$DIR/model_list.txt" --out scripts/plotting/topology_feature_ssl/data/capability_probes.csv || say "probe parse FAILED"
 
+# render a glance-able RESULTS.md from the parsed CSVs (numbers without running the notebook)
+python3 "$DIR/render_results.py" || say "render FAILED"
+
 say "DOWNSTREAM_DONE"
