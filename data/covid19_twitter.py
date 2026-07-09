@@ -15,6 +15,7 @@ from .dataloader import (
     ContrastiveTask,
     NeighborTask,
     RegressionTask,
+    MultiTaskSplitBatch,
 )
 from .dataset import SubgraphDataset
 from .midterm import (
@@ -174,6 +175,7 @@ def get_covid19_twitter_dataloader(
     seed = sum(ord(c) for c in split)
     graph = dataset.graph
     task_name = kwargs.get("task_name", "neighbor_matching")
+    aug_by_task = None  # set only by the nm_fp_cl rotation branch (per-episode aug map)
     if task_name == "neighbor_matching":
         strata = None
         confine_to_single_stratum = False
@@ -213,6 +215,79 @@ def get_covid19_twitter_dataloader(
             seed=seed,
         )
         label_embeddings = torch.zeros(1, 768).expand(graph.num_nodes, -1)
+        is_multiway = True
+    elif task_name == "nm_fp_cl":
+        # Multi-task SSL rotation: every EPISODE is one of {nm, cl, fp}, drawn round-robin
+        # over a count-weighted schedule (MultiTaskSplitBatch). All three share the metric
+        # episode structure (nm=NeighborTask; cl/fp=ContrastiveTask), so the metagraph is
+        # built identically; they differ only in (a) augmentation, set per task here via
+        # aug_by_task, and (b) — for fp — the reconstruction loss, dispatched in the trainer
+        # off graph.mix_is_fp (tagged by the Collator). Val/test fall back to pure NM so the
+        # pretrain monitor metric stays coherent (mixing reconstruction and metric scores in
+        # one accumulated eval is meaningless); the real comparison is the frozen-encoder
+        # downstream sweep, run as separate eval-only jobs.
+        if split == "train":
+            counts_raw = str(kwargs.get("mix_task_counts", "1,1,1")).split(",")
+            try:
+                counts = [int(c) for c in counts_raw]
+                assert len(counts) == 3 and all(c >= 0 for c in counts) and sum(counts) > 0
+            except (ValueError, AssertionError):
+                raise ValueError(
+                    f"mix_task_counts must be three non-negative ints 'nm,cl,fp', got {counts_raw!r}."
+                )
+            task_base = MultiTaskSplitBatch(
+                [
+                    NeighborTask(
+                        dataset.neighbor_sampler, graph.num_nodes, "inout",
+                        kwargs.get("neighbor_sampling_strategy", "strict"),
+                    ),
+                    ContrastiveTask(graph.num_nodes),  # cl
+                    ContrastiveTask(graph.num_nodes),  # fp
+                ],
+                ["nm", "cl", "fp"],
+                counts,
+            )
+            sampler = BatchSampler(
+                batch_count, task_base,
+                ParamSampler(batch_size, n_way, n_shot, n_query, 1),
+                seed=seed,
+            )
+            mask_ratio = float(kwargs.get("fp_mask_ratio", 0.3))
+            mask_strategy = kwargs.get("fp_mask_strategy", "zero")
+            if mask_strategy == "zero":
+                fp_aug_spec = f"NZ{mask_ratio}"
+            elif mask_strategy == "random":
+                fp_aug_spec = f"NR{mask_ratio}"
+            else:
+                raise ValueError(f"Unknown fp_mask_strategy={mask_strategy!r}; use 'zero' or 'random'.")
+            cl_aug_spec = kwargs.get("mix_cl_aug", "NZ0.2")
+            aug_by_task = {
+                "nm": get_aug("", graph.x),
+                "cl": get_aug(cl_aug_spec, graph.x),
+                "fp": get_aug(fp_aug_spec, graph.x),
+            }
+            label_embeddings = {
+                "nm": torch.zeros(1, 768).expand(graph.num_nodes, -1),
+                "cl": torch.zeros(1, 768).expand(graph.num_nodes, -1),
+                "fp": torch.zeros(1, 768).expand(graph.num_nodes, -1),
+            }
+            print(
+                f"nm_fp_cl rotation (per-episode): nm:cl:fp counts = "
+                f"{counts[0]}:{counts[1]}:{counts[2]}, cl_aug={cl_aug_spec}, fp_aug={fp_aug_spec}",
+                flush=True,
+            )
+        else:
+            # coherent monitor: pure NM for val/test
+            sampler = BatchSampler(
+                batch_count,
+                NeighborTask(
+                    dataset.neighbor_sampler, graph.num_nodes, "inout",
+                    kwargs.get("neighbor_sampling_strategy", "strict"),
+                ),
+                ParamSampler(batch_size, n_way, n_shot, n_query, 1),
+                seed=seed,
+            )
+            label_embeddings = torch.zeros(1, 768).expand(graph.num_nodes, -1)
         is_multiway = True
     elif task_name in {"contrastive", "masked_feature_prediction"}:
         sampler = BatchSampler(
@@ -358,7 +433,11 @@ def get_covid19_twitter_dataloader(
     else:
         raise ValueError(f"Unknown task for covid19_twitter: {task_name}")
 
-    if task_name == "masked_feature_prediction":
+    if task_name == "nm_fp_cl":
+        # Per-episode aug is supplied via aug_by_task (train) or none (val/test NM fallback);
+        # the global collator aug is identity so it never double-augments.
+        aug_fn = get_aug("", graph.x)
+    elif task_name == "masked_feature_prediction":
         mask_ratio = float(kwargs.get("fp_mask_ratio", 0.3))
         mask_strategy = kwargs.get("fp_mask_strategy", "zero")
         if mask_strategy == "zero":
@@ -377,5 +456,8 @@ def get_covid19_twitter_dataloader(
         dataset,
         batch_sampler=sampler,
         num_workers=num_workers,
-        collate_fn=Collator(label_embeddings, aug=aug_fn, is_multiway=is_multiway, task_name=task_name),
+        collate_fn=Collator(
+            label_embeddings, aug=aug_fn, is_multiway=is_multiway,
+            task_name=task_name, aug_by_task=aug_by_task,
+        ),
     )

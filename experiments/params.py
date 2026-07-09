@@ -321,6 +321,21 @@ def get_params():
         choices=["zero", "random"],
         help="How masked node features are corrupted for task_name=masked_feature_prediction.",
     )
+    args.add_argument(
+        "--mix_task_counts",
+        default="1,1,1",
+        type=str,
+        help="Round-robin weights for the nm_fp_cl SSL rotation, as 'nm,cl,fp' integer "
+        "counts (e.g. '1,1,1' = equal per-episode share). Only used when task_name=nm_fp_cl.",
+    )
+    args.add_argument(
+        "--mix_cl_aug",
+        default="NZ0.2",
+        type=str,
+        help="Feature augmentation applied to CONTRASTIVE (cl) episodes inside the nm_fp_cl "
+        "rotation (two-view positives). NM episodes get no aug; FP episodes use "
+        "fp_mask_ratio/fp_mask_strategy. Only used when task_name=nm_fp_cl.",
+    )
 
 
     args.add_argument("-prefix", "--prefix", default="exp1", type=str) # prefix for the experiment name for wandb
@@ -531,6 +546,7 @@ def get_params():
         "mfp": "masked_feature_prediction",
         "slp": "static_link_prediction",
         "reg": "regression",
+        "mix": "nm_fp_cl",
     }
     params["task_name"] = task_aliases.get(params["task_name"], params["task_name"])
 

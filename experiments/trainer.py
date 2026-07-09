@@ -149,6 +149,17 @@ class TrainerFS():
 
         self.is_regression = parameter["task_name"] == "regression"
         self.is_feature_prediction = parameter["task_name"] == "masked_feature_prediction"
+        # nm_fp_cl multi-task rotation: one SSL objective per episode (nm/cl -> metric loss,
+        # fp -> masked-feature reconstruction). The per-episode fp dispatch reads
+        # graph.mix_is_fp (tagged by the Collator); requires batch_size=1 so each gradient
+        # step is a single task.
+        self.is_mix = parameter["task_name"] == "nm_fp_cl"
+        self.mix_has_fp = self.is_mix  # fp is always part of the nm_fp_cl rotation
+        if self.is_mix and parameter.get("batch_size", 1) != 1:
+            raise ValueError(
+                f"task_name=nm_fp_cl requires batch_size=1 (one task per episode), "
+                f"got batch_size={parameter.get('batch_size')}."
+            )
         if self.is_regression:
             if self.ways != 1:
                 raise ValueError(f"regression only supports n_way=1, got n_way={self.ways}.")
@@ -306,7 +317,7 @@ class TrainerFS():
         wandb.run.summary["num_params"] = num_params
 
         # create a header to predict masked node attribute
-        if self.parameter["attr_regression_weight"] or self.is_feature_prediction:
+        if self.parameter["attr_regression_weight"] or self.is_feature_prediction or self.mix_has_fp:
             embed_dim = self.emb_dim
             output_dim = self.parameter["input_dim"]
             self.aux_header = torch.nn.Sequential(
@@ -454,6 +465,8 @@ class TrainerFS():
         kwargs["hard_negatives"] = self.parameter.get("hard_negatives", True)
         kwargs["fp_mask_ratio"] = self.parameter.get("fp_mask_ratio", 0.3)
         kwargs["fp_mask_strategy"] = self.parameter.get("fp_mask_strategy", "zero")
+        kwargs["mix_task_counts"] = self.parameter.get("mix_task_counts", "1,1,1")
+        kwargs["mix_cl_aug"] = self.parameter.get("mix_cl_aug", "NZ0.2")
         if self.parameter["all_test"]:
             kwargs["all_test"] = True
         if self.parameter["label_set"]:
@@ -595,6 +608,16 @@ class TrainerFS():
             loss = self.aux_loss(output, target)
             return loss
         return torch.zeros(1, device=self.device)
+
+    def _episode_is_fp(self, graph):
+        """True when the current (batch_size=1) rotation episode is masked-feature-prediction.
+
+        Reads the Collator-set graph.mix_is_fp tag; absent (e.g. pure-NM val/test) -> False.
+        """
+        m = getattr(graph, "mix_is_fp", None)
+        if m is None:
+            return False
+        return bool(m.reshape(-1)[0].item())
 
     def get_feature_prediction_loss_and_score(self, graph):
         if not hasattr(graph, "node_attr_mask") or not hasattr(graph, "x_orig"):
@@ -1372,7 +1395,7 @@ class TrainerFS():
                 require_flag=True,
                 raw_graph=raw_debug_graph,
             )
-            if self.is_feature_prediction:
+            if self.is_feature_prediction or (self.is_mix and self._episode_is_fp(graph)):
                 loss, acc = self.get_feature_prediction_loss_and_score(graph)
                 aux_loss = torch.zeros(1, device=self.device)
                 total_loss = loss
@@ -1577,7 +1600,7 @@ class TrainerFS():
                 printed_debug_this_eval = True
             if self.calc_ranks:
                 assert len(batch) == 10, "Not using the right batch structure; need to include task_mask"
-            if self.is_feature_prediction:
+            if self.is_feature_prediction or (self.is_mix and self._episode_is_fp(graph)):
                 loss, acc = self.get_feature_prediction_loss_and_score(graph)
             else:
                 loss, acc = self.get_loss_and_acc(yt, yp)  # get loss

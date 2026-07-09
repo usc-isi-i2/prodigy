@@ -495,20 +495,30 @@ def linearize(mask, inputs_idx, output_idx, batch_rand_perm = None):
     return seqs.transpose(2,1).reshape(seqs.shape[0], -1), batch_rand_perm
 
 class Collator:
-    def __init__(self, label_meta, aug=Identity(), is_multiway=True, task_name=None):
+    def __init__(self, label_meta, aug=Identity(), is_multiway=True, task_name=None, aug_by_task=None):
         self.label_meta = label_meta
         self.aug = aug
         self.is_multiway = is_multiway
         self.task_name = task_name
+        # Per-episode augmentation for the nm_fp_cl rotation: {task_name -> aug_fn}. When
+        # set, each task-episode is augmented by aug_by_task[its task tag] (nm->identity,
+        # cl->2-view feature aug, fp->feature masking) instead of the single self.aug.
+        self.aug_by_task = aug_by_task
+
+    def _aug_for(self, label_map):
+        if self.aug_by_task and label_map and isinstance(label_map[0], tuple) and len(label_map[0]) == 2:
+            return self.aug_by_task.get(label_map[0][1], self.aug)
+        return self.aug
 
     def process_one_task(self, task, batch_param):
         label_map = list(task) # Looks like this: (0, 'task1'), (1, 'task2'), ...
         label_map_reverse = {v: i for i, v in enumerate(label_map)} # ((0, 'task1'), 0), ((1, 'task2'), 1), ...
+        aug = self._aug_for(label_map)
         all_graphs = []
         labels = []
         query_mask = []
         for label, graphs in task.items():
-            augmented = [self.aug(graph) for graph in graphs for _ in range(batch_param.n_aug)]
+            augmented = [aug(graph) for graph in graphs for _ in range(batch_param.n_aug)]
             all_graphs.extend(augmented)
             query_mask.extend([False] * (batch_param.n_shot))
             query_mask.extend([True] * (len(augmented) - batch_param.n_shot))
@@ -531,6 +541,15 @@ class Collator:
 
         graphs = Batch.from_data_list([g for l in graphs for g in l])
         graphs.task_id_per_sample = torch.arange(num_task).repeat_interleave(task_len)
+        # nm_fp_cl rotation: record, per within-batch task-episode, whether it is a
+        # masked-feature-prediction (fp) episode so the trainer dispatches the
+        # reconstruction loss only there. `label_map` is still per-task here (list of
+        # (center, task_name) tuples); with batch_size=1 there is one task-episode.
+        if label_map and isinstance(label_map[0], list) and label_map[0] \
+                and isinstance(label_map[0][0], tuple) and len(label_map[0][0]) == 2:
+            graphs.mix_is_fp = torch.tensor(
+                [1 if lm[0][1] == "fp" else 0 for lm in label_map], dtype=torch.long
+            )
         labels = torch.cat(labels)
         b_mask = torch.stack(query_mask)
         query_mask = torch.cat(query_mask)
