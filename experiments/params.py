@@ -294,12 +294,14 @@ def get_params():
         ),
     )
     args.add_argument(
-        "--structural_features", default="none", choices=["none", "directed6"],
+        "--structural_features", default="none", choices=["none", "directed3", "directed6"],
         help=(
             "E1/E2: inject directed per-node structural features as INPUT features "
-            "(topology becomes representable). 'directed6' concatenates "
-            "[in_deg, out_deg, log_deg, k_core, pagerank, clustering] (z-scored per "
-            "graph) to graph.x, bumping input_dim by 6. Must be set identically at "
+            "(topology becomes representable). 'directed3' = [in_deg, out_deg, "
+            "log_deg] (exact, O(E), scales to the 34M-node merged graph); 'directed6' "
+            "adds [k_core, pagerank, clustering] (networkx, small graphs only). "
+            "Z-scored per graph and concatenated to graph.x, bumping input_dim by "
+            "3/6. Must be set identically at "
             "pretrain AND eval (it defines the encoder's input space). Features are "
             "cached next to the graph file. Subject to the leakage control "
             "(leakage_baseline.py) — E1/E2 'learned structure' only if the frozen "

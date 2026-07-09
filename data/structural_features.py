@@ -25,6 +25,14 @@ import torch
 STRUCTURAL_FEATURE_NAMES = [
     "in_deg", "out_deg", "log_deg", "k_core", "pagerank", "clustering",
 ]
+# directed3 = degree-only (exact + O(E), scales to the 34M-node merged graph);
+# directed6 adds the networkx features (k_core/pagerank/clustering), only tractable
+# on small graphs. The mode MUST match at pretrain and eval (defines input_dim).
+STRUCTURAL_FEATURE_MODES = {"directed3": 3, "directed6": 6}
+
+
+def structural_feature_names(mode: str = "directed6") -> list[str]:
+    return STRUCTURAL_FEATURE_NAMES[: STRUCTURAL_FEATURE_MODES[mode]]
 
 
 def _degrees(edge_index: torch.Tensor, num_nodes: int) -> tuple[torch.Tensor, torch.Tensor]:
@@ -41,20 +49,33 @@ def compute_structural_features(
     edge_index: torch.Tensor,
     num_nodes: int,
     *,
+    mode: str = "directed6",
     standardize: bool = True,
     pagerank_alpha: float = 0.85,
     max_nx_nodes: int | None = None,
 ) -> torch.Tensor:
-    """Return a [num_nodes, 6] float tensor of directed structural features.
+    """Return a [num_nodes, k] float tensor of directed structural features.
 
+    mode: 'directed3' = [in_deg, out_deg, log_deg] only (exact, O(E), scales to
+    tens of millions of nodes); 'directed6' additionally computes the networkx
+    features (k_core/pagerank/clustering), tractable only on small graphs.
     standardize: z-score each column (recommended when used as GNN input features
     so no single structural column dominates the 768-dim bio space by scale).
-    max_nx_nodes: if set and num_nodes exceeds it, skip the networkx features
-    (k_core/pagerank/clustering) and return zeros for them (degrees still exact),
-    so very large graphs stay tractable. None = always compute.
+    max_nx_nodes: with mode='directed6', if num_nodes exceeds this, skip networkx
+    (those columns stay zero, degrees still exact). None = always compute.
     """
+    if mode not in STRUCTURAL_FEATURE_MODES:
+        raise ValueError(f"mode must be one of {list(STRUCTURAL_FEATURE_MODES)}, got {mode}")
     in_deg, out_deg = _degrees(edge_index, num_nodes)
     log_deg = torch.log1p(in_deg + out_deg)
+
+    if mode == "directed3":
+        feats = torch.stack([in_deg, out_deg, log_deg], dim=1)
+        if standardize:
+            mean = feats.mean(dim=0, keepdim=True)
+            std = feats.std(dim=0, keepdim=True).clamp_min(1e-6)
+            feats = (feats - mean) / std
+        return feats
 
     k_core = torch.zeros(num_nodes, dtype=torch.float)
     pagerank = torch.zeros(num_nodes, dtype=torch.float)
@@ -102,39 +123,40 @@ def load_or_compute_structural(
     num_nodes: int,
     cache_path: str | None = None,
     *,
+    mode: str = "directed6",
     standardize: bool = True,
     max_nx_nodes: int | None = 2_000_000,
 ) -> torch.Tensor:
     """compute_structural_features with an on-disk cache keyed by the graph path.
 
-    The networkx features (k-core/PageRank/clustering) are the expensive part and
-    are identical across the many eval jobs that reload the same graph, so we
-    cache the [num_nodes, 6] tensor next to the graph (``<graph>.structural6.pt``)
-    and validate it against (num_nodes, edge_count) before reuse.
+    The features are identical across the many eval jobs that reload the same
+    graph, so we cache the [num_nodes, k] tensor next to the graph
+    (``<graph>.structural_<mode>.pt``) and validate it against (mode, num_nodes,
+    edge_count) before reuse.
     """
     n_edges = int(edge_index.size(1))
     if cache_path and os.path.exists(cache_path):
         try:
             blob = torch.load(cache_path, map_location="cpu")
-            if (blob.get("num_nodes") == num_nodes and blob.get("n_edges") == n_edges
+            if (blob.get("mode") == mode and blob.get("num_nodes") == num_nodes
+                    and blob.get("n_edges") == n_edges
                     and blob.get("standardize") == standardize):
-                print(f"[structural] loaded cached features from {cache_path}", flush=True)
+                print(f"[structural] loaded cached {mode} features from {cache_path}", flush=True)
                 return blob["feats"]
-            print(f"[structural] cache {cache_path} stale (graph changed) — recomputing",
-                  flush=True)
+            print(f"[structural] cache {cache_path} stale — recomputing", flush=True)
         except Exception as exc:  # pragma: no cover - corrupt cache
             print(f"[structural] failed to read cache {cache_path} ({exc}) — recomputing",
                   flush=True)
 
-    print(f"[structural] computing directed structural features "
+    print(f"[structural] computing {mode} structural features "
           f"({num_nodes} nodes, {n_edges} edges)...", flush=True)
     feats = compute_structural_features(
-        edge_index, num_nodes, standardize=standardize, max_nx_nodes=max_nx_nodes
+        edge_index, num_nodes, mode=mode, standardize=standardize, max_nx_nodes=max_nx_nodes
     )
     if cache_path:
         try:
-            torch.save({"feats": feats, "num_nodes": num_nodes, "n_edges": n_edges,
-                        "standardize": standardize}, cache_path)
+            torch.save({"feats": feats, "mode": mode, "num_nodes": num_nodes,
+                        "n_edges": n_edges, "standardize": standardize}, cache_path)
             print(f"[structural] cached features to {cache_path}", flush=True)
         except Exception as exc:  # pragma: no cover - read-only fs
             print(f"[structural] could not write cache {cache_path} ({exc})", flush=True)

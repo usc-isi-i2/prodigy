@@ -204,23 +204,25 @@ class TrainerFS():
                 and hasattr(dataset, "graph")
                 and getattr(dataset.graph, "x", None) is not None):
             from data.structural_features import (
-                STRUCTURAL_FEATURE_NAMES, load_or_compute_structural,
+                load_or_compute_structural, structural_feature_names,
             )
+            mode = self.parameter["structural_features"]
             g = dataset.graph
             cache_path = None
             if self.parameter.get("root") and self.parameter.get("graph_filename"):
                 cache_path = os.path.join(
-                    self.parameter["root"], self.parameter["graph_filename"] + ".structural6.pt"
+                    self.parameter["root"],
+                    self.parameter["graph_filename"] + f".structural_{mode}.pt",
                 )
             feats = load_or_compute_structural(
-                g.edge_index, int(g.x.shape[0]), cache_path
+                g.edge_index, int(g.x.shape[0]), cache_path, mode=mode
             ).to(g.x.dtype)
             g.x = torch.cat([g.x, feats], dim=1)
             if getattr(g, "feature_names", None):
-                g.feature_names = list(g.feature_names) + list(STRUCTURAL_FEATURE_NAMES)
+                g.feature_names = list(g.feature_names) + structural_feature_names(mode)
             self.parameter["input_dim"] = int(g.x.shape[1])
-            _log(f"structural_features={self.parameter['structural_features']}: injected "
-                 f"{feats.shape[1]} features -> input_dim={g.x.shape[1]}")
+            _log(f"structural_features={mode}: injected {feats.shape[1]} features "
+                 f"-> input_dim={g.x.shape[1]}")
 
         original_feature_graph_datasets = {
             "twitter",

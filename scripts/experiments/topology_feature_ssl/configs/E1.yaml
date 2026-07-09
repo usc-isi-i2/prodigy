@@ -1,9 +1,14 @@
 # E1 — DIRECTED STRUCTURAL INPUT FEATURES arm (topology_feature_ssl). Byte-for-byte
-# identical to B0 EXCEPT one knob: structural_features = directed6. Per-node
-# [in_deg, out_deg, log_deg, k_core, pagerank, clustering] (z-scored per graph,
-# directed from the retweet edges) are concatenated to the 768-d bio embedding, so
-# input_dim becomes 774 (the trainer injects them and bumps input_dim; the eval
-# sweep must pass --structural-features directed6 to match). Objective = NM.
+# identical to B0 EXCEPT one knob: structural_features = directed3. Per-node
+# [in_deg, out_deg, log_deg] (z-scored per graph, directed from the retweet edges;
+# in-deg=influence, out-deg=activity) are concatenated to the 768-d bio embedding,
+# so input_dim becomes 771 (the trainer injects them and bumps input_dim; the eval
+# sweep must pass --structural-features directed3 to match). Objective = NM.
+#
+# directed3 (not directed6): the merged pretrain graph has ~34M nodes, where the
+# networkx features (k_core/pagerank/clustering) are intractable; degree features
+# are exact/O(E) and carry the core directed signal. Pretrain and eval must share
+# the input space, so both use directed3.
 #
 # Isolates *representable*: does giving the encoder explicit structural inputs let
 # NM stop being ~chance under random bio features, and lift structure-linked
@@ -17,7 +22,7 @@ task_name: neighbor_matching
 edge_view: default
 feature_subset: all
 original_features: true
-input_dim: 768          # trainer bumps to 774 after structural injection
+input_dim: 768          # trainer bumps to 771 after directed3 injection
 
 emb_dim: 256
 gnn_type: sage
@@ -37,7 +42,7 @@ neighbor_sampling_episode_source: graph_id
 neighbor_sampling_episode_source_weighting: balanced
 
 # >>> THE ONE CHANGE vs B0 <<<
-structural_features: directed6
+structural_features: directed3
 
 eval_step: 10000
 checkpoint_step: 10000

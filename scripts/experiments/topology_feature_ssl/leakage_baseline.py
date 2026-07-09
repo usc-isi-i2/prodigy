@@ -30,7 +30,7 @@ from sklearn.linear_model import Ridge
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import StandardScaler
 
-from data.structural_features import STRUCTURAL_FEATURE_NAMES, compute_structural_features
+from data.structural_features import compute_structural_features, structural_feature_names
 
 # dataset -> (root_name, graph_filename); the focused datasets that carry node_targets.
 DATASETS = {
@@ -73,8 +73,9 @@ def main() -> int:
     ap.add_argument("--datasets", default=",".join(DATASETS))
     ap.add_argument("--targets", default=",".join(DEFAULT_TARGETS))
     ap.add_argument("--transform", default="log1p", choices=["none", "log1p"])
-    ap.add_argument("--max-nx-nodes", type=int, default=400000,
-                    help="Skip networkx features (k_core/pagerank/clustering) above this node count.")
+    ap.add_argument("--mode", default="directed3", choices=["directed3", "directed6"],
+                    help="Structural feature set — must MATCH the E1/E2 encoders' "
+                         "--structural_features to be their fair passthrough ceiling.")
     ap.add_argument("--out", default="scripts/plotting/topology_feature_ssl/data/leakage_baseline.csv")
     args = ap.parse_args()
 
@@ -96,9 +97,9 @@ def main() -> int:
         if edge_index is None:
             print(f"[leakage] skip {name}: no edge_index")
             continue
-        print(f"[leakage] {name}: {num_nodes} nodes — computing structural features")
+        print(f"[leakage] {name}: {num_nodes} nodes — computing {args.mode} structural features")
         feats = compute_structural_features(
-            edge_index, num_nodes, standardize=False, max_nx_nodes=args.max_nx_nodes
+            edge_index, num_nodes, mode=args.mode, standardize=False
         ).numpy()
 
         node_targets = _node_targets(raw)
@@ -130,7 +131,7 @@ def main() -> int:
         w.writeheader()
         w.writerows(rows)
     print(f"\n[leakage] wrote {out} ({len(rows)} rows). "
-          f"Structural feature order: {STRUCTURAL_FEATURE_NAMES}")
+          f"Structural features ({args.mode}): {structural_feature_names(args.mode)}")
     print("[leakage] E1/E2 'learned structure' ⇒ frozen-rep Spearman > these on "
           "structure-linked targets (followers/statuses).")
     return 0
