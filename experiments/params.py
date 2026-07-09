@@ -280,6 +280,19 @@ def get_params():
             "--augmentation and --augment_test is forced on. For -eval_only True runs."
         ),
     )
+    args.add_argument(
+        "-ablate_edges", "--ablate_edges", default="none",
+        choices=["none", "rewire"],
+        help=(
+            "Controlled eval-time EDGE ablation for measuring topology reliance "
+            "(the 'rewired edge' half of the topology_feature_ssl 2x2). 'rewire' "
+            "replaces each subgraph's real edges with a random directed edge set of "
+            "the same size over the same node support (destroys real adjacency, keeps "
+            "the node bag / features / edge count / supernode scaffolding). Composable "
+            "with --ablate_features (the token ER is appended to --augmentation and "
+            "--augment_test is forced on). For -eval_only True runs."
+        ),
+    )
     args.add_argument("-attr", "--attr_regression_weight", default=0.0, type=float)
     args.add_argument(
         "--fp_mask_ratio",
@@ -509,15 +522,27 @@ def get_params():
     # Feature-ablation intervention: compose the ablation aug into the eval path.
     # Meant for -eval_only True runs; if used during training it would also ablate
     # the training augmentations, so we warn when that combination is requested.
+    ablation_tokens = []
     if params["ablate_features"] != "none":
-        token = {"zero": "FZ", "permute": "FP", "noise": "NR1.0"}[params["ablate_features"]]
+        ablation_tokens.append(
+            {"zero": "FZ", "permute": "FP", "noise": "NR1.0"}[params["ablate_features"]]
+        )
+    if params["ablate_edges"] != "none":
+        ablation_tokens.append({"rewire": "ER"}[params["ablate_edges"]])
+    if ablation_tokens:
         existing = params["augmentation"]
+        token = ",".join(ablation_tokens)
         params["augmentation"] = f"{existing},{token}" if existing else token
         params["augment_test"] = True
         if not params.get("eval_only", False):
+            active = [
+                f"--ablate_{k}={params['ablate_' + k]}"
+                for k in ("features", "edges")
+                if params["ablate_" + k] != "none"
+            ]
             print(
-                f"[params] WARNING: --ablate_features={params['ablate_features']} set without "
-                "-eval_only True; the ablation aug will also be applied during training.",
+                f"[params] WARNING: {' '.join(active)} set without -eval_only True; "
+                "the ablation aug will also be applied during training.",
                 flush=True,
             )
 

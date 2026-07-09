@@ -391,11 +391,19 @@ def build_command(
         common.extend(["--eval_random_query", "True"])
     if args.ablate_features != "none":
         common.extend(["--ablate_features", args.ablate_features])
+    if args.ablate_edges != "none":
+        common.extend(["--ablate_edges", args.ablate_edges])
 
     tag = task_tag(task)
+    # keep intact vs. ablated eval runs in separate run dirs; the 2x2 conditions
+    # get suffixes: random-feat=_ablN, rewired-edge=_ablE, both=_ablNE, etc.
+    abl = ""
     if args.ablate_features != "none":
-        # keep intact vs. ablated eval runs in separate run dirs
-        tag = f"{tag}_abl{ {'zero': 'Z', 'permute': 'P', 'noise': 'N'}[args.ablate_features] }"
+        abl += {"zero": "Z", "permute": "P", "noise": "N"}[args.ablate_features]
+    if args.ablate_edges != "none":
+        abl += {"rewire": "E"}[args.ablate_edges]
+    if abl:
+        tag = f"{tag}_abl{abl}"
     prefix = f"eval_{model_name}_to_{dataset.name}_{tag}_{shots}shot"
     if task == "neighbor_matching":
         # encode n_way so 3-way and 30-way evals don't collide in the same run dir
@@ -709,6 +717,12 @@ def main() -> int:
                              "node features; 'permute' shuffles feature rows across nodes per subgraph; "
                              "'noise' resamples features from the full-graph distribution (destroys local "
                              "content, keeps distinctness). Ablated runs get a distinct _ablZ/_ablP/_ablN tag.")
+    parser.add_argument("--ablate-edges", default="none", choices=["none", "rewire"],
+                        help="Eval-time EDGE ablation (topology reliance; the 'rewired edge' half of the "
+                             "2x2). 'rewire' replaces each subgraph's real edges with a random directed edge "
+                             "set of the same size over the same node support (destroys real adjacency, keeps "
+                             "the node bag/features). Composable with --ablate-features; runs get a _ablE "
+                             "(or combined _ablNE) tag.")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--continue-on-error", action="store_true")
     parser.add_argument("extra_args", nargs=argparse.REMAINDER)

@@ -124,6 +124,75 @@ class AblateAllFeatures(AugBase):
         return graph
 
 
+class AblateEdges(AugBase):
+    """Deterministically destroy a subgraph's real adjacency while keeping the
+    node set, node features, edge count, and bidirectional/edge_attr structure.
+
+    The edge analog of ``AblateAllFeatures``: it isolates how much a
+    representation relies on the *real* edge structure vs. the node bag. Used as
+    the "rewired edge" half of the topology_feature_ssl 2x2 ablation (a rep that
+    "learns both" degrades under this AND under feature ablation; NM survives it).
+
+    mode="rewire" -> replace the subgraph's real edges with a random directed
+                     edge set of the SAME size, drawn uniformly from the nodes
+                     that currently appear as edge endpoints. Sampling only from
+                     the existing endpoint support keeps the pooling supernode
+                     (whose edges live in separate attributes, not edge_index)
+                     untouched, and reproduces the loader's bidirectional
+                     convention (each forward edge mirrored, edge_attr flag
+                     0=forward/1=reverse). Deterministic count, random structure.
+    """
+
+    def __init__(self, mode="rewire"):
+        if mode not in ("rewire",):
+            raise ValueError(f"AblateEdges mode must be 'rewire', got {mode}")
+        self.mode = mode
+
+    def __call__(self, graph):
+        graph = copy.copy(graph)
+        edge_index = getattr(graph, "edge_index", None)
+        if edge_index is None or edge_index.numel() == 0:
+            return graph
+        nodes = torch.unique(edge_index)
+        if nodes.numel() < 2:  # nothing to rewire onto
+            return graph
+
+        edge_attr = getattr(graph, "edge_attr", None)
+        # Loader bidirectionalizes real edges (get_subgraph): E is even, the first
+        # half are forward edges. Recreate m forward edges and mirror them.
+        m = edge_index.size(1) // 2
+        if m == 0:  # not bidirectional; rewire all columns as directed
+            m = edge_index.size(1)
+            bidir = False
+        else:
+            bidir = True
+
+        n = nodes.numel()
+        src = nodes[torch.randint(n, (m,))]
+        dst = nodes[torch.randint(n, (m,))]
+        loops = src == dst
+        tries = 0
+        while bool(loops.any()) and tries < 8:  # avoid trivial self-loops
+            dst[loops] = nodes[torch.randint(n, (int(loops.sum()),))]
+            loops = src == dst
+            tries += 1
+        fwd = torch.stack([src, dst], dim=0)
+
+        if bidir:
+            new_edge_index = torch.cat([fwd, fwd.flip(0)], dim=1)
+        else:
+            new_edge_index = fwd
+        graph.edge_index = new_edge_index.to(edge_index.dtype)
+
+        if edge_attr is not None:
+            cols = edge_attr.size(1) if edge_attr.dim() > 1 else 1
+            new_attr = torch.zeros((new_edge_index.size(1), cols), dtype=edge_attr.dtype)
+            if bidir:
+                new_attr[m:, 0] = 1  # reverse-direction flag, matching get_subgraph
+            graph.edge_attr = new_attr if edge_attr.dim() > 1 else new_attr.reshape(-1)
+        return graph
+
+
 def get_aug(aug_spec, node_feature_distribution=None):
     if not aug_spec:
         return Identity()
@@ -141,6 +210,8 @@ def get_aug(aug_spec, node_feature_distribution=None):
             augs.append(AblateAllFeatures("zero"))
         elif spec == "FP":  # ablate all features -> within-subgraph permutation
             augs.append(AblateAllFeatures("permute"))
+        elif spec == "ER":  # ablate edges -> random rewire (matched edge count)
+            augs.append(AblateEdges("rewire"))
         else:
             raise ValueError(f"Unknown augmentation {spec}")
     return Compose(augs)
