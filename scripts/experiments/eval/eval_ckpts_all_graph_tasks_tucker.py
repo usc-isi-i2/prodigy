@@ -413,6 +413,10 @@ def build_command(
     if args.structural_features != "none":
         # E1/E2 encoders: inject the same structural inputs used at pretrain
         common.extend(["--structural_features", args.structural_features])
+    if args.gnn_type != "sage":
+        # E2 encoder: build the matching architecture (e.g. sage_multi) so the
+        # pretrained state_dict loads.
+        common.extend(["--gnn_type", args.gnn_type])
 
     tag = task_tag(task)
     # keep intact vs. ablated eval runs in separate run dirs; the 2x2 conditions
@@ -737,6 +741,9 @@ def main() -> int:
                              "node features; 'permute' shuffles feature rows across nodes per subgraph; "
                              "'noise' resamples features from the full-graph distribution (destroys local "
                              "content, keeps distinctness). Ablated runs get a distinct _ablZ/_ablP/_ablN tag.")
+    parser.add_argument("--gnn-type", default="sage",
+                        help="Encoder architecture to build before loading the checkpoint. E2 needs "
+                             "'sage_multi' (multi-aggregation) so its state_dict loads; B0/B1/E1 use 'sage'.")
     parser.add_argument("--structural-features", default="none",
                         choices=["none", "directed3", "directed6"],
                         help="Inject directed structural input features (E1/E2 encoders). MUST match "

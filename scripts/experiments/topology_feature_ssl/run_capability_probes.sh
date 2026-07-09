@@ -31,17 +31,19 @@ if ! ls "${PROBE_GRAPHS}"/count_threshold.pt >/dev/null 2>&1; then
 fi
 
 RUNNER=scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py
-# E1-E4 encoders need structural inputs at probe time too (input_dim 774): set
-# STRUCTURAL=directed6 and use an E1-E4-only model list.
+# E1-E4 encoders need structural inputs at probe time too (E1 input_dim 771):
+# set STRUCTURAL=directed3 and use an E1-E4-only model list.
 STRUCTURAL_ARGS=()
 [[ -n "${STRUCTURAL:-}" ]] && STRUCTURAL_ARGS=(--structural-features "${STRUCTURAL}")
+GNN_TYPE_ARGS=()
+[[ -n "${GNN_TYPE:-}" ]] && GNN_TYPE_ARGS=(--gnn-type "${GNN_TYPE}")  # E2: sage_multi
 # Linear-probe classification (frozen rep -> linear head) on each single-rule graph.
 python3 "${RUNNER}" \
   --model-list "${ML}" --python python3 \
   --data-root /dataMeR1/phil/data \
   --datasets probe_count_threshold,probe_in_degree,probe_out_degree,probe_existence,probe_conjunction \
   --tasks pl --pl-linear-probe --shots 50 \
-  --continue-on-error "${STRUCTURAL_ARGS[@]}" "$@"
+  --continue-on-error "${STRUCTURAL_ARGS[@]}" "${GNN_TYPE_ARGS[@]}" "$@"
 
 python3 "${SCRIPT_DIR}/parse_capability_probes.py" \
   --log-root /dataMeR1/phil/gfm/prodigy/log --model-list "${ML}" \
