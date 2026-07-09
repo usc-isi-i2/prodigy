@@ -199,10 +199,23 @@ def _namespace_user_ids(names: list[str], graphs: list[dict[str, Any]]) -> tuple
     return user_ids, raw_user_ids
 
 
-def _merge_graphs(names: list[str], paths: list[Path], graphs: list[dict[str, Any]]) -> dict[str, Any]:
+def _merge_graphs(
+    names: list[str],
+    paths: list[Path],
+    graphs: list[dict[str, Any]],
+    drop_edge_features: bool = False,
+) -> dict[str, Any]:
     feature_names = _same_list(graphs, "feature_names")
-    edge_attr_feature_names = _same_list(graphs, "edge_attr_feature_names")
-    label_names = _same_list(graphs, "label_names")
+    if drop_edge_features:
+        # Heterogeneous edge schemas (e.g. social graphs' 2-d [rt_weight, mn_weight]
+        # vs twitter's 1-d [n_retweets]): drop edge_attr + all edge/label views and
+        # keep structure only. Loader tolerates missing edge_attr (edge_view=default
+        # falls back to the main edge_index).
+        edge_attr_feature_names: list[Any] = []
+        label_names: list[Any] = []
+    else:
+        edge_attr_feature_names = _same_list(graphs, "edge_attr_feature_names")
+        label_names = _same_list(graphs, "label_names")
 
     x_dims = {int(graph["x"].shape[1]) for graph in graphs}
     if len(x_dims) != 1:
@@ -230,11 +243,18 @@ def _merge_graphs(names: list[str], paths: list[Path], graphs: list[dict[str, An
         y_parts.append(y)
     y = torch.cat(y_parts, dim=0)
 
-    edge_attr = _concat_optional_tensors([graph.get("edge_attr") for graph in graphs], "edge_attr")
-    edge_index_views = _merge_edge_index_views(graphs, offsets, "edge_index_views")
-    target_edge_index_views = _merge_edge_index_views(graphs, offsets, "target_edge_index_views")
-    edge_attr_views = _merge_edge_attr_views(graphs)
-    edge_attr_feature_names_views = _same_mapping(graphs, "edge_attr_feature_names_views")
+    if drop_edge_features:
+        edge_attr = None
+        edge_index_views: dict[str, torch.Tensor] = {}
+        target_edge_index_views: dict[str, torch.Tensor] = {}
+        edge_attr_views: dict[str, torch.Tensor] = {}
+        edge_attr_feature_names_views: dict[str, Any] = {}
+    else:
+        edge_attr = _concat_optional_tensors([graph.get("edge_attr") for graph in graphs], "edge_attr")
+        edge_index_views = _merge_edge_index_views(graphs, offsets, "edge_index_views")
+        target_edge_index_views = _merge_edge_index_views(graphs, offsets, "target_edge_index_views")
+        edge_attr_views = _merge_edge_attr_views(graphs)
+        edge_attr_feature_names_views = _same_mapping(graphs, "edge_attr_feature_names_views")
 
     user_ids, raw_user_ids = _namespace_user_ids(names, graphs)
     handles: list[Any] = []
@@ -332,8 +352,11 @@ def main() -> None:
 
     graphs = [_load_graph(name, path) for name, path in zip(names, paths)]
 
+    drop_edge_features = bool(config.get("drop_edge_features", False))
+    if drop_edge_features:
+        _log("drop_edge_features=True: dropping edge_attr + edge/label views (structure only)")
     _log("merging inputs as disjoint components")
-    merged = _merge_graphs(names, paths, graphs)
+    merged = _merge_graphs(names, paths, graphs, drop_edge_features=drop_edge_features)
     _validate_merged(merged)
 
     out_path = Path(str(out))

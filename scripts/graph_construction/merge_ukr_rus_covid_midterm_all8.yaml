@@ -20,4 +20,7 @@ inputs:
     path: /dataMeR1/phil/data/twibot20/graphs/retweet_graph.pt
   - name: cp_hk
     path: /dataMeR1/phil/data/cp_hk_twitter/graphs/retweet_graph.pt
+# social/twibot/cphk graphs have incompatible edge schemas (2-d [rt_weight,mn_weight]
+# vs twitter's 1-d [n_retweets]); drop edge features and merge structure + node feats only.
+drop_edge_features: true
 out: /dataMeR1/phil/data/merged/graphs/ukr_rus_covid_midterm_all8_retweet_graph.pt
