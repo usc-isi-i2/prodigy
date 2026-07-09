@@ -22,6 +22,20 @@ launched by the user; this repo only ships the scripts.
 | E4 — multi-task MFR ⊕ dir-LP ⊕ structural | code | ⏳ pending (task #8) |
 | T1/T2/T3 tables + notebook | code | ⏳ pending (task #9) |
 
+## Budget decision (from the transfer sweep, 2026-07-09)
+
+**Pretrain budget for E2–E4 = 40k episodes** (`epochs: 4`, `dataset_len_cap: 10000`),
+not 120k. The budget sweep (`run_budget_sweep.sh`) showed downstream **classification
+is flat from 20k** and **regression peaks ~40–60k then *degrades* toward 110k** — NM
+(instance discrimination) collapses the continuous variation regression needs, so more
+NM training actively hurts transfer. 40k is the regression peak and ~3× cheaper
+(~1.5 hr vs ~4.6 hr per arm).
+
+**Matched-budget comparison:** the reading chain (E2−E1, E3−E2, …) must compare arms
+at the SAME step, so evaluate E2–E4 (40k) against **B0/B1/E1 at their 40k checkpoints**
+(`state_dict_40000.ckpt`), which already exist — not their 110k versions. Build E2–E4
+configs with `epochs: 4`.
+
 ## Prerequisites (once, on Tucker)
 
 ```bash

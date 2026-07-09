@@ -216,10 +216,13 @@ else:
         d["step"] = d.model.str.extract(r"_step(\d+)")[0].astype(int)
         display(d.pivot_table(index=["arm", "step"], columns="target", values="spearman").round(3))
         if leak is not None:
-            lk = leak[leak.dataset == "twibot20"].set_index("target")["spearman"].round(3)
-            print("leakage ceiling (raw directed3 -> target, twibot20, FULL-DATA Ridge):", lk.to_dict())
-            print("CAVEAT: leakage is full-data (163k nodes) vs the 10-shot eval above — NOT shot-matched, "
-                  "so 'E1 < leakage' is not yet a clean passthrough verdict. E1 > B0 IS clean.")
+            lk = leak[leak.dataset == "twibot20"].set_index("target")
+            print("leakage ceiling (raw directed3 -> target, twibot20), SHOT-MATCHED 10-shot:",
+                  lk["spearman"].round(3).to_dict())
+            if "spearman_fulldata" in lk:
+                print("  (full-data reference:", lk["spearman_fulldata"].round(3).to_dict(), ")")
+            print("Passthrough test: E1 'learned structure' only if its frozen-rep Spearman "
+                  "> the shot-matched ceiling on followers/statuses. E1 > B0 is a separate, clean signal.")
 '''))
 
 # ---- Reading chain ----
