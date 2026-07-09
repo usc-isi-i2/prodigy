@@ -30,10 +30,13 @@ export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 cd "${REPO_ROOT}"
 
 RUNNER=scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py
+# Set STRUCTURAL=directed6 when the model list is E1-E4 (input_dim 774).
+STRUCTURAL_ARGS=()
+[[ -n "${STRUCTURAL:-}" ]] && STRUCTURAL_ARGS=(--structural-features "${STRUCTURAL}")
 COMMON=(--model-list "${ML}" --python python3
         --data-root /dataMeR1/phil/data
         --datasets midterm,ukr_rus_twitter,covid19_twitter,twibot20,election2020
-        --continue-on-error)
+        --continue-on-error "${STRUCTURAL_ARGS[@]}")
 
 run_condition() {  # $1..: extra ablation flags (label echoed)
   local label="$1"; shift

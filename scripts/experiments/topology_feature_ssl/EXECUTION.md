@@ -16,7 +16,7 @@ launched by the user; this repo only ships the scripts.
 | Diagnostics: 2×2 rewired-edge ablation | code | ✅ built (`run_2x2_ablation.sh`, `parse_2x2.py`) |
 | Diagnostics: leakage baseline | code | ✅ built (`leakage_baseline.py`) |
 | Diagnostics: capability probes | code | ✅ built (`make_probe_graphs.py`, `run_capability_probes.sh`) |
-| E1 — directed structural input features | code | ⏳ pending (task #5) |
+| E1 — directed structural input features | code | ✅ built (`configs/E1.yaml`, `--structural_features directed6`) |
 | E2 — expressive directed aggregator | code | ⏳ pending (task #6) |
 | E3 — masked feature reconstruction | code (fp exists; refine) | ⏳ pending (task #7) |
 | E4 — multi-task MFR ⊕ dir-LP ⊕ structural | code | ⏳ pending (task #8) |
@@ -109,5 +109,30 @@ Outputs land in `scripts/plotting/topology_feature_ssl/data/`:
 `ablation_2x2.csv` (T2), `capability_probes.csv` (T3), `leakage_baseline.csv`.
 `parse_2x2.py` / `parse_capability_probes.py` also print the T2 / T3 tables.
 
-Arms E1–E4 and the joined T1/T2/T3 notebook are built in the later tasks; their
+## E-arm evals use a separate structural sweep
+
+E1–E4 encoders take the 6 structural inputs (input_dim 774), so their evals must
+pass `--structural-features directed6` and use an E-arm-only model list — B0/B1
+(768) and E1–E4 (774) cannot share one sweep.
+
+```bash
+# pretrain E1 (structural inputs; NM). One GPU.
+tmux new-session -d -s tfssl_E1 'bash -lc "bash scripts/experiments/topology_feature_ssl/train_arm_tucker.sh E1 --device 2"'
+
+# eval / diagnostics for the E-arms: E-only list + STRUCTURAL=directed6
+STATE_DIR=/dataMeR1/phil/gfm/prodigy/state ARMS="E1 E2 E3 E4" \
+  bash scripts/experiments/topology_feature_ssl/make_model_list.sh   # -> model_list.txt (E-arms)
+STRUCTURAL=directed6 MODEL_LIST=scripts/experiments/topology_feature_ssl/model_list.txt \
+  bash scripts/experiments/topology_feature_ssl/run_eval_sweep.sh --gpus 0,1,2,3
+STRUCTURAL=directed6 MODEL_LIST=scripts/experiments/topology_feature_ssl/model_list.txt \
+  bash scripts/experiments/topology_feature_ssl/run_2x2_ablation.sh --gpus 0,1,2,3
+STRUCTURAL=directed6 MODEL_LIST=scripts/experiments/topology_feature_ssl/model_list.txt \
+  bash scripts/experiments/topology_feature_ssl/run_capability_probes.sh --gpus 0,1,2,3
+```
+
+(Structural features are computed once per graph and cached as
+`<graph>.structural6.pt`, so the first E-arm eval on each graph pays the networkx
+cost and the rest reuse it.)
+
+Arms E2–E4 and the joined T1/T2/T3 notebook are built in the later tasks; their
 commands will be appended here as they land.

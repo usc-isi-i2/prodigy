@@ -410,6 +410,9 @@ def build_command(
         common.extend(["--ablate_features", args.ablate_features])
     if args.ablate_edges != "none":
         common.extend(["--ablate_edges", args.ablate_edges])
+    if args.structural_features != "none":
+        # E1/E2 encoders: inject the same structural inputs used at pretrain
+        common.extend(["--structural_features", args.structural_features])
 
     tag = task_tag(task)
     # keep intact vs. ablated eval runs in separate run dirs; the 2x2 conditions
@@ -734,6 +737,10 @@ def main() -> int:
                              "node features; 'permute' shuffles feature rows across nodes per subgraph; "
                              "'noise' resamples features from the full-graph distribution (destroys local "
                              "content, keeps distinctness). Ablated runs get a distinct _ablZ/_ablP/_ablN tag.")
+    parser.add_argument("--structural-features", default="none", choices=["none", "directed6"],
+                        help="Inject directed structural input features (E1/E2 encoders). MUST match "
+                             "how the checkpoint was pretrained (defines the input space), so run E1/E2/"
+                             "E3/E4 evals with directed6 in a SEPARATE sweep from B0/B1 (input_dim 774 vs 768).")
     parser.add_argument("--ablate-edges", default="none", choices=["none", "rewire"],
                         help="Eval-time EDGE ablation (topology reliance; the 'rewired edge' half of the "
                              "2x2). 'rewire' replaces each subgraph's real edges with a random directed edge "

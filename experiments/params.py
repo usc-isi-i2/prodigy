@@ -293,6 +293,19 @@ def get_params():
             "--augment_test is forced on). For -eval_only True runs."
         ),
     )
+    args.add_argument(
+        "--structural_features", default="none", choices=["none", "directed6"],
+        help=(
+            "E1/E2: inject directed per-node structural features as INPUT features "
+            "(topology becomes representable). 'directed6' concatenates "
+            "[in_deg, out_deg, log_deg, k_core, pagerank, clustering] (z-scored per "
+            "graph) to graph.x, bumping input_dim by 6. Must be set identically at "
+            "pretrain AND eval (it defines the encoder's input space). Features are "
+            "cached next to the graph file. Subject to the leakage control "
+            "(leakage_baseline.py) — E1/E2 'learned structure' only if the frozen "
+            "rep beats the raw-structural-feature probe on structure-linked targets."
+        ),
+    )
     args.add_argument("-attr", "--attr_regression_weight", default=0.0, type=float)
     args.add_argument(
         "--fp_mask_ratio",

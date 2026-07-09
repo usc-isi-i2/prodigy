@@ -26,10 +26,14 @@ export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 cd "${REPO_ROOT}"
 
 RUNNER=scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py
+# E1-E4 encoders need their structural inputs injected at eval (input_dim 774),
+# so run a SEPARATE sweep for them with STRUCTURAL=directed6; B0/B1 stay unset (768).
+STRUCTURAL_ARGS=()
+[[ -n "${STRUCTURAL:-}" ]] && STRUCTURAL_ARGS=(--structural-features "${STRUCTURAL}")
 COMMON=(--model-list "${ML}" --python python3
         --data-root /dataMeR1/phil/data
         --datasets midterm,ukr_rus_twitter,covid19_twitter,twibot20,election2020
-        --continue-on-error)
+        --continue-on-error "${STRUCTURAL_ARGS[@]}")
 
 # node regression (headline for the objective axis; NM is weak here)
 python3 "${RUNNER}" "${COMMON[@]}" --tasks reg --shots 10 --reg-transform log1p \

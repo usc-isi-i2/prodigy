@@ -18,7 +18,7 @@ they are a one-time offline cost per graph and are cached by the callers.
 
 from __future__ import annotations
 
-import math
+import os
 
 import torch
 
@@ -94,4 +94,48 @@ def compute_structural_features(
         mean = feats.mean(dim=0, keepdim=True)
         std = feats.std(dim=0, keepdim=True).clamp_min(1e-6)
         feats = (feats - mean) / std
+    return feats
+
+
+def load_or_compute_structural(
+    edge_index: torch.Tensor,
+    num_nodes: int,
+    cache_path: str | None = None,
+    *,
+    standardize: bool = True,
+    max_nx_nodes: int | None = 2_000_000,
+) -> torch.Tensor:
+    """compute_structural_features with an on-disk cache keyed by the graph path.
+
+    The networkx features (k-core/PageRank/clustering) are the expensive part and
+    are identical across the many eval jobs that reload the same graph, so we
+    cache the [num_nodes, 6] tensor next to the graph (``<graph>.structural6.pt``)
+    and validate it against (num_nodes, edge_count) before reuse.
+    """
+    n_edges = int(edge_index.size(1))
+    if cache_path and os.path.exists(cache_path):
+        try:
+            blob = torch.load(cache_path, map_location="cpu")
+            if (blob.get("num_nodes") == num_nodes and blob.get("n_edges") == n_edges
+                    and blob.get("standardize") == standardize):
+                print(f"[structural] loaded cached features from {cache_path}", flush=True)
+                return blob["feats"]
+            print(f"[structural] cache {cache_path} stale (graph changed) — recomputing",
+                  flush=True)
+        except Exception as exc:  # pragma: no cover - corrupt cache
+            print(f"[structural] failed to read cache {cache_path} ({exc}) — recomputing",
+                  flush=True)
+
+    print(f"[structural] computing directed structural features "
+          f"({num_nodes} nodes, {n_edges} edges)...", flush=True)
+    feats = compute_structural_features(
+        edge_index, num_nodes, standardize=standardize, max_nx_nodes=max_nx_nodes
+    )
+    if cache_path:
+        try:
+            torch.save({"feats": feats, "num_nodes": num_nodes, "n_edges": n_edges,
+                        "standardize": standardize}, cache_path)
+            print(f"[structural] cached features to {cache_path}", flush=True)
+        except Exception as exc:  # pragma: no cover - read-only fs
+            print(f"[structural] could not write cache {cache_path} ({exc})", flush=True)
     return feats

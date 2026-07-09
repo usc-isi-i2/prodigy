@@ -195,6 +195,33 @@ class TrainerFS():
                 self.parameter["input_dim"] = kg_embedding_dim + 2  # add 2 to flag head and tail nodes
         if self.dataset_name in ["CSG"]:
             edge_attr_dim = 128
+
+        # E1/E2: inject directed structural features as INPUT features so topology
+        # is representable. Done once on the full graph (the same SubgraphDataset
+        # graph feeds train/val/test) and before input_dim is inferred below. Must
+        # match at pretrain and eval — it defines the encoder's input space.
+        if (self.parameter.get("structural_features", "none") != "none"
+                and hasattr(dataset, "graph")
+                and getattr(dataset.graph, "x", None) is not None):
+            from data.structural_features import (
+                STRUCTURAL_FEATURE_NAMES, load_or_compute_structural,
+            )
+            g = dataset.graph
+            cache_path = None
+            if self.parameter.get("root") and self.parameter.get("graph_filename"):
+                cache_path = os.path.join(
+                    self.parameter["root"], self.parameter["graph_filename"] + ".structural6.pt"
+                )
+            feats = load_or_compute_structural(
+                g.edge_index, int(g.x.shape[0]), cache_path
+            ).to(g.x.dtype)
+            g.x = torch.cat([g.x, feats], dim=1)
+            if getattr(g, "feature_names", None):
+                g.feature_names = list(g.feature_names) + list(STRUCTURAL_FEATURE_NAMES)
+            self.parameter["input_dim"] = int(g.x.shape[1])
+            _log(f"structural_features={self.parameter['structural_features']}: injected "
+                 f"{feats.shape[1]} features -> input_dim={g.x.shape[1]}")
+
         original_feature_graph_datasets = {
             "twitter",
             "midterm",
