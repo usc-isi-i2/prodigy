@@ -114,6 +114,11 @@ def main() -> int:
                     help="Support size for the shot-matched ceiling (match the benchmark's n_shots).")
     ap.add_argument("--n-query", type=int, default=12, help="Query size per episode (match the benchmark).")
     ap.add_argument("--episodes", type=int, default=500, help="Number of few-shot episodes to accumulate.")
+    ap.add_argument("--skip-fulldata", action="store_true",
+                    help="Skip the full-data Ridge reference (_cv_spearman). It fits on ALL "
+                         "labeled nodes (O(n·d²)) — minutes-to-hours on the 23M-node graphs — "
+                         "and is NOT comparable to the few-shot floor anyway. Use for large "
+                         "graphs / the features_only floor.")
     ap.add_argument("--out", default="",
                     help="Output CSV; defaults to a features-mode-specific path.")
     args = ap.parse_args()
@@ -168,13 +173,14 @@ def main() -> int:
                 yy = np.log1p(np.clip(yy, 0, None))
             xm = feats[mask]
             rho_fs = _fewshot_spearman(xm, yy, args.shots, args.n_query, args.episodes)
-            rho_full = _cv_spearman(xm, yy)
+            rho_full = float("nan") if args.skip_fulldata else _cv_spearman(xm, yy)
             rows.append({"dataset": name, "target": target,
                          "spearman": rho_fs,            # shot-matched (primary, fair)
-                         "spearman_fulldata": rho_full,  # full-data reference
+                         "spearman_fulldata": rho_full,  # full-data reference (skippable)
                          "shots": args.shots, "n": int(mask.sum())})
+            ref = "skipped" if args.skip_fulldata else f"{rho_full:.3f}"
             print(f"[leakage] {name}/{target}: {args.shots}-shot Spearman={rho_fs:.3f} "
-                  f"(full-data ref={rho_full:.3f}, n={int(mask.sum())})")
+                  f"(full-data ref={ref}, n={int(mask.sum())})")
 
     if not rows:
         raise SystemExit("[leakage] no (dataset,target) pairs produced — check paths/targets.")
