@@ -81,10 +81,25 @@ features-only and structurally blind.**
    - **B0, B1, E2 all LOSE to the trivial floor on regression** (near-zero/negative);
      classification is the exception (encoders beat `raw_feat`).
    - **E2 underperforms E1** on regression *and* static-LP (0.35–0.43) at matched
-     budget. Count-aware aggregation did not turn representable structure into better
-     performance. *Caveats (preliminary):* E2 has more params (multi-agg + readout) so
-     30k may **under-train** it; its cls + some LP cells + the 2×2/probe diagnostics
-     were still running at write time.
+     budget. And the **capability probes explain why** — it's *not* "representable but
+     unused," the aggregator **still doesn't make structure representable**:
+
+     | probe AUC | count | in-deg | out-deg | existence | conj |
+     |---|---|---|---|---|---|
+     | E2@10k | 0.56 | 0.52 | 0.61 | 0.59 | 0.60 |
+     | E2@30k | 0.59 | 0.53 | 0.60 | 0.62 | 0.61 |
+     | E1@110k | 0.64 | 0.59 | 0.53 | 0.56 | 0.52 |
+
+     E2's probes barely move 10k→30k (converged, not under-trained) and sit **≤ E1 on
+     count/in-degree** — the exact primitives sum-aggregation was meant to lift. E2
+     only edges E1 on out-deg/existence/**conjunction** (presence/binding, which max
+     helps). Structure caps at ~0.6 for *both* mean and multi-agg encoders.
+   - **Why sum didn't buy counting:** `sum` ∝ degree, but the conv **BatchNorms** its
+     output and projects the 3× aggregate down — BN rescales to unit variance, washing
+     out the very magnitude that encodes count. The count signal is created by
+     sum-aggregation and then normalized away. Concrete + fixable (true PNA uses
+     degree-scalers to avoid this; or drop BN on the aggregate). *Preliminary:* E2's
+     cls + some LP + the full 2×2/probe run were still in progress at write time.
 
 ## Reading-chain conclusions
 - **B1 − B0 (augmentation lever):** the feature shortcut is **not removable by `NR`
@@ -96,11 +111,13 @@ features-only and structurally blind.**
   improves transfer. Its structure-target regression is still ≈ passthrough on some
   targets, but account_age + LP are not passthrough wins.
 - **E2 − E1 (count-aware encoder):** at matched budget E2 is **worse** than E1 on
-  regression and static-LP → making the aggregator count-capable did **not** convert
-  E1's representable structure into better performance. **Representational fit was not
-  the binding constraint** (the hypothesis this arm was built to test). The win is the
-  structural *input*, not the encoder. *Caveat:* E2's larger model may be under-trained
-  at 30k; a longer E2 run would tighten this.
+  regression and static-LP, and its probes show it **doesn't even represent count/
+  degree better** than E1 (≤ E1 there; both cap ~0.6). So multi-aggregation did **not**
+  make structure more representable — the hypothesis this arm tested (representational
+  fit) is **not supported**, and the win is the structural *input*, not the encoder.
+  The specific culprit is likely **scale-normalization** (BatchNorm washing out the
+  sum's count magnitude), which is fixable but was not the free win we hoped. E2's
+  probes are converged (flat 10k→30k), so this is not just under-training.
 
 ## Methodological notes (things that changed a verdict)
 - **Shot-matching the leakage baseline mattered.** A full-data Ridge ceiling (163k
@@ -119,9 +136,12 @@ features-only and structurally blind.**
   confirmatory, T2/T3 as primary. NM 30-way test acc has ±0.12 std.
 
 ## Next
-- **Firm up E2:** finish its cls + static-LP + 2×2/probe cells; consider a longer E2
-  run to rule out under-training before concluding the aggregator is a dead end.
-- **The story now points at the objective, not the encoder.** E1 (structural input)
+- **Finish E2's** cls + static-LP + full 2×2/probe cells (in progress) to complete the
+  matched table; but the probe verdict is already firm (converged, flat).
+- **Encoder-axis retry (cheap, targeted):** the E2 failure has a named culprit —
+  scale-normalization washing out the count magnitude. A "degree-scaler" PNA (or no BN
+  on the aggregate) is the one encoder change worth trying before abandoning the axis.
+- **The story otherwise points at the objective, not the encoder.** E1 (structural input)
   is the only thing that beats trivial; a fancier encoder (E2) didn't help. That
   redirects to the **objective axis (E3/E4)** — a generative / multi-task target
   that could make the encoder *use* structure — or to a **data-ceiling** conclusion
