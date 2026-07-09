@@ -105,12 +105,25 @@ def main() -> int:
     ap.add_argument("--mode", default="directed3", choices=["directed3", "directed6"],
                     help="Structural feature set — must MATCH the E1/E2 encoders' "
                          "--structural_features to be their fair passthrough ceiling.")
+    ap.add_argument("--features", default="structural", choices=["structural", "raw"],
+                    help="Ridge inputs: 'structural' = compute_structural_features "
+                         "(the E1/E2 passthrough ceiling); 'raw' = the raw node embeddings "
+                         "raw['x'] the encoders actually consume — i.e. the features_only "
+                         "floor for the frozen-probe matrix (pretrain_probe_matrix).")
     ap.add_argument("--shots", type=int, default=10,
                     help="Support size for the shot-matched ceiling (match the benchmark's n_shots).")
     ap.add_argument("--n-query", type=int, default=12, help="Query size per episode (match the benchmark).")
     ap.add_argument("--episodes", type=int, default=500, help="Number of few-shot episodes to accumulate.")
-    ap.add_argument("--out", default="scripts/plotting/topology_feature_ssl/data/leakage_baseline.csv")
+    ap.add_argument("--out", default="",
+                    help="Output CSV; defaults to a features-mode-specific path.")
     args = ap.parse_args()
+
+    if not args.out:
+        args.out = (
+            "scripts/plotting/node_regression/data/features_only_floor.csv"
+            if args.features == "raw"
+            else "scripts/plotting/topology_feature_ssl/data/leakage_baseline.csv"
+        )
 
     targets = [t.strip() for t in args.targets.split(",") if t.strip()]
     rows = []
@@ -130,10 +143,15 @@ def main() -> int:
         if edge_index is None:
             print(f"[leakage] skip {name}: no edge_index")
             continue
-        print(f"[leakage] {name}: {num_nodes} nodes — computing {args.mode} structural features")
-        feats = compute_structural_features(
-            edge_index, num_nodes, mode=args.mode, standardize=False
-        ).numpy()
+        if args.features == "raw":
+            print(f"[leakage] {name}: {num_nodes} nodes — using raw node features raw['x'] "
+                  f"(dim {int(x.shape[1])}) as the features_only floor")
+            feats = x.float().numpy()
+        else:
+            print(f"[leakage] {name}: {num_nodes} nodes — computing {args.mode} structural features")
+            feats = compute_structural_features(
+                edge_index, num_nodes, mode=args.mode, standardize=False
+            ).numpy()
 
         node_targets = _node_targets(raw)
         for target in targets:
@@ -168,11 +186,19 @@ def main() -> int:
                                            "spearman_fulldata", "shots", "n"])
         w.writeheader()
         w.writerows(rows)
-    print(f"\n[leakage] wrote {out} ({len(rows)} rows). "
-          f"Structural features ({args.mode}): {structural_feature_names(args.mode)}")
-    print(f"[leakage] 'spearman' is the {args.shots}-shot ceiling (fair vs the frozen-rep "
-          f"{args.shots}-shot eval); E1/E2 'learned structure' ⇒ frozen-rep > this on "
-          "structure-linked targets (followers/statuses).")
+    if args.features == "raw":
+        feat_desc = "raw node features raw['x'] (features_only floor)"
+    else:
+        feat_desc = f"structural features ({args.mode}): {structural_feature_names(args.mode)}"
+    print(f"\n[leakage] wrote {out} ({len(rows)} rows). Inputs: {feat_desc}")
+    print(f"[leakage] 'spearman' is the {args.shots}-shot ceiling, fair vs the frozen-rep "
+          f"{args.shots}-shot eval.")
+    if args.features == "raw":
+        print("[leakage] features_only floor: a pretrained row 'learned' beyond raw features "
+              "⇒ its frozen-rep Spearman > this on the same (dataset,target).")
+    else:
+        print("[leakage] E1/E2 'learned structure' ⇒ frozen-rep > this on structure-linked "
+              "targets (followers/statuses).")
     return 0
 
 

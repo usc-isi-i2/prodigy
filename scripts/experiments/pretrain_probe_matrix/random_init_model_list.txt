@@ -1,0 +1,5 @@
+# random_init floor for the frozen-probe matrix.
+# The ckpt sentinel NONE routes to an empty --pretrained_model_run, so the encoder
+# is built from the eval flags but never loads weights => untrained (random) encoder.
+# Same architecture as the bio-feature strategy rows (emb_only, input_dim 768, sage).
+random_init NONE

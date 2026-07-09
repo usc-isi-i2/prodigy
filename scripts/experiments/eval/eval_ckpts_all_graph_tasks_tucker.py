@@ -197,6 +197,16 @@ def parse_csv(value: str) -> list[str]:
     return [part.strip() for part in value.split(",") if part.strip()]
 
 
+# Sentinel ckpt values that mean "evaluate an untrained encoder" (the random_init
+# floor). trainer.py only loads a checkpoint when pretrained_model_run != "", so we
+# route these to an empty --pretrained_model_run and skip the existence check.
+RANDOM_INIT_SENTINELS = {"", "NONE", "RANDOM_INIT"}
+
+
+def is_random_init(ckpt_path: str) -> bool:
+    return ckpt_path.strip().upper() in RANDOM_INIT_SENTINELS
+
+
 def parse_model_list(path: Path) -> list[tuple[str, str]]:
     rows: list[tuple[str, str]] = []
     for raw_line in path.read_text(encoding="utf-8").splitlines():
@@ -402,7 +412,7 @@ def build_command(
         "--save_roc_curve",
         "True",
         "--pretrained_model_run",
-        ckpt_path,
+        "" if is_random_init(ckpt_path) else ckpt_path,
     ]
     if dataset.eval_random_query:
         common.extend(["--eval_random_query", "True"])
@@ -808,7 +818,7 @@ def main() -> int:
             print(f"[warn] {dataset.name}: graph x_dim={info['x_dim']} expected 768", flush=True)
 
         for model_name, ckpt_path in models:
-            if not Path(ckpt_path).exists():
+            if not is_random_init(ckpt_path) and not Path(ckpt_path).exists():
                 raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
             for task in selected_tasks:
                 if task == "temporal_link_prediction":
