@@ -45,9 +45,14 @@ REG_RE = re.compile(
 SLP_RE = re.compile(
     r"^eval_(?P<model>.+?)_to_(?P<dataset>.+?)_slp_(?P<shots>\d+)shot" + _TS
 )
+# few-shot classification (pl); skip the probe_* capability datasets (their own parser)
+PL_RE = re.compile(
+    r"^eval_(?P<model>.+?)_to_(?P<dataset>(?!probe_).+?)_pl_(?P<shots>\d+)shot" + _TS
+)
 
 REG_METRICS = ("spearman", "rmse", "mae", "r2", "mse")
 SLP_METRICS = ("roc_auc", "accuracy", "f1")
+PL_METRICS = ("roc_auc", "accuracy", "f1")
 
 
 def _split_of(path: Path) -> Optional[str]:
@@ -90,6 +95,7 @@ def _rows_for_run(run_dir: Path) -> list[dict[str, Any]]:
     name = run_dir.name
     reg = REG_RE.match(name)
     slp = SLP_RE.match(name)
+    pl = PL_RE.match(name)
     rows: list[dict[str, Any]] = []
     for split in ("test", "val"):
         metrics = _latest_metrics(run_dir, split)
@@ -108,6 +114,13 @@ def _rows_for_run(run_dir: Path) -> list[dict[str, Any]]:
             for k in SLP_METRICS:
                 row[k] = metrics.get(k)
             rows.append(row)
+        elif pl:
+            row = {**pl.groupdict(), "target": "", "task": "classification",
+                   "split": split, "run": name}
+            row["shots"] = int(row["shots"])
+            for k in PL_METRICS:
+                row[k] = metrics.get(k)
+            rows.append(row)
     return rows
 
 
@@ -118,6 +131,7 @@ def main() -> int:
                     help="Base dir; CSVs land under <out-dir>/{node_regression,static_link_prediction}/data.")
     ap.add_argument("--reg-glob", default="eval_*_reg_*")
     ap.add_argument("--slp-glob", default="eval_*_slp_*")
+    ap.add_argument("--pl-glob", default="eval_*_pl_*")
     args = ap.parse_args()
 
     import pandas as pd
@@ -126,23 +140,27 @@ def main() -> int:
     run_dirs = sorted(
         {Path(p) for p in glob.glob(str(log_root / args.reg_glob))}
         | {Path(p) for p in glob.glob(str(log_root / args.slp_glob))}
+        | {Path(p) for p in glob.glob(str(log_root / args.pl_glob))}
     )
     print(f"[parse] {len(run_dirs)} candidate run dirs under {log_root}")
 
-    reg_rows, slp_rows = [], []
+    task_rows = {"regression": [], "static_link_prediction": [], "classification": []}
     for run_dir in run_dirs:
         if not run_dir.is_dir():
             continue
         for row in _rows_for_run(run_dir):
-            (reg_rows if row["task"] == "regression" else slp_rows).append(row)
+            task_rows[row["task"]].append(row)
 
     out_base = Path(args.out_dir)
     written = []
     dedup_keys = {
         "node_regression": ["model", "dataset", "target", "shots", "split"],
         "static_link_prediction": ["model", "dataset", "shots", "split"],
+        "node_classification": ["model", "dataset", "shots", "split"],
     }
-    for name, rows in (("node_regression", reg_rows), ("static_link_prediction", slp_rows)):
+    for name, rows in (("node_regression", task_rows["regression"]),
+                       ("static_link_prediction", task_rows["static_link_prediction"]),
+                       ("node_classification", task_rows["classification"])):
         data_dir = out_base / name / "data"
         data_dir.mkdir(parents=True, exist_ok=True)
         csv_path = data_dir / f"{name}.csv"
