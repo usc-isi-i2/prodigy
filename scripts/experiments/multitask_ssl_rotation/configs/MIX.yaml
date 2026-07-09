@@ -1,0 +1,51 @@
+# MIX — the treatment arm (multitask_ssl_rotation). Rotate over ALL THREE SSL
+# objectives, ONE PER EPISODE, round-robin over a count-weighted schedule
+# (mix_task_counts = nm:cl:fp). Each episode is a full 30-way episode of a single
+# task; the encoder is shared, and per episode:
+#   * nm  -> NeighborTask,    no aug,   metric (instance-discrimination) loss
+#   * cl  -> ContrastiveTask, NZ0.2,    metric loss over two augmented views
+#   * fp  -> ContrastiveTask, NZ0.3,    reconstruction loss (aux head, masked nodes)
+# The Collator tags each episode (graph.mix_is_fp) so the trainer dispatches the
+# reconstruction loss only on fp episodes; nm/cl share the metric path. Val/test
+# fall back to pure NM as a coherent pretrain monitor — the real comparison is the
+# frozen-encoder downstream sweep (run_eval_sweep.sh).
+#
+# Matched TOTAL compute: 40k episodes total (~13.3k per task with 1:1:1), same as
+# each single-task control's 40k. requires batch_size=1 (one task per step).
+dataset: merged_ukr_rus_covid_midterm
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_retweet_graph.pt
+task_name: nm_fp_cl
+
+edge_view: default
+feature_subset: all
+original_features: true
+input_dim: 768
+
+emb_dim: 256
+gnn_type: sage
+n_layer: 1
+n_hop: 1
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1            # REQUIRED: one SSL task per gradient step
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+epochs: 4                # 40,000 episodes total, split ~13.3k/13.3k/13.3k across nm/cl/fp
+
+# >>> MIX-specific: rotation schedule + per-task aug knobs <<<
+mix_task_counts: "1,1,1"   # nm:cl:fp round-robin weights (equal per-episode share)
+mix_cl_aug: NZ0.2          # aug for cl episodes (matches CL.yaml)
+fp_mask_ratio: 0.3         # aug + recon target for fp episodes (matches FP.yaml)
+fp_mask_strategy: zero
+
+eval_step: 10000
+checkpoint_step: 10000
+workers: 16
+device: 0
+seed: 0
+tags: [multitask_ssl_rotation, MIX, nm_fp_cl, rotation, multitask, merged3way, global_sampling, budget40k]
+prefix: mtr_MIX
