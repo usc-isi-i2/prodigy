@@ -20,9 +20,15 @@ dataset_len_cap: 10000
 val_len_cap: 500
 test_len_cap: 500
 
-eval_step: 1000
+# improved sampling: confine each NM episode to ONE source graph (removes cross-source
+# negatives / the source-discrimination shortcut); uniform source weighting so the small
+# added graphs get equal episode share.
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+
+eval_step: 100000        # skip periodic val-eval; watcher stops the run at step 40k
 checkpoint_step: 1000
 workers: 16
 device: 0
 seed: 0
-prefix: merged_ukr_rus_covid_midterm_nm
+prefix: merged_ukr_rus_covid_midterm_nm_wb
