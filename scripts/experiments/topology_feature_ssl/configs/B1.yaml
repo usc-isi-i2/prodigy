@@ -1,0 +1,52 @@
+# B1 — FEATURE-SHORTCUT CORRUPTION arm (topology_feature_ssl). Byte-for-byte
+# identical to B0 EXCEPT one knob: augmentation = NR0.3. RandomNodeAttr replaces
+# 30% of nodes' features with a random *real* feature vector sampled from the
+# graph's own feature distribution (the loader passes graph.x as the sampling
+# pool). This corrupts the feature content NM leans on and forces it toward
+# topology WITHOUT changing the encoder or the objective.
+#
+# Why NR (not NZ): NZ0.3 (zeroing) aliases the already-zero missing bios, so the
+# model reads it as "missing" and ignores it (the likely reason the May NZ0.3 run
+# was ~null). NR is a plausible-but-wrong feature the model cannot detect by a
+# zero-check. See README "Augmentation lever".
+#
+# augment_test: false — corrupt only the training episodes (B1 is a training-time
+# regularizer); the real evaluation is the separate downstream benchmark sweep.
+dataset: merged_ukr_rus_covid_midterm
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_retweet_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+input_dim: 768
+
+emb_dim: 256
+gnn_type: sage
+n_layer: 1
+n_hop: 1
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+epochs: 12
+
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+
+# >>> THE ONE CHANGE vs B0 <<<
+augmentation: NR0.3
+augment_test: false
+
+eval_step: 10000
+checkpoint_step: 10000
+workers: 16
+device: 0
+seed: 0
+tags: [topology_feature_ssl, B1, feature_shortcut_corruption, nm, NR0.3, merged3way, within_balanced]
+prefix: tfssl_B1

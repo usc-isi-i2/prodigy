@@ -1,0 +1,47 @@
+# B0 — CONTROL arm (topology_feature_ssl). mean-agg SAGE, bio features only,
+# undirected message passing, NO augmentation. Plain neighbor matching on the
+# 3-way merged retweet graph, with within-source BALANCED episodes (each episode
+# confined to one source, source drawn uniformly). This is the fixed setup shared
+# by all six arms; exactly one lever changes per arm.
+#
+# feature_subset: all == the 768-dim GTE bio embedding on these retweet graphs
+# (graph.x carries no profile-stat columns — profile stats live in node_targets),
+# so this matches the eval driver's emb_only/768 input space. Recipe is the proven
+# merged-NM one (nm_covid_midterm/merged_within_balanced_nm.yaml); only the graph
+# (2-way -> 3-way merge) and the held-constant knobs (emb_dim/gnn/depth) differ.
+dataset: merged_ukr_rus_covid_midterm
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_retweet_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+input_dim: 768
+
+# --- held constant across all arms ---
+emb_dim: 256
+gnn_type: sage
+n_layer: 1
+n_hop: 1
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+epochs: 12          # 12 * 10000 = 120,000 episodes (fixed pretrain budget)
+
+# within-source, balanced (fixed episode sampling for NM arms B0/B1/E1/E2)
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+
+eval_step: 10000
+checkpoint_step: 10000
+workers: 16
+device: 0
+seed: 0
+tags: [topology_feature_ssl, B0, control, nm, merged3way, within_balanced]
+prefix: tfssl_B0
