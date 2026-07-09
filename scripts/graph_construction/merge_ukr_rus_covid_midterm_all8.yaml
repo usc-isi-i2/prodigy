@@ -1,0 +1,23 @@
+# 8-graph disjoint merge for the "interpolation / in-distribution" ladder rung.
+# ukr+cov+mid + rest(covid_political, election2020, ukr_rus_suspended, twibot20, cp_hk).
+# All eval graphs are in-distribution here by design (no held-out target).
+# Block-concat merge (disjoint components); carries graph_id for NM within-source sampling.
+# Pre-check on Tucker: every input x must be 768-dim or the concat will error.
+inputs:
+  - name: ukr_rus
+    path: /dataMeR1/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.pt
+  - name: covid
+    path: /dataMeR1/phil/data/covid19_twitter/graphs/retweet_graph_parquet.pt
+  - name: midterm
+    path: /dataMeR1/phil/data/midterm/graphs/retweet_graph_parquet.pt
+  - name: covid_political
+    path: /dataMeR1/phil/data/covid_political/graphs/retweet_graph.pt
+  - name: election2020
+    path: /dataMeR1/phil/data/election2020/graphs/retweet_graph.pt
+  - name: ukr_rus_suspended
+    path: /dataMeR1/phil/data/ukr_rus_suspended/graphs/retweet_graph.pt
+  - name: twibot20
+    path: /dataMeR1/phil/data/twibot20/graphs/retweet_graph.pt
+  - name: cp_hk
+    path: /dataMeR1/phil/data/cp_hk_twitter/graphs/retweet_graph.pt
+out: /dataMeR1/phil/data/merged/graphs/ukr_rus_covid_midterm_all8_retweet_graph.pt
