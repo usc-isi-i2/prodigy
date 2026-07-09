@@ -32,7 +32,7 @@ def get_dataset_wrap(root, dataset, **kwargs):
         from data.ukr_rus_twitter import get_ukr_rus_twitter_dataset
         return get_ukr_rus_twitter_dataset(root=root, **kwargs)
     if dataset in {"covid19_twitter", "merged_ukr_rus_covid", "merged_covid_midterm",
-                   "merged_ukr_rus_covid_midterm"}:
+                   "merged_ukr_rus_covid_midterm"} or dataset.startswith("probe_"):
         # The merged_* graphs are covid19_twitter-style graph dicts (built by the
         # disjoint merge); they reuse the same dataset/dataloader code path.
         from data.covid19_twitter import get_covid19_twitter_dataset

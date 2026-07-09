@@ -13,7 +13,9 @@ launched by the user; this repo only ships the scripts.
 | B1 — feature-shortcut corruption (`NR0.3`) | config-only | ✅ built (`configs/B1.yaml`) |
 | Per-arm eval sweep (reg + slp + pl) | config-only | ✅ built (`run_eval_sweep.sh`) |
 | 3-way merged name registered in loaders | code | ✅ done (trainer.py, data_loader_wrapper.py) |
-| Diagnostics: 2×2 ablation + capability probes + leakage baseline | code | ⏳ pending (task #4) |
+| Diagnostics: 2×2 rewired-edge ablation | code | ✅ built (`run_2x2_ablation.sh`, `parse_2x2.py`) |
+| Diagnostics: leakage baseline | code | ✅ built (`leakage_baseline.py`) |
+| Diagnostics: capability probes | code | ✅ built (`make_probe_graphs.py`, `run_capability_probes.sh`) |
 | E1 — directed structural input features | code | ⏳ pending (task #5) |
 | E2 — expressive directed aggregator | code | ⏳ pending (task #6) |
 | E3 — masked feature reconstruction | code (fp exists; refine) | ⏳ pending (task #7) |
@@ -81,5 +83,31 @@ tmux new-session -d -s tfssl_eval 'bash -lc "MODEL_LIST=scripts/experiments/topo
 Results land (keyed by `model` = arm) in
 `scripts/plotting/{node_regression,static_link_prediction}/data/*.csv`.
 
-Diagnostics (2×2 ablation, capability probes) and arms E1–E4 are built in the
-later tasks; their commands will be appended here as they land.
+## Step 3 — Diagnostics (PRIMARY evidence; frozen encoders, no training)
+
+Run after the eval sweep (they reuse `model_list.txt`). All offline apart from
+GPU forward passes.
+
+```bash
+cd /dataMeR1/phil/gfm/prodigy
+ML=scripts/experiments/topology_feature_ssl/model_list.txt
+
+# T2 — 2x2 ablation: retained fraction under random-feat / rewired-edge / both.
+# (intact reference = the Step-2 eval sweep; this runs the 3 corrupted conditions)
+MODEL_LIST=$ML bash scripts/experiments/topology_feature_ssl/run_2x2_ablation.sh --gpus 0,1,2,3
+
+# T3 — capability probes: linear-probe AUC on planted single-rule synthetic graphs.
+python3 scripts/experiments/topology_feature_ssl/make_probe_graphs.py \
+  --out-dir /dataMeR1/phil/data/synthetic_probes/graphs        # once
+MODEL_LIST=$ML bash scripts/experiments/topology_feature_ssl/run_capability_probes.sh --gpus 0,1,2,3
+
+# Leakage control: raw-structural-feature -> regression-target ceiling (no encoder).
+python3 scripts/experiments/topology_feature_ssl/leakage_baseline.py --data-root /dataMeR1/phil/data
+```
+
+Outputs land in `scripts/plotting/topology_feature_ssl/data/`:
+`ablation_2x2.csv` (T2), `capability_probes.csv` (T3), `leakage_baseline.csv`.
+`parse_2x2.py` / `parse_capability_probes.py` also print the T2 / T3 tables.
+
+Arms E1–E4 and the joined T1/T2/T3 notebook are built in the later tasks; their
+commands will be appended here as they land.

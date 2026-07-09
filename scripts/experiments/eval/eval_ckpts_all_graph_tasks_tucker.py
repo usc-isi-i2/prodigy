@@ -143,6 +143,23 @@ DATASETS = {
     ),
 }
 
+# Capability-probe datasets (topology_feature_ssl T3): planted single-rule
+# synthetic graphs written by make_probe_graphs.py into
+# <data_root>/synthetic_probes/graphs/<rule>.pt (covid dict-format, 2-class
+# labels). Evaluated as a classification linear-probe on the frozen rep; the
+# probe score IS the classification AUC. Names route to the covid loader.
+for _rule in ("count_threshold", "in_degree", "out_degree", "existence", "conjunction"):
+    DATASETS[f"probe_{_rule}"] = DatasetConfig(
+        name=f"probe_{_rule}",
+        root_name="synthetic_probes",
+        graph_filename=f"{_rule}.pt",
+        supports_lp=False,
+        nm_n_query=4,
+        pl_n_query=4,
+        val_cap=500,
+        test_cap=500,
+    )
+
 TASK_ALIASES = {
     "nm": "neighbor_matching",
     "nc": "classification",
