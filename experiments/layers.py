@@ -16,7 +16,7 @@ from models.supernode_propagation_layers import (
 )
 from transformers import GPT2Model, GPT2Config
 
-def get_module_list(module_string, emb_dim, edge_attr_dim, input_dim, dropout, reset_after_layer, attention_mask_scheme, has_final_back, msg_pos_only, batch_norm_metagraph=True, batch_norm_encoder=True, gnn_use_relu=False):
+def get_module_list(module_string, emb_dim, edge_attr_dim, input_dim, dropout, reset_after_layer, attention_mask_scheme, has_final_back, msg_pos_only, batch_norm_metagraph=True, batch_norm_encoder=True, gnn_use_relu=False, encoder_gnn_type="sage"):
     '''
     The idea is that we describe the order in which different modules are applied with a simple comma-separated string.
 
@@ -48,7 +48,7 @@ def get_module_list(module_string, emb_dim, edge_attr_dim, input_dim, dropout, r
                           n_layer=n_layer,
                           input_dim=in_dim,
                           classification_only=False,
-                          gnn_type="sage",
+                          gnn_type=encoder_gnn_type,
                           edge_attr_dim=edge_attr_dim,
                           dropout = dropout,
                           reset_after_layer = reset_after_layer,

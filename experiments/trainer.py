@@ -289,6 +289,7 @@ class TrainerFS():
                                          msg_pos_only=self.msg_pos_only,
                                          batch_norm_metagraph=batch_norm_metagraph,
                                          batch_norm_encoder=batch_norm_encoder,
+                                         encoder_gnn_type=self.gnn_type,
                                          gnn_use_relu = self.dataset_name in ["NELL", "ConceptNet", "FB15K-237", "Wiki", "WikiKG90M"])
 
             layer_list = torch.nn.ModuleList(layer_list)

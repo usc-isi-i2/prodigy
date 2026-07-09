@@ -1,0 +1,50 @@
+# E2 — EXPRESSIVE AGGREGATOR arm (topology_feature_ssl). E1 (directed3 structural
+# inputs) PLUS a count-aware encoder: aggregation mean -> multi-aggregation
+# (mean+sum+max, gnn_type sage_multi) and readout mean -> mean+sum+max. This makes
+# counts/existence REPRESENTABLE (mean is count-/degree-blind — the bottleneck the
+# E1 findings exposed: E1 made structure representable but the mean encoder couldn't
+# USE it, staying at passthrough on structure regression and ~0.6 on the probes).
+#
+# Two levers vs E1 (composite, as planned): multi-aggregation conv + multi-readout.
+# The plan's directed in/out SPLIT is deferred — these subgraphs are sampled
+# bidirectional=False with no reliable per-edge direction flag, and E1 already
+# injects directed degree as inputs. Objective = NM.
+#
+# Budget = 40k episodes (epochs 4), per the transfer sweep (NM anti-scales on
+# regression past ~40k). Compare against B0/B1/E1 at their 40k checkpoints.
+dataset: merged_ukr_rus_covid_midterm
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_retweet_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+input_dim: 768          # trainer bumps to 771 after directed3 injection
+
+emb_dim: 256
+gnn_type: sage_multi    # >>> multi-aggregation encoder (+ multi-readout, auto-coupled)
+n_layer: 1
+n_hop: 1
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+epochs: 4               # 40k episodes (budget from the transfer sweep)
+
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+
+structural_features: directed3
+
+eval_step: 10000
+checkpoint_step: 10000
+workers: 16
+device: 0
+seed: 0
+tags: [topology_feature_ssl, E2, multi_agg, multi_readout, nm, directed3, merged3way, within_balanced]
+prefix: tfssl_E2
