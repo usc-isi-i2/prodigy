@@ -105,6 +105,19 @@ def sec_t2():
     return block("T2 — 2×2 ablation (fraction of real/real retained; feature tasks)", t2.round(2))
 
 
+def sec_budget():
+    bud = tload("budget_sweep")
+    if bud is None or bud.empty:
+        return block("Budget — transfer vs pretrain step", "pending: run run_budget_sweep.sh")
+    parts = []
+    for task in sorted(bud.task.unique()):
+        piv = bud[bud.task == task].pivot_table(index="arm", columns="step", values="score").round(3)
+        parts.append(block(f"Budget — {task} (test) vs step", piv))
+    note = ("\n_Classification flat from 20k; regression peaks ~40-60k then degrades toward 110k "
+            "(NM anti-scales on regression). Optimal NM budget ~40k._\n")
+    return "\n".join(parts) + note
+
+
 def sec_t3():
     pr = tload("capability_probes")
     rules = ["count_threshold", "in_degree", "out_degree", "existence", "conjunction"]
@@ -120,7 +133,7 @@ def main() -> int:
         "_Auto-rendered from the parsed CSVs (see the notebook for the interactive "
         "version). Primary evidence: T2 (2×2) + T3 (probes); T1 is confirmatory. "
         "Headline is `min(feature, topological)`, never the mean._\n",
-        sec_free_preview(), sec_t1(), sec_t2(), sec_t3(),
+        sec_free_preview(), sec_t1(), sec_t2(), sec_t3(), sec_budget(),
     ]
     OUT.write_text("\n".join(parts))
     print(f"[render] wrote {OUT}")
