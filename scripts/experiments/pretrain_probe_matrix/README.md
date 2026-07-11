@@ -82,12 +82,16 @@ Columns are **both** SSL-objective probes (`nm`) *and* real downstream benchmark
 ## Run
 
 ```bash
-# 0a. features_only floor (CPU): raw bio embeddings -> target, shot-matched Ridge
+# 0a. features_only floor (CPU): raw bio embeddings -> target, shot-matched Ridge.
+#     --skip-fulldata is REQUIRED on the big graphs: the full-data Ridge reference is
+#     O(n·d²) and would hang on covid's 23M nodes. The raw path indexes labeled rows
+#     out of the mmap'd tensor, so peak RAM is (n_labeled × 768), not the full matrix.
 python3 ../topology_feature_ssl/leakage_baseline.py --features raw \
   --data-root /dataMeR1/phil/data \
   --datasets midterm,ukr_rus_twitter,covid19_twitter,twibot20 \
-  --targets followers_count,friends_count,statuses_count,favourites_count,listed_count,account_age_days
-#    -> scripts/plotting/node_regression/data/features_only_floor.csv
+  --targets followers_count,friends_count,statuses_count,favourites_count,listed_count,account_age_days \
+  --shots 10 --n-query 12 --episodes 500 --transform log1p --skip-fulldata
+#    -> scripts/plotting/node_regression/data/features_only_floor.csv (23 rows)
 
 # 0b. random_init floor via the normal runner (empty ckpt = untrained encoder)
 python3 ../eval/eval_ckpts_all_graph_tasks_tucker.py --tasks reg \
