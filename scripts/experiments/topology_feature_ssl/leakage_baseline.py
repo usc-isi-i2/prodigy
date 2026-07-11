@@ -148,10 +148,12 @@ def main() -> int:
         if edge_index is None:
             print(f"[leakage] skip {name}: no edge_index")
             continue
-        if args.features == "raw":
+        raw_mode = args.features == "raw"
+        if raw_mode:
             print(f"[leakage] {name}: {num_nodes} nodes — using raw node features raw['x'] "
-                  f"(dim {int(x.shape[1])}) as the features_only floor")
-            feats = x.float().numpy()
+                  f"(dim {int(x.shape[1])}) as the features_only floor "
+                  f"(indexed per-target; the full float32 matrix is never materialized)")
+            feats = None
         else:
             print(f"[leakage] {name}: {num_nodes} nodes — computing {args.mode} structural features")
             feats = compute_structural_features(
@@ -171,7 +173,14 @@ def main() -> int:
             yy = y[mask]
             if args.transform == "log1p":
                 yy = np.log1p(np.clip(yy, 0, None))
-            xm = feats[mask]
+            if raw_mode:
+                # Gather only the labeled rows out of the (mmap'd) feature tensor. The
+                # covid graph has ~23M nodes, so x.float().numpy() would materialize a
+                # ~70GB matrix; indexing first keeps peak RAM at (n_labeled x 768).
+                idx = np.nonzero(mask)[0]
+                xm = x[torch.from_numpy(idx)].float().numpy()
+            else:
+                xm = feats[mask]
             rho_fs = _fewshot_spearman(xm, yy, args.shots, args.n_query, args.episodes)
             rho_full = float("nan") if args.skip_fulldata else _cv_spearman(xm, yy)
             rows.append({"dataset": name, "target": target,
