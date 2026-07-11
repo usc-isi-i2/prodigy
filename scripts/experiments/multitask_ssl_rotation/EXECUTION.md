@@ -16,9 +16,22 @@ launched by the user; this repo ships the code + scripts.
 | NM / CL / FP single-task controls | config | ✅ `configs/{NM,CL,FP}.yaml` |
 | MIX rotation arm | config | ✅ `configs/MIX.yaml` |
 | Train / model-list / eval-sweep scripts | scripts | ✅ built |
-| Smoke test passed on Tucker | run | ⏳ pending (do this FIRST) |
-| Pretrains (NM/CL/FP/MIX) | run | ⏳ pending |
-| Eval sweep + T1 table | run | ⏳ pending |
+| Smoke test passed on Tucker | run | ✅ done |
+| Pretrains (NM/CL/FP/MIX), 1 seed, 40k | run | ✅ done (worktree, best-val=30k) |
+| Eval sweep + T1 table | run | ✅ done → **[FINDINGS.md](FINDINGS.md)** |
+| Aggregation (`aggregate_results.py`) | code | ✅ built |
+| Multi-seed hardening (NM/MIX ×3) | run | ⛔ scoped out (single-seed, 2026-07-10) |
+| WHY-LP ablation (eval-time, no retrain) | run | ⏳ next (Step 3 below) |
+
+**Result:** MIX (rotation) is the only generalist — near-best cls, 2nd reg, and the
+**only** arm with real static-LP (AUC 0.76 vs ≤0.47 chance for every control),
+consistent across all 4 LP datasets. Full reading in [FINDINGS.md](FINDINGS.md).
+
+**Ops note (worktree):** the 1-seed run executed from the isolated worktree
+`/dataMeR1/phil/gfm/prodigy-mtr` (branch `mtr-run`). `run_eval_sweep.sh` now derives
+`--log-root` from `REPO_ROOT` (was hardcoded to the main tree — it silently parsed
+the wrong logs from a worktree). Conda is broken in detached tmux there; launch via
+env-python directly (see the run memory).
 
 ## Prerequisites (once, on Tucker) — same as topology_feature_ssl
 
@@ -93,8 +106,44 @@ tmux new-session -d -s mtr_eval 'bash -lc "MODEL_LIST=scripts/experiments/multit
 
 Results land (keyed by `model` = arm ∈ {NM,CL,FP,MIX}) in
 `scripts/plotting/{node_regression,static_link_prediction,node_classification}/data/*.csv`.
-Build the T1 table (README) as a table subtraction MIX − max(NM,CL,FP), scored by
-`min(feature, topological)`.
+Then aggregate into the T1 table + headline reading:
+
+```bash
+python scripts/experiments/multitask_ssl_rotation/aggregate_results.py \
+  --plotting-root scripts/plotting     # prints T1, MIX−max(NM,CL,FP), min-bar, per-dataset LP
+```
+
+Reading recorded in [FINDINGS.md](FINDINGS.md). **1 seed** — done.
+
+## Step 3 — WHY does rotation yield LP? (eval-time ablation, NO retraining)
+
+The frozen MIX encoder already exists, so the *mechanism* of the emergent LP win is
+probed by re-running **static-LP only** under the tfssl 2×2 ablations (the eval
+runner supports them directly). Run from the worktree that holds the checkpoints:
+
+```bash
+cd /dataMeR1/phil/gfm/prodigy-mtr
+STATE_DIR=$PWD/state ARMS="NM CL FP MIX" \
+  bash scripts/experiments/multitask_ssl_rotation/make_model_list.sh
+ML=scripts/experiments/multitask_ssl_rotation/model_list.txt
+RUNNER=scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py
+COMMON="--model-list $ML --python python3 --data-root /dataMeR1/phil/data \
+  --datasets midterm,ukr_rus_twitter,covid19_twitter,twibot20 --continue-on-error \
+  --tasks slp --shots 0 --slp-n-query 4 --gpus 0,1,2,3"
+
+python3 $RUNNER $COMMON                          # clean (already have this)
+python3 $RUNNER $COMMON --ablate-edges rewire    # destroy real adjacency, keep node bag/features
+python3 $RUNNER $COMMON --ablate-features permute # destroy feature content, keep adjacency
+```
+
+**Prediction (the "rotation taught adjacency" hypothesis):** MIX static-LP AUC
+collapses toward chance under `--ablate-edges rewire` and **survives**
+`--ablate-features permute`; the controls stay at chance in all conditions.
+
+**Parse caveat:** ablated runs get an `_ablE` / `_ablP` tag
+(`eval_MIX_to_<ds>_slp_ablE_0shot_<ts>`), which the current `parse_benchmark_eval_logs.py`
+SLP regex does **not** match — read `log/<run>/data/metrics_test.json`
+(`roc_auc`, `accuracy`) directly, or extend the parser's `SLP_RE` to accept the tag.
 
 ## Notes / gotchas
 

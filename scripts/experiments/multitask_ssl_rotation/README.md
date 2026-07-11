@@ -1,7 +1,9 @@
 # Multi-task SSL rotation — one encoder, all SSL tasks
 
-**Status: proposed — nothing run yet.** Standalone experiment (sibling to, not part
-of, `topology_feature_ssl`'s six-arm reading chain).
+**Status: 1-seed result in → see [FINDINGS.md](FINDINGS.md).** Headline: MIX
+(rotation) is the only generalist and the only arm with real static-LP
+(AUC 0.76 vs ≤0.47 chance for every single-objective control). Standalone
+experiment (sibling to, not part of, `topology_feature_ssl`'s six-arm reading chain).
 
 ## Question
 
@@ -85,12 +87,16 @@ datasets, keyed by `model = arm`. The headline is a table subtraction:
 
 **T1 — transfer benchmark.** Rows = arms; columns = tasks × (in-domain vs held-out):
 
-| arm | cls (acc/AUC) | reg (Spearman) | static-LP (ROC-AUC) |
+| arm | cls (AUC) | reg (Spearman) | static-LP (ROC-AUC) |
 |---|---|---|---|
-| NM | | | |
-| CL | | | |
-| FP | | | |
-| **MIX** | | | |
+| NM | **0.810** | −0.001 | 0.467 |
+| CL | 0.638 | −0.128 | 0.332 |
+| FP | 0.492 | **0.166** | 0.449 |
+| **MIX** | 0.795 | 0.097 | **0.759** |
+
+_1 seed, mean over datasets (test). MIX − max(NM,CL,FP): cls −0.015, reg −0.068,
+**static-LP +0.293**. Joint min(feature=cls, topological=sLP) bar: MIX 0.759 vs
+≤0.467 for every control. Full reading + per-dataset LP in [FINDINGS.md](FINDINGS.md)._
 
 ## What we can conclude — the reading
 

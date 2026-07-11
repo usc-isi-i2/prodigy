@@ -43,8 +43,11 @@ python3 "${RUNNER}" "${COMMON[@]}" --tasks slp --shots 0 --slp-n-query 4 "$@"
 # node classification (feature task; auto-gated to labeled graphs)
 python3 "${RUNNER}" "${COMMON[@]}" --tasks pl --shots 10 "$@"
 
-# parse reg + slp into the shared plotting CSVs (keyed by model = arm)
+# parse reg + slp into the shared plotting CSVs (keyed by model = arm).
+# --log-root MUST be this tree's own log/ (eval writes to <cwd>/log, and we cd'd to
+# REPO_ROOT above). Hardcoding the main tree silently parses the wrong logs when the
+# sweep runs from an isolated worktree (e.g. /dataMeR1/phil/gfm/prodigy-mtr).
 python3 scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py \
-  --log-root /dataMeR1/phil/gfm/prodigy/log --out-dir scripts/plotting
+  --log-root "${REPO_ROOT}/log" --out-dir scripts/plotting
 
 echo "MULTITASK_SSL_ROTATION_EVAL_SWEEP_DONE"
