@@ -222,7 +222,8 @@ class ContrastiveTask(TaskBase):
 
 class NeighborTask(TaskBase):
     def __init__(self, neighbor_sampler, size, direction, sampling_strategy="strict", strata=None,
-                 confine_to_single_stratum=False, stratum_weighting="proportional"):
+                 confine_to_single_stratum=False, stratum_weighting="proportional",
+                 cross_source_prob=0.0):
         self.neighbor_sampler = neighbor_sampler
         self.size = size
         self.direction = direction
@@ -263,6 +264,21 @@ class NeighborTask(TaskBase):
                 raise ValueError(
                     f"Unknown stratum_weighting={stratum_weighting!r}; use 'proportional' or 'balanced'."
                 )
+        # Partial cross-source (remedy #4): when confining, draw a naive MIXED-source
+        # episode with this probability instead of confining to one source. p=0 -> pure
+        # within-source (unchanged default); p=1 -> pure naive; 0<p<1 interpolates,
+        # trading the cross-source shortcut against source-discrimination signal.
+        self.cross_source_prob = float(cross_source_prob)
+        if not 0.0 <= self.cross_source_prob <= 1.0:
+            raise ValueError(
+                f"cross_source_prob must be in [0, 1], got {self.cross_source_prob}."
+            )
+        if self.cross_source_prob > 0.0 and not self.confine_to_single_stratum:
+            raise ValueError(
+                "cross_source_prob>0 requires confine_to_single_stratum=True "
+                "(set neighbor_sampling_episode_source=graph_id); it interpolates "
+                "between within-source and naive sampling."
+            )
 
     @staticmethod
     def _balanced_counts(total, num_groups):
@@ -367,6 +383,12 @@ class NeighborTask(TaskBase):
         # Key: center node (int)
         # Value: list of nodes (list of int), list of nodes is the members of the task
         if self.confine_to_single_stratum:
+            # Partial cross-source: each episode is a naive mixed-source episode with
+            # probability cross_source_prob, otherwise confined to one source. The
+            # guarded short-circuit means p=0 never draws from rng, so it reproduces the
+            # pure within-source stream bit-for-bit (backward compatible).
+            if self.cross_source_prob > 0.0 and rng.random() < self.cross_source_prob:
+                return self._sample_uniform(num_label, num_member, rng)
             return self._sample_confined(num_label, num_member, rng)
         if self.strata is not None:
             return self._sample_stratified(num_label, num_member, rng)
