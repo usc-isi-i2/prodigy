@@ -18,4 +18,5 @@ python3 scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py \
   --tasks nm \
   --shots 3 \
   --nm-n-way 30 \
+  --data-root /dataMeR1/phil/data \
   "$@"

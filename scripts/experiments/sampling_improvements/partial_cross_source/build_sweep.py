@@ -63,7 +63,7 @@ def collect(log_root: Path, shots: str, nway: str, metric: str):
     return cells
 
 
-def report(cells, metric: str, csv_rows) -> None:
+def report(cells, metric: str, csv_rows, eps: float = 0.005) -> None:
     dcols = list(DATASETS)
     print(f"\n=== {metric} (rows = cross-source prob p) ===")
     print(f"{'p':<18}" + "".join(f"{DATASETS[d]:>14}" for d in dcols))
@@ -79,22 +79,42 @@ def report(cells, metric: str, csv_rows) -> None:
                 csv_rows.append([metric, f"{_p:.2f}", DATASETS[d], f"{v:.6f}"])
         print(row)
 
-    # Verdict: best p per domain; endpoint vs interior.
+    # Verdict per domain + a cross-domain conclusion. An interior p only counts as a real
+    # win if it beats BOTH endpoints by more than `eps` (deltas below eps are noise at 1
+    # seed, ±~0.09 episode std); and remedy #4 is only "supported" if the SAME interior p
+    # wins on EVERY domain. (Guards against calling a 0.001 fluctuation an interior optimum.)
+    interior_winner = {}  # domain -> winning interior p, else None
     for d in dcols:
         pts = [(p, cells.get((m, d))) for m, (lab, p) in MODELS.items()]
         pts = [(p, v) for p, v in pts if v is not None]
         if len(pts) < 2:
             continue
         best_p, best_v = max(pts, key=lambda t: t[1])
-        where = "ENDPOINT" if best_p in (0.0, 1.0) else "INTERIOR"
-        v0 = dict(pts).get(0.0)
-        v1 = dict(pts).get(1.0)
-        extra = ""
-        if v0 is not None and v1 is not None:
-            extra = f"  within(p=0)={v0:.4f} naive(p=1)={v1:.4f}"
-        verdict = ("supports remedy #4 (partial best)" if where == "INTERIOR"
-                   else "within-source best" if best_p == 0.0 else "naive best")
-        print(f"  {DATASETS[d]}: argmax at p={best_p:.2f} ({best_v:.4f}) [{where}]{extra} -> {verdict}")
+        vmap = dict(pts)
+        v0, v1 = vmap.get(0.0), vmap.get(1.0)
+        endpoints = [v for p, v in pts if p in (0.0, 1.0)]
+        endpoint_best = max(endpoints) if endpoints else None
+        extra = f"  within(p=0)={v0:.4f} naive(p=1)={v1:.4f}" if v0 is not None and v1 is not None else ""
+        is_interior = best_p not in (0.0, 1.0)
+        margin = (best_v - endpoint_best) if endpoint_best is not None else 0.0
+        real_win = is_interior and endpoint_best is not None and margin > eps
+        interior_winner[d] = best_p if real_win else None
+        if real_win:
+            verdict = f"interior p={best_p:.2f} beats best endpoint by {margin:+.4f} (> {eps})"
+        elif is_interior:
+            verdict = (f"argmax interior p={best_p:.2f} but only {margin:+.4f} over best endpoint "
+                       f"(<= {eps}: noise) -> no interior optimum")
+        else:
+            verdict = "within-source best" if best_p == 0.0 else "naive best"
+        print(f"  {DATASETS[d]}: argmax p={best_p:.2f} ({best_v:.4f}){extra} -> {verdict}")
+
+    domains = [d for d in dcols if d in interior_winner]
+    if domains:
+        wins = {interior_winner[d] for d in domains}
+        if len(wins) == 1 and None not in wins:
+            print(f"  => remedy #4 SUPPORTED on {metric}: p={wins.pop():.2f} beats endpoints by > {eps} on all domains.")
+        else:
+            print(f"  => remedy #4 NOT supported on {metric}: no single interior p beats within-source by > {eps} across domains.")
 
 
 def main() -> int:
@@ -104,6 +124,8 @@ def main() -> int:
     ap.add_argument("--n-way", default="30")
     ap.add_argument("--metric", default="all", choices=["roc_auc", "accuracy", "f1", "all"])
     ap.add_argument("--out-csv", default=None)
+    ap.add_argument("--interior-eps", type=float, default=0.005,
+                    help="Min margin for an interior p to count as beating an endpoint (below = noise at 1 seed).")
     args = ap.parse_args()
 
     metrics = ["accuracy", "f1", "roc_auc"] if args.metric == "all" else [args.metric]
@@ -114,7 +136,7 @@ def main() -> int:
             print(f"[warn] no eval dirs with test_{metric}")
             continue
         found = True
-        report(cells, metric, csv_rows)
+        report(cells, metric, csv_rows, args.interior_eps)
     if not found:
         raise SystemExit(f"No matching eval dirs under {args.log_root}")
     if args.out_csv and csv_rows:
