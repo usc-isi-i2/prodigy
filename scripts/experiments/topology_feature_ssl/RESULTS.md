@@ -1,5 +1,7 @@
 # topology_feature_ssl — RESULTS
 
+> **Final matched-40k results (B0/B1/E1/E2/E2b) are in [`RESULTS_matched40k.md`](RESULTS_matched40k.md)** and summarized in `FINDINGS.md`. The tables below are the earlier B0/B1/E1 render, kept for reference. Headline: E1 wins features, E2 wins static-LP (0.76), E2b's drop-BN lifts count probes but crashes LP — no encoder arm clears the joint bar → E4.
+
 _Auto-rendered from the parsed CSVs (see the notebook for the interactive version). Primary evidence: T2 (2×2) + T3 (probes); T1 is confirmatory. Headline is `min(feature, topological)`, never the mean._
 
 ### Free preview — NM vs FP (regression, test Spearman)

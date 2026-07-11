@@ -17,11 +17,11 @@ launched by the user; this repo only ships the scripts.
 | Diagnostics: leakage baseline | code | ✅ built (`leakage_baseline.py`) |
 | Diagnostics: capability probes | code | ✅ built (`make_probe_graphs.py`, `run_capability_probes.sh`) |
 | E1 — directed structural input features | code | ✅ built (`configs/E1.yaml`, `--structural_features directed3`) |
-| E2 — expressive directed aggregator | code | ✅ built (`configs/E2.yaml`); ⏳ **true-40k rerun + matched eval pending** (see Step 4) |
-| E2b — drop-BN encoder retry | config + eval flag | ✅ built (`configs/E2b.yaml` `no_bn_encoder:true`; eval `--no-bn-encoder`); ⏳ run pending (Step 5) |
-| E3 — masked feature reconstruction | code (fp exists; refine) | ⏳ pending (task #7) |
-| E4 — multi-task MFR ⊕ dir-LP ⊕ structural | code | ⏳ pending (task #8) |
-| T1/T2/T3 tables + notebook | code | ⏳ pending (task #9) |
+| E2 — expressive directed aggregator | code | ✅ **done** (true-40k; matched eval landed 2026-07-11 — wins static-LP 0.76, fails regression) |
+| E2b — drop-BN encoder retry | config + eval flag | ✅ **done** (2026-07-11 — probes ↑ count/out-deg, static-LP ↓ 0.40; BN mechanism real but not a fix) |
+| E3 — masked feature reconstruction | code (fp exists; refine) | ⏸ deferred → fold into E4 as an ablation (fp ⊀ nm in the free preview) |
+| E4 — multi-task MFR ⊕ dir-LP ⊕ structural | code | ⏳ **next** (the fork the results point to; build on E2's encoder) |
+| T1/T2/T3 tables + notebook | code | ✅ **done** (`RESULTS_matched40k.md`, `*_40k` CSVs, `capability_probes_40k.csv`) |
 
 ## Budget decision (from the transfer sweep, 2026-07-09)
 

@@ -12,7 +12,7 @@ import pandas as pd
 REPO = Path(__file__).resolve().parents[3]
 PLOT = REPO / "scripts" / "plotting"
 OUT = Path(__file__).resolve().parent / "RESULTS_matched40k.md"
-ARMS = ["B0_40k", "B1_40k", "E1_40k", "E2_40k"]
+ARMS = ["B0_40k", "B1_40k", "E1_40k", "E2_40k", "E2b_40k"]
 REG6 = ["followers_count", "friends_count", "statuses_count",
         "favourites_count", "listed_count", "account_age_days"]
 
@@ -32,8 +32,8 @@ def _fmt(df):
 
 
 def main() -> int:
-    parts = ["# topology_feature_ssl — matched-40k results (B0/B1/E1/E2 vs trivial floor)\n",
-             "_All arms at the same ~30k-episode budget. Anchored against `raw_feat` (bio "
+    parts = ["# topology_feature_ssl — matched-40k results (B0/B1/E1/E2/E2b vs trivial floor)\n",
+             "_All arms at a matched 40k-episode budget (true state_dict_40000). Anchored against `raw_feat` (bio "
              "features, no encoder) and `raw_degree` (leakage), both 10-shot. An arm only "
              "'improves performance' if it beats these._\n"]
     reg, clf, slp = bload("node_regression"), bload("node_classification"), bload("static_link_prediction")
