@@ -34,10 +34,13 @@ STRUCTURAL_ARGS=()
 # E2 needs GNN_TYPE=sage_multi so its multi-aggregation architecture is built before load.
 GNN_TYPE_ARGS=()
 [[ -n "${GNN_TYPE:-}" ]] && GNN_TYPE_ARGS=(--gnn-type "${GNN_TYPE}")
+# E2b (drop-BN retry) needs NO_BN_ENCODER=1 so the eval builds a BN-free conv to match.
+NO_BN_ARGS=()
+[[ -n "${NO_BN_ENCODER:-}" ]] && NO_BN_ARGS=(--no-bn-encoder)
 COMMON=(--model-list "${ML}" --python python3
         --data-root /dataMeR1/phil/data
         --datasets midterm,ukr_rus_twitter,covid19_twitter,twibot20,election2020
-        --continue-on-error "${STRUCTURAL_ARGS[@]}" "${GNN_TYPE_ARGS[@]}")
+        --continue-on-error "${STRUCTURAL_ARGS[@]}" "${GNN_TYPE_ARGS[@]}" "${NO_BN_ARGS[@]}")
 
 # node regression (headline for the objective axis; NM is weak here)
 python3 "${RUNNER}" "${COMMON[@]}" --tasks reg --shots 10 --reg-transform log1p \

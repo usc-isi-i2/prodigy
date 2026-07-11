@@ -34,7 +34,14 @@ batch_size: 1
 dataset_len_cap: 10000
 val_len_cap: 500
 test_len_cap: 500
-epochs: 4               # 40k episodes (budget from the transfer sweep)
+# Budget = 40k (transfer-sweep regression peak). epochs:5, NOT 4, on purpose:
+# the trainer loops trange(steps=epochs*dataset_len_cap) over e=0..steps-1 and
+# only checkpoints at e%10000==0, so epochs:4 (steps=40000) saves its LAST ckpt at
+# 30000 — never 40000 (same reason B0/E1 top out at 110k, not 120k). epochs:5
+# (steps=50000) saves 10/20/30/40k as its final ckpt; we evaluate state_dict_40000.
+# The extra ~10k optimizer steps past 40k are unused. (The first E2 run used
+# epochs:4 and therefore only reached a 30k final ckpt.)
+epochs: 5
 
 neighbor_sampling_episode_source: graph_id
 neighbor_sampling_episode_source_weighting: balanced

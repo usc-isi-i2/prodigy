@@ -35,10 +35,12 @@ STRUCTURAL_ARGS=()
 [[ -n "${STRUCTURAL:-}" ]] && STRUCTURAL_ARGS=(--structural-features "${STRUCTURAL}")
 GNN_TYPE_ARGS=()
 [[ -n "${GNN_TYPE:-}" ]] && GNN_TYPE_ARGS=(--gnn-type "${GNN_TYPE}")  # E2: sage_multi
+NO_BN_ARGS=()
+[[ -n "${NO_BN_ENCODER:-}" ]] && NO_BN_ARGS=(--no-bn-encoder)          # E2b: drop-BN retry
 COMMON=(--model-list "${ML}" --python python3
         --data-root /dataMeR1/phil/data
         --datasets midterm,ukr_rus_twitter,covid19_twitter,twibot20,election2020
-        --continue-on-error "${STRUCTURAL_ARGS[@]}" "${GNN_TYPE_ARGS[@]}")
+        --continue-on-error "${STRUCTURAL_ARGS[@]}" "${GNN_TYPE_ARGS[@]}" "${NO_BN_ARGS[@]}")
 
 run_condition() {  # $1..: extra ablation flags (label echoed)
   local label="$1"; shift

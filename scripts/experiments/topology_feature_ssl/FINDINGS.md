@@ -18,8 +18,17 @@ within-source **balanced** NM episodes, **1 seed**. Frozen-encoder eval on 5 dat
   multi-readout. (Directed in/out split deferred — subgraphs are `bidirectional=False`.)
 
 **Two budgets:** B0/B1/E1 have a full 120k run (final ckpt 110k) *and* a matched
-**30k** run; E2 is 30k only. **NM anti-scales on regression** (peaks ~40k, degrades
-by 110k), so the fair arm comparison is at the matched **30k** budget.
+**30k** run; **NM anti-scales on regression** (peaks ~40k, degrades by 110k). The
+tables below are the preliminary **matched-30k** read. **E2's first run reached only a
+30k final ckpt** — not because it was under-trained but because of a trainer off-by-one:
+`trange(steps=epochs*10000)` runs `e=0…steps-1` and checkpoints at `e%10000==0`, so
+`epochs:4` (steps 40000) saves its last ckpt at **30000** (same reason B0/E1 top out at
+110k, not 120k). Its run *completed* ("Training finished / best step 30000"). Since 40k
+is the regression peak, E2 (and E2b) configs are now `epochs:5` (→ clean
+`state_dict_40000.ckpt`) and the **matched-40k** comparison against B0/B1/E1 at their
+real 40k ckpts is prepared but not yet run (`run_matched40k_tucker.sh`; see
+[`EXECUTION.md`](EXECUTION.md) Step 4). The 40k numbers supersede the 30k tables below
+once they land.
 
 **Trivial floor (the absolute anchor):** `raw_feat` = 10-shot linear probe on the
 raw 768-d bio embedding (no encoder); `raw_degree` = 10-shot probe on the raw
@@ -135,15 +144,32 @@ features-only and structurally blind.**
 - **Single seed; small deltas** (the May aug delta was +0.008). Treat T1 as
   confirmatory, T2/T3 as primary. NM 30-way test acc has ±0.12 std.
 
-## Next
-- **Finish E2's** cls + static-LP + full 2×2/probe cells (in progress) to complete the
-  matched table; but the probe verdict is already firm (converged, flat).
-- **Encoder-axis retry (cheap, targeted):** the E2 failure has a named culprit —
-  scale-normalization washing out the count magnitude. A "degree-scaler" PNA (or no BN
-  on the aggregate) is the one encoder change worth trying before abandoning the axis.
-- **The story otherwise points at the objective, not the encoder.** E1 (structural input)
-  is the only thing that beats trivial; a fancier encoder (E2) didn't help. That
-  redirects to the **objective axis (E3/E4)** — a generative / multi-task target
-  that could make the encoder *use* structure — or to a **data-ceiling** conclusion
-  (degree is a near-sufficient statistic; SSL on this graph adds little over reading
-  it). The free preview already hinted the objective is not an easy win (fp ⊀ nm).
+## Next (decided 2026-07-10 — single-seed throughout)
+
+1. **Complete E2 at a true 40k, matched.** E2/E2b now `epochs:5` for a real
+   `state_dict_40000.ckpt`; `run_matched40k_tucker.sh` lands the missing E2 cls /
+   static-LP / 2×2 cells beside B0/B1/E1 at their 40k ckpts and re-renders
+   `RESULTS_matched40k.md` ([`EXECUTION.md`](EXECUTION.md) Step 4). Prepared, awaiting a
+   Tucker launch. (The probe verdict is already firm — converged, flat 10k→30k — so 40k
+   is unlikely to flip E2<E1; it makes the read airtight and at the regression peak.)
+
+2. **Encoder-axis retry FIRST — E2b (drop-BN), then reassess.** The E2 failure has a
+   named, testable culprit: `MultiAggSAGE`'s `sum` creates count-proportional magnitude,
+   but the conv-output `BatchNorm1d` rescales it to unit variance (and there is **no BN
+   in the readout** — `global_add_pool` survives — so the conv BN is the *sole*
+   count-washing knob). **E2b** = E2 + `no_bn_encoder:true` isolates it as a one-knob,
+   config-only change (`configs/E2b.yaml`; eval carries `--no-bn-encoder`;
+   [`EXECUTION.md`](EXECUTION.md) Step 5). Read vs E1/E2 at 40k: probes (count/in-deg/
+   out-deg) rising above E2's ~0.6 cap ⇒ **BN wash-out was the culprit**, count is now
+   representable; probes flat ~0.6 with reg/LP ≤ E1 ⇒ **encoder axis closed**. Fast
+   follow if drop-BN moves the probes: a degree-scaler PNA aggregator (a new conv, not a
+   flag). This closes a named loose end cheaply and de-risks the objective build either
+   way.
+
+3. **If the encoder axis closes → objective axis (E4).** E1 (structural input) is the
+   only arm that beats trivial; if E2b confirms a fancier *encoder* still doesn't help,
+   the story points at the **objective**, not representability — or at a **data-ceiling**
+   (degree is a near-sufficient statistic; SSL adds little over reading it). E3 (MFR) is
+   partly pre-discounted — the free preview already showed fp ⊀ nm (−0.016 on
+   regression) — so the real untested lever is **E4** (multi-task MFR ⊕ directed-LP ⊕
+   structural), which optimizes the topological task directly. Build after E2b's verdict.

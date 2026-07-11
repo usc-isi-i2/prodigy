@@ -37,13 +37,15 @@ STRUCTURAL_ARGS=()
 [[ -n "${STRUCTURAL:-}" ]] && STRUCTURAL_ARGS=(--structural-features "${STRUCTURAL}")
 GNN_TYPE_ARGS=()
 [[ -n "${GNN_TYPE:-}" ]] && GNN_TYPE_ARGS=(--gnn-type "${GNN_TYPE}")  # E2: sage_multi
+NO_BN_ARGS=()
+[[ -n "${NO_BN_ENCODER:-}" ]] && NO_BN_ARGS=(--no-bn-encoder)          # E2b: drop-BN retry
 # Linear-probe classification (frozen rep -> linear head) on each single-rule graph.
 python3 "${RUNNER}" \
   --model-list "${ML}" --python python3 \
   --data-root /dataMeR1/phil/data \
   --datasets probe_count_threshold,probe_in_degree,probe_out_degree,probe_existence,probe_conjunction \
   --tasks pl --pl-linear-probe --shots 50 \
-  --continue-on-error "${STRUCTURAL_ARGS[@]}" "${GNN_TYPE_ARGS[@]}" "$@"
+  --continue-on-error "${STRUCTURAL_ARGS[@]}" "${GNN_TYPE_ARGS[@]}" "${NO_BN_ARGS[@]}" "$@"
 
 python3 "${SCRIPT_DIR}/parse_capability_probes.py" \
   --log-root /dataMeR1/phil/gfm/prodigy/log --model-list "${ML}" \

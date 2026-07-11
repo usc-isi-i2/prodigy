@@ -427,6 +427,10 @@ def build_command(
         # E2 encoder: build the matching architecture (e.g. sage_multi) so the
         # pretrained state_dict loads.
         common.extend(["--gnn_type", args.gnn_type])
+    if args.no_bn_encoder:
+        # E2b: drop batch-norm on the conv output (the count-magnitude wash-out
+        # culprit). Must match the checkpoint's no_bn_encoder setting.
+        common.extend(["--no_bn_encoder", "True"])
 
     tag = task_tag(task)
     # keep intact vs. ablated eval runs in separate run dirs; the 2x2 conditions
@@ -754,6 +758,11 @@ def main() -> int:
     parser.add_argument("--gnn-type", default="sage",
                         help="Encoder architecture to build before loading the checkpoint. E2 needs "
                              "'sage_multi' (multi-aggregation) so its state_dict loads; B0/B1/E1 use 'sage'.")
+    parser.add_argument("--no-bn-encoder", action="store_true",
+                        help="Build the encoder WITHOUT batch-norm on the conv output (E2b drop-BN "
+                             "retry). MUST match how the checkpoint was pretrained (no_bn_encoder:true) "
+                             "or the state_dict won't load — a BN-off conv has no bn.{weight,bias,"
+                             "running_mean,running_var}.")
     parser.add_argument("--structural-features", default="none",
                         choices=["none", "directed3", "directed6"],
                         help="Inject directed structural input features (E1/E2 encoders). MUST match "
