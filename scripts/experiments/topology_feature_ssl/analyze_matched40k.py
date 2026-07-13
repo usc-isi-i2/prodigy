@@ -12,7 +12,7 @@ import pandas as pd
 REPO = Path(__file__).resolve().parents[3]
 PLOT = REPO / "scripts" / "plotting"
 OUT = Path(__file__).resolve().parent / "RESULTS_matched40k.md"
-ARMS = ["B0_40k", "B1_40k", "E1_40k", "E2_40k", "E2b_40k"]
+ARMS = ["B0_40k", "B1_40k", "E1_40k", "E2_40k", "E2b_40k", "E4_40k", "E4r_40k"]
 REG6 = ["followers_count", "friends_count", "statuses_count",
         "favourites_count", "listed_count", "account_age_days"]
 
