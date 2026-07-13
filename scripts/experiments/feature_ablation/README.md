@@ -42,16 +42,13 @@ multiset, so a model that uses content as a permutation-invariant *bag* is also
 permute-invariant. `noise` breaks that tie — if accuracy holds under `noise`,
 the model only needs distinct vectors (features-as-distinguishers); if it
 collapses under `noise` but survives `permute`, the model uses the *real
-neighborhood content* (features-as-content). (This corrects an earlier reading
-that treated permute-invariance as proof of content-disuse — see
-[`FINDINGS.md`](FINDINGS.md).)
+neighborhood content* (features-as-content).
 
 ## Mechanism (what was added)
 
-- `data/augment.py`: `AblateAllFeatures(mode={zero,permute})` (tokens `FZ`/`FP`)
-  and `AblateEdges(mode={rewire})` (token `ER`, topology axis); `noise` reuses the
-  existing `RandomNodeAttr` (token `NR1.0`, full-graph resample). Unit tests:
-  `data/tests/test_ablate_features.py`.
+- `data/augment.py`: `AblateAllFeatures(mode={zero,permute})` (tokens `FZ`/`FP`);
+  `noise` reuses the existing `RandomNodeAttr` (token `NR1.0`, full-graph resample).
+  Unit tests: `data/tests/test_ablate_features.py`.
 - `experiments/params.py`: `--ablate_features {none,zero,permute,noise}` — composes
   the token into `--augmentation` and forces `--augment_test True`. Intended for
   `-eval_only True` runs; warns otherwise.
@@ -91,8 +88,7 @@ per-treatment hypotheses, results tables, and evidence-based takeaways).
 
 Headline: **NM relies on the real feature *content* of a node's neighborhood, not
 topology or mere distinctness** — `noise` collapses NM to chance like `zero`, while
-`permute` is harmless. This *overturned* an earlier permute-only conclusion that
-"NM ignores content"; see the correction note in FINDINGS.md. Raw data:
+`permute` is harmless. Raw data:
 [`feature_ablation_results.csv`](feature_ablation_results.csv),
 [`feature_label_probe_results.csv`](feature_label_probe_results.csv),
 [`feature_only_nm_results.csv`](feature_only_nm_results.csv).
@@ -115,8 +111,7 @@ topology or mere distinctness** — `noise` collapses NM to chance like `zero`, 
 - **Run all three ablations.** `permute` alone is not interpretable in isolation
   (it preserves the content bag). Always pair it with `noise` to separate
   features-as-distinguishers from features-as-content, and `zero` as the blunt
-  cross-check. The earlier permute-only conclusion here was wrong for exactly
-  this reason.
+  cross-check.
 - **Same regime.** Only compare intact vs. ablated at identical n-way/shots/split
   — the parser pairs by run-dir config key, which encodes these.
 - **Complement, not replacement.** For labeled graphs, the per-node logistic
