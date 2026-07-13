@@ -32,17 +32,26 @@ Claude should read this via `CLAUDE.md`; Codex/GPT reads this file directly.
 
 - Use the `prodigy` conda environment for training and evaluation commands.
 - On Tucker, use `bio-embeddings-v001` for graph construction and embedding/feature generation.
-- Before running Python experiment scripts on Tucker:
+- Before running Python experiment scripts on Tucker, put conda's `bin` on `PATH` **first**, then source and activate:
 
 ```bash
+export PATH="/home/mhchu/miniconda3/bin:$PATH"   # so the `conda` executable resolves
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate prodigy
 export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 ```
 
+- **Why the `PATH` export is required — common failure, read this before launching.** Non-interactive shells and `bash -lc` login shells source `~/.bash_profile`, not the `~/.bashrc` where conda-init lives, so `conda` is not on `PATH`. Sourcing `conda.sh` in a *wrapper* does **not** fix a launcher script run as `bash train_arm_tucker.sh`: the child process does not inherit the `conda` shell function. Exporting conda's `bin` onto `PATH` lets the child script run its own `conda info --base` / `conda activate`. Symptom when missing: `conda: command not found` and `/etc/profile.d/conda.sh: No such file or directory`, and detached tmux jobs that exit immediately (log created, session gone).
+- When launching a heavy job in detached tmux, put the export **inside** the tmux command so the child inherits it:
+
+```bash
+tmux new-session -d -s <name> 'export PATH="/home/mhchu/miniconda3/bin:$PATH"; bash <script.sh> --device 0'
+```
+
 - For local plotting/notebooks, use the Homebrew conda Python 3.11 at `/opt/homebrew/bin/python3.11`; it has numpy/pandas/matplotlib.
 - For local model-code checks, use the local `prodigy` env, but do not run training locally.
 - Avoid other local conda envs unless the user explicitly asks.
+- LibreOffice is not installed locally; `soffice`/`libreoffice` are unavailable for converting or rendering documents (.pptx/.xlsx/.docx/.pdf).
 
 ## Important Paths
 
