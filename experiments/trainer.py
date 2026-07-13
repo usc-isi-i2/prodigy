@@ -745,6 +745,7 @@ class TrainerFS():
         returned score is -loss (a coherent pretrain monitor; the real read is the frozen
         downstream sweep)."""
         task = self._episode_e4_task(graph)
+        mfr = struct = lp = None
         comps = []
         if self.e4_combine == "rotation" and task is not None:
             if task == "lp":
@@ -772,6 +773,13 @@ class TrainerFS():
         else:
             # degenerate episode (no masked nodes and no edges): grad-connected no-op
             loss = graph.x.sum() * 0.0
+        # component monitor (RAW, pre-weight) — surfaces MFR/LP/structural balance so the
+        # e4_weights can be set sensibly (MFR reconstruction MSE can dominate LP/struct BCE/MSE).
+        self._e4_step = getattr(self, "_e4_step", 0) + 1
+        if self._e4_step <= 10 or self._e4_step % 2000 == 0:
+            _f = lambda x: (round(float(x), 4) if x is not None else None)
+            print(f"[e4] step~{self._e4_step} raw mfr={_f(mfr)} struct={_f(struct)} "
+                  f"lp={_f(lp)} weighted_total={_f(loss)}", flush=True)
         return loss, -float(loss.detach().cpu().item())
 
     def save_checkpoint(self, step):
