@@ -97,7 +97,8 @@ topology or mere distinctness** — `noise` collapses NM to chance like `zero`, 
 
 - `run_feature_ablation_tucker.sh` — loops modes (`MODES=`, default
   `none zero permute`; add `noise`) over the driver.
-- `parse_feature_ablation.py` — pairs intact↔ablated run dirs, writes the gap CSV.
+- `parse_feature_ablation.py` — writes the long results table (one row per
+  `config,condition` with `accuracy,roc_auc`; intact included; gap printed as a summary).
 - `feature_label_probe.py` — feature→label logreg (feature-quality check).
 - `feature_only_nm_probe.py` — prototype-NN NM in raw feature space (no model).
 - `feature_ablation_results.csv`, `feature_label_probe_results.csv`,

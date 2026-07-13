@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Parse a feature-ablation sweep into an intact-vs-ablated gap table.
+"""Parse a feature-ablation sweep into a long results table.
 
 Reads eval run dirs written by eval_ckpts_all_graph_tasks_tucker.py under
-``<log-root>/eval_*/data/metrics_test_step0.json`` and pairs, for each
-(model, dataset, task, shots, ...) configuration, the INTACT run with its ZEROED
-(_ablZ) and PERMUTED (_ablP) counterparts. The intact-minus-ablated gap in
-accuracy / roc_auc measures how much that task relies on node features.
+``<log-root>/eval_*/data/metrics_test_step0.json`` and emits one row per
+(config, condition), where condition is intact / zero / permute / noise and the
+columns are the raw accuracy / roc_auc for that condition. Intact is included as
+its own row; the intact-minus-condition gap is printed as a summary (and is
+trivially derivable from the table).
 
 Usage:
   python3 parse_feature_ablation.py --log-root log --out feature_ablation_results.csv
@@ -73,46 +74,48 @@ def main() -> int:
         # keep the latest run per (key, mode): later dirs sort after earlier ones
         configs.setdefault(key, {})[mode] = vals
 
+    # long format: one row per (config, condition), intact included as its own row
+    condition_order = ["intact", "zero", "permute", "noise"]
     rows = []
     for key, by_mode in sorted(configs.items()):
-        intact = by_mode.get("intact")
-        if intact is None:
-            continue  # no baseline to compare against
-        for mode in ("zero", "permute", "noise"):
-            ablated = by_mode.get(mode)
-            if ablated is None:
+        if "intact" not in by_mode:
+            continue  # no baseline recorded for this config
+        for cond in condition_order:
+            vals = by_mode.get(cond)
+            if vals is None:
                 continue
-            row = {"config": key, "ablation": mode}
+            row = {"config": key, "condition": cond}
             for m in metric_names:
-                iv, av = intact.get(m), ablated.get(m)
-                row[f"intact_{m}"] = iv
-                row[f"ablated_{m}"] = av
-                row[f"gap_{m}"] = (iv - av) if (iv is not None and av is not None) else None
+                row[m] = vals.get(m)
             rows.append(row)
 
     if not rows:
-        print(f"No intact/ablated pairs found under {log_root}. "
-              "Did the sweep run all of --modes 'none zero permute'?")
+        print(f"No intact runs found under {log_root}. "
+              "Did the sweep include the intact ('none') pass?")
         return 1
 
-    fieldnames = ["config", "ablation"]
-    for m in metric_names:
-        fieldnames += [f"intact_{m}", f"ablated_{m}", f"gap_{m}"]
+    fieldnames = ["config", "condition"] + metric_names
     with open(args.out, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fieldnames)
         w.writeheader()
         w.writerows(rows)
 
-    # human-readable summary, biggest feature-reliance gap first
+    # human-readable summary: biggest feature-reliance gap (intact - condition) first
     primary = metric_names[0]
-    rows_sorted = sorted(rows, key=lambda r: (r[f"gap_{primary}"] is not None, r.get(f"gap_{primary}") or 0),
-                         reverse=True)
+    intact_by_cfg = {r["config"]: r[primary] for r in rows if r["condition"] == "intact"}
+    gaps = []
+    for r in rows:
+        if r["condition"] == "intact":
+            continue
+        iv, av = intact_by_cfg.get(r["config"]), r[primary]
+        gap = (iv - av) if (iv is not None and av is not None) else None
+        gaps.append((gap, r["condition"], r["config"]))
+    gaps.sort(key=lambda g: (g[0] is not None, g[0] or 0), reverse=True)
     print(f"Wrote {len(rows)} rows -> {args.out}")
-    print(f"\nFeature-reliance gap (intact - ablated {primary}), largest first:")
-    for r in rows_sorted:
-        gap = r[f"gap_{primary}"]
+    print(f"\nFeature-reliance gap (intact - condition {primary}), largest first:")
+    for gap, cond, cfg in gaps:
         gap_s = f"{gap:+.4f}" if gap is not None else "   n/a "
-        print(f"  {gap_s}  [{r['ablation']:7s}]  {r['config']}")
+        print(f"  {gap_s}  [{cond:7s}]  {cfg}")
     return 0
 
 
