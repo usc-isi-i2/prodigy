@@ -43,18 +43,21 @@ permute-invariant. `noise` breaks that tie — if accuracy holds under `noise`,
 the model only needs distinct vectors (features-as-distinguishers); if it
 collapses under `noise` but survives `permute`, the model uses the *real
 neighborhood content* (features-as-content). (This corrects an earlier reading
-that treated permute-invariance as proof of content-disuse — see Findings.)
+that treated permute-invariance as proof of content-disuse — see
+[`FINDINGS.md`](FINDINGS.md).)
 
 ## Mechanism (what was added)
 
-- `data/augment.py`: `AblateAllFeatures(mode={zero,permute})` + `get_aug` tokens
-  `FZ` / `FP`. Unit tests: `data/tests/test_ablate_features.py`.
-- `experiments/params.py`: `--ablate_features {none,zero,permute}` — composes the
-  token into `--augmentation` and forces `--augment_test True`. Intended for
+- `data/augment.py`: `AblateAllFeatures(mode={zero,permute})` (tokens `FZ`/`FP`)
+  and `AblateEdges(mode={rewire})` (token `ER`, topology axis); `noise` reuses the
+  existing `RandomNodeAttr` (token `NR1.0`, full-graph resample). Unit tests:
+  `data/tests/test_ablate_features.py`.
+- `experiments/params.py`: `--ablate_features {none,zero,permute,noise}` — composes
+  the token into `--augmentation` and forces `--augment_test True`. Intended for
   `-eval_only True` runs; warns otherwise.
 - `scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py`:
-  `--ablate-features` pass-through; ablated runs get a `_ablZ` / `_ablP` tag so
-  they don't collide with intact runs.
+  `--ablate-features` pass-through; ablated runs get a `_ablZ` / `_ablP` / `_ablN`
+  tag so they don't collide with intact runs.
 
 ## Run (Tucker)
 
@@ -81,60 +84,18 @@ python3 scripts/experiments/feature_ablation/parse_feature_ablation.py \
 The intact (`none`) pass reuses the standard eval path, so if matching intact
 runs already exist in `log/` you can skip `none` via `MODES="zero permute"`.
 
-## Findings
+## Results & findings
 
-> **Correction.** An earlier version of this file concluded "NM ignores node-feature
-> content; the encoder strips it." That was based on `permute`-invariance alone and
-> is **wrong** — the `noise` condition (added later) overturns it. NM relies heavily
-> on real feature content. The corrected story is below.
+See **[`FINDINGS.md`](FINDINGS.md)** for the full writeup (executive summary,
+per-treatment hypotheses, results tables, and evidence-based takeaways).
 
-**Phase A — NM (30-way, `nm_matrix_covid`)** → `feature_ablation_results.csv`
-(accuracy; chance = 1/30 ≈ 0.033):
-
-| dataset | intact | zero | permute | noise |
-|---|---|---|---|---|
-| covid19_twitter (in-domain) | 0.664 | 0.073 | 0.626 | **0.061** |
-| midterm | 0.313 | 0.086 | 0.311 | **0.064** |
-| twibot20 | 0.406 | 0.066 | 0.407 | **0.058** |
-
-`noise` collapses NM to ~chance, essentially identical to `zero`, while `permute`
-is harmless. Since `noise` keeps nodes perfectly distinct and only destroys the
-*real* neighborhood content, **distinctness is not what NM needs — real feature
-content is.** And both `zero` and `noise` leave topology intact yet give chance,
-so **topology alone ≈ chance for this model.** NM matches a query to a center via
-their shared neighborhood feature signature (a permutation-invariant content
-*bag*, since `permute` is fine), not via topology and not via mere distinctness.
-
-**Feature-quality probe** (`feature_label_probe.py` → `feature_label_probe_results.csv`).
-Logistic regression from raw features to the node label (no graph): AUC 0.95
-(election2020), 0.91 (covid_political), 0.71 (twibot20), 0.60 (ukr_rus_suspended).
-The bio embeddings carry strong, linearly-decodable signal — features are good.
-
-**Feature-only NM probe** (`feature_only_nm_probe.py` → `feature_only_nm_results.csv`).
-Prototype nearest-neighbor in raw feature space (no model), 30-way / 3-shot:
-twibot20 real 0.169 (AUC 0.66) vs permuted 0.035; midterm real 0.103 (AUC 0.61)
-vs permuted 0.032; chance 0.033. Neighborhoods *are* feature-distinguishable at
-the community level (despite low edge homophily), which is exactly the signal the
-full model exploits (and extracts better: 0.41 / 0.31).
-
-**Phase B — classification linear-probe on the frozen NM representation** (20-shot),
-`zero`/`permute` only (no `noise` yet): election2020 intact/zero/permute AUC
-0.979/0.503/0.978; covid_political 0.912/0.613/0.911; twibot20 0.680/0.715/0.673.
-Permute-invariant on every graph — but **by the correction above, permute-invariance
-does NOT imply the encoder discards content** (permute preserves the content bag).
-So the earlier "encoder strips content" claim is **not established**; it needs a
-`noise` re-run. The twibot20 gap (rep 0.680 < raw-feature logreg 0.707) remains a
-*tentative* hint that individual-node semantics may be under-encoded relative to
-neighborhood-aggregate content — but that is unconfirmed.
-
-**Implication (revised).** Features are good, and NM already **uses** feature
-content heavily — the original "NM ignores features, so add a feature-content
-task" motivation is overturned. Topology, not features, is the underused channel
-here. The remaining open question is narrower: does the encoder preserve
-*individual-node* bio semantics (needed for low-homophily downstream like
-twibot20), or only the *neighborhood-aggregate* signature it uses for NM? Resolve
-with (1) `noise` on the Phase-B classification probe and (2) a feature-reconstruction
-probe (predict a node's raw bio from its frozen representation).
+Headline: **NM relies on the real feature *content* of a node's neighborhood, not
+topology or mere distinctness** — `noise` collapses NM to chance like `zero`, while
+`permute` is harmless. This *overturned* an earlier permute-only conclusion that
+"NM ignores content"; see the correction note in FINDINGS.md. Raw data:
+[`feature_ablation_results.csv`](feature_ablation_results.csv),
+[`feature_label_probe_results.csv`](feature_label_probe_results.csv),
+[`feature_only_nm_results.csv`](feature_only_nm_results.csv).
 
 ## Files
 
