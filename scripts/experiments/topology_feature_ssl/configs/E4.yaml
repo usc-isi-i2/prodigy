@@ -47,7 +47,10 @@ structural_features: directed3
 
 # >>> E4-specific: multi-task heads <<<
 e4_combine: simultaneous   # sum MFR + directed-LP + structural every step
-e4_weights: "1,1,1"        # mfr,lp,struct loss weights
+# mfr,lp,struct weights. MFR bio-recon MSE is tiny (~0.02, unit-norm features) vs LP BCE
+# (~0.7) and structural MSE (~0.7 after the ±4σ target clip), so MFR is up-weighted ~30×
+# to keep the feature objective contributing. (Raw per-head magnitudes are logged each run.)
+e4_weights: "30,1,1"
 e4_lp_neg_k: 1             # negative edges per positive directed edge
 fp_mask_ratio: 0.3         # whole-node mask ratio (drives MFR + structural targets)
 fp_mask_strategy: zero

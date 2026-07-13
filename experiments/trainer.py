@@ -708,7 +708,11 @@ class TrainerFS():
         tgt = graph.x_orig[mask].to(out.dtype)
         b = self.e4_bert_dim
         mfr = self.aux_loss(out[:, :b], tgt[:, :b])
-        struct = self.aux_loss(out[:, b:], tgt[:, b:])
+        # Structural target = z-scored directed3 degrees (in/out/log), which are heavy-tailed
+        # (power-law): a masked hub's degree z-score can be ~100, so its reconstruction MSE
+        # explodes into the thousands and swamps MFR/LP. Clip to +/-4 sigma so the head learns
+        # low/mid/high degree robustly instead of chasing unlearnable mega-hub magnitudes.
+        struct = self.aux_loss(out[:, b:], tgt[:, b:].clamp(-4.0, 4.0))
         return mfr, struct
 
     def _e4_lp_loss(self, graph):

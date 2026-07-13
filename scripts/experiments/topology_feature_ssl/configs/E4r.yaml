@@ -36,7 +36,7 @@ structural_features: directed3
 # >>> E4-specific: multi-task heads, rotation <<<
 e4_combine: rotation       # one head per episode, round-robin
 e4_task_counts: "1,1,1"    # mfr:lp:struct round-robin weights
-e4_weights: "1,1,1"        # per-head scale (applied to the active head each step)
+e4_weights: "30,1,1"       # mfr,lp,struct per-head scale (MFR up-weighted ~30×; see E4.yaml)
 e4_lp_neg_k: 1
 fp_mask_ratio: 0.3         # mfr/struct episodes mask whole nodes (lp episodes ignore it)
 fp_mask_strategy: zero
