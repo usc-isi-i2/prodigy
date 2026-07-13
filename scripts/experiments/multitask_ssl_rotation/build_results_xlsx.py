@@ -86,6 +86,69 @@ cls_m = {a: mean_arm(CLS, "roc_auc", a) for a in ARMS}
 reg_m = {a: mean_arm(REG, "spearman", a) for a in ARMS}
 slp_m = {a: mean_arm(SLP, "roc_auc", a) for a in ARMS}
 
+
+REG_GRAPHS = ["midterm", "ukr_rus_twitter", "covid19_twitter", "twibot20"]
+REG_TGT = ["followers_count", "statuses_count", "account_age_days"]
+CLS_GRAPHS = ["twibot20", "election2020"]
+SLP_GRAPHS = ["midterm", "ukr_rus_twitter", "covid19_twitter", "twibot20"]
+GRAPH_DISP = {"midterm": "midterm", "ukr_rus_twitter": "ukr_rus", "covid19_twitter": "covid19",
+              "twibot20": "twibot20", "election2020": "election2020"}
+TGT_DISP = {"followers_count": "followers", "statuses_count": "statuses", "account_age_days": "account age"}
+
+
+def _rank_group(mv):
+    """{model: value} -> {model: rank}, 1 = highest value, average ties."""
+    order = sorted(mv.items(), key=lambda x: -x[1])
+    rk, i = {}, 0
+    while i < len(order):
+        j = i
+        while j + 1 < len(order) and order[j + 1][1] == order[i][1]:
+            j += 1
+        avg = (i + 1 + j + 1) / 2.0
+        for k in range(i, j + 1):
+            rk[order[k][0]] = avg
+        i = j + 1
+    return rk
+
+
+def instance_ranks(records, metric):
+    """{(dataset, target): {model: rank}} over the test-split instances."""
+    inst = {}
+    for r in records:
+        if r.get("split") != "test" or r.get(metric) in ("", None):
+            continue
+        inst.setdefault((r["dataset"], r.get("target", "")), {})[r["model"]] = float(r[metric])
+    return {key: _rank_group(mv) for key, mv in inst.items()}
+
+
+IR = {"regression": instance_ranks(REG, "spearman"),
+      "classification": instance_ranks(CLS, "roc_auc"),
+      "static_link_prediction": instance_ranks(SLP, "roc_auc")}
+
+
+def _task_mean(ir):
+    per = {m: [] for m in ARMS}
+    for rk in ir.values():
+        for m in ARMS:
+            if m in rk:
+                per[m].append(rk[m])
+    return {m: statistics.fmean(per[m]) for m in ARMS}
+
+
+# per-task mean rank, then a FAIR overall = equal weight per task family
+# (so regression's 12 instances don't outvote classification's 2)
+RANK = {t: _task_mean(IR[t]) for t in IR}
+overall_rank = {m: statistics.fmean([RANK[t][m] for t in RANK]) for m in ARMS}
+worst_rank = {m: max(RANK[t][m] for t in RANK) for m in ARMS}
+gen_score = {m: (len(ARMS) - overall_rank[m]) / (len(ARMS) - 1) for m in ARMS}
+
+# breakdown views used by the sheets
+reg_target_rank = {t: {m: statistics.fmean([IR["regression"][(g, t)][m] for g in REG_GRAPHS
+                                             if (g, t) in IR["regression"]]) for m in ARMS} for t in REG_TGT}
+cls_graph_rank = {g: IR["classification"][(g, "")] for g in CLS_GRAPHS}
+slp_graph_rank = {g: IR["static_link_prediction"][(g, "")] for g in SLP_GRAPHS}
+reg_wins = {m: sum(1 for rk in IR["regression"].values() if rk.get(m) == 1.0) for m in ARMS}
+
 wb = Workbook()
 
 
@@ -211,6 +274,86 @@ for col, w in zip("ABCDEF", [10, 18, 14, 14, 18, 40]):
     ws.column_dimensions[col].width = w
 ws.freeze_panes = "A5"
 
+# ============================== Overall_ranking ==============================
+# Fair, scale-free "how good is each model, generally" — rank-based (ρ/AUC scale gap
+# is irrelevant) and equal-weighted per task family. Full breakdown: every aggregate
+# is the mean of the cells to its left, so the reader can audit each step.
+ws = wb.create_sheet("Overall_ranking")
+ws.sheet_view.showGridLines = False
+ws.cell(1, 1, "Overall model ranking — fair, cross-task, with full breakdown (lower rank = better)").font = TITLE_FONT
+ws.cell(2, 1, "Rank 1–4 per eval instance by the task's own metric (higher = better; ties averaged). "
+              "Reg mean = mean of its 3 target ranks · Cls / sLP mean = mean of their per-graph ranks · "
+              "OVERALL = equal-weight mean of the 3 task means.").font = SUB_FONT
+
+def merge_hdr(rng, text, fs=9):
+    ws.merge_cells(rng)
+    for row in ws[rng]:
+        for c in row:
+            c.fill = HDR_FILL; c.border = BORDER
+    tl = ws[rng.split(":")[0]]
+    tl.value = text
+    tl.font = Font(name=FONT, bold=True, color="FFFFFF", size=fs)
+    tl.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    return tl
+
+# grouped header: row 4 = groups, row 5 = per-instance sub-labels
+merge_hdr("A4:A5", "Model")
+merge_hdr("B4:D4", "Regression · rank by target")
+merge_hdr("E4:E5", "Reg mean")
+merge_hdr("F4:G4", "Classification · by graph")
+merge_hdr("H4:H5", "Cls mean")
+merge_hdr("I4:L4", "Static-LP · rank by graph")
+merge_hdr("M4:M5", "sLP mean")
+merge_hdr("N4:N5", "OVERALL rank")
+merge_hdr("O4:O5", "Worst task")
+merge_hdr("P4:P5", "Score 0–1")
+for addr, txt in {"B5": "followers", "C5": "statuses", "D5": "account age",
+                  "F5": "twibot20", "G5": "election2020",
+                  "I5": "midterm", "J5": "ukr_rus", "K5": "covid19", "L5": "twibot20"}.items():
+    c = ws[addr]; c.value = txt
+    c.font = Font(name=FONT, bold=True, color="FFFFFF", size=8)
+    c.fill = HDR_FILL; c.border = BORDER
+    c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+ws["E4"].comment = Comment("= mean of the 3 target ranks to the left (each target rank is itself a mean over 4 graphs — see Regression_ranks).", "results")
+ws["H4"].comment = Comment("= mean of the 2 per-graph ranks to the left.", "results")
+ws["M4"].comment = Comment("= mean of the 4 per-graph ranks to the left.", "results")
+ws["N4"].comment = Comment("Equal-weight mean of Reg/Cls/sLP means — each task family counts once, so regression's 12 instances don't outvote classification's 2.", "results")
+ws["O4"].comment = Comment("max of the 3 task means: the family the model is weakest on. A generalist stays low; a collapsing specialist hits 4.", "results")
+ws["P4"].comment = Comment("(4 - OVERALL rank)/3. 1.00 = always ranked best of 4; 0.00 = always worst.", "results")
+
+col_of = {"reg_mean": 5, "cls_mean": 8, "slp_mean": 13, "overall": 14, "worst": 15, "score": 16}
+for i, m in enumerate(sorted(ARMS, key=lambda mm: overall_rank[mm])):
+    rr = 6 + i
+    fill = MIX_FILL if m == "MIX" else None
+    put(ws, rr, 1, m, font=BOLD, align=LEF, fill=fill)
+    put(ws, rr, 2, reg_target_rank["followers_count"][m], fmt="0.00", font=BASE, fill=fill)
+    put(ws, rr, 3, reg_target_rank["statuses_count"][m], fmt="0.00", font=BASE, fill=fill)
+    put(ws, rr, 4, reg_target_rank["account_age_days"][m], fmt="0.00", font=BASE, fill=fill)
+    put(ws, rr, 5, RANK["regression"][m], fmt="0.00", font=BOLD, fill=fill)
+    put(ws, rr, 6, cls_graph_rank["twibot20"][m], fmt="0.00", font=BASE, fill=fill)
+    put(ws, rr, 7, cls_graph_rank["election2020"][m], fmt="0.00", font=BASE, fill=fill)
+    put(ws, rr, 8, RANK["classification"][m], fmt="0.00", font=BOLD, fill=fill)
+    put(ws, rr, 9, slp_graph_rank["midterm"][m], fmt="0.00", font=BASE, fill=fill)
+    put(ws, rr, 10, slp_graph_rank["ukr_rus_twitter"][m], fmt="0.00", font=BASE, fill=fill)
+    put(ws, rr, 11, slp_graph_rank["covid19_twitter"][m], fmt="0.00", font=BASE, fill=fill)
+    put(ws, rr, 12, slp_graph_rank["twibot20"][m], fmt="0.00", font=BASE, fill=fill)
+    put(ws, rr, 13, RANK["static_link_prediction"][m], fmt="0.00", font=BOLD, fill=fill)
+    put(ws, rr, 14, overall_rank[m], fmt="0.00", font=BOLD, fill=fill)
+    put(ws, rr, 15, worst_rank[m], fmt="0.00", font=BASE, fill=fill)
+    put(ws, rr, 16, gen_score[m], fmt="0.00", font=BOLD, fill=fill)
+nr = 6 + len(ARMS) + 1
+for k, t in enumerate([
+    "Bold columns are aggregates; each equals the mean of the plain cells to its left — fully auditable in-place.",
+    "Fair by construction: rank-based (Spearman ρ vs ROC-AUC scale is irrelevant) and each task family weighted equally.",
+    "MIX is the best GENERAL model: lowest OVERALL rank AND lowest worst-task rank — the only arm that never drops to a family it can't do.",
+    "FP wins regression outright but collapses to rank 4 on classification; NM is strong on cls/LP but ~rank 3 on regression; CL is last.",
+]):
+    ws.cell(nr + k, 1, "• " + t).font = SUB_FONT
+for col, w in zip("ABCDEFGHIJKLMNOP",
+                  [6, 9, 8, 11, 8, 9, 11, 8, 8, 8, 8, 8, 8, 9, 8, 8]):
+    ws.column_dimensions[col].width = w
+ws.freeze_panes = "B6"
+
 # ============================== Classification ==============================
 ws = wb.create_sheet("Classification")
 title(ws, "Node classification — ROC-AUC (10-shot, held-out datasets)",
@@ -257,6 +400,43 @@ for j, arm in enumerate(ARMS):
     put(ws, mr, 2 + j, reg_m[arm], fmt=NUM, font=BOLD, fill=CTRL_FILL)
 ws.cell(mr + 2, 1, "Targets: followers_count, statuses_count, account_age_days (log1p). Higher ρ = better.").font = SUB_FONT
 for col, w in zip("ABCDE", [30, 11, 11, 11, 11]):
+    ws.column_dimensions[col].width = w
+ws.freeze_panes = "B5"
+
+# ============================== Regression_ranks ==============================
+# General performance via mean rank: on each (target, dataset) instance, rank the 4
+# models by Spearman ρ (1 = best, higher ρ wins; average ties). Per-target mean rank
+# = mean over the 4 datasets; Overall = mean over all 12 instances. Lower = better.
+# reuse the shared rank breakdowns computed near the top (single source of truth)
+REG_TARGETS, REG_TDISP = REG_TGT, TGT_DISP
+mr_target = reg_target_rank                 # {target: {model: mean rank over graphs}}
+mr_overall = RANK["regression"]             # {model: mean rank over all 12 instances}
+wins = reg_wins                             # {model: # rank-1 finishes / 12}
+order_by_rank = sorted(ARMS, key=lambda m: mr_overall[m])
+
+ws = wb.create_sheet("Regression_ranks")
+title(ws, "Regression — general performance by mean rank (lower = better)",
+      "On each (target × test-graph) instance the 4 models are ranked 1–4 by Spearman ρ; cells are mean ranks.")
+cols = ["Model"] + [REG_TDISP[t] for t in REG_TARGETS] + ["OVERALL rank", "Wins (rank-1, /12)", "Mean ρ (ref)"]
+style_hdr(ws, 4, cols)
+ws.cell(4, 5).comment = Comment("Mean rank over all 12 target×dataset instances. 1 = always best of the 4 models, 4 = always worst.", "results")
+for i, m in enumerate(order_by_rank):
+    rr = 5 + i
+    mix = m == "MIX"
+    put(ws, rr, 1, m, font=BOLD, align=LEF, fill=MIX_FILL if mix else None)
+    for j, t in enumerate(REG_TARGETS):
+        put(ws, rr, 2 + j, mr_target[t][m], fmt="0.00", font=BASE, fill=MIX_FILL if mix else None)
+    put(ws, rr, 5, mr_overall[m], fmt="0.00", font=BOLD, fill=MIX_FILL if mix else None)
+    put(ws, rr, 6, wins[m], fmt="0", font=BASE, fill=MIX_FILL if mix else None)
+    put(ws, rr, 7, reg_m[m], fmt=NUM, font=BASE, fill=MIX_FILL if mix else None)
+note_r = 5 + len(ARMS) + 1
+for k, t in enumerate([
+    "Mean rank = average finishing place (1–4) across the test graphs; lower is better. Range 1.00 (always best) to 4.00 (always worst).",
+    "FP is the regression specialist (best overall rank). MIX is 2nd overall and actually ranks best on account-age.",
+    "Wins = number of the 12 instances where the model has the single highest ρ. Mean ρ is the raw metric for reference (see Regression sheet).",
+]):
+    ws.cell(note_r + k, 1, "• " + t).font = SUB_FONT
+for col, w in zip("ABCDEFG", [8, 11, 11, 12, 15, 18, 13]):
     ws.column_dimensions[col].width = w
 ws.freeze_panes = "B5"
 
@@ -324,7 +504,8 @@ write_raw("Raw_classification", cls_rows, {2, 6, 7, 8})
 write_raw("Raw_regression", reg_rows, {2, 6, 7, 8, 9, 10})
 write_raw("Raw_static_link_prediction", slp_rows, {2, 6, 7, 8})
 
-order = ["About", "Summary_T1", "Classification", "Regression", "Static_link_prediction",
+order = ["About", "Summary_T1", "Overall_ranking", "Classification", "Regression", "Regression_ranks",
+         "Static_link_prediction",
          "Raw_classification", "Raw_regression", "Raw_static_link_prediction"]
 wb._sheets.sort(key=lambda s: order.index(s.title))
 
