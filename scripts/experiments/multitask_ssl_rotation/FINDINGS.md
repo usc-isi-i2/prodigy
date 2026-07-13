@@ -33,6 +33,15 @@ criterion — the only arm above chance on the topological axis while staying ne
 on the feature axis. Specialists still win their own single task, so this is "best
 general encoder," not "free lunch on every task."
 
+![Capability plane: feature (classification AUC) vs topological (static-LP AUC) transfer. Only MIX sits in the top-right generalist quadrant; NM/CL/FP are stranded at or below the topological-chance line.](figures/0_capability_plane.png)
+
+*Headline figure — the capability plane. x = feature transfer (classification AUC),
+y = topological transfer (static-LP AUC); chance = 0.50 on both. Only MIX (rotation)
+reaches the top-right "good at both" quadrant; every single-objective control is
+pinned at/below the topological-chance floor. Marker size ∝ regression ρ (the secondary
+feature axis, where FP is the specialist); whiskers = static-LP min–max across the 4
+eval datasets. Built by `plot_capability_plane.py` from the raw CSVs.*
+
 ---
 
 ## 2. Methodology
@@ -131,7 +140,9 @@ classification read is entirely held-out.
 > worktree).
 > **Reproduce every number below:**
 > `python scripts/experiments/multitask_ssl_rotation/aggregate_results.py --plotting-root scripts/plotting/multitask_ssl_rotation`
-> **Figures:** `figures/{1_regression,2_static_link_prediction,3_classification}.png`
+> **Figures:** `figures/0_capability_plane.png` (headline; built by
+> `plot_capability_plane.py`) + per-task detail
+> `figures/{1_regression,2_static_link_prediction,3_classification}.png`
 
 ### T1 — frozen-encoder transfer (mean over datasets, test split)
 

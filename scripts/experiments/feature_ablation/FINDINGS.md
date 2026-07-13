@@ -98,8 +98,8 @@ election2020 0.95 / 0.88 / 0.54 · covid_political 0.91 / 0.86 / 0.75 · twibot2
 chance 0.033: twibot20 0.169 (0.66) vs 0.035 · midterm 0.103 (0.61) vs 0.032.
 
 **Classification linear-probe on the frozen representation** — AUC intact / zero /
-permute: election2020 0.979 / 0.503 / 0.978 · covid_political 0.912 / 0.613 / 0.911
-· twibot20 0.680 / 0.715 / 0.673.
+permute / noise: election2020 0.979 / 0.503 / 0.978 / 0.487 · covid_political
+0.912 / 0.613 / 0.911 / 0.535 · twibot20 0.680 / 0.715 / 0.673 / 0.629.
 
 ## Findings / discussion
 
@@ -115,10 +115,17 @@ permute: election2020 0.979 / 0.503 / 0.978 · covid_political 0.912 / 0.613 / 0
 - **The features are good and the signal is real.** Raw feature→label AUC up to 0.95;
   neighborhoods are feature-distinguishable (feature-only NM 3–5× chance, control at
   chance).
-- **Downstream feature-use is unresolved.** The classification probe was run
-  `permute`-only, which does not test content-use (permute preserves the bag). The
-  twibot20 gap (rep 0.680 < raw-feature 0.707) hints that individual-node semantics
-  may be under-encoded relative to the neighborhood aggregate NM uses — unconfirmed.
+- **Downstream, the encoder is feature-content-driven too.** On the frozen-rep label
+  probe, `noise` collapses the political graphs to chance (covid_political 0.912→0.535,
+  election2020 0.979→0.487) with topology fully intact — so their label signal comes
+  from real feature content, *not* topology, even where topology is label-informative
+  (homophily 0.94–0.95). This retires the earlier "topology-carried" reading.
+- **What the encoder encodes is neighborhood-*aggregate* content.** It pools neighbor
+  features (permutation-invariant bag), which is why it ties/beats raw features on
+  homophilous graphs but underperforms a node's own bio where homophily is low
+  (twibot20: rep 0.680 < raw-feature 0.707; near its noise floor, noise 0.629). The
+  open lever for transfer is *individual-node* semantics, which NM's aggregate objective
+  under-encodes.
 
 ## Caveats
 
