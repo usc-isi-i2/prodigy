@@ -160,6 +160,24 @@ class TrainerFS():
                 f"task_name=nm_fp_cl requires batch_size=1 (one task per episode), "
                 f"got batch_size={parameter.get('batch_size')}."
             )
+        # E4: multi-task objective (masked-feature-recon ⊕ directed-LP ⊕ structural-property)
+        # on E2's encoder. Heads + losses live in this trainer (_e4_total_loss_and_score);
+        # 'simultaneous' sums all three per step, 'rotation' does one head per episode.
+        self.is_e4 = parameter["task_name"] == "e4_multi"
+        if self.is_e4:
+            self.e4_combine = parameter.get("e4_combine", "simultaneous")
+            _w = [float(x) for x in str(parameter.get("e4_weights", "1,1,1")).split(",")]
+            if len(_w) != 3:
+                raise ValueError(
+                    f"e4_weights must be 3 floats 'mfr,lp,struct', got {parameter.get('e4_weights')!r}."
+                )
+            self.e4_w = {"mfr": _w[0], "lp": _w[1], "struct": _w[2]}
+            self.e4_lp_neg_k = max(1, int(parameter.get("e4_lp_neg_k", 1)))
+            if self.e4_combine == "rotation" and parameter.get("batch_size", 1) != 1:
+                raise ValueError(
+                    f"task_name=e4_multi with e4_combine=rotation requires batch_size=1, "
+                    f"got batch_size={parameter.get('batch_size')}."
+                )
         if self.is_regression:
             if self.ways != 1:
                 raise ValueError(f"regression only supports n_way=1, got n_way={self.ways}.")
@@ -317,7 +335,7 @@ class TrainerFS():
         wandb.run.summary["num_params"] = num_params
 
         # create a header to predict masked node attribute
-        if self.parameter["attr_regression_weight"] or self.is_feature_prediction or self.mix_has_fp:
+        if self.parameter["attr_regression_weight"] or self.is_feature_prediction or self.mix_has_fp or self.is_e4:
             embed_dim = self.emb_dim
             output_dim = self.parameter["input_dim"]
             self.aux_header = torch.nn.Sequential(
@@ -328,6 +346,27 @@ class TrainerFS():
             self.aux_header.to(self.device)
             self.aux_loss = torch.nn.MSELoss()
             self.aux_loss.to(self.device)
+
+        # E4 reuses aux_header for reconstruction (bio cols [:768] = MFR target,
+        # structural cols [768:] = structural-property target) and adds a directed
+        # link-prediction edge scorer over the encoder embeddings.
+        if self.is_e4:
+            self.e4_bert_dim = bert_dim
+            self.e4_struct_dim = int(self.parameter["input_dim"]) - bert_dim
+            if self.e4_struct_dim <= 0:
+                raise ValueError(
+                    "task_name=e4_multi requires structural_features (e.g. directed3) so the "
+                    "encoder input carries a structural block to reconstruct; got input_dim="
+                    f"{self.parameter['input_dim']} (<= bert_dim {bert_dim})."
+                )
+            self.lp_header = torch.nn.Sequential(
+                torch.nn.Linear(2 * self.emb_dim, self.emb_dim),
+                torch.nn.ReLU(),
+                torch.nn.Linear(self.emb_dim, 1),
+            )
+            self.lp_header.to(self.device)
+            self.lp_loss = torch.nn.BCEWithLogitsLoss()
+            self.lp_loss.to(self.device)
 
         bert_model_name = self.parameter["bert_emb_model"]
         label_emb_model_name = (self.parameter.get("label_emb_model") or "").strip()
@@ -358,6 +397,8 @@ class TrainerFS():
         params = list(self.model.parameters())
         if hasattr(self, "aux_header"):
             params += list(self.aux_header.parameters())
+        if hasattr(self, "lp_header"):
+            params += list(self.lp_header.parameters())
         if (
             not self.parameter["not_freeze_learned_label_embedding"]
             and hasattr(self.model, "learned_label_embedding")
@@ -407,6 +448,8 @@ class TrainerFS():
         }
         if hasattr(self, "aux_header"):
             self.all_saveable_modules["aux_header"] = self.aux_header
+        if hasattr(self, "lp_header"):
+            self.all_saveable_modules["lp_header"] = self.lp_header
         self.pretrained_model_run = self.parameter["pretrained_model_run"]
         if self.pretrained_model_run != "":
             _log(f"Reloading state dict from {self.pretrained_model_run}")
@@ -467,6 +510,8 @@ class TrainerFS():
         kwargs["fp_mask_strategy"] = self.parameter.get("fp_mask_strategy", "zero")
         kwargs["mix_task_counts"] = self.parameter.get("mix_task_counts", "1,1,1")
         kwargs["mix_cl_aug"] = self.parameter.get("mix_cl_aug", "NZ0.2")
+        kwargs["e4_combine"] = self.parameter.get("e4_combine", "simultaneous")
+        kwargs["e4_task_counts"] = self.parameter.get("e4_task_counts", "1,1,1")
         if self.parameter["all_test"]:
             kwargs["all_test"] = True
         if self.parameter["label_set"]:
@@ -633,6 +678,100 @@ class TrainerFS():
         target = graph.x_orig[mask]
         output = self.aux_header(graph.x[mask])
         loss = self.aux_loss(output, target)
+        return loss, -float(loss.detach().cpu().item())
+
+    # ------------------------------------------------------------------ E4 multi-task
+    def _episode_e4_task(self, graph):
+        """Rotation tag for the current episode: 'mfr' | 'lp' | 'struct', or None.
+
+        None in simultaneous mode and for val/test (untagged) -> falls back to the full
+        simultaneous objective as a coherent monitor.
+        """
+        m = getattr(graph, "e4_task", None)
+        if m is None:
+            return None
+        return {0: "mfr", 1: "lp", 2: "struct"}.get(int(m.reshape(-1)[0].item()))
+
+    def _e4_recon_losses(self, graph):
+        """Masked-node reconstruction split into MFR (bio cols) and structural (degree
+        cols). The masked node's OWN structural input is zeroed, so predicting its
+        degree from context is non-trivial (no passthrough leakage). Returns (mfr, struct),
+        each a scalar tensor or None when the episode has no masked nodes."""
+        if not hasattr(graph, "node_attr_mask") or not hasattr(graph, "x_orig"):
+            return None, None
+        mask = ~graph.node_attr_mask
+        if hasattr(graph, "node_mask"):
+            mask = mask.logical_and(graph.node_mask)
+        if int(mask.sum()) == 0:
+            return None, None
+        out = self.aux_header(graph.x[mask])
+        tgt = graph.x_orig[mask].to(out.dtype)
+        b = self.e4_bert_dim
+        mfr = self.aux_loss(out[:, :b], tgt[:, :b])
+        struct = self.aux_loss(out[:, b:], tgt[:, b:])
+        return mfr, struct
+
+    def _e4_lp_loss(self, graph):
+        """Directed link prediction: score the episode's directed edges (positives)
+        against dst-corrupted negatives on the encoder embeddings. Excludes the pooling
+        supernode. Returns a scalar tensor or None when the episode has no usable edges."""
+        ei = getattr(graph, "edge_index", None)
+        if ei is None or ei.numel() == 0:
+            return None
+        h = graph.x
+        n = h.shape[0]
+        valid = torch.ones(n, dtype=torch.bool, device=h.device)
+        sn = getattr(graph, "supernode", None)
+        if sn is not None:
+            valid[sn.reshape(-1).to(h.device)] = False
+        src, dst = ei[0].to(h.device), ei[1].to(h.device)
+        keep = valid[src] & valid[dst]
+        src, dst = src[keep], dst[keep]
+        if src.numel() == 0:
+            return None
+        valid_idx = valid.nonzero(as_tuple=False).reshape(-1)
+        k = self.e4_lp_neg_k
+        src_rep = src.repeat_interleave(k)
+        neg_dst = valid_idx[torch.randint(0, valid_idx.numel(), (src_rep.numel(),), device=h.device)]
+        pos = self.lp_header(torch.cat([h[src], h[dst]], dim=1)).reshape(-1)
+        neg = self.lp_header(torch.cat([h[src_rep], h[neg_dst]], dim=1)).reshape(-1)
+        logits = torch.cat([pos, neg])
+        labels = torch.cat([torch.ones_like(pos), torch.zeros_like(neg)])
+        return self.lp_loss(logits, labels)
+
+    def _e4_total_loss_and_score(self, graph):
+        """Combine the E4 heads into one loss. 'rotation' (with a per-episode e4_task tag)
+        trains one head per episode; otherwise sum all three, weighted by e4_w. The
+        returned score is -loss (a coherent pretrain monitor; the real read is the frozen
+        downstream sweep)."""
+        task = self._episode_e4_task(graph)
+        comps = []
+        if self.e4_combine == "rotation" and task is not None:
+            if task == "lp":
+                lp = self._e4_lp_loss(graph)
+                if lp is not None:
+                    comps.append(self.e4_w["lp"] * lp)
+            else:
+                mfr, struct = self._e4_recon_losses(graph)
+                comp = mfr if task == "mfr" else struct
+                if comp is not None:
+                    comps.append(self.e4_w[task] * comp)
+        else:
+            mfr, struct = self._e4_recon_losses(graph)
+            lp = self._e4_lp_loss(graph)
+            if mfr is not None:
+                comps.append(self.e4_w["mfr"] * mfr)
+            if struct is not None:
+                comps.append(self.e4_w["struct"] * struct)
+            if lp is not None:
+                comps.append(self.e4_w["lp"] * lp)
+        if comps:
+            loss = comps[0]
+            for c in comps[1:]:
+                loss = loss + c
+        else:
+            # degenerate episode (no masked nodes and no edges): grad-connected no-op
+            loss = graph.x.sum() * 0.0
         return loss, -float(loss.detach().cpu().item())
 
     def save_checkpoint(self, step):
@@ -1399,6 +1538,10 @@ class TrainerFS():
                 loss, acc = self.get_feature_prediction_loss_and_score(graph)
                 aux_loss = torch.zeros(1, device=self.device)
                 total_loss = loss
+            elif self.is_e4:
+                loss, acc = self._e4_total_loss_and_score(graph)
+                aux_loss = torch.zeros(1, device=self.device)
+                total_loss = loss
             else:
                 loss, acc = self.get_loss_and_acc(yt, yp) # get loss
                 aux_loss = self.get_aux_loss(graph)
@@ -1602,6 +1745,8 @@ class TrainerFS():
                 assert len(batch) == 10, "Not using the right batch structure; need to include task_mask"
             if self.is_feature_prediction or (self.is_mix and self._episode_is_fp(graph)):
                 loss, acc = self.get_feature_prediction_loss_and_score(graph)
+            elif self.is_e4:
+                loss, acc = self._e4_total_loss_and_score(graph)
             else:
                 loss, acc = self.get_loss_and_acc(yt, yp)  # get loss
             acc_all.append(acc)

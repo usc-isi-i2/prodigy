@@ -20,7 +20,7 @@ launched by the user; this repo only ships the scripts.
 | E2 — expressive directed aggregator | code | ✅ **done** (true-40k; matched eval landed 2026-07-11 — wins static-LP 0.76, fails regression) |
 | E2b — drop-BN encoder retry | config + eval flag | ✅ **done** (2026-07-11 — probes ↑ count/out-deg, static-LP ↓ 0.40; BN mechanism real but not a fix) |
 | E3 — masked feature reconstruction | code (fp exists; refine) | ⏸ deferred → fold into E4 as an ablation (fp ⊀ nm in the free preview) |
-| E4 — multi-task MFR ⊕ dir-LP ⊕ structural | code | ⏳ **next** (the fork the results point to; build on E2's encoder) |
+| E4 — multi-task MFR ⊕ dir-LP ⊕ structural | code | ✅ **built** (`configs/E4.yaml` simultaneous + `E4r.yaml` rotation; `task_name=e4_multi` heads in `trainer.py`/`covid19_twitter.py`/`dataloader.py`; loss math + param plumbing unit-tested locally). ⏳ Tucker smoke + 40k pending (Step 6). |
 | T1/T2/T3 tables + notebook | code | ✅ **done** (`RESULTS_matched40k.md`, `*_40k` CSVs, `capability_probes_40k.csv`) |
 
 ## Budget decision (from the transfer sweep, 2026-07-09)
@@ -242,3 +242,65 @@ is closed → pivot to the objective axis (E4). Add `E2b_40k` to `analyze_matche
 `ARMS` once its rows land to fold it into the matched table. (If drop-BN moves the
 probes, the fast follow is a degree-scaler PNA aggregator — a new conv variant, not a
 config flag.)
+
+## Step 6 — E4 multi-task objective (the objective-axis fork)
+
+E4 changes the **objective** on E2's encoder: three heads at once —
+**MFR** (masked bio-feature recon) ⊕ **directed-LP** (score the episode's directed edges
+vs negatives) ⊕ **structural** (reconstruct a masked node's `directed3` degree block from
+context). MFR + structural share the whole-node masking (`fp_mask_ratio`), so a masked
+node's bio cols `[:768]` are the MFR target and its degree cols `[768:]` the structural
+target — the node's own degree input is zeroed, so predicting it is **non-trivial (no
+passthrough leakage)**. `task_name=e4_multi` (aliases `e4`), heads + losses live in
+`experiments/trainer.py` (`_e4_recon_losses`, `_e4_lp_loss`, `_e4_total_loss_and_score`),
+episode wiring in `data/covid19_twitter.py` + `data/dataloader.py`.
+
+Two combination modes (both built): **E4** = `e4_combine: simultaneous` (weighted sum of
+the three losses every step); **E4r** = `e4_combine: rotation` (one head per episode,
+round-robin — reuses the `nm_fp_cl` machinery). E4-vs-E4r is the combination-mechanism
+ablation. Same E2 encoder (`sage_multi` + `directed3`) and same true-40k budget
+(`epochs: 5`), so E4 evals reuse the E2 sweep and compare at matched 40k.
+
+> **Local verification done** (laptop): all files compile; the E4 loss math is unit-tested
+> on a synthetic episode (simultaneous = weighted sum; both heads get gradients; supernode
+> excluded from LP; rotation dispatches the tagged head; degenerate episodes are a safe
+> no-op); both configs parse through `get_params`. **NOT** locally runnable end-to-end (no
+> merged graph on the laptop) → **smoke-test on Tucker first** to catch pipeline integration.
+
+```bash
+# --- 0. sync Tucker to the branch (laptop -> origin -> Tucker), as in Step 4's step 0.
+cd /dataMeR1/phil/gfm/prodigy
+
+# --- 1. SMOKE first (tiny; ~1 min). Confirms the real forward + all three heads run.
+#        Look for "structural_features=directed3 ... input_dim=771" and no crash.
+DRY_RUN=0 bash scripts/experiments/topology_feature_ssl/train_arm_tucker.sh E4 --device 0 \
+  --epochs 1 -ds_cap 40 -eval_step 40 -ckpt_step 40 --prefix tfssl_E4_smoke
+DRY_RUN=0 bash scripts/experiments/topology_feature_ssl/train_arm_tucker.sh E4r --device 0 \
+  --epochs 1 -ds_cap 40 -eval_step 40 -ckpt_step 40 --prefix tfssl_E4r_smoke   # rotation path
+
+# --- 2. full 40k pretrains (epochs:5 -> final ckpt state_dict_40000). ~1.5h each, one GPU
+#        each, in tmux + login shell (detached-tmux conda gotcha). nvidia-smi for free GPUs.
+tmux new-session -d -s tfssl_E4  'bash -lc "bash scripts/experiments/topology_feature_ssl/train_arm_tucker.sh E4  --device 0"'
+tmux new-session -d -s tfssl_E4r 'bash -lc "bash scripts/experiments/topology_feature_ssl/train_arm_tucker.sh E4r --device 1"'
+# DONE when state_dict_40000.ckpt exists (and 50000 does NOT — 40k is the final ckpt).
+
+# --- 3. matched-40k eval. E4 uses E2's encoder, so the frozen sweep MUST carry
+#        STRUCTURAL=directed3 GNN_TYPE=sage_multi (the extra e4 heads in the ckpt are
+#        ignored on load — load_checkpoint is strict=False over the eval trainer's modules).
+cd /dataMeR1/phil/gfm/prodigy
+for arm in E4 E4r; do
+  d=$(ls -dt state/tfssl_${arm}_*/ | grep -v smoke | head -1)
+  echo "${arm}_40k ${d}checkpoint/state_dict_40000.ckpt"
+done > scripts/experiments/topology_feature_ssl/model_list_E4.txt
+ML=scripts/experiments/topology_feature_ssl/model_list_E4.txt
+STRUCTURAL=directed3 GNN_TYPE=sage_multi MODEL_LIST=$ML \
+  bash scripts/experiments/topology_feature_ssl/run_eval_sweep.sh --gpus 0,1,2,3
+STRUCTURAL=directed3 GNN_TYPE=sage_multi MODEL_LIST=$ML \
+  bash scripts/experiments/topology_feature_ssl/run_capability_probes.sh --gpus 0,1,2,3
+```
+
+Then add `E4_40k`, `E4r_40k` to `analyze_matched40k.py` `ARMS`, re-run it, and fold the
+rows into the matched table + workbook. **Read:** does E4 clear the joint bar — regression
+above the trivial floor (E1's win) **and** static-LP near E2's 0.76, *at once*? If yes, the
+objective axis is the answer; if it trades one for the other like every encoder arm, the
+joint goal is unreachable on this stack and the write-up says so.

@@ -336,6 +336,41 @@ def get_params():
         "rotation (two-view positives). NM episodes get no aug; FP episodes use "
         "fp_mask_ratio/fp_mask_strategy. Only used when task_name=nm_fp_cl.",
     )
+    # --- E4: multi-task objective (masked-feature-recon ⊕ directed-LP ⊕ structural) ---
+    # Built on E2's encoder (sage_multi + directed3). MFR + structural share the
+    # whole-node masking (fp_mask_ratio/strategy): a masked node's bio block (cols
+    # :768) is the MFR target and its structural block (cols 768:) the structural
+    # target — the node's own degree input is zeroed, so predicting it from context
+    # is non-trivial (no leakage). Directed-LP scores the episode's directed edges
+    # against sampled negatives on the encoder embeddings.
+    args.add_argument(
+        "--e4_combine",
+        default="simultaneous",
+        choices=["simultaneous", "rotation"],
+        help="How task_name=e4_multi combines its heads: 'simultaneous' (weighted sum of "
+        "MFR+LP+structural every step) or 'rotation' (one head per episode, round-robin "
+        "over e4_task_counts; requires batch_size=1).",
+    )
+    args.add_argument(
+        "--e4_weights",
+        default="1,1,1",
+        type=str,
+        help="Simultaneous-mode loss weights as 'mfr,lp,struct' floats. Only used when "
+        "task_name=e4_multi and e4_combine=simultaneous.",
+    )
+    args.add_argument(
+        "--e4_task_counts",
+        default="1,1,1",
+        type=str,
+        help="Rotation-mode round-robin counts as 'mfr,lp,struct' ints. Only used when "
+        "task_name=e4_multi and e4_combine=rotation.",
+    )
+    args.add_argument(
+        "--e4_lp_neg_k",
+        default=1,
+        type=int,
+        help="Negative edges sampled per positive directed edge for the e4 link-prediction head.",
+    )
 
 
     args.add_argument("-prefix", "--prefix", default="exp1", type=str) # prefix for the experiment name for wandb
@@ -547,6 +582,7 @@ def get_params():
         "slp": "static_link_prediction",
         "reg": "regression",
         "mix": "nm_fp_cl",
+        "e4": "e4_multi",
     }
     params["task_name"] = task_aliases.get(params["task_name"], params["task_name"])
 

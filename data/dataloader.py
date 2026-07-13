@@ -550,6 +550,13 @@ class Collator:
             graphs.mix_is_fp = torch.tensor(
                 [1 if lm[0][1] == "fp" else 0 for lm in label_map], dtype=torch.long
             )
+            # E4 rotation: tag each episode's head (mfr/lp/struct) so the trainer
+            # dispatches the matching loss. Only fires when every tag is an e4 head.
+            e4_map = {"mfr": 0, "lp": 1, "struct": 2}
+            if all(lm[0][1] in e4_map for lm in label_map):
+                graphs.e4_task = torch.tensor(
+                    [e4_map[lm[0][1]] for lm in label_map], dtype=torch.long
+                )
         labels = torch.cat(labels)
         b_mask = torch.stack(query_mask)
         query_mask = torch.cat(query_mask)

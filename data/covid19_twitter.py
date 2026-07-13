@@ -289,6 +289,73 @@ def get_covid19_twitter_dataloader(
             )
             label_embeddings = torch.zeros(1, 768).expand(graph.num_nodes, -1)
         is_multiway = True
+    elif task_name == "e4_multi":
+        # E4 multi-task objective: masked-feature-recon ⊕ directed-LP ⊕ structural-property,
+        # on E2's encoder. Every episode is a whole-node-masked ContrastiveTask episode (same
+        # structure as masked_feature_prediction); the three heads read it in the trainer.
+        #   * simultaneous -> mask every episode, trainer sums MFR+LP+structural
+        #   * rotation     -> MultiTaskSplitBatch tags one head per episode (mfr/lp/struct),
+        #                     Collator sets graph.e4_task; trainer dispatches that head only.
+        # Masked node's bio block = MFR target, its structural (degree) block = structural
+        # target (own degree input zeroed -> no passthrough leakage). Val/test = masked
+        # episodes -> the trainer's simultaneous total is a coherent monitor.
+        combine = kwargs.get("e4_combine", "simultaneous")
+        if split == "train" and combine == "rotation":
+            counts_raw = str(kwargs.get("e4_task_counts", "1,1,1")).split(",")
+            try:
+                counts = [int(c) for c in counts_raw]
+                assert len(counts) == 3 and all(c >= 0 for c in counts) and sum(counts) > 0
+            except (ValueError, AssertionError):
+                raise ValueError(
+                    f"e4_task_counts must be three non-negative ints 'mfr,lp,struct', got {counts_raw!r}."
+                )
+            task_base = MultiTaskSplitBatch(
+                [
+                    ContrastiveTask(graph.num_nodes),  # mfr
+                    ContrastiveTask(graph.num_nodes),  # lp
+                    ContrastiveTask(graph.num_nodes),  # struct
+                ],
+                ["mfr", "lp", "struct"],
+                counts,
+            )
+            sampler = BatchSampler(
+                batch_count, task_base,
+                ParamSampler(batch_size, n_way, n_shot, n_query, 1),
+                seed=seed,
+            )
+            mask_ratio = float(kwargs.get("fp_mask_ratio", 0.3))
+            mask_strategy = kwargs.get("fp_mask_strategy", "zero")
+            if mask_strategy == "zero":
+                fp_aug_spec = f"NZ{mask_ratio}"
+            elif mask_strategy == "random":
+                fp_aug_spec = f"NR{mask_ratio}"
+            else:
+                raise ValueError(f"Unknown fp_mask_strategy={mask_strategy!r}; use 'zero' or 'random'.")
+            # All episodes are masked (lp ignores the mask); the trainer picks the head.
+            aug_by_task = {
+                "mfr": get_aug(fp_aug_spec, graph.x),
+                "lp": get_aug(fp_aug_spec, graph.x),
+                "struct": get_aug(fp_aug_spec, graph.x),
+            }
+            label_embeddings = {
+                "mfr": torch.zeros(1, 768).expand(graph.num_nodes, -1),
+                "lp": torch.zeros(1, 768).expand(graph.num_nodes, -1),
+                "struct": torch.zeros(1, 768).expand(graph.num_nodes, -1),
+            }
+            print(
+                f"e4_multi rotation (per-episode): mfr:lp:struct counts = "
+                f"{counts[0]}:{counts[1]}:{counts[2]}",
+                flush=True,
+            )
+        else:
+            sampler = BatchSampler(
+                batch_count,
+                ContrastiveTask(graph.num_nodes),
+                ParamSampler(batch_size, n_way, n_shot, n_query, 1),
+                seed=seed,
+            )
+            label_embeddings = torch.zeros(1, 768).expand(graph.num_nodes, -1)
+        is_multiway = True
     elif task_name in {"contrastive", "masked_feature_prediction"}:
         sampler = BatchSampler(
             batch_count,
@@ -433,11 +500,16 @@ def get_covid19_twitter_dataloader(
     else:
         raise ValueError(f"Unknown task for covid19_twitter: {task_name}")
 
-    if task_name == "nm_fp_cl":
-        # Per-episode aug is supplied via aug_by_task (train) or none (val/test NM fallback);
+    if task_name == "nm_fp_cl" or (
+        task_name == "e4_multi"
+        and split == "train"
+        and kwargs.get("e4_combine", "simultaneous") == "rotation"
+    ):
+        # Per-episode aug is supplied via aug_by_task (train) or none (val/test fallback);
         # the global collator aug is identity so it never double-augments.
         aug_fn = get_aug("", graph.x)
-    elif task_name == "masked_feature_prediction":
+    elif task_name in {"masked_feature_prediction", "e4_multi"}:
+        # e4_multi (simultaneous, or any val/test) masks every episode like fp.
         mask_ratio = float(kwargs.get("fp_mask_ratio", 0.3))
         mask_strategy = kwargs.get("fp_mask_strategy", "zero")
         if mask_strategy == "zero":
@@ -448,7 +520,7 @@ def get_covid19_twitter_dataloader(
             raise ValueError(
                 f"Unknown fp_mask_strategy={mask_strategy!r}; use 'zero' or 'random'."
             )
-        aug_spec = aug or fp_aug
+        aug_spec = (aug if task_name == "masked_feature_prediction" else "") or fp_aug
         aug_fn = get_aug(aug_spec, graph.x)
     else:
         aug_fn = get_aug(aug, graph.x) if (split == "train" or aug_test) else get_aug("")
