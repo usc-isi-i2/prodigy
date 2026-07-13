@@ -69,12 +69,14 @@ E3/E4).
   - **Capability probes:** planted single-rule synthetic graphs (count-threshold,
     existence, in-degree, out-degree, two-neighbor conjunction), linear-probed from
     the frozen rep.
-- **Leakage control (mandatory for structural-input arms E1/E2).** E1/E2 feed
-  degree/PageRank/etc. as *input features*, and regression targets `followers`
-  (≈ in-degree) and `statuses` (≈ out-degree) are near-copies of those inputs — an
-  encoder can win these **trivially by passthrough, not by learning.** So:
+- **Leakage control (mandatory for structural-input arms E1/E2).** E1 currently
+  feeds degree-only `directed3` inputs (`in_deg`, `out_deg`, `log_deg`) because the
+  full networkx feature set is not tractable on the 34M-node merged pretrain graph.
+  Regression targets `followers` (≈ in-degree) and `statuses` (≈ out-degree) are
+  near-copies of those inputs, so an encoder can win these **trivially by passthrough,
+  not by learning.** So:
   - Add a **raw-structural-feature probe baseline**: linear-probe the raw
-    `[in_deg, out_deg, log_deg, k_core, pagerank, clustering]` vector directly onto
+    `[in_deg, out_deg, log_deg]` vector directly onto
     each regression target, **no encoder**. E1/E2 count as "learned structure" only
     if the frozen rep **beats this baseline**.
   - Split the regression panel into **structure-linked** (`followers`, `statuses`)
@@ -122,8 +124,8 @@ the benchmark is directional/confirmatory:
 **Encoder axis** (objective = NM throughout; isolates *representable*):
 
 - **E1 — directed structural input features.** Add per-node in-deg, out-deg,
-  log-deg, k-core, PageRank, clustering; else B0. Subject to the leakage control
-  above. *Hyp:* NM stops being ~chance under **random bio features**; regression ↑
+  and log-deg (`directed3`); else B0. Subject to the leakage control above. *Hyp:*
+  NM stops being ~chance under **random bio features**; regression ↑
   on structure-linked targets **beyond the raw-feature baseline**; classification
   ~flat.
 - **E2 — expressive directed aggregator (composite arm).** E1 + a *package* of three
