@@ -1,0 +1,18 @@
+# Ladder fill-in rung 4 (4 sources): ukr + covid + midterm + covid_political.
+# Prefix of the all8 merge input list (same names => same graph_id order), so this
+# rung sits cleanly between rung 3 (ukr+cov+mid) and rung 8 (all8). Adds the 4th
+# table column (covid_political). Structure + node features only (drop_edge_features).
+# Pre-check on Tucker: every input x must be 768-dim or the concat will error.
+inputs:
+  - name: ukr_rus
+    path: /dataMeR1/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.pt
+  - name: covid
+    path: /dataMeR1/phil/data/covid19_twitter/graphs/retweet_graph_parquet.pt
+  - name: midterm
+    path: /dataMeR1/phil/data/midterm/graphs/retweet_graph_parquet.pt
+  - name: covid_political
+    path: /dataMeR1/phil/data/covid_political/graphs/retweet_graph.pt
+# heterogeneous edge schemas across sources; drop edge features, merge structure only
+# (loader uses edge_view=default => main edge_index, so edge_attr is unused anyway).
+drop_edge_features: true
+out: /dataMeR1/phil/data/merged/graphs/ukr_rus_covid_midterm_4src_retweet_graph.pt

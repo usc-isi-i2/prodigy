@@ -1,0 +1,35 @@
+# Ladder fill-in rung 4 (4 sources: ukr+cov+mid+covid_political), NM within-balanced.
+# Exact clone of merged_ukr_rus_covid_midterm_all8_nm.yaml (256.S,U,M base, no aug,
+# attr_regression_weight=0, within-source balanced episodes) — only graph_filename +
+# prefix differ, plus epochs:5/checkpoint_step:10000 so the run SELF-TERMINATES with
+# state_dict_40000 as its final ckpt (matched-40k). LR schedule is disabled (constant
+# LR) so 50k-planned vs the ladder's 120k-planned are identical at the 40k checkpoint.
+dataset: covid19_twitter
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_4src_retweet_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+
+# within-balanced: confine each NM episode to ONE source graph (remove cross-source
+# shortcut); uniform source weighting so small added graphs aren't drowned out.
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+
+epochs: 5                # 5 x 10k = 50k steps => saves 10/20/30/40k; 40k is the final ckpt
+eval_step: 100000        # > total steps => skip periodic val eval (~2x faster to 40k)
+checkpoint_step: 10000   # ckpts at 10k / 20k / 30k / 40k
+workers: 16
+device: 0
+seed: 0
+prefix: nm_ladder_4src

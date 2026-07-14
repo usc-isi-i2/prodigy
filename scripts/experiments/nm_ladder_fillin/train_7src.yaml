@@ -1,0 +1,30 @@
+# Ladder fill-in rung 7 (7 sources: rung 6 + twibot20), NM within-balanced.
+# See train_4src.yaml for the full rationale; only graph_filename + prefix differ.
+# Rung 8 (all8) already trained -> reuse its existing 40k ckpt, don't retrain here.
+dataset: covid19_twitter
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_7src_retweet_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+
+epochs: 5
+eval_step: 100000
+checkpoint_step: 10000
+workers: 16
+device: 0
+seed: 0
+prefix: nm_ladder_7src

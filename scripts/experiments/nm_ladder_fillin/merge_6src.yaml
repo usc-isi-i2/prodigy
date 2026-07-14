@@ -1,0 +1,17 @@
+# Ladder fill-in rung 6 (6 sources): rung 5 + ukr_rus_suspended.
+# Adds the 6th table column (ukr_rus_suspended). See merge_4src.yaml for rationale.
+inputs:
+  - name: ukr_rus
+    path: /dataMeR1/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.pt
+  - name: covid
+    path: /dataMeR1/phil/data/covid19_twitter/graphs/retweet_graph_parquet.pt
+  - name: midterm
+    path: /dataMeR1/phil/data/midterm/graphs/retweet_graph_parquet.pt
+  - name: covid_political
+    path: /dataMeR1/phil/data/covid_political/graphs/retweet_graph.pt
+  - name: election2020
+    path: /dataMeR1/phil/data/election2020/graphs/retweet_graph.pt
+  - name: ukr_rus_suspended
+    path: /dataMeR1/phil/data/ukr_rus_suspended/graphs/retweet_graph.pt
+drop_edge_features: true
+out: /dataMeR1/phil/data/merged/graphs/ukr_rus_covid_midterm_6src_retweet_graph.pt
