@@ -64,7 +64,8 @@ def _stats(xs):
 
 def make_figure(band: str, out: Path) -> None:
     rungs = list(range(1, 9))
-    stat = {r: _stats(GAP[r][:r]) for r in rungs}          # over in-training graphs
+    stat = {r: _stats(GAP[r][:r]) for r in rungs}          # in-training graphs (line + flat/std)
+    stat_all = {r: _stats(GAP[r]) for r in rungs}          # ALL 8 test graphs (min–max band)
     inc = {r: stat[r][0] for r in rungs}
     # newcomer at rung r: graph col (r-1). before = rung r-1 gap (still OOD), at x=r-1;
     # after = rung r gap (now in-training), at x=r.
@@ -84,9 +85,9 @@ def make_figure(band: str, out: Path) -> None:
                         zorder=0, lw=0)
         band_label = "in-training graphs: mean ± 1 std"
     elif band == "minmax":
-        ax.fill_between(rungs, [stat[r][2] for r in rungs], [stat[r][3] for r in rungs],
+        ax.fill_between(rungs, [stat_all[r][2] for r in rungs], [stat_all[r][3] for r in rungs],
                         color=BLUE, alpha=0.12, zorder=0, lw=0)
-        band_label = "in-training graphs: min–max"
+        band_label = "all 8 test graphs: min–max"
 
     # newcomer jumps: before (deep, OOD) at x=r-1 -> after (near best) at x=r
     for r, (b, a) in newcomer.items():

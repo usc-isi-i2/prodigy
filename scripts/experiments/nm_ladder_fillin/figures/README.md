@@ -48,6 +48,15 @@ _(populate as artifacts land)_
   to 0 at rung 8; both converge at the residual in-domain regret (−0.020 — the
   generalist tax vs a per-graph specialist). Script `plot_gap_to_best_means.py` in the
   experiment folder.
+- gap-to-best gain/retention (this chat): `nm_ladder_gain_retention_gap_minmax.pdf`
+  (+ `_gap.pdf` flat range, `_gap_std.pdf`) — the gain-vs-retention figure recast in
+  gap-to-best terms (y = 0 is each graph's best over all 16 models). Each newcomer arrow
+  rises from its deep out-of-dist gap (−0.08 to −0.19) up to a near-0 in-training gap, so
+  every graph reaches ~its own best on entering (residual −0.001 to −0.039, biggest for
+  cp_hk); the in-training mean-gap line hugs 0. In the minmax variant the shaded band =
+  min–max over ALL 8 test graphs (a wide wedge that stays deep until rung 8, when the last
+  hard graph cp_hk finally enters and it collapses); the std/flat variants show the tighter
+  in-training spread. Script `plot_gain_retention_gap.py` in the experiment folder.
 - delta boxplot (this chat): `nm_ladder_delta_boxplot.pdf` — the ladder analogue of
   `nmss_delta_boxplot.pdf`. x = ladder model (L1→all8, natural order); each column a
   boxplot of that model's AUC gap to the best ladder model on the 8 test graphs (0=best,
