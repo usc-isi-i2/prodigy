@@ -1,0 +1,32 @@
+# NM single-source transfer matrix — train source: midterm only.
+# Identical to every other config here except the data source. See README.md.
+dataset: midterm
+root: /dataMeR1/phil/data/midterm/graphs
+graph_filename: retweet_graph_parquet.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+n_hop: 1
+dataset_len_cap: 10000   # episodes per epoch
+val_len_cap: 500
+test_len_cap: 500
+
+# Matched-40k: 5 epochs x 10k = 50,000 steps so a state_dict_40000 checkpoint is saved.
+epochs: 5
+eval_step: 100000        # > total steps => skip periodic val eval (~2x faster to 40k)
+checkpoint_step: 10000   # ckpts at 10k / 20k / 30k / 40k
+workers: 16
+device: 0
+seed: 0
+tags:
+  - nm_single_source_matrix
+  - midterm
+  - plain
+prefix: nm_ss_midterm
