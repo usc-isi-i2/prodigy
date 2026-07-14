@@ -31,3 +31,27 @@ _(populate as artifacts land)_
   cross-graph error bars) and `nm_ladder_heatmap.pdf` (8-rung ladder-only AUC staircase
   heatmap). The combined heatmap + regret heatmap it can also make are already covered
   above by `plot_heatmaps.py`, so it does not re-emit them.
+- gain-vs-retention (this chat): `nm_ladder_gain_retention.pdf` — one-panel, two-claim
+  summary. A high, gently-sagging line = mean AUC of the graphs already in training (they
+  hold, ~.92–.96); a diagonal up-arrow at each rung = the newly added graph jumping from
+  its out-of-dist level (plotted at the previous rung) up to its in-training level
+  (ukr_susp +.16, cp_hk +.14 the biggest; covid/twibot20 ~flat, already transfer). Two
+  dispersion-band variants over the in-training graphs: `nm_ladder_gain_retention_std.pdf`
+  (mean ± 1 std) and `nm_ladder_gain_retention_minmax.pdf` (min–max; the envelope widens
+  at rung 8 as cp_hk joins as the new low). Script `plot_gain_retention.py` in the
+  experiment folder (reads `nm_ladder_full.csv` + embedded fallback).
+- gap-to-best means (this chat): `nm_ladder_gap_to_best_means.pdf` — the
+  `nm_ladder_means.pdf` figure recast in regret terms. Two lines over rungs = mean
+  gap-to-best (AUC − best-per-graph, best over all 16 models = ladder rungs +
+  single-source specialists) for graphs in-training (blue) vs all 8 (black). The all-8
+  line rises from −0.081 toward the frontier as coverage grows, closing the OOD penalty
+  to 0 at rung 8; both converge at the residual in-domain regret (−0.020 — the
+  generalist tax vs a per-graph specialist). Script `plot_gap_to_best_means.py` in the
+  experiment folder.
+- delta boxplot (this chat): `nm_ladder_delta_boxplot.pdf` — the ladder analogue of
+  `nmss_delta_boxplot.pdf`. x = ladder model (L1→all8, natural order); each column a
+  boxplot of that model's AUC gap to the best ladder model on the 8 test graphs (0=best,
+  y inverted). Boxes are uncoloured (neutral); each point is a circle coloured by test
+  graph. Boxes tighten & rise toward 0 as sources are added; the low `ukr_susp`/`cp_hk`
+  circles jump to 0 only once their graph enters (L6/L8). Script
+  `plot_ladder_delta_boxplot.py` in the experiment folder.
