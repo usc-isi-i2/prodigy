@@ -118,6 +118,24 @@ def load_existing_from_csv(csv_path: Path) -> dict[int, list[float]]:
     return out
 
 
+def load_single_source_csv(ss_csv: Path) -> list[tuple[str, list[float]]]:
+    """Single-source specialist rows (train ONE graph, test all 8), from the
+    nm_single_source_matrix wide CSV. Returns [(train_key, 8 aucs)] in CANON order."""
+    rows: dict[str, list[float]] = {}
+    if not ss_csv.is_file():
+        return []
+    with ss_csv.open(newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            train = row.get("train_graph")
+            if train not in CANON:
+                continue
+            try:
+                rows[train] = [float(row[c]) for c in CANON]
+            except (KeyError, ValueError):
+                print(f"[warn] malformed single-source CSV row for {train!r}")
+    return [(t, rows[t]) for t in CANON if t in rows]
+
+
 def load_new_from_logs(log_root: Path, shots: str, nway: str) -> dict[int, dict[str, float]]:
     """rung -> {test_col: auc} for the fill-in rungs, from eval log dirs."""
     cells: dict[int, dict[str, float]] = {}
@@ -152,6 +170,10 @@ def main() -> int:
     ap.add_argument("--ladder-csv",
                     default=str(repo_root / "scripts/plotting/nm_ladder/nmladder_results.csv"),
                     help="Published ladder CSV for the existing rungs 1/2/3/8.")
+    ap.add_argument("--ss-csv",
+                    default=str(repo_root / "scripts/experiments/nm_single_source_matrix/nm_single_source_matrix.csv"),
+                    help="Single-source matrix CSV; if present, its 8 specialist rows are "
+                         "appended to the combined table + a combined CSV is written.")
     ap.add_argument("--shots", default="3")
     ap.add_argument("--n-way", default="30")
     ap.add_argument("--out-dir", default=str(here))
@@ -222,6 +244,34 @@ def main() -> int:
                 cells.append(f"{v:.4f}" if v is not None else "")
             w.writerow([rung, n_src, label, added, "within_balanced"] + cells)
     print(f"\nwrote {out_path}" + (f"  ({n_missing} empty cells — some evals missing)" if n_missing else ""))
+
+    # Optionally extend with the single-source specialist rows (train ONE graph, test all 8).
+    ss = load_single_source_csv(Path(args.ss_csv))
+    if ss:
+        print(f"\n[ok] single-source specialists from {args.ss_csv}: {len(ss)} rows")
+        print("\n=== + single-source specialists (roc_auc; * = in-domain, train==test) ===")
+        header = "train".ljust(11) + "".join(SHORT[c].ljust(9) for c in CANON)
+        print(header)
+        print("-" * len(header))
+        for train, vals in ss:
+            line = SHORT[train].ljust(11)
+            for col, c in enumerate(CANON):
+                mark = "*" if c == train else " "
+                line += (f"{vals[col]:.3f}{mark}").ljust(9)
+            print(line)
+
+        combined_path = out_dir / "nm_ladder_plus_single_source.csv"
+        with combined_path.open("w", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            w.writerow(["block", "row", "diag_or_added"] + CANON)
+            for rung, n_src, label, added in RUNGS:
+                cells = [f"{v:.4f}" if v is not None else "" for v in table[rung]]
+                w.writerow(["ladder", f"{rung}:{label}", added] + cells)
+            for train, vals in ss:
+                w.writerow(["single_source", SHORT[train], train] + [f"{v:.4f}" for v in vals])
+        print(f"\nwrote {combined_path}")
+    else:
+        print(f"\n[note] no single-source CSV at {args.ss_csv}; skipping the specialist block")
     return 0
 
 

@@ -32,6 +32,45 @@ single-source graphs with the shared eval harness. **1 seed.**
 | 7 | twibot20 | .924 → .938 | +.013 |
 | 8 | cp_hk | .727 → .867 | **+.140** |
 
+## Extended with the single-source specialists
+
+The concurrent `nm_single_source_matrix` run (train NM on **one** graph, test on all 8;
+same matched-40k / 30-way / 3-shot protocol) stacks directly under the ladder. **Bold** =
+in-domain diagonal (train == test = specialist ceiling).
+
+| train (1 graph) | ukr | covid | midterm | cov_pol | elec20 | ukr_susp | twibot20 | cp_hk |
+|-----------------|----:|------:|--------:|--------:|-------:|---------:|---------:|------:|
+| ukr | **.947** | .973 | .881 | .839 | .826 | .789 | .922 | .714 |
+| covid | .926 | **.981** | .884 | .850 | .835 | .786 | .926 | .720 |
+| midterm | .797 | .879 | **.925** | .835 | .805 | .644 | .861 | .626 |
+| covid_political | .630 | .699 | .688 | **.915** | .783 | .551 | .737 | .544 |
+| election2020 | .602 | .655 | .680 | .787 | **.952** | .563 | .710 | .548 |
+| ukr_rus_suspended | .770 | .831 | .725 | .733 | .728 | **.964** | .765 | .623 |
+| twibot20 | .869 | .947 | .860 | .843 | .803 | .712 | **.949** | .690 |
+| cp_hk | .681 | .758 | .763 | .683 | .641 | .603 | .738 | **.906** |
+
+**Specialist ceiling vs all-8 merged** (does merging cost accuracy in-domain?):
+
+| col | specialist | all8 | Δ (spec − merged) |
+|-----|-----------:|-----:|------------------:|
+| ukr | .947 | .934 | +.013 |
+| covid | .981 | .975 | +.006 |
+| midterm | .925 | .908 | +.017 |
+| cov_pol | .915 | .906 | +.009 |
+| elec20 | .952 | .920 | **+.032** |
+| ukr_susp | .964 | .931 | **+.033** |
+| twibot20 | .949 | .937 | +.012 |
+| cp_hk | .906 | .867 | **+.039** |
+
+- **Merging costs little in-domain**, and the cost is smallest on the big twitter graphs
+  (covid +.006, ukr +.013) and largest on the small/topical ones (cp_hk +.039, ukr_susp
+  +.033, elec20 +.032) — the small domains get diluted in the shared budget.
+- **covid and ukr are near-universal donors** (each transfers ≥.83 to most targets); the
+  small/topical specialists (cov_pol, election2020, cp_hk) transfer narrowly — their
+  off-diagonal rows collapse to ~.55–.70.
+- Consistency: single-source `ukr` (.947) ≈ ladder rung 1 (.948) — same ukr-only model,
+  independent run, reproduces to ±.001.
+
 ## Read
 
 - **Clean staircase.** Every "rest" graph's column stays flat at its zero-shot transfer
