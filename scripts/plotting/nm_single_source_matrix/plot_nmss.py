@@ -126,16 +126,30 @@ def plot_boxplot(cells: dict, outdir: Path, mode: str) -> None:
     rng = np.random.default_rng(0)
     for pos, g in enumerate(order_models):
         data = vals[g]
-        bp = ax.boxplot([data], positions=[pos], widths=0.6, patch_artist=True,
-                        medianprops=dict(color="black", lw=1.6),
-                        flierprops=dict(marker=""), zorder=2)
-        for box in bp["boxes"]:
-            box.set(facecolor=COLOR[g], alpha=0.30, edgecolor=COLOR[g], linewidth=1.4)
-        for w in bp["whiskers"] + bp["caps"]:
-            w.set(color=COLOR[g], linewidth=1.2)
-        jitter = rng.uniform(-0.16, 0.16, size=len(data))
-        ax.scatter(pos + jitter, data, color=COLOR[g], marker=MARK[g], s=42,
-                   edgecolor="white", linewidth=0.5, zorder=3)
+        if mode == "delta":
+            # uncoloured (neutral) boxes; one circle per test graph, coloured by the
+            # test graph (matches figures/nm_ladder_delta_boxplot.pdf).
+            ax.boxplot([data], positions=[pos], widths=0.6, patch_artist=False,
+                       medianprops=dict(color="black", lw=1.6),
+                       boxprops=dict(color="0.35", lw=1.2),
+                       whiskerprops=dict(color="0.45", lw=1.0),
+                       capprops=dict(color="0.45", lw=1.0),
+                       flierprops=dict(marker=""), zorder=2)
+            jitter = rng.uniform(-0.17, 0.17, size=len(data))
+            ax.scatter(pos + jitter, data, c=[COLOR[te] for te in GRAPHS], marker="o",
+                       s=46, edgecolor="0.25", linewidth=0.5, zorder=3)
+        else:
+            # rank: coloured box + per-model marker (unchanged)
+            bp = ax.boxplot([data], positions=[pos], widths=0.6, patch_artist=True,
+                            medianprops=dict(color="black", lw=1.6),
+                            flierprops=dict(marker=""), zorder=2)
+            for box in bp["boxes"]:
+                box.set(facecolor=COLOR[g], alpha=0.30, edgecolor=COLOR[g], linewidth=1.4)
+            for w in bp["whiskers"] + bp["caps"]:
+                w.set(color=COLOR[g], linewidth=1.2)
+            jitter = rng.uniform(-0.16, 0.16, size=len(data))
+            ax.scatter(pos + jitter, data, color=COLOR[g], marker=MARK[g], s=42,
+                       edgecolor="white", linewidth=0.5, zorder=3)
     ax.set_xticks(range(len(order_models)))
     ax.set_xticklabels([SHORT[g] for g in order_models], rotation=20, ha="right")
     ax.set_xlabel("trained model")
@@ -154,8 +168,14 @@ def plot_boxplot(cells: dict, outdir: Path, mode: str) -> None:
         ax.set_title("How far each model trails the best on each test graph\n"
                      "(tight & high = always near the top; wide = only wins in-domain)", fontsize=11)
         fname = "nmss_delta_boxplot"
-    ax.legend(handles=_legend_handles(), title="model", bbox_to_anchor=(1.01, 1.0),
-              loc="upper left", frameon=False, fontsize=9, handletextpad=0.3)
+    if mode == "delta":
+        handles = [Line2D([0], [0], linestyle="none", marker="o", markerfacecolor=COLOR[g],
+                          markeredgecolor="0.25", markersize=8, label=SHORT[g]) for g in GRAPHS]
+        ax.legend(handles=handles, title="test graph", bbox_to_anchor=(1.01, 1.0),
+                  loc="upper left", frameon=False, fontsize=9, handletextpad=0.3)
+    else:
+        ax.legend(handles=_legend_handles(), title="model", bbox_to_anchor=(1.01, 1.0),
+                  loc="upper left", frameon=False, fontsize=9, handletextpad=0.3)
     fig.tight_layout()
     for ext in ("pdf", "png"):
         fig.savefig(outdir / f"{fname}.{ext}", bbox_inches="tight")
