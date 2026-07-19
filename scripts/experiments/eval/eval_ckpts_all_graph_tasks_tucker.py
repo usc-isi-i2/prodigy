@@ -764,7 +764,7 @@ def main() -> int:
                              "or the state_dict won't load — a BN-off conv has no bn.{weight,bias,"
                              "running_mean,running_var}.")
     parser.add_argument("--structural-features", default="none",
-                        choices=["none", "directed3", "directed6"],
+                        choices=["none", "directed3", "directed3_log", "directed6"],
                         help="Inject directed structural input features (E1/E2 encoders). MUST match "
                              "how the checkpoint was pretrained (defines the input space), so run E1/E2/"
                              "E3/E4 evals with the same mode in a SEPARATE sweep from B0/B1 "
