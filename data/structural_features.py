@@ -28,7 +28,7 @@ STRUCTURAL_FEATURE_NAMES = [
 # directed3 = degree-only (exact + O(E), scales to the 34M-node merged graph);
 # directed6 adds the networkx features (k_core/pagerank/clustering), only tractable
 # on small graphs. The mode MUST match at pretrain and eval (defines input_dim).
-STRUCTURAL_FEATURE_MODES = {"directed3": 3, "directed6": 6}
+STRUCTURAL_FEATURE_MODES = {"directed3": 3, "directed3_log": 3, "directed6": 6}
 
 
 def structural_feature_names(mode: str = "directed6") -> list[str]:
@@ -71,6 +71,22 @@ def compute_structural_features(
 
     if mode == "directed3":
         feats = torch.stack([in_deg, out_deg, log_deg], dim=1)
+        if standardize:
+            mean = feats.mean(dim=0, keepdim=True)
+            std = feats.std(dim=0, keepdim=True).clamp_min(1e-6)
+            feats = (feats - mean) / std
+        return feats
+
+    if mode == "directed3_log":
+        # Scaling FIX for directed3. The raw in/out degree counts are power-law, so
+        # z-scoring them directly leaves the bulk crushed (IQR ~ 0) while hubs blow up
+        # to |z| ~ 1300 — a heavy tail no linear input weight can undo (see
+        # scripts/experiments/topology_feature_ssl/check_directed3_distribution.py). We
+        # log1p the two raw counts BEFORE z-scoring, exactly as log_deg already is, so
+        # all three columns are well-scaled (max |z| drops to the low teens, like
+        # log_deg). Kept as a SEPARATE mode so directed3 stays byte-stable and old E1/E2
+        # checkpoints remain evaluable; the cache lives at *.structural_directed3_log.pt.
+        feats = torch.stack([torch.log1p(in_deg), torch.log1p(out_deg), log_deg], dim=1)
         if standardize:
             mean = feats.mean(dim=0, keepdim=True)
             std = feats.std(dim=0, keepdim=True).clamp_min(1e-6)

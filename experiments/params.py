@@ -294,7 +294,7 @@ def get_params():
         ),
     )
     args.add_argument(
-        "--structural_features", default="none", choices=["none", "directed3", "directed6"],
+        "--structural_features", default="none", choices=["none", "directed3", "directed3_log", "directed6"],
         help=(
             "E1/E2: inject directed per-node structural features as INPUT features "
             "(topology becomes representable). 'directed3' = [in_deg, out_deg, "
