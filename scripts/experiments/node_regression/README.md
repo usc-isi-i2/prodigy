@@ -36,7 +36,7 @@ automatically (the runner gates on the targets actually present in each artifact
 1. **Enrich once** (adds `node_targets`; needs the graph-construction env):
 
    ```bash
-   DATA_ROOT=/dataMeR2/phil/data bash scripts/graph_construction/enrich_all_graphs.sh
+   DATA_ROOT=/dataMeR1/phil/data bash scripts/graph_construction/enrich_all_graphs.sh
    ```
 
    (Graphs rebuilt from scratch already include the targets by default.)

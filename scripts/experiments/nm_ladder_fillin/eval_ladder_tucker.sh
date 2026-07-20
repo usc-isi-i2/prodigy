@@ -6,11 +6,10 @@
 #
 #   ./eval_ladder_tucker.sh                       # 32 NM eval jobs (4 rungs x 8 graphs), serial
 #   GPUS="0,1,2,3" ./eval_ladder_tucker.sh        # fan out across 4 GPUs
-#   DATA_ROOT=/dataMeR2/phil/data ./eval_ladder_tucker.sh   # override graph root
+#   DATA_ROOT=/some/other/data ./eval_ladder_tucker.sh     # override graph root
 #   ./eval_ladder_tucker.sh --dry-run             # preview jobs
 #
-# NOTE on DATA_ROOT: training configs + the NM ladder use /dataMeR1/phil/data; the
-# shared eval harness defaults to /dataMeR2. We pass /dataMeR1 to match the ladder.
+# DATA_ROOT defaults to the canonical /dataMeR1/phil/data catalog root.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Run checkpoint evaluation on Tucker without Slurm.
 
-The runner targets the GTE-compatible graph artifacts under /dataMeR2/phil/data.
+The runner targets the GTE-compatible graph artifacts cataloged in
+``config/graph_catalog.json`` under /dataMeR1/phil/data.
 It inspects each graph and gates tasks accordingly: classification is skipped when
 no labels are present, temporal LP when no future-edge target view is present,
 static LP when no ``static_holdout`` view is present, and regression is fanned out
@@ -12,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+import json
 import os
 from pathlib import Path
 import re
@@ -39,126 +41,39 @@ class DatasetConfig:
     eval_random_query: bool = False
 
 
-DATASETS = {
-    "midterm": DatasetConfig(
-        name="midterm",
-        root_name="midterm",
-        graph_filename="retweet_graph_parquet.pt",
-        supports_lp=True,
-        nm_n_query=12,
-        pl_n_query=12,
-        val_cap=500,
-        test_cap=500,
-    ),
-    "covid19_twitter": DatasetConfig(
-        name="covid19_twitter",
-        root_name="covid19_twitter",
-        graph_filename="retweet_graph_parquet.pt",
-        supports_lp=True,
-        nm_n_query=12,
-        pl_n_query=12,
-        val_cap=500,
-        test_cap=500,
-    ),
-    "ukr_rus_twitter": DatasetConfig(
-        name="ukr_rus_twitter",
-        root_name="ukr_rus_twitter",
-        graph_filename="retweet_graph_parquet.pt",
-        supports_lp=True,
-        nm_n_query=12,
-        pl_n_query=12,
-        val_cap=500,
-        test_cap=500,
-    ),
-    "merged_ukr_rus_covid": DatasetConfig(
-        name="merged_ukr_rus_covid",
-        root_name="merged",
-        graph_filename="ukr_rus_covid_retweet_graph.pt",
-        supports_lp=False,
-        nm_n_query=12,
-        pl_n_query=12,
-        val_cap=500,
-        test_cap=500,
-    ),
-    "merged_covid_midterm": DatasetConfig(
-        name="merged_covid_midterm",
-        root_name="merged",
-        graph_filename="covid_midterm_retweet_graph.pt",
-        supports_lp=False,
-        nm_n_query=12,
-        pl_n_query=12,
-        val_cap=500,
-        test_cap=500,
-    ),
-    "covid_political": DatasetConfig(
-        name="covid_political",
-        root_name="covid_political",
-        graph_filename="retweet_graph.pt",
-        supports_lp=False,
-        nm_n_query=12,
-        pl_n_query=12,
-        val_cap=500,
-        test_cap=500,
-        eval_random_query=True,
-    ),
-    "cp_hk_twitter": DatasetConfig(
-        name="cp_hk_twitter",
-        root_name="cp_hk_twitter",
-        graph_filename="retweet_graph.pt",
-        supports_lp=True,
-        nm_n_query=4,
-        pl_n_query=4,
-        val_cap=500,
-        test_cap=500,
-    ),
-    "election2020": DatasetConfig(
-        name="election2020",
-        root_name="election2020",
-        graph_filename="retweet_graph.pt",
-        supports_lp=False,
-        nm_n_query=1,
-        pl_n_query=1,
-        val_cap=500,
-        test_cap=500,
-    ),
-    "ukr_rus_suspended": DatasetConfig(
-        name="ukr_rus_suspended",
-        root_name="ukr_rus_suspended",
-        graph_filename="retweet_graph.pt",
-        supports_lp=False,
-        nm_n_query=1,
-        pl_n_query=1,
-        val_cap=500,
-        test_cap=500,
-    ),
-    "twibot20": DatasetConfig(
-        name="twibot20",
-        root_name="twibot20",
-        graph_filename="retweet_graph.pt",
-        supports_lp=False,  # no temporal edge views
-        nm_n_query=12,
-        pl_n_query=12,  # bot-vs-human classification auto-detected (2 classes)
-        val_cap=500,
-        test_cap=500,
-    ),
-}
+GRAPH_CATALOG_PATH = Path(__file__).resolve().parents[3] / "config" / "graph_catalog.json"
 
-# Capability-probe datasets (topology_feature_ssl T3): planted single-rule
-# synthetic graphs written by make_probe_graphs.py into
-# <data_root>/synthetic_probes/graphs/<rule>.pt (covid dict-format, 2-class
-# labels). Evaluated as a classification linear-probe on the frozen rep; the
-# probe score IS the classification AUC. Names route to the covid loader.
-for _rule in ("count_threshold", "in_degree", "out_degree", "existence", "conjunction"):
-    DATASETS[f"probe_{_rule}"] = DatasetConfig(
-        name=f"probe_{_rule}",
-        root_name="synthetic_probes",
-        graph_filename=f"{_rule}.pt",
-        supports_lp=False,
-        nm_n_query=4,
-        pl_n_query=4,
-        val_cap=500,
-        test_cap=500,
-    )
+
+def load_dataset_registry() -> tuple[str, dict[str, DatasetConfig], list[str]]:
+    """Load eval-capable graphs from the repository's canonical graph catalog."""
+    with GRAPH_CATALOG_PATH.open(encoding="utf-8") as handle:
+        catalog = json.load(handle)
+
+    datasets: dict[str, DatasetConfig] = {}
+    defaults: list[str] = []
+    for graph in catalog["graphs"]:
+        eval_config = graph.get("eval")
+        if eval_config is None:
+            continue
+        key = graph["dataset_key"]
+        relative_path = Path(graph["relative_path"])
+        if relative_path.parent.name != "graphs":
+            raise ValueError(f"Catalog graph path must be under a graphs directory: {relative_path}")
+        eval_random_query = eval_config.get("eval_random_query", False)
+        eval_fields = {key: value for key, value in eval_config.items() if key != "eval_random_query"}
+        datasets[key] = DatasetConfig(
+            name=key,
+            root_name=str(relative_path.parent.parent),
+            graph_filename=relative_path.name,
+            eval_random_query=eval_random_query,
+            **eval_fields,
+        )
+        if graph.get("default_eval", False):
+            defaults.append(key)
+    return catalog["data_root"], datasets, defaults
+
+
+DEFAULT_DATA_ROOT, DATASETS, DEFAULT_DATASETS = load_dataset_registry()
 
 TASK_ALIASES = {
     "nm": "neighbor_matching",
@@ -702,8 +617,8 @@ def main() -> int:
         default="",
         help="Optional model-name prefix for --checkpoint-run-dir rows.",
     )
-    parser.add_argument("--data-root", default="/dataMeR2/phil/data")
-    parser.add_argument("--datasets", default=",".join(DATASETS))
+    parser.add_argument("--data-root", default=DEFAULT_DATA_ROOT)
+    parser.add_argument("--datasets", default=",".join(DEFAULT_DATASETS))
     parser.add_argument("--tasks", default="neighbor_matching,temporal_link_prediction,classification")
     parser.add_argument("--shots", default="0,3,10")
     parser.add_argument("--python", default="python3")

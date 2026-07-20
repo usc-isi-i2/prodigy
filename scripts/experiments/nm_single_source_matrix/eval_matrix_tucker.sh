@@ -5,12 +5,10 @@
 #
 #   ./eval_matrix_tucker.sh                       # 64 NM eval jobs, serial
 #   GPUS="0,1,2,3" ./eval_matrix_tucker.sh        # fan out across 4 GPUs
-#   DATA_ROOT=/dataMeR2/phil/data ./eval_matrix_tucker.sh   # override graph root
+#   DATA_ROOT=/some/other/data ./eval_matrix_tucker.sh     # override graph root
 #   ./eval_matrix_tucker.sh --dry-run             # preview jobs
 #
-# NOTE on DATA_ROOT: the training configs and the NM ladder use /dataMeR1/phil/data.
-# The shared eval harness defaults to /dataMeR2/phil/data. We pass /dataMeR1 here to
-# match the ladder; override with DATA_ROOT= if your graphs live elsewhere.
+# DATA_ROOT defaults to the canonical /dataMeR1/phil/data catalog root.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

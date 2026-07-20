@@ -18,8 +18,8 @@ e.g. ``bio-embeddings-v001`` on Tucker.
 Example (Tucker):
     python scripts/graph_construction/enrich_graph_targets.py \
         --dataset midterm \
-        --graph-path /dataMeR2/phil/data/midterm/graphs/retweet_graph_parquet.pt \
-        --parquet-glob '/dataMeR2/phil/data/midterm/parquet/*/*.parquet'
+        --graph-path /dataMeR1/phil/data/midterm/graphs/retweet_graph_parquet.pt \
+        --parquet-glob '/dataMeR1/phil/data/midterm/parquet/*/*.parquet'
 """
 
 from __future__ import annotations

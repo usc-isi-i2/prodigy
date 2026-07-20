@@ -7,7 +7,7 @@
 # bio-embeddings-v001 on Tucker. Reads raw parquet; the user launches this
 # (it writes artifacts).
 #
-#   DATA_ROOT=/dataMeR2/phil/data bash scripts/graph_construction/enrich_all_graphs.sh
+#   DATA_ROOT=/dataMeR1/phil/data bash scripts/graph_construction/enrich_all_graphs.sh
 #
 # Per-dataset feasibility (see graph_construction/README.md):
 #   midterm/ukr_rus/covid19/twibot20 -> node regression + static LP
@@ -16,7 +16,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-DATA_ROOT="${DATA_ROOT:-/dataMeR2/phil/data}"
+DATA_ROOT="${DATA_ROOT:-/dataMeR1/phil/data}"
 PY="${PY:-python3}"
 ENRICH="${REPO_ROOT}/scripts/graph_construction/enrich_graph_targets.py"
 

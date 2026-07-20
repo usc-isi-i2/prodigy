@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "data_root": "/dataMeR1/phil/data",
+  "notes": "Canonical inventory of graph artifacts. Use canonical_name in prose and dataset_key for compatibility with existing code, configs, and logs.",
+  "graphs": [
+    {
+      "canonical_name": "ukraine",
+      "dataset_key": "ukr_rus_twitter",
+      "kind": "source",
+      "relative_path": "ukr_rus_twitter/graphs/retweet_graph_parquet.pt",
+      "eval": {"supports_lp": true, "nm_n_query": 12, "pl_n_query": 12, "val_cap": 500, "test_cap": 500},
+      "default_eval": true
+    },
+    {
+      "canonical_name": "covid",
+      "dataset_key": "covid19_twitter",
+      "kind": "source",
+      "relative_path": "covid19_twitter/graphs/retweet_graph_parquet.pt",
+      "eval": {"supports_lp": true, "nm_n_query": 12, "pl_n_query": 12, "val_cap": 500, "test_cap": 500},
+      "default_eval": true
+    },
+    {
+      "canonical_name": "midterm",
+      "dataset_key": "midterm",
+      "kind": "source",
+      "relative_path": "midterm/graphs/retweet_graph_parquet.pt",
+      "eval": {"supports_lp": true, "nm_n_query": 12, "pl_n_query": 12, "val_cap": 500, "test_cap": 500},
+      "default_eval": true
+    },
+    {
+      "canonical_name": "covid-political",
+      "dataset_key": "covid_political",
+      "kind": "source",
+      "relative_path": "covid_political/graphs/retweet_graph.pt",
+      "eval": {"supports_lp": false, "nm_n_query": 12, "pl_n_query": 12, "val_cap": 500, "test_cap": 500, "eval_random_query": true},
+      "default_eval": true
+    },
+    {
+      "canonical_name": "ukraine-suspended",
+      "dataset_key": "ukr_rus_suspended",
+      "kind": "source",
+      "relative_path": "ukr_rus_suspended/graphs/retweet_graph.pt",
+      "eval": {"supports_lp": false, "nm_n_query": 1, "pl_n_query": 1, "val_cap": 500, "test_cap": 500},
+      "default_eval": true
+    },
+    {
+      "canonical_name": "election2020-political",
+      "dataset_key": "election2020",
+      "kind": "source",
+      "relative_path": "election2020/graphs/retweet_graph.pt",
+      "eval": {"supports_lp": false, "nm_n_query": 1, "pl_n_query": 1, "val_cap": 500, "test_cap": 500},
+      "default_eval": true
+    },
+    {
+      "canonical_name": "twibot20",
+      "dataset_key": "twibot20",
+      "kind": "source",
+      "relative_path": "twibot20/graphs/retweet_graph.pt",
+      "eval": {"supports_lp": false, "nm_n_query": 12, "pl_n_query": 12, "val_cap": 500, "test_cap": 500},
+      "default_eval": true
+    },
+    {
+      "canonical_name": "hongkong",
+      "dataset_key": "cp_hk_twitter",
+      "kind": "source",
+      "relative_path": "cp_hk_twitter/graphs/retweet_graph.pt",
+      "eval": {"supports_lp": true, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
+      "default_eval": true
+    },
+    {
+      "canonical_name": "merged-ukraine-covid",
+      "dataset_key": "merged_ukr_rus_covid",
+      "kind": "merged",
+      "relative_path": "merged/graphs/ukr_rus_covid_retweet_graph.pt",
+      "sources": ["ukraine", "covid"],
+      "eval": {"supports_lp": false, "nm_n_query": 12, "pl_n_query": 12, "val_cap": 500, "test_cap": 500},
+      "default_eval": true
+    },
+    {
+      "canonical_name": "merged-covid-midterm",
+      "dataset_key": "merged_covid_midterm",
+      "kind": "merged",
+      "relative_path": "merged/graphs/covid_midterm_retweet_graph.pt",
+      "sources": ["covid", "midterm"],
+      "eval": {"supports_lp": false, "nm_n_query": 12, "pl_n_query": 12, "val_cap": 500, "test_cap": 500},
+      "default_eval": true
+    },
+    {
+      "canonical_name": "merged-ukraine-covid-midterm",
+      "dataset_key": "merged_ukr_rus_covid_midterm",
+      "kind": "merged",
+      "relative_path": "merged/graphs/ukr_rus_covid_midterm_retweet_graph.pt",
+      "sources": ["ukraine", "covid", "midterm"],
+      "eval": {"supports_lp": false, "nm_n_query": 12, "pl_n_query": 12, "val_cap": 500, "test_cap": 500},
+      "default_eval": false
+    },
+    {
+      "canonical_name": "merged-ukraine-covid-midterm-4src",
+      "dataset_key": "merged_ukr_rus_covid_midterm_4src",
+      "kind": "merged",
+      "relative_path": "merged/graphs/ukr_rus_covid_midterm_4src_retweet_graph.pt",
+      "sources": ["ukraine", "covid", "midterm", "covid-political"]
+    },
+    {
+      "canonical_name": "merged-ukraine-covid-midterm-5src",
+      "dataset_key": "merged_ukr_rus_covid_midterm_5src",
+      "kind": "merged",
+      "relative_path": "merged/graphs/ukr_rus_covid_midterm_5src_retweet_graph.pt",
+      "sources": ["ukraine", "covid", "midterm", "covid-political", "election2020-political"]
+    },
+    {
+      "canonical_name": "merged-ukraine-covid-midterm-6src",
+      "dataset_key": "merged_ukr_rus_covid_midterm_6src",
+      "kind": "merged",
+      "relative_path": "merged/graphs/ukr_rus_covid_midterm_6src_retweet_graph.pt",
+      "sources": ["ukraine", "covid", "midterm", "covid-political", "election2020-political", "ukraine-suspended"]
+    },
+    {
+      "canonical_name": "merged-ukraine-covid-midterm-7src",
+      "dataset_key": "merged_ukr_rus_covid_midterm_7src",
+      "kind": "merged",
+      "relative_path": "merged/graphs/ukr_rus_covid_midterm_7src_retweet_graph.pt",
+      "sources": ["ukraine", "covid", "midterm", "covid-political", "election2020-political", "ukraine-suspended", "twibot20"]
+    },
+    {
+      "canonical_name": "merged-all8",
+      "dataset_key": "merged_ukr_rus_covid_midterm_all8",
+      "kind": "merged",
+      "relative_path": "merged/graphs/ukr_rus_covid_midterm_all8_retweet_graph.pt",
+      "sources": ["ukraine", "covid", "midterm", "covid-political", "election2020-political", "ukraine-suspended", "twibot20", "hongkong"]
+    },
+    {
+      "canonical_name": "synthetic-probe-count-threshold",
+      "dataset_key": "probe_count_threshold",
+      "kind": "synthetic",
+      "relative_path": "synthetic_probes/graphs/count_threshold.pt",
+      "eval": {"supports_lp": false, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
+      "default_eval": true
+    },
+    {
+      "canonical_name": "synthetic-probe-in-degree",
+      "dataset_key": "probe_in_degree",
+      "kind": "synthetic",
+      "relative_path": "synthetic_probes/graphs/in_degree.pt",
+      "eval": {"supports_lp": false, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
+      "default_eval": true
+    },
+    {
+      "canonical_name": "synthetic-probe-out-degree",
+      "dataset_key": "probe_out_degree",
+      "kind": "synthetic",
+      "relative_path": "synthetic_probes/graphs/out_degree.pt",
+      "eval": {"supports_lp": false, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
+      "default_eval": true
+    },
+    {
+      "canonical_name": "synthetic-probe-existence",
+      "dataset_key": "probe_existence",
+      "kind": "synthetic",
+      "relative_path": "synthetic_probes/graphs/existence.pt",
+      "eval": {"supports_lp": false, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
+      "default_eval": true
+    },
+    {
+      "canonical_name": "synthetic-probe-conjunction",
+      "dataset_key": "probe_conjunction",
+      "kind": "synthetic",
+      "relative_path": "synthetic_probes/graphs/conjunction.pt",
+      "eval": {"supports_lp": false, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
+      "default_eval": true
+    }
+  ]
+}

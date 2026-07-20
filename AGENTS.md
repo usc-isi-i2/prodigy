@@ -63,6 +63,19 @@ tmux new-session -d -s <name> 'export PATH="/home/mhchu/miniconda3/bin:$PATH"; b
 - Tucker repo path: `/dataMeR1/phil/gfm/prodigy`
 - Tucker data root: `/dataMeR1/phil/data`
 
+## Graph Catalog
+
+- `config/graph_catalog.json` is the single source of truth for graph names,
+  artifact paths, source composition, and evaluation capabilities.
+- Use each entry's `canonical_name` in prose and new documentation. Use
+  `dataset_key` where compatibility with existing configs, CLI arguments, logs,
+  and loaders is required; do not rename historical artifacts retroactively.
+- Resolve `relative_path` beneath the catalog's `data_root`. The only current
+  Tucker data root is `/dataMeR1/phil/data`; do not introduce alternative roots.
+- When adding, removing, moving, or changing a graph, update the catalog first.
+  Code that needs a complete graph registry should read the catalog rather than
+  defining another hard-coded list. Experiment-specific subsets remain allowed.
+
 ## Experiment Conventions
 
 - Keep experiments atomized: each experiment should be self-contained, with config, runner, and notes in its own subfolder.

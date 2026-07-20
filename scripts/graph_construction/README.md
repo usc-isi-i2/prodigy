@@ -400,8 +400,8 @@ Use the graph-construction env (has `duckdb` + `pyarrow`, e.g. `bio-embeddings-v
 ```bash
 python scripts/graph_construction/enrich_graph_targets.py \
     --dataset midterm \
-    --graph-path /dataMeR2/phil/data/midterm/graphs/retweet_graph_parquet.pt \
-    --parquet-glob '/dataMeR2/phil/data/midterm/parquet/*/*.parquet'
+    --graph-path /dataMeR1/phil/data/midterm/graphs/retweet_graph_parquet.pt \
+    --parquet-glob '/dataMeR1/phil/data/midterm/parquet/*/*.parquet'
 # twibot20: pass --node-json instead of --parquet-glob
 # cp_hk_twitter: neither needed (static-LP only)
 ```

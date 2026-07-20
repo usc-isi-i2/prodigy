@@ -44,7 +44,7 @@ gates on its presence.
 1. **Enrich once** (adds the static views; graph-construction env):
 
    ```bash
-   DATA_ROOT=/dataMeR2/phil/data bash scripts/graph_construction/enrich_all_graphs.sh
+   DATA_ROOT=/dataMeR1/phil/data bash scripts/graph_construction/enrich_all_graphs.sh
    ```
 
    (Graphs rebuilt from scratch already include the views by default.)
