@@ -46,6 +46,25 @@ class GraphCatalogTest(unittest.TestCase):
             self.assertFalse(path.is_absolute(), graph["dataset_key"])
             self.assertEqual(path.parent.name, "graphs", graph["dataset_key"])
 
+    def test_inventory_fields_are_present(self):
+        for graph in self.graphs:
+            with self.subTest(graph=graph["dataset_key"]):
+                self.assertGreater(graph["artifact_size_bytes"], 0)
+                self.assertGreater(graph["artifact_size_gb"], 0)
+                self.assertGreater(graph["statistics"]["nodes"], 0)
+                self.assertGreater(graph["statistics"]["edges"], 0)
+                self.assertTrue(graph["tasks"]["supported"])
+
+    def test_source_graphs_document_inputs_and_labels(self):
+        for graph in self.graphs:
+            if graph["kind"] != "source":
+                continue
+            with self.subTest(graph=graph["dataset_key"]):
+                self.assertIn("metadata_path", graph)
+                self.assertTrue(graph["source_data"])
+                self.assertIn("features", graph)
+                self.assertIn("labels", graph)
+
     def test_merged_sources_exist(self):
         canonical_names = {graph["canonical_name"] for graph in self.graphs}
         for graph in self.graphs:

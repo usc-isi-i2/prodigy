@@ -75,6 +75,10 @@ tmux new-session -d -s <name> 'export PATH="/home/mhchu/miniconda3/bin:$PATH"; b
 - When adding, removing, moving, or changing a graph, update the catalog first.
   Code that needs a complete graph registry should read the catalog rather than
   defining another hard-coded list. Experiment-specific subsets remain allowed.
+- Keep inventory metadata current: artifact byte size, node/edge counts, features,
+  labels, supported tasks, source-data locations, metadata sidecar, and construction
+  provenance. Verify these read-only on Tucker and advance `last_verified`; use
+  explicit `null` values or notes when a fact is unknown rather than guessing.
 
 ## Experiment Conventions
 
