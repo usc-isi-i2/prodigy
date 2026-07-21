@@ -2,7 +2,7 @@
 
 These are pure-torch and need no cluster data, so they document + guard the
 intervention used by the feature-ablation experiment
-(scripts/experiments/feature_ablation/).
+(scripts/experiments/setup/feature_ablation/).
 
 Run: python -m pytest data/tests/test_ablate_features.py
 """

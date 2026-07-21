@@ -257,7 +257,7 @@
       "features": {"node_feature_dim": 768, "edge_features": []},
       "tasks": {"supported": ["neighbor_matching"]},
       "sources": ["ukraine", "covid", "midterm", "covid-political"],
-      "construction": {"policy": "disjoint_block_concat", "config": "scripts/experiments/nm_ladder_fillin/merge_4src.yaml"}
+      "construction": {"policy": "disjoint_block_concat", "config": "scripts/experiments/setup/nm_ladder_fillin/merge_4src.yaml"}
     },
     {
       "canonical_name": "merged-ukraine-covid-midterm-5src",
@@ -271,7 +271,7 @@
       "features": {"node_feature_dim": 768, "edge_features": []},
       "tasks": {"supported": ["neighbor_matching"]},
       "sources": ["ukraine", "covid", "midterm", "covid-political", "election2020-political"],
-      "construction": {"policy": "disjoint_block_concat", "config": "scripts/experiments/nm_ladder_fillin/merge_5src.yaml"}
+      "construction": {"policy": "disjoint_block_concat", "config": "scripts/experiments/setup/nm_ladder_fillin/merge_5src.yaml"}
     },
     {
       "canonical_name": "merged-ukraine-covid-midterm-6src",
@@ -285,7 +285,7 @@
       "features": {"node_feature_dim": 768, "edge_features": []},
       "tasks": {"supported": ["neighbor_matching"]},
       "sources": ["ukraine", "covid", "midterm", "covid-political", "election2020-political", "ukraine-suspended"],
-      "construction": {"policy": "disjoint_block_concat", "config": "scripts/experiments/nm_ladder_fillin/merge_6src.yaml"}
+      "construction": {"policy": "disjoint_block_concat", "config": "scripts/experiments/setup/nm_ladder_fillin/merge_6src.yaml"}
     },
     {
       "canonical_name": "merged-ukraine-covid-midterm-7src",
@@ -299,7 +299,7 @@
       "features": {"node_feature_dim": 768, "edge_features": []},
       "tasks": {"supported": ["neighbor_matching"]},
       "sources": ["ukraine", "covid", "midterm", "covid-political", "election2020-political", "ukraine-suspended", "twibot20"],
-      "construction": {"policy": "disjoint_block_concat", "config": "scripts/experiments/nm_ladder_fillin/merge_7src.yaml"}
+      "construction": {"policy": "disjoint_block_concat", "config": "scripts/experiments/setup/nm_ladder_fillin/merge_7src.yaml"}
     },
     {
       "canonical_name": "merged-all8",
@@ -326,7 +326,7 @@
       "features": {"node_feature_dim": 768},
       "labels": {"type": "binary synthetic rule", "labeled_nodes": 4000},
       "tasks": {"supported": ["node_classification"], "details": {"rule": "count_threshold"}},
-      "source_data": [{"role": "generator", "root": "repo", "path": "scripts/experiments/topology_feature_ssl/make_probe_graphs.py", "format": "Python"}],
+      "source_data": [{"role": "generator", "root": "repo", "path": "scripts/experiments/setup/topology_feature_ssl/make_probe_graphs.py", "format": "Python"}],
       "eval": {"supports_lp": false, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
       "default_eval": true
     },
@@ -341,7 +341,7 @@
       "features": {"node_feature_dim": 768},
       "labels": {"type": "binary synthetic rule", "labeled_nodes": 4000},
       "tasks": {"supported": ["node_classification"], "details": {"rule": "in_degree"}},
-      "source_data": [{"role": "generator", "root": "repo", "path": "scripts/experiments/topology_feature_ssl/make_probe_graphs.py", "format": "Python"}],
+      "source_data": [{"role": "generator", "root": "repo", "path": "scripts/experiments/setup/topology_feature_ssl/make_probe_graphs.py", "format": "Python"}],
       "eval": {"supports_lp": false, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
       "default_eval": true
     },
@@ -356,7 +356,7 @@
       "features": {"node_feature_dim": 768},
       "labels": {"type": "binary synthetic rule", "labeled_nodes": 4000},
       "tasks": {"supported": ["node_classification"], "details": {"rule": "out_degree"}},
-      "source_data": [{"role": "generator", "root": "repo", "path": "scripts/experiments/topology_feature_ssl/make_probe_graphs.py", "format": "Python"}],
+      "source_data": [{"role": "generator", "root": "repo", "path": "scripts/experiments/setup/topology_feature_ssl/make_probe_graphs.py", "format": "Python"}],
       "eval": {"supports_lp": false, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
       "default_eval": true
     },
@@ -371,7 +371,7 @@
       "features": {"node_feature_dim": 768},
       "labels": {"type": "binary synthetic rule", "labeled_nodes": 4000},
       "tasks": {"supported": ["node_classification"], "details": {"rule": "existence"}},
-      "source_data": [{"role": "generator", "root": "repo", "path": "scripts/experiments/topology_feature_ssl/make_probe_graphs.py", "format": "Python"}],
+      "source_data": [{"role": "generator", "root": "repo", "path": "scripts/experiments/setup/topology_feature_ssl/make_probe_graphs.py", "format": "Python"}],
       "eval": {"supports_lp": false, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
       "default_eval": true
     },
@@ -386,7 +386,7 @@
       "features": {"node_feature_dim": 768},
       "labels": {"type": "binary synthetic rule", "labeled_nodes": 4000},
       "tasks": {"supported": ["node_classification"], "details": {"rule": "conjunction"}},
-      "source_data": [{"role": "generator", "root": "repo", "path": "scripts/experiments/topology_feature_ssl/make_probe_graphs.py", "format": "Python"}],
+      "source_data": [{"role": "generator", "root": "repo", "path": "scripts/experiments/setup/topology_feature_ssl/make_probe_graphs.py", "format": "Python"}],
       "eval": {"supports_lp": false, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
       "default_eval": true
     }
