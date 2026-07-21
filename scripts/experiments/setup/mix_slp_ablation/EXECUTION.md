@@ -23,11 +23,11 @@ run, checkpoints, and seeds. Findings land in
 | Step | Status |
 |---|---|
 | Implementation (runner catalog-path fix, setup scripts, parser) | ✅ laptop, committed |
-| Tucker worktree + model list (pinned 30k) | ⏳ |
-| Sanity: `none`, MIX, covid19 → must reproduce ≈0.755 | ⏳ |
-| Full grid 2 arms × 4 conditions × 4 datasets (32 runs) | ⏳ |
-| Parse → `data/slp_ablation_2x2.csv`, commit on Tucker, push | ⏳ |
-| FINDINGS.md verdict (laptop) | ⏳ |
+| Tucker worktree + model list (pinned 30k) | ✅ |
+| Sanity: `none`, MIX, covid19 → must reproduce ≈0.755 | ✅ 0.75508, exact |
+| Full grid 2 arms × 4 conditions × 4 datasets (32 runs) | ✅ 2026-07-21, 0 errors |
+| Parse → `data/slp_ablation_2x2.csv`, commit on Tucker, push | ✅ (pulled to laptop via `git fetch ssh://tucker/...` — Tucker has no push credentials) |
+| FINDINGS.md verdict (laptop) | ✅ **topological** — rewire collapses MIX (0.759→0.576), permute is a no-op (0.762) |
 
 ## Step 0 — Tucker worktree (once)
 
@@ -102,3 +102,18 @@ git push origin exp/mix-slp-ablation
   (32 runs = 2 arms × 4 conditions × 4 datasets; the `none` cells re-run
   rather than reusing the July-09 sweep so all four conditions share one
   code state; the parser keeps the latest timestamp per cell).
+- **2026-07-21 12:20–12:55 (Tucker clock)** Grid ran as 4 sequential runner
+  invocations (one per condition, 8 jobs each, 4 parallel GPU slots), sharing
+  GPUs politely with the sibling `msc_eval` sweep launched 12:22. 32/32 jobs
+  done, 0 errors, ~35 min wall. Metrics gotcha: each run writes
+  `log/<run>/data/metrics_test_step0.json` (step-suffixed; no unstepped
+  `metrics_test.json`, no val file) — `parse_slp_2x2.py` handles this.
+- **2026-07-21** `parse_slp_2x2.py` → 32-row
+  `analysis/mix_slp_ablation/data/slp_ablation_2x2.csv`; committed on Tucker
+  (ambient Davidchu identity, matching prior Tucker-side result commits),
+  fetched to the laptop worktree over ssh (`git fetch
+  ssh://tucker/dataMeR1/phil/gfm/prodigy-abl exp/mix-slp-ablation` +
+  cherry-pick; Tucker's https remote has no credentials), pushed; Tucker
+  worktree hard-reset to `origin/exp/mix-slp-ablation` to reconverge.
+- **2026-07-21** FINDINGS written: verdict **topological** (see
+  `scripts/experiments/analysis/mix_slp_ablation/FINDINGS.md`).
