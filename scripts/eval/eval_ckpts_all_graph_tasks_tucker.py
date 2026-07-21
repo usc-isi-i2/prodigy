@@ -41,7 +41,9 @@ class DatasetConfig:
     eval_random_query: bool = False
 
 
-GRAPH_CATALOG_PATH = Path(__file__).resolve().parents[3] / "config" / "graph_catalog.json"
+# this file lives at <repo>/scripts/eval/ -> repo root is parents[1] of the dir,
+# i.e. parents[2] of the file (was parents[3] from its pre-reorg location).
+GRAPH_CATALOG_PATH = Path(__file__).resolve().parents[2] / "config" / "graph_catalog.json"
 
 
 def load_dataset_registry() -> tuple[str, dict[str, DatasetConfig], list[str]]:
