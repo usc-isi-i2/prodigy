@@ -1,0 +1,43 @@
+# multitask_ssl_corpora — all8-merged corpus clone of multitask_ssl_rotation/NM.
+# ONLY dataset/root/graph_filename/prefix/tags differ from the original; all
+# model/episode/budget hyperparams are identical (seed 0, epochs 4, cap 10000).
+# dataset key covid19_twitter = shared merged-graph loader path (see covid_ukr all8 config).
+# NM — single-task control (multitask_ssl_rotation). Neighbor matching only.
+# One of four arms; the fixed setup below is shared by all four and ONLY task_name
+# (+ its task-specific knobs) changes per arm. Bio-only 768-d GTE embeddings,
+# mean-agg SAGE, undirected message passing, GLOBAL episode sampling (no
+# within-source confinement — so NM/CL/FP/MIX differ only in the SSL objective;
+# ContrastiveTask has no strata support, so global is the shared regime).
+# Matched budget = 40k episodes (epochs 4 * dataset_len_cap 10000).
+dataset: covid19_twitter
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_all8_retweet_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+input_dim: 768
+
+# --- held constant across all four arms ---
+emb_dim: 256
+gnn_type: sage
+n_layer: 1
+n_hop: 1
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1            # one task per gradient step (required by the MIX arm; kept here for parity)
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+epochs: 4                # 4 * 10000 = 40,000 episodes (matched total-compute budget)
+
+eval_step: 10000
+checkpoint_step: 10000
+workers: 16
+device: 0
+seed: 0
+tags: [multitask_ssl_corpora, corpus_all8, NM, nm, single_task, all8merged, global_sampling, budget40k]
+prefix: msc_all8_NM
