@@ -13,9 +13,8 @@ run, checkpoints, and seeds. Findings land in
   episodes are seeded by split name (`sum(ord(split))`) — identical across
   conditions by construction.
 - **Checkpoints (pinned step 30000, the FINDINGS checkpoints):**
-  - MIX: `/dataMeR1/phil/gfm/prodigy-mtr/state/mtr_MIX_<ts>/checkpoint/state_dict_30000.ckpt`
-  - NM:  `/dataMeR1/phil/gfm/prodigy-mtr/state/mtr_NM_<ts>/checkpoint/state_dict_30000.ckpt`
-  - (exact `<ts>` recorded below once verified on Tucker)
+  - MIX: `/dataMeR1/phil/gfm/prodigy-mtr/state/mtr_MIX_09_07_2026_15_09_52/checkpoint/state_dict_30000.ckpt`
+  - NM:  `/dataMeR1/phil/gfm/prodigy-mtr/state/mtr_NM_09_07_2026_15_09_52/checkpoint/state_dict_30000.ckpt`
 - **Eval:** static-LP only, 0-shot, `--slp-n-query 4`, hard negatives,
   datasets `midterm,ukr_rus_twitter,covid19_twitter,twibot20`.
 
@@ -88,4 +87,18 @@ git push origin exp/mix-slp-ablation
 
 ## As-run log
 
-(to be filled in as steps complete)
+- **2026-07-21** Laptop: implementation committed (`24a92f4`), pushed.
+- **2026-07-21** Tucker: worktree `/dataMeR1/phil/gfm/prodigy-abl` created on
+  `exp/mix-slp-ablation` @ `24a92f4`; hooksPath set; model list pinned to the
+  two 30k checkpoints above (both verified present).
+- **2026-07-21 09:39** Sanity anchor (Step 2, GPU 1):
+  `eval_MIX_to_covid19_twitter_slp_0shot_21_07_2026_09_39_45` →
+  `test_roc_auc = 0.75508`, **exactly** equal to the original sweep's
+  `eval_MIX_to_covid19_twitter_slp_0shot_09_07_2026_17_34_25`
+  (`test_roc_auc = 0.75508`, same accuracy 0.6765 / f1 0.57905). Split-name
+  episode seeding + identical runner flags ⇒ bit-identical anchor. Proceed.
+- **2026-07-21 ~10:0x** Full grid (Step 3) launched in tmux `abl2x2`,
+  `--gpus 0,1,2,3`, `SEED=0`, log `/tmp/abl_2x2.log`
+  (32 runs = 2 arms × 4 conditions × 4 datasets; the `none` cells re-run
+  rather than reusing the July-09 sweep so all four conditions share one
+  code state; the parser keeps the latest timestamp per cell).
