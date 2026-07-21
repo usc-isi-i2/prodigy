@@ -16,7 +16,7 @@ DATA_ROOT="${DATA_ROOT:-/dataMeR1/phil/data}"
 GPUS="${GPUS:-0,1,2,3}"
 DS=midterm,ukr_rus_twitter,covid19_twitter,twibot20,election2020
 REG6=followers_count,friends_count,statuses_count,favourites_count,listed_count,account_age_days
-RUNNER=scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py
+RUNNER=scripts/eval/eval_ckpts_all_graph_tasks_tucker.py
 say(){ echo "[matched40k $(date +%H:%M:%S)] $*"; }
 
 run_dir_of(){ ls -dt "${STATE_DIR}/tfssl_$1_"*/ 2>/dev/null | head -1; }
@@ -57,11 +57,11 @@ STRUCTURAL=directed3 GNN_TYPE=sage_multi MODEL_LIST="$DIR/model_list_40k_e2.txt"
 say "trivial baseline (raw_feat) + leakage (raw_degree), full 6-panel shot-matched"
 python3 "$DIR/trivial_baselines.py" --data-root "$DATA_ROOT" --targets "$REG6" || say "raw_feat FAILED"
 python3 "$DIR/leakage_baseline.py" --data-root "$DATA_ROOT" --targets "$REG6" \
-  --out scripts/plotting/topology_feature_ssl/data/leakage_baseline_6panel.csv || say "leakage FAILED"
+  --out scripts/experiments/analysis/topology_feature_ssl/data/leakage_baseline_6panel.csv || say "leakage FAILED"
 
 say "parse + analyze"
-python3 scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py --log-root "$LOG_ROOT" --out-dir scripts/plotting
-python3 "$DIR/parse_2x2.py" --log-root "$LOG_ROOT" --model-list "$DIR/model_list_40k_all.txt" --out scripts/plotting/topology_feature_ssl/data/ablation_2x2_40k.csv || say "2x2 parse FAILED"
-python3 "$DIR/parse_capability_probes.py" --log-root "$LOG_ROOT" --model-list "$DIR/model_list_40k_all.txt" --out scripts/plotting/topology_feature_ssl/data/capability_probes_40k.csv || say "probe parse FAILED"
+python3 scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py --log-root "$LOG_ROOT" --out-dir scripts/experiments/analysis
+python3 "$DIR/parse_2x2.py" --log-root "$LOG_ROOT" --model-list "$DIR/model_list_40k_all.txt" --out scripts/experiments/analysis/topology_feature_ssl/data/ablation_2x2_40k.csv || say "2x2 parse FAILED"
+python3 "$DIR/parse_capability_probes.py" --log-root "$LOG_ROOT" --model-list "$DIR/model_list_40k_all.txt" --out scripts/experiments/analysis/topology_feature_ssl/data/capability_probes_40k.csv || say "probe parse FAILED"
 python3 "$DIR/analyze_matched40k.py" || say "analyze FAILED"
 say "MATCHED40K_DONE"

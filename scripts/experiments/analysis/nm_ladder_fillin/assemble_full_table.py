@@ -65,7 +65,7 @@ NEW_RUNGS = {4, 5, 6, 7}  # trained here; the rest come from the ladder CSV
 
 # Fallback for the existing rungs if the ladder CSV is absent (e.g. it's gitignored
 # and wasn't synced to Tucker). These are the published within-balanced values from
-# scripts/plotting/nm_ladder/nmladder_results.csv (matched-40k, NM 3-shot 30-way).
+# scripts/experiments/analysis/nm_ladder/data/nmladder_results.csv (matched-40k, NM 3-shot 30-way).
 # The CSV, when present, always wins over this.
 FALLBACK_EXISTING = {
     1: [0.948, 0.973, 0.874, 0.849, 0.828, 0.771, 0.921, 0.724],
@@ -168,10 +168,10 @@ def main() -> int:
                     help="Dir holding eval_nm_ladder_*src_* run dirs (Tucker: "
                          "/dataMeR1/phil/gfm/prodigy/log).")
     ap.add_argument("--ladder-csv",
-                    default=str(repo_root / "scripts/plotting/nm_ladder/nmladder_results.csv"),
+                    default=str(repo_root / "scripts/experiments/analysis/nm_ladder/data/nmladder_results.csv"),
                     help="Published ladder CSV for the existing rungs 1/2/3/8.")
     ap.add_argument("--ss-csv",
-                    default=str(repo_root / "scripts/experiments/nm_single_source_matrix/nm_single_source_matrix.csv"),
+                    default=str(repo_root / "scripts/experiments/analysis/nm_single_source_matrix/data/nm_single_source_matrix.csv"),
                     help="Single-source matrix CSV; if present, its 8 specialist rows are "
                          "appended to the combined table + a combined CSV is written.")
     ap.add_argument("--shots", default="3")

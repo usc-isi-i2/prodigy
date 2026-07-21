@@ -8,7 +8,7 @@ pivot sheet holds values computed in Python from those same Raw_* rows (test spl
 analyze_matched40k.py. Values not live formulas because LibreOffice is unavailable in
 this environment to validate cross-sheet formulas; the Raw_* sheets keep it auditable.
 
-Reproduce:  python scripts/experiments/topology_feature_ssl/build_results_xlsx.py
+Reproduce:  python scripts/experiments/analysis/topology_feature_ssl/build_results_xlsx.py
 """
 from __future__ import annotations
 import csv
@@ -21,7 +21,7 @@ from openpyxl.utils import get_column_letter
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
-PLOT = REPO / "scripts/plotting"
+PLOT = REPO / "scripts/experiments/analysis"
 TF = PLOT / "topology_feature_ssl/data"
 OUT = HERE / "topology_feature_ssl_results.xlsx"
 
@@ -232,7 +232,7 @@ lines = [
     ("Summary values", "Each summary cell = mean over the named Raw_* sheet (test split), i.e. AVERAGEIFS computed in Python (LibreOffice unavailable here to validate live formulas). Re-derivable via analyze_matched40k.py. Green fill = arm that wins that task; grey = trivial floor."),
     ("Raw_* sheets", "Verbatim source CSVs. The 3 shared benchmark CSVs (regression/classification/static-LP) are FILTERED to this experiment's model family; other experiments' models were dropped. Diagnostic CSVs are full."),
     ("Model family kept", "B0*/B1*/E1*/E2*/E2b* (incl. _40k matched-eval + _step* budget-sweep checkpoints), free-preview proxies task_transfer_covid_{nm,fp,cl}, and random_init. Excluded: muc10k and all non-tfssl models."),
-    ("Reproduce", "python scripts/experiments/topology_feature_ssl/build_results_xlsx.py  (then recalc.py to cache formula values)"),
+    ("Reproduce", "python scripts/experiments/analysis/topology_feature_ssl/build_results_xlsx.py  (then recalc.py to cache formula values)"),
     ("Built", "2026-07-12"),
     ("", None),
     ("Deviations / caveats (stated plainly)", "HEAD"),

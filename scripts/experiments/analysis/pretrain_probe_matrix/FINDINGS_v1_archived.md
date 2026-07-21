@@ -88,12 +88,12 @@ by +0.09).
   through the shot-matched episodic-Ridge protocol. The raw path was made memory-safe
   (index the labeled rows out of the mmap'd feature tensor per target) so covid's
   ~23M-node graph completes without materializing a ~70GB float32 matrix. Output is its
-  own file, `scripts/plotting/node_regression/data/features_only_floor.csv` (23 rows),
+  own file, `scripts/experiments/analysis/node_regression/data/features_only_floor.csv` (23 rows),
   read directly by the plot — *not* appended to the shared regression CSV.
 - Both floor passes ran in an **isolated git worktree** off the pushed commit (the main
   Tucker tree was dirty on a different commit): `random_init` at `8101b53`,
   `features_only` at `7826419`. Figures via
-  `scripts/plotting/pretrain_probe_matrix/plot_probe_matrix.py`.
+  `scripts/experiments/analysis/pretrain_probe_matrix/plot_probe_matrix.py`.
 
 ## Next
 Matrix is **complete** — both floors filled, both headline tasks closed. Multi-seed CIs

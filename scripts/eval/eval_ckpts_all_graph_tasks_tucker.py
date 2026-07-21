@@ -24,7 +24,7 @@ from typing import Any
 
 
 DEFAULT_MODEL_LIST = (
-    "scripts/experiments/covid_ukr/merged_ukr_rus_covid_nm_eval_model_list.txt"
+    "scripts/experiments/setup/covid_ukr/merged_ukr_rus_covid_nm_eval_model_list.txt"
 )
 
 

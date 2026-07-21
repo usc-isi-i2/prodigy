@@ -50,7 +50,7 @@ for mode in ${MODES}; do
   echo "===================================================================="
   echo "[feature-ablation] mode=${mode}  datasets=${DATASETS}  tasks=${TASKS}  shots=${SHOTS}"
   echo "===================================================================="
-  python3 scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py \
+  python3 scripts/eval/eval_ckpts_all_graph_tasks_tucker.py \
     --model-list "${MODEL_LIST}" \
     --datasets "${DATASETS}" \
     --tasks "${TASKS}" \

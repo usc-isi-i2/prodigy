@@ -17,7 +17,7 @@ from openpyxl.utils import get_column_letter
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]  # scripts/experiments/multitask_ssl_rotation -> repo root
-DATA = REPO / "scripts/plotting/multitask_ssl_rotation"
+DATA = REPO / "scripts/experiments/analysis/multitask_ssl_rotation"
 OUT = HERE / "multitask_ssl_rotation_results.xlsx"
 
 ARMS = ["NM", "CL", "FP", "MIX"]
@@ -207,10 +207,10 @@ lines = [
     ("Static link prediction", "0-shot, ROC-AUC. Datasets: midterm, ukr_rus, covid19 (in-domain) + twibot20 (held-out)."),
     ("", None),
     ("Data provenance", "HEAD"),
-    ("Raw source", "Eval CSVs from the Tucker run worktree /dataMeR1/phil/gfm/prodigy-mtr/scripts/plotting/*/data/*.csv"),
-    ("Repo snapshot", "scripts/plotting/multitask_ssl_rotation/{node_classification,node_regression,static_link_prediction}/data/*.csv"),
+    ("Raw source", "Eval CSVs from the Tucker run worktree /dataMeR1/phil/gfm/prodigy-mtr/scripts/experiments/analysis/*/data/*.csv"),
+    ("Repo snapshot", "scripts/experiments/analysis/multitask_ssl_rotation/data/*.csv"),
     ("This workbook", "Raw_* sheets = source eval values. Summary/pivot sheets = means over those rows (test split), computed in Python and verified against aggregate_results.py."),
-    ("Reproduce", "python scripts/experiments/multitask_ssl_rotation/aggregate_results.py --plotting-root scripts/plotting/multitask_ssl_rotation"),
+    ("Reproduce", "python scripts/experiments/analysis/multitask_ssl_rotation/aggregate_results.py --plotting-root scripts/experiments/analysis/multitask_ssl_rotation"),
     ("Built", "2026-07-12"),
     ("", None),
     ("Caveats", "HEAD"),

@@ -189,9 +189,9 @@ under-exposed — which is exactly why we add a **balanced** within-source varia
 - **Each experiment folder** has its own README.md + RESULTS.md with exact commands.
 - **Build a matrix / comparison** (metrics already in the eval JSONs):
   ```bash
-  python3 scripts/experiments/nm_transfer_matrix/build_auc_matrix.py \
+  python3 scripts/experiments/analysis/nm_transfer_matrix/build_auc_matrix.py \
     --log-root log --shots 3 --n-way 30 --metric all
-  python3 scripts/experiments/nm_cross_source_shortcut/compare_shortcut.py \
+  python3 scripts/experiments/analysis/nm_cross_source_shortcut/compare_shortcut.py \
     --log-root log --shots 3 --n-way 30 --metric all
   ```
 - **Key flags added:** `--nm-n-way` (eval), `--neighbor_sampling_episode_source`

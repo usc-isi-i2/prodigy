@@ -10,7 +10,7 @@ Outputs:
   - a pretty-printed matrix per metric (diagonal = in-domain specialist);
   - ``nm_single_source_matrix.csv`` — WIDE, roc_auc only, columns = the 8 canonical
     dataset keys, one row per train source. Same column shape as
-    ``scripts/plotting/nm_ladder/nmladder_results.csv`` so the single-source rows
+    ``scripts/experiments/analysis/nm_ladder/data/nmladder_results.csv`` so the single-source rows
     can be concatenated with the merged-ladder rows for one combined figure.
   - ``nm_single_source_matrix_long.csv`` — LONG, all three metrics.
 

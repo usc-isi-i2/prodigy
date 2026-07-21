@@ -24,7 +24,7 @@ rules by passthrough; E2 (sum/PNA + directed) passes count/existence and recover
 in/out-degree; conjunction needs cross-neighbor binding (hardest).
 
 Run (anywhere with torch):
-    python scripts/experiments/topology_feature_ssl/make_probe_graphs.py \
+    python scripts/experiments/setup/topology_feature_ssl/make_probe_graphs.py \
         --out-dir /dataMeR1/phil/data/synthetic_probes/graphs
 """
 

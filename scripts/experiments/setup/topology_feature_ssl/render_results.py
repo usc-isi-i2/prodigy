@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Render the topology_feature_ssl result tables into a glance-able RESULTS.md.
 
-Mirrors the notebook (scripts/plotting/topology_feature_ssl/topology_feature_ssl.ipynb)
+Mirrors the notebook (scripts/experiments/analysis/topology_feature_ssl/topology_feature_ssl.ipynb)
 but writes markdown, so the numbers are viewable without running anything. Robust to
 CSVs that haven't landed — each missing table is marked 'pending'.
 
 Run on Tucker after the downstream parse (needs pandas):
-    python scripts/experiments/topology_feature_ssl/render_results.py
+    python scripts/experiments/setup/topology_feature_ssl/render_results.py
 """
 
 from __future__ import annotations

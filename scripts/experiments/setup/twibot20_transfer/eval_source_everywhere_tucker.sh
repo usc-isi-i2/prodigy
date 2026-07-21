@@ -15,7 +15,7 @@ export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 cd "${REPO_ROOT}"
 
 # All graphs except twibot20 itself (add twibot20 to --datasets for a self-eval).
-python3 scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py \
+python3 scripts/eval/eval_ckpts_all_graph_tasks_tucker.py \
   --model-list "${SCRIPT_DIR}/model_list_source.txt" \
   --datasets midterm,covid19_twitter,ukr_rus_twitter,merged_ukr_rus_covid,merged_covid_midterm,covid_political,election2020,ukr_rus_suspended,twibot20 \
   --tasks nm,classification \

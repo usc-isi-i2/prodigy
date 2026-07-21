@@ -5,7 +5,7 @@ Each new rung adds one source graph, in table-column order. NM 3-shot / 30-way,
 matched-40k (`state_dict_40000`), within-balanced episodes, evaluated on all 8
 single-source graphs with the shared eval harness. **1 seed.**
 
-- Rungs 1/2/3/8: existing ladder (`scripts/plotting/nm_ladder/nmladder_results.csv`).
+- Rungs 1/2/3/8: existing ladder (`scripts/experiments/analysis/nm_ladder/data/nmladder_results.csv`).
 - Rungs 4/5/6/7: trained + evaluated here (2026-07-13). Cross-checked against raw
   `metrics_test` and the fallback-vs-CSV agreement (rungs 1/2/3/8 identical to the digit).
 

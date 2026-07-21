@@ -4,7 +4,7 @@
 NM matrix (64 rows). Regenerate with `python3 build_transfer_pairs.py` (from repo root).
 
 Sources: `../nm_single_source_matrix.csv` (ROC-AUC, rows=train/source, cols=test/target) joined with
-`scripts/plotting/graph_divergence/graph_divergence_data.json` (pairwise divergence + per-graph stats).
+`scripts/experiments/analysis/graph_divergence/data/graph_divergence_data.json` (pairwise divergence + per-graph stats).
 Transfer metric is **ROC-AUC**; the single-source pilot preferred top-1 accuracy (AUC near ceiling
 in-domain), but off-diagonal AUC spans ~.55–.98 so regret is discriminative here. **1 seed** — treat
 sub-~.03 gaps as noise.

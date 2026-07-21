@@ -21,9 +21,9 @@ pathological input is confirmed. max|z| ~ 4-6 => hypothesis falsified cheaply.
 
 Run on Tucker (prodigy env):
     conda activate prodigy
-    python scripts/experiments/topology_feature_ssl/check_directed3_distribution.py
+    python scripts/experiments/analysis/topology_feature_ssl/check_directed3_distribution.py
     # with raw degrees + fix preview (needs the graph in memory):
-    python scripts/experiments/topology_feature_ssl/check_directed3_distribution.py --from-graph
+    python scripts/experiments/analysis/topology_feature_ssl/check_directed3_distribution.py --from-graph
 """
 from __future__ import annotations
 

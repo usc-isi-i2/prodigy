@@ -3,7 +3,7 @@
 # _log arms have state_dict_40000, then runs the frozen-encoder benchmark
 # (regression / classification / static-LP) + capability probes with the correct
 # per-arm flags, mirroring run_matched40k_tucker.sh's sweep(). Results land in
-# scripts/plotting/{node_regression,node_classification,static_link_prediction}/data
+# scripts/experiments/analysis/{node_regression,node_classification,static_link_prediction}/data
 # (model=<arm>_log, alongside the original arms) + capability_probes_directed3log.csv.
 #
 # Encoder groups (different architectures -> different eval flags):
@@ -14,7 +14,7 @@
 #
 # Launch on Tucker in tmux:
 #   tmux new-session -d -s d3log_eval 'export PATH="/home/mhchu/miniconda3/bin:$PATH"; \
-#     bash scripts/experiments/topology_feature_ssl/run_directed3log_overnight.sh \
+#     bash scripts/experiments/setup/topology_feature_ssl/run_directed3log_overnight.sh \
 #     > /tmp/d3log_eval.log 2>&1'
 set -uo pipefail
 
@@ -31,7 +31,7 @@ DATA_ROOT="${DATA_ROOT:-/dataMeR1/phil/data}"
 GPUS="${GPUS:-0,1,2,3}"
 DS=midterm,ukr_rus_twitter,covid19_twitter,twibot20,election2020
 REG6=followers_count,friends_count,statuses_count,favourites_count,listed_count,account_age_days
-RUNNER=scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py
+RUNNER=scripts/eval/eval_ckpts_all_graph_tasks_tucker.py
 STEP=40000
 ARMS="E1_log E2_log E2b_log E4_log E4r_log"
 say(){ echo "[d3log-eval $(date +%m-%d_%H:%M:%S)] $*"; }
@@ -76,8 +76,8 @@ STRUCTURAL=directed3_log GNN_TYPE=sage_multi NO_BN_ENCODER=1 MODEL_LIST="$DIR/ml
 
 # 5) parse everything (benchmark parser reads all logs; probes parsed over all _log arms)
 say "STAGE parse"
-python3 scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py --log-root "$LOG_ROOT" --out-dir scripts/plotting || say "benchmark parse FAILED"
+python3 scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py --log-root "$LOG_ROOT" --out-dir scripts/experiments/analysis || say "benchmark parse FAILED"
 python3 "$DIR/parse_capability_probes.py" --log-root "$LOG_ROOT" --model-list "$DIR/ml_log_all.txt" \
-  --out scripts/plotting/topology_feature_ssl/data/capability_probes_directed3log.csv || say "probe parse FAILED"
+  --out scripts/experiments/analysis/topology_feature_ssl/data/capability_probes_directed3log.csv || say "probe parse FAILED"
 
-say "D3LOG_EVAL_DONE — results in scripts/plotting/{node_regression,node_classification,static_link_prediction}/data (model=*_log) + capability_probes_directed3log.csv"
+say "D3LOG_EVAL_DONE — results in scripts/experiments/analysis/{node_regression,node_classification,static_link_prediction}/data (model=*_log) + capability_probes_directed3log.csv"

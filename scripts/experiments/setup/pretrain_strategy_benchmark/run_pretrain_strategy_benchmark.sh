@@ -8,7 +8,7 @@
 # Headline tasks are the diverse new ones (node regression + static LP); nm and
 # classification are included for completeness. Results land in the shared
 # per-task CSVs (keyed by model = strategy) and are compared in
-# scripts/plotting/pretrain_strategy_benchmark/.
+# scripts/experiments/analysis/pretrain_strategy_benchmark/.
 #
 # Pass overrides through "$@" (e.g. --gpus 0,1).
 set -euo pipefail
@@ -21,7 +21,7 @@ conda activate prodigy
 export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 cd "${REPO_ROOT}"
 
-RUNNER=scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py
+RUNNER=scripts/eval/eval_ckpts_all_graph_tasks_tucker.py
 ML="${SCRIPT_DIR}/model_list.txt"
 COMMON=(--model-list "${ML}" --python python3
         --data-root /dataMeR1/phil/data
@@ -39,9 +39,9 @@ python3 "${RUNNER}" "${COMMON[@]}" --tasks nm,pl --shots 3 "$@"
 
 # parse the new-task results (reg + slp) into the plotting CSVs
 python3 scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py \
-  --log-root /dataMeR1/phil/gfm/prodigy/log --out-dir scripts/plotting
+  --log-root /dataMeR1/phil/gfm/prodigy/log --out-dir scripts/experiments/analysis
 
 # NOTE: to run this in a *detached* tmux, launch it through a login shell so
 # ~/.bashrc initialises conda, e.g.:
-#   tmux new-session -d -s strat_bench 'bash -lc "bash scripts/experiments/pretrain_strategy_benchmark/run_pretrain_strategy_benchmark.sh --gpus 0,1,2,3 > /tmp/strat_bench.log 2>&1"'
+#   tmux new-session -d -s strat_bench 'bash -lc "bash scripts/experiments/setup/pretrain_strategy_benchmark/run_pretrain_strategy_benchmark.sh --gpus 0,1,2,3 > /tmp/strat_bench.log 2>&1"'
 echo "PRETRAIN_STRATEGY_BENCHMARK_DONE"

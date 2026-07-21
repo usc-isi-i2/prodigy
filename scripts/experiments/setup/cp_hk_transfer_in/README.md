@@ -3,7 +3,7 @@
 Evaluate NM-trained source models from the recent transfer studies on the new
 CP-HK retweet graph.
 
-This is the mirror of `scripts/experiments/cp_hk_twitter`: CP-HK -> other
+This is the mirror of `scripts/experiments/setup/cp_hk_twitter`: CP-HK -> other
 graphs has already been run; this folder runs other NM sources -> CP-HK.
 
 ## Scope
@@ -42,13 +42,13 @@ Use only physical GPUs `0,1,2,3`.
 
 ```bash
 cd /dataMeR1/phil/gfm/prodigy
-GPUS=1,3 bash scripts/experiments/cp_hk_transfer_in/eval_sources_on_cp_hk_tucker.sh
+GPUS=1,3 bash scripts/experiments/setup/cp_hk_transfer_in/eval_sources_on_cp_hk_tucker.sh
 ```
 
 For a dry run:
 
 ```bash
-DRY_RUN=1 GPUS=1,3 bash scripts/experiments/cp_hk_transfer_in/eval_sources_on_cp_hk_tucker.sh
+DRY_RUN=1 GPUS=1,3 bash scripts/experiments/setup/cp_hk_transfer_in/eval_sources_on_cp_hk_tucker.sh
 ```
 
 Results land under:

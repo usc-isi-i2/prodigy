@@ -35,10 +35,10 @@ The two new tasks give the cleanest strategy signal (nm saturates; pl is single-
 # once: enrich graphs with benchmark targets
 DATA_ROOT=/dataMeR1/phil/data bash scripts/graph_construction/enrich_all_graphs.sh
 # then: the strategy sweep (prodigy env; ~GPUs 0-3)
-bash scripts/experiments/pretrain_strategy_benchmark/run_pretrain_strategy_benchmark.sh --gpus 0,1,2,3
+bash scripts/experiments/setup/pretrain_strategy_benchmark/run_pretrain_strategy_benchmark.sh --gpus 0,1,2,3
 ```
 
 Results (keyed by `model` = strategy) land in
-`scripts/plotting/{node_regression,static_link_prediction}/data/*.csv`; the
+`scripts/experiments/analysis/{node_regression,static_link_prediction}/data/*.csv`; the
 strategy comparison notebook is in
-`scripts/plotting/pretrain_strategy_benchmark/`.
+`scripts/experiments/analysis/pretrain_strategy_benchmark/`.

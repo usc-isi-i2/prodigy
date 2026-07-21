@@ -59,21 +59,21 @@ if [[ "${DRY_RUN}" == "1" ]]; then
 fi
 
 echo "[run] CP-HK transfer NM, 3-way"
-python3 scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py \
+python3 scripts/eval/eval_ckpts_all_graph_tasks_tucker.py \
   "${common_args[@]}" \
   --datasets "${NM_DATASETS}" \
   --tasks nm \
   --nm-n-way 3
 
 echo "[run] CP-HK transfer NM, 30-way"
-python3 scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py \
+python3 scripts/eval/eval_ckpts_all_graph_tasks_tucker.py \
   "${common_args[@]}" \
   --datasets "${NM_DATASETS}" \
   --tasks nm \
   --nm-n-way 30
 
 echo "[run] CP-HK transfer NC"
-python3 scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py \
+python3 scripts/eval/eval_ckpts_all_graph_tasks_tucker.py \
   "${common_args[@]}" \
   --datasets "${NC_DATASETS}" \
   --tasks nc

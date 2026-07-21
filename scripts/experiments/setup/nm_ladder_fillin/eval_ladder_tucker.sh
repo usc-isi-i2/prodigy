@@ -21,7 +21,7 @@ export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 
 cd "${REPO_ROOT}"
 
-python3 scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py \
+python3 scripts/eval/eval_ckpts_all_graph_tasks_tucker.py \
   --model-list "${SCRIPT_DIR}/model_list.txt" \
   --data-root "${DATA_ROOT:-/dataMeR1/phil/data}" \
   --datasets ukr_rus_twitter,covid19_twitter,midterm,covid_political,election2020,ukr_rus_suspended,twibot20,cp_hk_twitter \

@@ -12,7 +12,7 @@ count/existence/in-out; conjunction (cross-neighbor binding) is the hardest.
 Usage:
     python parse_capability_probes.py --log-root /dataMeR1/phil/gfm/prodigy/log \
         --model-list scripts/experiments/topology_feature_ssl/model_list.txt \
-        --out scripts/plotting/topology_feature_ssl/data/capability_probes.csv
+        --out scripts/experiments/analysis/topology_feature_ssl/data/capability_probes.csv
 """
 
 from __future__ import annotations
@@ -54,7 +54,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--log-root", required=True)
     ap.add_argument("--model-list", required=True)
-    ap.add_argument("--out", default="scripts/plotting/topology_feature_ssl/data/capability_probes.csv")
+    ap.add_argument("--out", default="scripts/experiments/analysis/topology_feature_ssl/data/capability_probes.csv")
     args = ap.parse_args()
 
     arms = [ln.split()[0] for ln in Path(args.model_list).read_text().splitlines()

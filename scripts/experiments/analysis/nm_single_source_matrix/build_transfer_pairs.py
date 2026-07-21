@@ -4,21 +4,21 @@ Build a tidy per-(source, target) transfer-analysis table for the 8x8 single-sou
 NM matrix, joined with pairwise graph divergence and per-graph attributes.
 
 Inputs (repo-relative):
-  - scripts/experiments/nm_single_source_matrix/nm_single_source_matrix.csv   (8x8 ROC-AUC; rows=train/source, cols=test/target)
-  - scripts/plotting/graph_divergence/graph_divergence_data.json               (pairwise divergence + per-graph stats)
+  - scripts/experiments/analysis/nm_single_source_matrix/data/nm_single_source_matrix.csv   (8x8 ROC-AUC; rows=train/source, cols=test/target)
+  - scripts/experiments/analysis/graph_divergence/data/graph_divergence_data.json               (pairwise divergence + per-graph stats)
 
 Output:
-  - scripts/experiments/nm_single_source_matrix/analysis/transfer_pairs.csv     (64 rows = 8 sources x 8 targets)
+  - scripts/experiments/analysis/nm_single_source_matrix/data/transfer_pairs.csv     (64 rows = 8 sources x 8 targets)
 
 Every column corresponds to something in the symmetry / regret / similarity-control
 analysis. See README.md in this folder for the column dictionary.
-Run from repo root:  python3 scripts/experiments/nm_single_source_matrix/analysis/build_transfer_pairs.py
+Run from repo root:  python3 scripts/experiments/analysis/nm_single_source_matrix/build_transfer_pairs.py
 """
 import csv, json, os, statistics as st
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
-AUC_CSV = os.path.join(REPO, "scripts/experiments/nm_single_source_matrix/nm_single_source_matrix.csv")
-DIV_JSON = os.path.join(REPO, "scripts/plotting/graph_divergence/graph_divergence_data.json")
+AUC_CSV = os.path.join(REPO, "scripts/experiments/analysis/nm_single_source_matrix/data/nm_single_source_matrix.csv")
+DIV_JSON = os.path.join(REPO, "scripts/experiments/analysis/graph_divergence/data/graph_divergence_data.json")
 OUT_CSV = os.path.join(os.path.dirname(__file__), "transfer_pairs.csv")
 
 # ---- transfer matrix (rows=source, cols=target) ----

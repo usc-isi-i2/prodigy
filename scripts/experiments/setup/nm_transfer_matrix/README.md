@@ -62,7 +62,7 @@ follow-up is to re-run with ≥3 seeds for error bars.
 | `eval_nm_matrix_tucker.sh` | Eval all 3 models on all 3 test domains (NM, zero-shot). |
 | `build_auc_matrix.py` | Aggregate eval logs into the train × test AUC matrix (stdlib only). |
 
-The eval reuses `scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py`.
+The eval reuses `scripts/eval/eval_ckpts_all_graph_tasks_tucker.py`.
 A `merged_ukr_rus_covid` entry was added to that script's dataset registry so the
 merged graph can also be a **test** target (the 3rd matrix column).
 

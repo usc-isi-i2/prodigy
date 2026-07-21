@@ -56,8 +56,8 @@ DRY_RUN=1 ./run_all_train_tucker.sh
 mkdir -p run_logs
 tmux new-session -d -s nmladder_fillin \
   'export PATH="/home/mhchu/miniconda3/bin:$PATH"; \
-   GPUS="0 1 2 3" bash scripts/experiments/nm_ladder_fillin/run_all_train_tucker.sh \
-   > scripts/experiments/nm_ladder_fillin/run_logs/orchestrator.log 2>&1'
+   GPUS="0 1 2 3" bash scripts/experiments/setup/nm_ladder_fillin/run_all_train_tucker.sh \
+   > scripts/experiments/setup/nm_ladder_fillin/run_logs/orchestrator.log 2>&1'
 #    ~40k steps at ~7 it/s ≈ 1.5h/rung; one rung per GPU => ~1.5h wall.
 
 # 3. once all four state_dict_40000.ckpt exist, point the model list at them
@@ -82,7 +82,7 @@ python3 assemble_full_table.py --log-root /dataMeR1/phil/gfm/prodigy/log
 - **Coexistence:** these share GPUs with the `nmss` single-source-matrix run; NM
   episodes are tiny, so no need to wait for or kill it. `nvidia-smi` first anyway.
 - **Existing rungs:** `assemble_full_table.py` reads them from
-  `scripts/plotting/nm_ladder/nmladder_results.csv`. If that CSV isn't on Tucker (it
+  `scripts/experiments/analysis/nm_ladder/data/nmladder_results.csv`. If that CSV isn't on Tucker (it
   may be gitignored), the script falls back to the published values baked into it and
   prints a warning — the table is still complete.
 - **Fill-in order** = the table's column order (twitter-like graphs first, the two

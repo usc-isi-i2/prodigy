@@ -22,9 +22,9 @@ from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[3]
-REG_CSV = ROOT / "scripts/plotting/node_regression/data/node_regression.csv"
-SLP_CSV = ROOT / "scripts/plotting/static_link_prediction/data/static_link_prediction.csv"
-FEAT_CSV = ROOT / "scripts/plotting/node_regression/data/features_only_floor.csv"
+REG_CSV = ROOT / "scripts/experiments/analysis/node_regression/data/node_regression.csv"
+SLP_CSV = ROOT / "scripts/experiments/analysis/static_link_prediction/data/static_link_prediction.csv"
+FEAT_CSV = ROOT / "scripts/experiments/analysis/node_regression/data/features_only_floor.csv"
 OUT = Path(__file__).resolve().parent
 
 # rows (top->bottom): the 4 pretraining strategies, then the two floors.

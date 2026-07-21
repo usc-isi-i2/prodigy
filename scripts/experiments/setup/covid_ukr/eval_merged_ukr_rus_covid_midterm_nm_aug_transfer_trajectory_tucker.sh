@@ -13,7 +13,7 @@ GPUS="${GPUS:-}"
 MODEL_DROPOUT="${MODEL_DROPOUT:-0.1}"
 
 cmd=(
-  python3 scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py
+  python3 scripts/eval/eval_ckpts_all_graph_tasks_tucker.py
   --model-list "${MODEL_LIST}"
   --data-root "${DATA_ROOT}"
   --datasets "${DATASETS}"

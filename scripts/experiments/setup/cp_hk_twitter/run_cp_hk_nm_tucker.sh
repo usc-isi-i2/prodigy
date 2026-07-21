@@ -19,7 +19,7 @@ BIO_ROOT="${DATA_ROOT}/bio_embeddings/gte-multilingual-base/version=v001"
 GRAPH_DIR="${DATA_ROOT}/graphs"
 EMB_PATH="${EMB_DIR}/user_bio_embeddings_gte_multilingual_base.pt"
 GRAPH_PATH="${GRAPH_DIR}/retweet_graph.pt"
-CONFIG_PATH="${REPO_ROOT}/scripts/experiments/cp_hk_twitter/cp_hk_nm.yaml"
+CONFIG_PATH="${REPO_ROOT}/scripts/experiments/setup/cp_hk_twitter/cp_hk_nm.yaml"
 
 mkdir -p "${LOG_ROOT}" "${RAW_DIR}" "${PARQUET_DIR}" "${EMB_DIR}" "${BIO_ROOT}" "${GRAPH_DIR}"
 cd "${REPO_ROOT}"

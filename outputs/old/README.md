@@ -83,7 +83,7 @@ commands remain valid, and explicit CLI flags override YAML values:
 
 ```bash
 python3 experiments/run_single_experiment.py \
-  --config scripts/experiments/train1/merged_ukr_rus_covid_nm.yaml \
+  --config scripts/experiments/setup/train1/merged_ukr_rus_covid_nm.yaml \
   --n_query 8 \
   --prefix merged_ukr_rus_covid_nm_smoke
 ```
@@ -104,19 +104,19 @@ Training scripts are in `scripts/`. Each is a self-contained SLURM `.sbatch` scr
 
 ```bash
 # Midterm
-sbatch scripts/experiments/train1/submit_train1_midterm_lp.sh   # temporal link prediction
-sbatch scripts/experiments/train1/submit_train1_midterm_nm.sh   # neighbor matching
-sbatch scripts/experiments/train1/submit_train1_midterm_pl.sh   # political leaning classification
+sbatch scripts/experiments/setup/train1/submit_train1_midterm_lp.sh   # temporal link prediction
+sbatch scripts/experiments/setup/train1/submit_train1_midterm_nm.sh   # neighbor matching
+sbatch scripts/experiments/setup/train1/submit_train1_midterm_pl.sh   # political leaning classification
 
 # Ukraine-Russia
-sbatch scripts/experiments/train1/submit_train1_ukr_rus_twitter_lp.sh
-sbatch scripts/experiments/train1/submit_train1_ukr_rus_twitter_nm.sh
-sbatch scripts/experiments/train1/submit_train1_ukr_rus_twitter_pl.sh
+sbatch scripts/experiments/setup/train1/submit_train1_ukr_rus_twitter_lp.sh
+sbatch scripts/experiments/setup/train1/submit_train1_ukr_rus_twitter_nm.sh
+sbatch scripts/experiments/setup/train1/submit_train1_ukr_rus_twitter_pl.sh
 
 # COVID-19
-sbatch scripts/experiments/train1/submit_train1_covid19_twitter_lp.sh
-sbatch scripts/experiments/train1/submit_train1_covid19_twitter_nm.sh
-sbatch scripts/experiments/train1/submit_train1_covid19_twitter_pl.sh
+sbatch scripts/experiments/setup/train1/submit_train1_covid19_twitter_lp.sh
+sbatch scripts/experiments/setup/train1/submit_train1_covid19_twitter_nm.sh
+sbatch scripts/experiments/setup/train1/submit_train1_covid19_twitter_pl.sh
 ```
 
 > The scripts have hardcoded paths under `/scratch1/eibl/` and `/home1/eibl/`. Update `--root`, `--graph_filename`, and the `cd` / log paths to your own directories before submitting. The current graph builders also support exact `--max_nodes` caps and save `user_ids` plus `u2i` in the graph artifact.
@@ -125,16 +125,16 @@ Cross-dataset transfer (train on one, eval on other) — see [CROSS_DATASET_EVAL
 
 ```bash
 # Midterm <-> Ukraine-Russia
-sbatch scripts/experiments/eval/submit_eval_midterm_to_ukr_rus_all_tasks.sh
-sbatch scripts/experiments/eval/submit_eval_ukr_rus_to_midterm_all_tasks.sh
+sbatch scripts/eval/submit_eval_midterm_to_ukr_rus_all_tasks.sh
+sbatch scripts/eval/submit_eval_ukr_rus_to_midterm_all_tasks.sh
 
 # Evaluate any model list on a COVID-19 target graph
-sbatch scripts/experiments/eval/eval_covid19_twitter_model_list_all_tasks.sbatch \
-  scripts/experiments/train1/models/eval1_covid_model_list.txt
+sbatch scripts/eval/eval_covid19_twitter_model_list_all_tasks.sbatch \
+  scripts/experiments/setup/train1/models/eval1_covid_model_list.txt
 
 # Evaluate any model list on a Ukraine-Russia target graph
-sbatch scripts/experiments/eval/eval_ukr_rus_twitter_model_list_all_tasks.sbatch \
-  scripts/experiments/train1/models/eval1_model_list.txt
+sbatch scripts/eval/eval_ukr_rus_twitter_model_list_all_tasks.sbatch \
+  scripts/experiments/setup/train1/models/eval1_model_list.txt
 ```
 
 ### MAG240M pretraining

@@ -4,7 +4,7 @@ Shared collection point for the **final figures (PDF) and result tables (CSV)** 
 NM graph-ladder experiment, gathered across the several chats that worked on it.
 
 If you're a chat contributing ladder artifacts: keep the *generating script* wherever it
-lives (e.g. `scripts/plotting/nm_ladder/`, this experiment folder, etc.), and copy the
+lives (e.g. `scripts/experiments/analysis/nm_ladder/`, this experiment folder, etc.), and copy the
 *output* PDF/CSV here so everything the experiment produced sits in one place.
 
 ## Naming
@@ -18,7 +18,7 @@ _(populate as artifacts land)_
 
 - from this chat (`nm_ladder_fillin`): `nm_ladder_per_step_delta.pdf`, `nm_ladder_full.csv`,
   `nm_ladder_plus_single_source.csv`
-- from the plotting chat (`scripts/plotting/nm_ladder`): `nm_ladder_trajectory.pdf`,
+- from the plotting chat (`scripts/experiments/analysis/nm_ladder`): `nm_ladder_trajectory.pdf`,
   `nm_ladder_means.pdf`, `nm_ladder_deltas.pdf`, `nm_ladder_deltas_lines.pdf`,
   `nm_ladder_vs_similarity.pdf`
 - generalist-vs-specialist scatters (this chat): `nm_ladder_generalist_scatter.pdf`

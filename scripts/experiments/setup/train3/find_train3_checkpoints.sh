@@ -1,5 +1,5 @@
 #!/bin/bash
-# Run on cluster: bash scripts/experiments/train3/find_train3_checkpoints.sh > scripts/experiments/train3/models/train3_all_models.txt
+# Run on cluster: bash scripts/experiments/setup/train3/find_train3_checkpoints.sh > scripts/experiments/setup/train3/models/train3_all_models.txt
 # Errors (missing checkpoints) go to stderr.
 set -euo pipefail
 cd /home1/eibl/gfm/prodigy

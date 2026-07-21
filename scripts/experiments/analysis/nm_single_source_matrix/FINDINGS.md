@@ -5,7 +5,7 @@
 **all 8** graphs — NM 30-way / 3-shot, ROC-AUC. Rows = train source, cols = test
 graph. **Diagonal = in-domain specialist; off-diagonal = zero-overlap transfer.**
 This is the single-source counterpart to the merged NM "interpolation ladder"
-(`scripts/experiments/nm_ladder_fillin/RESULTS.md`, `scripts/plotting/nm_ladder/`).
+(`scripts/experiments/analysis/nm_ladder_fillin/RESULTS.md`, `scripts/experiments/analysis/nm_ladder/`).
 **1 seed.** Data: `nm_single_source_matrix.csv` (wide), `_long.csv` (acc/f1 too).
 
 ## The matrix (ROC-AUC, `*` = in-domain diagonal)

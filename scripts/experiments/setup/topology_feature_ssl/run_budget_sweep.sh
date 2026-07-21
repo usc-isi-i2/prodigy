@@ -17,7 +17,7 @@ STATE_DIR="${STATE_DIR:-/dataMeR1/phil/gfm/prodigy/state}"
 LOG_ROOT="${LOG_ROOT:-/dataMeR1/phil/gfm/prodigy/log}"
 STEPS="${STEPS:-20000 40000 60000 120000}"
 GPUS="${GPUS:-0,1,2,3}"
-RUNNER=scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py
+RUNNER=scripts/eval/eval_ckpts_all_graph_tasks_tucker.py
 
 run_dir_of(){ ls -dt "${STATE_DIR}/tfssl_$1_"*/ 2>/dev/null | head -1; }
 mk_list(){  # arm -> model_list_budget_<arm>.txt with <arm>_step<N> rows (existing ckpts)
@@ -38,6 +38,6 @@ sweep(){  # $1=model_list  $2..=extra (e.g. --structural-features directed3)
 [ -s "$B0L" ] && sweep "$B0L"
 [ -s "$E1L" ] && sweep "$E1L" --structural-features directed3
 
-python3 scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py --log-root "$LOG_ROOT" --out-dir scripts/plotting
+python3 scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py --log-root "$LOG_ROOT" --out-dir scripts/experiments/analysis
 python3 "$DIR/analyze_budget.py"
 echo "BUDGET_SWEEP_DONE"

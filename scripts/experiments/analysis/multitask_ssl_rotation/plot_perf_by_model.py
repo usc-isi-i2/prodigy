@@ -31,7 +31,7 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
-PLOT = REPO / "scripts/plotting/multitask_ssl_rotation"
+PLOT = REPO / "scripts/experiments/analysis/multitask_ssl_rotation"
 
 MODELS = ["NM", "CL", "FP", "MIX"]
 MODEL_SUB = {"NM": "neighbor\nmatching", "CL": "contrastive", "FP": "feature\nrecon", "MIX": "rotation"}

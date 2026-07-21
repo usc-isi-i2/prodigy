@@ -91,7 +91,7 @@ python3 ../topology_feature_ssl/leakage_baseline.py --features raw \
   --datasets midterm,ukr_rus_twitter,covid19_twitter,twibot20 \
   --targets followers_count,friends_count,statuses_count,favourites_count,listed_count,account_age_days \
   --shots 10 --n-query 12 --episodes 500 --transform log1p --skip-fulldata
-#    -> scripts/plotting/node_regression/data/features_only_floor.csv (23 rows)
+#    -> scripts/experiments/analysis/node_regression/data/features_only_floor.csv (23 rows)
 
 # 0b. random_init floor via the normal runner (empty ckpt = untrained encoder)
 python3 ../eval/eval_ckpts_all_graph_tasks_tucker.py --tasks reg \
@@ -104,7 +104,7 @@ python3 ../eval/eval_ckpts_all_graph_tasks_tucker.py --tasks slp \
 #    strategy rows (task_transfer_covid_{nm,cl,fp}, muc10k) are already in the CSVs
 
 # 1. collect + plot (results keyed by model = row)
-python3 ../../analysis/benchmark_tasks/parse_benchmark_eval_logs.py --log-root <log-dir> --out-dir scripts/plotting
+python3 ../../analysis/benchmark_tasks/parse_benchmark_eval_logs.py --log-root <log-dir> --out-dir scripts/experiments/analysis
 python3 ../../plotting/pretrain_probe_matrix/plot_probe_matrix.py   # heatmap + Δ-over-floor bars
 ```
 
@@ -125,4 +125,4 @@ transfer on these tasks."
 - runner: `../pretrain_strategy_benchmark/run_pretrain_strategy_benchmark.sh` + `../eval/eval_ckpts_all_graph_tasks_tucker.py`
 - downstream tasks: `../node_regression/`, `../static_link_prediction/`
 - floors: `../feature_ablation/feature_label_probe.py`, `../feature_ablation/feature_only_nm_probe.py`
-- plots: `scripts/plotting/best_pretrain_strat/` (already has headroom-normalized views)
+- plots: `scripts/experiments/analysis/best_pretrain_strat/` (already has headroom-normalized views)

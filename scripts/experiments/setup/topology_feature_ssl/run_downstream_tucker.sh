@@ -5,7 +5,7 @@
 # T3 probes) so partial completion still yields the most important tables.
 #
 # Assumes checkpoints already exist. Run on Tucker in the prodigy env (conda on PATH).
-#   GPUS=0,1,2,3 bash scripts/experiments/topology_feature_ssl/run_downstream_tucker.sh
+#   GPUS=0,1,2,3 bash scripts/experiments/setup/topology_feature_ssl/run_downstream_tucker.sh
 set -uo pipefail
 DIR=scripts/experiments/topology_feature_ssl
 STATE_DIR="${STATE_DIR:-/dataMeR1/phil/gfm/prodigy/state}"
@@ -44,9 +44,9 @@ say "STAGE T3 probes"
 # --- FINAL authoritative parse over ALL arms (the per-stage parses were per-group) ---
 say "final parse (all arms)"
 STATE_DIR="$STATE_DIR" ARMS="B0 B1 E1" bash "$DIR/make_model_list.sh"   # -> model_list.txt (all present)
-python3 scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py --log-root "$LOG_ROOT" --out-dir scripts/plotting || say "benchmark parse FAILED"
-python3 "$DIR/parse_2x2.py" --log-root "$LOG_ROOT" --model-list "$DIR/model_list.txt" --out scripts/plotting/topology_feature_ssl/data/ablation_2x2.csv || say "2x2 parse FAILED"
-python3 "$DIR/parse_capability_probes.py" --log-root "$LOG_ROOT" --model-list "$DIR/model_list.txt" --out scripts/plotting/topology_feature_ssl/data/capability_probes.csv || say "probe parse FAILED"
+python3 scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py --log-root "$LOG_ROOT" --out-dir scripts/experiments/analysis || say "benchmark parse FAILED"
+python3 "$DIR/parse_2x2.py" --log-root "$LOG_ROOT" --model-list "$DIR/model_list.txt" --out scripts/experiments/analysis/topology_feature_ssl/data/ablation_2x2.csv || say "2x2 parse FAILED"
+python3 "$DIR/parse_capability_probes.py" --log-root "$LOG_ROOT" --model-list "$DIR/model_list.txt" --out scripts/experiments/analysis/topology_feature_ssl/data/capability_probes.csv || say "probe parse FAILED"
 
 # render a glance-able RESULTS.md from the parsed CSVs (numbers without running the notebook)
 python3 "$DIR/render_results.py" || say "render FAILED"

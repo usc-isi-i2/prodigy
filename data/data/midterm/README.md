@@ -100,9 +100,9 @@ python data/data/midterm/scripts/inspect_graph.py \
 Example task-1 scripts:
 
 ```bash
-sbatch scripts/experiments/train1/submit_train1_midterm_pl.sh
-sbatch scripts/experiments/train1/submit_train1_midterm_nm.sh
-sbatch scripts/experiments/train1/submit_train1_midterm_lp.sh
+sbatch scripts/experiments/setup/train1/submit_train1_midterm_pl.sh
+sbatch scripts/experiments/setup/train1/submit_train1_midterm_nm.sh
+sbatch scripts/experiments/setup/train1/submit_train1_midterm_lp.sh
 ```
 
 Typical task settings used in recent comparable runs:

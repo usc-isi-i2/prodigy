@@ -74,6 +74,6 @@ ax.legend(title="Train model", bbox_to_anchor=(1.02, 1), loc="upper left", fonts
 for s in ("top", "right"):
     ax.spines[s].set_visible(False)
 fig.tight_layout()
-out = "scripts/plotting/cp_hk_transfer_scatter/cp_hk_cross_model_scatter.png"
+out = "scripts/experiments/analysis/archive/cp_hk_transfer_scatter/cp_hk_cross_model_scatter.png"
 fig.savefig(out, dpi=200, bbox_inches="tight")
 print("wrote", out)

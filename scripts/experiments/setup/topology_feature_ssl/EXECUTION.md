@@ -71,7 +71,7 @@ DATA_ROOT=/dataMeR1/phil/data bash scripts/graph_construction/enrich_all_graphs.
 Reads the existing covid nm/fp checkpoints; pre-validates E3 for ~zero cost.
 
 ```bash
-bash scripts/experiments/topology_feature_ssl/run_free_preview.sh --gpus 0,1
+bash scripts/experiments/setup/topology_feature_ssl/run_free_preview.sh --gpus 0,1
 ```
 
 Prints a per-(dataset, target) NM-vs-FP Spearman table + a `mean(fp-nm)` verdict.
@@ -91,8 +91,8 @@ DRY_RUN=0 bash $ARM_DIR/train_arm_tucker.sh B0 --device 0 --epochs 1 \
   -ds_cap 20 -eval_step 20 -ckpt_step 20 --prefix tfssl_B0_smoke
 
 # full pretrains (one GPU each; run in tmux)
-tmux new-session -d -s tfssl_B0 'bash -lc "bash scripts/experiments/topology_feature_ssl/train_arm_tucker.sh B0 --device 0"'
-tmux new-session -d -s tfssl_B1 'bash -lc "bash scripts/experiments/topology_feature_ssl/train_arm_tucker.sh B1 --device 1"'
+tmux new-session -d -s tfssl_B0 'bash -lc "bash scripts/experiments/setup/topology_feature_ssl/train_arm_tucker.sh B0 --device 0"'
+tmux new-session -d -s tfssl_B1 'bash -lc "bash scripts/experiments/setup/topology_feature_ssl/train_arm_tucker.sh B1 --device 1"'
 ```
 
 ## Step 2 — Eval sweep for B0 / B1
@@ -101,14 +101,14 @@ tmux new-session -d -s tfssl_B1 'bash -lc "bash scripts/experiments/topology_fea
 cd /dataMeR1/phil/gfm/prodigy
 # build the arm-keyed model list from the trained checkpoints
 STATE_DIR=/dataMeR1/phil/gfm/prodigy/state ARMS="B0 B1" \
-  bash scripts/experiments/topology_feature_ssl/make_model_list.sh
+  bash scripts/experiments/setup/topology_feature_ssl/make_model_list.sh
 
 # frozen-encoder benchmark: reg (10-shot) + static-LP (0-shot) + classification
-tmux new-session -d -s tfssl_eval 'bash -lc "MODEL_LIST=scripts/experiments/topology_feature_ssl/model_list.txt bash scripts/experiments/topology_feature_ssl/run_eval_sweep.sh --gpus 0,1,2,3 > /tmp/tfssl_eval.log 2>&1"'
+tmux new-session -d -s tfssl_eval 'bash -lc "MODEL_LIST=scripts/experiments/topology_feature_ssl/model_list.txt bash scripts/experiments/setup/topology_feature_ssl/run_eval_sweep.sh --gpus 0,1,2,3 > /tmp/tfssl_eval.log 2>&1"'
 ```
 
 Results land (keyed by `model` = arm) in
-`scripts/plotting/{node_regression,static_link_prediction}/data/*.csv`.
+`scripts/experiments/analysis/{node_regression,static_link_prediction}/data/*.csv`.
 
 ## Step 3 — Diagnostics (PRIMARY evidence; frozen encoders, no training)
 
@@ -121,18 +121,18 @@ ML=scripts/experiments/topology_feature_ssl/model_list.txt
 
 # T2 — 2x2 ablation: retained fraction under random-feat / rewired-edge / both.
 # (intact reference = the Step-2 eval sweep; this runs the 3 corrupted conditions)
-MODEL_LIST=$ML bash scripts/experiments/topology_feature_ssl/run_2x2_ablation.sh --gpus 0,1,2,3
+MODEL_LIST=$ML bash scripts/experiments/setup/topology_feature_ssl/run_2x2_ablation.sh --gpus 0,1,2,3
 
 # T3 — capability probes: linear-probe AUC on planted single-rule synthetic graphs.
-python3 scripts/experiments/topology_feature_ssl/make_probe_graphs.py \
+python3 scripts/experiments/setup/topology_feature_ssl/make_probe_graphs.py \
   --out-dir /dataMeR1/phil/data/synthetic_probes/graphs        # once
-MODEL_LIST=$ML bash scripts/experiments/topology_feature_ssl/run_capability_probes.sh --gpus 0,1,2,3
+MODEL_LIST=$ML bash scripts/experiments/setup/topology_feature_ssl/run_capability_probes.sh --gpus 0,1,2,3
 
 # Leakage control: raw-structural-feature -> regression-target ceiling (no encoder).
-python3 scripts/experiments/topology_feature_ssl/leakage_baseline.py --data-root /dataMeR1/phil/data
+python3 scripts/experiments/setup/topology_feature_ssl/leakage_baseline.py --data-root /dataMeR1/phil/data
 ```
 
-Outputs land in `scripts/plotting/topology_feature_ssl/data/`:
+Outputs land in `scripts/experiments/analysis/topology_feature_ssl/`:
 `ablation_2x2.csv` (T2), `capability_probes.csv` (T3), `leakage_baseline.csv`.
 `parse_2x2.py` / `parse_capability_probes.py` also print the T2 / T3 tables.
 
@@ -145,17 +145,17 @@ commands on the same structural mode they were trained with.
 
 ```bash
 # pretrain E1 (structural inputs; NM). One GPU.
-tmux new-session -d -s tfssl_E1 'bash -lc "bash scripts/experiments/topology_feature_ssl/train_arm_tucker.sh E1 --device 2"'
+tmux new-session -d -s tfssl_E1 'bash -lc "bash scripts/experiments/setup/topology_feature_ssl/train_arm_tucker.sh E1 --device 2"'
 
 # eval / diagnostics for the E-arms: E-only list + matching STRUCTURAL mode
 STATE_DIR=/dataMeR1/phil/gfm/prodigy/state ARMS="E1 E2 E3 E4" \
-  bash scripts/experiments/topology_feature_ssl/make_model_list.sh   # -> model_list.txt (E-arms)
+  bash scripts/experiments/setup/topology_feature_ssl/make_model_list.sh   # -> model_list.txt (E-arms)
 STRUCTURAL=directed3 MODEL_LIST=scripts/experiments/topology_feature_ssl/model_list.txt \
-  bash scripts/experiments/topology_feature_ssl/run_eval_sweep.sh --gpus 0,1,2,3
+  bash scripts/experiments/setup/topology_feature_ssl/run_eval_sweep.sh --gpus 0,1,2,3
 STRUCTURAL=directed3 MODEL_LIST=scripts/experiments/topology_feature_ssl/model_list.txt \
-  bash scripts/experiments/topology_feature_ssl/run_2x2_ablation.sh --gpus 0,1,2,3
+  bash scripts/experiments/setup/topology_feature_ssl/run_2x2_ablation.sh --gpus 0,1,2,3
 STRUCTURAL=directed3 MODEL_LIST=scripts/experiments/topology_feature_ssl/model_list.txt \
-  bash scripts/experiments/topology_feature_ssl/run_capability_probes.sh --gpus 0,1,2,3
+  bash scripts/experiments/setup/topology_feature_ssl/run_capability_probes.sh --gpus 0,1,2,3
 ```
 
 (Structural features are computed once per graph and cached as
@@ -184,7 +184,7 @@ rm -rf state/tfssl_E2_smoke_*        # optional: keep `ls -dt tfssl_E2_*` unambi
 #        (GPUs 0-3 were free on 2026-07-10; nvidia-smi first.) run in tmux, login shell
 #        so `conda activate` inside train_arm_tucker.sh works (detached-tmux conda gotcha).
 tmux new-session -d -s tfssl_E2_40k \
-  'bash -lc "bash scripts/experiments/topology_feature_ssl/train_arm_tucker.sh E2 --device 0"'
+  'bash -lc "bash scripts/experiments/setup/topology_feature_ssl/train_arm_tucker.sh E2 --device 0"'
 # watch: tmux capture-pane -pt tfssl_E2_40k | tail ; ls state/tfssl_E2_*/checkpoint/ | tail
 # DONE when state_dict_40000.ckpt exists (and 50000 does NOT — 40k is the final ckpt).
 
@@ -196,13 +196,13 @@ tmux new-session -d -s tfssl_m40k 'bash -lc "\
   source \$(conda info --base)/etc/profile.d/conda.sh && conda activate prodigy && \
   export LD_LIBRARY_PATH=\$CONDA_PREFIX/lib:\${LD_LIBRARY_PATH:-} && \
   cd /dataMeR1/phil/gfm/prodigy && \
-  GPUS=0,1,2,3 bash scripts/experiments/topology_feature_ssl/run_matched40k_tucker.sh \
+  GPUS=0,1,2,3 bash scripts/experiments/setup/topology_feature_ssl/run_matched40k_tucker.sh \
   > /tmp/tfssl_m40k.log 2>&1"'
 # watch: tail -f /tmp/tfssl_m40k.log ; DONE at line "MATCHED40K_DONE".
 ```
 
 Lands (keyed `model = <arm>_40k`): `B0_40k/B1_40k/E1_40k/E2_40k` rows in
-`scripts/plotting/{node_regression,static_link_prediction,node_classification}/data/*.csv`;
+`scripts/experiments/analysis/{node_regression,static_link_prediction,node_classification}/data/*.csv`;
 `ablation_2x2_40k.csv`, `capability_probes_40k.csv`, `trivial_baselines.csv`,
 `leakage_baseline_6panel.csv` in `…/topology_feature_ssl/data/`; and
 `RESULTS_matched40k.md`. Then commit the CSVs on Tucker + pull to the laptop (or scp the
@@ -219,7 +219,7 @@ won't load.
 ```bash
 # --- 1. pretrain E2b to 40k (epochs:5, no_bn_encoder). ~1.5h. Parallel with E2 (GPU 1).
 tmux new-session -d -s tfssl_E2b \
-  'bash -lc "bash scripts/experiments/topology_feature_ssl/train_arm_tucker.sh E2b --device 1"'
+  'bash -lc "bash scripts/experiments/setup/topology_feature_ssl/train_arm_tucker.sh E2b --device 1"'
 
 # --- 2. eval E2b vs the 40k family. Name it E2b_40k to sit beside E1_40k/E2_40k.
 cd /dataMeR1/phil/gfm/prodigy
@@ -228,11 +228,11 @@ echo "E2b_40k ${d}checkpoint/state_dict_40000.ckpt" \
   > scripts/experiments/topology_feature_ssl/model_list_E2b.txt
 ML=scripts/experiments/topology_feature_ssl/model_list_E2b.txt
 STRUCTURAL=directed3 GNN_TYPE=sage_multi NO_BN_ENCODER=1 MODEL_LIST=$ML \
-  bash scripts/experiments/topology_feature_ssl/run_eval_sweep.sh --gpus 0,1,2,3
+  bash scripts/experiments/setup/topology_feature_ssl/run_eval_sweep.sh --gpus 0,1,2,3
 STRUCTURAL=directed3 GNN_TYPE=sage_multi NO_BN_ENCODER=1 MODEL_LIST=$ML \
-  bash scripts/experiments/topology_feature_ssl/run_2x2_ablation.sh --gpus 0,1,2,3
+  bash scripts/experiments/setup/topology_feature_ssl/run_2x2_ablation.sh --gpus 0,1,2,3
 STRUCTURAL=directed3 GNN_TYPE=sage_multi NO_BN_ENCODER=1 MODEL_LIST=$ML \
-  bash scripts/experiments/topology_feature_ssl/run_capability_probes.sh --gpus 0,1,2,3
+  bash scripts/experiments/setup/topology_feature_ssl/run_capability_probes.sh --gpus 0,1,2,3
 ```
 
 Read (vs E1_40k / E2_40k): **capability probes** (count / in-deg / out-deg) rising above
@@ -273,15 +273,15 @@ cd /dataMeR1/phil/gfm/prodigy
 
 # --- 1. SMOKE first (tiny; ~1 min). Confirms the real forward + all three heads run.
 #        Look for "structural_features=directed3 ... input_dim=771" and no crash.
-DRY_RUN=0 bash scripts/experiments/topology_feature_ssl/train_arm_tucker.sh E4 --device 0 \
+DRY_RUN=0 bash scripts/experiments/setup/topology_feature_ssl/train_arm_tucker.sh E4 --device 0 \
   --epochs 1 -ds_cap 40 -eval_step 40 -ckpt_step 40 --prefix tfssl_E4_smoke
-DRY_RUN=0 bash scripts/experiments/topology_feature_ssl/train_arm_tucker.sh E4r --device 0 \
+DRY_RUN=0 bash scripts/experiments/setup/topology_feature_ssl/train_arm_tucker.sh E4r --device 0 \
   --epochs 1 -ds_cap 40 -eval_step 40 -ckpt_step 40 --prefix tfssl_E4r_smoke   # rotation path
 
 # --- 2. full 40k pretrains (epochs:5 -> final ckpt state_dict_40000). ~1.5h each, one GPU
 #        each, in tmux + login shell (detached-tmux conda gotcha). nvidia-smi for free GPUs.
-tmux new-session -d -s tfssl_E4  'bash -lc "bash scripts/experiments/topology_feature_ssl/train_arm_tucker.sh E4  --device 0"'
-tmux new-session -d -s tfssl_E4r 'bash -lc "bash scripts/experiments/topology_feature_ssl/train_arm_tucker.sh E4r --device 1"'
+tmux new-session -d -s tfssl_E4  'bash -lc "bash scripts/experiments/setup/topology_feature_ssl/train_arm_tucker.sh E4  --device 0"'
+tmux new-session -d -s tfssl_E4r 'bash -lc "bash scripts/experiments/setup/topology_feature_ssl/train_arm_tucker.sh E4r --device 1"'
 # DONE when state_dict_40000.ckpt exists (and 50000 does NOT — 40k is the final ckpt).
 
 # --- 3. matched-40k eval. E4 uses E2's encoder, so the frozen sweep MUST carry
@@ -294,9 +294,9 @@ for arm in E4 E4r; do
 done > scripts/experiments/topology_feature_ssl/model_list_E4.txt
 ML=scripts/experiments/topology_feature_ssl/model_list_E4.txt
 STRUCTURAL=directed3 GNN_TYPE=sage_multi MODEL_LIST=$ML \
-  bash scripts/experiments/topology_feature_ssl/run_eval_sweep.sh --gpus 0,1,2,3
+  bash scripts/experiments/setup/topology_feature_ssl/run_eval_sweep.sh --gpus 0,1,2,3
 STRUCTURAL=directed3 GNN_TYPE=sage_multi MODEL_LIST=$ML \
-  bash scripts/experiments/topology_feature_ssl/run_capability_probes.sh --gpus 0,1,2,3
+  bash scripts/experiments/setup/topology_feature_ssl/run_capability_probes.sh --gpus 0,1,2,3
 ```
 
 Then add `E4_40k`, `E4r_40k` to `analyze_matched40k.py` `ARMS`, re-run it, and fold the

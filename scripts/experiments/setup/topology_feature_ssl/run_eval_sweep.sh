@@ -11,7 +11,7 @@
 #
 # Usage (Tucker, prodigy env, tmux):
 #   MODEL_LIST=scripts/experiments/topology_feature_ssl/model_list.txt \
-#     bash scripts/experiments/topology_feature_ssl/run_eval_sweep.sh --gpus 0,1,2,3
+#     bash scripts/experiments/setup/topology_feature_ssl/run_eval_sweep.sh --gpus 0,1,2,3
 # Build MODEL_LIST first with make_model_list.sh. Pass overrides through "$@".
 set -euo pipefail
 
@@ -25,7 +25,7 @@ conda activate prodigy
 export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 cd "${REPO_ROOT}"
 
-RUNNER=scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py
+RUNNER=scripts/eval/eval_ckpts_all_graph_tasks_tucker.py
 # E1-E4 encoders need their structural inputs injected at eval (E1 uses
 # directed3/input_dim 771), so run a SEPARATE sweep for them with
 # STRUCTURAL=directed3; B0/B1 stay unset (768).
@@ -54,6 +54,6 @@ python3 "${RUNNER}" "${COMMON[@]}" --tasks pl --shots 10 "$@"
 
 # parse reg + slp into the shared plotting CSVs (keyed by model = arm)
 python3 scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py \
-  --log-root /dataMeR1/phil/gfm/prodigy/log --out-dir scripts/plotting
+  --log-root /dataMeR1/phil/gfm/prodigy/log --out-dir scripts/experiments/analysis
 
 echo "TOPOLOGY_FEATURE_SSL_EVAL_SWEEP_DONE"

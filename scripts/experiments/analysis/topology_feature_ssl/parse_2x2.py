@@ -18,7 +18,7 @@ NM's signature (to break): survives rewired_edge (~1.0), collapses under random_
 Usage:
     python parse_2x2.py --log-root /dataMeR1/phil/gfm/prodigy/log \
         --model-list scripts/experiments/topology_feature_ssl/model_list.txt \
-        --out scripts/plotting/topology_feature_ssl/data/ablation_2x2.csv
+        --out scripts/experiments/analysis/topology_feature_ssl/data/ablation_2x2.csv
 """
 
 from __future__ import annotations
@@ -105,7 +105,7 @@ def main() -> int:
     ap.add_argument("--log-root", required=True)
     ap.add_argument("--model-list", required=True,
                     help="Arm-keyed model list; arm names (col 1) label the CSV rows.")
-    ap.add_argument("--out", default="scripts/plotting/topology_feature_ssl/data/ablation_2x2.csv")
+    ap.add_argument("--out", default="scripts/experiments/analysis/topology_feature_ssl/data/ablation_2x2.csv")
     args = ap.parse_args()
 
     arms = [ln.split()[0] for ln in Path(args.model_list).read_text().splitlines()

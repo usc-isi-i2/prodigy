@@ -1,5 +1,5 @@
 // topology_feature_ssl — 2-slide deck (design + results).
-// Same pptxgenjs style/palette as scripts/experiments/slides/build_slides.js.
+// Same pptxgenjs style/palette as slides/build_slides.js.
 // Build:  NODE_PATH=<scratchpad>/node_modules node build_slides.js
 // Writes topology_feature_ssl_slides.pptx next to this file.
 const path = require("path");

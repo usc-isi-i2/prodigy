@@ -21,7 +21,7 @@ export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 
 cd "${REPO_ROOT}"
 
-python3 scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py \
+python3 scripts/eval/eval_ckpts_all_graph_tasks_tucker.py \
   --tasks reg \
   --datasets midterm,ukr_rus_twitter,covid19_twitter,twibot20 \
   --reg-transform log1p \

@@ -6,21 +6,21 @@
 # ============================================================================
 
 cd /home1/eibl/gfm/prodigy
-python scripts/experiments/eval/generate_eval_jobs.py
+python scripts/eval/generate_eval_jobs.py
 
 # Creates:
-# - scripts/experiments/legacy_cross_dataset_eval/eval_jobs.txt          (list of 90 evaluation commands)
-# - scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch  (SLURM submission script)
+# - scripts/experiments/setup/legacy_cross_dataset_eval/eval_jobs.txt          (list of 90 evaluation commands)
+# - scripts/experiments/setup/legacy_cross_dataset_eval/eval_cross_dataset.sbatch  (SLURM submission script)
 
 # ============================================================================
 # STEP 2: Submit to Cluster
 # ============================================================================
 
 # Review jobs
-head -20 scripts/experiments/legacy_cross_dataset_eval/eval_jobs.txt
+head -20 scripts/experiments/setup/legacy_cross_dataset_eval/eval_jobs.txt
 
 # Submit
-sbatch scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch
+sbatch scripts/experiments/setup/legacy_cross_dataset_eval/eval_cross_dataset.sbatch
 
 # Check submission
 squeue -u $USER
@@ -44,7 +44,7 @@ squeue -u $USER -O "JOBID,ARRAY_TASK_ID,STATE,TIME,NODELIST"
 # STEP 4: Aggregate Results (after jobs finish)
 # ============================================================================
 
-python scripts/experiments/eval/aggregate_eval_results.py \
+python scripts/analysis/aggregate_eval_results.py \
   --results_dir /home1/eibl/gfm/prodigy/eval_results
 
 # Generates:
@@ -56,7 +56,7 @@ python scripts/experiments/eval/aggregate_eval_results.py \
 # OPTIONAL: Run Single Evaluation (for testing)
 # ============================================================================
 
-python scripts/experiments/eval/eval_cross_dataset.py \
+python scripts/analysis/eval_cross_dataset.py \
   --model_path /scratch1/singhama/data/experiments/train2_midterm_nm_to_covid_nm_16_04_2026_10_07_00/state_dict \
   --dataset covid19_twitter \
   --task node_masking \

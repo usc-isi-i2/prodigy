@@ -31,7 +31,7 @@ def _plotting_root():
     for c in [Path.cwd(), *Path.cwd().parents]:
         if (c / "node_regression").is_dir() and (c / "static_link_prediction").is_dir():
             return c
-    # fallback: notebook lives in scripts/plotting/topology_feature_ssl/
+    # fallback: notebook lives in scripts/experiments/analysis/topology_feature_ssl/
     return Path.cwd().parent
 PLOT = _plotting_root()
 

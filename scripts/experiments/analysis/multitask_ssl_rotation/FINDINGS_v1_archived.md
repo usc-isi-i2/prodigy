@@ -9,7 +9,7 @@ link prediction at all. Every single-objective control collapses on ≥1 task.
 4 LP datasets, so it is very likely real; deltas on the noisy regression axis are
 within noise. Multi-seed hardening was scoped out (single-seed decision, 2026-07-10).
 
-Reproduce the numbers below: `python aggregate_results.py --plotting-root <tree>/scripts/plotting`
+Reproduce the numbers below: `python aggregate_results.py --plotting-root <tree>/scripts/experiments/analysis`
 
 ---
 

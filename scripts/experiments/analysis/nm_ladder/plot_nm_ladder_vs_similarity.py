@@ -18,9 +18,9 @@ topology-CLOSE to the merge yet transfers WORST — topology mispredicts it, fea
 not (the known cp_hk topology anomaly).
 
 Derived (see below) from:
-  - scripts/plotting/nm_ladder/nm_ladder_full.csv              (ladder OOD baselines)
-  - scripts/experiments/nm_single_source_matrix/nm_single_source_matrix.csv  (donors)
-  - scripts/plotting/graph_divergence/graph_divergence_data.json (pairwise divergence)
+  - scripts/experiments/analysis/nm_ladder/data/nm_ladder_full.csv              (ladder OOD baselines)
+  - scripts/experiments/analysis/nm_single_source_matrix/data/nm_single_source_matrix.csv  (donors)
+  - scripts/experiments/analysis/graph_divergence/data/graph_divergence_data.json (pairwise divergence)
 Values are embedded so the figure is self-contained (the inputs are gitignored / churned
 by a parallel analysis). Recompute: rerun the join over the three files above.
 

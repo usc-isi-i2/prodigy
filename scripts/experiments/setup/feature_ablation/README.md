@@ -52,7 +52,7 @@ neighborhood content* (features-as-content).
 - `experiments/params.py`: `--ablate_features {none,zero,permute,noise}` — composes
   the token into `--augmentation` and forces `--augment_test True`. Intended for
   `-eval_only True` runs; warns otherwise.
-- `scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py`:
+- `scripts/eval/eval_ckpts_all_graph_tasks_tucker.py`:
   `--ablate-features` pass-through; ablated runs get a `_ablZ` / `_ablP` / `_ablN`
   tag so they don't collide with intact runs.
 
@@ -62,20 +62,20 @@ neighborhood content* (features-as-content).
 source "$(conda info --base)/etc/profile.d/conda.sh"; conda activate prodigy
 
 # 1. list the checkpoint(s) to probe, one per line: "<model_name> <ckpt.pt>"
-cat > scripts/experiments/feature_ablation/model_list.txt <<'LIST'
+cat > scripts/experiments/setup/feature_ablation/model_list.txt <<'LIST'
 nm_pretrained  /dataMeR1/phil/gfm/prodigy/log/<your_nm_run>/models/<ckpt>.pt
 LIST
 
 # 2. sweep intact/zero/permute over the tasks (forwards extra args to the driver)
-MODEL_LIST=scripts/experiments/feature_ablation/model_list.txt \
-  bash scripts/experiments/feature_ablation/run_feature_ablation_tucker.sh \
+MODEL_LIST=scripts/experiments/setup/feature_ablation/model_list.txt \
+  bash scripts/experiments/setup/feature_ablation/run_feature_ablation_tucker.sh \
   --datasets midterm,covid19_twitter,ukr_rus_twitter,twibot20 \
   --tasks neighbor_matching,temporal_link_prediction,classification \
   --shots 3 --nm-n-way 30 --gpus 0
 
 # 3. collect the intact-vs-ablated gap table
-python3 scripts/experiments/feature_ablation/parse_feature_ablation.py \
-  --log-root log --out scripts/experiments/feature_ablation/feature_ablation_results.csv
+python3 scripts/experiments/analysis/feature_ablation/parse_feature_ablation.py \
+  --log-root log --out scripts/experiments/analysis/feature_ablation/data/feature_ablation_results.csv
 ```
 
 The intact (`none`) pass reuses the standard eval path, so if matching intact

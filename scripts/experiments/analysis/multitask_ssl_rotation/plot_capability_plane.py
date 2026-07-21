@@ -17,8 +17,8 @@ Reads the same raw CSVs as aggregate_results.py; recomputes every number (no
 hardcoded results). Writes figures/0_capability_plane.{pdf,png}.
 
 Usage:
-    python scripts/experiments/multitask_ssl_rotation/plot_capability_plane.py \
-        --plotting-root scripts/plotting/multitask_ssl_rotation
+    python scripts/experiments/analysis/multitask_ssl_rotation/plot_capability_plane.py \
+        --plotting-root scripts/experiments/analysis/multitask_ssl_rotation
 """
 from __future__ import annotations
 
@@ -75,7 +75,7 @@ def _by_arm(rows: list[dict], metric: str) -> dict[str, list[float]]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--plotting-root", default="scripts/plotting/multitask_ssl_rotation")
+    ap.add_argument("--plotting-root", default="scripts/experiments/analysis/multitask_ssl_rotation")
     ap.add_argument("--outdir", default=None, help="default: <this dir>/figures")
     args = ap.parse_args()
     root = Path(args.plotting_root)

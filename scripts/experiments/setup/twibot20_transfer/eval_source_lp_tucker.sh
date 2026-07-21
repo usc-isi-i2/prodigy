@@ -18,7 +18,7 @@ export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 
 cd "${REPO_ROOT}"
 
-python3 scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py \
+python3 scripts/eval/eval_ckpts_all_graph_tasks_tucker.py \
   --model-list "${SCRIPT_DIR}/model_list_source.txt" \
   --datasets twibot20,covid_political,election2020,ukr_rus_suspended,cp_hk_twitter \
   --tasks classification \

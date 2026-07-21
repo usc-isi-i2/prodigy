@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
-OUT_DIR="${OUT_DIR:-${REPO_ROOT}/scripts/plotting/transfer_trajectory_merged_ukr_rus_covid_midterm_nm_aug}"
+OUT_DIR="${OUT_DIR:-${REPO_ROOT}/scripts/experiments/analysis/archive/transfer_trajectory_merged_ukr_rus_covid_midterm_nm_aug}"
 RUN_GLOB="${RUN_GLOB:-eval_merged_ukr_rus_covid_midterm_nm_aug_15_06_2026_17_49_22_step*_to_*}"
 
 if [[ -z "${LOG_ROOT:-}" ]]; then

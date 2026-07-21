@@ -135,11 +135,11 @@ classification read is entirely held-out.
 ## 4. Results
 
 > **Raw data (single source of truth):**
-> `scripts/plotting/multitask_ssl_rotation/{node_classification,node_regression,static_link_prediction}/data/*.csv`
+> `scripts/experiments/analysis/multitask_ssl_rotation/data/*.csv`
 > (per-arm × per-dataset × per-target eval rows, test split; pulled from the run
 > worktree).
 > **Reproduce every number below:**
-> `python scripts/experiments/multitask_ssl_rotation/aggregate_results.py --plotting-root scripts/plotting/multitask_ssl_rotation`
+> `python scripts/experiments/analysis/multitask_ssl_rotation/aggregate_results.py --plotting-root scripts/experiments/analysis/multitask_ssl_rotation`
 > **Figures:** `figures/0_capability_plane.png` (headline; built by
 > `plot_capability_plane.py`) + per-task detail
 > `figures/{1_regression,2_static_link_prediction,3_classification}.png`

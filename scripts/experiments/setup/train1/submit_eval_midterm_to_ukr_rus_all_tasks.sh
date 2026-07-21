@@ -5,6 +5,6 @@ SHOTS_CSV="${1:-0,1,2,5,10}"
 
 cd /home1/eibl/gfm/prodigy
 
-sbatch scripts/experiments/eval/eval_ukr_rus_twitter_model_list_all_tasks.sbatch \
-  scripts/experiments/train1/models/midterm_train1_eval_on_ukr_rus_model_list.txt \
+sbatch scripts/eval/eval_ukr_rus_twitter_model_list_all_tasks.sbatch \
+  scripts/experiments/setup/train1/models/midterm_train1_eval_on_ukr_rus_model_list.txt \
   "$SHOTS_CSV"

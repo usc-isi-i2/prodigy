@@ -13,7 +13,7 @@
 #
 # Usage (Tucker, prodigy env, tmux):
 #   MODEL_LIST=scripts/experiments/multitask_ssl_rotation/model_list.txt \
-#     bash scripts/experiments/multitask_ssl_rotation/run_eval_sweep.sh --gpus 0,1,2,3
+#     bash scripts/experiments/setup/multitask_ssl_rotation/run_eval_sweep.sh --gpus 0,1,2,3
 # Build MODEL_LIST first with make_model_list.sh. Pass overrides through "$@".
 set -euo pipefail
 
@@ -27,7 +27,7 @@ conda activate prodigy
 export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 cd "${REPO_ROOT}"
 
-RUNNER=scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py
+RUNNER=scripts/eval/eval_ckpts_all_graph_tasks_tucker.py
 COMMON=(--model-list "${ML}" --python python3
         --data-root /dataMeR1/phil/data
         --datasets midterm,ukr_rus_twitter,covid19_twitter,twibot20,election2020
@@ -48,6 +48,6 @@ python3 "${RUNNER}" "${COMMON[@]}" --tasks pl --shots 10 "$@"
 # REPO_ROOT above). Hardcoding the main tree silently parses the wrong logs when the
 # sweep runs from an isolated worktree (e.g. /dataMeR1/phil/gfm/prodigy-mtr).
 python3 scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py \
-  --log-root "${REPO_ROOT}/log" --out-dir scripts/plotting
+  --log-root "${REPO_ROOT}/log" --out-dir scripts/experiments/analysis
 
 echo "MULTITASK_SSL_ROTATION_EVAL_SWEEP_DONE"

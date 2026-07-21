@@ -12,11 +12,11 @@ Defaults target Tucker paths under `/dataMeR1`. Override `COVID_ROOT`,
 Dry-run the commands:
 
 ```bash
-DRY_RUN=1 bash scripts/experiments/task_transfer/run_covid_smokes_tucker.sh
+DRY_RUN=1 bash scripts/experiments/setup/task_transfer/run_covid_smokes_tucker.sh
 ```
 
 Run one task:
 
 ```bash
-bash scripts/experiments/task_transfer/train_covid_task_tucker.sh cl
+bash scripts/experiments/setup/task_transfer/train_covid_task_tucker.sh cl
 ```

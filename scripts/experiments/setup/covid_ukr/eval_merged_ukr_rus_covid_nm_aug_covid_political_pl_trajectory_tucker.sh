@@ -16,7 +16,7 @@ LAYERS="${LAYERS:-S2,U,M2}"
 MODEL_DROPOUT="${MODEL_DROPOUT:-0.1}"
 
 cmd=(
-  python3 scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py
+  python3 scripts/eval/eval_ckpts_all_graph_tasks_tucker.py
   --checkpoint-run-dir "${RUN_DIR}"
   --data-root "${DATA_ROOT}"
   --datasets "${DATASETS}"

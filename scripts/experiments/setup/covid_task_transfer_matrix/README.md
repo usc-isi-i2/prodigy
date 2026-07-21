@@ -30,7 +30,7 @@ This follows the same local structure as:
 Those experiments build dataset-transfer matrices for the NM task. This one
 instead holds the dataset fixed to COVID and varies the train/eval task.
 
-The existing shared eval runner, `scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py`,
+The existing shared eval runner, `scripts/eval/eval_ckpts_all_graph_tasks_tucker.py`,
 only supports `nm/lp/pl`, so this folder uses a dedicated launcher for
 `nm/cl/fp`.
 

@@ -6,12 +6,12 @@
 #
 # Prereq: build the synthetic graphs once (writes covid dict-format .pt files that
 # the covid loader + eval driver consume as probe_* datasets):
-#   python scripts/experiments/topology_feature_ssl/make_probe_graphs.py \
+#   python scripts/experiments/setup/topology_feature_ssl/make_probe_graphs.py \
 #     --out-dir /dataMeR1/phil/data/synthetic_probes/graphs
 #
 # Usage (Tucker, prodigy env, tmux):
 #   MODEL_LIST=scripts/experiments/topology_feature_ssl/model_list.txt \
-#     bash scripts/experiments/topology_feature_ssl/run_capability_probes.sh --gpus 0,1,2,3
+#     bash scripts/experiments/setup/topology_feature_ssl/run_capability_probes.sh --gpus 0,1,2,3
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -30,7 +30,7 @@ if ! ls "${PROBE_GRAPHS}"/count_threshold.pt >/dev/null 2>&1; then
   python3 "${SCRIPT_DIR}/make_probe_graphs.py" --out-dir "${PROBE_GRAPHS}"
 fi
 
-RUNNER=scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py
+RUNNER=scripts/eval/eval_ckpts_all_graph_tasks_tucker.py
 # E1-E4 encoders need structural inputs at probe time too (E1 input_dim 771):
 # set STRUCTURAL=directed3 and use an E1-E4-only model list.
 STRUCTURAL_ARGS=()
@@ -49,6 +49,6 @@ python3 "${RUNNER}" \
 
 python3 "${SCRIPT_DIR}/parse_capability_probes.py" \
   --log-root /dataMeR1/phil/gfm/prodigy/log --model-list "${ML}" \
-  --out scripts/plotting/topology_feature_ssl/data/capability_probes.csv
+  --out scripts/experiments/analysis/topology_feature_ssl/data/capability_probes.csv
 
 echo "TOPOLOGY_FEATURE_SSL_CAPABILITY_PROBES_DONE"

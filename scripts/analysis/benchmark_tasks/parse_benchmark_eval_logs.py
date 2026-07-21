@@ -13,7 +13,7 @@ Usage (laptop or Tucker, needs pandas):
 
     python scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py \
         --log-root /dataMeR2/phil/gfm/prodigy/log \
-        --out-dir scripts/plotting
+        --out-dir scripts/experiments/analysis
 """
 
 from __future__ import annotations
@@ -127,7 +127,7 @@ def _rows_for_run(run_dir: Path) -> list[dict[str, Any]]:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--log-root", required=True, help="Directory containing eval_* run dirs.")
-    ap.add_argument("--out-dir", default="scripts/plotting",
+    ap.add_argument("--out-dir", default="scripts/experiments/analysis",
                     help="Base dir; CSVs land under <out-dir>/{node_regression,static_link_prediction}/data.")
     ap.add_argument("--reg-glob", default="eval_*_reg_*")
     ap.add_argument("--slp-glob", default="eval_*_slp_*")

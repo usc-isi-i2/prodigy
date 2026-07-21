@@ -52,8 +52,8 @@ gates on its presence.
 2. **Evaluate** (prodigy env):
 
    ```bash
-   bash scripts/experiments/static_link_prediction/run_static_lp_eval.sh \
+   bash scripts/experiments/setup/static_link_prediction/run_static_lp_eval.sh \
      --checkpoint-run-dir /dataMeR2/phil/gfm/prodigy/state/<run> --gpus 0,1
    ```
 
-Results are collected in `scripts/plotting/static_link_prediction/`.
+Results are collected in `scripts/experiments/analysis/static_link_prediction/`.

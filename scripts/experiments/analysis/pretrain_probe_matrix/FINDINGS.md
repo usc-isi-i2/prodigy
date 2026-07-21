@@ -94,13 +94,13 @@ is treated as noise.
 ## Results
 
 **Raw data (source of truth):**
-- Regression: [`scripts/plotting/node_regression/data/node_regression.csv`](../../plotting/node_regression/data/node_regression.csv)
-- Static LP: [`scripts/plotting/static_link_prediction/data/static_link_prediction.csv`](../../plotting/static_link_prediction/data/static_link_prediction.csv)
-- `features_only` floor: [`scripts/plotting/node_regression/data/features_only_floor.csv`](../../plotting/node_regression/data/features_only_floor.csv)
-- Classification: [`scripts/plotting/node_classification/data/node_classification.csv`](../../plotting/node_classification/data/node_classification.csv)
+- Regression: [`scripts/experiments/analysis/node_regression/data/node_regression.csv`](../../plotting/node_regression/data/node_regression.csv)
+- Static LP: [`scripts/experiments/analysis/static_link_prediction/data/static_link_prediction.csv`](../../plotting/static_link_prediction/data/static_link_prediction.csv)
+- `features_only` floor: [`scripts/experiments/analysis/node_regression/data/features_only_floor.csv`](../../plotting/node_regression/data/features_only_floor.csv)
+- Classification: [`scripts/experiments/analysis/node_classification/data/node_classification.csv`](../../plotting/node_classification/data/node_classification.csv)
 - Figures: [`probe_matrix_heatmap.png`](../../plotting/pretrain_probe_matrix/probe_matrix_heatmap.png),
   [`probe_matrix_delta_bars.png`](../../plotting/pretrain_probe_matrix/probe_matrix_delta_bars.png)
-- Reproduce aggregation + figures: `python3 scripts/plotting/pretrain_probe_matrix/plot_probe_matrix.py`
+- Reproduce aggregation + figures: `python3 scripts/experiments/analysis/pretrain_probe_matrix/plot_probe_matrix.py`
 
 ### Node regression — 10-shot Spearman ρ (mean over 23 dataset×target cells)
 

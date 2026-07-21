@@ -81,7 +81,7 @@ and this experiment's [`README.md`](./README.md)):
   near-ceiling ROC-AUC.
 
 Regenerate the figure:
-`~/.pyenv/versions/myenv/bin/python scripts/plotting/similarity_vs_transfer/make_slide_figure.py`.
+`~/.pyenv/versions/myenv/bin/python scripts/experiments/analysis/similarity_vs_transfer/make_slide_figure.py`.
 
 ## Next steps
 

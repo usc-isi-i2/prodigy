@@ -16,7 +16,7 @@
 #
 # Usage (Tucker, prodigy env, tmux):
 #   MODEL_LIST=scripts/experiments/topology_feature_ssl/model_list.txt \
-#     bash scripts/experiments/topology_feature_ssl/run_2x2_ablation.sh --gpus 0,1,2,3
+#     bash scripts/experiments/setup/topology_feature_ssl/run_2x2_ablation.sh --gpus 0,1,2,3
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -29,7 +29,7 @@ conda activate prodigy
 export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 cd "${REPO_ROOT}"
 
-RUNNER=scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py
+RUNNER=scripts/eval/eval_ckpts_all_graph_tasks_tucker.py
 # Set STRUCTURAL=directed3 when the model list is E1-E4 (E1 input_dim 771).
 STRUCTURAL_ARGS=()
 [[ -n "${STRUCTURAL:-}" ]] && STRUCTURAL_ARGS=(--structural-features "${STRUCTURAL}")
@@ -62,6 +62,6 @@ run_condition "random-feat+rewired"  --ablate-features noise --ablate-edges rewi
 # join intact (from the normal sweep) with the ablated runs -> retained fraction
 python3 "${SCRIPT_DIR}/parse_2x2.py" \
   --log-root /dataMeR1/phil/gfm/prodigy/log --model-list "${ML}" \
-  --out scripts/plotting/topology_feature_ssl/data/ablation_2x2.csv
+  --out scripts/experiments/analysis/topology_feature_ssl/data/ablation_2x2.csv
 
 echo "TOPOLOGY_FEATURE_SSL_2X2_DONE"

@@ -42,13 +42,13 @@ CP-HK shard while the larger shard is still expensive to transfer:
 
 ```bash
 CP_HK_RAW_FILES="an_cp-hk.twitter.v7-ground-truth.2020-08-24_2020-09-13.json.gz" \
-GPU_ID=1 bash scripts/experiments/cp_hk_twitter/run_cp_hk_nm_tucker.sh
+GPU_ID=1 bash scripts/experiments/setup/cp_hk_twitter/run_cp_hk_nm_tucker.sh
 ```
 
 From the local machine, transfer raw files with:
 
 ```bash
-bash scripts/experiments/cp_hk_twitter/transfer_cp_hk_raw_to_tucker.sh
+bash scripts/experiments/setup/cp_hk_twitter/transfer_cp_hk_raw_to_tucker.sh
 ```
 
 ## Transfer Evaluation
@@ -56,7 +56,7 @@ bash scripts/experiments/cp_hk_twitter/transfer_cp_hk_raw_to_tucker.sh
 Evaluate the CP-HK NM checkpoint on the requested transfer grid with:
 
 ```bash
-GPUS=1 bash scripts/experiments/cp_hk_twitter/eval_cp_hk_transfer_tucker.sh
+GPUS=1 bash scripts/experiments/setup/cp_hk_twitter/eval_cp_hk_transfer_tucker.sh
 ```
 
 The runner performs:

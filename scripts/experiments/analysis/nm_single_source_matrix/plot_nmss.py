@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Plots for the 8x8 single-source NM transfer matrix.
 
-Reads scripts/experiments/nm_single_source_matrix/nm_single_source_matrix.csv
+Reads scripts/experiments/analysis/nm_single_source_matrix/data/nm_single_source_matrix.csv
 (train_graph rows x 8 test-graph columns, NM 30-way/3-shot ROC-AUC @ matched-40k)
 and writes two figures next to this script (PDF + PNG):
 

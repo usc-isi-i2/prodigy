@@ -55,11 +55,15 @@ tmux new-session -d -s <name> 'export PATH="/home/mhchu/miniconda3/bin:$PATH"; b
 
 ## Important Paths
 
-- Training configs: `scripts/experiments/`
-- COVID/UKR merged experiments: `scripts/experiments/covid_ukr/`
-- Eval runner: `scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py`
-- Analysis/export scripts: `scripts/analysis/`
-- Plotting notebooks/results: `scripts/plotting/`
+- Experiment setup (configs, launch/eval scripts): `scripts/experiments/setup/<name>/`
+- Experiment analysis (notebooks, findings, data, figures): `scripts/experiments/analysis/<name>/`
+- COVID/UKR merged experiments: `scripts/experiments/setup/covid_ukr/`
+- Eval runner: `scripts/eval/eval_ckpts_all_graph_tasks_tucker.py`
+- Shared analysis/export harness: `scripts/analysis/`
+- Retired analyses: `scripts/experiments/analysis/archive/`
+- Slide decks: `slides/<date>_<topic>/`
+- Training engine (trainer, params, sampler): `experiments/` at the repo root —
+  note this is the model code, *not* the per-experiment folders above.
 - Tucker repo path: `/dataMeR1/phil/gfm/prodigy`
 - Tucker data root: `/dataMeR1/phil/data`
 
@@ -83,8 +87,19 @@ tmux new-session -d -s <name> 'export PATH="/home/mhchu/miniconda3/bin:$PATH"; b
 ## Experiment Conventions
 
 - Keep experiments atomized: each experiment should be self-contained, with config, runner, and notes in its own subfolder.
-- Experiment code belongs under `scripts/experiments/`.
-- Analysis and plots belong under `scripts/plotting/` as notebooks or plotting scripts.
+- Producing runs and interpreting them are kept apart, in two name-aligned trees:
+  - `scripts/experiments/setup/<name>/` — configs, launch/eval scripts, and the
+    `README.md` describing how to reproduce the run. Nothing downstream.
+  - `scripts/experiments/analysis/<name>/` — notebooks and plotting/table code,
+    findings, plus `data/` and `figures/` subfolders.
+- The trees are independent: an experiment with no analysis yet, or an analysis
+  with no dedicated experiment folder, is normal. Do not create empty shells.
+- Findings files (`RESULTS.md`, `FINDINGS.md`) live with the analysis; the
+  `README.md` that explains how to run the experiment stays with the setup.
+- Eval CSVs under `data/` and figures under `figures/` are committed on purpose —
+  they are the evidence behind each findings file. Artifacts elsewhere stay
+  ignored, and `.githooks/pre-commit` rejects anything over 25 MB. Enable it once
+  per clone (including on Tucker) with `git config core.hooksPath .githooks`.
 - Pull results from cluster logs into a notebook rather than leaving loose result files at the repo root.
 - Prefer the shared train/eval harness over one-off scripts.
 - Tasks:

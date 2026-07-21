@@ -99,9 +99,9 @@ python data/data/ukr_rus_twitter/scripts/inspect_graph.py \
 ## Training
 
 ```bash
-sbatch scripts/experiments/train1/submit_train1_ukr_rus_twitter_pl.sh
-sbatch scripts/experiments/train1/submit_train1_ukr_rus_twitter_nm.sh
-sbatch scripts/experiments/train1/submit_train1_ukr_rus_twitter_lp.sh
+sbatch scripts/experiments/setup/train1/submit_train1_ukr_rus_twitter_pl.sh
+sbatch scripts/experiments/setup/train1/submit_train1_ukr_rus_twitter_nm.sh
+sbatch scripts/experiments/setup/train1/submit_train1_ukr_rus_twitter_lp.sh
 ```
 
 Typical task settings used in recent comparable runs:

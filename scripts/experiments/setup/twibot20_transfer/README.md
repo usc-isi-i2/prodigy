@@ -17,10 +17,10 @@ checkpoint. Config: [`twibot20_cls_smoke.yaml`](twibot20_cls_smoke.yaml)
 
 ```bash
 # Preview the command:
-DRY_RUN=1 bash scripts/experiments/twibot20_transfer/train_twibot20_tucker.sh
+DRY_RUN=1 bash scripts/experiments/setup/twibot20_transfer/train_twibot20_tucker.sh
 
 # Run the smoke (pick a free GPU first with nvidia-smi):
-DEVICE=0 bash scripts/experiments/twibot20_transfer/train_twibot20_tucker.sh
+DEVICE=0 bash scripts/experiments/setup/twibot20_transfer/train_twibot20_tucker.sh
 ```
 
 Checkpoints land under `state/twibot20_cls_smoke_<timestamp>/`, logs under `log/`.
@@ -31,8 +31,8 @@ Real run via [`twibot20_cls.yaml`](twibot20_cls.yaml) (12 epochs x 10k episodes 
 120k steps; eval/checkpoint once per epoch). No CLI overrides needed:
 
 ```bash
-CONFIG_PATH=scripts/experiments/twibot20_transfer/twibot20_cls.yaml \
-DEVICE=0 bash scripts/experiments/twibot20_transfer/train_twibot20_tucker.sh
+CONFIG_PATH=scripts/experiments/setup/twibot20_transfer/twibot20_cls.yaml \
+DEVICE=0 bash scripts/experiments/setup/twibot20_transfer/train_twibot20_tucker.sh
 ```
 
 `eval_step`/`checkpoint_step` are baked into the YAML at `10000` (= one
@@ -51,10 +51,10 @@ classification with `--linear_probe True` and a larger many-shot support
 
 ```bash
 # transfer-IN (9 merged models -> twibot20), linear probe:
-SHOTS=20 bash scripts/experiments/twibot20_transfer/eval_merged_on_twibot20_lp_tucker.sh --gpus 0,1,2
+SHOTS=20 bash scripts/experiments/setup/twibot20_transfer/eval_merged_on_twibot20_lp_tucker.sh --gpus 0,1,2
 
 # transfer-OUT (twibot20 model -> labeled targets), linear probe:
-SHOTS=20 bash scripts/experiments/twibot20_transfer/eval_source_lp_tucker.sh --gpus 0,1,2
+SHOTS=20 bash scripts/experiments/setup/twibot20_transfer/eval_source_lp_tucker.sh --gpus 0,1,2
 ```
 
 Linear-probe runs land in `log/eval_*_pl_<SHOTS>shot_lp*` (the `_lp` suffix keeps
@@ -65,7 +65,7 @@ raise `SHOTS` (e.g. 50) for a fuller probe. Under the hood these pass
 ## Notes
 
 - Config alignment: `twibot20_cls.yaml` mirrors the merged-graph NM setup
-  (`scripts/experiments/nm_transfer_matrix/merged_nm.yaml`) as closely as
+  (`scripts/experiments/setup/nm_transfer_matrix/merged_nm.yaml`) as closely as
   classification allows — `batch_size: 1`, `n_hop: 1`, `n_shots: 3`,
   `n_query: 4`, `dataset_len_cap: 10000`, `val/test_len_cap: 500`,
   `workers: 16`, `epochs: 12`. The one forced difference is `n_way: 2` (capped at
@@ -88,15 +88,15 @@ that checkpoint on every other graph/task. Config
 
 ```bash
 # 1. Train (GPU; pick a free device):
-CONFIG_PATH=scripts/experiments/twibot20_transfer/twibot20_nm.yaml \
-DEVICE=0 bash scripts/experiments/twibot20_transfer/train_twibot20_tucker.sh
+CONFIG_PATH=scripts/experiments/setup/twibot20_transfer/twibot20_nm.yaml \
+DEVICE=0 bash scripts/experiments/setup/twibot20_transfer/train_twibot20_tucker.sh
 
 # 2. Build the model list from the trained run's final checkpoint:
 STATE_DIR=/dataMeR1/phil/gfm/prodigy/state \
-  bash scripts/experiments/twibot20_transfer/make_model_list_source.sh
+  bash scripts/experiments/setup/twibot20_transfer/make_model_list_source.sh
 
 # 3. Eval on all graphs/tasks (NM 30-way 3-shot + classification; LP auto-skipped):
-bash scripts/experiments/twibot20_transfer/eval_source_everywhere_tucker.sh
+bash scripts/experiments/setup/twibot20_transfer/eval_source_everywhere_tucker.sh
 #    add --gpus 0,1,2 to parallelize, --dry-run to preview.
 ```
 
@@ -113,14 +113,14 @@ bot-vs-human classification). The 9 models:
 ```bash
 # 1. Build the model list from those runs' final checkpoints:
 STATE_DIR=/dataMeR1/phil/gfm/prodigy/state \
-  bash scripts/experiments/twibot20_transfer/make_model_list_merged.sh
+  bash scripts/experiments/setup/twibot20_transfer/make_model_list_merged.sh
 
 # 2. Eval them on TwiBot-20:
-bash scripts/experiments/twibot20_transfer/eval_merged_on_twibot20_tucker.sh
+bash scripts/experiments/setup/twibot20_transfer/eval_merged_on_twibot20_tucker.sh
 #    add --gpus 0,1,2 to parallelize, --dry-run to preview.
 ```
 
 Both experiments require `twibot20` in the shared eval harness `DATASETS`
-(`scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py`) — added here.
+(`scripts/eval/eval_ckpts_all_graph_tasks_tucker.py`) — added here.
 Results land under `log/eval_*_to_twibot20_*` (b) and `log/eval_nm_twibot20_to_*`
 (a); parse them with the same tooling as the other transfer matrices.

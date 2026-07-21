@@ -55,11 +55,11 @@ if [[ "${DRY_RUN}" == "1" ]]; then
 fi
 
 echo "[run] source NM models -> CP-HK, 3-way"
-python3 scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py \
+python3 scripts/eval/eval_ckpts_all_graph_tasks_tucker.py \
   "${common_args[@]}" \
   --nm-n-way 3
 
 echo "[run] source NM models -> CP-HK, 30-way"
-python3 scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py \
+python3 scripts/eval/eval_ckpts_all_graph_tasks_tucker.py \
   "${common_args[@]}" \
   --nm-n-way 30

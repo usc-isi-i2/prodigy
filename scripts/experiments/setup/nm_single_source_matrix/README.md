@@ -4,8 +4,8 @@
 then evaluate every model on **every graph** — an 8×8 `train × test` NM-AUC matrix.
 The **diagonal** is each graph's in-domain specialist; the **off-diagonal** is
 zero-training-overlap transfer. This is the single-source counterpart to the merged
-NM "interpolation ladder" (`scripts/experiments/covid_ukr`, plotted in
-`scripts/plotting/nm_ladder/nmladder_results.csv`): the ladder trains on a *growing
+NM "interpolation ladder" (`scripts/experiments/setup/covid_ukr`, plotted in
+`scripts/experiments/analysis/nm_ladder/data/nmladder_results.csv`): the ladder trains on a *growing
 merge*, this trains on *one source at a time*, and both are read on the same 8 columns.
 
 ## The 8 graphs
@@ -49,7 +49,7 @@ drift from `.948`.
 | `eval_matrix_tucker.sh` | Eval every model on all 8 graphs (NM 30-way 3-shot). |
 | `build_ss_matrix.py` | Aggregate eval logs → 8×8 matrix + `nm_single_source_matrix.csv`. |
 
-Eval reuses `scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py`; all 8
+Eval reuses `scripts/eval/eval_ckpts_all_graph_tasks_tucker.py`; all 8
 graphs are already in its dataset registry, so no code change is needed.
 
 ## How to run (on Tucker, `prodigy` conda env)

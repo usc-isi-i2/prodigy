@@ -20,7 +20,7 @@ clouds; 0 = indistinguishable, 2 = perfectly separable).
 
 - `compute_graph_divergence.py` — the runner. Loads each graph, computes all of the
   above, writes one JSON artifact.
-- Plots + write-up: [`scripts/plotting/graph_divergence/graph_divergence.ipynb`](../../plotting/graph_divergence/graph_divergence.ipynb),
+- Plots + write-up: [`scripts/experiments/analysis/graph_divergence/graph_divergence.ipynb`](../../plotting/graph_divergence/graph_divergence.ipynb),
   reading `graph_divergence_data.json` in that folder.
 
 ## Graphs compared
@@ -50,9 +50,9 @@ call the env's Python directly:
 ```bash
 export LD_LIBRARY_PATH="/home/mhchu/miniconda3/envs/prodigy/lib:${LD_LIBRARY_PATH:-}"
 /home/mhchu/miniconda3/envs/prodigy/bin/python \
-    scripts/experiments/graph_divergence/compute_graph_divergence.py \
+    scripts/experiments/analysis/graph_divergence/compute_graph_divergence.py \
     --data-root /dataMeR1/phil/data \
-    --out scripts/plotting/graph_divergence/graph_divergence_data.json
+    --out scripts/experiments/analysis/graph_divergence/data/graph_divergence_data.json
 ```
 
 Then commit `graph_divergence_data.json` (≈160 KB) and pull it to the laptop; the

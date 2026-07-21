@@ -3,7 +3,7 @@ set -euo pipefail
 
 SHOTS_CSV="${1:-0,1,3,10}"
 TAGS_CSV="${2:-}"
-MODEL_LIST="scripts/experiments/eval/models/eval_covid_political_pl.txt"
+MODEL_LIST="scripts/eval/models/eval_covid_political_pl.txt"
 
 cd /home1/eibl/gfm/prodigy
 mkdir -p logs
@@ -13,6 +13,6 @@ if [[ -n "$TAGS_CSV" ]]; then
   SBATCH_ARGS+=("$TAGS_CSV")
 fi
 
-sbatch scripts/experiments/eval/eval_midterm_model_list_all_tasks.sbatch "${SBATCH_ARGS[@]}"
-sbatch scripts/experiments/eval/eval_covid19_twitter_model_list_all_tasks.sbatch "${SBATCH_ARGS[@]}"
-sbatch scripts/experiments/eval/eval_ukr_rus_twitter_model_list_all_tasks.sbatch "${SBATCH_ARGS[@]}"
+sbatch scripts/eval/eval_midterm_model_list_all_tasks.sbatch "${SBATCH_ARGS[@]}"
+sbatch scripts/eval/eval_covid19_twitter_model_list_all_tasks.sbatch "${SBATCH_ARGS[@]}"
+sbatch scripts/eval/eval_ukr_rus_twitter_model_list_all_tasks.sbatch "${SBATCH_ARGS[@]}"

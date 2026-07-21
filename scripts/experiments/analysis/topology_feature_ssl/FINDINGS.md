@@ -9,7 +9,7 @@ tasks**. No single encoder clears the joint bar.
 
 _Status: all three axes now run — B0, B1, E1, E2, E2b (encoder/aug) + **E4, E4r**
 (objective, run 2026-07-13), single seed. All numbers below are re-derived ground-up
-from the raw CSVs in `scripts/plotting/**/data/` (paths under each table)._
+from the raw CSVs in `scripts/experiments/analysis/**/data/` (paths under each table)._
 
 ---
 
@@ -148,7 +148,7 @@ dropping regression (or vice versa) has *failed* the cross-task goal.
 - **Budget locked at 40k episodes.** A prior budget sweep showed NM **anti-scales on
   regression**: E1 peaks at 40k (Spearman 0.222) and *degrades* by 110k (0.142); B0
   peaks ~40–60k; classification is flat across budget
-  (`scripts/plotting/topology_feature_ssl/data/budget_sweep.csv`). All arms compared at
+  (`scripts/experiments/analysis/topology_feature_ssl/data/budget_sweep.csv`). All arms compared at
   a **true** `state_dict_40000` checkpoint (E2/E2b/E4/E4r use `epochs:5` per the trainer
   off-by-one).
 - **Eval (frozen encoder):** node classification (ROC-AUC, 10-shot), node regression
@@ -182,10 +182,10 @@ dropping regression (or vice versa) has *failed* the cross-task goal.
 ## 4. Results — raw data
 
 **All raw per-run rows:**
-`scripts/plotting/node_regression/data/node_regression.csv`,
-`scripts/plotting/node_classification/data/node_classification.csv`,
-`scripts/plotting/static_link_prediction/data/static_link_prediction.csv`,
-`scripts/plotting/topology_feature_ssl/data/{capability_probes_40k,budget_sweep}.csv`.
+`scripts/experiments/analysis/node_regression/data/node_regression.csv`,
+`scripts/experiments/analysis/node_classification/data/node_classification.csv`,
+`scripts/experiments/analysis/static_link_prediction/data/static_link_prediction.csv`,
+`scripts/experiments/analysis/topology_feature_ssl/{capability_probes_40k,budget_sweep}.csv`.
 Filter to `split == "test"` and the `*_40k` arms. Consolidated workbook:
 `topology_feature_ssl_results.xlsx`.
 

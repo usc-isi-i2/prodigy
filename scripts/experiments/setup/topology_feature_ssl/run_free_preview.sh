@@ -18,7 +18,7 @@ conda activate prodigy
 export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 cd "${REPO_ROOT}"
 
-RUNNER=scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py
+RUNNER=scripts/eval/eval_ckpts_all_graph_tasks_tucker.py
 ML="${SCRIPT_DIR}/model_list_free_preview.txt"
 
 # Focused 5 datasets: 3 in-domain (ukr_rus, covid, midterm) + 2 held-out
@@ -34,10 +34,10 @@ python3 "${RUNNER}" \
 
 # Parse reg logs into the shared plotting CSV (keyed by model = strategy).
 python3 scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py \
-  --log-root /dataMeR1/phil/gfm/prodigy/log --out-dir scripts/plotting
+  --log-root /dataMeR1/phil/gfm/prodigy/log --out-dir scripts/experiments/analysis
 
 # Print the nm-vs-fp Spearman comparison table.
 python3 "${SCRIPT_DIR}/compare_free_preview.py" \
-  --csv scripts/plotting/node_regression/data/node_regression.csv
+  --csv scripts/experiments/analysis/node_regression/data/node_regression.csv
 
 echo "TOPOLOGY_FEATURE_SSL_FREE_PREVIEW_DONE"

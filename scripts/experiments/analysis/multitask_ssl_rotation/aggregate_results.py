@@ -22,8 +22,8 @@ Single seed: "spread" is the dispersion ACROSS eval datasets, not across seeds.
 Stdlib only (no pandas), so it runs anywhere. Test split only.
 
 Usage:
-    python scripts/experiments/multitask_ssl_rotation/aggregate_results.py \
-        --plotting-root scripts/plotting
+    python scripts/experiments/analysis/multitask_ssl_rotation/aggregate_results.py \
+        --plotting-root scripts/experiments/analysis
 """
 
 from __future__ import annotations
@@ -76,7 +76,7 @@ def _fmt(x: float | None, nd: int = 3) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--plotting-root", default="scripts/plotting")
+    ap.add_argument("--plotting-root", default="scripts/experiments/analysis")
     args = ap.parse_args()
     root = Path(args.plotting_root)
 

@@ -44,11 +44,11 @@ automatically (the runner gates on the targets actually present in each artifact
 2. **Evaluate** (prodigy env):
 
    ```bash
-   bash scripts/experiments/node_regression/run_node_regression_eval.sh \
+   bash scripts/experiments/setup/node_regression/run_node_regression_eval.sh \
      --checkpoint-run-dir /dataMeR2/phil/gfm/prodigy/state/<run> --gpus 0,1
    ```
 
    One eval run is produced per (model, dataset, target, shot); the target name is
    encoded in the run-dir prefix (`eval_<model>_to_<ds>_reg_<target>_<shots>shot`).
 
-Results are collected in `scripts/plotting/node_regression/`.
+Results are collected in `scripts/experiments/analysis/node_regression/`.

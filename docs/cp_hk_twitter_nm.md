@@ -51,14 +51,14 @@ conda activate prodigy
 Transfer raw data from CARC to Tucker:
 
 ```bash
-bash scripts/experiments/cp_hk_twitter/transfer_cp_hk_raw_to_tucker.sh
+bash scripts/experiments/setup/cp_hk_twitter/transfer_cp_hk_raw_to_tucker.sh
 ```
 
 The end-to-end Tucker command is:
 
 ```bash
 cd /dataMeR1/phil/gfm/prodigy
-GPU_ID=1 nohup bash scripts/experiments/cp_hk_twitter/run_cp_hk_nm_tucker.sh \
+GPU_ID=1 nohup bash scripts/experiments/setup/cp_hk_twitter/run_cp_hk_nm_tucker.sh \
   > /dataMeR1/phil/logs/cp_hk_nm_$(date +%Y%m%d_%H%M%S).out \
   2> /dataMeR1/phil/logs/cp_hk_nm_$(date +%Y%m%d_%H%M%S).err &
 ```
@@ -66,7 +66,7 @@ GPU_ID=1 nohup bash scripts/experiments/cp_hk_twitter/run_cp_hk_nm_tucker.sh \
 For smoke tests:
 
 ```bash
-MAX_RECORDS=100000 BUILD_ONLY=1 bash scripts/experiments/cp_hk_twitter/run_cp_hk_nm_tucker.sh
+MAX_RECORDS=100000 BUILD_ONLY=1 bash scripts/experiments/setup/cp_hk_twitter/run_cp_hk_nm_tucker.sh
 ```
 
 ## Artifacts

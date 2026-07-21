@@ -25,9 +25,9 @@ Because loading a 75GB graph is heavy, launch this on Tucker yourself, e.g.:
 
     source "$(conda info --base)/etc/profile.d/conda.sh"; conda activate prodigy
     export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
-    python scripts/experiments/graph_divergence/compute_graph_divergence.py \
+    python scripts/experiments/analysis/graph_divergence/compute_graph_divergence.py \
         --data-root /dataMeR1/phil/data \
-        --out scripts/plotting/graph_divergence/graph_divergence_data.json
+        --out scripts/experiments/analysis/graph_divergence/data/graph_divergence_data.json
 
 See the companion README.md for the full experiment write-up.
 """
@@ -395,7 +395,7 @@ def git_commit() -> str | None:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--data-root", default="/dataMeR1/phil/data")
-    ap.add_argument("--out", default="scripts/plotting/graph_divergence/graph_divergence_data.json")
+    ap.add_argument("--out", default="scripts/experiments/analysis/graph_divergence/data/graph_divergence_data.json")
     ap.add_argument("--graphs", default="", help="comma list to restrict to a subset of DEFAULT_GRAPHS")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--feat-sample", type=int, default=4000, help="non-missing nodes sampled per graph for feature stats")

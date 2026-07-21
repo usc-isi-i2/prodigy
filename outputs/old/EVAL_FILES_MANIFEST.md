@@ -8,16 +8,16 @@ All files created for cross-dataset evaluation on cluster. Last updated: 2026-04
 
 | File | Purpose | Usage |
 |------|---------|-------|
-| `scripts/experiments/eval/eval_cross_dataset.py` | Main evaluation engine | `python eval_cross_dataset.py --model_path X --dataset Y --task Z` |
-| `scripts/experiments/eval/generate_eval_jobs.py` | Generate batch jobs | `python generate_eval_jobs.py` |
-| `scripts/experiments/eval/aggregate_eval_results.py` | Summarize results | `python aggregate_eval_results.py --results_dir DIR` |
+| `scripts/eval/eval_cross_dataset.py` | Main evaluation engine | `python eval_cross_dataset.py --model_path X --dataset Y --task Z` |
+| `scripts/eval/generate_eval_jobs.py` | Generate batch jobs | `python generate_eval_jobs.py` |
+| `scripts/eval/aggregate_eval_results.py` | Summarize results | `python aggregate_eval_results.py --results_dir DIR` |
 
 ### Generated on Cluster
 
 | File | Created By | Purpose |
 |------|-----------|---------|
-| `scripts/experiments/legacy_cross_dataset_eval/eval_jobs.txt` | generate_eval_jobs.py | List of 90 evaluation commands |
-| `scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch` | generate_eval_jobs.py | SLURM batch submission script |
+| `scripts/experiments/setup/legacy_cross_dataset_eval/eval_jobs.txt` | generate_eval_jobs.py | List of 90 evaluation commands |
+| `scripts/experiments/setup/legacy_cross_dataset_eval/eval_cross_dataset.sbatch` | generate_eval_jobs.py | SLURM batch submission script |
 
 ### Documentation
 
@@ -25,8 +25,8 @@ All files created for cross-dataset evaluation on cluster. Last updated: 2026-04
 |------|------|----------|
 | `CROSS_DATASET_EVAL.md` | MD | Detailed guide (updated) |
 | `EVAL_SETUP_SUMMARY.md` | MD | Executive summary & next steps |
-| `scripts/experiments/eval/EVAL_QUICKSTART.sh` | Bash | Quick reference commands |
-| `scripts/experiments/eval/check_eval_setup.py` | Python | Setup validator |
+| `scripts/eval/EVAL_QUICKSTART.sh` | Bash | Quick reference commands |
+| `scripts/eval/check_eval_setup.py` | Python | Setup validator |
 | `EVAL_FILES_MANIFEST.md` | MD | This file |
 
 ### Output Locations
@@ -44,9 +44,9 @@ All files created for cross-dataset evaluation on cluster. Last updated: 2026-04
 ```
 generate_eval_jobs.py
     ↓
-    Creates: scripts/experiments/legacy_cross_dataset_eval/eval_jobs.txt + scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch
+    Creates: scripts/experiments/setup/legacy_cross_dataset_eval/eval_jobs.txt + scripts/experiments/setup/legacy_cross_dataset_eval/eval_cross_dataset.sbatch
     ↓
-sbatch scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch
+sbatch scripts/experiments/setup/legacy_cross_dataset_eval/eval_cross_dataset.sbatch
     ↓
     Submits 90 parallel jobs
     ↓
@@ -96,12 +96,12 @@ aggregate_eval_results.py
 2. **Generate jobs**
    ```bash
    cd /scratch1/singhama/prodigy
-   python scripts/experiments/eval/generate_eval_jobs.py
+   python scripts/eval/generate_eval_jobs.py
    ```
 
 3. **Submit batch**
    ```bash
-   sbatch scripts/experiments/legacy_cross_dataset_eval/eval_cross_dataset.sbatch
+   sbatch scripts/experiments/setup/legacy_cross_dataset_eval/eval_cross_dataset.sbatch
    ```
 
 4. **Monitor progress**
@@ -112,7 +112,7 @@ aggregate_eval_results.py
 
 5. **Aggregate results**
    ```bash
-   python scripts/experiments/eval/aggregate_eval_results.py \
+   python scripts/eval/aggregate_eval_results.py \
      --results_dir /scratch1/singhama/data/eval_results
    ```
 
@@ -143,7 +143,7 @@ All 15 models included in evaluation:
 Run this to verify setup:
 ```bash
 cd /Users/philipp/projects/gfm/prodigy
-python scripts/experiments/eval/check_eval_setup.py
+python scripts/eval/check_eval_setup.py
 ```
 
 Should show all ✓ marks.
@@ -154,7 +154,7 @@ Should show all ✓ marks.
 |----------|---------|
 | [CROSS_DATASET_EVAL.md](CROSS_DATASET_EVAL.md) | Full setup guide & troubleshooting |
 | [EVAL_SETUP_SUMMARY.md](EVAL_SETUP_SUMMARY.md) | Executive summary |
-| [scripts/experiments/eval/EVAL_QUICKSTART.sh](scripts/experiments/eval/EVAL_QUICKSTART.sh) | Copy-paste commands |
+| [scripts/eval/EVAL_QUICKSTART.sh](scripts/eval/EVAL_QUICKSTART.sh) | Copy-paste commands |
 | [README.md](README.md) | Project overview |
 
 ## 🔗 Related Code

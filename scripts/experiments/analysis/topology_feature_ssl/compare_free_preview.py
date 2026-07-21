@@ -11,7 +11,7 @@ mean(fp - nm) on regression pre-validates E3's core hypothesis (a generative
 objective helps regression, where NM is weak) for ~zero cost.
 
 Usage:
-    python compare_free_preview.py --csv scripts/plotting/node_regression/data/node_regression.csv
+    python compare_free_preview.py --csv scripts/experiments/analysis/node_regression/data/node_regression.csv
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ HELD_OUT = {"twibot20", "election2020"}
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--csv", default="scripts/plotting/node_regression/data/node_regression.csv")
+    ap.add_argument("--csv", default="scripts/experiments/analysis/node_regression/data/node_regression.csv")
     ap.add_argument("--split", default="test")
     ap.add_argument("--shots", type=int, default=10)
     ap.add_argument("--metric", default="spearman")

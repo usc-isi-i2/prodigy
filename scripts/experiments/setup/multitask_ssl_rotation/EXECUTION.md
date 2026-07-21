@@ -84,10 +84,10 @@ it) and that `graph.mix_is_fp` survived `.to(device)` (see trainer `_episode_is_
 
 ```bash
 cd /dataMeR1/phil/gfm/prodigy
-tmux new-session -d -s mtr_NM  'bash -lc "bash scripts/experiments/multitask_ssl_rotation/train_arm_tucker.sh NM  --device 0"'
-tmux new-session -d -s mtr_CL  'bash -lc "bash scripts/experiments/multitask_ssl_rotation/train_arm_tucker.sh CL  --device 1"'
-tmux new-session -d -s mtr_FP  'bash -lc "bash scripts/experiments/multitask_ssl_rotation/train_arm_tucker.sh FP  --device 2"'
-tmux new-session -d -s mtr_MIX 'bash -lc "bash scripts/experiments/multitask_ssl_rotation/train_arm_tucker.sh MIX --device 3"'
+tmux new-session -d -s mtr_NM  'bash -lc "bash scripts/experiments/setup/multitask_ssl_rotation/train_arm_tucker.sh NM  --device 0"'
+tmux new-session -d -s mtr_CL  'bash -lc "bash scripts/experiments/setup/multitask_ssl_rotation/train_arm_tucker.sh CL  --device 1"'
+tmux new-session -d -s mtr_FP  'bash -lc "bash scripts/experiments/setup/multitask_ssl_rotation/train_arm_tucker.sh FP  --device 2"'
+tmux new-session -d -s mtr_MIX 'bash -lc "bash scripts/experiments/setup/multitask_ssl_rotation/train_arm_tucker.sh MIX --device 3"'
 ```
 
 Checkpoints land at 10k/20k/30k/40k under `state/mtr_<ARM>_<timestamp>/checkpoint/`.
@@ -98,19 +98,19 @@ Checkpoints land at 10k/20k/30k/40k under `state/mtr_<ARM>_<timestamp>/checkpoin
 cd /dataMeR1/phil/gfm/prodigy
 # arm-keyed model list from the trained checkpoints (highest-step ckpt per arm)
 STATE_DIR=/dataMeR1/phil/gfm/prodigy/state ARMS="NM CL FP MIX" \
-  bash scripts/experiments/multitask_ssl_rotation/make_model_list.sh
+  bash scripts/experiments/setup/multitask_ssl_rotation/make_model_list.sh
 
 # frozen-encoder benchmark: reg (10-shot) + static-LP (0-shot) + classification (10-shot)
-tmux new-session -d -s mtr_eval 'bash -lc "MODEL_LIST=scripts/experiments/multitask_ssl_rotation/model_list.txt bash scripts/experiments/multitask_ssl_rotation/run_eval_sweep.sh --gpus 0,1,2,3 > /tmp/mtr_eval.log 2>&1"'
+tmux new-session -d -s mtr_eval 'bash -lc "MODEL_LIST=scripts/experiments/multitask_ssl_rotation/model_list.txt bash scripts/experiments/setup/multitask_ssl_rotation/run_eval_sweep.sh --gpus 0,1,2,3 > /tmp/mtr_eval.log 2>&1"'
 ```
 
 Results land (keyed by `model` = arm ∈ {NM,CL,FP,MIX}) in
-`scripts/plotting/{node_regression,static_link_prediction,node_classification}/data/*.csv`.
+`scripts/experiments/analysis/{node_regression,static_link_prediction,node_classification}/data/*.csv`.
 Then aggregate into the T1 table + headline reading:
 
 ```bash
-python scripts/experiments/multitask_ssl_rotation/aggregate_results.py \
-  --plotting-root scripts/plotting     # prints T1, MIX−max(NM,CL,FP), min-bar, per-dataset LP
+python scripts/experiments/analysis/multitask_ssl_rotation/aggregate_results.py \
+  --plotting-root scripts/experiments/analysis     # prints T1, MIX−max(NM,CL,FP), min-bar, per-dataset LP
 ```
 
 Reading recorded in [FINDINGS.md](FINDINGS.md). **1 seed** — done.
@@ -124,9 +124,9 @@ runner supports them directly). Run from the worktree that holds the checkpoints
 ```bash
 cd /dataMeR1/phil/gfm/prodigy-mtr
 STATE_DIR=$PWD/state ARMS="NM CL FP MIX" \
-  bash scripts/experiments/multitask_ssl_rotation/make_model_list.sh
+  bash scripts/experiments/setup/multitask_ssl_rotation/make_model_list.sh
 ML=scripts/experiments/multitask_ssl_rotation/model_list.txt
-RUNNER=scripts/experiments/eval/eval_ckpts_all_graph_tasks_tucker.py
+RUNNER=scripts/eval/eval_ckpts_all_graph_tasks_tucker.py
 COMMON="--model-list $ML --python python3 --data-root /dataMeR1/phil/data \
   --datasets midterm,ukr_rus_twitter,covid19_twitter,twibot20 --continue-on-error \
   --tasks slp --shots 0 --slp-n-query 4 --gpus 0,1,2,3"
