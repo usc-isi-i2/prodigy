@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" viewBox="0 0 680 320" role="img" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+<title>Two cheat-sheet guesses: is the improvement real?</title>
+<desc>Before crediting a version, check it against two guesses that use no model. Profile-only guess: the best from the profile text alone. Counts-only guess: the best from the connection counts, a trap because a target like follower count is a number the model was handed. Trust the wins on things neither guess can predict, like account age, where the popularity version jumps clearly while both guesses are near none.</desc>
+<style>
+  text{fill:#2c2c2a}
+  .hdr{font-size:14px;font-weight:600;fill:#2c2c2a}
+  .ts{font-size:12px;fill:#6a6862}
+  .divider{stroke:#d3d1c7;stroke-width:1}
+  .card-slate{fill:#f1efe8;stroke:#b4b2a9;stroke-width:1.5}
+  .slate-title{font-size:14px;font-weight:600;fill:#444441}
+  .beat-slate{font-size:12px;font-weight:600;fill:#5f5e5a}
+  .card-amber{fill:#faeeda;stroke:#e0972b;stroke-width:1.5}
+  .amber-title{font-size:14px;font-weight:600;fill:#633806}
+  .beat-amber{font-size:12px;font-weight:600;fill:#854f0b}
+  .numh{font-size:12px;font-weight:600;fill:#6a6862}
+  .num{font-size:12px;fill:#2c2c2a}
+  .win{font-size:12px;font-weight:600;fill:#3b6d11}
+  .pass{font-size:12px;fill:#86847c}
+</style>
+
+<text class="ts" x="40" y="30">Two “cheat-sheet” guesses that use no model — is the improvement real?</text>
+
+<!-- CARD A: profile-only -->
+<rect class="card-slate" x="40" y="50" width="288" height="120" rx="10"/>
+<text class="slate-title" x="58" y="76">Profile-only guess</text>
+<text class="ts" x="58" y="100">best you can do from the profile text</text>
+<text class="ts" x="58" y="120">…with no network model at all</text>
+<text class="beat-slate" x="58" y="150">beat it → the training actually helped</text>
+
+<!-- CARD B: counts-only -->
+<rect class="card-amber" x="352" y="50" width="288" height="120" rx="10"/>
+<text class="amber-title" x="370" y="76">Counts-only guess</text>
+<text class="ts" x="370" y="100">best you can do from connection counts</text>
+<text class="ts" x="370" y="120">a trap: “followers” is a handed-in number</text>
+<text class="beat-amber" x="370" y="150">beat it → it really learned, didn’t echo</text>
+
+<!-- READING RULE -->
+<text class="ts" x="40" y="198">Trust the wins on things neither guess can predict.</text>
+
+<!-- TABLE -->
+<text class="numh" x="48" y="228">guessing…</text>
+<text class="numh" x="250" y="228" text-anchor="middle">from counts</text>
+<text class="numh" x="360" y="228" text-anchor="middle">from profile</text>
+<text class="numh" x="450" y="228">“popularity” version</text>
+<line class="divider" x1="40" y1="238" x2="640" y2="238"/>
+<text class="num" x="48" y="264" font-weight="600">account age</text>
+<text class="num" x="250" y="264" text-anchor="middle">≈ none</text>
+<text class="num" x="360" y="264" text-anchor="middle">≈ none</text>
+<text class="win" x="450" y="264">clear jump ✓ real</text>
+<text class="num" x="48" y="292" font-weight="600">follower count</text>
+<text class="num" x="250" y="292" text-anchor="middle">good</text>
+<text class="num" x="360" y="292" text-anchor="middle">good</text>
+<text class="pass" x="450" y="292">no better ✗ just echo</text>
+</svg>

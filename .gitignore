@@ -1,19 +1,33 @@
-.idea
-.DS_Store
+# ─── Heavyweight / generated artifacts ──────────────────────────────────
 *.pt
 *.parquet
-*.csv
 *.pkl
-*.json
 *.npy
-*.png
-!docs/assets/readme/fig.png
-!scripts/plotting/similarity_vs_transfer/figures/similarity_transfer_slide.png
-*.pptx
+*.gz
 *.ndjson
-__pycache__
-.python-version
+*.pptx
+*.csv
+*.json
+*.png
+*.pdf
 
+# ─── Tracked evidence: analysis data + figures ──────────────────────────
+# Eval results and figures are the evidence behind each FINDINGS.md, so they
+# are committed on purpose. Only these canonical folders are re-included —
+# a stray CSV or figure anywhere else stays ignored. Size is capped at 25 MB
+# by .githooks/pre-commit (enable with: git config core.hooksPath .githooks).
+!scripts/**/data/**/*.csv
+!scripts/**/data/**/*.tsv
+!scripts/**/data/**/*.json
+!scripts/**/figures/**/*.png
+!scripts/**/figures/**/*.pdf
+# Retired analyses keep their original flat layout.
+!scripts/**/archive/**/*.csv
+!scripts/**/archive/**/*.png
+!scripts/**/archive/**/*.pdf
+!docs/assets/**/*.png
+
+# ─── Environments, run state, caches ────────────────────────────────────
 wandb/
 logs/
 log/
@@ -25,6 +39,12 @@ facebook_uk_ru/
 sbert/
 bge_m3_embeddings/
 xlm_roberta_embeddings/
-.ipynb_checkpoints/
 checkpoints/
-*.gz
+.idea
+.python-version
+
+# ─── Never tracked (must win over the negations above) ──────────────────
+.DS_Store
+__pycache__/
+.ipynb_checkpoints/
+*.bak

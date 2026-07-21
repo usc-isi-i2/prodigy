@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" viewBox="0 0 680 320" role="img" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+<title>Two no-encoder floors: raw_feat and raw_degree</title>
+<desc>Two baseline floors decide whether an arm learned anything. raw_feat is a linear probe on raw bio features with no encoder. raw_degree is a linear probe on raw degree with no encoder, the leakage control for E1/E2. An arm counts only if it beats the floor that applies; the cleanest evidence is a target both floors miss, such as account age, where E1 scores 0.118 versus floors near 0.01-0.02.</desc>
+<style>
+  text{fill:#2c2c2a}
+  .hdr{font-size:14px;font-weight:600;fill:#2c2c2a}
+  .ts{font-size:12px;fill:#6a6862}
+  .divider{stroke:#d3d1c7;stroke-width:1}
+  .card-slate{fill:#f1efe8;stroke:#b4b2a9;stroke-width:1.5}
+  .slate-title{font-size:14px;font-weight:600;fill:#444441}
+  .beat-slate{font-size:12px;font-weight:600;fill:#5f5e5a}
+  .card-amber{fill:#faeeda;stroke:#e0972b;stroke-width:1.5}
+  .amber-title{font-size:14px;font-weight:600;fill:#633806}
+  .beat-amber{font-size:12px;font-weight:600;fill:#854f0b}
+  .numh{font-size:12px;font-weight:600;fill:#6a6862}
+  .num{font-size:12px;fill:#2c2c2a}
+  .win{font-size:12px;font-weight:600;fill:#3b6d11}
+  .pass{font-size:12px;fill:#86847c}
+</style>
+
+<text class="ts" x="40" y="30">Two no-encoder floors — an arm counts only if it beats the one that applies.</text>
+
+<!-- CARD A: raw_feat -->
+<rect class="card-slate" x="40" y="50" width="288" height="120" rx="10"/>
+<text class="slate-title" x="58" y="76">raw_feat — feature floor</text>
+<text class="ts" x="58" y="100">linear probe on the raw bio features</text>
+<text class="ts" x="58" y="120">no GNN — “just use the profile”</text>
+<text class="beat-slate" x="58" y="150">beat it → pretraining actually helped</text>
+
+<!-- CARD B: raw_degree -->
+<rect class="card-amber" x="352" y="50" width="288" height="120" rx="10"/>
+<text class="amber-title" x="370" y="76">raw_degree — leakage floor</text>
+<text class="ts" x="370" y="100">linear probe on raw degree, no GNN</text>
+<text class="ts" x="370" y="120">followers ≈ in-deg, statuses ≈ out-deg</text>
+<text class="beat-amber" x="370" y="150">beat it → the win isn’t just passthrough</text>
+
+<!-- READING RULE -->
+<text class="ts" x="40" y="198">Cleanest evidence: a target both floors miss — neither shortcut can explain it.</text>
+
+<!-- TABLE -->
+<text class="numh" x="48" y="228">target (Spearman)</text>
+<text class="numh" x="250" y="228" text-anchor="middle">raw_degree</text>
+<text class="numh" x="345" y="228" text-anchor="middle">raw_feat</text>
+<text class="numh" x="425" y="228" text-anchor="middle">E1</text>
+<text class="numh" x="480" y="228">verdict</text>
+<line class="divider" x1="40" y1="238" x2="640" y2="238"/>
+<text class="num" x="48" y="264" font-weight="600">account_age</text>
+<text class="num" x="250" y="264" text-anchor="middle">0.01</text>
+<text class="num" x="345" y="264" text-anchor="middle">0.02</text>
+<text class="win" x="425" y="264" text-anchor="middle">0.118</text>
+<text class="win" x="480" y="264">real win ✓</text>
+<text class="num" x="48" y="292" font-weight="600">followers</text>
+<text class="num" x="250" y="292" text-anchor="middle">0.16</text>
+<text class="num" x="345" y="292" text-anchor="middle">0.19</text>
+<text class="num" x="425" y="292" text-anchor="middle">0.19</text>
+<text class="pass" x="480" y="292">passthrough ✗</text>
+</svg>
