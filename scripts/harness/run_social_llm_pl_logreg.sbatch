@@ -16,4 +16,4 @@ conda activate prodigy
 cd /home1/eibl/gfm/prodigy
 mkdir -p /home1/eibl/gfm/prodigy/logs
 
-bash scripts/analysis/run_social_llm_pl_logreg.sh "$@"
+bash scripts/harness/run_social_llm_pl_logreg.sh "$@"

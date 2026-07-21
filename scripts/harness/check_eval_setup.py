@@ -12,9 +12,9 @@ def check_setup():
     """Validate that everything is ready for evaluation."""
     
     checks = {
-        "eval_cross_dataset.py": "/Users/philipp/projects/gfm/prodigy/scripts/analysis/eval_cross_dataset.py",
+        "eval_cross_dataset.py": "/Users/philipp/projects/gfm/prodigy/scripts/harness/eval_cross_dataset.py",
         "generate_eval_jobs.py": "/Users/philipp/projects/gfm/prodigy/scripts/eval/generate_eval_jobs.py",
-        "aggregate_eval_results.py": "/Users/philipp/projects/gfm/prodigy/scripts/analysis/aggregate_eval_results.py",
+        "aggregate_eval_results.py": "/Users/philipp/projects/gfm/prodigy/scripts/harness/aggregate_eval_results.py",
         "CROSS_DATASET_EVAL.md": "/Users/philipp/projects/gfm/prodigy/CROSS_DATASET_EVAL.md",
         "EVAL_QUICKSTART.sh": "/Users/philipp/projects/gfm/prodigy/scripts/eval/EVAL_QUICKSTART.sh",
     }
@@ -58,8 +58,8 @@ def check_setup():
     
     print("📖 Full guide:       CROSS_DATASET_EVAL.md")
     print("⚡ Quick commands:   scripts/eval/EVAL_QUICKSTART.sh")
-    print("🔍 Main script:      scripts/analysis/eval_cross_dataset.py")
-    print("📊 Aggregation:      scripts/analysis/aggregate_eval_results.py")
+    print("🔍 Main script:      scripts/harness/eval_cross_dataset.py")
+    print("📊 Aggregation:      scripts/harness/aggregate_eval_results.py")
     print()
     
     print("="*80)
@@ -71,7 +71,7 @@ def check_setup():
     print("3. python scripts/eval/generate_eval_jobs.py")
     print("4. sbatch scripts/experiments/setup/legacy_cross_dataset_eval/eval_cross_dataset.sbatch")
     print("5. Monitor: squeue -u $USER")
-    print("6. Aggregate: python scripts/analysis/aggregate_eval_results.py --results_dir /home1/eibl/gfm/prodigy/eval_results")
+    print("6. Aggregate: python scripts/harness/aggregate_eval_results.py --results_dir /home1/eibl/gfm/prodigy/eval_results")
     print()
     
     if all_good:

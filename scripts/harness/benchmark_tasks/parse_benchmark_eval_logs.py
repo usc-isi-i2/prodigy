@@ -4,14 +4,14 @@
 Parses eval log directories produced by the shared runner
 (``eval_<model>_to_<dataset>_<tag>_..._<shots>shot_<timestamp>/``) and their
 ``metrics_<split>[_step<N>].json`` files (same layout as
-``scripts/analysis/export_eval_results_csv.py``), keeping only the two new tasks:
+``scripts/harness/export_eval_results_csv.py``), keeping only the two new tasks:
 
   * ``reg`` -> node_regression.csv  (spearman, rmse, mae, r2)
   * ``slp`` -> static_link_prediction.csv  (roc_auc, accuracy, f1)
 
 Usage (laptop or Tucker, needs pandas):
 
-    python scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py \
+    python scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py \
         --log-root /dataMeR2/phil/gfm/prodigy/log \
         --out-dir scripts/experiments/analysis
 """

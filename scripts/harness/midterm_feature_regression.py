@@ -2,7 +2,7 @@
 Logistic regression analysis of node features vs. political leaning in the midterm graph.
 
 Usage:
-    python scripts/analysis/midterm_feature_regression.py \
+    python scripts/harness/midterm_feature_regression.py \
         --graph /scratch1/eibl/data/midterm/graphs/graph_data.pt \
         --features stats_only        # default
         --features emb_only

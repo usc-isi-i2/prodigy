@@ -4,7 +4,7 @@
 Tucker log directories into two tidy CSVs, consumed by the plotting notebooks.
 
 ```
-python scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py \
+python scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py \
     --log-root /dataMeR2/phil/gfm/prodigy/log \
     --out-dir scripts/experiments/analysis
 ```

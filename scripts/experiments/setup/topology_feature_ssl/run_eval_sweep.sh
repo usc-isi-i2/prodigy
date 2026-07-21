@@ -53,7 +53,7 @@ python3 "${RUNNER}" "${COMMON[@]}" --tasks slp --shots 0 --slp-n-query 4 "$@"
 python3 "${RUNNER}" "${COMMON[@]}" --tasks pl --shots 10 "$@"
 
 # parse reg + slp into the shared plotting CSVs (keyed by model = arm)
-python3 scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py \
+python3 scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py \
   --log-root /dataMeR1/phil/gfm/prodigy/log --out-dir scripts/experiments/analysis
 
 echo "TOPOLOGY_FEATURE_SSL_EVAL_SWEEP_DONE"

@@ -2,7 +2,7 @@
 """Free-preview reading: NM vs (masked) feature-prediction on node regression.
 
 Reads the tidy node_regression.csv produced by
-scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py and prints a
+scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py and prints a
 per-(dataset, target) table of test Spearman for the two existing covid
 task_transfer checkpoints, with the fp - nm delta.
 

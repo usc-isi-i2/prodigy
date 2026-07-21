@@ -38,7 +38,7 @@ python3 "${RUNNER}" "${COMMON[@]}" --tasks slp --shots 0 --slp-n-query 4 "$@"
 python3 "${RUNNER}" "${COMMON[@]}" --tasks nm,pl --shots 3 "$@"
 
 # parse the new-task results (reg + slp) into the plotting CSVs
-python3 scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py \
+python3 scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py \
   --log-root /dataMeR1/phil/gfm/prodigy/log --out-dir scripts/experiments/analysis
 
 # NOTE: to run this in a *detached* tmux, launch it through a login shell so

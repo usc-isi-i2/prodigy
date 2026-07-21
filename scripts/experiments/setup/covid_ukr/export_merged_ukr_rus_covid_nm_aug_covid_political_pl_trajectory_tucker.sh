@@ -24,7 +24,7 @@ fi
 LOG_ROOT="${LOG_ROOT:-/dataMeR1/phil/gfm/prodigy/log}"
 
 cmd=(
-  python3 scripts/analysis/export_eval_results_csv.py
+  python3 scripts/harness/export_eval_results_csv.py
   --log-root "${LOG_ROOT}"
   --run-glob "${RUN_GLOB}"
   --out-dir "${OUT_DIR}"

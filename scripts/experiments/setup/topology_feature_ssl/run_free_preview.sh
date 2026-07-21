@@ -33,7 +33,7 @@ python3 "${RUNNER}" \
   --continue-on-error "$@"
 
 # Parse reg logs into the shared plotting CSV (keyed by model = strategy).
-python3 scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py \
+python3 scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py \
   --log-root /dataMeR1/phil/gfm/prodigy/log --out-dir scripts/experiments/analysis
 
 # Print the nm-vs-fp Spearman comparison table.

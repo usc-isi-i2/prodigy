@@ -59,7 +59,7 @@ tmux new-session -d -s <name> 'export PATH="/home/mhchu/miniconda3/bin:$PATH"; b
 - Experiment analysis (notebooks, findings, data, figures): `scripts/experiments/analysis/<name>/`
 - COVID/UKR merged experiments: `scripts/experiments/setup/covid_ukr/`
 - Eval runner: `scripts/eval/eval_ckpts_all_graph_tasks_tucker.py`
-- Shared analysis/export harness: `scripts/analysis/`
+- Shared analysis/export harness: `scripts/harness/`
 - Retired analyses: `scripts/experiments/analysis/archive/`
 - Slide decks: `slides/<date>_<topic>/`
 - Training engine (trainer, params, sampler): `experiments/` at the repo root —

@@ -76,7 +76,7 @@ STRUCTURAL=directed3_log GNN_TYPE=sage_multi NO_BN_ENCODER=1 MODEL_LIST="$DIR/ml
 
 # 5) parse everything (benchmark parser reads all logs; probes parsed over all _log arms)
 say "STAGE parse"
-python3 scripts/analysis/benchmark_tasks/parse_benchmark_eval_logs.py --log-root "$LOG_ROOT" --out-dir scripts/experiments/analysis || say "benchmark parse FAILED"
+python3 scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py --log-root "$LOG_ROOT" --out-dir scripts/experiments/analysis || say "benchmark parse FAILED"
 python3 "$DIR/parse_capability_probes.py" --log-root "$LOG_ROOT" --model-list "$DIR/ml_log_all.txt" \
   --out scripts/experiments/analysis/topology_feature_ssl/data/capability_probes_directed3log.csv || say "probe parse FAILED"
 
