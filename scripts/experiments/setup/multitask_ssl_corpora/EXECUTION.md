@@ -67,6 +67,27 @@ ONLY="<corpus>_<ARM>" bash scripts/experiments/setup/multitask_ssl_corpora/launc
 (Stale partial state dirs are harmless: make_model_list picks the newest
 `msc_<run>_<ts>` dir and demands the 30k ckpt.)
 
-## Run log (as executed)
+## Run log (as executed, 2026-07-21)
 
-Filled in by the launching session — see the final workstream report.
+- Worktree `/dataMeR1/phil/gfm/prodigy-msc` created at 9271c2e; hooks enabled.
+- 09:39 all 8 trainings launched via `launch_all_tucker.sh` (packing as above).
+  Graph loading took ~5 min (cov, 78 GB) / ~30 min (all8, 111 GB); host RAM fine.
+- Wall times (40k steps, final it/s): cov_NM 1:27 (7.6), cov_MIX 0:52 (12.9),
+  cov_FP 0:48 (13.9), cov_CL 0:35 (19.0), all8_NM 1:36 (7.0), all8_MIX 0:55
+  (12.2), all8_FP 0:50 (13.2), all8_CL 0:38 (17.4). All saved 10k/20k/30k ckpts
+  and exited cleanly ("Saved best model").
+- The auto-eval watcher was **not** used (session interruptions meant the eval
+  was driven manually): 12:20 `make_model_list.sh` (8 x 30k ckpts) +
+  `run_eval_sweep.sh --gpus 0,1,2,3` in tmux `msc_eval`; 144 eval runs, done
+  ~15:00, marker `MULTITASK_SSL_CORPORA_EVAL_SWEEP_DONE` in `/tmp/msc_eval.log`.
+- Bug found+fixed mid-run (4cbd4a4): `scripts/eval/eval_ckpts_all_graph_tasks_tucker.py`
+  resolved the graph catalog with a stale pre-reorg depth (`parents[3]`) and
+  crashed on startup; fixed to `parents[2]`, pulled on Tucker, relaunched.
+- Parse gotcha (worked around in e7dd1c7): `parse_benchmark_eval_logs.py`
+  REPLACES the shared CSVs with whatever the current log root contains — from a
+  fresh worktree this drops all historical rows. The msc rows were re-merged
+  with the HEAD rows before committing; msc-only copies live in
+  `../../analysis/multitask_ssl_corpora/data/`.
+- Tucker cannot push to GitHub non-interactively; result commits were fetched
+  to the laptop over ssh (`git fetch ssh://tucker/dataMeR1/phil/gfm/prodigy-msc`)
+  and pushed from there.
