@@ -185,12 +185,12 @@ Negative/conditional transfer and data curation for graph pretraining. Hu et al.
 15. Compare PRODIGY with a normal GATv2/GraphSAGE encoder.
 16. Replicate the emergent sLP result on an OGB graph: Run each objective alone, test on sLP. Then 3-way rotation.
 17. Sum up the losses as opposed to rotating them. (Needs to be weighted properly)
-18. Scaling experiment: how quickly does transfer saturate? My bet is ~1k episodes is enough.
+18. Scaling experiment: how quickly does transfer saturate? My bet is <1k episodes is enough.
 19. gradient conflict analysis — measure cosine similarity of per-objective gradients vs. per-graph gradients during training. The prediction that makes your story cohere: gradients across graphs are near-orthogonal or aligned (hence additive), while gradients across objectives conflict (hence interference). Supplement with representation analysis (e.g., CKA between single-objective and mixed checkpoints) to show what the triple mix builds that pairs don't.
 20. Train PRODIGY from scratch on all the downstream tasks — then we have a baseline to beat.
 21. We have only looked at ICL, but we should also consider fine-tuning. Else our models face a harder task than in other papers.
 22. Frozen vs. hot embeddings.
-23. Can we predict cross-domain transfer for all tasks with NM?
+23. Can we predict cross-domain transfer for all tasks with NM? How correlated is NM with downstream performance?
 
 
 
