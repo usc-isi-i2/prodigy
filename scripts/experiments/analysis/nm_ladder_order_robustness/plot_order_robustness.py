@@ -291,6 +291,105 @@ def fig_role_deltas(rows):
         print(f"  {lab.split(chr(10))[0]:<14}{len(v):<4}{v.mean():+.4f}  {v.min():+.4f}  {v.max():+.4f}")
 
 
+# --------------------------------------------------------------- figure 3b (bars)
+def fig_role_deltas_bars(rows):
+    """Per-source impact as BARS by merge size, aggregated over orders (the bar form of
+    the original plot_nm_ladder_deltas.py two-panel figure).
+
+    x = merge size after the addition (2..8). At each step and in each order, the added
+    graph is different, so a bar is the MEAN over orders A/B/C of that role's delta, and
+    the error bar is the min/max over the three orders. Top panel = newcomer benefit at
+    full scale; bottom = incumbent cost + held-out interference, zoomed (note the
+    y-scales differ, as in the single-order figure).
+    """
+    auc = {(r["order"], r["rung"], r["graph"]): r["auc"] for r in rows}
+    entry, graphs_by_order = {}, defaultdict(set)
+    for r in rows:
+        entry[(r["order"], r["graph"])] = r["entry_rung"]
+        graphs_by_order[r["order"]].add(r["graph"])
+
+    steps = list(range(2, 9))
+    # per step: lists (over the 3 orders) of newcomer Δ, mean-incumbent Δ, mean-held-out Δ
+    newc, incu, held = defaultdict(list), defaultdict(list), defaultdict(list)
+    for order in ("A", "B", "C"):
+        graphs = graphs_by_order[order]
+        for rr in steps:
+            d = {}
+            for g in graphs:
+                a0, a1 = auc.get((order, rr - 1, g)), auc.get((order, rr, g))
+                if a0 is not None and a1 is not None:
+                    d[g] = a1 - a0
+            newcomer = next(g for g in graphs if entry[(order, g)] == rr)
+            incs = [d[g] for g in graphs if entry[(order, g)] < rr and g in d]
+            hels = [d[g] for g in graphs if entry[(order, g)] > rr and g in d]
+            if newcomer in d:
+                newc[rr].append(d[newcomer])
+            if incs:
+                incu[rr].append(float(np.mean(incs)))
+            if hels:
+                held[rr].append(float(np.mean(hels)))
+
+    def agg(dct):
+        mu = [float(np.mean(dct[s])) if dct[s] else np.nan for s in steps]
+        lo = [mu[i] - float(np.min(dct[s])) if dct[s] else 0 for i, s in enumerate(steps)]
+        hi = [float(np.max(dct[s])) - mu[i] if dct[s] else 0 for i, s in enumerate(steps)]
+        return np.array(mu), np.array([lo, hi])
+
+    n_mu, n_err = agg(newc)
+    i_mu, i_err = agg(incu)
+    h_mu, h_err = agg(held)
+
+    x = np.arange(len(steps))
+    fig, (ax1, ax2) = plt.subplots(
+        2, 1, figsize=(9.4, 6.8), dpi=200, sharex=True, constrained_layout=True,
+        gridspec_kw={"height_ratios": [2.3, 1.0]})
+
+    # top: newcomer benefit, full scale
+    ax1.bar(x, n_mu, width=0.62, color=BLUE, edgecolor="white", linewidth=0.8, zorder=3)
+    ax1.errorbar(x, n_mu, yerr=n_err, fmt="none", ecolor=INK, elinewidth=1.1,
+                 capsize=3, zorder=5)
+    for xi, v in zip(x, n_mu):
+        ax1.annotate(f"+{v:.3f}", xy=(xi, v), xytext=(0, -13), textcoords="offset points",
+                     ha="center", va="top", fontsize=8.6, color="white", fontweight="bold")
+    ax1.set_ylim(0, max(n_mu + n_err[1]) * 1.12)
+    ax1.set_ylabel("newcomer Δ\n(its OOD-to-ID jump)", fontsize=10, color=INK)
+    ax1.axhline(0, color="#c3c2b7", lw=0.9, zorder=2)
+    chrome(ax1)
+
+    # bottom: incumbent (cost) + held-out (interference), zoomed, grouped
+    w = 0.36
+    ax2.bar(x - w / 2, i_mu, width=w, color=CORAL, edgecolor="white", linewidth=0.8,
+            zorder=3, label="incumbents (already in) — cost")
+    ax2.bar(x + w / 2, h_mu, width=w, color=GRAY, edgecolor="white", linewidth=0.8,
+            zorder=3, label="held-out (not yet added) — interference")
+    ax2.errorbar(x - w / 2, i_mu, yerr=i_err, fmt="none", ecolor="#8a3b1c",
+                 elinewidth=1.0, capsize=2.5, zorder=5)
+    ax2.errorbar(x + w / 2, h_mu, yerr=h_err, fmt="none", ecolor="#5f5e5a",
+                 elinewidth=1.0, capsize=2.5, zorder=5)
+    ax2.axhline(0, color="#c3c2b7", lw=0.9, zorder=2)
+    ax2.set_ylabel("mean Δ of\nother graphs", fontsize=10, color=INK)
+    ax2.set_xticks(x)
+    ax2.set_xticklabels([str(s) for s in steps], fontsize=9.5)
+    ax2.set_xlabel("merge size after the addition  (newcomer identity differs by order)",
+                   fontsize=10.5, color=INK)
+    chrome(ax2)
+    ax2.legend(loc="upper right", frameon=False, fontsize=8.6, handlelength=1.2)
+
+    ax1.set_title("Per-source impact by merge size: large newcomer benefit throughout, "
+                  "~zero incumbent cost",
+                  fontsize=11.6, color=INK, fontweight="bold", loc="left", pad=24)
+    ax1.text(0.0, 1.03, "bars = mean over orders A/B/C, whiskers = min/max over orders  ·  "
+             "NM 3-shot/30-way · matched-40k  ·  panels differ in y-scale",
+             transform=ax1.transAxes, ha="left", va="bottom", fontsize=8.5, color=MUTED)
+
+    save(fig, "order_role_deltas_bars")
+    plt.close(fig)
+
+    print("\nsize  newcomer(mean)  incumbent  held-out   [mean over 3 orders]")
+    for i, s in enumerate(steps):
+        print(f"  {s}     {n_mu[i]:+.4f}       {i_mu[i]:+.4f}   {h_mu[i]:+.4f}")
+
+
 def main():
     os.makedirs(FIGS, exist_ok=True)
     rows = load()
@@ -298,6 +397,7 @@ def main():
     fig_entry_aligned(rows)
     fig_id_ood_gap(rows)
     fig_role_deltas(rows)
+    fig_role_deltas_bars(rows)
 
 
 if __name__ == "__main__":
