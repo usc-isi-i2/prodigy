@@ -1,0 +1,25 @@
+order,rung,n_sources,added,sources,status,provenance,ukr_rus_twitter,covid19_twitter,midterm,covid_political,election2020,ukr_rus_suspended,twibot20,cp_hk_twitter
+A,1,1,ukr_rus,ukr_rus,reuse,order-A ladder rung 1 (nm_ladder_full.csv),0.948,0.973,0.874,0.849,0.828,0.771,0.921,0.724
+A,2,2,covid,ukr_rus covid,reuse,order-A ladder rung 2 (nm_ladder_full.csv),0.945,0.98,0.885,0.843,0.828,0.775,0.925,0.726
+A,3,3,midterm,ukr_rus covid midterm,reuse,order-A ladder rung 3 (nm_ladder_full.csv),0.941,0.978,0.915,0.83,0.815,0.777,0.927,0.72
+A,4,4,covid_political,ukr_rus covid midterm covid_political,reuse,order-A ladder rung 4 (nm_ladder_full.csv),0.9344,0.9753,0.9093,0.9113,0.8297,0.7768,0.9234,0.7235
+A,5,5,election2020,ukr_rus covid midterm covid_political election2020,reuse,order-A ladder rung 5 (nm_ladder_full.csv),0.9346,0.9754,0.9086,0.9102,0.9259,0.7693,0.9254,0.7261
+A,6,6,ukr_rus_suspended,ukr_rus covid midterm covid_political election2020 ukr_rus_suspended,reuse,order-A ladder rung 6 (nm_ladder_full.csv),0.9325,0.9744,0.9073,0.9106,0.9241,0.934,0.9242,0.7239
+A,7,7,twibot20,ukr_rus covid midterm covid_political election2020 ukr_rus_suspended twibot20,reuse,order-A ladder rung 7 (nm_ladder_full.csv),0.9321,0.9748,0.9033,0.9076,0.9198,0.9256,0.9377,0.7267
+A,8,8,cp_hk,ukr_rus covid midterm covid_political election2020 ukr_rus_suspended twibot20 cp_hk,reuse,order-A ladder rung 8 (nm_ladder_full.csv),0.934,0.975,0.908,0.906,0.92,0.931,0.937,0.867
+B,1,1,covid,covid,reuse,single-source matrix (nm_single_source_matrix.csv),0.9264,0.9805,0.8842,0.8498,0.8345,0.7861,0.9258,0.7196
+B,2,2,ukr_rus,covid ukr_rus,reuse,order-A ladder rung 2 (nm_ladder_full.csv),0.945,0.98,0.885,0.843,0.828,0.775,0.925,0.726
+B,3,3,twibot20,covid ukr_rus twibot20,new,nm_ladder_ordB_r3,0.9374042240261814,0.9766477793103447,0.8828455995530013,0.8481246410600255,0.8262687172413794,0.7623589471264366,0.940626939096424,0.7316832084770114
+B,4,4,midterm,covid ukr_rus twibot20 midterm,new,nm_ladder_ordB_r4,0.9378017811143038,0.9767758714878672,0.912982757183908,0.8419349837324395,0.8226825218390805,0.7756944183908047,0.9403036309546615,0.720369180172414
+B,5,5,ukr_rus_suspended,covid ukr_rus twibot20 midterm ukr_rus_suspended,new,nm_ladder_ordB_r5,0.9368854688218391,0.9758706065772669,0.910825294875479,0.8518825089559386,0.8316414873563218,0.9429354735632182,0.9391024623722861,0.7183858511494251
+B,6,6,cp_hk,covid ukr_rus twibot20 midterm ukr_rus_suspended cp_hk,new,nm_ladder_ordB_r6,0.9357241479565772,0.9755057551245211,0.9095899810185184,0.8455864786079182,0.827781832183908,0.9383324758620691,0.9381731583333334,0.8703703616379311
+B,7,7,covid_political,covid ukr_rus twibot20 midterm ukr_rus_suspended cp_hk covid_political,new,nm_ladder_ordB_r7,0.9324600312739465,0.9743727322796935,0.9053425773148146,0.9081583631545338,0.8400826022988507,0.9339022344827586,0.9368092478128992,0.8655103360632184
+B,8,8,election2020,covid ukr_rus twibot20 midterm ukr_rus_suspended cp_hk covid_political election2020,reuse,order-A ladder rung 8 (nm_ladder_full.csv),0.934,0.975,0.908,0.906,0.92,0.931,0.937,0.867
+C,1,1,election2020,election2020,reuse,single-source matrix (nm_single_source_matrix.csv),0.6018,0.6551,0.6804,0.7872,0.9519,0.5627,0.7096,0.5475
+C,2,2,covid_political,election2020 covid_political,new,nm_ladder_ordC_r2,0.6479949551245211,0.7322287988825033,0.7521999042943807,0.9126674958812262,0.9399837586206897,0.579886075862069,0.7747346551564493,0.5653788771551724
+C,3,3,cp_hk,election2020 covid_political cp_hk,new,nm_ladder_ordC_r3,0.7467859874361431,0.832790019476373,0.8069119819604087,0.9121630072956576,0.9359273793103448,0.6518217747126436,0.8181850680555556,0.8879583830459771
+C,4,4,ukr_rus_suspended,election2020 covid_political cp_hk ukr_rus_suspended,new,nm_ladder_ordC_r4,0.8250104927522349,0.8927544834610472,0.8213368669859517,0.9119613505427842,0.9290459954022989,0.948886659770115,0.8540511916028097,0.8803228070402299
+C,5,5,midterm,election2020 covid_political cp_hk ukr_rus_suspended midterm,new,nm_ladder_ordC_r5,0.8651577229885058,0.9308379506226054,0.9090407906609194,0.9102062763888887,0.9256953310344829,0.9460343586206896,0.8906968706577267,0.8775573316091952
+C,6,6,twibot20,election2020 covid_political cp_hk ukr_rus_suspended midterm twibot20,new,nm_ladder_ordC_r6,0.8894939903256703,0.9559441030970623,0.9093757811621969,0.9098169683429117,0.9266274275862068,0.9404447471264369,0.9364474721743296,0.8725752594827586
+C,7,7,ukr_rus,election2020 covid_political cp_hk ukr_rus_suspended midterm twibot20 ukr_rus,new,nm_ladder_ordC_r7,0.9310392045019156,0.968881610823755,0.905970399010217,0.9097965718869733,0.920786659770115,0.9330977609195403,0.936868715038314,0.8675103811781608
+C,8,8,covid,election2020 covid_political cp_hk ukr_rus_suspended midterm twibot20 ukr_rus covid,reuse,order-A ladder rung 8 (nm_ladder_full.csv),0.934,0.975,0.908,0.906,0.92,0.931,0.937,0.867
