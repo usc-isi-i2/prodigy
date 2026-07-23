@@ -41,7 +41,24 @@ class DatasetConfig:
     eval_random_query: bool = False
 
 
-GRAPH_CATALOG_PATH = Path(__file__).resolve().parents[3] / "config" / "graph_catalog.json"
+def _find_graph_catalog() -> Path:
+    """Locate config/graph_catalog.json by walking up from this file.
+
+    Depth-independent on purpose: a hardcoded parents[N] silently breaks whenever this
+    script moves between directory levels, and it breaks at eval time with a path one
+    level off the repo root rather than at import. The setup/analysis split (d87d7a6)
+    moved this file up a level and left parents[3] pointing above the repo.
+    """
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        candidate = parent / "config" / "graph_catalog.json"
+        if candidate.is_file():
+            return candidate
+    # Preserve the historical location in the error so the failure is self-explaining.
+    return here.parents[2] / "config" / "graph_catalog.json"
+
+
+GRAPH_CATALOG_PATH = _find_graph_catalog()
 
 
 def load_dataset_registry() -> tuple[str, dict[str, DatasetConfig], list[str]]:
