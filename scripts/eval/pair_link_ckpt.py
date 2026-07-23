@@ -170,13 +170,30 @@ def load_graph_blob(path: str):
     ``edge_index_views`` and prediction targets in ``target_edge_index_views``.
     """
     import torch
+
+    class _GraphShim:
+        """Minimal stand-in when the artifact carries no PyG Data object.
+
+        Some graphs (cp_hk, twibot20) store ``data`` as a plain dict, so node
+        count has to be recovered from the feature matrix.
+        """
+
+        def __init__(self, num_nodes, x):
+            self.num_nodes = num_nodes
+            self.x = x
+
     raw = torch.load(path, map_location="cpu", weights_only=False)
     if not isinstance(raw, dict):
         return raw, raw
     for key in ("data", "graph"):
-        if key in raw:
-            return raw, raw[key]
-    raise KeyError(f"no 'data'/'graph' entry in {path}; keys={sorted(raw)[:20]}")
+        obj = raw.get(key)
+        if obj is not None and getattr(obj, "num_nodes", None) is not None:
+            return raw, obj
+    x = raw.get("x")
+    if x is not None:
+        return raw, _GraphShim(int(x.shape[0]), x)
+    raise KeyError(
+        f"cannot determine num_nodes for {path}; keys={sorted(raw)[:20]}")
 
 
 def _view_edge_index(blob, name: str):

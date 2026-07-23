@@ -93,16 +93,44 @@ def main() -> int:
         if vals:
             print(f"  {h:<26}{sum(vals)/len(vals):.3f}")
 
-    print("\ngates (must hold for every encoder row):")
-    bad = [r for r in rows if r["model"] != "__floor__" and (
-        (r["endpoint_sensitivity"] and float(r["endpoint_sensitivity"]) < 0.99)
-        or (r["leakage_edges"] and float(r["leakage_edges"]) > 0))]
-    if bad:
-        for r in bad[:10]:
-            print(f"  VIOLATION {r['dataset']}/{r['model']}: "
-                  f"sensitivity={r['endpoint_sensitivity']} leakage={r['leakage_edges']}")
+    print("\ngates:")
+    # Two distinct conditions share this statistic and must not be conflated:
+    #   sensitivity == 0      -> the scorer ignores an endpoint. Fatal; the row is
+    #                            void (this is precisely the old evaluator's bug).
+    #   0 < sensitivity < 1   -> the scorer is pair-conditioned, but the ENCODER
+    #                            is directionally collapsed, so cosine ties. Not an
+    #                            evaluator fault; a property of that encoder, and a
+    #                            finding in its own right. Measured on midterm:
+    #                            mtr_FP spans 536 distinct directions over 4568
+    #                            nodes vs mtr_NM's 4429.
+    fatal, collapsed = [], []
+    for r in rows:
+        if r["model"] == "__floor__":
+            continue
+        if r["leakage_edges"] and float(r["leakage_edges"]) > 0:
+            fatal.append((r, "leakage"))
+            continue
+        s = r["endpoint_sensitivity"]
+        if s == "":
+            continue
+        s = float(s)
+        if s <= 1e-9:
+            fatal.append((r, "endpoint-blind"))
+        elif s < 0.99:
+            collapsed.append((r, s))
+    if fatal:
+        for r, why in fatal[:10]:
+            print(f"  VOID {r['dataset']}/{r['model']}: {why}")
     else:
-        print("  all rows: sensitivity=1.0, leakage=0")
+        print("  no voided rows (no endpoint-blind scoring, no leakage)")
+    if collapsed:
+        by_model: Dict[str, List[float]] = defaultdict(list)
+        for r, s in collapsed:
+            by_model[r["model"]].append(s)
+        print("  encoder-collapse flags (pair-conditioned, but embeddings tie):")
+        for m, ss in sorted(by_model.items()):
+            print(f"    {m:<18} sensitivity {min(ss):.2f}-{max(ss):.2f} "
+                  f"across {len(ss)} dataset(s)")
     perms = [float(r["endpoint_permutation_auc"]) for r in rows
              if r["model"] != "__floor__" and r["endpoint_permutation_auc"]]
     if perms:
