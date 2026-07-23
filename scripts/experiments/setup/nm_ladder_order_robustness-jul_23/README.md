@@ -1,6 +1,6 @@
 # NM ladder — order robustness (multiple graph orders)
 
-**Status:** planned, 2026-07-23. Nothing run yet.
+**Status:** configs + scripts ready, 2026-07-23. Nothing trained yet — the gate runs first.
 
 ## What we are doing
 
@@ -72,6 +72,49 @@ drawn from. The merge is disjoint (no cross-source edges) and episodes are alrea
 to one `graph_id`, so restricting the allowed source set is equivalent to training on that
 sub-merge. **Gate:** reproduce A's rung 4 via the subset knob and check it matches the
 published row within ~.01 before running anything else.
+
+## Run order (Tucker)
+
+Configs are generated, not hand-written — `make_configs.py` decides new-vs-reuse by
+source set and writes `manifest.csv` alongside the 11 `train_ord*.yaml` files.
+
+```bash
+cd scripts/experiments/setup/nm_ladder_order_robustness-jul_23
+
+# 0. regenerate configs / preview the plan (idempotent)
+python3 make_configs.py --dry-run
+
+# 1. THE GATE — train order A rung 4 through the subset knob (~20 min, 1 GPU)
+tmux new-session -d -s nmlor_gate \
+  'export PATH="/home/mhchu/miniconda3/bin:$PATH"; \
+   GATE=1 GPUS="0" bash scripts/experiments/setup/nm_ladder_order_robustness-jul_23/run_all_train_tucker.sh \
+   > scripts/experiments/setup/nm_ladder_order_robustness-jul_23/run_logs/gate.log 2>&1'
+
+# 2. eval the gate on all 8 graphs, then check it against the published rung 4
+GATE=1 STATE_DIR=/dataMeR1/phil/gfm/prodigy/state ./make_model_list.sh
+GATE=1 GPUS="0,1,2,3" ./eval_ladder_tucker.sh
+python3 check_gate.py --log-root /dataMeR1/phil/gfm/prodigy/log
+#    exit 0 = PASS -> continue.  exit 1 = FAIL -> STOP, the shortcut is invalid.
+#    exit 2 = incomplete (missing eval columns).
+
+# 3. only if the gate PASSES: train the 11 rungs (~20 min each; 4 GPUs => ~1h)
+tmux new-session -d -s nmlor_rungs \
+  'export PATH="/home/mhchu/miniconda3/bin:$PATH"; \
+   GPUS="0 1 2 3" bash scripts/experiments/setup/nm_ladder_order_robustness-jul_23/run_all_train_tucker.sh \
+   > scripts/experiments/setup/nm_ladder_order_robustness-jul_23/run_logs/orchestrator.log 2>&1'
+
+# 4. eval all 11 rungs on all 8 graphs (88 NM jobs)
+STATE_DIR=/dataMeR1/phil/gfm/prodigy/state ./make_model_list.sh
+GPUS="0,1,2,3" ./eval_ladder_tucker.sh
+```
+
+`DRY_RUN=1` previews any launch script without touching a GPU. See AGENTS.md for the
+conda-on-PATH gotcha that makes detached tmux jobs die immediately.
+
+The gate is a real stop, not a formality: if it fails, the 11 rungs are not merely noisy,
+they are measuring something other than the sub-merges they claim to. The fallback is
+building nested merges per order (~7 × ~100 GB per order), which is a different budget
+conversation.
 
 ## Analysis / deliverable
 
