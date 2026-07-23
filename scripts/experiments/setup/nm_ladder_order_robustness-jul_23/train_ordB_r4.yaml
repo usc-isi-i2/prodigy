@@ -1,0 +1,40 @@
+# NM ladder order-robustness -- order B rung 4
+# Order B (donor strength descending), rung 4/8 -- adds midterm (midterm).
+# Sources: covid, ukraine, twibot20, midterm
+#
+# Trains on the all8 merged graph restricted to this rung's sources via
+# neighbor_sampling_source_subset. Equivalent to training on the sub-merge: the merge is
+# a disjoint block-concat, so sampled neighborhoods never leave their source graph.
+# Otherwise an exact clone of covid_ukr/merged_ukr_rus_covid_midterm_all8_nm.yaml
+# (256.S,U,M, no aug, attr_regression_weight=0, within-source balanced episodes), with
+# epochs:5 / checkpoint_step:10000 so the run self-terminates with state_dict_40000 as
+# its final checkpoint (matched-40k, same as nm_ladder_fillin).
+dataset: covid19_twitter
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_all8_retweet_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+
+# within-balanced episodes, restricted to this rung's sources
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+neighbor_sampling_source_subset: covid,ukr_rus,twibot20,midterm
+
+epochs: 5                # 5 x 10k = 50k planned; 40k is the final saved ckpt
+eval_step: 100000        # > total steps => skip periodic val eval
+checkpoint_step: 10000   # ckpts at 10k / 20k / 30k / 40k
+workers: 16
+device: 0
+seed: 0
+prefix: nm_ladder_ordB_r4
