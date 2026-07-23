@@ -84,7 +84,7 @@ cd scripts/experiments/setup/nm_ladder_order_robustness-jul_23
 # 0. regenerate configs / preview the plan (idempotent)
 python3 make_configs.py --dry-run
 
-# 1. THE GATE — train order A rung 4 through the subset knob (~20 min, 1 GPU)
+# 1. THE GATE — train order A rung 4 through the subset knob (~80 min, 1 GPU)
 tmux new-session -d -s nmlor_gate \
   'export PATH="/home/mhchu/miniconda3/bin:$PATH"; \
    GATE=1 GPUS="0" bash scripts/experiments/setup/nm_ladder_order_robustness-jul_23/run_all_train_tucker.sh \
@@ -97,16 +97,23 @@ python3 check_gate.py --log-root /dataMeR1/phil/gfm/prodigy/log
 #    exit 0 = PASS -> continue.  exit 1 = FAIL -> STOP, the shortcut is invalid.
 #    exit 2 = incomplete (missing eval columns).
 
-# 3. only if the gate PASSES: train the 11 rungs (~20 min each; 4 GPUs => ~1h)
+# 3. only if the gate PASSES: train the 11 rungs
+#    ~80 min each at ~8.5 it/s (40k steps); 3 GPUs => 4 rounds => ~5.5h
 tmux new-session -d -s nmlor_rungs \
   'export PATH="/home/mhchu/miniconda3/bin:$PATH"; \
-   GPUS="0 1 2 3" bash scripts/experiments/setup/nm_ladder_order_robustness-jul_23/run_all_train_tucker.sh \
+   GPUS="0 1 2" bash scripts/experiments/setup/nm_ladder_order_robustness-jul_23/run_all_train_tucker.sh \
    > scripts/experiments/setup/nm_ladder_order_robustness-jul_23/run_logs/orchestrator.log 2>&1'
 
 # 4. eval all 11 rungs on all 8 graphs (88 NM jobs)
 STATE_DIR=/dataMeR1/phil/gfm/prodigy/state ./make_model_list.sh
-GPUS="0,1,2,3" ./eval_ladder_tucker.sh
+GPUS="0,1,2" ./eval_ladder_tucker.sh
 ```
+
+**GPU etiquette (2026-07-23):** GPUs 0–3 are ours on paper, but labmates `rdorn`/`ashreyas`
+run a long-lived `ollama` server that holds a 520 MiB context stub on GPU 0 and the actual
+model (~42 GB) on GPU 3, where it bursts to 75–95% utilization while serving. Use **GPUs
+0, 1, 2** and leave GPU 3 alone. Our NM jobs draw ~2.5 GB at ~9% utilization, so sharing
+GPU 0 costs them nothing; landing on GPU 3 would contend with live inference.
 
 `DRY_RUN=1` previews any launch script without touching a GPU. See AGENTS.md for the
 conda-on-PATH gotcha that makes detached tmux jobs die immediately.
