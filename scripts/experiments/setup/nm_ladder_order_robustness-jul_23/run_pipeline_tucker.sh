@@ -32,7 +32,12 @@ PY="/home/mhchu/miniconda3/envs/prodigy/bin/python"
 
 TRAIN_GPUS="${TRAIN_GPUS:-0 1 2}"    # GPU 3 left alone: labmates' ollama serves there
 EVAL_GPUS="${EVAL_GPUS:-0,1,2}"
+# Two different identifiers, do not conflate them:
+#   GATE_PREFIX -- the yaml's `prefix:`, used for state/ dirs and eval log dirs
+#   GATE_CONFIG -- the config FILENAME, which is what appears in the trainer's cmdline.
+# pgrep must match the config name; the prefix never appears in /proc/<pid>/cmdline.
 GATE_PREFIX="nm_ladder_gate_ordA_r4"
+GATE_CONFIG="train_gate_ordA_r4"
 PARTIAL=0
 
 say() { echo "[$(date +%F_%T)] $*" | tee -a "${PIPELOG}"; }
@@ -54,7 +59,7 @@ if [[ "${SKIP_GATE:-0}" != "1" ]]; then
       say "gate checkpoint present: ${ckpt}"
       break
     fi
-    if ! pgrep -f "run_single_experiment.py.*${GATE_PREFIX}" >/dev/null; then
+    if ! pgrep -f "run_single_experiment.py.*${GATE_CONFIG}" >/dev/null; then
       fail gate_wait "trainer gone with no 40k checkpoint"
     fi
     if (( $(date +%s) > deadline )); then
@@ -65,9 +70,9 @@ if [[ "${SKIP_GATE:-0}" != "1" ]]; then
 
   # The trainer keeps going to its planned 50k; 40k is the matched budget we evaluate,
   # so stop it here to free the GPU for the rungs.
-  if pgrep -f "run_single_experiment.py.*${GATE_PREFIX}" >/dev/null; then
+  if pgrep -f "run_single_experiment.py.*${GATE_CONFIG}" >/dev/null; then
     say "stopping gate trainer (40k reached; 50k planned is surplus)"
-    pkill -f "run_single_experiment.py.*${GATE_PREFIX}"
+    pkill -f "run_single_experiment.py.*${GATE_CONFIG}"
     sleep 20
   fi
 
