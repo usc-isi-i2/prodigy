@@ -66,7 +66,13 @@ if str(REPO_ROOT) not in sys.path:
 
 @dataclass
 class Adjacency:
-    """Undirected CSR adjacency over ``num_nodes`` nodes."""
+    """Undirected CSR adjacency over ``num_nodes`` nodes.
+
+    Built via scipy.sparse so it scales to the real retweet graphs (covid19 is
+    23M nodes / 91M background edges); a numpy lexsort over 182M symmetrised
+    pairs, or any per-node Python loop, is not viable at that size. Row indices
+    are sorted, which ``contains_pairs`` and the heuristics rely on.
+    """
 
     indptr: np.ndarray
     indices: np.ndarray
@@ -75,26 +81,27 @@ class Adjacency:
     @classmethod
     def from_edge_index(cls, edge_index: np.ndarray, num_nodes: int) -> "Adjacency":
         """Build a symmetric, de-duplicated, self-loop-free CSR adjacency."""
+        import scipy.sparse as sp
+
+        edge_index = np.asarray(edge_index)
         if edge_index.size == 0:
             return cls(np.zeros(num_nodes + 1, dtype=np.int64),
-                       np.zeros(0, dtype=np.int64), num_nodes)
+                       np.zeros(0, dtype=np.int32), num_nodes)
         src = np.asarray(edge_index[0], dtype=np.int64)
         dst = np.asarray(edge_index[1], dtype=np.int64)
-        # symmetrise, drop self-loops, de-duplicate
+        keep = src != dst
+        src, dst = src[keep], dst[keep]
+        # bool data keeps the value array at 1 byte/nnz instead of float64's 8
         u = np.concatenate([src, dst])
         v = np.concatenate([dst, src])
-        keep = u != v
-        u, v = u[keep], v[keep]
-        order = np.lexsort((v, u))
-        u, v = u[order], v[order]
-        if u.size:
-            uniq = np.ones(u.size, dtype=bool)
-            uniq[1:] = (u[1:] != u[:-1]) | (v[1:] != v[:-1])
-            u, v = u[uniq], v[uniq]
-        indptr = np.zeros(num_nodes + 1, dtype=np.int64)
-        np.add.at(indptr, u + 1, 1)
-        np.cumsum(indptr, out=indptr)
-        return cls(indptr, v.astype(np.int64), num_nodes)
+        del src, dst
+        mat = sp.coo_matrix(
+            (np.ones(u.size, dtype=bool), (u, v)), shape=(num_nodes, num_nodes)
+        ).tocsr()
+        del u, v
+        mat.sum_duplicates()
+        mat.sort_indices()
+        return cls(mat.indptr.astype(np.int64), mat.indices, num_nodes)
 
     def neighbors(self, node: int) -> np.ndarray:
         return self.indices[self.indptr[node]:self.indptr[node + 1]]
@@ -104,16 +111,52 @@ class Adjacency:
         return np.diff(self.indptr)
 
     def has_edge(self, u: int, v: int) -> bool:
-        return bool(np.isin(v, self.neighbors(u)))
+        row = self.neighbors(u)
+        pos = np.searchsorted(row, v)
+        return bool(pos < row.size and row[pos] == v)
 
-    def edge_set(self) -> set:
-        """All undirected pairs as ordered (min, max) tuples."""
-        out = set()
-        for u in range(self.num_nodes):
-            for v in self.neighbors(u):
-                a, b = (u, int(v)) if u < v else (int(v), u)
-                out.add((a, b))
-        return out
+    def contains_pairs(self, u: np.ndarray, v: np.ndarray) -> np.ndarray:
+        """Vectorised membership test over a (small) batch of pairs."""
+        return np.array([self.has_edge(int(a), int(b)) for a, b in zip(u, v)], dtype=bool)
+
+    @property
+    def num_undirected_edges(self) -> int:
+        return int(self.indices.size // 2)
+
+
+def sample_undirected_pairs(
+    edge_index: np.ndarray, k: Optional[int], rng: np.random.Generator
+) -> List[Tuple[int, int]]:
+    """Sample up to ``k`` distinct undirected pairs straight from an edge array.
+
+    Sampling the raw array avoids materialising all 16M holdout pairs. With a few
+    thousand positives the AUC standard error is well under 0.01, so the cap costs
+    precision we do not need rather than validity.
+    """
+    edge_index = np.asarray(edge_index)
+    n_edges = edge_index.shape[1]
+    if k is None or k >= n_edges:
+        cols = np.arange(n_edges)
+    else:
+        # oversample to absorb self-loops and (u,v)/(v,u) duplicates
+        cols = rng.choice(n_edges, size=min(n_edges, int(k * 2.5) + 64), replace=False)
+    a = np.asarray(edge_index[0][cols], dtype=np.int64)
+    b = np.asarray(edge_index[1][cols], dtype=np.int64)
+    keep = a != b
+    a, b = a[keep], b[keep]
+    lo = np.minimum(a, b)
+    hi = np.maximum(a, b)
+    seen = set()
+    out: List[Tuple[int, int]] = []
+    for x, y in zip(lo, hi):
+        key = (int(x), int(y))
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(key)
+        if k is not None and len(out) >= k:
+            break
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -169,42 +212,61 @@ def sample_negatives(
 
     deg = background.degree
     bins = _degree_bin(deg)
-    by_bin: Dict[int, np.ndarray] = {}
-    if kind == "degree_matched":
-        for b in np.unique(bins):
-            by_bin[int(b)] = np.flatnonzero(bins == b)
+    n_nodes = background.num_nodes
+    # Degree-bin pools are built lazily and cached: a full per-bin index over 23M
+    # nodes costs ~184MB and most of it is never consulted.
+    bin_cache: Dict[int, np.ndarray] = {}
+
+    def pool_for_bin(b: int) -> np.ndarray:
+        if b not in bin_cache:
+            bin_cache[b] = np.flatnonzero(bins == b)
+        return bin_cache[b]
+
+    def is_forbidden(u: int, cand: int) -> bool:
+        # Membership by binary search on the sorted CSR row -- materialising a
+        # hub's neighbour set (millions of entries) is not an option here.
+        return cand == u or background.has_edge(u, cand) or holdout.has_edge(u, cand)
+
+    # Caps bounding the 2-hop expansion; a hub can have millions of neighbours, so
+    # the shell is sampled rather than enumerated.
+    FANOUT, SHELL = 64, 64
 
     negatives: List[Tuple[int, int]] = []
     for (u, v) in positives:
-        forbidden = set(background.neighbors(u).tolist())
-        forbidden.update(holdout.neighbors(u).tolist())
-        forbidden.add(u)
-
         if kind == "degree_matched":
-            pool = by_bin.get(int(bins[v]), np.arange(background.num_nodes))
+            pool = pool_for_bin(int(bins[v]))
+            if pool.size == 0:
+                pool = np.arange(n_nodes)
         elif kind == "hard_2hop":
-            two_hop = set()
-            for nb in background.neighbors(u):
-                two_hop.update(background.neighbors(int(nb)).tolist())
-            cand = [c for c in two_hop if c not in forbidden]
-            pool = np.asarray(cand, dtype=np.int64) if cand else np.arange(background.num_nodes)
+            nbrs = background.neighbors(u)
+            if nbrs.size > FANOUT:
+                nbrs = nbrs[rng.choice(nbrs.size, size=FANOUT, replace=False)]
+            shell: List[int] = []
+            for nb in nbrs:
+                row = background.neighbors(int(nb))
+                if row.size > SHELL:
+                    row = row[rng.choice(row.size, size=SHELL, replace=False)]
+                shell.extend(int(c) for c in row)
+            pool = np.unique(np.asarray(shell, dtype=np.int64)) if shell else np.arange(n_nodes)
         else:
-            pool = np.arange(background.num_nodes)
+            pool = np.arange(n_nodes)
 
         chosen = -1
         for _ in range(max_tries):
             cand = int(pool[rng.integers(len(pool))])
-            if cand not in forbidden:
+            if not is_forbidden(int(u), cand):
                 chosen = cand
                 break
         if chosen < 0:
-            # Exhausted the matched pool; fall back to any valid non-neighbour so
-            # the pair set stays balanced. Counted and reported by the caller.
-            allowed = np.setdiff1d(np.arange(background.num_nodes),
-                                   np.fromiter(forbidden, dtype=np.int64))
-            if allowed.size == 0:
-                continue
-            chosen = int(allowed[rng.integers(allowed.size)])
+            # Matched pool exhausted; fall back to a uniform draw so the pair set
+            # stays balanced rather than silently dropping the positive.
+            for _ in range(max_tries):
+                cand = int(rng.integers(n_nodes))
+                if not is_forbidden(int(u), cand):
+                    chosen = cand
+                    break
+        if chosen < 0:
+            continue
         negatives.append((int(u), chosen))
     return negatives
 
@@ -215,14 +277,26 @@ def build_pair_set(
     negative_kind: str,
     rng: np.random.Generator,
     max_positives: Optional[int] = None,
+    holdout_edge_index: Optional[np.ndarray] = None,
 ) -> PairSet:
-    """Positives = held-out edges; one matched negative per positive."""
-    pos_pairs = sorted(holdout.edge_set())
+    """Positives = held-out edges; one matched negative per positive.
+
+    ``holdout_edge_index`` samples positives directly from the raw edge array,
+    which is the only workable route on the full graphs.
+    """
+    if holdout_edge_index is not None:
+        pos_pairs = sample_undirected_pairs(holdout_edge_index, max_positives, rng)
+    else:
+        # small-graph path (tests): reconstruct pairs from the CSR upper triangle
+        rows = np.repeat(np.arange(holdout.num_nodes), np.diff(holdout.indptr))
+        cols = holdout.indices.astype(np.int64)
+        upper = rows < cols
+        pos_pairs = list(zip(rows[upper].tolist(), cols[upper].tolist()))
+        if max_positives is not None and len(pos_pairs) > max_positives:
+            idx = rng.choice(len(pos_pairs), size=max_positives, replace=False)
+            pos_pairs = [pos_pairs[i] for i in np.sort(idx)]
     if not pos_pairs:
         raise ValueError("holdout graph has no edges -- nothing to evaluate")
-    if max_positives is not None and len(pos_pairs) > max_positives:
-        idx = rng.choice(len(pos_pairs), size=max_positives, replace=False)
-        pos_pairs = [pos_pairs[i] for i in np.sort(idx)]
 
     neg_pairs = sample_negatives(pos_pairs, background, holdout, negative_kind, rng)
 
@@ -432,10 +506,17 @@ def endpoint_sensitivity(emb: np.ndarray, pairs: PairSet, kind: str = "cosine") 
     return float(np.mean(differs[changed]))
 
 
-def leakage_check(background: Adjacency, holdout: Adjacency) -> int:
-    """Count held-out edges still present in the background graph. Must be 0."""
-    bg = background.edge_set()
-    return sum(1 for e in holdout.edge_set() if e in bg)
+def leakage_check(background: Adjacency, pairs: PairSet) -> int:
+    """Count scored positive edges that are still present in the background graph.
+
+    Checks the pairs actually being scored rather than all 16M holdout edges --
+    same guarantee where it matters (the encoder must not have aggregated over an
+    edge it is asked to predict), at a cost that does not scale with graph size.
+    """
+    pos = pairs.label == 1
+    if not pos.any():
+        return 0
+    return int(background.contains_pairs(pairs.u[pos], pairs.v[pos]).sum())
 
 
 # --------------------------------------------------------------------------- #
@@ -522,14 +603,41 @@ def embed_nodes(
     return np.concatenate(out, axis=0)
 
 
+class NodeEmbeddings:
+    """Sparse node->embedding map that indexes like a dense array.
+
+    A dense ``num_nodes x d`` table is impossible at real scale (23M x 256 floats
+    = 23.5GB) when only a few thousand nodes are ever scored. This stores just the
+    embedded rows plus an int32 lookup, while supporting ``emb[node_array]`` so
+    call sites read the same as with an ndarray.
+    """
+
+    __slots__ = ("table", "index", "num_nodes")
+
+    def __init__(self, table: np.ndarray, nodes: np.ndarray, num_nodes: int):
+        self.table = table
+        self.num_nodes = num_nodes
+        self.index = np.full(num_nodes, -1, dtype=np.int32)
+        self.index[nodes] = np.arange(nodes.size, dtype=np.int32)
+
+    def __getitem__(self, nodes) -> np.ndarray:
+        rows = self.index[nodes]
+        if np.any(rows < 0):
+            missing = np.asarray(nodes)[rows < 0][:5]
+            raise KeyError(f"no embedding for node(s) {missing.tolist()}")
+        return self.table[rows]
+
+    @property
+    def shape(self) -> Tuple[int, int]:
+        return (self.num_nodes, self.table.shape[1])
+
+
 def embeddings_by_node(
     model, subgraph_dataset, nodes: np.ndarray, num_nodes: int, **kwargs
-) -> np.ndarray:
-    """Dense ``num_nodes x d`` table with rows filled only for ``nodes``."""
+) -> "NodeEmbeddings":
+    """Embed ``nodes`` and wrap them in a node-indexed sparse map."""
     packed = embed_nodes(model, subgraph_dataset, nodes.tolist(), **kwargs)
-    table = np.zeros((num_nodes, packed.shape[1]), dtype=np.float32)
-    table[nodes] = packed
-    return table
+    return NodeEmbeddings(packed, np.asarray(nodes), num_nodes)
 
 
 # --------------------------------------------------------------------------- #
@@ -546,6 +654,7 @@ def evaluate_graph(
     seed: int,
     max_positives: Optional[int] = None,
     score_kind: str = "cosine",
+    holdout_edge_index: Optional[np.ndarray] = None,
 ) -> dict:
     """Score one graph under one negative-sampling regime.
 
@@ -554,7 +663,8 @@ def evaluate_graph(
     """
     rng = np.random.default_rng(seed)
     pairs = build_pair_set(background, holdout, negative_kind, rng,
-                           max_positives=max_positives)
+                           max_positives=max_positives,
+                           holdout_edge_index=holdout_edge_index)
     val_mask = split_val_mask(pairs, rng)
 
     reports: List[ScoreReport] = []
@@ -576,7 +686,7 @@ def evaluate_graph(
         reports.append(evaluate_scores(
             h, pairs.label, heuristic_scores(h, pairs, background), val_mask))
 
-    gates["holdout_leakage_edges"] = float(leakage_check(background, holdout))
+    gates["holdout_leakage_edges"] = float(leakage_check(background, pairs))
 
     return {
         "negative_kind": negative_kind,
@@ -639,7 +749,9 @@ def self_test(verbose: bool = True) -> bool:
         print(f"  nodes={n} background_edges={background.indices.size // 2} "
               f"holdout_edges={holdout.indices.size // 2}")
 
-    check("no holdout leakage into background", leakage_check(background, holdout) == 0)
+    _probe = build_pair_set(background, holdout, "random",
+                            np.random.default_rng(99), max_positives=200)
+    check("no holdout leakage into background", leakage_check(background, _probe) == 0)
 
     # An oracle embedding: one-hot block identity. Same-block pairs score 1.
     oracle = np.eye(4, dtype=np.float32)[block]

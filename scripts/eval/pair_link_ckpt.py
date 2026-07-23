@@ -41,6 +41,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from scripts.eval.pair_link_eval import (  # noqa: E402
     Adjacency,
+    NodeEmbeddings,
     evaluate_graph,
     embeddings_by_node,
     build_pair_set,
@@ -139,29 +140,71 @@ def load_frozen_encoder(checkpoint: str, params: dict, device: str = "cpu",
     return model
 
 
-def build_subgraph_dataset(graph, n_hop: int, background_view: str):
-    """SubgraphDataset over the background view only (held-out edges excluded)."""
+def build_subgraph_dataset(blob, graph, n_hop: int, background_view: str):
+    """SubgraphDataset over the background view only (held-out edges excluded).
+
+    Builds a minimal Data that SHARES the feature tensor by reference. Cloning the
+    source graph would duplicate a 23M x 768 matrix (~70GB on covid19).
+    """
+    import torch
+    from torch_geometric.data import Data
     from data.dataset import SubgraphDataset
     from experiments.sampler import NeighborSampler
 
-    bg = _view_edge_index(graph, background_view)
-    scoped = graph.clone()
-    scoped.edge_index = bg
+    bg = torch.as_tensor(_view_edge_index(blob, background_view)).long()
+    x = _get_field(blob, "x")
+    if x is None:
+        x = getattr(graph, "x", None)
+    if x is None:
+        raise ValueError("graph artifact carries no node features 'x'")
+    scoped = Data(x=x, edge_index=bg, num_nodes=int(graph.num_nodes))
     sampler = NeighborSampler(scoped, num_hops=n_hop)
     return SubgraphDataset(scoped, sampler, bidirectional=False)
 
 
-def _view_edge_index(graph, name: str):
-    views = getattr(graph, "edge_index_views", None)
-    if isinstance(views, dict) and name in views:
-        return views[name]
-    legacy = f"edge_index_{name}"
-    if hasattr(graph, legacy):
-        return getattr(graph, legacy)
+def load_graph_blob(path: str):
+    """Load a prodigy graph artifact -> (raw_dict_or_data, Data).
+
+    The artifacts are dicts whose PyG object lives under ``data`` (not ``graph``),
+    with edge views split across two dicts: message-passing views in
+    ``edge_index_views`` and prediction targets in ``target_edge_index_views``.
+    """
+    import torch
+    raw = torch.load(path, map_location="cpu", weights_only=False)
+    if not isinstance(raw, dict):
+        return raw, raw
+    for key in ("data", "graph"):
+        if key in raw:
+            return raw, raw[key]
+    raise KeyError(f"no 'data'/'graph' entry in {path}; keys={sorted(raw)[:20]}")
+
+
+def _view_edge_index(blob, name: str):
+    """Find a named edge view in either view dict, on the blob or the Data object."""
+    containers = []
+    for holder in (blob, getattr(blob, "data", None)):
+        if holder is None:
+            continue
+        get = holder.get if isinstance(holder, dict) else lambda k, d=None: getattr(holder, k, d)
+        for dict_name in ("edge_index_views", "target_edge_index_views"):
+            v = get(dict_name, None)
+            if isinstance(v, dict):
+                containers.append((dict_name, v))
+                if name in v:
+                    return v[name]
+        legacy = get(f"edge_index_{name}", None)
+        if legacy is not None:
+            return legacy
+    available = {k: sorted(v) for k, v in containers}
     raise KeyError(
-        f"edge view {name!r} not found; available: "
-        f"{sorted(views) if isinstance(views, dict) else 'none'}. Run "
+        f"edge view {name!r} not found; available: {available}. Run "
         "scripts/graph_construction/enrich_all_graphs.sh to add the static views.")
+
+
+def _get_field(blob, name: str):
+    if isinstance(blob, dict) and name in blob:
+        return blob[name]
+    return getattr(blob, name, None)
 
 
 def main(argv: Optional[list] = None) -> int:
@@ -191,18 +234,34 @@ def main(argv: Optional[list] = None) -> int:
 
     import torch
 
-    raw = torch.load(args.graph, map_location="cpu", weights_only=False)
-    graph = raw["graph"] if isinstance(raw, dict) and "graph" in raw else raw
+    blob, graph = load_graph_blob(args.graph)
     n = int(graph.num_nodes)
 
-    background = Adjacency.from_edge_index(
-        np.asarray(_view_edge_index(graph, args.background_view)), n)
-    holdout = Adjacency.from_edge_index(
-        np.asarray(_view_edge_index(graph, args.holdout_view)), n)
-    print(f"[graph] nodes={n} background_edges={background.indices.size // 2} "
-          f"holdout_edges={holdout.indices.size // 2}")
+    bg_ei = np.asarray(_view_edge_index(blob, args.background_view))
+    ho_ei = np.asarray(_view_edge_index(blob, args.holdout_view))
+    print(f"[graph] nodes={n} background_edges={bg_ei.shape[1]} "
+          f"holdout_edges={ho_ei.shape[1]}")
+    background = Adjacency.from_edge_index(bg_ei, n)
+    holdout = Adjacency.from_edge_index(ho_ei, n)
 
-    raw_features = np.asarray(graph.x, dtype=np.float32) if getattr(graph, "x", None) is not None else None
+    # Determine the scored node set once; every per-node table below is built only
+    # for these nodes (a dense 23M-row table is not affordable).
+    needed = set()
+    for kind in args.negative_kinds.split(","):
+        ps = build_pair_set(background, holdout, kind.strip(),
+                            np.random.default_rng(args.seed),
+                            max_positives=args.max_positives,
+                            holdout_edge_index=ho_ei)
+        needed.update(ps.nodes().tolist())
+    nodes = np.array(sorted(needed), dtype=np.int64)
+
+    raw_features = None
+    x = _get_field(blob, "x")
+    if x is None:
+        x = getattr(graph, "x", None)
+    if x is not None:
+        raw_features = NodeEmbeddings(
+            np.asarray(x[torch.as_tensor(nodes)], dtype=np.float32), nodes, n)
 
     embeddings = None
     if not args.no_encoder:
@@ -212,20 +271,8 @@ def main(argv: Optional[list] = None) -> int:
         params.update(emb_dim=args.emb_dim, input_dim=args.input_dim,
                       gnn_type=args.gnn_type, n_layer=args.n_layer, layers=args.layers)
         model = load_frozen_encoder(args.checkpoint, params, device=args.device)
-
-        # Only nodes that appear in some scored pair need embedding -- with a
-        # 2000-positive cap that is a few thousand subgraphs, not the whole graph.
-        probe_rng = np.random.default_rng(args.seed)
-        needed = set()
-        for kind in args.negative_kinds.split(","):
-            ps = build_pair_set(background, holdout, kind.strip(),
-                                np.random.default_rng(args.seed),
-                                max_positives=args.max_positives)
-            needed.update(ps.nodes().tolist())
-        nodes = np.array(sorted(needed), dtype=np.int64)
         print(f"[embed] embedding {nodes.size} nodes on the background view")
-
-        dataset = build_subgraph_dataset(graph, args.n_hop, args.background_view)
+        dataset = build_subgraph_dataset(blob, graph, args.n_hop, args.background_view)
         embeddings = embeddings_by_node(
             model, dataset, nodes, n, device=args.device, batch_size=args.batch_size)
 
@@ -234,7 +281,8 @@ def main(argv: Optional[list] = None) -> int:
         res = evaluate_graph(background, holdout, embeddings, raw_features,
                              kind.strip(), seed=args.seed,
                              max_positives=args.max_positives,
-                             score_kind=args.score_kind)
+                             score_kind=args.score_kind,
+                             holdout_edge_index=ho_ei)
         results.append(res)
         gates = res["gates"]
         print(f"\n[{kind.strip()}] pairs={res['n_pairs']} "

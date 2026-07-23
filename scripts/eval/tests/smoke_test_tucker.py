@@ -28,6 +28,7 @@ from scripts.eval.pair_link_eval import (  # noqa: E402
 )
 from scripts.eval.pair_link_ckpt import (  # noqa: E402
     ENCODER_DEFAULTS, build_subgraph_dataset, load_frozen_encoder, _view_edge_index,
+    load_graph_blob,
 )
 
 OK = True
@@ -56,19 +57,15 @@ def main() -> int:
     import torch
 
     print("Tucker smoke test")
-    raw = torch.load(args.graph, map_location="cpu", weights_only=False)
-    graph = raw["graph"] if isinstance(raw, dict) and "graph" in raw else raw
+    blob, graph = load_graph_blob(args.graph)
     n = int(graph.num_nodes)
 
-    background = Adjacency.from_edge_index(
-        np.asarray(_view_edge_index(graph, "static_background")), n)
-    holdout = Adjacency.from_edge_index(
-        np.asarray(_view_edge_index(graph, "static_holdout")), n)
-    print(f"  graph: nodes={n} bg_edges={background.indices.size // 2} "
-          f"holdout_edges={holdout.indices.size // 2}")
-
-    check("holdout edges absent from background",
-          sum(1 for e in holdout.edge_set() if e in background.edge_set()) == 0)
+    bg_ei = np.asarray(_view_edge_index(blob, "static_background"))
+    ho_ei = np.asarray(_view_edge_index(blob, "static_holdout"))
+    print(f"  graph: nodes={n} bg_edges={bg_ei.shape[1]} holdout_edges={ho_ei.shape[1]}")
+    print("  building adjacency (this dominates runtime on the big graphs)...")
+    background = Adjacency.from_edge_index(bg_ei, n)
+    holdout = Adjacency.from_edge_index(ho_ei, n)
 
     params = dict(ENCODER_DEFAULTS)
     params.update(emb_dim=args.emb_dim, input_dim=args.input_dim,
@@ -79,11 +76,16 @@ def main() -> int:
     check("checkpoint loads with all encoder weights present", True)
 
     pairs = build_pair_set(background, holdout, "degree_matched",
-                           np.random.default_rng(0), max_positives=args.max_positives)
+                           np.random.default_rng(0), max_positives=args.max_positives,
+                           holdout_edge_index=ho_ei)
+    check("scored positives are absent from the background graph",
+          int(background.contains_pairs(pairs.u[pairs.label == 1],
+                                        pairs.v[pairs.label == 1]).sum()) == 0)
+
     nodes = pairs.nodes()
     print(f"  embedding {nodes.size} nodes")
 
-    dataset = build_subgraph_dataset(graph, args.n_hop, "static_background")
+    dataset = build_subgraph_dataset(blob, graph, args.n_hop, "static_background")
     emb = embeddings_by_node(model, dataset, nodes, n, device=args.device, batch_size=128)
 
     check("embeddings are finite", bool(np.isfinite(emb[nodes]).all()))
@@ -93,7 +95,8 @@ def main() -> int:
           f"{emb.shape[1]} vs {args.emb_dim}")
 
     res = evaluate_graph(background, holdout, emb, None, "degree_matched",
-                         seed=0, max_positives=args.max_positives)
+                         seed=0, max_positives=args.max_positives,
+                         holdout_edge_index=ho_ei)
     g = res["gates"]
     check("encoder scoring is endpoint-sensitive", g["endpoint_sensitivity"] > 0.99,
           f"{g['endpoint_sensitivity']:.3f}")
