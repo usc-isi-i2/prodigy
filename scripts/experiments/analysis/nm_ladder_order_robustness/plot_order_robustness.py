@@ -390,6 +390,76 @@ def fig_role_deltas_bars(rows):
         print(f"  {s}     {n_mu[i]:+.4f}       {i_mu[i]:+.4f}   {h_mu[i]:+.4f}")
 
 
+# ------------------------------------------------------------ figure 4 (held-out)
+def fig_heldout_headroom(rows):
+    """Why some held-out graphs gain a lot: headroom, not donor-matching.
+
+    Each held-out event (a graph not yet in the merge, at one addition step, in one
+    order) as a point: x = the graph's AUC just before the step, y = the change at the
+    step. The gains are almost all in order C (weak-first), and they scale with how far
+    below its normal level the graph currently sits -- a graph already covered well barely
+    moves. That is recovery toward the achievable level as coverage grows, not a targeted
+    cross-transfer from the specific source being added (which shows ~0 correlation).
+    """
+    auc = {(r["order"], r["rung"], r["graph"]): r["auc"] for r in rows}
+    entry = {(r["order"], r["graph"]): r["entry_rung"] for r in rows}
+    graphs_by_order = defaultdict(set)
+    for r in rows:
+        graphs_by_order[r["order"]].add(r["graph"])
+
+    pts = defaultdict(list)   # order -> [(before, delta)]
+    for order in ("A", "B", "C"):
+        for rr in range(2, 9):
+            for g in graphs_by_order[order]:
+                if entry[(order, g)] > rr:
+                    before = auc[(order, rr - 1, g)]
+                    pts[order].append((before, auc[(order, rr, g)] - before))
+
+    allx = [b for order in pts for b, _ in pts[order]]
+    ally = [d for order in pts for _, d in pts[order]]
+    mx, my = np.mean(allx), np.mean(ally)
+    r = (np.mean([(b - mx) * (d - my) for b, d in zip(allx, ally)])
+         / (np.std(allx) * np.std(ally)))
+    # least-squares trend line
+    b_slope = np.polyfit(allx, ally, 1)
+
+    fig, ax = plt.subplots(figsize=(8.6, 5.6), dpi=200)
+    ax.axhline(0, color="#c3c2b7", lw=1.0, zorder=2)
+    xs = np.array([min(allx) - 0.01, max(allx) + 0.01])
+    ax.plot(xs, np.polyval(b_slope, xs), color=MUTED, lw=1.4, ls=(0, (5, 3)), zorder=3)
+
+    for order in ("A", "B", "C"):
+        bx = [b for b, _ in pts[order]]
+        dy = [d for _, d in pts[order]]
+        ax.scatter(bx, dy, s=46, color=ORDER_C[order], alpha=0.75, edgecolor="white",
+                   linewidth=0.6, zorder=5, label=f"order {order}")
+
+    ax.text(0.035, 0.52, f"r = {r:+.2f}", transform=ax.transAxes, fontsize=13,
+            color=INK, fontweight="bold", ha="left")
+    ax.text(0.035, 0.475, "lower current AUC,\nlarger recovery", transform=ax.transAxes,
+            fontsize=9, color=MUTED, ha="left", va="top")
+
+    ax.set_xlabel("held-out graph's NM AUC just before the source is added",
+                  fontsize=10.5, color=INK)
+    ax.set_ylabel("Δ NM AUC at that step\n(while still held out)", fontsize=10.5, color=INK)
+    chrome(ax)
+    ax.set_title("Held-out gains are headroom, not targeted transfer",
+                 fontsize=12.5, color=INK, fontweight="bold", loc="left", pad=26)
+    ax.text(0.0, 1.02, "each dot = one held-out graph at one addition step  ·  lower current "
+            "AUC, larger recovery  ·  A/B ≈ 0, gains concentrated in weak-first order C",
+            transform=ax.transAxes, ha="left", va="bottom", fontsize=8.6, color=MUTED)
+    ax.legend(loc="upper right", frameon=False, fontsize=9.5, handlelength=1.0,
+              scatterpoints=1)
+
+    fig.tight_layout()
+    save(fig, "order_heldout_headroom")
+    plt.close(fig)
+
+    print("\nheld-out mean Δ by order:  " +
+          "  ".join(f"{o}: {np.mean([d for _, d in pts[o]]):+.4f}" for o in "ABC"))
+    print(f"corr(Δ, current AUC) = {r:+.3f}")
+
+
 def main():
     os.makedirs(FIGS, exist_ok=True)
     rows = load()
@@ -398,6 +468,7 @@ def main():
     fig_id_ood_gap(rows)
     fig_role_deltas(rows)
     fig_role_deltas_bars(rows)
+    fig_heldout_headroom(rows)
 
 
 if __name__ == "__main__":
