@@ -151,6 +151,49 @@ def get_covid19_twitter_dataset(root: str, n_hop: int = 1, graph_filename: str =
     return dataset
 
 
+def resolve_source_subset(subset_spec, stratum_ids, source_names):
+    """Resolve a --neighbor_sampling_source_subset spec to a set of graph_ids.
+
+    `subset_spec` is a comma-separated list of source names (as stored in
+    `graph.source_graph_names`) and/or integer graph_ids. Returns None when the spec is
+    empty (meaning "all sources"), otherwise the selected graph_ids as a set.
+
+    Raises ValueError on anything ambiguous -- an unknown name, an id absent from the
+    graph, or an empty selection. A mis-specified subset must fail loudly: silently
+    falling back to all sources would produce a full-merge run wearing a single-rung
+    label, which is indistinguishable from a real rung in the results table.
+    """
+    tokens = [tok.strip() for tok in str(subset_spec or "").split(",")]
+    tokens = [tok for tok in tokens if tok]
+    if not tokens:
+        return None
+
+    name_to_id = {name: idx for idx, name in enumerate(source_names)}
+    available = ", ".join(f"{i}:{source_names[i]}" if i < len(source_names) else str(i)
+                          for i in stratum_ids)
+    selected = set()
+    for tok in tokens:
+        if tok in name_to_id:
+            graph_id = name_to_id[tok]
+        else:
+            try:
+                graph_id = int(tok)
+            except ValueError:
+                raise ValueError(
+                    f"neighbor_sampling_source_subset: unknown source {tok!r}. "
+                    f"Available sources: {available}."
+                )
+        if graph_id not in stratum_ids:
+            raise ValueError(
+                f"neighbor_sampling_source_subset: graph_id {graph_id} (from {tok!r}) is not "
+                f"present in this graph. Available sources: {available}."
+            )
+        selected.add(graph_id)
+    if not selected:
+        raise ValueError("neighbor_sampling_source_subset resolved to an empty set of sources.")
+    return selected
+
+
 def get_covid19_twitter_dataloader(
         dataset: SubgraphDataset,
         split: str,
@@ -184,22 +227,35 @@ def get_covid19_twitter_dataloader(
         #   neighbor_sampling_episode_source="graph_id"  -> confine each episode to ONE source
         strata_mode = kwargs.get("neighbor_sampling_strata", "")
         episode_source = kwargs.get("neighbor_sampling_episode_source", "")
+        subset_spec = kwargs.get("neighbor_sampling_source_subset", "")
         if strata_mode == "graph_id" or episode_source == "graph_id":
             if not hasattr(graph, "graph_id"):
                 raise ValueError("graph_id neighbor sampling requires graph.graph_id metadata.")
             graph_ids = graph.graph_id.detach().cpu().numpy()
-            strata = [np.where(graph_ids == graph_id)[0].tolist() for graph_id in sorted(set(graph_ids.tolist()))]
-            confine_to_single_stratum = episode_source == "graph_id"
+            stratum_ids = sorted(set(graph_ids.tolist()))
             source_names = list(getattr(graph, "source_graph_names", []))
-            if source_names:
-                summary = ", ".join(
-                    f"{source_names[i] if i < len(source_names) else i}:{len(stratum)}"
-                    for i, stratum in enumerate(strata)
-                )
-            else:
-                summary = ", ".join(f"{i}:{len(stratum)}" for i, stratum in enumerate(strata))
+            # Optionally restrict episodes to a subset of the merged sources. The merge is a
+            # disjoint block-concat, so a neighborhood sampled around a center never leaves its
+            # source graph; dropping the other strata is therefore equivalent to training on the
+            # merge of just these sources (see nm_ladder_order_robustness-jul_23).
+            subset = resolve_source_subset(subset_spec, stratum_ids, source_names)
+            if subset is not None:
+                stratum_ids = [graph_id for graph_id in stratum_ids if graph_id in subset]
+            strata = [np.where(graph_ids == graph_id)[0].tolist() for graph_id in stratum_ids]
+            confine_to_single_stratum = episode_source == "graph_id"
+            summary = ", ".join(
+                f"{source_names[graph_id] if graph_id < len(source_names) else graph_id}:{len(stratum)}"
+                for graph_id, stratum in zip(stratum_ids, strata)
+            )
             mode = "confine-to-one-source" if confine_to_single_stratum else "balance-within-episode"
-            print(f"Neighbor sampling graph_id strata ({mode}): {summary}", flush=True)
+            scope = f" [subset {len(stratum_ids)}/{len(set(graph_ids.tolist()))} sources]" if subset else ""
+            print(f"Neighbor sampling graph_id strata ({mode}){scope}: {summary}", flush=True)
+        elif str(subset_spec or "").strip():
+            raise ValueError(
+                "neighbor_sampling_source_subset requires neighbor_sampling_strata='graph_id' or "
+                "neighbor_sampling_episode_source='graph_id'; got neither, so the subset would be "
+                "silently ignored and the run would train on every source."
+            )
         sampler = BatchSampler(
             batch_count,
             NeighborTask(

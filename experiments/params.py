@@ -246,6 +246,21 @@ def get_params():
         ),
     )
     args.add_argument(
+        "--neighbor_sampling_source_subset",
+        default="",
+        type=str,
+        help=(
+            "Comma-separated source graphs (names from graph.source_graph_names, or integer "
+            "graph_ids) that neighbor-matching episodes may be drawn from. Empty -> all sources. "
+            "Because merges are disjoint block-concats (no cross-source edges) and episodes are "
+            "already confined to one source, restricting the set is equivalent to training on the "
+            "merge of just those sources -- this lets one merged graph stand in for every rung of "
+            "a curriculum ladder without rebuilding merges. Requires --neighbor_sampling_strata or "
+            "--neighbor_sampling_episode_source to be 'graph_id'; errors otherwise rather than "
+            "silently training on every source."
+        ),
+    )
+    args.add_argument(
         "--neighbor_sampling_episode_source_weighting",
         default="proportional",
         choices=["proportional", "balanced"],
