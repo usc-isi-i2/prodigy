@@ -22,6 +22,11 @@ early steps, where every not-yet-added graph recovers as coverage grows
 transfer. Color scale is clipped so off-diagonal structure stays visible; the
 diagonal saturates and its value is annotated.
 
+Second figure (order_add_impact_by_source): the same events aggregated over
+targets -- per source added, three bars (own entry boost / mean on in-mix
+targets / mean on out-of-mix targets), whisker = min/max over that source's
+addition events. The row-sum view of the matrix, in the regret-bar style.
+
 Reads data/nm_ladder_order_robustness_long.csv; writes figures/. Local python:
   /opt/homebrew/bin/python3.11 plot_add_impact_matrix.py
 """
@@ -41,8 +46,11 @@ DATA = os.path.join(HERE, "data", "nm_ladder_order_robustness_long.csv")
 FIGS = os.path.join(HERE, "figures")
 
 GREEN, CORAL = "#2e8b45", "#d85a30"      # + toward best / - away (regret-bar palette)
+GREEN_DK, CORAL_DK = "#1a5a2a", "#8a3b1c"
+GRAY, GRAY_DK = "#8f8d87", "#5f5e5a"
 INK = "#0b0b0b"
 MUTED = "#898781"
+GRID = "#e1e0d9"
 EMPTY = "#f1f0ea"
 ORDERS = ("A", "B", "C")
 
@@ -154,6 +162,98 @@ def draw_panel(ax, m, n, title, vmax, show_n, ylabels):
     return im
 
 
+def fig_by_source(events):
+    """Aggregate over targets: per source added, own boost / in-mix / out-of-mix bars."""
+    per = {g: {"new": [], "in": [], "out": []} for g in GRAPHS}
+    for ev in events:
+        per[ev["src"]]["new"].append(ev["deltas"][ev["src"]])
+        for role in ("in", "out"):
+            vals = [ev["deltas"][g] for g in GRAPHS if ev["roles"][g] == role]
+            if vals:
+                per[ev["src"]][role].append(float(np.mean(vals)))
+
+    def stats(role):
+        vs = [per[g][role] for g in GRAPHS]
+        mu = [float(np.mean(v)) for v in vs]
+        err = [[m - min(v) for m, v in zip(mu, vs)], [max(v) - m for m, v in zip(mu, vs)]]
+        return mu, err, [len(v) for v in vs]
+
+    n_mu, n_err, n_n = stats("new")
+    i_mu, i_err, i_n = stats("in")
+    o_mu, o_err, o_n = stats("out")
+
+    x = np.arange(8)
+    w = 0.27
+    ylim = (min(i_mu + o_mu) - 0.022,
+            max(m + e for m, e in zip(n_mu, n_err[1])) * 1.14)
+
+    fig, ax = plt.subplots(figsize=(10.6, 5.7), dpi=200, constrained_layout=True)
+    ax.axhline(0.0, color="#9c9a93", lw=1.0, zorder=2)
+    ax.bar(x - w, n_mu, width=w, color=GREEN, edgecolor="white", linewidth=0.7,
+           zorder=3, label="the source's own graph — its entry boost")
+    ax.bar(x, i_mu, width=w, color=CORAL, edgecolor="white", linewidth=0.7,
+           zorder=3, label="in-mix targets — mean Δ (already in the merge)")
+    ax.bar(x + w, o_mu, width=w, color=GRAY, edgecolor="white", linewidth=0.7,
+           zorder=3, label="out-of-mix targets — mean Δ (not yet added)")
+
+    for xs, mu, err, n, col in ((x - w, n_mu, n_err, n_n, GREEN_DK),
+                                (x, i_mu, i_err, i_n, CORAL_DK),
+                                (x + w, o_mu, o_err, o_n, GRAY_DK)):
+        keep = [k for k in range(8) if n[k] > 1]
+        ax.errorbar([xs[k] for k in keep], [mu[k] for k in keep],
+                    yerr=[[err[0][k] for k in keep], [err[1][k] for k in keep]],
+                    fmt="none", ecolor=col, elinewidth=1.0, capsize=2.4, zorder=5)
+
+    for xi, m, e in zip(x - w, n_mu, n_err[1]):
+        ax.annotate(f"+{m:.3f}", xy=(xi, m + e), xytext=(0, 3),
+                    textcoords="offset points", ha="center", va="bottom",
+                    fontsize=7.4, color=GREEN_DK, fontweight="bold")
+    for xi, n in zip(x + w, o_n):        # events that still had held-out targets
+        ax.annotate(f"n={n}", xy=(xi, ylim[0]), xytext=(0, 3),
+                    textcoords="offset points", ha="center", va="bottom",
+                    fontsize=6.4, color=MUTED)
+
+    ax.set_ylim(*ylim)
+    ax.set_yticks([0.0, 0.1, 0.2, 0.3])
+    ax.set_ylabel("mean Δ NM AUC at the addition step   (+ = toward best)",
+                  fontsize=10, color=INK)
+    ax.set_xlim(-0.6, 7.6)
+    ax.set_xticks(x)
+    ax.set_xticklabels([f"+{l}" for l in GLAB], fontsize=9.5)
+    ax.set_xlabel("source added to the SSL pre-training merge", fontsize=10.5, color=INK)
+    for sp in ("top", "right"):
+        ax.spines[sp].set_visible(False)
+    for sp in ("left", "bottom"):
+        ax.spines[sp].set_color("#c3c2b7")
+    ax.tick_params(colors=MUTED, labelsize=9)
+    ax.grid(axis="y", color=GRID, lw=0.8, zorder=0)
+    ax.set_axisbelow(True)
+    ax.legend(loc="upper left", frameon=False, fontsize=9, borderaxespad=0.4,
+              handlelength=1.2, labelspacing=0.45)
+    ax.set_title("Adding a source mostly helps itself — averaged over its addition events",
+                 fontsize=12.5, color=INK, fontweight="bold", loc="left", pad=24)
+    ax.text(0.0, 1.015, "NM 3-shot / 30-way · matched step 40k · bar = mean over the "
+            "source's measurable additions (3 orders; 2 for ukr / covid / elec '20), "
+            "whisker = min/max over those events\ngreen = its own graph's jump · coral / "
+            "gray = mean Δ over the other graphs by role · n = events with any held-out "
+            "target left · gray upside = order-C headroom recovery",
+            transform=ax.transAxes, ha="left", va="bottom", fontsize=8.4, color=MUTED)
+
+    for ext in ("pdf", "png"):
+        out = os.path.join(FIGS, f"order_add_impact_by_source.{ext}")
+        fig.savefig(out, bbox_inches="tight", dpi=200)
+        print("wrote", out)
+    plt.close(fig)
+
+    print("\naggregated over targets  (mean over events [min..max], n)")
+    print("  source      own boost                in-mix targets           out-of-mix targets")
+    for k in range(8):
+        own = f"{n_mu[k]:+.4f} [{n_mu[k]-n_err[0][k]:+.3f}..{n_mu[k]+n_err[1][k]:+.3f}] n={n_n[k]}"
+        im = f"{i_mu[k]:+.4f} [{i_mu[k]-i_err[0][k]:+.3f}..{i_mu[k]+i_err[1][k]:+.3f}] n={i_n[k]}"
+        om = f"{o_mu[k]:+.4f} [{o_mu[k]-o_err[0][k]:+.3f}..{o_mu[k]+o_err[1][k]:+.3f}] n={o_n[k]}"
+        print(f"  +{GLAB[k]:<10} {own:<24} {im:<24} {om}")
+
+
 def main():
     os.makedirs(FIGS, exist_ok=True)
     events = load_events()
@@ -219,6 +319,8 @@ def main():
     show(m_all, n_all, "POOLED mean Δ AUC")
     show(m_in, n_in, "IN-MIX-only mean Δ AUC (target already in the merge)")
     show(m_out, n_out, "OUT-only mean Δ AUC (target still held out)")
+
+    fig_by_source(events)
 
 
 if __name__ == "__main__":
