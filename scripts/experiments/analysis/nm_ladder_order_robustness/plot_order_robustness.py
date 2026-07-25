@@ -223,7 +223,7 @@ def fig_id_ood_gap(rows):
 
 # --------------------------------------------------------------------- figure 3
 def fig_role_deltas(rows):
-    """Per-source impact split by role, pooled over the three orders."""
+    """Per-source impact split by role, colored by order."""
     # index AUC by (order, rung, graph) and by (order, graph)->entry
     auc = {(r["order"], r["rung"], r["graph"]): r["auc"] for r in rows}
     entry = {}
@@ -232,7 +232,8 @@ def fig_role_deltas(rows):
         entry[(r["order"], r["graph"])] = r["entry_rung"]
         graphs_by_order[r["order"]].add(r["graph"])
 
-    newc, inc, hel = [], [], []
+    # Collect data by (order, role)
+    data = defaultdict(lambda: defaultdict(list))  # order -> role -> list of deltas
     for order in ("A", "B", "C"):
         graphs = graphs_by_order[order]
         for rr in range(2, 9):                                  # rung rr vs rr-1
@@ -246,49 +247,90 @@ def fig_role_deltas(rows):
             incs = [g for g in graphs if entry[(order, g)] < rr]
             hels = [g for g in graphs if entry[(order, g)] > rr]
             if newcomer in deltas:
-                newc.append(deltas[newcomer])
-            inc += [deltas[g] for g in incs if g in deltas]
-            hel += [deltas[g] for g in hels if g in deltas]
+                data[order]["newc"].append(deltas[newcomer])
+            data[order]["inc"] += [deltas[g] for g in incs if g in deltas]
+            data[order]["hel"] += [deltas[g] for g in hels if g in deltas]
 
-    groups = [("newcomer\n(just added)", newc, BLUE),
-              ("incumbents\n(already in)", inc, CORAL),
-              ("held-out\n(not yet added)", hel, GRAY)]
+    roles = [("newcomer\n(just added)", "newc"),
+             ("incumbents\n(already in)", "inc"),
+             ("held-out\n(not yet added)", "hel")]
 
     fig, ax = plt.subplots(figsize=(8.4, 5.6), dpi=200)
     rng = np.random.default_rng(0)
-    for i, (lab, vals, col) in enumerate(groups):
-        vals = np.array(vals)
-        jitter = rng.uniform(-0.13, 0.13, size=len(vals))
-        ax.scatter(np.full(len(vals), i) + jitter, vals, s=26, color=col, alpha=0.55,
-                   edgecolor="white", linewidth=0.4, zorder=4)
-        mu = float(vals.mean())
-        ax.plot([i - 0.28, i + 0.28], [mu, mu], color=INK, lw=2.4, zorder=6)
-        ax.annotate(f"mean {mu:+.3f}\nn={len(vals)}", xy=(i + 0.33, mu),
-                    fontsize=8.8, color=col if i == 0 else MUTED, va="center",
-                    fontweight="bold" if i == 0 else "normal")
+
+    # Plot each role, with each order as a separate color with x-offset
+    orders = ["A", "B", "C"]
+    order_colors = [ORDER_C[o] for o in orders]
+    n_orders = len(orders)
+
+    handles = []
+    for role_idx, (lab, role_key) in enumerate(roles):
+        for order_idx, (order, color) in enumerate(zip(orders, order_colors)):
+            vals = np.array(data[order][role_key])
+            if len(vals) == 0:
+                continue
+
+            # Spread orders across the x-position to avoid overlap
+            x_offset = (order_idx - n_orders / 2 + 0.5) * 0.12
+            jitter = rng.uniform(-0.06, 0.06, size=len(vals))
+            ax.scatter(np.full(len(vals), role_idx) + x_offset + jitter, vals, s=26,
+                      color=color, alpha=0.60, edgecolor="white", linewidth=0.4,
+                      zorder=4, label=f"order {order}" if role_idx == 0 else "")
+
+            # Mean line for this (role, order)
+            mu = float(vals.mean())
+            line_x = [role_idx + x_offset - 0.13, role_idx + x_offset + 0.13]
+            ax.plot(line_x, [mu, mu], color=color, lw=1.8, zorder=5, alpha=0.8)
+
+        # Pooled summary annotation
+        all_vals = np.array(data["A"][role_key] + data["B"][role_key] + data["C"][role_key])
+        if len(all_vals) > 0:
+            mu_pool = float(all_vals.mean())
+            ax.annotate(f"pool\n{mu_pool:+.3f}", xy=(role_idx + 0.35, mu_pool),
+                       fontsize=7.8, color=MUTED, va="center", style="italic")
 
     ax.axhline(0, color="#c3c2b7", lw=1.0, zorder=2)
-    ax.set_xticks(range(3))
-    ax.set_xticklabels([g[0] for g in groups], fontsize=9.8)
+    ax.set_xticks(range(len(roles)))
+    ax.set_xticklabels([r[0] for r in roles], fontsize=9.8)
     ax.set_ylabel("Δ NM AUC at each source-addition step\n(this rung − rung below)",
                   fontsize=10.3, color=INK)
-    ax.set_xlim(-0.6, 2.9)
+    ax.set_xlim(-0.6, len(roles) - 0.4)
     chrome(ax)
-    ax.set_title("Per-source impact: large in-domain benefit, ~zero cost to other graphs",
+    ax.set_title("Per-source impact by order: large in-domain benefit, ~zero cost to other graphs",
                  fontsize=12.0, color=INK, fontweight="bold", loc="left", pad=26)
-    ax.text(0.0, 1.02, "each dot = one graph at one addition step, pooled over orders "
-            "A/B/C  ·  newcomer = its own OOD-to-ID jump  ·  21 newcomer events, all positive",
+    ax.text(0.0, 1.02, "each dot = one graph at one addition step  ·  newcomer = its own "
+            "OOD-to-ID jump  ·  colored by order; lines = mean per (role, order)  ·  italic "
+            "label = pooled mean over all orders",
             transform=ax.transAxes, ha="left", va="bottom", fontsize=8.6, color=MUTED)
+
+    # Custom legend
+    legend_handles = [Line2D([0], [0], marker="o", color="w", markerfacecolor=ORDER_C[o],
+                            markersize=7, markeredgecolor="white", markeredgewidth=0.8,
+                            label=f"order {o}") for o in orders]
+    ax.legend(handles=legend_handles, loc="upper left", frameon=False, fontsize=9,
+             handlelength=1.5)
 
     fig.tight_layout()
     save(fig, "order_role_deltas")
     plt.close(fig)
 
-    # console summary
+    # console summary by role
     print("\nrole            n     mean      min      max")
-    for lab, vals, _ in groups:
-        v = np.array(vals)
-        print(f"  {lab.split(chr(10))[0]:<14}{len(v):<4}{v.mean():+.4f}  {v.min():+.4f}  {v.max():+.4f}")
+    for lab, role_key in roles:
+        all_vals = np.array(data["A"][role_key] + data["B"][role_key] + data["C"][role_key])
+        if len(all_vals) > 0:
+            print(f"  {lab.split(chr(10))[0]:<14}{len(all_vals):<4}{all_vals.mean():+.4f}  "
+                  f"{all_vals.min():+.4f}  {all_vals.max():+.4f}")
+
+    # Summary by order
+    print("\norder  newcomer      incumbent      held-out")
+    for order in orders:
+        n_vals = np.array(data[order]["newc"])
+        i_vals = np.array(data[order]["inc"])
+        h_vals = np.array(data[order]["hel"])
+        print(f"  {order}     {n_vals.mean() if len(n_vals) > 0 else 0:+.4f}        "
+              f"{i_vals.mean() if len(i_vals) > 0 else 0:+.4f}       "
+              f"{h_vals.mean() if len(h_vals) > 0 else 0:+.4f}")
 
 
 # --------------------------------------------------------------- figure 3b (bars)
