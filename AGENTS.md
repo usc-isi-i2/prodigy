@@ -88,6 +88,40 @@ tmux new-session -d -s <name> 'export PATH="/home/mhchu/miniconda3/bin:$PATH"; b
   provenance. Verify these read-only on Tucker and advance `last_verified`; use
   explicit `null` values or notes when a fact is unknown rather than guessing.
 
+## Repo Traps (read before moving files or merging branches)
+
+Learned the hard way in the 2026-07-26 consolidation. Each of these fails *silently*.
+
+- **The ignore policy is inverted, so moving a tracked data file untracks it.**
+  `.gitignore` blanket-ignores `*.json`, `*.csv`, `*.png`, `*.pdf` and re-includes only
+  narrow paths (`scripts/**/data/**`, `scripts/**/figures/**`, `scripts/**/archive/**`,
+  `docs/graph_catalog.json`). Move such a file outside a re-included path and `git add -A`
+  will quietly *drop* it — the commit reads as a deletion. After moving any data file,
+  check `git check-ignore -v <path>` and confirm it still appears in `git ls-files`.
+- **Scope `git add`.** This working copy has held unrelated projects; an unscoped
+  `git add -A` swept one into a research commit and needed a history rewrite to undo.
+  Stage the paths you actually changed.
+- **The shared per-task eval CSVs are append-only accumulations across experiments**
+  (`analysis/{node_classification,node_regression,static_link_prediction}/data/*.csv`).
+  Every experiment appends its arms. A git line-wise auto-merge of two branches that
+  both appended will report success while dropping rows. Merge them as a **union** and
+  verify with `comm -23 <(git show <side>:<path> | sort -u) <(sort -u <path>)` for both
+  sides before committing.
+- **Static link prediction: use `scripts/eval/pair_link_eval.py`.** The episodic sLP
+  path in the old runner is invalid (center-blind scoring, frozen random prototypes,
+  degree-confounded negatives). Every sLP number produced before 2026-07-23 is void —
+  do not cite one without checking it against
+  `analysis/multitask_ssl/FINDINGS_rescore.md`. Findings that still carry void numbers
+  are banner-marked; temporal LP has the same defect and was never rescored.
+
+## Where to Start Reading
+
+- `scripts/experiments/analysis/_cross/README.md` — index of every analysis folder,
+  which findings file is current, and which are superseded.
+- Retired analyses are **not** in the working tree: branch
+  `archive/retired-analyses-2026-07` and tag `archive/retired-analyses-2026-07-26`.
+  Tag `pre-cleanup-2026-07-26` is the pre-consolidation state.
+
 ## Experiment Conventions
 
 - Keep experiments atomized: each experiment should be self-contained, with config, runner, and notes in its own subfolder.
