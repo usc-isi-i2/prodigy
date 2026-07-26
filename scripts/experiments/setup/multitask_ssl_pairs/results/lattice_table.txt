@@ -1,0 +1,59 @@
+==========================================================================
+T1 - frozen-encoder transfer over the {nm,cl,fp} subset lattice (test split)
+    cls: 2 datasets | reg: 4 datasets x 3 targets | sLP: 4 datasets
+    all arms = merged 3-way corpus, bio-768/mean-SAGE, matched 40k episodes
+==========================================================================
+arm     k   cls AUC   reg rho   sLP AUC  min(cls,sLP)   group
+NM      1     0.810    -0.001     0.467         0.467   single
+CL      1     0.638    -0.128     0.332         0.332   single
+FP      1     0.492     0.166     0.449         0.449   single
+NMCL    2     0.800    -0.144     0.305         0.305   pair
+NMFP    2     0.802    -0.098     0.424         0.424   pair
+CLFP    2     0.601     0.110     0.227         0.227   pair
+MIX     3     0.795     0.097     0.759         0.759   triple
+
+--------------------------------------------------------------------------
+Capability vs. # objectives in the rotation (mean over arms at each k)
+--------------------------------------------------------------------------
+ k  #arms   cls AUC   reg rho   sLP AUC   min bar
+ 1      3     0.647     0.012     0.416     0.416
+ 2      3     0.734    -0.044     0.319     0.319
+ 3      1     0.795     0.097     0.759     0.759
+
+--------------------------------------------------------------------------
+Joint generalist bar  min(feature=cls AUC, topological=sLP AUC), ranked
+  (chance=0.50 both axes; > 0.6 = genuine dual-capability generalist;
+   regression excluded - noisy secondary feature axis, see rotation FINDINGS)
+--------------------------------------------------------------------------
+  MIX    (k=3)  min = 0.759  (bottleneck: sLP)  <-- generalist
+  NM     (k=1)  min = 0.467  (bottleneck: sLP)  (at chance)
+  FP     (k=1)  min = 0.449  (bottleneck: sLP)  (at chance)
+  NMFP   (k=2)  min = 0.424  (bottleneck: sLP)  (at chance)
+  CL     (k=1)  min = 0.332  (bottleneck: sLP)  (at chance)
+  NMCL   (k=2)  min = 0.305  (bottleneck: sLP)  (at chance)
+  CLFP   (k=2)  min = 0.227  (bottleneck: sLP)  (at chance)
+
+  best single = NM (0.467) | best pair = NMFP (0.424) | MIX = 0.759
+  best-pair - best-single = -0.042   MIX - best-pair = +0.335
+
+==========================================================================
+HEADLINE - static-LP ROC-AUC (the emergent topological transfer)
+==========================================================================
+  single  NM=0.467  CL=0.332  FP=0.449
+  pair    NMCL=0.305  NMFP=0.424  CLFP=0.227
+  triple  MIX=0.759
+
+  arms clearing sLP > 0.6: ['MIX']
+  marginal sLP by objective (mean over arms that DO vs DO NOT rotate it):
+    nm: with=0.489 without=0.336 delta=+0.153
+    cl: with=0.406 without=0.447 delta=-0.041
+    fp: with=0.465 without=0.368 delta=+0.097
+
+--------------------------------------------------------------------------
+static-LP ROC-AUC per dataset (0-shot), all arms
+--------------------------------------------------------------------------
+dataset              NM     CL     FP   NMCL   NMFP   CLFP    MIX
+covid19_twitter   0.406  0.366  0.449  0.320  0.395  0.228  0.755
+midterm           0.487  0.417  0.433  0.376  0.445  0.310  0.676
+twibot20          0.491  0.259  0.381  0.315  0.471  0.202  0.745
+ukr_rus_twitter   0.484  0.288  0.534  0.210  0.387  0.168  0.861

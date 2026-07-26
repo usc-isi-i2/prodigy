@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Block oversized files from entering the repo.
+#
+# Analysis data/ and figures/ are deliberately tracked (see .gitignore), so the
+# usual "ignore all binaries" guard is gone. This is what replaces it: eval CSVs
+# and figures are KB-to-MB, so anything past the limit is almost certainly a
+# checkpoint, parquet, or embedding dump that belongs on Tucker instead.
+#
+# Enable (once per clone, including on Tucker):
+#     git config core.hooksPath .githooks
+#
+# Intentional override:
+#     git commit --no-verify
+
+set -euo pipefail
+
+LIMIT_MB=25
+LIMIT_BYTES=$((LIMIT_MB * 1024 * 1024))
+oversized=0
+
+while IFS= read -r -d '' path; do
+    [ -f "$path" ] || continue
+    size=$(wc -c < "$path" | tr -d ' ')
+    if [ "$size" -gt "$LIMIT_BYTES" ]; then
+        awk -v s="$size" -v p="$path" \
+            'BEGIN { printf "  BLOCKED  %8.1f MB  %s\n", s / 1048576, p }'
+        oversized=1
+    fi
+done < <(git diff --cached --name-only -z --diff-filter=ACM)
+
+if [ "$oversized" -ne 0 ]; then
+    cat >&2 <<EOF
+
+Commit aborted: file(s) above ${LIMIT_MB} MB.
+
+Large artifacts (checkpoints, parquet, embeddings) live on Tucker under
+/dataMeR1, not in git. If this file really belongs here, re-run with:
+
+    git commit --no-verify
+
+EOF
+    exit 1
+fi

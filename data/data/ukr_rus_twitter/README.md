@@ -99,9 +99,9 @@ python data/data/ukr_rus_twitter/scripts/inspect_graph.py \
 ## Training
 
 ```bash
-sbatch scripts/submit_train1_ukr_rus_twitter_pl.sh
-sbatch scripts/submit_train1_ukr_rus_twitter_nm.sh
-sbatch scripts/submit_train1_ukr_rus_twitter_lp.sh
+sbatch scripts/experiments/setup/train1/submit_train1_ukr_rus_twitter_pl.sh
+sbatch scripts/experiments/setup/train1/submit_train1_ukr_rus_twitter_nm.sh
+sbatch scripts/experiments/setup/train1/submit_train1_ukr_rus_twitter_lp.sh
 ```
 
 Typical task settings used in recent comparable runs:
@@ -109,11 +109,11 @@ Typical task settings used in recent comparable runs:
 | Task | `--task_name` | Typical flags |
 |---|---|---|
 | Political labels | `classification` | `--n_way 2 --n_shots 3 --n_query 3 --midterm_label_downsample 50:50` |
-| Neighbor matching | `neighbor_matching` | `--midterm_edge_view temporal_history --n_way 3 --n_shots 1 --n_query 12` |
-| Temporal link prediction | `temporal_link_prediction` | `--midterm_edge_view temporal_history --midterm_target_edge_view temporal_new --n_way 1 --n_shots 1 --n_query 3` |
+| Neighbor matching | `neighbor_matching` | `--edge_view temporal_history --n_way 3 --n_shots 1 --n_query 12` |
+| Temporal link prediction | `temporal_link_prediction` | `--edge_view temporal_history --target_edge_view temporal_new --n_way 1 --n_shots 1 --n_query 3` |
 
 For embedding-only runs, use:
 
 ```text
---midterm_feature_subset emb_only --input_dim 384
+--feature_subset emb_only --input_dim 384
 ```

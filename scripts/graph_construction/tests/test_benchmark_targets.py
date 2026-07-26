@@ -1,0 +1,181 @@
+"""Unit tests for scripts/graph_construction/benchmark_targets.py.
+
+Run directly (no pytest required):
+    /opt/homebrew/bin/python3.11 scripts/graph_construction/tests/test_benchmark_targets.py
+"""
+
+from __future__ import annotations
+
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+import numpy as np
+import torch
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+import benchmark_targets as bt  # noqa: E402
+
+
+def test_profile_targets_alignment_and_missing():
+    user_ids = [10, 20, 30]
+    raw = {
+        10: {
+            "followers_count": 100,
+            "friends_count": 50,
+            "statuses_count": 4000,
+            "favourites_count": 12,
+            "listed_count": 3,
+            "created_at": "Wed Oct 10 20:19:24 +0000 2018",
+        },
+        # user 20 missing entirely -> all NaN
+        30: {"followers_count": -5, "statuses_count": None, "created_at": "not-a-date"},
+    }
+    ref = datetime(2020, 10, 10, tzinfo=timezone.utc)
+    targets, stats = bt.build_profile_node_targets(user_ids, raw, reference_date=ref)
+
+    assert list(targets.keys())[:5] == list(bt.PROFILE_COUNT_FIELDS)
+    assert "account_age_days" in targets
+    for name, t in targets.items():
+        assert t.shape == (3,), name
+
+    fol = targets["followers_count"].numpy()
+    assert fol[0] == 100.0
+    assert np.isnan(fol[1])           # missing user
+    assert np.isnan(fol[2])           # negative -> NaN
+
+    age = targets["account_age_days"].numpy()
+    assert abs(age[0] - 731.0) < 1.5  # ~2 years (2018-10-10 -> 2020-10-10)
+    assert np.isnan(age[1])
+    assert np.isnan(age[2])           # unparseable creation date
+
+    assert stats["coverage"]["followers_count"] == 1
+    print("ok: profile targets alignment + missing handling")
+
+
+def test_profile_targets_string_ids():
+    """twibot20 uses string ids ('u123…'); targets must align without int() casts."""
+    user_ids = ["u17461978", "u999", "u5"]
+    raw = {
+        "u17461978": {"followers_count": 15349596, "listed_count": 45568,
+                      "created_at": "Tue Nov 18 10:27:25 +0000 2008"},
+        # u999 missing, u5 present with only statuses
+        "u5": {"statuses_count": 42},
+    }
+    ref = datetime(2020, 1, 1, tzinfo=timezone.utc)
+    targets, stats = bt.build_profile_node_targets(user_ids, raw, reference_date=ref)
+    assert targets["followers_count"].numpy()[0] == 15349596.0
+    assert np.isnan(targets["followers_count"].numpy()[1])
+    assert targets["statuses_count"].numpy()[2] == 42.0
+    assert stats["coverage"]["followers_count"] == 1
+    print("ok: profile targets align with string (twibot20) ids")
+
+
+def test_static_split_no_undirected_leakage():
+    # Reciprocated pair (0,1)/(1,0) plus a chain, 8 undirected pairs total.
+    edges = [
+        (0, 1), (1, 0), (1, 2), (2, 3), (3, 4),
+        (4, 5), (5, 6), (6, 7), (7, 8),
+    ]
+    edge_index = torch.tensor(edges, dtype=torch.long).t().contiguous()
+    split = bt.build_static_edge_split(edge_index, holdout_frac=0.25, seed=0)
+
+    bg = set(map(tuple, split.background_edge_index.t().tolist()))
+    ho = set(map(tuple, split.holdout_edge_index.t().tolist()))
+
+    # Partition: every original edge is in exactly one view.
+    assert len(bg) + len(ho) == len({*map(tuple, edge_index.t().tolist())})
+    assert bg.isdisjoint(ho)
+
+    # No undirected pair straddles: reverse of a held-out edge not in background.
+    for u, v in ho:
+        assert (v, u) not in bg, f"undirected leak: ({u},{v}) held out but ({v},{u}) in background"
+
+    # Mask is consistent with the returned background edges.
+    assert int(split.background_mask.sum()) == split.background_edge_index.shape[1]
+    assert split.stats["holdout_edges"] == len(ho)
+    print("ok: static split partitions edges with no undirected leakage")
+
+
+def test_static_split_reproducible():
+    edge_index = torch.randint(0, 50, (2, 400))
+    a = bt.build_static_edge_split(edge_index, holdout_frac=0.15, seed=7)
+    b = bt.build_static_edge_split(edge_index, holdout_frac=0.15, seed=7)
+    assert torch.equal(a.holdout_edge_index, b.holdout_edge_index)
+    print("ok: static split is reproducible under a fixed seed")
+
+
+def test_attach_creates_views():
+    graph_obj: dict = {}
+    edge_index = torch.tensor([[0, 1, 2, 3], [1, 2, 3, 0]], dtype=torch.long)
+    split = bt.build_static_edge_split(edge_index, holdout_frac=0.25, seed=1)
+    targets, _ = bt.build_profile_node_targets([0, 1, 2, 3], {})
+    edge_attr = torch.arange(4, dtype=torch.float).reshape(-1, 1)
+
+    bt.attach_benchmark_targets(
+        graph_obj,
+        node_targets=targets,
+        static_split=split,
+        edge_attr=edge_attr,
+        edge_attr_feature_names=["n_retweets"],
+    )
+    assert graph_obj["node_target_names"] == list(bt.PROFILE_TARGET_NAMES)
+    assert "static_background" in graph_obj["edge_index_views"]
+    assert "static_holdout" in graph_obj["target_edge_index_views"]
+    assert graph_obj["edge_attr_views"]["static_background"].shape[0] == int(split.background_mask.sum())
+    print("ok: attach_benchmark_targets creates node_targets + static views")
+
+
+def test_enrich_graph_obj_static_only():
+    """cp_hk path: no profile adapter -> static views added, node_targets skipped."""
+    import enrich_graph_targets as egt
+
+    edge_index = torch.tensor([[0, 1, 2, 3, 4], [1, 2, 3, 4, 0]], dtype=torch.long)
+    graph_obj = {
+        "user_ids": [100, 101, 102, 103, 104],
+        "edge_index": edge_index,
+        "edge_attr": torch.arange(5, dtype=torch.float).reshape(-1, 1),
+        "edge_attr_feature_names": ["n_retweets"],
+    }
+    stats = egt.enrich_graph_obj(graph_obj, "cp_hk_twitter", holdout_frac=0.25, seed=3)
+
+    assert "node_targets" not in graph_obj                      # no metrics for cp_hk
+    assert stats["profile"].get("skipped") is True
+    assert "static_background" in graph_obj["edge_index_views"]
+    assert "static_holdout" in graph_obj["target_edge_index_views"]
+    assert graph_obj["benchmark_target_stats"]["static_split"]["holdout_edges"] >= 1
+    print("ok: enrich_graph_obj adds static views and skips regression for cp_hk")
+
+
+def test_enrich_graph_obj_with_targets():
+    """Regression path via an injected fake adapter result (no duckdb needed)."""
+    import enrich_graph_targets as egt
+
+    orig = egt._fetch_raw_by_user
+    egt._fetch_raw_by_user = lambda dataset, user_ids, **kw: {
+        uid: {"followers_count": uid * 10, "created_at": "Wed Oct 10 20:19:24 +0000 2018"}
+        for uid in user_ids
+    }
+    try:
+        edge_index = torch.tensor([[0, 1, 2], [1, 2, 0]], dtype=torch.long)
+        graph_obj = {"user_ids": [1, 2, 3], "edge_index": edge_index}
+        egt.enrich_graph_obj(graph_obj, "midterm", holdout_frac=0.34, seed=0)
+    finally:
+        egt._fetch_raw_by_user = orig
+
+    assert graph_obj["node_target_names"][0] == "followers_count"
+    fol = graph_obj["node_targets"]["followers_count"]
+    assert fol.tolist() == [10.0, 20.0, 30.0]
+    print("ok: enrich_graph_obj builds node_targets when an adapter is present")
+
+
+if __name__ == "__main__":
+    test_profile_targets_alignment_and_missing()
+    test_profile_targets_string_ids()
+    test_static_split_no_undirected_leakage()
+    test_static_split_reproducible()
+    test_attach_creates_views()
+    test_enrich_graph_obj_static_only()
+    test_enrich_graph_obj_with_targets()
+    print("\nAll benchmark_targets tests passed.")

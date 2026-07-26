@@ -1,0 +1,10 @@
+# Disjoint merge of covid + midterm retweet graphs (for the cov/mid validation of
+# the merged-vs-single NM finding). Order fixes graph_id: 0=covid, 1=midterm.
+# NB: midterm (~0.34M nodes) is ~1.5% of covid (~23M), so the proportional merge is
+# covid-dominant; midterm is heavily under-exposed under naive sampling.
+inputs:
+  - name: covid
+    path: /dataMeR1/phil/data/covid19_twitter/graphs/retweet_graph_parquet.pt
+  - name: midterm
+    path: /dataMeR1/phil/data/midterm/graphs/retweet_graph_parquet.pt
+out: /dataMeR1/phil/data/merged/graphs/covid_midterm_retweet_graph.pt

@@ -1,0 +1,50 @@
+#!/bin/bash
+#SBATCH --job-name=train1_ukr_rus_twitter_pl
+#SBATCH --output=/home1/eibl/gfm/prodigy/logs/%j.out
+#SBATCH --error=/home1/eibl/gfm/prodigy/logs/%j.err
+#SBATCH --partition=gpu
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=64G
+#SBATCH --time=01:00:00
+
+set -euo pipefail
+
+module purge || true
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate prodigy
+
+cd /home1/eibl/gfm/prodigy
+
+mkdir -p /home1/eibl/gfm/prodigy/logs/
+export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
+
+args=(
+  --dataset ukr_rus_twitter
+  --root /scratch1/eibl/data/ukr_rus_twitter/graphs
+  --graph_filename retweet_graph_150files_minilm_hf03_political_labels.pt
+  --task_name classification
+  --feature_subset emb_only
+  --edge_view retweet_all
+  --input_dim 384
+  --original_features True
+  --ignore_label_embeddings False
+  --linear_probe False
+  --n_way 2
+  --n_shots 0
+  --n_query 4
+  --zero_shot True
+  --dataset_len_cap 2000
+  --val_len_cap 500
+  --test_len_cap 500
+  --eval_step 1000
+  --epochs 3
+  --checkpoint_step 1000
+  --workers 8
+  --device 0
+  --seed 0
+  --midterm_label_downsample 50:50
+  --prefix train1_ukr_rus_twitter_pl
+)
+
+python3 experiments/run_single_experiment.py "${args[@]}" "$@"

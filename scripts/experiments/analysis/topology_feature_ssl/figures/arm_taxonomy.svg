@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" viewBox="0 0 680 492" role="img" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+<title>Topology-feature SSL: seven pretraining arms across three levers</title>
+<desc>Lever 1 changes the training data: B0 control then B1 feature corruption. Lever 2 changes the encoder: E1 degree inputs, E2 count-aware aggregation, E2b drop BatchNorm. Lever 3 changes the objective on E2's encoder: E4 multi-task versus E4r rotated. Each arm flips one knob from the baseline.</desc>
+<style>
+  text{fill:#2c2c2a}
+  .hdr{font-size:14px;font-weight:600;fill:#2c2c2a}
+  .ts{font-size:12px;fill:#6a6862}
+  .arr{stroke:#8a897f;stroke-width:1.5;fill:none}
+  .divider{stroke:#d3d1c7;stroke-width:1}
+  .g-fill{fill:#eaf3de;stroke:#639922;stroke-width:1.5}
+  .g-title{font-size:14px;font-weight:600;fill:#27500a}
+  .g-sub{font-size:12px;fill:#3b6d11}
+  .g-dot{fill:#639922}
+  .b-fill{fill:#e6f1fb;stroke:#378add;stroke-width:1.5}
+  .b-title{font-size:14px;font-weight:600;fill:#0c447c}
+  .b-sub{font-size:12px;fill:#185fa5}
+  .b-dot{fill:#378add}
+  .a-fill{fill:#faeeda;stroke:#e0972b;stroke-width:1.5}
+  .a-title{font-size:14px;font-weight:600;fill:#633806}
+  .a-sub{font-size:12px;fill:#854f0b}
+  .a-dot{fill:#ba7517}
+</style>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1,1 L8,5 L1,9" fill="none" stroke="#8a897f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+
+<text class="ts" x="40" y="30">NM = neighbor-matching: the default objective — learns node features, ignores graph structure.</text>
+
+<!-- LEVER 1 -->
+<circle class="g-dot" cx="45" cy="66" r="5"/>
+<text class="hdr" x="58" y="70">1 · Corrupt the feature shortcut</text>
+<text class="ts" x="58" y="88">change the training data — encoder &amp; objective unchanged</text>
+<rect class="g-fill" x="40" y="100" width="176" height="54" rx="10"/>
+<text class="g-title" x="128" y="122" text-anchor="middle">B0 · control</text>
+<text class="g-sub" x="128" y="140" text-anchor="middle">mean-agg · bio only</text>
+<line class="arr" x1="216" y1="127" x2="247" y2="127" marker-end="url(#arrow)"/>
+<rect class="g-fill" x="250" y="100" width="176" height="54" rx="10"/>
+<text class="g-title" x="338" y="122" text-anchor="middle">B1 · corrupt feats</text>
+<text class="g-sub" x="338" y="140" text-anchor="middle">30% → random real vec</text>
+
+<!-- LEVER 2 -->
+<circle class="b-dot" cx="45" cy="188" r="5"/>
+<text class="hdr" x="58" y="192">2 · Make topology representable</text>
+<text class="ts" x="58" y="210">change the encoder (inputs &amp; aggregation) — NM objective kept</text>
+<rect class="b-fill" x="40" y="222" width="176" height="54" rx="10"/>
+<text class="b-title" x="128" y="244" text-anchor="middle">E1 · degree inputs</text>
+<text class="b-sub" x="128" y="262" text-anchor="middle">+ in / out / log-degree</text>
+<line class="arr" x1="216" y1="249" x2="247" y2="249" marker-end="url(#arrow)"/>
+<rect class="b-fill" x="250" y="222" width="176" height="54" rx="10"/>
+<text class="b-title" x="338" y="244" text-anchor="middle">E2 · count-aware</text>
+<text class="b-sub" x="338" y="262" text-anchor="middle">mean + sum + max</text>
+<line class="arr" x1="426" y1="249" x2="457" y2="249" marker-end="url(#arrow)"/>
+<rect class="b-fill" x="460" y="222" width="176" height="54" rx="10"/>
+<text class="b-title" x="548" y="244" text-anchor="middle">E2b · drop BN</text>
+<text class="b-sub" x="548" y="262" text-anchor="middle">E2 minus BatchNorm</text>
+
+<!-- LEVER 3 -->
+<circle class="a-dot" cx="45" cy="310" r="5"/>
+<text class="hdr" x="58" y="314">3 · Make topology used</text>
+<text class="ts" x="58" y="332">replace NM with a new objective — E2's encoder kept</text>
+<rect class="a-fill" x="40" y="344" width="176" height="54" rx="10"/>
+<text class="a-title" x="128" y="366" text-anchor="middle">E4 · multi-task</text>
+<text class="a-sub" x="128" y="384" text-anchor="middle">MFR ⊕ dir-LP ⊕ struct</text>
+<text class="ts" x="233" y="375" text-anchor="middle">vs</text>
+<rect class="a-fill" x="250" y="344" width="176" height="54" rx="10"/>
+<text class="a-title" x="338" y="366" text-anchor="middle">E4r · rotated</text>
+<text class="a-sub" x="338" y="384" text-anchor="middle">one head / episode</text>
+<text class="ts" x="460" y="360">combine mode:</text>
+<text class="ts" x="460" y="377">E4 = sum every step</text>
+<text class="ts" x="460" y="394">E4r = alternate heads</text>
+
+<!-- FOOTER -->
+<line class="divider" x1="40" y1="420" x2="640" y2="420"/>
+<text class="ts" x="40" y="442">Each arm = baseline + one change.   Reads:  B0→B1   ·   B0→E1→E2→E2b   ·   E2→E4→E4r</text>
+<text class="ts" x="40" y="461">MFR = masked-feature recon · dir-LP = directed link-pred · struct = degree pred</text>
+<text class="ts" x="40" y="480">All arms: 3-way merged graph · 40k episodes · frozen-encoder eval · single seed</text>
+</svg>

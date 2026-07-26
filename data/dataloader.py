@@ -25,12 +25,13 @@ class IsomorphismTask(TaskBase):
         `ids` may be a list or a range object, specifying IDs of graphs
         """
         self.ids = ids
+        self.ids_seq = sorted(ids) if isinstance(ids, set) else ids
 
     def get_label(self, graph_id):
         return graph_id
 
     def sample(self, num_label, num_member, rng):
-        labels = rng.sample(self.ids, num_label)
+        labels = rng.sample(self.ids_seq, num_label)
         return {label: [label] * num_member for label in labels}
 
 class MultiTaskSplitWay(TaskBase):
@@ -108,33 +109,58 @@ class MultiTaskSplitBatch(TaskBase):
         return labels
 
 class MulticlassTask(TaskBase):
-    def __init__(self, labels, label_set, train_label=None, linear_probe=False):
+    def __init__(self, labels, label_set, train_label=None, linear_probe=False, random_query=False):
         """Multi-class classification
         `labels` is a numpy array
         `label_set` is the set of labels we interested in
+        `random_query`: if True, allocate query slots proportionally to class frequency
+                        instead of equal n_query per class (use for eval to reflect
+                        real-world class distribution in accumulated metrics).
         """
         self.labels = labels
         self.label_set = label_set
+        self.label_seq = sorted(label_set)
         self.train_label = train_label
         self.linear_probe = linear_probe
+        self.random_query = random_query
         self.label2idx = {label: np.where(labels == label)[0] for label in label_set}
         if train_label is not None:
             self.train_label2idx = {label: np.where(train_label == label)[0] for label in label_set}
-            print(self.train_label2idx )
+            print(self.train_label2idx)
+        if random_query:
+            total = sum(len(v) for v in self.label2idx.values())
+            self.class_weights = {l: len(self.label2idx[l]) / total for l in label_set}
 
+    def _proportional_query_counts(self, labels, num_query):
+        """Allocate total query slots (num_query * n_way) proportionally to class frequency."""
+        total = num_query * len(labels)
+        raw = [max(1, round(total * self.class_weights.get(l, 1.0 / len(labels)))) for l in labels]
+        diff = total - sum(raw)
+        for i in range(abs(diff)):
+            raw[i % len(raw)] += 1 if diff > 0 else -1
+            raw[i % len(raw)] = max(1, raw[i % len(raw)])
+        return {l: c for l, c in zip(labels, raw)}
 
     def get_label(self, graph_id):
         return self.labels[graph_id].item()
 
     def sample(self, num_label, num_member, num_shot, num_query, rng):
         if self.linear_probe:
-            labels = self.label_set
+            labels = self.label_seq
             assert len(labels) == num_label
         else:
-            labels = rng.sample(self.label_set, num_label)
+            labels = rng.sample(self.label_seq, num_label)
 
         task = {}
-        if self.train_label is None:
+        if self.random_query:
+            query_counts = self._proportional_query_counts(labels, num_query)
+            for label in labels:
+                members = self.label2idx[label]
+                n_q = query_counts[label]
+                n_total = num_shot + n_q
+                sample_func = rng.choices if members.shape[0] < n_total else rng.sample
+                task[label] = members[sample_func(range(members.shape[0]), k=n_total)].tolist()
+        elif self.train_label is None:
             for label in labels:
                 members = self.label2idx[label]
                 if members.shape[0] < num_member:
@@ -146,8 +172,6 @@ class MulticlassTask(TaskBase):
             for label in labels:
                 members = self.label2idx[label]
                 train_members = self.train_label2idx[label]
-                #if members.shape[0] == 0:
-                #    continue
                 if members.shape[0] < num_query:
                     sample_func = rng.choices
                 else:
@@ -158,6 +182,25 @@ class MulticlassTask(TaskBase):
                     train_sample_func = rng.sample
                 task[label] = train_members[train_sample_func(range(train_members.shape[0]), k=num_shot)].tolist() + members[sample_func(range(members.shape[0]), k=num_query)].tolist()
         return task
+
+
+class RegressionTask(TaskBase):
+    def __init__(self, labels, node_indices):
+        self.labels = np.asarray(labels, dtype=np.float32)
+        self.node_indices = np.asarray(node_indices, dtype=np.int64)
+        if self.node_indices.size == 0:
+            raise ValueError("RegressionTask requires at least one labeled node.")
+
+    def get_label(self, graph_id):
+        return float(self.labels[graph_id])
+
+    def sample(self, num_label, num_member, num_shot, num_query, rng):
+        del num_label, num_shot, num_query
+        if self.node_indices.size < num_member:
+            chosen = rng.choices(self.node_indices.tolist(), k=num_member)
+        else:
+            chosen = rng.sample(self.node_indices.tolist(), num_member)
+        return {0: chosen}
 
 class ContrastiveTask(TaskBase):
     def __init__(self, size):
@@ -178,7 +221,8 @@ class ContrastiveTask(TaskBase):
         return task
 
 class NeighborTask(TaskBase):
-    def __init__(self, neighbor_sampler, size, direction, sampling_strategy="strict"):
+    def __init__(self, neighbor_sampler, size, direction, sampling_strategy="strict", strata=None,
+                 confine_to_single_stratum=False, stratum_weighting="proportional"):
         self.neighbor_sampler = neighbor_sampler
         self.size = size
         self.direction = direction
@@ -188,30 +232,145 @@ class NeighborTask(TaskBase):
                 "Use 'strict' or 'replacement'."
             )
         self.sampling_strategy = sampling_strategy
+        self.strata = None
+        if strata is not None:
+            self.strata = [
+                [int(node_idx) for node_idx in stratum]
+                for stratum in strata
+                if len(stratum) > 0
+            ]
+            if not self.strata:
+                raise ValueError("NeighborTask strata must contain at least one non-empty stratum.")
+        # When True, every episode is drawn entirely from ONE stratum (e.g. one merged
+        # source graph), so an episode's negatives all share a source. The per-episode
+        # source is chosen by stratum_weighting:
+        #   "proportional" -> P(source) proportional to node count; the per-node center
+        #                     marginal then matches naive uniform sampling (only the
+        #                     cross-source-negative structure changes).
+        #   "balanced"     -> P(source) uniform across sources; gives a small source
+        #                     equal episode share (also rebalances per-domain exposure).
+        self.confine_to_single_stratum = bool(confine_to_single_stratum) and self.strata is not None
+        self.stratum_weights = None
+        if self.confine_to_single_stratum:
+            n = len(self.strata)
+            if stratum_weighting == "balanced":
+                self.stratum_weights = [1.0 / n] * n
+            elif stratum_weighting == "proportional":
+                sizes = [len(stratum) for stratum in self.strata]
+                total = float(sum(sizes))
+                self.stratum_weights = [size / total for size in sizes]
+            else:
+                raise ValueError(
+                    f"Unknown stratum_weighting={stratum_weighting!r}; use 'proportional' or 'balanced'."
+                )
 
-    def sample(self, num_label, num_member, num_shot, num_query, rng):
-        # Task is dict
-        # Key: center node (int)
-        # Value: list of nodes (list of int), list of nodes is the members of the task
+    @staticmethod
+    def _balanced_counts(total, num_groups):
+        base = total // num_groups
+        counts = [base] * num_groups
+        for i in range(total % num_groups):
+            counts[i] += 1
+        return counts
+
+    def _sample_center_members(self, center, num_member, rng):
+        node_idx = torch.ones(num_member * 10, dtype=torch.long) * center
+        node_idx = self.neighbor_sampler.random_walk(node_idx, self.direction)
+        if node_idx.numel() == 0:
+            return None
+        unique_node_idx = torch.unique(node_idx)
+        if unique_node_idx.size(0) >= num_member:
+            return unique_node_idx[:num_member].tolist()
+        if self.sampling_strategy == "replacement":
+            sampled = unique_node_idx.tolist()
+            while len(sampled) < num_member:
+                sampled.append(rng.choice(sampled))
+            return sampled[:num_member]
+        return None
+
+    def _sample_uniform(self, num_label, num_member, rng):
         task = {}
         while len(task) < num_label:
             center = rng.randrange(self.size)
             if center in task:
                 continue
-            node_idx = torch.ones(num_member * 10, dtype=torch.long) * center
-            node_idx = self.neighbor_sampler.random_walk(node_idx, self.direction)
-            if node_idx.numel() == 0:
-                continue
-            unique_node_idx = torch.unique(node_idx)
-            if unique_node_idx.size(0) >= num_member:
-                task[center] = unique_node_idx[:num_member].tolist()
-            elif self.sampling_strategy == "replacement":
-                sampled = unique_node_idx.tolist()
-                while len(sampled) < num_member:
-                    sampled.append(rng.choice(sampled))
-                task[center] = sampled[:num_member]
-
+            members = self._sample_center_members(center, num_member, rng)
+            if members is not None:
+                task[center] = members
         return task
+
+    def _sample_stratified(self, num_label, num_member, rng):
+        stratum_order = list(range(len(self.strata)))
+        rng.shuffle(stratum_order)
+        counts = self._balanced_counts(num_label, len(stratum_order))
+        task = {}
+        used = set()
+        max_attempts = max(1000, num_label * 1000)
+
+        for stratum_idx, count in zip(stratum_order, counts):
+            candidates = list(self.strata[stratum_idx])
+            attempts = 0
+            sampled_from_stratum = 0
+            while sampled_from_stratum < count and attempts < max_attempts:
+                attempts += 1
+                center = rng.choice(candidates)
+                if center in used:
+                    continue
+                members = self._sample_center_members(center, num_member, rng)
+                if members is None:
+                    continue
+                task[center] = members
+                used.add(center)
+                sampled_from_stratum += 1
+            if sampled_from_stratum < count:
+                raise RuntimeError(
+                    f"Could only sample {sampled_from_stratum} centers from neighbor stratum "
+                    f"{stratum_idx}, needed {count}. Try neighbor_sampling_strategy='replacement' "
+                    "or lower n_way."
+                )
+
+        if len(task) < num_label:
+            raise RuntimeError(
+                f"Could only sample {len(task)} stratified neighbor labels out of {num_label}. "
+                "Try neighbor_sampling_strategy='replacement' or lower n_way."
+            )
+        return task
+
+    def _sample_confined(self, num_label, num_member, rng):
+        # Pick ONE stratum (source) proportional to its size, then draw the whole
+        # episode from it so every center/negative shares a source.
+        stratum_idx = rng.choices(range(len(self.strata)), weights=self.stratum_weights, k=1)[0]
+        candidates = self.strata[stratum_idx]
+        task = {}
+        used = set()
+        max_attempts = max(1000, num_label * 1000)
+        attempts = 0
+        while len(task) < num_label and attempts < max_attempts:
+            attempts += 1
+            center = rng.choice(candidates)
+            if center in used:
+                continue
+            members = self._sample_center_members(center, num_member, rng)
+            if members is None:
+                continue
+            task[center] = members
+            used.add(center)
+        if len(task) < num_label:
+            raise RuntimeError(
+                f"Could only sample {len(task)} centers from single-source stratum {stratum_idx} "
+                f"({len(candidates)} nodes), needed {num_label}. Try "
+                "neighbor_sampling_strategy='replacement' or lower n_way."
+            )
+        return task
+
+    def sample(self, num_label, num_member, num_shot, num_query, rng):
+        # Task is dict
+        # Key: center node (int)
+        # Value: list of nodes (list of int), list of nodes is the members of the task
+        if self.confine_to_single_stratum:
+            return self._sample_confined(num_label, num_member, rng)
+        if self.strata is not None:
+            return self._sample_stratified(num_label, num_member, rng)
+        return self._sample_uniform(num_label, num_member, rng)
 
 class KGNeighborTask(TaskBase):
     def __init__(self, dataset, neighbor_sampler, size, direction, is_multiway):
@@ -336,19 +495,30 @@ def linearize(mask, inputs_idx, output_idx, batch_rand_perm = None):
     return seqs.transpose(2,1).reshape(seqs.shape[0], -1), batch_rand_perm
 
 class Collator:
-    def __init__(self, label_meta, aug=Identity(), is_multiway=True):
+    def __init__(self, label_meta, aug=Identity(), is_multiway=True, task_name=None, aug_by_task=None):
         self.label_meta = label_meta
         self.aug = aug
         self.is_multiway = is_multiway
+        self.task_name = task_name
+        # Per-episode augmentation for the nm_fp_cl rotation: {task_name -> aug_fn}. When
+        # set, each task-episode is augmented by aug_by_task[its task tag] (nm->identity,
+        # cl->2-view feature aug, fp->feature masking) instead of the single self.aug.
+        self.aug_by_task = aug_by_task
+
+    def _aug_for(self, label_map):
+        if self.aug_by_task and label_map and isinstance(label_map[0], tuple) and len(label_map[0]) == 2:
+            return self.aug_by_task.get(label_map[0][1], self.aug)
+        return self.aug
 
     def process_one_task(self, task, batch_param):
         label_map = list(task) # Looks like this: (0, 'task1'), (1, 'task2'), ...
         label_map_reverse = {v: i for i, v in enumerate(label_map)} # ((0, 'task1'), 0), ((1, 'task2'), 1), ...
+        aug = self._aug_for(label_map)
         all_graphs = []
         labels = []
         query_mask = []
         for label, graphs in task.items():
-            augmented = [self.aug(graph) for graph in graphs for _ in range(batch_param.n_aug)]
+            augmented = [aug(graph) for graph in graphs for _ in range(batch_param.n_aug)]
             all_graphs.extend(augmented)
             query_mask.extend([False] * (batch_param.n_shot))
             query_mask.extend([True] * (len(augmented) - batch_param.n_shot))
@@ -371,10 +541,65 @@ class Collator:
 
         graphs = Batch.from_data_list([g for l in graphs for g in l])
         graphs.task_id_per_sample = torch.arange(num_task).repeat_interleave(task_len)
+        # nm_fp_cl rotation: record, per within-batch task-episode, whether it is a
+        # masked-feature-prediction (fp) episode so the trainer dispatches the
+        # reconstruction loss only there. `label_map` is still per-task here (list of
+        # (center, task_name) tuples); with batch_size=1 there is one task-episode.
+        if label_map and isinstance(label_map[0], list) and label_map[0] \
+                and isinstance(label_map[0][0], tuple) and len(label_map[0][0]) == 2:
+            graphs.mix_is_fp = torch.tensor(
+                [1 if lm[0][1] == "fp" else 0 for lm in label_map], dtype=torch.long
+            )
+            # E4 rotation: tag each episode's head (mfr/lp/struct) so the trainer
+            # dispatches the matching loss. Only fires when every tag is an e4 head.
+            e4_map = {"mfr": 0, "lp": 1, "struct": 2}
+            if all(lm[0][1] in e4_map for lm in label_map):
+                graphs.e4_task = torch.tensor(
+                    [e4_map[lm[0][1]] for lm in label_map], dtype=torch.long
+                )
         labels = torch.cat(labels)
         b_mask = torch.stack(query_mask)
         query_mask = torch.cat(query_mask)
         label_map = list(chain(*label_map))
+        if self.task_name == "regression":
+            # One dummy label node per task; support edges carry the observed scalar target.
+            center_rows = graphs.ptr[:-1]
+            y_values = graphs.y[center_rows].float().reshape(-1, 1)
+            metagraph_edge_source = torch.arange(y_values.size(0))
+            metagraph_edge_target = labels.size(0) + torch.arange(num_task).repeat_interleave(task_len)
+            metagraph_edge_index = torch.stack([metagraph_edge_source, metagraph_edge_target], dim=0)
+            metagraph_edge_mask = query_mask
+            metagraph_edge_value = y_values.reshape(-1) * (~metagraph_edge_mask).float()
+            metagraph_edge_attr = torch.stack([metagraph_edge_mask, metagraph_edge_value], dim=1)
+
+            if isinstance(self.label_meta, torch.Tensor):
+                if self.label_meta.ndim == 1:
+                    label_embeddings = self.label_meta.unsqueeze(0).repeat(num_task, 1)
+                else:
+                    label_embeddings = self.label_meta[0].unsqueeze(0).repeat(num_task, 1)
+            else:
+                label_embeddings = torch.zeros((num_task, 768), dtype=torch.float)
+
+            inputs_idx = metagraph_edge_index.reshape(2, len(b_mask), -1)[0]
+            output_idx = metagraph_edge_index.reshape(2, len(b_mask), -1)[1]
+            input_seqs, _ = linearize(~b_mask, inputs_idx, output_idx)
+            query_seqs, batch_rand_perm = linearize(
+                b_mask,
+                inputs_idx,
+                torch.ones(output_idx.shape, dtype=torch.int) * (metagraph_edge_index.max() + 1),
+            )
+            query_seqs_gt, _ = linearize(b_mask, inputs_idx, output_idx, batch_rand_perm)
+            return (
+                graphs,
+                label_embeddings,
+                y_values,
+                metagraph_edge_index,
+                metagraph_edge_attr,
+                metagraph_edge_mask,
+                input_seqs,
+                query_seqs,
+                query_seqs_gt,
+            )
         if label_map and not isinstance(label_map[0], tuple):
             try:
                 graphs.task_label_map = torch.tensor(label_map).reshape(num_task, num_labels)

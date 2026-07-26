@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" viewBox="0 0 680 482" role="img" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+<title>Three ways to make the model use network structure</title>
+<desc>The model reads account profiles but ignores the surrounding network. Three fixes. Lever 1 changes the data: starting point, then scramble profiles. Lever 2 changes the model: add popularity, let it count, unblur counts. Lever 3 changes the goal: three jobs at once, or three jobs in turns. Each version changes one thing from the one before.</desc>
+<style>
+  text{fill:#2c2c2a}
+  .hdr{font-size:14px;font-weight:600;fill:#2c2c2a}
+  .ts{font-size:12px;fill:#6a6862}
+  .arr{stroke:#8a897f;stroke-width:1.5;fill:none}
+  .divider{stroke:#d3d1c7;stroke-width:1}
+  .g-fill{fill:#eaf3de;stroke:#639922;stroke-width:1.5}
+  .g-title{font-size:14px;font-weight:600;fill:#27500a}
+  .g-sub{font-size:12px;fill:#3b6d11}
+  .g-dot{fill:#639922}
+  .b-fill{fill:#e6f1fb;stroke:#378add;stroke-width:1.5}
+  .b-title{font-size:14px;font-weight:600;fill:#0c447c}
+  .b-sub{font-size:12px;fill:#185fa5}
+  .b-dot{fill:#378add}
+  .a-fill{fill:#faeeda;stroke:#e0972b;stroke-width:1.5}
+  .a-title{font-size:14px;font-weight:600;fill:#633806}
+  .a-sub{font-size:12px;fill:#854f0b}
+  .a-dot{fill:#ba7517}
+</style>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1,1 L8,5 L1,9" fill="none" stroke="#8a897f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+
+<text class="ts" x="40" y="30">The model reads each account's profile but ignores the surrounding network. Three fixes:</text>
+
+<!-- LEVER 1 -->
+<circle class="g-dot" cx="45" cy="66" r="5"/>
+<text class="hdr" x="58" y="70">1 · Hide the easy clues</text>
+<text class="ts" x="58" y="88">mess with the training data — model &amp; goal unchanged</text>
+<rect class="g-fill" x="40" y="100" width="176" height="54" rx="10"/>
+<text class="g-title" x="128" y="122" text-anchor="middle">B0 · Starting point</text>
+<text class="g-sub" x="128" y="140" text-anchor="middle">reads profiles only</text>
+<line class="arr" x1="216" y1="127" x2="247" y2="127" marker-end="url(#arrow)"/>
+<rect class="g-fill" x="250" y="100" width="176" height="54" rx="10"/>
+<text class="g-title" x="338" y="122" text-anchor="middle">B1 · Scramble profiles</text>
+<text class="g-sub" x="338" y="140" text-anchor="middle">swap 30% for random ones</text>
+
+<!-- LEVER 2 -->
+<circle class="b-dot" cx="45" cy="188" r="5"/>
+<text class="hdr" x="58" y="192">2 · Give it the right tools</text>
+<text class="ts" x="58" y="210">rewire the model — same training goal</text>
+<rect class="b-fill" x="40" y="222" width="176" height="54" rx="10"/>
+<text class="b-title" x="128" y="244" text-anchor="middle">E1 · Popularity</text>
+<text class="b-sub" x="128" y="262" text-anchor="middle">how connected it is</text>
+<line class="arr" x1="216" y1="249" x2="247" y2="249" marker-end="url(#arrow)"/>
+<rect class="b-fill" x="250" y="222" width="176" height="54" rx="10"/>
+<text class="b-title" x="338" y="244" text-anchor="middle">E2 · Let it count</text>
+<text class="b-sub" x="338" y="262" text-anchor="middle">count links, not average</text>
+<line class="arr" x1="426" y1="249" x2="457" y2="249" marker-end="url(#arrow)"/>
+<rect class="b-fill" x="460" y="222" width="176" height="54" rx="10"/>
+<text class="b-title" x="548" y="244" text-anchor="middle">E2b · Unblur counts</text>
+<text class="b-sub" x="548" y="262" text-anchor="middle">undo the smoothing</text>
+
+<!-- LEVER 3 -->
+<circle class="a-dot" cx="45" cy="310" r="5"/>
+<text class="hdr" x="58" y="314">3 · Change the goal</text>
+<text class="ts" x="58" y="332">give it new tasks — same rewired model</text>
+<rect class="a-fill" x="40" y="344" width="176" height="54" rx="10"/>
+<text class="a-title" x="128" y="366" text-anchor="middle">E4 · Three jobs</text>
+<text class="a-sub" x="128" y="384" text-anchor="middle">profiles, links, reach</text>
+<text class="ts" x="233" y="375" text-anchor="middle">vs</text>
+<rect class="a-fill" x="250" y="344" width="176" height="54" rx="10"/>
+<text class="a-title" x="338" y="366" text-anchor="middle">E4r · In turns</text>
+<text class="a-sub" x="338" y="384" text-anchor="middle">one job per round</text>
+<text class="ts" x="460" y="360">combine style:</text>
+<text class="ts" x="460" y="377">E4 = all at once</text>
+<text class="ts" x="460" y="394">E4r = take turns</text>
+
+<!-- FOOTER -->
+<line class="divider" x1="40" y1="420" x2="640" y2="420"/>
+<text class="ts" x="40" y="442">Each version changes just one thing from the version before it.</text>
+<text class="ts" x="40" y="461">Same data and training budget throughout · one run per version.</text>
+</svg>

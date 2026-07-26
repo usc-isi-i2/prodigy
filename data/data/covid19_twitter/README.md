@@ -15,7 +15,33 @@ The loader accepts:
 - JSON arrays
 - wrapper dicts containing `statuses` or `data`
 
-## Step 1: build user embeddings
+## Step 1: build bio embeddings
+
+To mirror the newer `ukr-rus` parquet pipeline, use the shared bio embedding store rather than the older per-user tweet-text meanpool artifact:
+
+```bash
+cd /Users/philipp/projects/gfm/prodigy
+CUDA_VISIBLE_DEVICES=0,1,2,3 python -u scripts/bio_embeddings/embed_bios.py \
+  --input-root /dataMeR1/phil/data/covid19_twitter/parquet \
+  --output-root /dataMeR1/phil/data/covid19_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
+  --gpus 0,1,2,3 \
+  --num-workers 4 \
+  --batch-size 2048 \
+  --duckdb-memory-limit 200GB \
+  --duckdb-threads 32
+```
+
+Validate:
+
+```bash
+python -u scripts/bio_embeddings/validate_bio_embeddings.py \
+  --output-root /dataMeR1/phil/data/covid19_twitter/bio_embeddings/gte-multilingual-base/version=v001 \
+  --summary-json /dataMeR1/phil/data/covid19_twitter/bio_embeddings/gte-multilingual-base/version=v001/validation.json
+```
+
+The bio embedding store contains normalized distinct bios plus user-time provenance, matching the artifact contract already used by the `ukr-rus` parquet graph builder.
+
+## Legacy step 1: build user tweet embeddings
 
 ```bash
 python data/data/covid19_twitter/scripts/build_user_embeddings.py \
@@ -46,7 +72,7 @@ Embedding artifact keys:
 ## Step 2: build the graph
 
 ```bash
-python data/data/covid19_twitter/scripts/generate_retweet_graph.py \
+python data/data/covid19_twitter/scripts/generate_user_graph.py \
   --json_glob "/scratch1/eibl/data/covid19_twitter/raw/*/*.json" \
   --embeddings /scratch1/eibl/data/covid19_twitter/embeddings/user_embeddings_minilm.pt \
   --embedding_pool meanpool \
@@ -65,12 +91,20 @@ Useful flags:
 | `--labels_parquet_glob` | external label parquet glob, defaulting to `/scratch1/eibl/data/covid_masking/masking_2020-*.parquet` |
 | `--keep-isolates / --no-keep-isolates` | keep or drop zero-degree nodes |
 
+For the parquet-backed graph builder that mirrors the `ukr_rus_twitter/scripts` layout:
+
+```bash
+python data/data/covid19_twitter/scripts/generate_retweet_graph_from_parquet.py \
+  --parquet-root /dataMeR1/phil/data/covid19_twitter/parquet \
+  --out /dataMeR1/phil/data/covid19_twitter/graphs/retweet_graph_parquet.pt
+```
+
 Graph artifact keys:
 
 | Key | Description |
 |---|---|
 | `x` | node features |
-| `edge_index` | directed retweet edges |
+| `edge_index` | directed user-user edges |
 | `edge_attr` | edge features |
 | `edge_attr_feature_names` | edge feature names |
 | `user_ids` | canonical node ids |
@@ -99,9 +133,9 @@ python data/data/covid19_twitter/scripts/inspect_graph.py \
 ## Training
 
 ```bash
-sbatch scripts/submit_train1_covid19_twitter_pl.sh
-sbatch scripts/submit_train1_covid19_twitter_nm.sh
-sbatch scripts/submit_train1_covid19_twitter_lp.sh
+sbatch scripts/experiments/setup/train1/submit_train1_covid19_twitter_pl.sh
+sbatch scripts/experiments/setup/train1/submit_train1_covid19_twitter_nm.sh
+sbatch scripts/experiments/setup/train1/submit_train1_covid19_twitter_lp.sh
 ```
 
 Typical task settings used in recent comparable runs:
@@ -109,11 +143,11 @@ Typical task settings used in recent comparable runs:
 | Task | `--task_name` | Typical flags |
 |---|---|---|
 | Political labels | `classification` | `--n_way 2 --n_shots 3 --n_query 3 --midterm_label_downsample 50:50` |
-| Neighbor matching | `neighbor_matching` | `--midterm_edge_view temporal_history --n_way 3 --n_shots 1 --n_query 12` |
-| Temporal link prediction | `temporal_link_prediction` | `--midterm_edge_view temporal_history --midterm_target_edge_view temporal_new --n_way 1 --n_shots 1 --n_query 3` |
+| Neighbor matching | `neighbor_matching` | `--edge_view temporal_history --n_way 3 --n_shots 1 --n_query 12` |
+| Temporal link prediction | `temporal_link_prediction` | `--edge_view temporal_history --target_edge_view temporal_new --n_way 1 --n_shots 1 --n_query 3` |
 
 For embedding-only runs, use:
 
 ```text
---midterm_feature_subset emb_only --input_dim 384
+--feature_subset emb_only --input_dim 384
 ```

@@ -31,9 +31,19 @@ def get_dataset_wrap(root, dataset, **kwargs):
     if dataset == "ukr_rus_twitter":
         from data.ukr_rus_twitter import get_ukr_rus_twitter_dataset
         return get_ukr_rus_twitter_dataset(root=root, **kwargs)
-    if dataset == "covid19_twitter":
+    if dataset in {"covid19_twitter", "merged_ukr_rus_covid", "merged_covid_midterm",
+                   "merged_ukr_rus_covid_midterm"} or dataset.startswith("probe_"):
+        # The merged_* graphs are covid19_twitter-style graph dicts (built by the
+        # disjoint merge); they reuse the same dataset/dataloader code path.
         from data.covid19_twitter import get_covid19_twitter_dataset
         return get_covid19_twitter_dataset(root=root, **kwargs)
+    if dataset == "covid_political":
+        from data.covid_political import get_covid_political_dataset
+        return get_covid_political_dataset(root=root, **kwargs)
+    if dataset in {"covid_mf", "cp_hk_twitter", "election2020", "hate_bots05", "hate_bots08",
+                   "ukr_rus_hate", "ukr_rus_suspended", "twibot20"}:
+        from data import social_llm_dataset as _sld
+        return getattr(_sld, f"get_{dataset}_dataset")(root=root, **kwargs)
     if dataset in {"facebook-uk_ru", "facebook_uk_ru"}:
         from data.facebook_uk_ru import get_facebook_uk_ru_dataset
         return get_facebook_uk_ru_dataset(root=root, **kwargs)

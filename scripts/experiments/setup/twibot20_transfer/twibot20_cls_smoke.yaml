@@ -1,0 +1,29 @@
+dataset: twibot20
+root: /dataMeR1/phil/data/twibot20/graphs
+graph_filename: retweet_graph.pt
+task_name: classification
+
+edge_view: default
+feature_subset: all
+original_features: true
+input_dim: 768
+
+# Same episode shape as the full run (twibot20_cls.yaml), just tiny caps.
+n_way: 2
+n_shots: 3
+n_query: 4
+batch_size: 1
+n_hop: 1
+
+# Tiny caps for a fast end-to-end smoke.
+epochs: 2
+dataset_len_cap: 20
+val_len_cap: 10
+test_len_cap: 10
+
+eval_step: 20
+checkpoint_step: 20
+workers: 4
+device: 0
+seed: 0
+prefix: twibot20_cls_smoke

@@ -1,0 +1,816 @@
+#!/usr/bin/env python3
+"""Run checkpoint evaluation on Tucker without Slurm.
+
+The runner targets the GTE-compatible graph artifacts cataloged in
+``config/graph_catalog.json`` under /dataMeR1/phil/data.
+It inspects each graph and gates tasks accordingly: classification is skipped when
+no labels are present, temporal LP when no future-edge target view is present,
+static LP when no ``static_holdout`` view is present, and regression is fanned out
+over the profile targets actually stored in the graph (``node_target_names``).
+"""
+
+from __future__ import annotations
+
+import argparse
+from dataclasses import dataclass
+import json
+import os
+from pathlib import Path
+import re
+import shlex
+import subprocess
+import sys
+from typing import Any
+
+
+DEFAULT_MODEL_LIST = (
+    "scripts/experiments/setup/covid_ukr/merged_ukr_rus_covid_nm_eval_model_list.txt"
+)
+
+
+@dataclass(frozen=True)
+class DatasetConfig:
+    name: str
+    root_name: str
+    graph_filename: str
+    supports_lp: bool
+    nm_n_query: int
+    pl_n_query: int
+    val_cap: int
+    test_cap: int
+    eval_random_query: bool = False
+
+
+CATALOG_DIRS = ("config", "docs")
+
+
+def _find_graph_catalog() -> Path:
+    """Locate graph_catalog.json by walking up from this file.
+
+    Depth-independent on purpose: a hardcoded parents[N] silently breaks whenever this
+    script moves between directory levels, and it breaks at eval time with a path one
+    level off the repo root rather than at import. The setup/analysis split (d87d7a6)
+    moved this file up a level and left parents[3] pointing above the repo.
+
+    Directory-independent for the same reason: the catalog moved config/ -> docs/ on
+    2026-07-26, so both are searched rather than pinning whichever is current.
+    """
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        for directory in CATALOG_DIRS:
+            candidate = parent / directory / "graph_catalog.json"
+            if candidate.is_file():
+                return candidate
+    # Preserve a plausible location in the error so the failure is self-explaining.
+    return here.parents[2] / CATALOG_DIRS[0] / "graph_catalog.json"
+
+
+GRAPH_CATALOG_PATH = _find_graph_catalog()
+
+
+def load_dataset_registry() -> tuple[str, dict[str, DatasetConfig], list[str]]:
+    """Load eval-capable graphs from the repository's canonical graph catalog."""
+    with GRAPH_CATALOG_PATH.open(encoding="utf-8") as handle:
+        catalog = json.load(handle)
+
+    datasets: dict[str, DatasetConfig] = {}
+    defaults: list[str] = []
+    for graph in catalog["graphs"]:
+        eval_config = graph.get("eval")
+        if eval_config is None:
+            continue
+        key = graph["dataset_key"]
+        relative_path = Path(graph["relative_path"])
+        if relative_path.parent.name != "graphs":
+            raise ValueError(f"Catalog graph path must be under a graphs directory: {relative_path}")
+        eval_random_query = eval_config.get("eval_random_query", False)
+        eval_fields = {key: value for key, value in eval_config.items() if key != "eval_random_query"}
+        datasets[key] = DatasetConfig(
+            name=key,
+            root_name=str(relative_path.parent.parent),
+            graph_filename=relative_path.name,
+            eval_random_query=eval_random_query,
+            **eval_fields,
+        )
+        if graph.get("default_eval", False):
+            defaults.append(key)
+    return catalog["data_root"], datasets, defaults
+
+
+DEFAULT_DATA_ROOT, DATASETS, DEFAULT_DATASETS = load_dataset_registry()
+
+TASK_ALIASES = {
+    "nm": "neighbor_matching",
+    "nc": "classification",
+    "lp": "temporal_link_prediction",
+    "pl": "classification",
+    "slp": "static_link_prediction",
+    "reg": "regression",
+    "neighbor_matching": "neighbor_matching",
+    "temporal_link_prediction": "temporal_link_prediction",
+    "static_link_prediction": "static_link_prediction",
+    "classification": "classification",
+    "regression": "regression",
+}
+
+# Full profile regression panel (see scripts/graph_construction/benchmark_targets.py).
+DEFAULT_REG_TARGETS = (
+    "followers_count",
+    "friends_count",
+    "statuses_count",
+    "favourites_count",
+    "listed_count",
+    "account_age_days",
+)
+
+
+def load_torch() -> Any:
+    try:
+        import torch
+    except ImportError as exc:
+        raise RuntimeError("torch is required to inspect graph files") from exc
+    return torch
+
+
+def parse_csv(value: str) -> list[str]:
+    return [part.strip() for part in value.split(",") if part.strip()]
+
+
+# Sentinel ckpt values that mean "evaluate an untrained encoder" (the random_init
+# floor). trainer.py only loads a checkpoint when pretrained_model_run != "", so we
+# route these to an empty --pretrained_model_run and skip the existence check.
+RANDOM_INIT_SENTINELS = {"", "NONE", "RANDOM_INIT"}
+
+
+def is_random_init(ckpt_path: str) -> bool:
+    return ckpt_path.strip().upper() in RANDOM_INIT_SENTINELS
+
+
+def parse_model_list(path: Path) -> list[tuple[str, str]]:
+    rows: list[tuple[str, str]] = []
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = line.split()
+        if len(parts) == 1:
+            ckpt = parts[0]
+            model_name = Path(ckpt).parent.parent.name
+        elif len(parts) == 2:
+            model_name, ckpt = parts
+        else:
+            raise ValueError(f"Invalid model-list line: {raw_line!r}")
+        rows.append((model_name, ckpt))
+    if not rows:
+        raise ValueError(f"No checkpoints found in {path}")
+    return rows
+
+
+def parse_checkpoint_step(path: Path) -> int | None:
+    match = re.fullmatch(r"state_dict_(\d+)\.ckpt", path.name)
+    if match is None:
+        return None
+    return int(match.group(1))
+
+
+def discover_checkpoint_run_dir(run_dir: Path, name_prefix: str | None = None) -> list[tuple[str, str]]:
+    checkpoint_dir = run_dir / "checkpoint"
+    if not checkpoint_dir.is_dir():
+        raise FileNotFoundError(f"Checkpoint directory does not exist: {checkpoint_dir}")
+
+    checkpoints: list[tuple[int, Path]] = []
+    for path in checkpoint_dir.glob("state_dict_*.ckpt"):
+        step = parse_checkpoint_step(path)
+        if step is not None:
+            checkpoints.append((step, path))
+    checkpoints.sort(key=lambda item: item[0])
+
+    if not checkpoints:
+        raise ValueError(f"No state_dict_<step>.ckpt checkpoints found in {checkpoint_dir}")
+
+    prefix = name_prefix or run_dir.name
+    return [
+        (f"{prefix}_step{step}", checkpoint_path.as_posix())
+        for step, checkpoint_path in checkpoints
+    ]
+
+
+def torch_load_graph(torch_mod: Any, path: Path) -> dict[str, Any]:
+    # mmap keeps RAM low when inspecting the multi-GB graphs.
+    try:
+        return torch_mod.load(path, map_location="cpu", weights_only=False, mmap=True)
+    except TypeError:
+        try:
+            return torch_mod.load(path, map_location="cpu", weights_only=False)
+        except TypeError:
+            return torch_mod.load(path, map_location="cpu")
+
+
+def has_classification_labels(raw: dict[str, Any], torch_mod: Any) -> bool:
+    label_names = list(raw.get("label_names") or [])
+    if not label_names:
+        return False
+    y = raw.get("y")
+    if y is None and "data" in raw:
+        y = getattr(raw["data"], "y", None)
+    if y is None:
+        return False
+    if torch_mod.is_floating_point(y):
+        return False
+    return bool((y >= 0).any().item())
+
+
+def classification_label_count(raw: dict[str, Any]) -> int:
+    label_names = list(raw.get("label_names") or [])
+    if label_names:
+        return len(label_names)
+    y = raw.get("y")
+    if y is None and "data" in raw:
+        y = getattr(raw["data"], "y", None)
+    if y is None:
+        return 0
+    valid = y[y >= 0]
+    if valid.numel() == 0:
+        return 0
+    return int(valid.max().item()) + 1
+
+
+def has_future_edges(raw: dict[str, Any]) -> bool:
+    future = raw.get("future_edge_index")
+    if future is not None and getattr(future, "numel", lambda: 0)() > 0:
+        return True
+    views = raw.get("target_edge_index_views") or {}
+    for key in ("temporal_new", "future", "future_edge_index"):
+        value = views.get(key)
+        if value is not None and getattr(value, "numel", lambda: 0)() > 0:
+            return True
+    return False
+
+
+def has_static_holdout(raw: dict[str, Any]) -> bool:
+    views = raw.get("target_edge_index_views") or {}
+    value = views.get("static_holdout")
+    return value is not None and getattr(value, "numel", lambda: 0)() > 0
+
+
+def node_target_names(raw: dict[str, Any]) -> list[str]:
+    names = raw.get("node_target_names")
+    if names:
+        return list(names)
+    node_targets = raw.get("node_targets")
+    if isinstance(node_targets, dict):
+        return list(node_targets.keys())
+    return []
+
+
+def node_target_coverage(raw: dict[str, Any], torch_mod: Any) -> dict[str, int]:
+    """Count non-NaN (labeled) nodes per regression target, so all-missing targets
+    (e.g. favourites_count on twibot20) can be skipped instead of failing at runtime."""
+    node_targets = raw.get("node_targets")
+    coverage: dict[str, int] = {}
+    if isinstance(node_targets, dict):
+        for name, tensor in node_targets.items():
+            try:
+                coverage[name] = int(torch_mod.isfinite(tensor).sum().item())
+            except Exception:
+                coverage[name] = 0
+    return coverage
+
+
+def graph_info(torch_mod: Any, path: Path) -> dict[str, Any]:
+    raw = torch_load_graph(torch_mod, path)
+    x = raw.get("x")
+    if x is None and "data" in raw:
+        x = getattr(raw["data"], "x", None)
+    x_dim = int(x.shape[1]) if x is not None and x.dim() == 2 else -1
+    return {
+        "x_dim": x_dim,
+        "has_labels": has_classification_labels(raw, torch_mod),
+        "label_count": classification_label_count(raw),
+        "has_future_edges": has_future_edges(raw),
+        "has_static_holdout": has_static_holdout(raw),
+        "node_target_names": node_target_names(raw),
+        "node_target_coverage": node_target_coverage(raw, torch_mod),
+    }
+
+
+def zero_shot(shots: str) -> str:
+    return "True" if str(shots) == "0" else "False"
+
+
+def task_tag(task: str) -> str:
+    return {
+        "neighbor_matching": "nm",
+        "temporal_link_prediction": "lp",
+        "static_link_prediction": "slp",
+        "classification": "pl",
+        "regression": "reg",
+    }[task]
+
+
+def build_command(
+    args: argparse.Namespace,
+    dataset: DatasetConfig,
+    model_name: str,
+    ckpt_path: str,
+    task: str,
+    shots: str,
+    classification_n_way: int | None = None,
+    reg_target: str | None = None,
+) -> list[str]:
+    root = Path(args.data_root) / dataset.root_name / "graphs"
+    common = [
+        args.python,
+        "experiments/run_single_experiment.py",
+        "--dataset",
+        dataset.name,
+        "--root",
+        root.as_posix(),
+        "--graph_filename",
+        dataset.graph_filename,
+        "--feature_subset",
+        "emb_only",
+        "--input_dim",
+        "768",
+        "--original_features",
+        "True",
+        "--workers",
+        str(args.workers),
+        "--batch_size",
+        str(args.batch_size),
+        "--device",
+        str(args.device),
+        "--seed",
+        str(args.seed),
+        "--eval_only",
+        "True",
+        "--eval_test_before_train",
+        "True",
+        "--eval_val_before_train",
+        "True",
+        "--save_roc_curve",
+        "True",
+        "--pretrained_model_run",
+        "" if is_random_init(ckpt_path) else ckpt_path,
+    ]
+    if dataset.eval_random_query:
+        common.extend(["--eval_random_query", "True"])
+    if args.ablate_features != "none":
+        common.extend(["--ablate_features", args.ablate_features])
+    if args.ablate_edges != "none":
+        common.extend(["--ablate_edges", args.ablate_edges])
+    if args.structural_features != "none":
+        # E1/E2 encoders: inject the same structural inputs used at pretrain
+        common.extend(["--structural_features", args.structural_features])
+    if args.gnn_type != "sage":
+        # E2 encoder: build the matching architecture (e.g. sage_multi) so the
+        # pretrained state_dict loads.
+        common.extend(["--gnn_type", args.gnn_type])
+    if args.no_bn_encoder:
+        # E2b: drop batch-norm on the conv output (the count-magnitude wash-out
+        # culprit). Must match the checkpoint's no_bn_encoder setting.
+        common.extend(["--no_bn_encoder", "True"])
+
+    tag = task_tag(task)
+    # keep intact vs. ablated eval runs in separate run dirs; the 2x2 conditions
+    # get suffixes: random-feat=_ablN, rewired-edge=_ablE, both=_ablNE, etc.
+    abl = ""
+    if args.ablate_features != "none":
+        abl += {"zero": "Z", "permute": "P", "noise": "N"}[args.ablate_features]
+    if args.ablate_edges != "none":
+        abl += {"rewire": "E"}[args.ablate_edges]
+    if abl:
+        tag = f"{tag}_abl{abl}"
+    prefix = f"eval_{model_name}_to_{dataset.name}_{tag}_{shots}shot"
+    if task == "neighbor_matching":
+        # encode n_way so 3-way and 30-way evals don't collide in the same run dir
+        prefix = f"{prefix}_{args.nm_n_way}way"
+        extra = [
+            "--task_name",
+            "neighbor_matching",
+            "--n_way",
+            str(args.nm_n_way),
+            "--n_shots",
+            shots,
+            "--n_query",
+            str(dataset.nm_n_query),
+            "--zero_shot",
+            zero_shot(shots),
+            "--dataset_len_cap",
+            str(args.nm_dataset_len_cap),
+            "--val_len_cap",
+            str(dataset.val_cap),
+            "--test_len_cap",
+            str(dataset.test_cap),
+            "--epochs",
+            str(args.epochs),
+            "--eval_step",
+            str(args.eval_step),
+            "--checkpoint_step",
+            str(args.checkpoint_step),
+            "--prefix",
+            prefix,
+        ]
+    elif task == "temporal_link_prediction":
+        extra = [
+            "--task_name",
+            "temporal_link_prediction",
+            "--edge_view",
+            "temporal_history",
+            "--target_edge_view",
+            "temporal_new",
+            "--n_way",
+            "1",
+            "--n_shots",
+            shots,
+            "--n_query",
+            str(args.lp_n_query),
+            "--zero_shot",
+            zero_shot(shots),
+            "--dataset_len_cap",
+            str(args.lp_dataset_len_cap),
+            "--val_len_cap",
+            str(args.parquet_val_cap),
+            "--test_len_cap",
+            str(args.parquet_test_cap),
+            "--epochs",
+            str(args.epochs),
+            "--eval_step",
+            str(args.eval_step),
+            "--checkpoint_step",
+            str(args.checkpoint_step),
+            "--prefix",
+            prefix,
+        ]
+    elif task == "static_link_prediction":
+        extra = [
+            "--task_name",
+            "static_link_prediction",
+            "--edge_view",
+            "static_background",
+            "--target_edge_view",
+            "static_holdout",
+            "--hard_negatives",
+            "True" if args.slp_hard_negatives else "False",
+            "--midterm_lp_neg_ratio",
+            str(args.slp_neg_ratio),
+            "--n_way",
+            "1",
+            "--n_shots",
+            shots,
+            "--n_query",
+            str(args.slp_n_query),
+            "--zero_shot",
+            zero_shot(shots),
+            "--dataset_len_cap",
+            str(args.lp_dataset_len_cap),
+            "--val_len_cap",
+            str(args.parquet_val_cap),
+            "--test_len_cap",
+            str(args.parquet_test_cap),
+            "--epochs",
+            str(args.epochs),
+            "--eval_step",
+            str(args.eval_step),
+            "--checkpoint_step",
+            str(args.checkpoint_step),
+            "--prefix",
+            prefix,
+        ]
+    elif task == "regression":
+        if not reg_target:
+            raise ValueError("regression task requires a reg_target")
+        # encode the target name so per-target runs don't collide in the run dir
+        prefix = f"{prefix}_{reg_target}"
+        extra = [
+            "--task_name",
+            "regression",
+            "--target_feature",
+            reg_target,
+            "--target_transform",
+            args.reg_transform,
+            "--n_way",
+            "1",
+            "--n_shots",
+            shots,
+            "--n_query",
+            str(dataset.pl_n_query),
+            "--zero_shot",
+            zero_shot(shots),
+            "--dataset_len_cap",
+            str(args.pl_dataset_len_cap),
+            "--val_len_cap",
+            str(dataset.val_cap),
+            "--test_len_cap",
+            str(dataset.test_cap),
+            "--epochs",
+            str(args.epochs),
+            "--eval_step",
+            str(args.eval_step),
+            "--checkpoint_step",
+            str(args.checkpoint_step),
+            "--prefix",
+            prefix,
+        ]
+    elif task == "classification":
+        n_way = classification_n_way if classification_n_way is not None else 2
+        if args.pl_linear_probe:
+            # keep linear-probe run dirs distinct from few-shot pl runs
+            prefix = f"{prefix}_lp{args.pl_train_cap}" if args.pl_train_cap > 0 else f"{prefix}_lp"
+        extra = [
+            "--task_name",
+            "classification",
+            "--ignore_label_embeddings",
+            "False",
+            "--linear_probe",
+            "True" if args.pl_linear_probe else "False",
+            "--n_way",
+            str(n_way),
+            "--n_shots",
+            shots,
+            "--n_query",
+            str(dataset.pl_n_query),
+            "--zero_shot",
+            zero_shot(shots),
+            "--dataset_len_cap",
+            str(args.pl_dataset_len_cap),
+            "--val_len_cap",
+            str(dataset.val_cap),
+            "--test_len_cap",
+            str(dataset.test_cap),
+            "--epochs",
+            str(args.epochs),
+            "--eval_step",
+            str(args.eval_step),
+            "--checkpoint_step",
+            str(args.checkpoint_step),
+            "--midterm_label_downsample",
+            "50:50",
+            "--prefix",
+            prefix,
+        ]
+        if args.pl_linear_probe and args.pl_train_cap > 0:
+            extra += ["--train_cap", str(args.pl_train_cap)]
+    else:
+        raise ValueError(f"Unsupported task: {task}")
+    return common + extra + args.extra_args
+
+
+def run_job_queue(
+    jobs: list[tuple[list[str], str]],
+    *,
+    gpus: list[str],
+    dry_run: bool,
+    continue_on_error: bool,
+) -> int:
+    if not jobs:
+        print("[progress] no eval jobs selected", flush=True)
+        return 0
+    if not gpus:
+        gpus = [""]
+
+    print(
+        f"[progress] starting eval queue jobs={len(jobs)} parallel_slots={len(gpus)} "
+        f"gpus={','.join(gpus) if any(gpus) else '<inherit>'}",
+        flush=True,
+    )
+    running: list[tuple[subprocess.Popen, str, str]] = []
+    failures = 0
+    next_job = 0
+    completed = 0
+
+    while next_job < len(jobs) or running:
+        while next_job < len(jobs) and len(running) < len(gpus):
+            cmd, label = jobs[next_job]
+            gpu = gpus[next_job % len(gpus)]
+            env = os.environ.copy()
+            if gpu:
+                env["CUDA_VISIBLE_DEVICES"] = gpu
+            printable = " ".join(shlex.quote(part) for part in cmd)
+            prefix = f"CUDA_VISIBLE_DEVICES={gpu} " if gpu else ""
+            print(
+                f"[launch {next_job + 1}/{len(jobs)}] gpu={gpu or '<inherit>'} {label}",
+                flush=True,
+            )
+            print(f"[cmd] {prefix}{printable}", flush=True)
+            next_job += 1
+            if dry_run:
+                continue
+            process = subprocess.Popen(cmd, env=env)
+            running.append((process, label, gpu))
+
+        if dry_run:
+            continue
+
+        process, label, gpu = running.pop(0)
+        returncode = process.wait()
+        completed += 1
+        if returncode != 0:
+            failures += 1
+            print(
+                f"[error] returncode={returncode} gpu={gpu or '<inherit>'} {label}",
+                flush=True,
+            )
+            if not continue_on_error:
+                for other_process, _, _ in running:
+                    other_process.terminate()
+                return returncode
+        else:
+            print(
+                f"[done {completed}/{len(jobs)}] gpu={gpu or '<inherit>'} {label}",
+                flush=True,
+            )
+
+    return 1 if failures else 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--model-list", default=DEFAULT_MODEL_LIST)
+    parser.add_argument(
+        "--checkpoint-run-dir",
+        default="",
+        help=(
+            "Training run directory containing checkpoint/state_dict_<step>.ckpt files. "
+            "When provided, checkpoints are discovered in numeric step order and "
+            "--model-list is ignored."
+        ),
+    )
+    parser.add_argument(
+        "--checkpoint-name-prefix",
+        default="",
+        help="Optional model-name prefix for --checkpoint-run-dir rows.",
+    )
+    parser.add_argument("--data-root", default=DEFAULT_DATA_ROOT)
+    parser.add_argument("--datasets", default=",".join(DEFAULT_DATASETS))
+    parser.add_argument("--tasks", default="neighbor_matching,temporal_link_prediction,classification")
+    parser.add_argument("--shots", default="0,3,10")
+    parser.add_argument("--python", default="python3")
+    parser.add_argument(
+        "--gpus",
+        default="",
+        help=(
+            "Comma-separated physical GPU ids for parallel eval, e.g. 1,3. "
+            "Each subprocess sees one GPU and uses --device 0."
+        ),
+    )
+    parser.add_argument("--device", default="0")
+    parser.add_argument("--workers", type=int, default=4)
+    parser.add_argument("--batch-size", type=int, default=1)
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--epochs", type=int, default=12)
+    parser.add_argument("--eval-step", type=int, default=2000)
+    parser.add_argument("--checkpoint-step", type=int, default=2000)
+    parser.add_argument("--nm-n-way", type=int, default=3,
+                        help="N-way for NM eval episodes. 3-way 3-shot is near-ceiling; "
+                             "use 30 for a more discriminative comparison.")
+    parser.add_argument("--nm-dataset-len-cap", type=int, default=5000)
+    parser.add_argument("--lp-dataset-len-cap", type=int, default=2500)
+    parser.add_argument("--pl-dataset-len-cap", type=int, default=2000)
+    parser.add_argument("--pl-linear-probe", action="store_true",
+                        help="Run classification eval as a linear probe (--linear_probe True, all classes "
+                             "per episode). Pair with a larger --shots (e.g. 20,50) for full-support readout.")
+    parser.add_argument("--pl-train-cap", type=int, default=0,
+                        help="With --pl-linear-probe, cap labeled support examples per class (0 = uncapped).")
+    parser.add_argument("--parquet-val-cap", type=int, default=500)
+    parser.add_argument("--parquet-test-cap", type=int, default=500)
+    parser.add_argument("--lp-n-query", type=int, default=12)
+    # static link prediction. Episodes need (n_shots + n_query) held-out edges on a
+    # single center; retweet graphs are sparse/power-law, so keep n_query small and
+    # prefer zero-shot (--shots 0) so low-degree centers still qualify.
+    parser.add_argument("--slp-n-query", type=int, default=4)
+    parser.add_argument("--slp-neg-ratio", type=int, default=1,
+                        help="Negatives per positive for static LP episodes.")
+    parser.add_argument("--slp-hard-negatives", type=lambda s: s.lower() not in {"0", "false", "no"},
+                        default=True,
+                        help="Draw static-LP negatives from the 2-hop shell (True) or random (False).")
+    # node regression
+    parser.add_argument("--reg-targets", default=",".join(DEFAULT_REG_TARGETS),
+                        help="Comma-separated profile targets to evaluate; one eval run per target.")
+    parser.add_argument("--reg-transform", default="log1p", choices=["none", "log1p"],
+                        help="Transform applied to regression targets (log1p for heavy-tailed counts).")
+    parser.add_argument("--ablate-features", default="none", choices=["none", "zero", "permute", "noise"],
+                        help="Eval-time feature ablation (feature vs. topology reliance). 'zero' zeroes all "
+                             "node features; 'permute' shuffles feature rows across nodes per subgraph; "
+                             "'noise' resamples features from the full-graph distribution (destroys local "
+                             "content, keeps distinctness). Ablated runs get a distinct _ablZ/_ablP/_ablN tag.")
+    parser.add_argument("--gnn-type", default="sage",
+                        help="Encoder architecture to build before loading the checkpoint. E2 needs "
+                             "'sage_multi' (multi-aggregation) so its state_dict loads; B0/B1/E1 use 'sage'.")
+    parser.add_argument("--no-bn-encoder", action="store_true",
+                        help="Build the encoder WITHOUT batch-norm on the conv output (E2b drop-BN "
+                             "retry). MUST match how the checkpoint was pretrained (no_bn_encoder:true) "
+                             "or the state_dict won't load — a BN-off conv has no bn.{weight,bias,"
+                             "running_mean,running_var}.")
+    parser.add_argument("--structural-features", default="none",
+                        choices=["none", "directed3", "directed3_log", "directed6"],
+                        help="Inject directed structural input features (E1/E2 encoders). MUST match "
+                             "how the checkpoint was pretrained (defines the input space), so run E1/E2/"
+                             "E3/E4 evals with the same mode in a SEPARATE sweep from B0/B1 "
+                             "(directed3 -> input_dim 771, directed6 -> 774; vs 768).")
+    parser.add_argument("--ablate-edges", default="none", choices=["none", "rewire"],
+                        help="Eval-time EDGE ablation (topology reliance; the 'rewired edge' half of the "
+                             "2x2). 'rewire' replaces each subgraph's real edges with a random directed edge "
+                             "set of the same size over the same node support (destroys real adjacency, keeps "
+                             "the node bag/features). Composable with --ablate-features; runs get a _ablE "
+                             "(or combined _ablNE) tag.")
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--continue-on-error", action="store_true")
+    parser.add_argument("extra_args", nargs=argparse.REMAINDER)
+    args = parser.parse_args()
+
+    if args.extra_args and args.extra_args[0] == "--":
+        args.extra_args = args.extra_args[1:]
+
+    selected_datasets = parse_csv(args.datasets)
+    selected_tasks = [TASK_ALIASES[task] for task in parse_csv(args.tasks)]
+    shots = parse_csv(args.shots)
+    if args.checkpoint_run_dir:
+        models = discover_checkpoint_run_dir(
+            Path(args.checkpoint_run_dir),
+            args.checkpoint_name_prefix or None,
+        )
+    else:
+        models = parse_model_list(Path(args.model_list))
+    print(
+        "[progress] eval selection "
+        f"datasets={selected_datasets} tasks={selected_tasks} shots={shots} "
+        f"models={len(models)}",
+        flush=True,
+    )
+    torch_mod = load_torch()
+
+    jobs: list[tuple[list[str], str]] = []
+    for dataset_name in selected_datasets:
+        if dataset_name not in DATASETS:
+            raise ValueError(f"Unknown dataset {dataset_name!r}. Known: {sorted(DATASETS)}")
+        dataset = DATASETS[dataset_name]
+        graph_path = Path(args.data_root) / dataset.root_name / "graphs" / dataset.graph_filename
+        if not graph_path.exists():
+            print(f"[skip] {dataset.name}: missing graph {graph_path}", flush=True)
+            continue
+        print(f"[progress] inspecting {dataset.name} graph={graph_path}", flush=True)
+        info = graph_info(torch_mod, graph_path)
+        reg_targets_available = [
+            t for t in parse_csv(args.reg_targets)
+            if info["node_target_coverage"].get(t, 0) > 0
+        ]
+        print(
+            f"[progress] {dataset.name}: x_dim={info['x_dim']} "
+            f"labels={info['has_labels']} label_count={info['label_count']} "
+            f"future_edges={info['has_future_edges']} static_holdout={info['has_static_holdout']} "
+            f"reg_targets={reg_targets_available}",
+            flush=True,
+        )
+        if info["x_dim"] != 768:
+            print(f"[warn] {dataset.name}: graph x_dim={info['x_dim']} expected 768", flush=True)
+
+        for model_name, ckpt_path in models:
+            if not is_random_init(ckpt_path) and not Path(ckpt_path).exists():
+                raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
+            for task in selected_tasks:
+                if task == "temporal_link_prediction":
+                    if not dataset.supports_lp or not info["has_future_edges"]:
+                        print(f"[skip] {dataset.name}: no temporal LP target edges", flush=True)
+                        continue
+                if task == "static_link_prediction" and not info["has_static_holdout"]:
+                    print(f"[skip] {dataset.name}: no static_holdout view (enrich the graph)", flush=True)
+                    continue
+                if task == "classification" and not info["has_labels"]:
+                    print(f"[skip] {dataset.name}: no classification labels", flush=True)
+                    continue
+                if task == "regression" and not reg_targets_available:
+                    print(f"[skip] {dataset.name}: no node regression targets present", flush=True)
+                    continue
+
+                # regression fans out over one job per profile target
+                target_iter = reg_targets_available if task == "regression" else [None]
+                for reg_target in target_iter:
+                    for shot in shots:
+                        cmd = build_command(
+                            args,
+                            dataset,
+                            model_name,
+                            ckpt_path,
+                            task,
+                            shot,
+                            classification_n_way=info["label_count"] if task == "classification" else None,
+                            reg_target=reg_target,
+                        )
+                        tgt = f" target={reg_target}" if reg_target else ""
+                        label = (
+                            f"dataset={dataset.name} model={model_name} "
+                            f"task={task}{tgt} shot={shot}"
+                        )
+                        jobs.append((cmd, label))
+
+    return run_job_queue(
+        jobs,
+        gpus=parse_csv(args.gpus),
+        dry_run=args.dry_run,
+        continue_on_error=args.continue_on_error,
+    )
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

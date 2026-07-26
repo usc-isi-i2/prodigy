@@ -1,0 +1,52 @@
+# E1_log — E1 with the directed3 INPUT-SCALING FIX (topology_feature_ssl). Byte-identical
+# to E1 EXCEPT structural_features: directed3 -> directed3_log. The raw in/out degree
+# counts are power-law; z-scoring them directly (directed3) leaves the bulk crushed to
+# IQR~0 while hubs hit |z|~1300 (measured on the merged graph, see
+# check_directed3_distribution.py). directed3_log log1p's the two raw counts before
+# z-scoring (as log_deg already is), bringing all three columns to max |z| ~ low-teens.
+#
+# CAUSAL TEST for "E1 < B0 on the pretext val_roc_auc is caused by the input scaling":
+# if this run's NM val_roc_auc now catches B0 (the original E1 sat ~0.01 below it the
+# whole way), the pathology was the culprit. Encoder (sage), objective (NM), sampling,
+# budget all identical to E1 — the ONLY change is the degree-input scaling.
+#
+# epochs: 12 matches E1 exactly (no LR-schedule confound); read at state_dict_40000 like
+# every arm, where the original E1<B0 gap is already clear. Eval MUST pass
+# --structural-features directed3_log to match the 771-d input space.
+dataset: merged_ukr_rus_covid_midterm
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_retweet_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+input_dim: 768          # trainer bumps to 771 after directed3_log injection
+
+emb_dim: 256
+gnn_type: sage
+n_layer: 1
+n_hop: 1
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+epochs: 12          # matched to E1 (120k budget; read at 40k like the other arms)
+
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+
+# >>> THE ONE CHANGE vs E1: log1p the raw in/out counts before z-scoring <<<
+structural_features: directed3_log
+
+eval_step: 10000
+checkpoint_step: 10000
+workers: 16
+device: 0
+seed: 0
+tags: [topology_feature_ssl, E1_log, structural_input, directed3_log, degree_scaling_fix, nm, merged3way, within_balanced]
+prefix: tfssl_E1_log

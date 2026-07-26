@@ -1,0 +1,26 @@
+dataset: covid19_twitter
+root: /dataMeR1/phil/data/covid19_twitter/graphs
+graph_filename: retweet_graph_parquet.pt
+task_name: cl
+
+edge_view: temporal_history
+feature_subset: all
+original_features: true
+input_dim: 768
+
+augmentation: NZ0.2
+augment_test: true
+n_way: 16
+n_shots: 1
+n_query: 1
+batch_size: 8
+dataset_len_cap: 20
+val_len_cap: 10
+test_len_cap: 10
+
+eval_step: 20
+checkpoint_step: 20
+workers: 4
+device: 0
+seed: 0
+prefix: task_transfer_covid_cl_smoke

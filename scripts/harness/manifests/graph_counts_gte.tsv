@@ -1,0 +1,12 @@
+dataset	graph_file	family	nodes	edges	feature_dim	label_col	label_type	labeled_nodes	embedding_matched_users	source_graphs	remote_path
+midterm	retweet_graph_parquet.pt	twitter_retweet	341908	899979	768				274361		/dataMeR1/phil/data/midterm/graphs/retweet_graph_parquet.pt
+covid19_twitter	retweet_graph_parquet.pt	twitter_retweet	23012850	107222182	768				18493966		/dataMeR1/phil/data/covid19_twitter/graphs/retweet_graph_parquet.pt
+ukr_rus_twitter	retweet_graph_parquet.pt	twitter_retweet	10400775	76851913	768				7973536		/dataMeR1/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.pt
+merged	ukr_rus_covid_retweet_graph.pt	merged	33413625	184074095	768					ukr_rus:10400775/76851913;covid:23012850/107222182	/dataMeR1/phil/data/merged/graphs/ukr_rus_covid_retweet_graph.pt
+merged	ukr_rus_covid_midterm_retweet_graph.pt	merged	33755533	184974074	768					ukr_rus:10400775/76851913;covid:23012850/107222182;midterm:341908/899979	/dataMeR1/phil/data/merged/graphs/ukr_rus_covid_midterm_retweet_graph.pt
+covid_political	retweet_graph.pt	social_llm	78672	180928	768	label_conservative	classification	78672	78672		/dataMeR1/phil/data/covid_political/graphs/retweet_graph.pt
+covid_political	retweet_graph_conservative.pt	social_llm	78672	180928	768	label_conservative	classification	78672	78672		/dataMeR1/phil/data/covid_political/graphs/retweet_graph_conservative.pt
+election2020	retweet_graph.pt	social_llm	78932	2818603	768	label_conservative	classification	78932	78932		/dataMeR1/phil/data/election2020/graphs/retweet_graph.pt
+election2020	retweet_graph_conservative.pt	social_llm	78932	2818603	768	label_conservative	classification	78932	78932		/dataMeR1/phil/data/election2020/graphs/retweet_graph_conservative.pt
+ukr_rus_suspended	retweet_graph.pt	social_llm	72295	354209	768	label_suspended	classification	56438	72295		/dataMeR1/phil/data/ukr_rus_suspended/graphs/retweet_graph.pt
+ukr_rus_suspended	retweet_graph_suspended.pt	social_llm	72295	354209	768	label_suspended	classification	56438	72295		/dataMeR1/phil/data/ukr_rus_suspended/graphs/retweet_graph_suspended.pt

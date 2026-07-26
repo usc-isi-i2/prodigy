@@ -307,10 +307,58 @@ class GNNWithSupernodePooling(torch.nn.Module, BackgroundGNNLayer):
         return x
 
 
+class MultiAggSAGE(MessagePassing):
+    """E2 (core): SAGEConvSelfLoops with mean-aggregation replaced by
+    multi-aggregation (mean + sum + max), so counts / existence / fractions become
+    representable — mean alone is count-/degree-blind (the bottleneck the E1
+    findings pointed at). The concatenated 3x aggregate is projected back to
+    emb_dim; the SAGE self-loop + residual + BatchNorm shell is unchanged. Pairs
+    with the multi-readout (mean+sum+max) in MultiLayerGNN.
+
+    (The directed in/out split from the plan's E2 is deferred: these subgraphs are
+    sampled with bidirectional=False and carry no reliable per-edge direction flag,
+    and E1 already injects directed degree as INPUT features.)
+    """
+
+    AGGRS = ["mean", "sum", "max"]
+
+    def __init__(self, x_dim, edge_attr_dim, emb_dim, dropout=0, aggr="mean",
+                 transform_x=True, batch_norm=True):
+        super().__init__(aggr=self.AGGRS)  # concat of the 3 aggregations -> [N, 3*emb]
+        self.transform_x = transform_x
+        self.lin_x = torch.nn.Linear(x_dim, emb_dim)
+        if transform_x:
+            self.lin_self_loops = torch.nn.Linear(x_dim, emb_dim)
+        self.lin_edge_attr = None if edge_attr_dim is None else torch.nn.Linear(edge_attr_dim, emb_dim)
+        self.lin_agg = torch.nn.Linear(len(self.AGGRS) * emb_dim, emb_dim)
+        self.mlp = torch.nn.Sequential(torch.nn.Linear(emb_dim, 2 * emb_dim), torch.nn.ReLU(),
+                                       torch.nn.Linear(2 * emb_dim, emb_dim))
+        self.dropout = torch.nn.Dropout(dropout)
+        self.bn = torch.nn.BatchNorm1d(emb_dim) if batch_norm else torch.nn.Identity()
+
+    def forward(self, x, edge_index, edge_attr=None):
+        x_transformed = self.lin_x(x)
+        if self.lin_edge_attr is None or edge_attr is None:
+            x_msg = self.propagate(edge_index, x=x_transformed)
+        else:
+            x_msg = self.propagate(edge_index, x=x_transformed, edge_attr=self.lin_edge_attr(edge_attr))
+        x_msg = self.lin_agg(x_msg)  # [N, 3*emb] -> [N, emb]
+        if self.transform_x:
+            x_msg = x_msg + self.lin_self_loops(x)
+        x_msg = self.mlp(x_msg)
+        if x.shape[1] == x_msg.shape[1]:
+            x_msg = self.dropout(x_msg) + x
+        return self.bn(x_msg)
+
+    def message(self, x_j, edge_attr=None):
+        return x_j if edge_attr is None else x_j + edge_attr
+
+
 gnn_models = {
     "gin": GINConv,
     "no_msg_passing": NoMessagePassing,
     "sage": SAGEConvSelfLoops,
+    "sage_multi": MultiAggSAGE,
     "molecule_sage": SimpleMoleculeGNN,
     "gat": GATv2Conv
 }

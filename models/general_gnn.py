@@ -27,6 +27,12 @@ class SingleLayerGeneralGNN(torch.nn.Module):
             self.params = params
         self.logit_scale = torch.nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
         self.txt_dropout = text_dropout
+        if self.params.get("task_name") == "regression":
+            self.regression_head = torch.nn.Sequential(
+                torch.nn.Linear(params["emb_dim"], params["emb_dim"]),
+                torch.nn.ReLU(),
+                torch.nn.Linear(params["emb_dim"], 1),
+            )
 
     def decode(self, input_x, label_x, metagraph_edge_index, edgelist_bipartite=False):
         '''
@@ -148,8 +154,11 @@ class SingleLayerGeneralGNN(torch.nn.Module):
         x_input = self.final_input_mlp(x_input)
         x_label = self.final_label_mlp(x_label)
 
-        y_pred_matrix = self.decode(x_input, x_label, metagraph_edge_index, edgelist_bipartite=False).reshape(
-            y_true_matrix.shape)
+        if self.params.get("task_name") == "regression":
+            y_pred_matrix = self.regression_head(x_input).reshape(y_true_matrix.shape)
+        else:
+            y_pred_matrix = self.decode(x_input, x_label, metagraph_edge_index, edgelist_bipartite=False).reshape(
+                y_true_matrix.shape)
 
         qry_idx = torch.where(query_set_mask.reshape(-1, y_true_matrix.shape[1])[:, 0] == 1)[0]
         return y_true_matrix[qry_idx, :], y_pred_matrix[qry_idx, :], graph

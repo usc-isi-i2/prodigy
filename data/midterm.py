@@ -9,7 +9,7 @@ from torch_geometric.data import Data
 
 from experiments.sampler import NeighborSampler
 from .augment import get_aug
-from .dataloader import MulticlassTask, ParamSampler, BatchSampler, Collator, NeighborTask
+from .dataloader import MulticlassTask, ParamSampler, BatchSampler, Collator, NeighborTask, RegressionTask
 from .dataset import SubgraphDataset
 
 
@@ -82,6 +82,98 @@ class BinaryFutureLinkTask:
             remaining = [n for n in self._all_nodes if n not in forbidden]
             if not remaining:
                 raise RuntimeError("BinaryFutureLinkTask found no valid negative candidates.")
+            while len(neg) < neg_target:
+                neg.append(remaining[len(neg) % len(remaining)])
+
+        # Order matters for Collator(is_multiway=False): negatives first, positives second.
+        return {(0, center): neg, (1, center): pos}
+
+
+class StaticLinkTask:
+    """Binary *static* link-prediction episodes on held-out edges with hard negatives.
+
+    Unlike :class:`BinaryFutureLinkTask` (which uses a temporal future split), this
+    predicts existence of edges held out from the same graph:
+    - positives: held-out edges incident to a sampled center node (from the
+      ``static_holdout`` neighbor sampler).
+    - negatives: by default *hard* negatives — nodes two hops from the center in the
+      ``static_background`` graph but not direct neighbors — falling back to random
+      non-neighbors when the 2-hop shell is too small. Hard negatives keep the task
+      discriminative (random negatives make AUC saturate near 1.0).
+
+    The held-out edges are removed from the background message-passing graph at
+    construction time, so the encoder never sees the edges it is asked to predict.
+    """
+
+    def __init__(self, holdout_neighbor_sampler, background_neighbor_sampler, size: int,
+                 neg_ratio: int = 1, hard_negatives: bool = True):
+        self.size = size
+        self.neg_ratio = max(1, int(neg_ratio))
+        self.hard_negatives = bool(hard_negatives)
+        self.h_rowptr, self.h_col, _ = holdout_neighbor_sampler.whole_adj.csr()
+        self.b_rowptr, self.b_col, _ = background_neighbor_sampler.whole_adj.csr()
+        self._all_nodes = list(range(size))
+
+    def _neighbors(self, rowptr, col, node: int):
+        start = int(rowptr[node].item())
+        end = int(rowptr[node + 1].item())
+        if end <= start:
+            return col[0:0].tolist()
+        return col[start:end].tolist()
+
+    def _holdout_positives(self, center: int):
+        neigh = self._neighbors(self.h_rowptr, self.h_col, center)
+        return [int(n) for n in set(neigh) if int(n) != center]
+
+    def _sample_hard_negatives(self, center: int, forbidden: set, k: int, rng):
+        one_hop = set(int(n) for n in self._neighbors(self.b_rowptr, self.b_col, center))
+        two_hop = set()
+        for nb in one_hop:
+            two_hop.update(int(n) for n in self._neighbors(self.b_rowptr, self.b_col, nb))
+        cands = [n for n in two_hop if n not in one_hop and n not in forbidden and n != center]
+        rng.shuffle(cands)
+        return cands[:k]
+
+    def sample(self, num_label, num_member, num_shot, num_query, rng):
+        del num_label, num_shot, num_query
+        center = None
+        positives = []
+        for _ in range(2000):
+            candidate = rng.randrange(self.size)
+            curr = self._holdout_positives(candidate)
+            if len(curr) >= num_member:
+                center = candidate
+                positives = curr
+                break
+        if center is None:
+            raise RuntimeError(
+                f"StaticLinkTask could not find a center with >= {num_member} held-out "
+                "positive edges. Try reducing n_shots or n_query."
+            )
+
+        pos = rng.sample(positives, num_member)
+        neg_target = num_member * self.neg_ratio
+        forbidden = set(positives)
+        forbidden.add(center)
+
+        neg = []
+        if self.hard_negatives:
+            neg = self._sample_hard_negatives(center, forbidden, neg_target, rng)
+
+        # Top up with random non-neighbor negatives when hard negatives are exhausted.
+        forbidden_neg = forbidden | set(neg)
+        trials = 0
+        max_trials = max(100, neg_target * 100)
+        while len(neg) < neg_target and trials < max_trials:
+            cand = rng.randrange(self.size)
+            if cand not in forbidden_neg:
+                neg.append(cand)
+                forbidden_neg.add(cand)
+            trials += 1
+        if len(neg) < neg_target:
+            remaining = [n for n in self._all_nodes if n not in forbidden]
+            if not remaining:
+                raise RuntimeError("StaticLinkTask found no valid negative candidates.")
             while len(neg) < neg_target:
                 neg.append(remaining[len(neg) % len(remaining)])
 
@@ -212,6 +304,34 @@ def _deterministic_label_embeddings(label_names, dim: int = 768) -> torch.Tensor
     return torch.stack(rows, dim=0)
 
 
+def _label_embedding_texts(label_names, override_spec: str = ""):
+    label_names = list(label_names)
+    spec = (override_spec or "").strip()
+    if spec == "":
+        return label_names
+
+    overrides = {}
+    for entry in spec.split(";"):
+        entry = entry.strip()
+        if not entry:
+            continue
+        if "=" not in entry:
+            raise ValueError(
+                f"Invalid --label_emb_texts entry {entry!r}. "
+                "Use semicolon-separated 'label_name=text' pairs."
+            )
+        key, value = entry.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        if not key or not value:
+            raise ValueError(f"Invalid --label_emb_texts entry {entry!r}.")
+        overrides[key] = value
+
+    # Ignore overrides for labels absent from this graph so one mapping can be
+    # reused across multi-dataset eval sweeps.
+    return [overrides.get(name, name) for name in label_names]
+
+
 def _apply_label_downsample(
         labels: torch.Tensor,
         label_names,
@@ -306,13 +426,17 @@ def _apply_feature_subset(graph: Data, subset_spec: str) -> Data:
     if not feature_names or len(feature_names) != x_dim:
         feature_names = [f"f{i}" for i in range(x_dim)]
 
-    emb_mask = [name.startswith("emb_") for name in feature_names]
+    emb_mask = [name.startswith(("emb_", "bio_emb_")) for name in feature_names]
     stats_idx = [i for i, is_emb in enumerate(emb_mask) if not is_emb]
     emb_idx = [i for i, is_emb in enumerate(emb_mask) if is_emb]
     label_names = list(getattr(graph, "label_names", []))
     n_label = max(1, len(label_names))
 
     def build_label_leak():
+        if getattr(graph, "label_type", "classification") == "regression":
+            raise ValueError(
+                f"feature_subset='{spec}' is not supported when using regression targets."
+            )
         leak = torch.zeros((graph.x.shape[0], n_label), dtype=graph.x.dtype, device=graph.x.device)
         y = getattr(graph, "y", None)
         if y is not None:
@@ -336,7 +460,7 @@ def _apply_feature_subset(graph: Data, subset_spec: str) -> Data:
 
     if spec == "emb_only_plus_label":
         if not emb_idx:
-            raise ValueError("midterm_feature_subset='emb_only_plus_label' requires embedding features.")
+            raise ValueError("feature_subset='emb_only_plus_label' requires embedding features.")
         leak, leak_names = build_label_leak()
         graph.x = torch.cat([graph.x[:, emb_idx], leak], dim=1)
         graph.feature_names = [feature_names[i] for i in emb_idx] + leak_names
@@ -361,13 +485,13 @@ def _apply_feature_subset(graph: Data, subset_spec: str) -> Data:
         indices = [i for i, name in enumerate(feature_names) if name not in drop_set]
     else:
         raise ValueError(
-            f"Unsupported midterm_feature_subset='{subset_spec}'. "
+            f"Unsupported feature_subset='{subset_spec}'. "
             f"Use one of: all, constant1, stats_only, emb_only, emb_only_plus_label, label_only, keep:<...>, drop:<...>."
         )
 
     if not indices:
         raise ValueError(
-            f"midterm_feature_subset='{subset_spec}' selected 0 columns out of {x_dim}."
+            f"feature_subset='{subset_spec}' selected 0 columns out of {x_dim}."
         )
 
     graph.x = graph.x[:, indices]
@@ -376,6 +500,85 @@ def _apply_feature_subset(graph: Data, subset_spec: str) -> Data:
         f"Applied midterm feature subset '{subset_spec}': "
         f"{x_dim} -> {graph.x.shape[1]} dims."
     )
+    return graph
+
+
+def _apply_target_transform(y: torch.Tensor, transform: str) -> torch.Tensor:
+    """Apply an optional target transform for regression.
+
+    'log1p' is the right default for the heavy-tailed profile counts (follower
+    count etc.). NaN (missing) values are preserved so regression splits drop them.
+    """
+    spec = (transform or "none").strip().lower()
+    if spec in {"", "none"}:
+        return y
+    if spec == "log1p":
+        return torch.log1p(y)
+    raise ValueError(f"Unknown target_transform='{transform}'. Use 'none' or 'log1p'.")
+
+
+def _select_target_from_feature(
+    graph: Data,
+    target_feature: str,
+    *,
+    keep_in_x: bool = False,
+    transform: str = "none",
+) -> Data:
+    feature_name = (target_feature or "").strip()
+    if feature_name == "":
+        if not hasattr(graph, "label_type"):
+            graph.label_type = "classification"
+        return graph
+
+    # Preferred source: a named node-regression target stored outside x
+    # (benchmark profile panel: followers_count, account_age_days, ...). These
+    # carry NaN for missing users and never entered the encoder features.
+    node_targets = getattr(graph, "node_targets", None)
+    if isinstance(node_targets, dict) and feature_name in node_targets:
+        y = node_targets[feature_name].detach().clone().float()
+        graph.y = _apply_target_transform(y, transform)
+        graph.label_names = [feature_name]
+        graph.label_type = "regression"
+        graph.target_feature = feature_name
+        finite = int(torch.isfinite(graph.y).sum().item())
+        print(
+            f"Using node target '{feature_name}' (transform={transform}) as regression "
+            f"target: {finite}/{graph.y.numel()} labeled nodes; x left unchanged."
+        )
+        return graph
+
+    feature_names = list(getattr(graph, "feature_names", []))
+    x_dim = int(graph.x.shape[1])
+    if not feature_names or len(feature_names) != x_dim:
+        raise ValueError(
+            "target_feature requires graph.feature_names aligned with graph.x, "
+            "or a matching entry in graph.node_targets."
+        )
+    if feature_name not in feature_names:
+        available = list(node_targets.keys()) if isinstance(node_targets, dict) else []
+        raise ValueError(
+            f"Unknown target_feature='{feature_name}'. "
+            f"Available node_targets: {available}; x features: {feature_names}"
+        )
+
+    target_idx = feature_names.index(feature_name)
+    graph.y = _apply_target_transform(graph.x[:, target_idx].detach().clone().float(), transform)
+    graph.label_names = [feature_name]
+    graph.label_type = "regression"
+    graph.target_feature = feature_name
+    if keep_in_x:
+        print(
+            f"Using feature '{feature_name}' as regression target and keeping it in x "
+            f"for leakage/sanity testing ({x_dim} dims unchanged)."
+        )
+    else:
+        keep_idx = [i for i in range(x_dim) if i != target_idx]
+        graph.x = graph.x[:, keep_idx]
+        graph.feature_names = [feature_names[i] for i in keep_idx]
+        print(
+            f"Using feature '{feature_name}' as regression target: "
+            f"removed column {target_idx} from x ({x_dim} -> {graph.x.shape[1]} dims)."
+        )
     return graph
 
 
@@ -396,7 +599,7 @@ def _apply_edge_feature_subset(graph: Data, subset_spec: str, feature_names=None
     if spec == "none":
         graph.edge_attr = None
         graph.edge_attr_feature_names = []
-        print("Disabled midterm edge features (midterm_edge_feature_subset='none').")
+        print("Disabled graph edge features (edge_feature_subset='none').")
         return graph
 
     x_dim = graph.edge_attr.shape[1]
@@ -415,26 +618,26 @@ def _apply_edge_feature_subset(graph: Data, subset_spec: str, feature_names=None
         indices = [i for i, name in enumerate(names) if name not in drop_set]
     else:
         raise ValueError(
-            f"Unsupported midterm_edge_feature_subset='{subset_spec}'. "
+            f"Unsupported edge_feature_subset='{subset_spec}'. "
             "Use one of: all, none, keep:<...>, drop:<...>."
         )
 
     if not indices:
         raise ValueError(
-            f"midterm_edge_feature_subset='{subset_spec}' selected 0 columns out of {x_dim}."
+            f"edge_feature_subset='{subset_spec}' selected 0 columns out of {x_dim}."
         )
 
     graph.edge_attr = graph.edge_attr[:, indices]
     graph.edge_attr_feature_names = [names[i] for i in indices]
     print(
-        f"Applied midterm edge feature subset '{subset_spec}': "
+        f"Applied edge feature subset '{subset_spec}': "
         f"{x_dim} -> {graph.edge_attr.shape[1]} dims."
     )
     return graph
 
 
 def _build_midterm_graph(raw: dict, **kwargs):
-    edge_view = _normalize_view_name(kwargs.get("midterm_edge_view", "default"))
+    edge_view = _normalize_view_name(kwargs.get("edge_view", kwargs.get("midterm_edge_view", "default")))
     edge_index, resolved_edge_view = _load_named_tensor(
         raw,
         edge_view,
@@ -470,19 +673,28 @@ def _build_midterm_graph(raw: dict, **kwargs):
     graph.edge_attr_feature_names = edge_feature_names
 
     graph.label_names = raw['label_names']
+    graph.label_type = raw.get("label_type", "classification")
     graph.user_ids = raw.get("user_ids", [])
     graph.u2i = raw.get("u2i", {})
-    graph.y = _apply_label_downsample(
-        graph.y,
-        graph.label_names,
-        kwargs.get("midterm_label_downsample", ""),
-        seed=int(kwargs.get("seed", 0) or 0),
-    )
     graph.feature_names = raw.get('feature_names', [])
-    graph = _apply_feature_subset(graph, kwargs.get("midterm_feature_subset", "all"))
+    graph.node_targets = raw.get("node_targets", None)
+    graph = _select_target_from_feature(
+        graph,
+        kwargs.get("target_feature", ""),
+        keep_in_x=bool(kwargs.get("target_feature_keep_in_x", False)),
+        transform=kwargs.get("target_transform", "none"),
+    )
+    if graph.label_type != "regression":
+        graph.y = _apply_label_downsample(
+            graph.y,
+            graph.label_names,
+            kwargs.get("midterm_label_downsample", ""),
+            seed=int(kwargs.get("seed", 0) or 0),
+        )
+    graph = _apply_feature_subset(graph, kwargs.get("feature_subset", kwargs.get("midterm_feature_subset", "all")))
     graph = _apply_edge_feature_subset(
         graph,
-        kwargs.get("midterm_edge_feature_subset", "all"),
+        kwargs.get("edge_feature_subset", kwargs.get("midterm_edge_feature_subset", "all")),
         feature_names=edge_feature_names,
     )
     return graph, resolved_edge_view
@@ -498,6 +710,14 @@ def get_midterm_dataset(
     print(f"Loading midterm graph from {graph_path}...")
     raw = torch.load(graph_path, map_location='cpu')
 
+    task_name = kwargs.get("task_name", "")
+    if task_name == "temporal_link_prediction" and not kwargs.get("edge_view") and not kwargs.get("midterm_edge_view"):
+        kwargs = {**kwargs, "edge_view": "temporal_history"}
+        print("temporal_link_prediction: defaulting to 'temporal_history' edge view for subgraph construction.")
+    if task_name == "static_link_prediction" and not kwargs.get("edge_view") and not kwargs.get("midterm_edge_view"):
+        kwargs = {**kwargs, "edge_view": "static_background"}
+        print("static_link_prediction: defaulting to 'static_background' edge view for subgraph construction.")
+
     graph, resolved_edge_view = _build_midterm_graph(raw, **kwargs)
 
     print(f"Graph: {graph.num_nodes} nodes, {graph.edge_index.shape[1]} edges, "
@@ -512,9 +732,12 @@ def get_midterm_dataset(
     if hasattr(graph, "edge_attr") and graph.edge_attr is not None:
         print(f"Edge features: {graph.edge_attr.shape[1]} dims from edge view '{resolved_edge_view}'")
 
-    task_name = kwargs.get("task_name", "")
-    if task_name == "temporal_link_prediction":
-        target_view = _normalize_view_name(kwargs.get("midterm_target_edge_view", "future"), default="future")
+    if task_name in ("temporal_link_prediction", "static_link_prediction"):
+        default_target = "static_holdout" if task_name == "static_link_prediction" else "future"
+        target_view = _normalize_view_name(
+            kwargs.get("target_edge_view", kwargs.get("midterm_target_edge_view", default_target)),
+            default=default_target,
+        )
         future_edge_index, resolved_target_view = _load_named_tensor(
             raw,
             target_view,
@@ -523,11 +746,11 @@ def get_midterm_dataset(
             legacy_prefix="future_edge_index",
         )
         if future_edge_index is not None:
-            print("Building future neighbor sampler...", flush=True)
+            print("Building target-edge neighbor sampler...", flush=True)
             future_graph = Data(edge_index=future_edge_index, num_nodes=graph.num_nodes)
             dataset.future_neighbor_sampler = NeighborSampler(future_graph, num_hops=n_hop)
             dataset.future_edge_view = resolved_target_view
-            print("Future neighbor sampler ready.", flush=True)
+            print("Target-edge neighbor sampler ready.", flush=True)
         else:
             dataset.future_edge_view = None
     else:
@@ -543,6 +766,7 @@ def midterm_task(
         split_labels: bool = True,
         train_cap: Optional[int] = None,
         linear_probe: bool = False,
+        random_query: bool = False,
 ) -> MulticlassTask:
     if label_set is not None:
         chosen_label_set = set(label_set)
@@ -578,7 +802,39 @@ def midterm_task(
                 disabled_idx = idx[train_cap:]
                 train_label[disabled_idx] = -1 - i
 
-    return MulticlassTask(labels, chosen_label_set, train_label, linear_probe)
+    return MulticlassTask(labels, chosen_label_set, train_label, linear_probe,
+                          random_query=random_query and split in {"val", "test"})
+
+
+def _build_regression_node_splits(
+        labels: np.ndarray,
+        *,
+        seed: int = 0,
+        train_frac: float = 0.6,
+        val_frac: float = 0.2,
+):
+    labels = np.asarray(labels, dtype=np.float32)
+    labeled_idx = np.where(np.isfinite(labels))[0]
+    rng = np.random.default_rng(seed)
+    if labeled_idx.size:
+        rng.shuffle(labeled_idx)
+
+    n = int(labeled_idx.size)
+    n_train = int(round(n * train_frac))
+    n_val = int(round(n * val_frac))
+    if n >= 3:
+        n_train = min(max(1, n_train), n - 2)
+        n_val = min(max(1, n_val), n - n_train - 1)
+    elif n == 2:
+        n_train, n_val = 1, 0
+    elif n == 1:
+        n_train, n_val = 1, 0
+
+    return {
+        "train": labeled_idx[:n_train],
+        "val": labeled_idx[n_train:n_train + n_val],
+        "test": labeled_idx[n_train + n_val:],
+    }
 
 
 def get_midterm_dataloader(
@@ -621,11 +877,16 @@ def get_midterm_dataloader(
         )
         label_embeddings = torch.zeros(1, 768).expand(graph.num_nodes, -1)
     elif task_name == "classification":
+        if getattr(graph, "label_type", "classification") == "regression":
+            raise ValueError(
+                "midterm graph stores regression labels; use --task_name regression, not classification."
+            )
         label_names = list(getattr(graph, 'label_names', []))
         num_classes = len(label_names)
 
         if bert is not None:
-            label_embeddings = bert.get_sentence_embeddings(label_names)
+            label_texts = _label_embedding_texts(label_names, kwargs.get("label_emb_texts", ""))
+            label_embeddings = bert.get_sentence_embeddings(label_texts)
         else:
             label_embeddings = _deterministic_label_embeddings(label_names, dim=768)
 
@@ -649,6 +910,7 @@ def get_midterm_dataloader(
             split_labels=False,
             train_cap=train_cap,
             linear_probe=linear_probe,
+            random_query=kwargs.get("eval_random_query", False),
         )
         task.original_graph_labels = graph.y.numpy().copy()
         task.split_masked_labels = labels.copy()
@@ -658,11 +920,47 @@ def get_midterm_dataloader(
             ParamSampler(batch_size, n_way, n_shot, n_query, 1),
             seed=seed,
         )
+    elif task_name == "regression":
+        if getattr(graph, "label_type", "classification") != "regression":
+            raise ValueError(
+                f"midterm regression requires a graph with regression labels; "
+                f"got label_type={getattr(graph, 'label_type', None)!r}."
+            )
+        if n_way != 1:
+            raise ValueError(f"midterm regression only supports n_way=1, got {n_way}.")
+
+        labels = graph.y.detach().cpu().numpy().astype(np.float32)
+        if not hasattr(dataset, "_regression_node_splits"):
+            dataset._regression_node_splits = _build_regression_node_splits(labels, seed=0)
+
+        split_key = (node_split or "").strip() or split
+        node_splits = dataset._regression_node_splits
+        if split_key not in node_splits:
+            raise ValueError(
+                f"Unknown midterm regression node split '{split_key}'. "
+                f"Available: {sorted(node_splits.keys())}"
+            )
+        split_idx = node_splits[split_key]
+        if split_idx.size == 0:
+            raise ValueError(
+                f"midterm regression split '{split_key}' has no labeled nodes."
+            )
+
+        task = RegressionTask(labels=labels, node_indices=split_idx)
+        task.original_graph_labels = labels.copy()
+        task.split_masked_labels = labels.copy()
+        sampler = BatchSampler(
+            batch_count,
+            task,
+            ParamSampler(batch_size, 1, n_shot, n_query, 1),
+            seed=seed,
+        )
+        label_embeddings = torch.zeros((1, 768), dtype=torch.float)
     elif task_name == "temporal_link_prediction":
         if not hasattr(dataset, "future_neighbor_sampler"):
             raise ValueError(
                 "temporal_link_prediction requires target edges, but no future edge view was found. "
-                "Provide --midterm_target_edge_view (or ensure 'future_edge_index' exists in graph_data.pt)."
+                "Provide --target_edge_view (or ensure 'future_edge_index' exists in graph_data.pt)."
             )
         neg_ratio = int(kwargs.get("midterm_lp_neg_ratio", 1))
         if isinstance(n_way, int):
@@ -690,15 +988,45 @@ def get_midterm_dataloader(
             seed=seed,
         )
         label_embeddings = torch.zeros(1, 768).expand(graph.num_nodes, -1)
+    elif task_name == "static_link_prediction":
+        if not hasattr(dataset, "future_neighbor_sampler"):
+            raise ValueError(
+                "static_link_prediction requires a 'static_holdout' target edge view, but "
+                "none was found. Rebuild/enrich the graph with benchmark targets "
+                "(see scripts/graph_construction/enrich_graph_targets.py)."
+            )
+        neg_ratio = int(kwargs.get("midterm_lp_neg_ratio", 1))
+        hard_negatives = bool(kwargs.get("hard_negatives", True))
+        invalid_n_way = (n_way != 1) if isinstance(n_way, int) else any(v != 1 for v in n_way)
+        if invalid_n_way:
+            raise ValueError(f"static_link_prediction only supports n_way=1, got n_way={n_way}.")
+        print(
+            f"Using static LP sampler (held-out edges vs "
+            f"{'hard 2-hop' if hard_negatives else 'random'} negatives, neg_ratio={neg_ratio}:1)."
+        )
+        task = StaticLinkTask(
+            dataset.future_neighbor_sampler,
+            dataset.neighbor_sampler,
+            graph.num_nodes,
+            neg_ratio=neg_ratio,
+            hard_negatives=hard_negatives,
+        )
+        sampler = BatchSampler(
+            batch_count,
+            task,
+            ParamSampler(batch_size, n_way, n_shot, n_query, 1),
+            seed=seed,
+        )
+        label_embeddings = torch.zeros(1, 768).expand(graph.num_nodes, -1)
     else:
         raise ValueError(f"Unknown task for midterm: {task_name}")
 
     aug_fn = get_aug(aug, dataset.graph.x) if (split == "train" or aug_test) else get_aug("")
-    is_multiway = task_name != "temporal_link_prediction"
+    is_multiway = task_name not in {"temporal_link_prediction", "static_link_prediction", "regression"}
 
     return DataLoader(
         dataset,
         batch_sampler=sampler,
         num_workers=num_workers,
-        collate_fn=Collator(label_embeddings, aug=aug_fn, is_multiway=is_multiway),
+        collate_fn=Collator(label_embeddings, aug=aug_fn, is_multiway=is_multiway, task_name=task_name),
     )

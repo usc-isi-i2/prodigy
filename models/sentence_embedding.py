@@ -13,7 +13,17 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
 class SentenceEmb:
-    def __init__(self, model, device, dummy=False, use_cache=True, cache_folder=None):
+    def __init__(
+            self,
+            model,
+            device,
+            dummy=False,
+            use_cache=True,
+            cache_folder=None,
+            revision=None,
+            trust_remote_code=False,
+            normalize_embeddings=False,
+    ):
         '''
 
         :param model: The bert model to use.
@@ -26,12 +36,21 @@ class SentenceEmb:
         if dummy:
             self.model = None
         else:
-            self.model = SentenceTransformer(model, cache_folder=cache_folder, device=device)
+            kwargs = {
+                "cache_folder": cache_folder,
+                "device": device,
+            }
+            if trust_remote_code:
+                kwargs["trust_remote_code"] = trust_remote_code
+            if revision:
+                kwargs["revision"] = revision
+            self.model = SentenceTransformer(model, **kwargs)
         if use_cache:
             self.cache = {}
         else:
             self.cache = None
         self.device = device
+        self.normalize_embeddings = normalize_embeddings
 
     def get_sentence_embeddings(self, sentence_list):
         '''
@@ -46,9 +65,12 @@ class SentenceEmb:
         t1 = time()
         unknown_sentences = [sent for sent in sentence_list if sent not in self.cache]
         if len(unknown_sentences) > 0:
-            unknown_embeddings = self.model.encode(unknown_sentences, convert_to_tensor=True)
+            unknown_embeddings = self.model.encode(
+                unknown_sentences,
+                convert_to_tensor=True,
+                normalize_embeddings=self.normalize_embeddings,
+            )
             for i, sent in enumerate(unknown_sentences):
                 self.cache[sent] = unknown_embeddings[i].cpu()
         t2 = time()
         return stack([self.cache[sent] for sent in sentence_list])
-

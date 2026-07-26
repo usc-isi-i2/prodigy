@@ -1,15 +1,37 @@
-.idea
-.DS_Store
+# ─── Heavyweight / generated artifacts ──────────────────────────────────
 *.pt
 *.parquet
-*.csv
 *.pkl
-*.json
 *.npy
-__pycache__
-.python-version
-CLAUDE.md
+*.gz
+*.ndjson
+*.pptx
+*.csv
+*.json
+*.png
+*.pdf
 
+# ─── Tracked evidence: analysis data + figures ──────────────────────────
+# Eval results and figures are the evidence behind each FINDINGS.md, so they
+# are committed on purpose. Only these canonical folders are re-included —
+# a stray CSV or figure anywhere else stays ignored. Size is capped at 25 MB
+# by .githooks/pre-commit (enable with: git config core.hooksPath .githooks).
+!scripts/**/data/**/*.csv
+!scripts/**/data/**/*.tsv
+!scripts/**/data/**/*.json
+# The graph catalog is the repo's source of truth and must stay tracked;
+# it moved config/ -> docs/ on 2026-07-26, where the blanket *.json rule hides it.
+!docs/graph_catalog.json
+!scripts/**/figures/**/*.png
+!scripts/**/figures/**/*.pdf
+# Retired analyses keep their original flat layout.
+!scripts/**/archive/**/*.csv
+!scripts/**/archive/**/*.png
+!scripts/**/archive/**/*.pdf
+!docs/assets/**/*.png
+!docs/archive/assets/**/*.png
+
+# ─── Environments, run state, caches ────────────────────────────────────
 wandb/
 logs/
 log/
@@ -21,6 +43,20 @@ facebook_uk_ru/
 sbert/
 bge_m3_embeddings/
 xlm_roberta_embeddings/
-.ipynb_checkpoints/
 checkpoints/
-*.gz
+.idea
+.python-version
+# Job output written next to experiments on Tucker; regenerable, never committed.
+run_logs/
+ml_log_*.txt
+model_list.txt
+
+# ─── Never tracked (must win over the negations above) ──────────────────
+.DS_Store
+__pycache__/
+.ipynb_checkpoints/
+*.bak
+
+# Unrelated side projects that may live in this working copy but are not part
+# of the research repo. Keeps an unscoped `git add -A` from sweeping them in.
+/apps/

@@ -1,0 +1,35 @@
+# Experiment (a): train neighbor-matching on the TwiBot-20 retweet graph, then
+# evaluate the checkpoint on every other graph/task. Mirrors the merged-graph NM
+# configs (nm_transfer_matrix/merged_nm.yaml) exactly except for the data source
+# and a 12-epoch (120k-step) budget.
+dataset: twibot20
+root: /dataMeR1/phil/data/twibot20/graphs
+graph_filename: retweet_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+n_hop: 1
+dataset_len_cap: 10000   # episodes per epoch
+val_len_cap: 500
+test_len_cap: 500
+
+# 12 epochs x 10000 = 120,000 episodes (matches the merged runs' full budget).
+epochs: 12
+
+eval_step: 10000
+checkpoint_step: 10000
+workers: 16
+device: 0
+seed: 0
+tags:
+  - twibot20
+  - nm
+  - transfer_out
+prefix: nm_twibot20

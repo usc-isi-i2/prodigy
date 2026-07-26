@@ -1,0 +1,60 @@
+# E2b — DROP-BN ENCODER RETRY arm (topology_feature_ssl). Byte-for-byte identical
+# to E2 (sage_multi multi-aggregation + multi-readout, directed3 inputs, NM) EXCEPT
+# one knob: no_bn_encoder: true — the conv output BatchNorm is removed.
+#
+# WHY: E2's findings named a concrete, fixable culprit for why the count-aware
+# aggregator did NOT beat E1 — MultiAggSAGE's `sum` aggregation creates a
+# count-proportional MAGNITUDE, but the conv's final BatchNorm1d rescales every dim
+# to unit variance across the batch, washing out exactly that magnitude (the count
+# signal is created by sum-aggregation and then normalized away). There is no BN in
+# the readout (global_add_pool survives), so the conv output BN is the SOLE
+# count-washing knob. no_bn_encoder:true -> MultiAggSAGE(batch_norm=False) ->
+# self.bn = Identity(), so the sum's magnitude reaches the readout intact.
+#
+# Isolates: was E2's failure representational-WASH-OUT (BN), or genuinely no gain
+# from multi-aggregation? Read against E1/E2 at matched 40k:
+#   * capability probes (count / in-deg / out-deg) rise above E2's ~0.6 cap  -> BN was the culprit
+#   * probes stay ~0.6 and reg/LP don't beat E1                              -> encoder axis is closed
+# Eval MUST pass --no-bn-encoder (NO_BN_ENCODER=1) alongside --gnn-type sage_multi
+# and --structural-features directed3, or the BN-free state_dict won't load.
+#
+# Budget = 40k (matched to E1/E2). epochs:5 for the SAME off-by-one reason as E2:
+# trange(steps=epochs*10000) runs e=0..steps-1 and checkpoints at e%10000==0, so
+# epochs:4 saves its final ckpt at 30k; epochs:5 lands a clean state_dict_40000.
+dataset: merged_ukr_rus_covid_midterm
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_retweet_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+input_dim: 768          # trainer bumps to 771 after directed3 injection
+
+emb_dim: 256
+gnn_type: sage_multi    # multi-aggregation encoder (+ multi-readout, auto-coupled)
+n_layer: 1
+n_hop: 1
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+epochs: 5               # 40k final ckpt (see header: trange off-by-one)
+
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+
+structural_features: directed3_log
+no_bn_encoder: true     # >>> THE ONE CHANGE vs E2: drop the count-washing conv BN <<<
+
+eval_step: 10000
+checkpoint_step: 10000
+workers: 16
+device: 0
+seed: 0
+tags: [topology_feature_ssl, E2b_log, multi_agg, multi_readout, no_bn_encoder, nm, directed3_log, degree_scaling_fix, merged3way, within_balanced]
+prefix: tfssl_E2b_log

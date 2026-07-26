@@ -1,0 +1,48 @@
+# NMFP — pairwise SSL arm (multitask_ssl_pairs). Rotate over TWO objectives,
+# nm + fp, ONE PER EPISODE, round-robin 1:1. Reuses the EXACT nm_fp_cl rotation
+# machinery (task_name: nm_fp_cl) with the cl count zeroed: cl is NEVER sampled ->
+# pure nm/fp rotation. nm episodes take the metric path; fp episodes are tagged
+# graph.mix_is_fp (by the Collator) so the trainer dispatches the masked-feature
+# reconstruction loss on them only. SAME code path as the single/MIX arms, so NMFP
+# is directly comparable to NM, FP, and MIX.
+#
+# Matched TOTAL compute: 40k episodes total (~20k nm + ~20k fp with 1:1), the same
+# budget as each single-task control (40k x1) and MIX (~13.3k x3). requires
+# batch_size=1 (one task per step).
+dataset: merged_ukr_rus_covid_midterm
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_retweet_graph.pt
+task_name: nm_fp_cl
+
+edge_view: default
+feature_subset: all
+original_features: true
+input_dim: 768
+
+emb_dim: 256
+gnn_type: sage
+n_layer: 1
+n_hop: 1
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1            # REQUIRED: one SSL task per gradient step
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+epochs: 4                # 40,000 episodes total, split ~20k/20k across nm/fp
+
+# >>> pair-specific: rotation schedule (cl zeroed) + per-task aug knobs <<<
+mix_task_counts: "1,0,1"   # nm:cl:fp -> cl OFF; equal nm/fp per-episode share
+mix_cl_aug: NZ0.2          # kept for parity with MIX; UNUSED here (cl count = 0)
+fp_mask_ratio: 0.3         # aug + recon target for fp episodes (ACTIVE; matches FP.yaml / MIX.yaml)
+fp_mask_strategy: zero
+
+eval_step: 10000
+checkpoint_step: 10000
+workers: 16
+device: 0
+seed: 0
+tags: [multitask_ssl_pairs, NMFP, nm_fp, pair, rotation, multitask, merged3way, global_sampling, budget40k]
+prefix: mtp_NMFP

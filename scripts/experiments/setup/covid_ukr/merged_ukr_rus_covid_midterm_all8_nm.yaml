@@ -1,0 +1,35 @@
+# 8-graph merge (ukr+cov+mid + covid_political, election2020, ukr_rus_suspended,
+# twibot20, cp_hk) — top rung of the in-distribution interpolation ladder.
+# Same base config as the other rungs (256·S,U,M, no aug, attr_regression_weight=0,
+# 12 epochs × 10k cap ≈ 120k steps) => equal TOTAL compute. Note: with 8 domains
+# sharing that budget, per-domain exposure is ~8× lower than ukr_only sees ukr.
+# Requires the merged graph from merge_ukr_rus_covid_midterm_all8.yaml first.
+dataset: covid19_twitter
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_all8_retweet_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+
+# improved sampling: confine each NM episode to ONE source graph (removes cross-source
+# negatives / the source-discrimination shortcut); uniform source weighting so the small
+# added graphs get equal episode share.
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+
+eval_step: 100000        # skip periodic val-eval; watcher stops the run at step 40k
+checkpoint_step: 1000
+workers: 16
+device: 0
+seed: 0
+prefix: merged_ukr_rus_covid_midterm_all8_nm_wb

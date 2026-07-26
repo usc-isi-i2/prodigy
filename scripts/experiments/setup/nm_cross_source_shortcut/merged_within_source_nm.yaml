@@ -1,0 +1,47 @@
+# Cross-source-shortcut test: MERGED graph, but every NM episode is confined to a
+# SINGLE source (covid OR ukr), so an episode's negatives never come from the other
+# source. This is byte-for-byte identical to nm_transfer_matrix/merged_nm.yaml
+# EXCEPT the one new flag below -- the single variable under test.
+#
+# Hypothesis: with naive merged sampling, episodes mix sources, so the model can
+# tell positives from negatives via source-level feature differences (a shortcut)
+# instead of within-source neighborhood structure -> worse single-source transfer.
+# Confining each episode to one source removes that shortcut. If this run recovers
+# single-source AUC (and beats the proportional merged baseline), the hypothesis holds.
+dataset: covid19_twitter   # label only; the graph below is the merged graph
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_retweet_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+n_hop: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+
+# Same budget as the proportional merged baseline: 12 epochs x 10000 = 120,000 episodes.
+epochs: 12
+
+# >>> THE ONE CHANGE vs nm_transfer_matrix/merged_nm.yaml <<<
+# Confine each episode to one source; source picked proportional to node count, so
+# the per-node center marginal still matches naive proportional sampling.
+neighbor_sampling_episode_source: graph_id
+
+eval_step: 10000
+checkpoint_step: 10000
+workers: 16
+device: 0
+seed: 0
+tags:
+  - nm_cross_source_shortcut
+  - merged
+  - within_source
+  - plain
+prefix: nm_xsrc_within_source

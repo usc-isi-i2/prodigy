@@ -1,0 +1,40 @@
+# CL — single-task control (multitask_ssl_rotation). Contrastive (instance
+# discrimination) only. Positives are two feature-augmented views of the same
+# center node (NZ0.2 = zero 20% of feature dims per view). Same fixed setup as NM;
+# ONLY task_name + the augmentation change. This is exactly the CL objective the
+# MIX arm rotates in (mix_cl_aug defaults to NZ0.2 to match).
+dataset: merged_ukr_rus_covid_midterm
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_retweet_graph.pt
+task_name: contrastive
+
+edge_view: default
+feature_subset: all
+original_features: true
+input_dim: 768
+
+emb_dim: 256
+gnn_type: sage
+n_layer: 1
+n_hop: 1
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+epochs: 4
+
+# >>> CL-specific: two-view feature augmentation (positives) <<<
+augmentation: NZ0.2
+augment_test: true
+
+eval_step: 10000
+checkpoint_step: 10000
+workers: 16
+device: 0
+seed: 0
+tags: [multitask_ssl_rotation, CL, cl, contrastive, single_task, merged3way, global_sampling, budget40k]
+prefix: mtr_CL

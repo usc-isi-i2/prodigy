@@ -1,0 +1,64 @@
+# E4 — MULTI-TASK OBJECTIVE arm (topology_feature_ssl). The fork the results point
+# to: the encoder axis is exhausted (E2 makes topology REPRESENTABLE — best static-LP
+# 0.76 — but the NM objective doesn't make it USED jointly with the feature capability;
+# E1 wins regression, E2 wins LP, no arm wins both). E4 changes the OBJECTIVE on E2's
+# count-aware encoder to three heads at once:
+#   * MFR       — masked bio-feature reconstruction  (the feature capability)
+#   * directed-LP — score the episode's directed edges vs negatives (the topological task)
+#   * structural — reconstruct a masked node's directed3 degree block from context
+# MFR + structural share the whole-node masking (fp_mask_ratio/strategy): a masked node's
+# bio block [:768] is the MFR target and its structural block [768:] the structural target.
+# Because the node's OWN degree input is zeroed, predicting it is non-trivial (no
+# passthrough leakage — the trap E1's directed3 inputs create).
+#
+# Encoder = E2's (sage_multi multi-agg + multi-readout, directed3 inputs), so E4 evals
+# reuse the E2 sweep (STRUCTURAL=directed3 GNN_TYPE=sage_multi) and compare at matched 40k.
+# This is E4-simultaneous (weighted sum every step); E4r.yaml is the rotation variant.
+dataset: merged_ukr_rus_covid_midterm
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_retweet_graph.pt
+task_name: e4_multi
+
+edge_view: default
+feature_subset: all
+original_features: true
+input_dim: 768          # trainer bumps to 771 after directed3 injection
+
+emb_dim: 256
+gnn_type: sage_multi    # E2's count-aware encoder (multi-agg + multi-readout)
+n_layer: 1
+n_hop: 1
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+# Budget = true 40k (epochs:5 -> final ckpt state_dict_40000; epochs:4 stops at 30k —
+# see the trainer off-by-one note). Matched to B0/B1/E1/E2 at 40k.
+epochs: 5
+
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+
+structural_features: directed3_log
+
+# >>> E4-specific: multi-task heads <<<
+e4_combine: simultaneous   # sum MFR + directed-LP + structural every step
+# mfr,lp,struct weights. MFR bio-recon MSE is tiny (~0.02, unit-norm features) vs LP BCE
+# (~0.7) and structural MSE (~0.7 after the ±4σ target clip), so MFR is up-weighted ~30×
+# to keep the feature objective contributing. (Raw per-head magnitudes are logged each run.)
+e4_weights: "30,1,1"
+e4_lp_neg_k: 1             # negative edges per positive directed edge
+fp_mask_ratio: 0.3         # whole-node mask ratio (drives MFR + structural targets)
+fp_mask_strategy: zero
+
+eval_step: 10000
+checkpoint_step: 10000
+workers: 16
+device: 0
+seed: 0
+tags: [topology_feature_ssl, E4_log, multitask, mfr_dirlp_struct, simultaneous, sage_multi, directed3_log, degree_scaling_fix, merged3way, within_balanced]
+prefix: tfssl_E4_log

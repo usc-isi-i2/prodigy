@@ -1,0 +1,7 @@
+# Free preview (topology_feature_ssl README "Budget"): read a prior we already own.
+# Compare NM vs (masked) feature-prediction on node regression using the EXISTING
+# task_transfer covid checkpoints — no new pretrain. fp is ~E3's objective, so if
+# fp already beats nm on regression here, E3's core hypothesis is pre-validated for
+# ~zero cost. (These are covid-only pretrains, step 11000, emb_dim 256.)
+task_transfer_covid_nm /dataMeR1/phil/gfm/prodigy/state/task_transfer_covid_nm_smoke_01_07_2026_16_44_41/checkpoint/state_dict_11000.ckpt
+task_transfer_covid_fp /dataMeR1/phil/gfm/prodigy/state/task_transfer_covid_fp_smoke_01_07_2026_16_44_41/checkpoint/state_dict_11000.ckpt

@@ -1,0 +1,23 @@
+dataset: covid19_twitter
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_retweet_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 16
+dataset_len_cap: 100
+val_len_cap: 20
+test_len_cap: 20
+
+eval_step: 100
+checkpoint_step: 100
+workers: 8
+device: 0
+seed: 0
+prefix: merged_ukr_rus_covid_nm_smoke

@@ -1,0 +1,37 @@
+# NM single-source transfer matrix — train source: ukr_rus_twitter only.
+# Plain default architecture (NO augmentation, NO attr regression). Every config
+# in this folder is identical except the data source, so the trained models
+# differ ONLY in which single graph they saw. Matched-40k protocol (eval at
+# state_dict_40000) so the diagonal/off-diagonal are directly comparable to the
+# merged NM "interpolation ladder" (scripts/experiments/setup/covid_ukr). See README.md.
+dataset: ukr_rus_twitter
+root: /dataMeR1/phil/data/ukr_rus_twitter/graphs
+graph_filename: retweet_graph_parquet.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+n_hop: 1
+dataset_len_cap: 10000   # episodes per epoch
+val_len_cap: 500
+test_len_cap: 500
+
+# Matched-40k: 5 epochs x 10k = 50,000 steps so a state_dict_40000 checkpoint is
+# saved (the trainer skips the final-step ckpt; 50k > 40k guarantees 40k exists).
+epochs: 5
+eval_step: 100000        # > total steps => skip periodic val eval (~2x faster to 40k)
+checkpoint_step: 10000   # ckpts at 10k / 20k / 30k / 40k
+workers: 16
+device: 0
+seed: 0
+tags:
+  - nm_single_source_matrix
+  - ukr_rus_twitter
+  - plain
+prefix: nm_ss_ukr_rus_twitter

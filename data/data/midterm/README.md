@@ -42,7 +42,7 @@ Embedding artifact keys:
 ## Step 2: build the graph
 
 ```bash
-python data/data/midterm/scripts/generate_retweet_graph.py \
+python data/data/midterm/scripts/generate_user_graph.py \
   --csv_glob "/project2/ll_774_951/midterm/*/*.csv" \
   --embeddings /scratch1/eibl/data/midterm/embeddings/user_embeddings_minilm.pt \
   --embedding_pool meanpool \
@@ -68,7 +68,7 @@ Graph artifact keys:
 | Key | Description |
 |---|---|
 | `x` | node features |
-| `edge_index` | directed retweet edges |
+| `edge_index` | directed user-user edges |
 | `edge_attr` | edge features |
 | `edge_attr_feature_names` | edge feature names |
 | `user_ids` | canonical node ids |
@@ -100,9 +100,9 @@ python data/data/midterm/scripts/inspect_graph.py \
 Example task-1 scripts:
 
 ```bash
-sbatch scripts/submit_train1_midterm_pl.sh
-sbatch scripts/submit_train1_midterm_nm.sh
-sbatch scripts/submit_train1_midterm_lp.sh
+sbatch scripts/experiments/setup/train1/submit_train1_midterm_pl.sh
+sbatch scripts/experiments/setup/train1/submit_train1_midterm_nm.sh
+sbatch scripts/experiments/setup/train1/submit_train1_midterm_lp.sh
 ```
 
 Typical task settings used in recent comparable runs:
@@ -110,11 +110,11 @@ Typical task settings used in recent comparable runs:
 | Task | `--task_name` | Typical flags |
 |---|---|---|
 | Political labels | `classification` | `--n_way 2 --n_shots 3 --n_query 3 --midterm_label_downsample 50:50` |
-| Neighbor matching | `neighbor_matching` | `--midterm_edge_view temporal_history --n_way 3 --n_shots 1 --n_query 12` |
-| Temporal link prediction | `temporal_link_prediction` | `--midterm_edge_view temporal_history --midterm_target_edge_view temporal_new --n_way 1 --n_shots 1 --n_query 3` |
+| Neighbor matching | `neighbor_matching` | `--edge_view temporal_history --n_way 3 --n_shots 1 --n_query 12` |
+| Temporal link prediction | `temporal_link_prediction` | `--edge_view temporal_history --target_edge_view temporal_new --n_way 1 --n_shots 1 --n_query 3` |
 
 For embedding-only runs, use:
 
 ```text
---midterm_feature_subset emb_only --input_dim 384
+--feature_subset emb_only --input_dim 384
 ```

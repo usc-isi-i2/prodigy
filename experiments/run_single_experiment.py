@@ -2,7 +2,6 @@ import numpy as np
 import random
 import torch
 import time
-import shlex
 
 torch.multiprocessing.set_sharing_strategy("file_system")
 
@@ -26,7 +25,6 @@ warnings.filterwarnings("ignore")
 
 if __name__ == '__main__':
     torch.set_num_threads(4)
-    _log("Command: " + " ".join(shlex.quote(arg) for arg in [sys.executable, *sys.argv]))
 
     params = get_params()
 
@@ -82,11 +80,16 @@ if __name__ == '__main__':
         max_posts=params["facebook_max_posts"],
         n_hop=params["n_hop"],
         graph_filename=params["graph_filename"],
-        midterm_feature_subset=params["midterm_feature_subset"],
+        target_feature=params["target_feature"],
+        target_feature_keep_in_x=params["target_feature_keep_in_x"],
+        target_transform=params["target_transform"],
+        feature_subset=params["feature_subset"],
         midterm_label_downsample=params["midterm_label_downsample"],
-        midterm_edge_view=params["midterm_edge_view"],
-        midterm_target_edge_view=params["midterm_target_edge_view"],
-        midterm_edge_feature_subset=params["midterm_edge_feature_subset"],
+        edge_view=params["edge_view"],
+        target_edge_view=params["target_edge_view"],
+        edge_feature_subset=params["edge_feature_subset"],
+        neighbor_sampling_strategy=params["neighbor_sampling_strategy"],
+        neighbor_sampling_strata=params["neighbor_sampling_strata"],
         seed=params["seed"],
     )
 

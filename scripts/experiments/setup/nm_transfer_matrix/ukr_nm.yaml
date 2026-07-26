@@ -1,0 +1,35 @@
+# NM transfer matrix — train source: UKR/RUS only.
+# Plain default architecture (NO augmentation, NO attr regression) so all three
+# training runs differ ONLY in the data source. See README.md.
+dataset: ukr_rus_twitter
+root: /dataMeR1/phil/data/ukr_rus_twitter/graphs
+graph_filename: retweet_graph_parquet.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+n_hop: 1
+dataset_len_cap: 10000   # episodes per epoch
+val_len_cap: 500
+test_len_cap: 500
+
+# Compute budget (single-source): 6 epochs x 10000 = 60,000 episodes.
+# Merged run doubles this to match per-domain exposure (see merged_nm.yaml).
+epochs: 6
+
+eval_step: 10000
+checkpoint_step: 10000
+workers: 16
+device: 0
+seed: 0
+tags:
+  - nm_transfer_matrix
+  - ukr
+  - plain
+prefix: nm_matrix_ukr

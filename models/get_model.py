@@ -49,5 +49,7 @@ def get_model(emb_dim=128, bert_dim=768, n_layer=1, input_dim=768, edge_attr_dim
             all_gnns.append(GNNConv(x_dim=emb_dim, edge_attr_dim=edge_attr_dim, emb_dim=emb_dim, aggr="mean", batch_norm=batch_norm))
         
     all_gnns = torch.nn.ModuleList(all_gnns)
-    gnn_all = MultiLayerGNN(all_gnns, supernode_gnn=None, emb_dim=emb_dim, reset_after_layer=reset_after_layer)
+    # E2: the multi-aggregation encoder pairs with a count-aware (mean+sum+max) readout.
+    gnn_all = MultiLayerGNN(all_gnns, supernode_gnn=None, emb_dim=emb_dim, reset_after_layer=reset_after_layer,
+                            multi_readout=(gnn_type == "sage_multi"))
     return gnn_all

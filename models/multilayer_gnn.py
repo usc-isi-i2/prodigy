@@ -4,23 +4,27 @@
 
 import torch
 from models.layer_classes import BackgroundGNNLayer
-from torch_geometric.nn import global_mean_pool
+from torch_geometric.nn import global_add_pool, global_max_pool, global_mean_pool
 
 class MultiLayerGNN(torch.nn.Module, BackgroundGNNLayer):
-    def __init__(self, module_list: torch.nn.ModuleList, supernode_gnn=None, reset_after_layer = None, emb_dim = 256):
+    def __init__(self, module_list: torch.nn.ModuleList, supernode_gnn=None, reset_after_layer = None, emb_dim = 256,
+                 multi_readout = False):
         '''
 
         :param module_list: ModuleList for each layer's GNN.
         :param supernode_gnn: If not None, will be used to perform message passing on the supernode edges.
+        :param multi_readout: If True (E2), the center-node readout pools the subgraph with
+            mean+sum+max concatenated (count-aware) instead of mean only.
         '''
         super().__init__()
         self.module_list = module_list
         self.supernode_gnn = supernode_gnn
         self.act = torch.nn.ReLU()
         self.reset_after_layer = reset_after_layer
+        self.multi_readout = multi_readout
         self.reset_mlp = torch.nn.Linear(2*emb_dim, emb_dim)
         self.reset_mlp_c = torch.nn.Linear(emb_dim, emb_dim)
-        self.reset_mlp_m = torch.nn.Linear(emb_dim, emb_dim)
+        self.reset_mlp_m = torch.nn.Linear((3 if multi_readout else 1) * emb_dim, emb_dim)
         
 
     def forward(self, x_orig, x, edge_index, edge_attr, supernode_edge_index=None, center_node_index = None, batch = None):
@@ -53,7 +57,13 @@ class MultiLayerGNN(torch.nn.Module, BackgroundGNNLayer):
         if supernode_edge_index is not None and self.supernode_gnn is not None:
             x = self.supernode_gnn(x=x, edge_index=supernode_edge_index)
         x = x.clone()
-        x[center_node_index] =  self.act(self.reset_mlp_c(x[center_node_index]) + self.reset_mlp_m(global_mean_pool(x = x, batch = batch)))
+        if self.multi_readout:
+            pooled = torch.cat([global_mean_pool(x=x, batch=batch),
+                                global_add_pool(x=x, batch=batch),
+                                global_max_pool(x=x, batch=batch)], dim=1)
+        else:
+            pooled = global_mean_pool(x=x, batch=batch)
+        x[center_node_index] = self.act(self.reset_mlp_c(x[center_node_index]) + self.reset_mlp_m(pooled))
         return x
 
 
