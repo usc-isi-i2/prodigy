@@ -7,8 +7,8 @@
 > effect that rotation dilutes — NM is the best arm on all 5 datasets and MIX sits
 > below the heuristic floors. There is no 3-way synergy.
 >
-> Current read: [`../../multitask_ssl/FINDINGS.md`](../../multitask_ssl/FINDINGS.md) ·
-> defect details: [`../../multitask_ssl/FINDINGS_rescore.md`](../../multitask_ssl/FINDINGS_rescore.md)
+> Current read: [`../../../multitask_ssl/FINDINGS.md`](../../../multitask_ssl/FINDINGS.md) ·
+> defect details: [`../../../multitask_ssl/FINDINGS_rescore.md`](../../../multitask_ssl/FINDINGS_rescore.md)
 >
 > The classification and regression sections never touched the broken path and remain
 > valid; they are consolidated into `multitask_ssl/`.
