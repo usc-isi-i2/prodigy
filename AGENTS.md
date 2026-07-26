@@ -26,7 +26,52 @@ Claude should read this via `CLAUDE.md`; Codex/GPT reads this file directly.
 
 - Use git to move code between laptop and cluster: commit/push from laptop, pull on Tucker.
 - Do not hand-copy source files between laptop and cluster unless explicitly requested.
-- The working branch shifts over time and multiple agents may be active at once. Check branch and status before committing.
+
+### You are not the only agent
+
+Assume several agents are working in this repo at the same time, on different branches,
+and that some of them are pushing to Tucker and launching jobs there. Nothing warns you
+about the others — you find out by having your work silently land on top of, or
+underneath, theirs.
+
+- **HEAD moves under you.** Another agent can commit between the moment you read a file
+  and the moment you commit. Re-run `git status` and `git log --oneline -1` immediately
+  before committing, not once at the start of the task. (Real case: `dddea1c` was
+  authored by another agent mid-session and became the parent of `7b81fff`.)
+- **Stage explicit paths, never `git add -A`.** See the Repo Traps section — with
+  concurrent agents this also sweeps in *their* half-finished work.
+- **Pull before push; never force-push a shared branch.** If a push is rejected,
+  `git pull --rebase origin <branch>` and push again. A force-push discards whatever
+  another agent pushed in the meantime, and their local worktree on Tucker will then
+  refuse to fast-forward.
+- **Say which branch and worktree you used** when reporting what you did. The next agent
+  cannot infer it.
+
+### Tucker is shared, and it is not a single checkout
+
+The cluster has one main checkout plus a per-experiment git worktree, so a long job's
+code cannot be mutated by someone else's `git pull`:
+
+- `/dataMeR1/phil/gfm/prodigy` — main checkout
+- `/dataMeR1/phil/gfm/prodigy-{abl,featabl,msc,mtp,mtr,sampling,slpfix}` — one per
+  experiment branch (`git worktree list` for the current set)
+
+- **Give a heavy or long-running experiment its own worktree.** Add it with
+  `git worktree add ../prodigy-<short> <branch>`. Running two experiments out of one
+  checkout means whoever pulls first changes the code under the other one.
+- **Never `git checkout` or `git pull` in a worktree that has a job running.** Check
+  `tmux ls` first. Python reads the code at import, so a running trainer survives — but
+  any eval or follow-up script launched afterwards silently picks up the new code, and
+  the run is then a mix of two revisions.
+- **Name the branch explicitly when pulling on Tucker:** `git pull origin <branch>`.
+  Upstreams there are not reliable — the main checkout currently has
+  `experiment/nm-ladder-order-robustness` tracking `origin/cleanup/repo-consolidation-jul-26`,
+  so a bare `git pull` merges an unrelated branch. Verify with
+  `git rev-parse --abbrev-ref --symbolic-full-name @{u}` before pulling.
+- **`state/` and `log/` are gitignored and live per worktree — they do not follow a
+  branch.** Checkpoints land in whichever worktree ran the job (the main checkout alone
+  holds ~17 GB). Evaluate from the same worktree that trained, or pass absolute paths;
+  do not assume `state/<run_name>/` resolves just because you are on the right branch.
 
 ## Environment
 
