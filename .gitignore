@@ -19,6 +19,9 @@
 !scripts/**/data/**/*.csv
 !scripts/**/data/**/*.tsv
 !scripts/**/data/**/*.json
+# The graph catalog is the repo's source of truth and must stay tracked;
+# it moved config/ -> docs/ on 2026-07-26, where the blanket *.json rule hides it.
+!docs/graph_catalog.json
 !scripts/**/figures/**/*.png
 !scripts/**/figures/**/*.pdf
 # Retired analyses keep their original flat layout.

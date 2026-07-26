@@ -61,8 +61,9 @@ tmux new-session -d -s <name> 'export PATH="/home/mhchu/miniconda3/bin:$PATH"; b
 - Eval runner: `scripts/eval/eval_ckpts_all_graph_tasks_tucker.py`
 - Shared analysis/export harness: `scripts/harness/`
 - Retired analyses: `scripts/experiments/analysis/archive/`
-- Paper planning (theses, routes, related work): `docs/paper/` — start at its `README.md`.
-  Prose planning docs belong here, **not** in `scripts/experiments/setup/`.
+- Paper planning (theses, routes, related work): `docs/paper/`; superseded drafts in
+  `docs/paper/archive/`. Prose planning docs belong here, **not** in
+  `scripts/experiments/setup/`.
 - Slide decks: `slides/<date>_<topic>/`
 - Training engine (trainer, params, sampler): `experiments/` at the repo root —
   note this is the model code, *not* the per-experiment folders above.
@@ -71,7 +72,8 @@ tmux new-session -d -s <name> 'export PATH="/home/mhchu/miniconda3/bin:$PATH"; b
 
 ## Graph Catalog
 
-- `config/graph_catalog.json` is the single source of truth for graph names,
+- `docs/graph_catalog.json` is the single source of truth (moved from `config/` on
+  2026-07-26; loaders accept either location) for graph names,
   artifact paths, source composition, and evaluation capabilities.
 - Use each entry's `canonical_name` in prose and new documentation. Use
   `dataset_key` where compatibility with existing configs, CLI arguments, logs,

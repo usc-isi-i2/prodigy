@@ -4,7 +4,11 @@ import unittest
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-CATALOG_PATH = REPO_ROOT / "config" / "graph_catalog.json"
+# The catalog moved config/ -> docs/ on 2026-07-26; accept either.
+CATALOG_PATH = next(
+    (p for d in ("config", "docs") if (p := REPO_ROOT / d / "graph_catalog.json").is_file()),
+    REPO_ROOT / "docs" / "graph_catalog.json",
+)
 
 
 class GraphCatalogTest(unittest.TestCase):
