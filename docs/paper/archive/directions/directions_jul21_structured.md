@@ -1,8 +1,8 @@
 # Structured directions → contributions (2026-07-25)
 
-Companion to [`./related_work/RELATED_WORK_AND_GAPS.md`](./related_work/RELATED_WORK_AND_GAPS.md)
+Companion to [`./related_work/RELATED_WORK_AND_GAPS.md`](../../related_work/RELATED_WORK_AND_GAPS.md)
 (claims C1–C6, experiments E1–E14) and
-[`./state_doc_jul22.md`](./state_doc_jul22.md).
+[`./state_doc_jul22.md`](../../state_doc_jul22.md).
 
 This doc does two things: (1) split the program into **two papers with disjoint
 contributions** — a CSS/social paper (ICWSM) and an ML paper (NeurIPS/ICML/ICLR) — and

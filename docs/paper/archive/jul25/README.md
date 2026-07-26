@@ -43,5 +43,5 @@ Three worked-out framings of the same evidence, plus the scratch notes they grew
 > rotation produces a structural capability absent from every pair — rests on the
 > static-LP result that the 2026-07-23 evaluator rescore overturned. Link prediction
 > is a neighbor-matching main effect, not a synergy. See
-> [`multitask_ssl/FINDINGS_rescore.md`](../../scripts/experiments/analysis/multitask_ssl/FINDINGS_rescore.md).
+> [`multitask_ssl/FINDINGS_rescore.md`](../../../../scripts/experiments/analysis/multitask_ssl/FINDINGS_rescore.md).
 > The route needs a new spine before it can be used.
