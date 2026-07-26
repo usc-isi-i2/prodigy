@@ -1,15 +1,20 @@
-# Multitask SSL (mixed objective) — VALID results only
+# Multitask SSL — the mixed-objective experiments
 
-Analysis-ready consolidation of everything that survived the 2026-07-23 static-LP
-evaluator rescore. Use this folder for any new analysis of the mixed-objective
-experiments; do **not** pull LP numbers from the older experiment folders.
+**The single home for the {NM, CL, FP} lattice.** Consolidated 2026-07-26 from
+`multitask_ssl_rotation/`, `multitask_ssl_pairs/` and `multitask_ssl_valid/`: everything
+here survived the 2026-07-23 static-LP evaluator rescore. Anything that rested on the
+broken evaluator moved to [`../archive/multitask_ssl_superseded/`](../archive/multitask_ssl_superseded/)
+and must not be cited.
+
+Setup/reproduction for the runs behind it stays in
+`../../setup/multitask_ssl_rotation/` and `../../setup/multitask_ssl_pairs/`.
 
 ## Why this folder exists
 
 The episodic `static_link_prediction` evaluator was found to be invalid (center-blind
 scoring, frozen random prototypes, degree-confounded negatives — see
 [FINDINGS_rescore.md](FINDINGS_rescore.md)). That voids every sLP number in
-`multitask_ssl_rotation/` and `multitask_ssl_pairs/`, including the old headline
+`../archive/multitask_ssl_superseded/`, including the old headline
 "emergent MIX link prediction, 0.76 AUC". The rescore of the same 15 frozen
 checkpoints inverts it: **NM is the best LP arm on all 5 datasets (0.757 mean,
 +0.113 over heuristic floors); MIX trails everywhere; no synergy — an NM main effect
@@ -20,7 +25,7 @@ decoder) never touched the broken path and remain valid.
 
 | task | status | valid source |
 |---|---|---|
-| classification | **valid** | `multitask_ssl_pairs/data/combined_all_arms.csv` (7 arms) |
+| classification | **valid** | `data/raw/combined_all_arms.csv` (7 arms) |
 | regression | **valid** | same |
 | static LP | **void → rescored** | `data/pair_lp/*.csv` (15 arms + heuristic floors) |
 | temporal LP | never measured | carries the same defect; do not use without the repaired evaluator |
@@ -31,10 +36,14 @@ decoder) never touched the broken path and remain valid.
 |---|---|---|
 | `data/pair_lp/*__pair_lp.csv` | rescored LP, 5 datasets × (15 arms + 5 heuristic floors) × 3 negative kinds | verbatim from `exp/slp-evaluator-repair` @ `79e173a` (`scripts/experiments/analysis/slp_evaluator_repair/results/`) |
 | `FINDINGS_rescore.md` | writeup of the rescore + defect list | verbatim from same commit |
-| `data/cls_reg_7arms.csv` | classification + regression, 7 lattice arms (derived) | built from `../multitask_ssl_pairs/data/combined_all_arms.csv`, old sLP rows dropped |
+| `data/cls_reg_7arms.csv` | classification + regression, 7 lattice arms (derived) | built from `data/raw/combined_all_arms.csv`, old sLP rows dropped |
 | `data/link_prediction_valid.csv` | arm-level LP with `best_floor_auc` / `margin_vs_floor` columns, all 3 negative kinds (derived) | built from `data/pair_lp/` |
 | `data/combined_valid.csv` | one tidy long table — every valid (source, model, task, dataset, metric, value) (derived) | built from both |
 | `build_valid_dataset.py` | rebuilds the three derived CSVs | — |
+| `data/raw/combined_all_arms.csv` | the 7-arm cls/reg/void-sLP table the lattice reads from | from the pairs run |
+| `data/raw/{rotation,pairs}_node_{classification,regression}.csv` | per-task eval sweeps the combined table was built from | from the two runs |
+| `aggregate_results.py`, `build_combined_csv.py` | rebuild `combined_all_arms.csv` from the per-task sweeps | from the pairs run (7-arm superset of the rotation version) |
+| `plot_perf_by_model.py`, `figures/` | classification + regression figures — **valid**, they never used the sLP path | from the rotation run |
 
 Rebuild: `/opt/homebrew/bin/python3.11 build_valid_dataset.py` (prints a sanity table
 that must match the mean-AUC column in FINDINGS_rescore.md).

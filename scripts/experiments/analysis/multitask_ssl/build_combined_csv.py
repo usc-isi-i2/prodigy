@@ -17,7 +17,7 @@ Slice it: group=='single'|'pair'|'triple', or k in {1,2,3}; task in
 {classification, regression, static_link_prediction}. Stdlib only.
 
 Usage:
-    python scripts/experiments/analysis/multitask_ssl_pairs/build_combined_csv.py \
+    python scripts/experiments/analysis/multitask_ssl/build_combined_csv.py \
         --plotting-root results --out results/combined_all_arms.csv
 """
 

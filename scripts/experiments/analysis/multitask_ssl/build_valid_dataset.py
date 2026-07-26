@@ -3,7 +3,7 @@
 
 Inputs (all local / in-repo, no cluster access needed):
   data/pair_lp/*__pair_lp.csv        rescored link prediction (valid evaluator, slpfix @ 79e173a)
-  ../multitask_ssl_pairs/data/combined_all_arms.csv   7-arm lattice cls/reg (+ VOID old sLP rows)
+  data/raw/combined_all_arms.csv   7-arm lattice cls/reg (+ VOID old sLP rows)
 
 Outputs (written to data/):
   cls_reg_7arms.csv          classification + regression rows only (old sLP rows dropped)
@@ -19,7 +19,7 @@ import pandas as pd
 
 HERE = Path(__file__).resolve().parent
 PAIR_LP_DIR = HERE / "data" / "pair_lp"
-LATTICE_CSV = HERE.parent / "multitask_ssl_pairs" / "data" / "combined_all_arms.csv"
+LATTICE_CSV = HERE / "data" / "raw" / "combined_all_arms.csv"
 OUT_DIR = HERE / "data"
 
 # Arm-name schema in the rescored LP CSVs: <source>_<MODEL> where source is the

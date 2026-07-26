@@ -2,7 +2,7 @@
 
 The corrected read of the 7-arm {NM, CL, FP} lattice after the 2026-07-23 LP-evaluator
 rescore. **Supersedes the LP sections and all "emergent MIX link prediction" claims in
-`multitask_ssl_rotation/FINDINGS.md` and `multitask_ssl_pairs/FINDINGS.md`.** Their
+`archive/multitask_ssl_superseded/`.** Their
 classification/regression sections remain valid and are consolidated here. Defect
 details and the full 15-arm LP table (incl. the msc corpora arms) are in
 [FINDINGS_rescore.md](FINDINGS_rescore.md).

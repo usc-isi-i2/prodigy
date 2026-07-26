@@ -1,5 +1,19 @@
 # Findings — multitask_ssl_rotation
 
+> **⚠️ SUPERSEDED — do not cite.** Every static-link-prediction number below came
+> from an evaluator found to be invalid on 2026-07-23 (center-blind scoring, frozen
+> random prototypes, degree-confounded negatives). The rescore of the same frozen
+> checkpoints **inverts the headline**: link prediction is a neighbor-matching main
+> effect that rotation dilutes — NM is the best arm on all 5 datasets and MIX sits
+> below the heuristic floors. There is no 3-way synergy.
+>
+> Current read: [`../../multitask_ssl/FINDINGS.md`](../../multitask_ssl/FINDINGS.md) ·
+> defect details: [`../../multitask_ssl/FINDINGS_rescore.md`](../../multitask_ssl/FINDINGS_rescore.md)
+>
+> The classification and regression sections never touched the broken path and remain
+> valid; they are consolidated into `multitask_ssl/`.
+
+
 **One line:** rotating one encoder over three heterogeneous SSL objectives
 (NM + CL + FP, one per episode) is the **only** configuration that transfers to
 *both* feature tasks and topology — and it is the **only** arm that does static

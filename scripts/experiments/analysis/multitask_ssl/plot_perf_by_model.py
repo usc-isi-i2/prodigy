@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Performance-by-model scatter for multitask_ssl_rotation.
+"""Performance-by-model scatter for the mixed-objective arms.
 
 x = model (arm)     — NM / CL / FP / MIX
 y = performance     — the task's headline metric (Spearman ρ / ROC-AUC)
@@ -31,7 +31,7 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
-PLOT = REPO / "scripts/experiments/analysis/multitask_ssl_rotation"
+PLOT = REPO / "scripts/experiments/analysis/multitask_ssl"
 
 MODELS = ["NM", "CL", "FP", "MIX"]
 MODEL_SUB = {"NM": "neighbor\nmatching", "CL": "contrastive", "FP": "feature\nrecon", "MIX": "rotation"}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Aggregate the multitask_ssl_pairs eval sweep into the subset-lattice table.
+"""Aggregate the mixed-objective eval sweep into the subset-lattice table.
 
 Merges the 3 PAIR arms (NMCL, NMFP, CLFP) with the single-objective controls
 (NM, CL, FP) and the 3-way rotation (MIX) into ONE table over the full non-empty
@@ -27,7 +27,7 @@ Single seed: "spread" is dispersion ACROSS eval datasets, not across seeds.
 Stdlib only (no pandas). Test split only.
 
 Usage:
-    python scripts/experiments/analysis/multitask_ssl_pairs/aggregate_results.py \
+    python scripts/experiments/analysis/multitask_ssl/aggregate_results.py \
         --plotting-root scripts/experiments/analysis
 """
 

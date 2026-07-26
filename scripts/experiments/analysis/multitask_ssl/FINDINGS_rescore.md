@@ -113,7 +113,7 @@ python scripts/experiments/analysis/slp_evaluator_repair/aggregate_pair_lp.py \
 - The `mix_slp_ablation` 2×2 rests on the broken metric. Its target (MIX-unique LP) no
   longer exists; the useful version re-points it at **NM** — is NM's adjacency signal
   topological or feature-driven?
-- LP sections of `multitask_ssl_rotation`, `multitask_ssl_pairs`, `topology_feature_ssl`,
+- LP sections of `archive/multitask_ssl_superseded/`, `topology_feature_ssl`,
   `pretrain_probe_matrix`, `consolidate_7_20`, `multitask_ssl_corpora` need re-deriving.
   Their classification and regression sections are unaffected (10-shot classification runs
   with `zero_shot=False` and builds real prototypes; regression bypasses the decoder).

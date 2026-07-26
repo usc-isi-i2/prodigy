@@ -109,7 +109,7 @@ Results land (keyed by `model` = arm ∈ {NM,CL,FP,MIX}) in
 Then aggregate into the T1 table + headline reading:
 
 ```bash
-python scripts/experiments/analysis/multitask_ssl_rotation/aggregate_results.py \
+python scripts/experiments/analysis/multitask_ssl/aggregate_results.py \
   --plotting-root scripts/experiments/analysis     # prints T1, MIX−max(NM,CL,FP), min-bar, per-dataset LP
 ```
 
