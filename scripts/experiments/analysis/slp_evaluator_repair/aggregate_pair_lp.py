@@ -5,7 +5,7 @@ per arm: mean AUC across datasets, and the margin over the best topology heurist
 on the same pair set. The margin is the number that matters -- an encoder that only
 matches common-neighbour has learned nothing a $0 CPU baseline does not already do.
 
-    python aggregate_pair_lp.py --results-dir results [--negative-kind degree_matched]
+    python aggregate_pair_lp.py --results-dir ../multitask_ssl/data/pair_lp [--negative-kind degree_matched]
 """
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ def load(results_dir: str) -> List[dict]:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--results-dir", default="results")
+    ap.add_argument("--results-dir", default="../multitask_ssl/data/pair_lp")
     ap.add_argument("--negative-kind", default="degree_matched")
     args = ap.parse_args()
 
