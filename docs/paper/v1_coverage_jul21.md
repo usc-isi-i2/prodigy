@@ -4,7 +4,7 @@
 
 **Working title:** *Coverage Without Composition? What Transfers in Fixed-Budget Multi-Event Social-Graph Pretraining*
 
-**Status:** independent paper thesis and execution plan, 2026-07-21. This builds substantially on the original [scratch note](../gap_to_paper-jul_21/Naive_paper.md), which remains untouched. Every current headline is one-seed pilot evidence unless explicitly stated otherwise. The point of this document is to decide what deserves replication, not to turn exploratory results into finished claims.
+**Status:** independent paper thesis and execution plan, 2026-07-21. This builds substantially on the original [scratch note](./scratch_jul21.md), which remains untouched. Every current headline is one-seed pilot evidence unless explicitly stated otherwise. The point of this document is to decide what deserves replication, not to turn exploratory results into finished claims.
 
 ---
 
@@ -152,7 +152,7 @@ The eight source graph artifacts contain about **34.48M graph-node instances** a
 
 The domains are Ukraine, COVID, Midterm, COVID-political, Election 2020-political, Ukraine-suspended, TwiBot-20, and Hong Kong. They share a social-interaction setting and 768-dimensional bio embeddings, but they are not perfectly uniform retweet graphs: construction pipelines, interaction types/weights, missing-feature behavior, task support, and evaluation query counts vary. The paper must tabulate what is standardized and what is not rather than saying “only the domain changes.”
 
-All names, paths, sizes, capabilities, and provenance should come from [the graph catalog](../../../../config/graph_catalog.json), using canonical names in prose.
+All names, paths, sizes, capabilities, and provenance should come from [the graph catalog](../../config/graph_catalog.json), using canonical names in prose.
 
 ---
 
@@ -422,7 +422,7 @@ Then ask whether the active transfer geometry changes with the pretext channel. 
 
 The **E0–E5 core alone** is therefore roughly **77–92 new pretraining runs** at three seeds. E6 is intentionally unpriced until E0 reveals which family- and user-filtered artifacts can reuse checkpoints; strict holdouts generally require new artifacts and pretraining as well as cheap probe/fine-tuning runs. E7 and E8 are separate gates. A power analysis that requires five seeds would increase the budget further and must be costed before launch. This is a staged program, not a promise to launch every row at once.
 
-Storage is a first-class constraint. Existing merged graph artifacts are around 100GB; eight leave-one-out plus subset artifacts could approach 1–1.5TB. Prefer a loader that samples from separate source artifacts without materializing every union. If a new graph artifact is required, update [the graph catalog](../../../../config/graph_catalog.json) first and include construction/storage time in the plan.
+Storage is a first-class constraint. Existing merged graph artifacts are around 100GB; eight leave-one-out plus subset artifacts could approach 1–1.5TB. Prefer a loader that samples from separate source artifacts without materializing every union. If a new graph artifact is required, update [the graph catalog](../../config/graph_catalog.json) first and include construction/storage time in the plan.
 
 ---
 
@@ -633,16 +633,16 @@ The reusable contribution is not a new max statistic. It is a disciplined audit:
 
 ## 15. Existing evidence map
 
-- [Consolidated findings](../../analysis/consolidate_7_20/FINDINGS.md)
-- [8×8 single-source NM matrix](../../analysis/nm_single_source_matrix/FINDINGS.md)
-- [Eight-rung mixture ladder](../../analysis/nm_ladder_fillin/RESULTS.md)
-- [Matched merged-versus-single study](../../analysis/nm_transfer_matrix/RESULTS.md)
-- [Cross-source sampling study](../../analysis/nm_cross_source_shortcut/RESULTS.md)
-- [COVID/Midterm imbalance study](../../analysis/nm_covid_midterm/RESULTS.md)
-- [Feature ablation](../../analysis/feature_ablation/FINDINGS.md)
-- [Similarity-versus-transfer pilot](../../analysis/similarity_vs_transfer/FINDINGS.md)
-- [Frozen-probe matrix](../../analysis/pretrain_probe_matrix/FINDINGS.md)
-- [Graph catalog](../../../../config/graph_catalog.json)
+- [Consolidated findings](../../scripts/experiments/analysis/consolidate_7_20/FINDINGS.md)
+- [8×8 single-source NM matrix](../../scripts/experiments/analysis/nm_single_source_matrix/FINDINGS.md)
+- [Eight-rung mixture ladder](../../scripts/experiments/analysis/nm_ladder_fillin/RESULTS.md)
+- [Matched merged-versus-single study](../../scripts/experiments/analysis/nm_transfer_matrix/RESULTS.md)
+- [Cross-source sampling study](../../scripts/experiments/analysis/nm_cross_source_shortcut/RESULTS.md)
+- [COVID/Midterm imbalance study](../../scripts/experiments/analysis/nm_covid_midterm/RESULTS.md)
+- [Feature ablation](../../scripts/experiments/analysis/feature_ablation/FINDINGS.md)
+- [Similarity-versus-transfer pilot](../../scripts/experiments/analysis/similarity_vs_transfer/FINDINGS.md)
+- [Frozen-probe matrix](../../scripts/experiments/analysis/pretrain_probe_matrix/FINDINGS.md)
+- [Graph catalog](../../config/graph_catalog.json)
 
 The static-link, multi-objective rotation, objective-pair, and topology-feature analyses are intentionally excluded from the positive evidence map. They may guide evaluator repair, but they do not currently support topology or emergence claims.
 

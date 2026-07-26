@@ -1,11 +1,3 @@
-Does “neural scaling laws for GNNs” hold for us?
-Can we use our representations for autoregressive text gen?
-
-word2vec results for graphs:
-- they found king-royal=man. can we get somethign similar?
-- can we get *controllable* representations this way?
-
-
 <!-- TODO
 is the goal for downstream tasks:
 good 0-shot performance
@@ -14,6 +6,12 @@ get best performance after FT -->
 
 
 # Title
+## Abstract
+We introduce SocialGFM (PRODIGY with our recipe) and SocialGraphBench (though we cannot release that).
+We train SocialGFM on G graphs from D domains using O pre-training objectives.
+We demonstrate that training PRODIGY with our recipe beats more recent models despite fewer parameters.
+In the few-shot setting, we demonstrate that SocialGFM reaches comparable performance to specialist GNNs on unseen graphs, and outperforms specialists when fine-tuned.
+In the zero-shot setting, we demonstrate that SocialGFM’s representations beat comparable models with fine-tuning.
 ## Intro
 GFMs achieve high performance on a large array of downstream tasks.
 No GFM exists for Social Networks because:
@@ -91,9 +89,10 @@ See folders.
   - how to generalize to multiple tasks ()
   - how to scale to 100M data points (if naive scaling does not work)
   - how to scale to 20M parameters (if naive scaling does not work)
+
+#### Contribution candidates
 - Non-separability — maybe data and objective interact, currently untested.
 - Mechanism — What actually transfers between domains and tasks.
-
 
 ## Todo
 #### To defend GFM claim, we need to scale:

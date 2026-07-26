@@ -4,7 +4,7 @@
 
 **Working subtitle:** *The unit of graph pretraining is a graph–objective pair.*
 
-**Status:** v2 paper thesis and execution plan, 2026-07-22. This develops the direction in the original [scratch note](../gap_to_paper-jul_21/Naive_paper.md) without modifying it or treating its provisional claims as constraints. The adjacent [coverage-focused v1](../coverage_not_composition-jul_21/Naive_paper.md) remains a useful account of the current neighbor-matching evidence; v2 is the more ambitious paper to attempt.
+**Status:** v2 paper thesis and execution plan, 2026-07-22. This develops the direction in the original [scratch note](./scratch_jul21.md) without modifying it or treating its provisional claims as constraints. The adjacent [coverage-focused v1](./v1_coverage_jul21.md) remains a useful account of the current neighbor-matching evidence; v2 is the more ambitious paper to attempt.
 
 Current-result labels used throughout:
 
@@ -213,7 +213,7 @@ An objective helps most when its fingerprint overlaps the downstream task-demand
 
 The current catalog supplies eight source graphs: `ukraine`, `covid`, `midterm`, `covid-political`, `election2020-political`, `ukraine-suspended`, `twibot20`, and `hongkong`. Together the current source artifacts contain roughly **34.48M graph-node instances and 191.52M edges**. This is not a count of unique people; cross-event identity overlap remains to be audited. Two sources dominate node count, while six have fewer than 350k nodes.
 
-Use [the graph catalog](../../../../config/graph_catalog.json) as the source of truth for names, paths, task support, and provenance. Do not describe all eight artifacts as identical retweet graphs: some include mention/retweet weights, missing-feature policies and task availability differ, and query counts vary.
+Use [the graph catalog](../../config/graph_catalog.json) as the source of truth for names, paths, task support, and provenance. Do not describe all eight artifacts as identical retweet graphs: some include mention/retweet weights, missing-feature policies and task availability differ, and query counts vary.
 
 The study needs four levels of exclusion:
 
@@ -543,7 +543,7 @@ The full successful route is **`102–120 + 14F` new 40k-equivalent social-graph
 | Sequential pretraining is “bad.” | **[NOT SUPPORTED/partly quarantined]** | The current aggregate mixes three invalid LP evaluation columns, bootstraps benchmark cells rather than training seeds, and changes when LP columns are removed. There is no clean seed-replicated effect estimate. | Keep sequential training as a future matched-compute baseline; do not report the legacy point magnitudes. |
 | “90% of performance in 10% of steps.” | **[NOT SUPPORTED]** | No validated current analysis supports this sentence. | Replace with prospectively measured checkpoint curves. |
 
-Current evidence sources: [single-source NM findings](../../analysis/nm_single_source_matrix/FINDINGS.md), [NM ladder results](../../analysis/nm_ladder_fillin/RESULTS.md), [covid/midterm exposure results](../../analysis/nm_covid_midterm/RESULTS.md), [feature-ablation findings](../../analysis/feature_ablation/FINDINGS.md), [multi-objective pilot](../../analysis/multitask_ssl_rotation/FINDINGS.md), [probe-matrix findings](../../analysis/pretrain_probe_matrix/FINDINGS.md), and the superseding [directed/log-input objective rerun](../../analysis/topology_feature_ssl/RESULTS_directed3log.md). The 21-cell best-donor and router summaries are checked derivations currently narrated in the coverage v1; add a reconstruction script and committed table before citing them in a manuscript.
+Current evidence sources: [single-source NM findings](../../scripts/experiments/analysis/nm_single_source_matrix/FINDINGS.md), [NM ladder results](../../scripts/experiments/analysis/nm_ladder_fillin/RESULTS.md), [covid/midterm exposure results](../../scripts/experiments/analysis/nm_covid_midterm/RESULTS.md), [feature-ablation findings](../../scripts/experiments/analysis/feature_ablation/FINDINGS.md), [multi-objective pilot](../../scripts/experiments/analysis/multitask_ssl_rotation/FINDINGS.md), [probe-matrix findings](../../scripts/experiments/analysis/pretrain_probe_matrix/FINDINGS.md), and the superseding [directed/log-input objective rerun](../../scripts/experiments/analysis/topology_feature_ssl/RESULTS_directed3log.md). The 21-cell best-donor and router summaries are checked derivations currently narrated in the coverage v1; add a reconstruction script and committed table before citing them in a manuscript.
 
 ### 6.2 Quarantined results
 

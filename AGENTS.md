@@ -61,6 +61,8 @@ tmux new-session -d -s <name> 'export PATH="/home/mhchu/miniconda3/bin:$PATH"; b
 - Eval runner: `scripts/eval/eval_ckpts_all_graph_tasks_tucker.py`
 - Shared analysis/export harness: `scripts/harness/`
 - Retired analyses: `scripts/experiments/analysis/archive/`
+- Paper planning (theses, routes, related work): `docs/paper/` — start at its `README.md`.
+  Prose planning docs belong here, **not** in `scripts/experiments/setup/`.
 - Slide decks: `slides/<date>_<topic>/`
 - Training engine (trainer, params, sampler): `experiments/` at the repo root —
   note this is the model code, *not* the per-experiment folders above.
