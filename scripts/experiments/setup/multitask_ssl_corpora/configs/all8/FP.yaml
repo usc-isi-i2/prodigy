@@ -1,0 +1,45 @@
+# multitask_ssl_corpora — all8-merged corpus clone of multitask_ssl_rotation/FP.
+# ONLY dataset/root/graph_filename/prefix/tags differ from the original; all
+# model/episode/budget hyperparams are identical (seed 0, epochs 4, cap 10000).
+# dataset key covid19_twitter = shared merged-graph loader path (see covid_ukr all8 config).
+# FP — single-task control (multitask_ssl_rotation). Masked feature prediction
+# (GraphMAE-style) only. Mask 30% of nodes' features (zero), reconstruct the
+# originals from the frozen-encoder embedding via the aux reconstruction head
+# (scaled MSE over masked nodes). Same fixed setup as NM; ONLY task_name + the
+# masking knobs change. This is exactly the FP objective the MIX arm rotates in
+# (fp_mask_ratio/fp_mask_strategy shared).
+dataset: covid19_twitter
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_all8_retweet_graph.pt
+task_name: masked_feature_prediction
+
+edge_view: default
+feature_subset: all
+original_features: true
+input_dim: 768
+
+emb_dim: 256
+gnn_type: sage
+n_layer: 1
+n_hop: 1
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+epochs: 4
+
+# >>> FP-specific: feature masking (drives both the corruption and the recon target) <<<
+fp_mask_ratio: 0.3
+fp_mask_strategy: zero
+
+eval_step: 10000
+checkpoint_step: 10000
+workers: 16
+device: 0
+seed: 0
+tags: [multitask_ssl_corpora, corpus_all8, FP, fp, masked_feature_prediction, single_task, all8merged, global_sampling, budget40k]
+prefix: msc_all8_FP
