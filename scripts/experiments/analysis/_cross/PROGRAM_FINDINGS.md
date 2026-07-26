@@ -16,6 +16,19 @@ lifted verbatim from each thrust's own `FINDINGS.md`/`RESULTS.md`; absolute valu
 only comparable **within** an experiment (corpus / sampling / checkpoint differ across
 them — see §5.6). Last consolidated 2026-07-20._
 
+> **⚠️ Partially superseded (2026-07-23), not yet rewritten.** Every
+> static-link-prediction number in this document — including the headline "MIX is the
+> only generalist / LP is a 3-way synergy" and the 0.42 → 0.32 → 0.76 non-monotonic
+> lattice — came from an evaluator later found invalid. On the rescore of the same
+> frozen checkpoints, **link prediction is a neighbor-matching main effect that
+> rotation dilutes**: NM is the best arm on all 5 datasets and MIX sits near the
+> heuristic floors. There is no synergy. The classification, regression, feature-ablation
+> and NM-transfer sections are unaffected.
+>
+> Corrected read: [`../multitask_ssl/FINDINGS.md`](../multitask_ssl/FINDINGS.md) ·
+> defect details: [`../multitask_ssl/FINDINGS_rescore.md`](../multitask_ssl/FINDINGS_rescore.md).
+> Rewriting this synthesis against the valid numbers is still open work.
+
 ---
 
 ## 1. Executive summary
@@ -34,7 +47,7 @@ Five findings recur across the program and are each supported by ≥2 independen
   under a fair comparison (nm_transfer_matrix, nm_covid_midterm). The all-8 merged model
   loses only ~.006–.04 AUC in-domain vs each specialist, the tax landing hardest on the
   small/topical graphs, and buys **+.09–.16** on graphs with no strong donor
-  (nm_single_source_matrix, nm_ladder_fillin). No merge ever beats a single source
+  (nm_single_source_matrix, nm_ladder). No merge ever beats a single source
   *out-of-distribution*.
 
 - **Within-source episode sampling beats naive/proportional — the cross-source shortcut
@@ -42,11 +55,11 @@ Five findings recur across the program and are each supported by ≥2 independen
   shortcut and gives a small consistent gain; under size imbalance, balanced
   within-source *rescues* a starved small domain (midterm 0.31→0.43, above its own
   single-source specialist) (nm_cross_source_shortcut, nm_covid_midterm,
-  sampling_improvements). A cross-source-probability sweep confirms p=0 (fully
+  sampling_strat_comparison). A cross-source-probability sweep confirms p=0 (fully
   within-source) is best.
 
-- **The "learns both feature *and* topology" encoder exists — but only via pretext
-  rotation, and it's a 3-way synergy.** Rotating NM/CL/FP one-per-episode (MIX) is the
+- **⚠️ SUPERSEDED (see banner) — The "learns both feature *and* topology" encoder exists,
+  but only via pretext rotation, and it's a 3-way synergy.** Rotating NM/CL/FP one-per-episode (MIX) is the
   *only* arm above chance on zero-shot static link prediction (0.76 vs ≤0.47 for every
   single objective) while staying near-best on classification (multitask_ssl_rotation).
   **No pair reproduces it** — capability is non-monotonic (singles 0.42 → pairs 0.32 →
@@ -90,14 +103,14 @@ rest are held-out transfer targets.
 
 | # | Thrust | Folders | One-line finding |
 |---|--------|---------|------------------|
-| A | Graph diagnostics | [graph_divergence](../graph_divergence/README.md), [similarity_vs_transfer](../similarity_vs_transfer/FINDINGS.md) | Feature-cloud separability predicts transfer (ρ≈−0.92); topology distance barely does. |
-| B | NM merged-vs-single (cross-source shortcut) | [nm_transfer_matrix](../nm_transfer_matrix/RESULTS.md), [nm_cross_source_shortcut](../nm_cross_source_shortcut/RESULTS.md), [nm_covid_midterm](../nm_covid_midterm/RESULTS.md), [sampling_improvements](../sampling_improvements/) | Inversion doesn't reproduce; within-source > naive; balanced rescues small domains. |
-| C | NM transfer geometry (8×8 + ladder) | [nm_single_source_matrix](../nm_single_source_matrix/FINDINGS.md), [nm_ladder_fillin](../nm_ladder_fillin/RESULTS.md) | Specialists beat merged in-domain everywhere; covid/ukr universal donors; cp_hk an island. |
+| A | Graph diagnostics | [graph_divergence](../../setup/graph_divergence/README.md), [similarity_vs_transfer](../similarity_vs_transfer/FINDINGS.md) | Feature-cloud separability predicts transfer (ρ≈−0.92); topology distance barely does. |
+| B | NM merged-vs-single (cross-source shortcut) | [nm_transfer_matrix](../nm_transfer_matrix/RESULTS.md), [nm_cross_source_shortcut](../nm_cross_source_shortcut/RESULTS.md), [nm_covid_midterm](../nm_covid_midterm/RESULTS.md), [sampling_strat_comparison](../sampling_strat_comparison/) | Inversion doesn't reproduce; within-source > naive; balanced rescues small domains. |
+| C | NM transfer geometry (8×8 + ladder) | [nm_single_source_matrix](../nm_single_source_matrix/FINDINGS.md), [nm_ladder](../nm_ladder/RESULTS.md) | Specialists beat merged in-domain everywhere; covid/ukr universal donors; cp_hk an island. |
 | D | Features vs topology | [feature_ablation](../feature_ablation/FINDINGS.md) | NM uses real feature *content*; topology alone ≈ chance at n_hop=1. |
-| E | SSL-objective studies | [topology_feature_ssl](../topology_feature_ssl/FINDINGS.md), [multitask_ssl_rotation](../multitask_ssl_rotation/FINDINGS.md), [multitask_ssl_pairs](../multitask_ssl_pairs/FINDINGS.md) | Pretext rotation (MIX) is the only generalist; a multi-head objective (E4) fails; LP is a 3-way synergy. |
-| F | Frozen-probe strategy benchmark | [pretrain_probe_matrix](../pretrain_probe_matrix/FINDINGS.md), [pretrain_strategy_benchmark](../pretrain_strategy_benchmark/README.md), [covid_task_transfer_matrix](../covid_task_transfer_matrix/README.md) | Only NM→LP clears a floor; raw features beat all pretraining on regression. |
-| G | New downstream tasks (enablers) | [node_regression](../node_regression/README.md), [static_link_prediction](../static_link_prediction/README.md) | Continuous + edge-level tasks with real headroom; used as the topology/feature axes above. |
-| H | New datasets (enablers) | [twibot20_transfer](../twibot20_transfer/README.md), [cp_hk_twitter](../cp_hk_twitter/README.md), [cp_hk_transfer_in](../cp_hk_transfer_in/README.md) | twibot20 = easy transfer target (~.92 zero-shot); cp_hk = the isolated island. |
+| E | SSL-objective studies | [topology_feature_ssl](../topology_feature_ssl/FINDINGS.md), [multitask_ssl](../multitask_ssl/FINDINGS.md) | A multi-head objective (E4) fails. ⚠️ The "MIX is the only generalist / LP is a 3-way synergy" reading is superseded — LP is an NM main effect (see banner). |
+| F | Frozen-probe strategy benchmark | [pretrain_probe_matrix](../pretrain_probe_matrix/FINDINGS.md), [pretrain_strategy_benchmark](../../setup/pretrain_strategy_benchmark/README.md), [covid_task_transfer_matrix](../../setup/covid_task_transfer_matrix/README.md) | Only NM→LP clears a floor; raw features beat all pretraining on regression. |
+| G | New downstream tasks (enablers) | [node_regression](../../setup/node_regression/README.md), [static_link_prediction](../../setup/static_link_prediction/README.md) | Continuous + edge-level tasks with real headroom; used as the topology/feature axes above. |
+| H | New datasets (enablers) | [twibot20_transfer](../../setup/twibot20_transfer/README.md), [cp_hk_twitter](../../setup/cp_hk_twitter/README.md), [cp_hk_transfer_in](../../setup/cp_hk_transfer_in/README.md) | twibot20 = easy transfer target (~.92 zero-shot); cp_hk = the isolated island. |
 
 ### How to read this document
 
@@ -227,7 +240,7 @@ not an eval ablation.*
 
 ### E. SSL-objective studies — can one pretext do both?
 
-**E-rotation (multitask_ssl_rotation & _pairs):** rotate SSL *pretext tasks*
+**E-rotation (multitask_ssl):** rotate SSL *pretext tasks*
 one-per-episode at matched 40k. Static-LP is the headline (0-shot AUC, chance 0.50):
 
 | arm | k | cls AUC | reg ρ | **static-LP** | min(cls, sLP) |
@@ -369,5 +382,5 @@ _Per-thrust write-ups are the source of truth for every number here; this docume
 consolidates their headlines. Structure mirrors
 [`topology_feature_ssl/FINDINGS.md`](../topology_feature_ssl/FINDINGS.md). Earlier
 cross-experiment summaries:
-[`NM_MERGED_VS_SINGLE_SUMMARY.md`](../NM_MERGED_VS_SINGLE_SUMMARY.md),
-[`NM_CROSS_SOURCE_STUDY.md`](../NM_CROSS_SOURCE_STUDY.md)._
+[`NM_MERGED_VS_SINGLE_SUMMARY.md`](./NM_MERGED_VS_SINGLE_SUMMARY.md),
+[`NM_CROSS_SOURCE_STUDY.md`](./NM_CROSS_SOURCE_STUDY.md)._

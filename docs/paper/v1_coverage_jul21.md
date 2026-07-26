@@ -633,7 +633,7 @@ The reusable contribution is not a new max statistic. It is a disciplined audit:
 
 ## 15. Existing evidence map
 
-- [Consolidated findings](../../scripts/experiments/analysis/consolidate_7_20/FINDINGS.md)
+- [Consolidated findings](../../scripts/experiments/analysis/_cross/PROGRAM_FINDINGS.md)
 - [8×8 single-source NM matrix](../../scripts/experiments/analysis/nm_single_source_matrix/FINDINGS.md)
 - [Eight-rung mixture ladder](../../scripts/experiments/analysis/nm_ladder/RESULTS.md)
 - [Matched merged-versus-single study](../../scripts/experiments/analysis/nm_transfer_matrix/RESULTS.md)

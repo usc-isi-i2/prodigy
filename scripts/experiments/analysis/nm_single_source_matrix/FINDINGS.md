@@ -91,5 +91,5 @@ diagonal (.964), i.e. easy to fit in-domain, hard to reach from outside.
   sparse (eval `nm_n_query=1`); they trained fine at 30-way but their transfer cells
   rest on fewer episodes.
 - All cells at **matched-40k**, plain arch — same protocol as the ladder, so the two
-  tables are directly comparable. See also `NM_MERGED_VS_SINGLE_SUMMARY.md` (the
+  tables are directly comparable. See also `../_cross/NM_MERGED_VS_SINGLE_SUMMARY.md` (the
   earlier ukr/covid + covid/midterm pairwise version this generalizes).

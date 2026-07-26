@@ -114,6 +114,6 @@ python scripts/experiments/analysis/slp_evaluator_repair/aggregate_pair_lp.py \
   longer exists; the useful version re-points it at **NM** — is NM's adjacency signal
   topological or feature-driven?
 - LP sections of `archive/multitask_ssl_superseded/`, `topology_feature_ssl`,
-  `pretrain_probe_matrix`, `consolidate_7_20`, `multitask_ssl_corpora` need re-deriving.
+  `pretrain_probe_matrix`, `_cross/PROGRAM_FINDINGS.md`, `multitask_ssl_corpora` need re-deriving.
   Their classification and regression sections are unaffected (10-shot classification runs
   with `zero_shot=False` and builds real prototypes; regression bypasses the decoder).

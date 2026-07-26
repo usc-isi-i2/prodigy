@@ -3,7 +3,7 @@
 **Run date:** 2026-06-28/30 · **Seed:** 0 · **1 seed only.**
 Checkpoints: single-source step 50000; merged at **50000 (`@match` = matched total
 compute)** and **110000 (`@full` = per-domain exposure)**. Eval: 3-shot, 30-way.
-(See ../NM_MERGED_VS_SINGLE_SUMMARY.md for the cross-experiment view.)
+(See ../_cross/NM_MERGED_VS_SINGLE_SUMMARY.md for the cross-experiment view.)
 
 > ⚠️ **Always eval NM at shots ≥ 3.** Zero-shot NM has no support prototypes, so
 > accuracy collapses to chance and `roc_auc ≈ 0.5` — this made an earlier eval look
