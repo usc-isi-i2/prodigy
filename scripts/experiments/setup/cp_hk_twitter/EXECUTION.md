@@ -1,6 +1,8 @@
-# CP-HK Twitter Retweet Graph With Bio Features
+# Execution tracker — cp_hk_twitter
 
-This document tracks the COSINE CP-HK Twitter graph build and NM training run.
+Companion to `README.md` (design + transfer-eval grid + results). This file
+tracks the COSINE CP-HK Twitter graph build and NM training run: environments,
+exact commands as run, and the artifacts they produce.
 
 ## Dataset
 
@@ -88,4 +90,6 @@ The graph stores:
 
 ## Status
 
-Pending: raw transfer, full build, and NM training launch.
+Done. The 2026-07-02 run completed (checkpoint
+`/dataMeR1/phil/gfm/prodigy/state/cp_hk_twitter_nm_bio_02_07_2026_08_58_57/state_dict`);
+transfer-eval results are in `README.md`.
