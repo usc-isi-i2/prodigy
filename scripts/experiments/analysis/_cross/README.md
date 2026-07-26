@@ -16,7 +16,9 @@ and it is the entry point to the analysis tree.
 |---|---|---|
 | `feature_ablation/` | what NM actually uses (noise/permute ablation) | `FINDINGS.md` |
 | `graph_divergence/`, `similarity_vs_transfer/` | graph-distance statistics and whether they predict transfer | `FINDINGS.md` |
+| `mix_slp_ablation/` | eval-time 2×2 (rewire × permute) on MIX's static LP | `FINDINGS.md` — ⚠️ premise voided by the rescore |
 | `multitask_ssl/` | the {NM, CL, FP} objective lattice — singles, pairs, triple | `FINDINGS.md`, `FINDINGS_rescore.md` |
+| `multitask_ssl_corpora/` | the rotation arms replicated on the cov and all8 corpora | `FINDINGS.md` — ⚠️ LP sections superseded |
 | `nm_covid_midterm/` | size-imbalance / exposure between covid and midterm | `RESULTS.md` |
 | `nm_cross_source_shortcut/` | cross-source-probability sweep on episode sampling | `RESULTS.md` |
 | `nm_ladder/` | the 8-rung merged-graph interpolation ladder | `RESULTS.md` |
@@ -24,6 +26,7 @@ and it is the entry point to the analysis tree.
 | `nm_single_source_matrix/` | 8×8 single-source transfer matrix | `FINDINGS.md` |
 | `nm_transfer_matrix/` | matched merged-vs-single comparison | `RESULTS.md` |
 | `pretrain_probe_matrix/` | frozen-probe matrix over pretraining strategies | `FINDINGS.md` |
+| `slp_evaluator_repair/` | the 2026-07-23 static-LP evaluator repair (method; evaluator itself in `scripts/eval/pair_link_*.py`) | `README.md` |
 | `topology_feature_ssl/` | topology-vs-feature SSL objectives (E-series) | `FINDINGS.md`, `RESULTS_directed3log.md` |
 | `best_pretrain_strat/`, `sampling_strat_comparison/`, `pretrain_strategy_benchmark/`, `node_classification/`, `node_regression/`, `static_link_prediction/`, `covid_task_transfer_matrix/` | earlier notebook-only analyses; no findings file | — |
 | `archive/` | retired analyses and superseded work | see its `README.md` |

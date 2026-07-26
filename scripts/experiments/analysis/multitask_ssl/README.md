@@ -52,8 +52,9 @@ that must match the mean-AUC column in FINDINGS_rescore.md).
 
 - **`source`** = checkpoint family: `mtr` (rotation run: NM/CL/FP/MIX, 3-way corpus),
   `mtp` (pairs run: NMCL/NMFP/CLFP), `msc_cov`/`msc_all8` (corpora replication,
-  LP-rescore only — their cls/reg live in the `exp/multitask-ssl-corpora` worktree and
-  are not consolidated here). `model` is the objective combination; `k`/`group` give
+  LP-rescore only — their cls/reg are not folded into this lattice; they live in
+  [`../multitask_ssl_corpora/`](../multitask_ssl_corpora/), merged onto the main line
+  2026-07-26). `model` is the objective combination; `k`/`group` give
   lattice depth (1=single, 2=pair, 3=triple/MIX).
 - **LP headline condition** is `negative_kind == degree_matched`. `random` is easier,
   `hard_2hop` is punishing by construction (a 2-hop negative shares a neighbour and

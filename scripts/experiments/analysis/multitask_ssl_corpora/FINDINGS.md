@@ -1,5 +1,22 @@
 # multitask_ssl_corpora — findings
 
+> **⚠️ Static-LP numbers superseded (2026-07-23).** Every sLP figure below came from the
+> evaluator later found invalid. These arms *were* rescored: they appear as `msc_cov` and
+> `msc_all8` in [`../multitask_ssl/data/pair_lp/`](../multitask_ssl/data/pair_lp/) — use
+> those, not the numbers here.
+>
+> The direction of the headline partly survives: on the valid evaluator NM is indeed the
+> best LP arm on all8 (0.744, +0.100 over floor) and MIX trails (0.692). But the framing
+> is wrong — there was no emergent MIX ability on the 3-way corpus to fail to replicate,
+> so this is not a corpus×objective interaction. It is an NM main effect that rotation
+> dilutes on every corpus. The paragraph below citing `mix_slp_ablation` as confirming
+> the original signal is also void; that ablation used the same broken evaluator.
+>
+> Classification and regression here never touched the broken path and stand.
+>
+> Corrected read: [`../multitask_ssl/FINDINGS.md`](../multitask_ssl/FINDINGS.md)
+
+
 **Headline: the emergent-MIX static-LP contrast does NOT replicate on either new
 corpus — corpus composition, not the objective rotation alone, is load-bearing.**
 On covid-only, three arms (CL, FP, MIX) sit modestly above chance with no
@@ -12,7 +29,7 @@ corpus-x-objective interaction, not a corpus-general property of the rotation.
 
 ## What was run
 
-Replication of `multitask_ssl_rotation` (4 arms: NM, CL, FP, MIX) on two new
+Replication of `archive/multitask_ssl_superseded/rotation/` (4 arms: NM, CL, FP, MIX) on two new
 pretraining corpora, everything else identical (seed 0, 40k-episode budget =
 epochs 4 x cap 10000, batch_size 1, bio-768/mean-SAGE, 30-way/3-shot/4-query,
 global sampling; all arms evaluated at the 30k checkpoint — the trainer's
@@ -24,7 +41,7 @@ off-by-one means 30k is the terminal ckpt, matching the original):
   (`merged/graphs/ukr_rus_covid_midterm_all8_retweet_graph.pt`)
 
 Setup/configs/commands: `../../setup/multitask_ssl_corpora/`. Original result:
-`../multitask_ssl_rotation/FINDINGS.md` (MIX the only arm with above-chance
+`../archive/multitask_ssl_superseded/rotation/FINDINGS.md` (MIX the only arm with above-chance
 0-shot static-LP on the 3-way corpus: 0.759 vs <= 0.467 for NM/CL/FP).
 Frozen-encoder eval sweep identical to the original (focused-5 datasets;
 eval episodes seeded by split name => identical episodes across arms). Evidence

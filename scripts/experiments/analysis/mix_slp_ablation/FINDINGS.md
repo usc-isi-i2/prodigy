@@ -1,7 +1,23 @@
 # Findings — mix_slp_ablation (eval-time 2×2: rewire × permute)
 
+> **⚠️ SUPERSEDED — the premise is void.** This 2×2 asks whether MIX's "emergent"
+> 0-shot static-LP ability (mean AUC 0.759) is topological or a feature artifact. On
+> 2026-07-23 the evaluator that produced 0.759 was found invalid, and the rescore of the
+> same frozen checkpoints shows **there was no MIX-unique LP ability to explain**: link
+> prediction is a neighbor-matching main effect, NM is the best arm on all 5 datasets,
+> and MIX sits near the heuristic floors.
+>
+> The sanity anchor below — reproducing 0.75508 exactly — confirms this ran through the
+> same broken path, so every number here inherits the defect. The *method* (eval-time
+> rewire × permute with split-seeded episodes) is sound and worth re-running against
+> `scripts/eval/pair_link_eval.py`; the *verdict* cannot be cited.
+>
+> Rescore: [`../multitask_ssl/FINDINGS_rescore.md`](../multitask_ssl/FINDINGS_rescore.md) ·
+> corrected lattice: [`../multitask_ssl/FINDINGS.md`](../multitask_ssl/FINDINGS.md)
+
+
 **Question.** Is MIX's emergent 0-shot static-link-prediction ability
-(`multitask_ssl_rotation` FINDINGS: mean AUC 0.759 while NM/CL/FP sit at/below
+(`archive/multitask_ssl_superseded/rotation/FINDINGS.md`: mean AUC 0.759 while NM/CL/FP sit at/below
 chance) genuinely **topological** — true adjacency carried through message
 passing — or a **feature artifact** (feature homophily of the node bag)?
 This gates the interpretation of the parallel training workstream.
