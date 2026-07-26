@@ -1471,6 +1471,7 @@ class TrainerFS():
 
         # training by step
         t_load, t_one_step = 0, 0
+        steps_run = 0  # optimizer steps actually completed; used for the final checkpoint
         train_dataloader_itr = iter(self.train_dataloader)
 
         bad_counts = 0
@@ -1523,6 +1524,7 @@ class TrainerFS():
 
         pbar = trange(self.steps)
         for e in pbar:
+            steps_run = e + 1
             self.model.train()
 
             self.optimizer.zero_grad()
@@ -1666,8 +1668,27 @@ class TrainerFS():
                 if should_stop:
                     pbar.write(f"[{time.strftime('%H:%M:%S')}] Early stopping at step {e}")
                     break
+
+        # `trange(self.steps)` runs e = 0..steps-1, so the periodic
+        # `e % self.checkpoint_step == 0` save can never fire on the last step: a
+        # 40k-step run with checkpoint_step=10000 left state_dict_30000 as its final
+        # periodic checkpoint, and every trajectory eval silently stopped 10k short of
+        # the budget the run was labelled with. Save the terminal state explicitly,
+        # named for the number of steps actually completed so early-stopped runs are
+        # labelled honestly too. This step is always > any periodic save, so it never
+        # collides with one.
+        if steps_run > 0:
+            final_ckpt = os.path.join(self.ckpt_dir, f"state_dict_{steps_run}.ckpt")
+            if os.path.exists(final_ckpt):
+                _log(f"[step {steps_run}] final checkpoint already present, not re-saving")
+            else:
+                _log(f"[step {steps_run}] saving final checkpoint...")
+                self.save_checkpoint(steps_run)
+
         if bool(self.parameter.get("eval_after_train", False)):
-            final_step = self.steps
+            # steps actually completed, not the budget — an early-stopped run must not
+            # log its final eval at a step it never reached.
+            final_step = steps_run
             with torch.no_grad():
                 self.model.eval()
                 val_loss, val_acc, val_acc_std, val_aux_loss, ranks = self.do_eval(
