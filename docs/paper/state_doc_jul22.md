@@ -67,7 +67,7 @@ No single pretraining objective performs well on all downstream tasks.
 - Ablation 1: Make all node features the 0 vector, shuffle node feature vectors, try random noise vectors.
 - Ablation 2: Add topological info as input features, and try to force the model to use it by changing the objective (structural inputs, LP head, multi-head loss, drop-BN).
 ## Results
-See folders.
+<!-- TODO -->
 ## Findings [v0.4]
 ### Data
 - 1-graph matrix. Every graph has a strong specialist. Transfer is asymmetrical. Covid and Ukraine transfer to almost everything; HK donates little and receives little.
@@ -87,26 +87,6 @@ See folders.
 - Recipe
   - how to generalize to multiple domains (We have a way of leveraging multiple graphs for pretraining **without negative transfer** through interleaved training with better sampling)
   - how to generalize to multiple tasks ()
-  - how to scale to 100M data points (if naive scaling does not work)
-  - how to scale to 20M parameters (if naive scaling does not work)
-
-#### Contribution candidates
-- Non-separability — maybe data and objective interact, currently untested.
-- Mechanism — What actually transfers between domains and tasks.
-
-## Todo
-#### To defend GFM claim, we need to scale:
-- [ ] increase model size to 10M+ params
-- [ ] train on N=10M nodes
-- [ ] train for N steps
-#### Other directions we can go into:
-- Graph ladder results for sequential training.
-- SSL indicator: How well does the SSL performance (or a function of it or its gradient or the activations) indicate downstream performance?
-- Scaling: How does downstream performance scale with model and data, especially early on? How does performance evolve as we scale from 1M to 20M+?
-- Test the graph ladder models on the downstream tasks.
-- Injecting downstream tasks in pretraining for ICL
-- Add task: cascade prediction? hashtag prediction?
-- Compare another model
-- Finetuning: All current experiments are done without finetuning. If we do, we will likely do much better. But allowing this might mean that we should change it everywhere. So maybe avoid. But most other models need fine-tuning.
-- Sampling: Uniform sampling over the graph creates clusters and gaps. We have power law degree distributions and currently restrict sampling to nodes with enough edges. Can we do better? Importance sampling? —> again, best to see (a) why we do not reach 100 AUC and
-- Joint graphs over disjoint graphs.
+  - how to scale:
+    - 100M data points (if naive scaling does not work)
+    - 20M parameters (if naive scaling does not work)

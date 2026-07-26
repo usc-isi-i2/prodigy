@@ -14,6 +14,7 @@ Consolidated 2026-07-26 from seven scattered folders under `scripts/experiments/
 | Doc | What it is | Status |
 |---|---|---|
 | [`v2_channels_jul22.md`](v2_channels_jul22.md) | *Which Graphs for Which Objectives?* — channel-aware joint mixtures. Full thesis + execution plan. | **Current thesis** |
+| [`directions_jul26.md`](directions_jul26.md) | Open research directions organised by which knob they turn (data / objective / sampler / representation / scale / eval / generality). | **Current question list** |
 | [`directions_jul25.md`](directions_jul25.md) | Structured direction options, scored against the literature. | **Current shortlist** |
 | [`related_work/RELATED_WORK_AND_GAPS.md`](related_work/RELATED_WORK_AND_GAPS.md) | Related work synthesis + open lanes; per-lane detail in [`agent_reports/`](related_work/agent_reports/). | Current |
 | [`lit_gap_analysis_jul25.md`](lit_gap_analysis_jul25.md) | Verified gap analysis: which lanes are open, which are scooped, deadlines. | Current |
