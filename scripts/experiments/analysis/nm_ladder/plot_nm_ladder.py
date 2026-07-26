@@ -11,7 +11,7 @@ graph enters the merge (the interpolation event); the vertical step there is the
 OOD->ID delta. With one graph entering per rung, the entry markers trace a diagonal
 cascade across the ladder.
 
-Data: nm_ladder_full.csv (within_balanced rows) from the nm_ladder_fillin
+Data: nm_ladder_full.csv (within_balanced rows) from the same folder
 experiment; searched next to this script and in the experiment folder, with an
 embedded fallback (the CSV is gitignored). Writes nm_ladder_trajectory.pdf/.png here.
 """
@@ -69,7 +69,7 @@ EMBED = {
 }
 CSV_CANDIDATES = [
     os.path.join(HERE, "nm_ladder_full.csv"),
-    os.path.join(HERE, "..", "..", "experiments", "nm_ladder_fillin", "nm_ladder_full.csv"),
+    os.path.join(HERE, "data", "nm_ladder_full.csv"),
 ]
 
 
@@ -206,7 +206,7 @@ def main():
 
     fig.tight_layout()
     for ext in ("pdf", "png"):
-        out = os.path.join(HERE, f"nm_ladder_trajectory.{ext}")
+        out = os.path.join(HERE, "figures", f"nm_ladder_trajectory.{ext}")
         fig.savefig(out, bbox_inches="tight")
         print("wrote", out)
 

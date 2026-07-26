@@ -194,7 +194,7 @@ def main():
                  fontsize=13, color=INK, fontweight="bold", x=0.012, ha="left", y=1.005)
     fig.tight_layout(rect=(0, 0, 1, 0.97))
     for ext in ("pdf", "png"):
-        out = os.path.join(HERE, f"nm_ladder_vs_similarity.{ext}")
+        out = os.path.join(HERE, "figures", f"nm_ladder_vs_similarity.{ext}")
         fig.savefig(out, bbox_inches="tight")
         print("wrote", out)
 

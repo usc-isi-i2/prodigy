@@ -635,7 +635,7 @@ The reusable contribution is not a new max statistic. It is a disciplined audit:
 
 - [Consolidated findings](../../scripts/experiments/analysis/consolidate_7_20/FINDINGS.md)
 - [8×8 single-source NM matrix](../../scripts/experiments/analysis/nm_single_source_matrix/FINDINGS.md)
-- [Eight-rung mixture ladder](../../scripts/experiments/analysis/nm_ladder_fillin/RESULTS.md)
+- [Eight-rung mixture ladder](../../scripts/experiments/analysis/nm_ladder/RESULTS.md)
 - [Matched merged-versus-single study](../../scripts/experiments/analysis/nm_transfer_matrix/RESULTS.md)
 - [Cross-source sampling study](../../scripts/experiments/analysis/nm_cross_source_shortcut/RESULTS.md)
 - [COVID/Midterm imbalance study](../../scripts/experiments/analysis/nm_covid_midterm/RESULTS.md)

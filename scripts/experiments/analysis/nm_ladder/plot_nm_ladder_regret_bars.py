@@ -107,7 +107,7 @@ def _xaxis(ax, show_x):
 
 
 def _save(fig, name):
-    out = os.path.join(HERE, f"{name}.png")
+    out = os.path.join(HERE, "figures", f"{name}.png")
     fig.savefig(out, bbox_inches="tight", dpi=DPI)
     print("wrote", out)
     plt.close(fig)

@@ -123,7 +123,7 @@ def main():
 
     fig.tight_layout()
     for ext in ("pdf", "png"):
-        out = os.path.join(HERE, f"nm_ladder_id_ood.{ext}")
+        out = os.path.join(HERE, "figures", f"nm_ladder_id_ood.{ext}")
         fig.savefig(out, bbox_inches="tight")
         print("wrote", out)
 

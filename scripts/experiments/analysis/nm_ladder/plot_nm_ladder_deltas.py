@@ -55,7 +55,7 @@ EMBED = {
 }
 CSV_CANDIDATES = [
     os.path.join(HERE, "nm_ladder_full.csv"),
-    os.path.join(HERE, "..", "..", "experiments", "nm_ladder_fillin", "nm_ladder_full.csv"),
+    os.path.join(HERE, "data", "nm_ladder_full.csv"),
 ]
 
 
@@ -171,7 +171,7 @@ def main():
              transform=ax1.transAxes, ha="left", va="bottom", fontsize=8.8, color=MUTED)
 
     for ext in ("pdf", "png"):
-        out = os.path.join(HERE, f"nm_ladder_deltas.{ext}")
+        out = os.path.join(HERE, "figures", f"nm_ladder_deltas.{ext}")
         fig.savefig(out, bbox_inches="tight")
         print("wrote", out)
 
