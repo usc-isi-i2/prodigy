@@ -1,0 +1,44 @@
+# Dense early-training retrain of ladder rung 1 (ukr_rus_twitter alone).
+#
+# Clone of ukr_only/ukr_only_nm.yaml -- the config behind
+# ukr_only_nm_14_06_2026_16_39_00 -- except for the step budget, the checkpoint
+# schedule, eval_step, and the prefix.
+#
+# eval_step DELIBERATELY DIFFERS from the original's 1000. Two reasons, both about
+# checkpoint integrity:
+#   1. The in-loop best-checkpoint save (trainer.py:1647) still names by the
+#      pre-increment loop variable, so with eval_step=1000 it would overwrite our clean
+#      `state_dict_1000` (1000 steps) with a 1001-step model.
+#   2. A val eval consumes global torch RNG (Collator -> linearize -> torch.rand), so
+#      the training stream diverges after the first one fires. Disabling it keeps steps
+#      1..1001 identical to the original, which is exactly the range the splice check
+#      needs. Consequence: the 2001 probe is NOT comparable for this arm -- the original
+#      ran an eval at step 1001 and we do not. check_splice.py knows this and skips it.
+dataset: ukr_rus_twitter
+root: /dataMeR1/phil/data/ukr_rus_twitter/graphs
+graph_filename: retweet_graph_parquet.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+n_hop: 1
+
+epochs: 1
+dataset_len_cap: 2100
+val_len_cap: 500
+test_len_cap: 500
+
+eval_step: 100000        # original: 1000 -- see the header
+checkpoint_step: 1000    # inert: checkpoint_steps below overrides the modulo cadence
+checkpoint_steps: "100,500,1000,1001,2000,2001"
+
+workers: 16
+device: 0
+seed: 0
+prefix: sat_dense_ukr

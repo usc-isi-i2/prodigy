@@ -1,0 +1,53 @@
+# Dense early-training retrain of the all8 ladder rung, for the saturation curve.
+#
+# An exact clone of covid_ukr/merged_ukr_rus_covid_midterm_all8_nm.yaml -- the config
+# behind merged_ukr_rus_covid_midterm_all8_nm_wb_09_07_2026_15_10_30 -- except for the
+# step budget, the checkpoint schedule, and the prefix. Everything the optimization
+# trajectory depends on (graph, sampling, n_way/n_shots/n_query, emb_dim, layers, lr,
+# seed) is identical, so this run is a genuine PREFIX of that one:
+#   * BatchSampler seeds its RNG once from the split name and draws episodes lazily, so
+#     dataset_len_cap sets only HOW MANY episodes are drawn, never WHICH.
+#   * The LR scheduler is commented out (trainer.py:437), so the shorter budget does not
+#     change the learning rate at any step.
+# Verified by the 1001/2001 splice probes below.
+dataset: covid19_twitter
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_all8_retweet_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+
+# 1 x 2100 = 2100 steps, just past the last requested checkpoint. Original was
+# 12 x 10000; we never reach the first epoch boundary either way, so the episode
+# stream is the same one, truncated.
+epochs: 1
+dataset_len_cap: 2100
+val_len_cap: 500
+test_len_cap: 500
+
+# improved sampling: confine each NM episode to ONE source graph (removes cross-source
+# negatives / the source-discrimination shortcut); uniform source weighting so the small
+# added graphs get equal episode share. Must match the original exactly.
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+
+eval_step: 100000        # no in-loop val eval -- same as the original run
+checkpoint_step: 1000    # inert: checkpoint_steps below overrides the modulo cadence
+
+# 100 and 500 are what this run exists to produce. 1000/2000 duplicate surviving
+# checkpoints and are kept as a cross-check. 1001/2001 are the splice probes: the
+# pre-2026-07-26 trainer named a save by the pre-increment loop variable, so the
+# historical `state_dict_1000` holds 1001 steps and should equal our `state_dict_1001`.
+checkpoint_steps: "100,500,1000,1001,2000,2001"
+
+workers: 16
+device: 0
+seed: 0
+prefix: sat_dense_all8
