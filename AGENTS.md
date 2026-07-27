@@ -162,6 +162,13 @@ Learned the hard way in the 2026-07-26 consolidation. Each of these fails *silen
   both appended will report success while dropping rows. Merge them as a **union** and
   verify with `comm -23 <(git show <side>:<path> | sort -u) <(sort -u <path>)` for both
   sides before committing.
+  `parse_benchmark_eval_logs.py` now **merges into** these files rather than replacing
+  them, and leaves a task's CSV untouched when no run dir matches — so running it from a
+  per-experiment worktree is safe. It did not always: on 2026-07-27 it rebuilt each CSV
+  from `--log-root` alone and truncated `static_link_prediction.csv` to zero rows,
+  because that worktree's `log/` held only its own sweep. `--overwrite` restores the old
+  destructive behaviour; use it only when `--log-root` really holds every arm.
+  `scripts/harness/benchmark_tasks/tests/test_parse_merge.py` pins this.
 - **Static link prediction: use `scripts/eval/pair_link_eval.py`.** The episodic sLP
   path in the old runner is invalid (center-blind scoring, frozen random prototypes,
   degree-confounded negatives). Every sLP number produced before 2026-07-23 is void —

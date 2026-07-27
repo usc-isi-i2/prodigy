@@ -14,6 +14,16 @@ Usage (laptop or Tucker, needs pandas):
     python scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py \
         --log-root /dataMeR2/phil/gfm/prodigy/log \
         --out-dir scripts/experiments/analysis
+
+The output CSVs are append-only accumulations across experiments, so this MERGES into
+whatever is already on disk rather than replacing it, deduping on (model, dataset,
+target, shots, split) and keeping the newest run per config. That matters because the
+normal pattern here is one git worktree per experiment: its ``log/`` holds only that
+sweep, so rebuilding a shared CSV from it alone would drop every other experiment's
+arms. A task with no matching run dirs leaves its CSV untouched.
+
+Pass ``--overwrite`` for a genuine full rebuild, and only when ``--log-root`` really is
+the canonical log dir holding every arm.
 """
 
 from __future__ import annotations
@@ -132,6 +142,11 @@ def main() -> int:
     ap.add_argument("--reg-glob", default="eval_*_reg_*")
     ap.add_argument("--slp-glob", default="eval_*_slp_*")
     ap.add_argument("--pl-glob", default="eval_*_pl_*")
+    ap.add_argument("--overwrite", action="store_true",
+                    help="Replace each CSV with only what --log-root contains, instead of "
+                         "merging into it. Use ONLY for a full rebuild from the canonical "
+                         "log dir; from a per-experiment worktree this discards every arm "
+                         "that experiment did not itself run.")
     args = ap.parse_args()
 
     import pandas as pd
@@ -165,16 +180,70 @@ def main() -> int:
         data_dir.mkdir(parents=True, exist_ok=True)
         csv_path = data_dir / f"{name}.csv"
         df = pd.DataFrame(rows)
+
+        # These CSVs are append-only accumulations across experiments, so the default is
+        # to MERGE into whatever is already there. Rebuilding from --log-root alone is
+        # only correct when that log dir holds every arm ever run; from a per-experiment
+        # worktree it holds one sweep, and a plain overwrite silently deletes the rest.
+        existing = None
+        if csv_path.is_file() and not args.overwrite:
+            try:
+                # dtype=str keeps every carried-through row byte-identical. Parsing to
+                # float and re-serialising would rewrite ~600 rows to a different repr of
+                # the same value, which makes the diff unreviewable and defeats the
+                # `comm` check AGENTS.md prescribes for these accumulating CSVs.
+                existing = pd.read_csv(csv_path, dtype=str, keep_default_na=False)
+            except pd.errors.EmptyDataError:
+                existing = None
+
+        if df.empty:
+            # Nothing parsed for this task. An empty frame would write a file with no
+            # rows AND no header, so leave the CSV untouched instead -- a task this
+            # sweep deliberately did not run must not erase the task's history.
+            if existing is not None:
+                print(f"[parse] {name}: no run dirs matched; left {len(existing)} "
+                      f"existing rows untouched")
+                continue
+            if csv_path.is_file():
+                print(f"[parse] {name}: no run dirs matched; left {csv_path} untouched")
+                continue
+
         if not df.empty:
-            # keep the latest run per config (reruns from earlier sweeps are dropped)
+            # keep the latest run per config WITHIN this parse (reruns from earlier
+            # sweeps in the same log dir are dropped)
             df["_ts"] = df["run"].map(_run_timestamp)
-            df = (df.sort_values("_ts")
+            df = (df.sort_values("_ts", kind="stable")
                     .drop_duplicates(dedup_keys[name], keep="last")
                     .drop(columns="_ts"))
-        df.to_csv(csv_path, index=False)
-        written.append((csv_path, len(df)))
-    for path, n in written:
-        print(f"[parse] wrote {n:>4} rows -> {path}")
+
+        before = 0
+        if existing is not None and not existing.empty:
+            before = len(existing)
+            # Supersede ONLY the configs this parse actually produced; every other
+            # existing row is carried through untouched. Deduping the merged frame
+            # instead would rewrite history -- these CSVs accumulated rows that share a
+            # dedup key (they differ only in float formatting), and collapsing them
+            # silently deletes hundreds of rows that were never in scope.
+            keys = dedup_keys[name]
+            if not df.empty and all(k in existing.columns for k in keys):
+                incoming = set(map(tuple, df[keys].astype(str).itertuples(index=False)))
+                mask = existing[keys].astype(str).apply(tuple, axis=1).isin(incoming)
+                superseded = int(mask.sum())
+                existing = existing[~mask]
+            else:
+                superseded = 0
+            df = pd.concat([existing, df], ignore_index=True, sort=False)
+            if superseded:
+                print(f"[parse] {name}: superseded {superseded} existing row(s) "
+                      f"for re-evaluated configs")
+
+        # lineterminator is explicit: the default varies by platform/pandas version, and a
+        # CRLF rewrite makes every line read as changed, which hides real diffs in review.
+        df.to_csv(csv_path, index=False, lineterminator="\n")
+        written.append((csv_path, len(df), before))
+    for path, n, before in written:
+        delta = f" (+{n - before} vs {before} existing)" if before else ""
+        print(f"[parse] wrote {n:>4} rows -> {path}{delta}")
     return 0
 
 
