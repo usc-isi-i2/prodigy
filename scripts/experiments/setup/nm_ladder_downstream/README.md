@@ -125,7 +125,13 @@ python3 scripts/experiments/setup/nm_ladder_downstream/assemble_downstream_table
 `DRY_RUN=1` previews either sweep without touching a GPU; `make_model_list.py --dry-run`
 prints the 24-row plan and resolves nothing.
 
-**GPU etiquette:** GPUs 0–2. GPU 3 hosts labmates' long-lived ollama server.
+**GPU etiquette:** checked 2026-07-27 — `rdorn` runs a vLLM tensor-parallel worker pinned
+across GPUs **2 and 3** (~76 GB each), so only 0 and 1 are actually free. The pipeline
+defaults to `EVAL_GPUS=0,1`. This moves; check before launching and override:
+
+```bash
+ssh tucker nvidia-smi --query-compute-apps=pid,gpu_uuid,used_memory --format=csv
+```
 
 ## Deliverables
 

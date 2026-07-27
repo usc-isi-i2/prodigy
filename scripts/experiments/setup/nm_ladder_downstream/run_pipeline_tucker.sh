@@ -35,7 +35,11 @@ PY="${PY:-/home/mhchu/miniconda3/envs/prodigy/bin/python}"
 
 STATE_DIR="${STATE_DIR:-/dataMeR1/phil/gfm/prodigy/state}"
 DATA_ROOT="${DATA_ROOT:-/dataMeR1/phil/data}"
-EVAL_GPUS="${EVAL_GPUS:-0,1,2}"      # GPU 3 left alone: labmates' ollama serves there
+# GPU occupancy checked 2026-07-27: rdorn runs a vLLM worker pinned across GPUs 2 AND 3
+# (~76 GB each), so only 0 and 1 are ours in practice. This moves -- run
+# `nvidia-smi --query-compute-apps=pid,gpu_uuid,used_memory --format=csv` before launching
+# and override if the picture has changed.
+EVAL_GPUS="${EVAL_GPUS:-0,1}"
 LP_GPU="${LP_GPU:-0}"
 ONLY="${ONLY:-}"
 
