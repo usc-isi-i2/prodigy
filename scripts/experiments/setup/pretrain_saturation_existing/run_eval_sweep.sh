@@ -89,6 +89,14 @@ fi
 # --log-root MUST derive from THIS tree's REPO_ROOT: eval writes to <cwd>/log and we cd'd
 # to REPO_ROOT above, so hardcoding the main checkout silently parses the wrong logs when
 # the sweep runs from an isolated worktree.
+#
+# NEVER add --overwrite here. This sweep produces regression and classification logs and
+# no static-LP ones, and this worktree's log/ holds only our own runs. Under the parser's
+# pre-490af96 behaviour (rebuild each CSV from --log-root alone, write unconditionally)
+# that combination truncated static_link_prediction.csv from 149 rows to zero and dropped
+# every historical arm from the other two. The parser now merges by default and skips a
+# task whose CSV has no matching run dir; --overwrite restores the destructive rebuild and
+# is only correct when --log-root really holds every arm ever run.
 echo "=== parse into shared CSVs ==="
 run python3 scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py \
   --log-root "${REPO_ROOT}/log" --out-dir scripts/experiments/analysis
