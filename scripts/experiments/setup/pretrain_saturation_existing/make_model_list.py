@@ -23,12 +23,16 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from arms import ARMS, DEFAULT_STATE_DIR, EXISTING_STEPS, model_key  # noqa: E402
+from arms import ARMS, DEFAULT_HISTORICAL_STATE_DIR, EXISTING_STEPS, model_key  # noqa: E402
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--state-dir", default=os.environ.get("STATE_DIR", DEFAULT_STATE_DIR))
+    ap.add_argument("--state-dir",
+                    default=os.environ.get("HISTORICAL_STATE_DIR",
+                                           os.environ.get("STATE_DIR", DEFAULT_HISTORICAL_STATE_DIR)),
+                    help="Where the HISTORICAL runs were trained (the main checkout). "
+                         "Not this worktree's state/ -- see arms.py.")
     ap.add_argument("--out", default=str(HERE / "model_list.txt"))
     ap.add_argument("--dry-run", action="store_true",
                     help="Print the plan and touch no disk.")

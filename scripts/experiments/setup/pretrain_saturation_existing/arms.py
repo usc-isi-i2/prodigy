@@ -20,9 +20,25 @@ from __future__ import annotations
 
 from pathlib import Path
 
-# Tucker main checkout. state/ is per-worktree and gitignored, so this is a real
-# location, not a repo-relative one -- all three runs happen to live in the main checkout.
-DEFAULT_STATE_DIR = "/dataMeR1/phil/gfm/prodigy/state"
+# TWO state dirs, and conflating them is a real failure mode (it broke the first
+# check_splice.py run). `state/` is gitignored and lives PER WORKTREE -- it does not
+# follow a branch -- so:
+#
+#   historical checkpoints -> the main checkout, where those runs were trained
+#   dense checkpoints      -> whichever worktree ran run_all_train_tucker.sh
+#
+# The historical location is absolute because it is a fact about where past jobs ran.
+# The dense location is derived from this file's own path, so it is automatically correct
+# whether the experiment runs from the main checkout or from a worktree.
+DEFAULT_HISTORICAL_STATE_DIR = "/dataMeR1/phil/gfm/prodigy/state"
+
+# setup/<name>/arms.py -> up 4 = repo root
+REPO_ROOT = Path(__file__).resolve().parents[4]
+
+
+def default_dense_state_dir() -> Path:
+    """`state/` of the checkout this file belongs to."""
+    return REPO_ROOT / "state"
 
 # Steps served by each folder. Their union is the 18-checkpoint curve.
 EXISTING_STEPS = (1000, 2000, 10000, 40000)
@@ -54,7 +70,7 @@ class Arm:
         self.eval_step_in_history = eval_step_in_history
         self.note = note
 
-    def historical_ckpt(self, step, state_dir=DEFAULT_STATE_DIR):
+    def historical_ckpt(self, step, state_dir=DEFAULT_HISTORICAL_STATE_DIR):
         return Path(state_dir) / self.run_dir / "checkpoint" / f"state_dict_{step}.ckpt"
 
     def splice_probe_is_comparable(self, historical_step):

@@ -27,9 +27,15 @@ difference against a reference distance: how far the historical run itself moved
 its own step 1000 and step 2000. Same trajectory => difference orders of magnitude
 smaller than that.
 
+Note the TWO state dirs. `state/` is gitignored and per-worktree, so the historical
+checkpoints sit in the main checkout while the dense ones sit in whichever worktree ran
+the retrains. The defaults handle this (dense = this checkout's `state/`), but they are
+separate knobs on purpose.
+
 Usage (on Tucker, after run_all_train_tucker.sh):
     python3 check_splice.py
-    STATE_DIR=... python3 check_splice.py --arm ukr
+    python3 check_splice.py --arm ukr
+    HISTORICAL_STATE_DIR=... DENSE_STATE_DIR=... python3 check_splice.py
 """
 from __future__ import annotations
 
@@ -45,7 +51,9 @@ EXISTING = HERE.parent / "pretrain_saturation_existing"
 # shadows our module with theirs, and `resolve_dense_run_dir` then fails to import.
 sys.path.append(str(EXISTING))
 
-from arms import ARMS_BY_NAME, DEFAULT_STATE_DIR, SPLICE_PROBES  # noqa: E402
+from arms import (  # noqa: E402
+    ARMS_BY_NAME, DEFAULT_HISTORICAL_STATE_DIR, SPLICE_PROBES, default_dense_state_dir,
+)
 from make_model_list import resolve_dense_run_dir  # noqa: E402
 
 # A difference this many times smaller than the run's own 1000-step displacement is
@@ -85,14 +93,29 @@ def distance(a, b, torch):
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--state-dir", default=os.environ.get("STATE_DIR", DEFAULT_STATE_DIR))
+    # The whole point of this script is to compare across TWO state dirs. They are almost
+    # never the same directory: the historical runs live in the main checkout, the dense
+    # retrains in whichever worktree ran them, because state/ is per-worktree.
+    ap.add_argument("--historical-state-dir",
+                    default=os.environ.get("HISTORICAL_STATE_DIR", DEFAULT_HISTORICAL_STATE_DIR),
+                    help="Where the historical runs were trained (main checkout).")
+    ap.add_argument("--dense-state-dir",
+                    default=os.environ.get("DENSE_STATE_DIR", str(default_dense_state_dir())),
+                    help="Where the dense retrains wrote (default: this checkout's state/).")
     ap.add_argument("--arm", action="append", choices=sorted(ARMS_BY_NAME),
                     help="Check only this arm (repeatable). Default: all three.")
     args = ap.parse_args()
 
     import torch
 
-    state_dir = Path(args.state_dir)
+    hist_dir = Path(args.historical_state_dir)
+    dense_dir_root = Path(args.dense_state_dir)
+    print(f"historical state dir: {hist_dir}")
+    print(f"dense state dir:      {dense_dir_root}")
+    if hist_dir == dense_dir_root:
+        print("[warn] both state dirs are identical -- is that really right? The dense "
+              "runs normally live in a different worktree than the historical ones.")
+    print()
     arms = [ARMS_BY_NAME[n] for n in (args.arm or sorted(ARMS_BY_NAME))]
 
     failures: list[str] = []
@@ -103,17 +126,17 @@ def main() -> int:
         print(f"ARM {arm.name}   historical={arm.run_dir}")
         print("=" * 78)
 
-        dense_dir = resolve_dense_run_dir(state_dir, arm.dense_prefix)
+        dense_dir = resolve_dense_run_dir(dense_dir_root, arm.dense_prefix)
         if dense_dir is None:
             failures.append(f"{arm.name}: no dense run dir {arm.dense_prefix}_*")
-            print(f"  MISSING dense run dir {arm.dense_prefix}_* under {state_dir}")
+            print(f"  MISSING dense run dir {arm.dense_prefix}_* under {dense_dir_root}")
             continue
         print(f"  dense={dense_dir.name}")
 
         # Reference scale: how far this run moved over its own steps 1000 -> 2000.
         ref_norm = None
-        ref_a = arm.historical_ckpt(1000, state_dir)
-        ref_b = arm.historical_ckpt(2000, state_dir)
+        ref_a = arm.historical_ckpt(1000, hist_dir)
+        ref_b = arm.historical_ckpt(2000, hist_dir)
         if ref_a.is_file() and ref_b.is_file():
             _, ref_norm, _ = distance(
                 flat_tensors(torch.load(ref_a, map_location="cpu", weights_only=False), torch),
@@ -135,7 +158,7 @@ def main() -> int:
                 continue
 
             dense_ckpt = dense_dir / "checkpoint" / f"state_dict_{dense_step}.ckpt"
-            hist_ckpt = arm.historical_ckpt(hist_step, state_dir)
+            hist_ckpt = arm.historical_ckpt(hist_step, hist_dir)
             if not dense_ckpt.is_file() or not hist_ckpt.is_file():
                 missing = dense_ckpt if not dense_ckpt.is_file() else hist_ckpt
                 failures.append(f"{arm.name}: missing {missing}")

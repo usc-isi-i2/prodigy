@@ -29,7 +29,7 @@ EXISTING = HERE.parent / "pretrain_saturation_existing"
 # (check_splice.py does).
 sys.path.append(str(EXISTING))
 
-from arms import ARMS, DEFAULT_STATE_DIR, DENSE_STEPS, model_key  # noqa: E402
+from arms import ARMS, DENSE_STEPS, default_dense_state_dir, model_key  # noqa: E402
 
 
 def resolve_dense_run_dir(state_dir: Path, prefix: str) -> Path | None:
@@ -48,7 +48,12 @@ def resolve_dense_run_dir(state_dir: Path, prefix: str) -> Path | None:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--state-dir", default=os.environ.get("STATE_DIR", DEFAULT_STATE_DIR))
+    # THIS worktree's state/, not the main checkout's: the dense runs wrote wherever
+    # run_all_train_tucker.sh was launched from, and state/ does not follow a branch.
+    ap.add_argument("--state-dir",
+                    default=os.environ.get("DENSE_STATE_DIR", str(default_dense_state_dir())),
+                    help="Where the DENSE retrains wrote their checkpoints "
+                         "(default: this checkout's state/).")
     ap.add_argument("--out", default=str(HERE / "model_list.txt"))
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
