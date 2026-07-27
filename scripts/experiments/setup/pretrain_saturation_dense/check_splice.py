@@ -40,7 +40,10 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 EXISTING = HERE.parent / "pretrain_saturation_existing"
-sys.path.insert(0, str(EXISTING))
+# APPEND, never insert(0): both setup folders contain a `make_model_list.py`, and this
+# script's own directory is already sys.path[0]. Inserting the sibling folder at the front
+# shadows our module with theirs, and `resolve_dense_run_dir` then fails to import.
+sys.path.append(str(EXISTING))
 
 from arms import ARMS_BY_NAME, DEFAULT_STATE_DIR, SPLICE_PROBES  # noqa: E402
 from make_model_list import resolve_dense_run_dir  # noqa: E402

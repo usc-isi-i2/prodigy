@@ -24,7 +24,10 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 EXISTING = HERE.parent / "pretrain_saturation_existing"
-sys.path.insert(0, str(EXISTING))
+# APPEND, never insert(0): the sibling folder has a same-named `make_model_list.py`, so
+# putting it at the front of sys.path shadows this module for anything that imports it
+# (check_splice.py does).
+sys.path.append(str(EXISTING))
 
 from arms import ARMS, DEFAULT_STATE_DIR, DENSE_STEPS, model_key  # noqa: E402
 
