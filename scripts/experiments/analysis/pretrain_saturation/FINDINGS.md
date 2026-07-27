@@ -41,7 +41,9 @@ wrote a checkpoint below step 1000, so the entire rise was previously invisible.
 
 ## 2. But the mean hides that transfer only works on two of the four graphs
 
-Per-graph ROC-AUC for `all8`:
+![classification heatmap](figures/heatmap_classification.png)
+
+The same three-way split appears independently in all three arms. Per-graph ROC-AUC for `all8`:
 
 | step | covid_political | election2020 | twibot20 | ukr_rus_suspended |
 |---|---|---|---|---|
@@ -62,6 +64,10 @@ three:
 - **twibot20 gets *worse* with pretraining** — 0.668 at step 100 down to 0.626 at 40 000,
   its best checkpoint being the *least*-trained one.
 
+Against a random-init encoder these two are unambiguous: covid_political 0.429 and
+election2020 0.403 untrained (both *below* chance), versus 0.932 and 0.987 pretrained —
+gaps of +0.50 and +0.58. Whatever else is uncertain here, this effect is real.
+
 **`election2020` reaching 0.987 deserves scrutiny before it is cited.** A near-perfect
 frozen-probe ROC-AUC after 500 pretraining steps is more consistent with an easy or leaky
 label than with representation quality.
@@ -77,18 +83,45 @@ shows; if anything the broad corpus arrives **sooner**. State this weakly: the g
 (0.013 vs 0.032/0.040 in plateau spread) are the size of the run-to-run noise this
 experiment cannot measure (§5).
 
-## 4. Node regression is a null result, not a saturation curve
+## 4. Node regression measures nothing — and there is a mechanism, not just a null
 
-Mean Spearman never leaves the band around zero (−0.21 to +0.16) and has no coherent
-trend in step for any arm. Across all 144 regression cells: **50/144 positive**, mean
-−0.029, median −0.043, range −0.38 to +0.48. Both targets behave the same
-(`followers_count` mean −0.040, `account_age_days` −0.018).
+![regression heatmap](figures/heatmap_regression.png)
 
-The right-hand panel should be read as "these frozen encoders carry no usable signal for
-10-shot profile regression", **not** as "regression saturates". Nothing saturates because
-nothing rises. This has not been checked against
-`../node_regression/data/features_only_floor.csv`, which is the obvious next step before
-any claim is made about regression.
+Mean Spearman never leaves the band around zero and has no coherent trend in step.
+Across all 144 cells: 50/144 positive, mean −0.029, median −0.043, range −0.38 to +0.48.
+
+**A random-init encoder does just as well** (`data/random_init_floor.csv`, measured
+2026-07-27 with the `RANDOM_INIT` sentinel):
+
+| | pretrained (18 ckpts × 4 cells) | random init |
+|---|---|---|
+| mean \|ρ\| | 0.150 | 0.069 |
+| max \|ρ\| | 0.484 | **0.174** |
+
+An **untrained** encoder reaches ρ = +0.174 on twibot20/followers_count, and **62 % of
+all pretrained cells fall below that value**. There is no evidence any of these encoders
+carry usable signal for 10-shot profile regression.
+
+**Why, mechanically.** Nothing in the model was ever trained to regress. The collator
+feeds the support targets in as metagraph edge attributes
+(`metagraph_edge_value = y_values * (~query_mask)` — correctly masked, so no leakage), but
+these encoders were pretrained on `neighbor_matching`, where that same `edge_attr` slot
+carries a support/query indicator rather than a continuous magnitude. Eval runs with
+`--eval_only True`, so no gradient step ever adapts the weights that read it. There is no
+regression head at random init — there is no regression head at all; the scalar pathway is
+simply untrained. Reading these numbers as "transfer" over-reads them.
+
+**Consequently the apparent structure in this panel is noise**, including the one pattern
+that looked alarming: `ukr` flips sign negative→positive across the 500→1000 boundary and
+`covid` flips positive→negative, in 5/8 and 8/8 cells, with 500→1000 the largest adjacent
+gap for both — and that boundary is exactly the splice. It aligned suspiciously with the
+pre/post-code-drift split (`all8`'s historical run is post-drift and shows 1/8 cells and a
++0.006 delta). But a channel whose untrained floor is |ρ| = 0.17 has no signal to be
+discontinuous; sign flips are what a quantity centred on zero does. See §5 for why the
+channel that *does* carry signal shows no boundary effect at all.
+
+Not checked against `../node_regression/data/features_only_floor.csv` — the random-init
+floor above is the stronger control and reaches the same conclusion.
 
 ## 5. What this evidence cannot support
 
@@ -102,12 +135,17 @@ any claim is made about regression.
   from runs of 2026-06-14 (ukr, covid) and 2026-07-09 (all8).
   `setup/pretrain_saturation_dense/check_splice.py` passes, but **weakly**: a model trained
   on a *different corpus* sits 587 away, versus 546 for the same-config null, so the test
-  would also pass a model it should reject. Weight-space distance cannot resolve this
-  question. The splice rests on the mechanism argument — no code drift on the plain-NM
-  path between June and now, verified by reading the diffs (see the setup README) — not on
-  a measurement. The sound version of the check is in metric space: evaluate the dense
-  `state_dict_1001` and compare against the historical `state_dict_1000` already in the
-  table (~12 jobs).
+  would also pass a model it should reject. Weight-space distance cannot resolve trajectory
+  identity after ~1000 chaotic steps; always compute the unrelated scale (√2·‖w‖ ≈ 1708
+  here) before trusting a distance threshold.
+
+  **The best available evidence on the splice is the classification panel itself.** It is
+  the only channel with signal well above its random-init floor, and its 500→1000 step —
+  the joint — moves by −0.011 / +0.012 / +0.010 for all8/ukr/covid, i.e. no more than the
+  plateau wobbles anyway. The one apparent discontinuity showed up in regression (§4),
+  which the random-init floor shows is measuring nothing. The stronger test remains
+  available and unrun: evaluate the dense `state_dict_1001` against the historical
+  `state_dict_1000` in metric space (~12 jobs per arm).
 - **Steps ≥1000 are labelled one step short.** Pre-2026-07-26 checkpoints hold N+1
   completed steps under the name N. Irrelevant numerically; do not present the axis as
   exact.

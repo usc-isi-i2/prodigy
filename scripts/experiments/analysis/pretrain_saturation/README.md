@@ -59,6 +59,12 @@ Built by [`build_tables_and_figure.py`](build_tables_and_figure.py) (Homebrew Py
 - `figures/pretrain_saturation.png` — metric vs. pretraining step, log x, one line per
   arm, one panel per task (two panels rather than two y-axes, since ROC-AUC and Spearman
   do not share a scale).
+- `figures/heatmap_{classification,regression}.png` — every (step × test graph) cell, one
+  panel per arm, from [`build_heatmaps.py`](build_heatmaps.py). These are where the result
+  actually lives: the line figure plots the mean over test graphs, which is exactly what
+  hides the per-graph split.
+- `data/random_init_floor.csv` — an untrained encoder on the same cells. The control that
+  separates the real classification effect from the empty regression one.
 - [`FINDINGS.md`](FINDINGS.md).
 
 ## Result in one line
@@ -66,4 +72,6 @@ Built by [`build_tables_and_figure.py`](build_tables_and_figure.py) (Homebrew Py
 Classification transfer is ~99 % complete by step 500 for the 8-source corpus and flat for
 the remaining 80× of training — but the mean is carried entirely by two of the four
 graphs, one of the other two sits at chance throughout, and the fourth gets *worse* with
-pretraining. Regression is a null.
+pretraining. On the two that work the effect is large and certain (+0.50/+0.58 over an
+untrained encoder). Regression measures nothing: a random-init encoder matches it, because
+no part of the model was ever trained to regress.
