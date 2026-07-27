@@ -21,11 +21,26 @@ torch.rand), so the two training streams legitimately diverge afterwards. ukr an
 used eval_step=1000 and are skipped at 2001 by design; all8 used 100000 and is checked.
 This is reported, not silently dropped.
 
-Exact equality is not expected -- these ran on different days on possibly different GPUs,
-and scatter/segment kernels are nondeterministic. The verdict compares the observed
-difference against a reference distance: how far the historical run itself moved between
-its own step 1000 and step 2000. Same trajectory => difference orders of magnitude
-smaller than that.
+THE NULL MATTERS, AND THE OBVIOUS ONE IS WRONG. This script originally scored the
+difference against how far the historical run moved over its own steps 1000->2000, and
+demanded 100x smaller. That premise -- "same procedure => near-identical weights" --
+assumes training is reproducible, and it is NOT. Measured 2026-07-27 on all8 by running
+the same config twice on the same GPU with the same seed:
+
+    step 1001:  ||A - B|| = 546   ||A - historical|| = 579   ||B - historical|| = 554
+    step 2001:  ||A - B|| = 1710  ||A - historical|| = 1774  ||B - historical|| = 1698
+
+Two identical runs differ as much as either differs from the historical run. PyG's
+scatter-based message passing uses non-deterministic float atomics on CUDA, and training
+is chaotic, so a 1e-7 difference at step 1 becomes O(1) in weight space by step 1000. The
+old test could not distinguish "same procedure, unreproducible" from "different
+procedure" -- which is the only thing it existed to distinguish.
+
+The correct null is the RUN-TO-RUN distance: rerun one arm identically and ask whether
+the dense-vs-historical gap is comparable to the dense-vs-replicate gap. If it is, the
+historical checkpoints are statistically indistinguishable from a fresh run and the splice
+is sound. Without a replicate this script cannot reach a verdict, and it says so rather
+than failing closed onto a 5-GPU-hour retrain recommendation.
 
 Note the TWO state dirs. `state/` is gitignored and per-worktree, so the historical
 checkpoints sit in the main checkout while the dense ones sit in whichever worktree ran
@@ -56,9 +71,15 @@ from arms import (  # noqa: E402
 )
 from make_model_list import resolve_dense_run_dir  # noqa: E402
 
-# A difference this many times smaller than the run's own 1000-step displacement is
-# float noise, not a different trajectory.
-SAME_TRAJECTORY_RATIO = 100.0
+# A dense-vs-historical gap within this factor of the run-to-run (dense-vs-replicate) gap
+# is indistinguishable from ordinary irreproducibility. Generous on purpose: the quantity
+# it bounds is itself a single noisy sample, so a tight threshold would fail at random.
+REPLICATE_TOLERANCE = 3.0
+
+# Prefix of the replicate run used as the null. Produced by rerunning an arm's dense
+# config unchanged except for --prefix, e.g.
+#   bash train_nm_tucker.sh train_all8_dense.yaml --device 1 --prefix sat_repro_all8
+REPLICATE_PREFIX_FMT = "sat_repro_{arm}"
 
 
 def flat_tensors(blob, torch):
@@ -120,6 +141,7 @@ def main() -> int:
 
     failures: list[str] = []
     skipped: list[str] = []
+    inconclusive: list[str] = []
 
     for arm in arms:
         print("=" * 78)
@@ -133,18 +155,16 @@ def main() -> int:
             continue
         print(f"  dense={dense_dir.name}")
 
-        # Reference scale: how far this run moved over its own steps 1000 -> 2000.
-        ref_norm = None
-        ref_a = arm.historical_ckpt(1000, hist_dir)
-        ref_b = arm.historical_ckpt(2000, hist_dir)
-        if ref_a.is_file() and ref_b.is_file():
-            _, ref_norm, _ = distance(
-                flat_tensors(torch.load(ref_a, map_location="cpu", weights_only=False), torch),
-                flat_tensors(torch.load(ref_b, map_location="cpu", weights_only=False), torch),
-                torch,
-            )
-            print(f"  reference: ||w(2000) - w(1000)|| = {ref_norm:.6g}  "
-                  "(one 1000-step displacement of this same run)")
+        # The null: an independent rerun of THIS arm's own dense config. Training is not
+        # reproducible, so "how far apart are two runs of the same command" is the only
+        # meaningful yardstick for "how far apart should the historical run be".
+        replicate_dir = resolve_dense_run_dir(
+            dense_dir_root, REPLICATE_PREFIX_FMT.format(arm=arm.name))
+        if replicate_dir is None:
+            print(f"  no replicate ({REPLICATE_PREFIX_FMT.format(arm=arm.name)}_*) -- "
+                  "distances will be reported without a verdict")
+        else:
+            print(f"  replicate={replicate_dir.name}")
 
         for dense_step, hist_step in sorted(SPLICE_PROBES.items()):
             label = f"dense state_dict_{dense_step} vs historical state_dict_{hist_step}"
@@ -173,18 +193,32 @@ def main() -> int:
             if mismatched:
                 print(f"  [WARN] parameters not comparable: {mismatched[:5]}")
 
-            verdict = "?"
-            if ref_norm and ref_norm > 0:
-                ratio = ref_norm / norm if norm > 0 else float("inf")
-                verdict = "SAME TRAJECTORY" if ratio >= SAME_TRAJECTORY_RATIO else "DIVERGED"
-                print(f"  [{verdict}] {label}")
-                print(f"      max|diff|={max_abs:.6g}  ||diff||={norm:.6g}  "
-                      f"reference/diff={ratio:.1f}x  (need >= {SAME_TRAJECTORY_RATIO:.0f}x)")
-                if verdict == "DIVERGED":
-                    failures.append(f"{arm.name}: {label} -- ||diff||={norm:.6g} vs "
-                                    f"reference {ref_norm:.6g}")
-            else:
-                print(f"  [no reference] {label}: max|diff|={max_abs:.6g} ||diff||={norm:.6g}")
+            # The null: same step, our dense run vs an independent rerun of the same config.
+            replicate_norm = None
+            if replicate_dir is not None:
+                rep_ckpt = replicate_dir / "checkpoint" / f"state_dict_{dense_step}.ckpt"
+                if rep_ckpt.is_file():
+                    _, replicate_norm, _ = distance(
+                        flat_tensors(torch.load(dense_ckpt, map_location="cpu", weights_only=False), torch),
+                        flat_tensors(torch.load(rep_ckpt, map_location="cpu", weights_only=False), torch),
+                        torch,
+                    )
+
+            if replicate_norm is None:
+                inconclusive.append(f"{arm.name}: {label} -- no replicate at step {dense_step}")
+                print(f"  [INCONCLUSIVE] {label}: ||diff||={norm:.6g}, no run-to-run null "
+                      "to compare against")
+                continue
+
+            ratio = norm / replicate_norm if replicate_norm > 0 else float("inf")
+            ok = ratio <= REPLICATE_TOLERANCE
+            print(f"  [{'INDISTINGUISHABLE' if ok else 'DIVERGED'}] {label}")
+            print(f"      ||dense - historical|| = {norm:.6g}   max|diff|={max_abs:.6g}")
+            print(f"      ||dense - replicate||  = {replicate_norm:.6g}   "
+                  f"(two runs of the SAME command)")
+            print(f"      ratio = {ratio:.2f}x  (pass if <= {REPLICATE_TOLERANCE:.0f}x)")
+            if not ok:
+                failures.append(f"{arm.name}: {label} -- {ratio:.2f}x the run-to-run null")
 
     print()
     print("=" * 78)
@@ -194,10 +228,22 @@ def main() -> int:
         print(f"SPLICE CHECK FAILED ({len(failures)}):")
         for f in failures:
             print(f"  {f}")
-        print("\nDo NOT splice. Retrain the affected arm(s) to 40000 with "
-              "--checkpoint_steps 100,500,1000,2000,10000,40000 instead.")
+        print("\nThe historical checkpoints sit further from a fresh run than two fresh "
+              "runs sit from each other, so something really does differ. Do NOT splice; "
+              "retrain the affected arm(s) to 40000 with "
+              "--checkpoint_steps 100,500,1000,2000,10000,40000.")
         return 1
-    print("SPLICE CHECK PASSED -- dense and historical checkpoints lie on one trajectory.")
+    if inconclusive:
+        print(f"SPLICE CHECK INCONCLUSIVE ({len(inconclusive)}) -- no replicate run to "
+              "supply the null. Distances above are unscored; training is NOT reproducible, "
+              "so a raw distance means nothing on its own. Produce the null with:")
+        for arm in arms:
+            print(f"  bash train_nm_tucker.sh {arm.dense_config} --device <gpu> "
+                  f"--prefix {REPLICATE_PREFIX_FMT.format(arm=arm.name)}")
+        return 2
+    print("SPLICE CHECK PASSED -- the dense-vs-historical gap is within the run-to-run "
+          "noise of this training setup, i.e. the historical checkpoints are "
+          "statistically indistinguishable from a fresh run. Splice is sound.")
     return 0
 
 
