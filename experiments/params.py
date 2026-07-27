@@ -136,6 +136,19 @@ def get_params():
     args.add_argument("-prt_step", "--print_step", default=2000, type=int)
     args.add_argument("-eval_step", "--eval_step", default=2000, type=int)
     args.add_argument("-ckpt_step", "--checkpoint_step", default=2000, type=int)
+    args.add_argument(
+        "-ckpt_steps", "--checkpoint_steps", default="", type=str,
+        help=(
+            "Explicit checkpoint schedule as comma-separated step counts, e.g. "
+            "'0,10,100,250,500,1000,2000'. Non-empty OVERRIDES the --checkpoint_step "
+            "modulo cadence. A step here is a count of COMPLETED optimizer steps: 0 is "
+            "the random-init state written before the first step, N is the state after "
+            "N steps. Steps above the budget (epochs x dataset_len_cap) are never "
+            "reached; the terminal checkpoint at the true step count is written either "
+            "way. Use this for dense early-training trajectories (saturation curves), "
+            "where a uniform modulo cadence cannot express log-spaced steps."
+        ),
+    )
     args.add_argument("-bs", "--batch_size", default=1, type=int) 
     args.add_argument("-weight_decay", "--weight_decay", default=0.001, type=float)
     args.add_argument("-dropout", "--dropout", default=0, type=float)

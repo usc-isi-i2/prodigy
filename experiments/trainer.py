@@ -132,6 +132,31 @@ class TrainerFS():
         self.print_step = parameter['print_step']
         self.eval_step = parameter['eval_step']
         self.checkpoint_step = parameter['checkpoint_step']
+        # Explicit checkpoint schedule; non-empty overrides the modulo cadence entirely.
+        # Entries are counts of COMPLETED optimizer steps, matching the `steps_run`
+        # convention used by both the in-loop and the terminal save in train().
+        raw_checkpoint_steps = str(parameter.get('checkpoint_steps') or "")
+        self.checkpoint_steps = sorted({
+            int(part) for part in (chunk.strip() for chunk in raw_checkpoint_steps.split(","))
+            if part
+        })
+        if self.checkpoint_steps:
+            if self.checkpoint_steps[0] < 0:
+                raise ValueError(
+                    f"--checkpoint_steps must be non-negative, got {self.checkpoint_steps}."
+                )
+            unreachable = [s for s in self.checkpoint_steps if s > self.steps]
+            if unreachable:
+                # Loud, not fatal: the budget is epochs x dataset_len_cap, which is easy
+                # to under-set by one step and would otherwise silently drop the last
+                # (usually most important) rung of the requested schedule.
+                print(
+                    f"[trainer] WARNING: --checkpoint_steps {unreachable} exceed the step "
+                    f"budget {self.steps} (epochs x dataset_len_cap) and will never be "
+                    "written. Raise --epochs or --dataset_len_cap.",
+                    flush=True,
+                )
+            _log(f"Checkpoint schedule (explicit): {self.checkpoint_steps}")
 
         self.dataset_name = parameter['dataset']
         self.classification_only = self.parameter["classification_only"]
@@ -1522,6 +1547,13 @@ class TrainerFS():
                         start_log_dict["start_val_" + key] = ranks[key]
                 wandb.log(start_log_dict, step=0)
 
+        # `steps_run` counts completed optimizer steps, so it never takes the value 0
+        # inside the loop. Step 0 — the random-init anchor a saturation curve is measured
+        # against — therefore has to be written here, before any gradient is applied.
+        if 0 in self.checkpoint_steps:
+            _log("[step 0] saving pre-training checkpoint...")
+            self.save_checkpoint(0)
+
         pbar = trange(self.steps)
         for e in pbar:
             steps_run = e + 1
@@ -1587,10 +1619,19 @@ class TrainerFS():
                 load=f"{(t2-t1):.2f}s",
                 step=f"{(t3-t2):.2f}s",
             )
-            # save checkpoint on specific step
-            if e % self.checkpoint_step == 0 and e != 0:
-                pbar.write(f"[{time.strftime('%H:%M:%S')}] [step {e}] saving checkpoint...")
-                self.save_checkpoint(e)
+            # Save checkpoints by COMPLETED step count. This used to test and name by the
+            # pre-increment loop variable `e`, so `state_dict_2000` from an in-loop save
+            # had actually run 2001 steps while the terminal save below counts honestly —
+            # two conventions for one filename. `steps_run` is >= 1 inside the loop, so
+            # the old `e != 0` guard is no longer needed (and step 0 is written before the
+            # loop instead, where it is actually reachable).
+            if self.checkpoint_steps:
+                due_for_checkpoint = steps_run in self.checkpoint_steps
+            else:
+                due_for_checkpoint = steps_run % self.checkpoint_step == 0
+            if due_for_checkpoint:
+                pbar.write(f"[{time.strftime('%H:%M:%S')}] [step {steps_run}] saving checkpoint...")
+                self.save_checkpoint(steps_run)
 
             if e % self.eval_step == 0 and e != 0:
                 should_stop = False
@@ -1669,14 +1710,16 @@ class TrainerFS():
                     pbar.write(f"[{time.strftime('%H:%M:%S')}] Early stopping at step {e}")
                     break
 
-        # `trange(self.steps)` runs e = 0..steps-1, so the periodic
-        # `e % self.checkpoint_step == 0` save can never fire on the last step: a
-        # 40k-step run with checkpoint_step=10000 left state_dict_30000 as its final
-        # periodic checkpoint, and every trajectory eval silently stopped 10k short of
-        # the budget the run was labelled with. Save the terminal state explicitly,
-        # named for the number of steps actually completed so early-stopped runs are
-        # labelled honestly too. This step is always > any periodic save, so it never
-        # collides with one.
+        # Historically the periodic save tested `e % checkpoint_step == 0` on the
+        # pre-increment loop variable, so it could never fire on the last step: a 40k-step
+        # run with checkpoint_step=10000 left state_dict_30000 as its final periodic
+        # checkpoint, and every trajectory eval silently stopped 10k short of the budget
+        # the run was labelled with. Save the terminal state explicitly, named for the
+        # number of steps actually completed so early-stopped runs are labelled honestly
+        # too. Now that the periodic save is also keyed on `steps_run`, a run whose budget
+        # is a multiple of checkpoint_step writes this file inside the loop and the
+        # existence check below turns the terminal save into a no-op — same filenames as
+        # before the fix, one step of training later in content.
         if steps_run > 0:
             final_ckpt = os.path.join(self.ckpt_dir, f"state_dict_{steps_run}.ckpt")
             if os.path.exists(final_ckpt):
@@ -1743,7 +1786,13 @@ class TrainerFS():
         if other_metrics_on_best is not None:
               for key in other_metrics_on_best:
                   wandb.run.summary["final_test_" + key] = other_metrics_on_best[key]
-        self.save_best_state_dict(best_step)
+        # `best_step` is still 0 when no validation eval ever recorded one (eval_step above
+        # the budget, or a very short run). Step 0 is now a real file whenever
+        # --checkpoint_steps asks for the random-init anchor, so copying "the best
+        # checkpoint" would quietly publish untrained weights as the run's state_dict.
+        # Fall back to the terminal checkpoint, which is what this did before step 0 was
+        # ever written.
+        self.save_best_state_dict(best_step if best_val > float("-inf") else steps_run)
         wandb.finish()
         return best_val, test_acc_on_best_val, best_step
         # returns best-val-acc, best-test-acc, best-step
