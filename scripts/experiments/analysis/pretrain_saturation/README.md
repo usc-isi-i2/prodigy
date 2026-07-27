@@ -1,6 +1,8 @@
 # Pretrain saturation — analysis
 
-**Status: skeleton.** The sweeps have not run yet; nothing here is populated.
+**Status: complete.** 216/216 eval jobs finished 2026-07-27, zero failures.
+**Read [`FINDINGS.md`](FINDINGS.md) first** — including §5, which lists what this evidence
+cannot support (no error bars, and a splice that passes only a weak check).
 
 ## Question
 
@@ -46,11 +48,22 @@ Filter them to rows whose model key starts with `sat_`.
    "stops improving", not "reaches a fraction of the total gain over an untrained
    encoder". Do not report a percentage-of-gain without adding that row.
 
-## Deliverables (planned)
+## Deliverables
 
-Into `data/` and `figures/`:
+Built by [`build_tables_and_figure.py`](build_tables_and_figure.py) (Homebrew Python 3.11
+— pandas/matplotlib; the conda env is for training):
 
-- `pretrain_saturation_long.csv` — one row per (arm, step, task, dataset, target, metric).
-- The curve: metric vs. pretraining step, log x, one line per arm, faceted by task.
-- `FINDINGS.md` — with the saturation step per arm/task, and whether broad and narrow
-  corpora differ.
+- `data/pretrain_saturation_long.csv` — 216 rows, one per (arm, step, task, dataset,
+  target, metric).
+- `data/pretrain_saturation_wide.csv` — arm × step, mean of the primary metric per task.
+- `figures/pretrain_saturation.png` — metric vs. pretraining step, log x, one line per
+  arm, one panel per task (two panels rather than two y-axes, since ROC-AUC and Spearman
+  do not share a scale).
+- [`FINDINGS.md`](FINDINGS.md).
+
+## Result in one line
+
+Classification transfer is ~99 % complete by step 500 for the 8-source corpus and flat for
+the remaining 80× of training — but the mean is carried entirely by two of the four
+graphs, one of the other two sits at chance throughout, and the fourth gets *worse* with
+pretraining. Regression is a null.
