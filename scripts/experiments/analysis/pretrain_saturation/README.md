@@ -73,5 +73,8 @@ Classification transfer is ~99 % complete by step 500 for the 8-source corpus an
 the remaining 80× of training — but the mean is carried entirely by two of the four
 graphs, one of the other two sits at chance throughout, and the fourth gets *worse* with
 pretraining. On the two that work the effect is large and certain (+0.50/+0.58 over an
-untrained encoder). Regression measures nothing: a random-init encoder matches it, because
-no part of the model was ever trained to regress.
+untrained encoder). The old regression eval measured nothing (a random-init encoder matched it: the
+`regression_head` is never in any checkpoint and never fitted). Re-scored with a fitted
+frozen-encoder ridge probe, the channel does work — beating the raw-feature floor on 6 of
+8 cells — but pretraining budget barely moves it: a 100-step encoder matches a
+40 000-step one.

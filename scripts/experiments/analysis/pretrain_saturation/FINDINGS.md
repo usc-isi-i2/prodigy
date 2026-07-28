@@ -102,14 +102,19 @@ An **untrained** encoder reaches ρ = +0.174 on twibot20/followers_count, and **
 all pretrained cells fall below that value**. There is no evidence any of these encoders
 carry usable signal for 10-shot profile regression.
 
-**Why, mechanically.** Nothing in the model was ever trained to regress. The collator
-feeds the support targets in as metagraph edge attributes
-(`metagraph_edge_value = y_values * (~query_mask)` — correctly masked, so no leakage), but
-these encoders were pretrained on `neighbor_matching`, where that same `edge_attr` slot
-carries a support/query indicator rather than a continuous magnitude. Eval runs with
-`--eval_only True`, so no gradient step ever adapts the weights that read it. There is no
-regression head at random init — there is no regression head at all; the scalar pathway is
-simply untrained. Reading these numbers as "transfer" over-reads them.
+**Why, mechanically — corrected 2026-07-27.** An earlier version of this file said "there
+is no regression head at all". That is **wrong**. `models/general_gnn.py:30` constructs a
+`regression_head` (Linear→ReLU→Linear) whenever `task_name == "regression"`, and line 158
+predicts with it, bypassing `decode()` entirely. That head appears in **no** NM/CL/FP
+checkpoint (verified: 38 tensors, zero matching `regression_head`), and `load_checkpoint`
+uses `strict=False`, so it silently stays at its **random initialisation**. `--eval_only
+True` returns at `trainer.py:1529` before any optimizer step, so it is never fitted.
+
+Both mechanisms hold at once. The collator does feed the support targets in as metagraph
+edge attributes (`metagraph_edge_value = y_values * (~query_mask)` — correctly masked, no
+leakage), so support values reach the encoder; and the readout sitting on top of them is an
+untrained random MLP. Either alone would void the measurement. Credit for the correction to
+the `experiment/regression-probe-repair` session (`694e5d9`).
 
 **Consequently the apparent structure in this panel is noise**, including the one pattern
 that looked alarming: `ukr` flips sign negative→positive across the 500→1000 boundary and
@@ -120,8 +125,75 @@ pre/post-code-drift split (`all8`'s historical run is post-drift and shows 1/8 c
 discontinuous; sign flips are what a quantity centred on zero does. See §5 for why the
 channel that *does* carry signal shows no boundary effect at all.
 
-Not checked against `../node_regression/data/features_only_floor.csv` — the random-init
-floor above is the stronger control and reaches the same conclusion.
+## 4b. Re-scored with a fitted probe — the channel works, and it saturates by step 100
+
+The random-init floor proves the *old* measurement was dead. It does not say whether a
+properly fitted readout would find a saturation signal. The
+`experiment/regression-probe-repair` session (`694e5d9`) built one: encoder frozen, ridge
+fitted on the support set, scored on held-out query nodes, protocol lifted verbatim from
+`setup/topology_feature_ssl/leakage_baseline.py:74`. All 18 checkpoints re-scored on
+4 graphs × 2 targets, 500 shared episodes per cell (`data/reg_probe/`).
+
+**Architecture check passed silently**: `load_frozen_encoder` prints `[load] missing=…
+unexpected=…` only on a mismatch, and no `[load]` line appeared for any of the 18 × 4
+loads (`gnn_type=sage` for every arm).
+
+**The probe is stable where the old eval was not.** Old numbers swung across a 0.40 range
+with no structure; these move within ~0.035 across the whole step axis.
+
+Mean Spearman over 4 graphs × 2 targets:
+
+| step | all8 | ukr | covid |
+|---|---|---|---|
+| 100 | 0.113 | 0.114 | 0.126 |
+| 500 | 0.091 | 0.111 | 0.111 |
+| 1 000 | 0.105 | 0.120 | 0.117 |
+| 2 000 | 0.108 | 0.124 | 0.123 |
+| 10 000 | 0.126 | 0.132 | 0.130 |
+| 40 000 | 0.124 | 0.121 | 0.131 |
+
+**There is no saturation *curve*, because there is barely a rise.** A 100-step encoder is
+as good as a 40 000-step one; the step-trend is weak (mean rank-correlation with step
++0.331 across the 24 arm×cell series, 17/24 positive, only 5 strongly monotone) and
+several cells dip in the middle. If anything this is saturation *earlier* than
+classification — by step 100, the first point measured — but the dynamic range is so small
+that the honest statement is "pretraining budget barely moves this metric", not "it
+saturates at step N".
+
+**Encoders beat the raw-feature floor on 6 of 8 cells** — the opposite of the
+midterm-only impression:
+
+| dataset | target | floor | best encoder | |
+|---|---|---|---|---|
+| twibot20 | followers_count | 0.1597 | **0.4095** | +0.250 |
+| twibot20 | account_age_days | 0.0371 | 0.1150 | +0.078 |
+| covid19_twitter | account_age_days | 0.0105 | 0.0670 | +0.057 |
+| ukr_rus_twitter | account_age_days | 0.0095 | 0.0622 | +0.053 |
+| midterm | account_age_days | 0.0398 | 0.0872 | +0.047 |
+| covid19_twitter | followers_count | 0.1188 | 0.1424 | +0.024 |
+| midterm | followers_count | 0.2597 | 0.2000 | −0.060 |
+| ukr_rus_twitter | followers_count | 0.2090 | 0.1612 | −0.048 |
+
+**`twibot20` degrades with pretraining on this task too** — 0.37/0.41/0.40 at step 100
+falling to ~0.30 at 40 000, best-at-least-trained for all three arms. That is the same
+direction as its classification behaviour (§2), from an independent measurement, which
+makes it the most reproducible anti-result in this experiment.
+
+**Why encoders can exceed the raw-feature floor at all.** `SAGEConvSelfLoops` does not
+replace a node with its neighbourhood mean: it adds a dedicated `lin_self_loops(x)` root
+projection and a residual `+ x`. Measured on midterm/followers_count — raw `x` scores
+0.2597, `mean_nb(x)` alone scores **0.0415**, and `[x ; mean_nb(x)]` scores 0.2615. So mean
+aggregation destroys ~84 % of that signal on its own, and everything above 0.04 comes from
+the self pathway.
+
+Not checked against `../node_regression/data/features_only_floor.csv` — the probe
+reproduces that file's midterm numbers to four decimals, so it is the same floor.
+
+### The 144 `sat_*` rows in `../node_regression/data/node_regression.csv` are VOID
+They came from the random-head episodic path and are superseded by `data/reg_probe/`.
+They were left in place rather than deleted (the shared CSVs are append-only and other
+experiments' rows sit beside them), but they must not be read as a representation
+measure.
 
 ## 5. What this evidence cannot support
 
