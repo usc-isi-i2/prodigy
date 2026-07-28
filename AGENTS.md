@@ -109,9 +109,13 @@ tmux new-session -d -s <name> 'export PATH="/home/mhchu/miniconda3/bin:$PATH"; b
   `scripts/experiments/analysis/archive/` holds the ones kept in the working tree;
   the 23 removed on 2026-07-26 are only in git (see *Where to Start Reading*).
   `archive/README.md` is the authoritative split.
-- Paper planning: `docs/paper/` — currently `state_doc_jul22.md` and
-  `related_work/`; superseded drafts in `docs/paper/archive/`. Prose planning docs
-  belong here, **not** in `scripts/experiments/setup/`.
+- Paper planning: lives **outside this repo**, at `../paper/` (i.e.
+  `/Users/philipp/projects/gfm/paper`, sibling of `prodigy`) — moved out of
+  `docs/paper/` on 2026-07-27, and not under version control. Holds
+  `state_doc.md` (was `state_doc_jul22.md`), `directions_jul26.md`,
+  `LoG_extended_abstract/`, `related_work/`, and superseded drafts in
+  `archive/`. Prose planning docs belong there, **not** in
+  `scripts/experiments/setup/` and not in `docs/`.
 - There is no `slides/` tree. The decks and their pptxgenjs build scripts were
   removed from the repo on 2026-07-26 (`6dd1635`); recover from git if needed.
 - Training engine (trainer, params, sampler): `experiments/` at the repo root —
