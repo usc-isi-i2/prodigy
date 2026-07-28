@@ -1,0 +1,45 @@
+# Partial cross-source sweep (sampling_improvements remedy #4).
+# ONE variable across the 5 sweep configs: neighbor_sampling_cross_source_prob.
+# Everything else is byte-identical to nm_cross_source_shortcut/merged_within_source_nm.yaml
+# (the established ukr+covid within-source run), so the p=0.0 endpoint reproduces it and
+# the p=1.0 endpoint reproduces the naive merged run.
+#
+# p = P(an NM episode is a naive MIXED-source episode). 0.0 -> every episode confined to
+# one source (no cross-source negatives); 1.0 -> every episode naive (mixed sources).
+#
+# THIS FILE: p = 1.00  -> pure naive endpoint (== merged naive).
+dataset: covid19_twitter          # label only; graph below is the disjoint ukr+covid merge
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_retweet_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+n_hop: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+epochs: 12                        # 12 x 10000 = 120,000 episodes (matches prior runs)
+
+# --- sampling: confine episodes to one source, source ~ proportional to node count ---
+# (proportional keeps the per-node center marginal equal to naive; the ONLY thing the
+#  sweep changes is the fraction of mixed-source episodes below.)
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: proportional
+
+# >>> THE ONE SWEEP VARIABLE <<<
+neighbor_sampling_cross_source_prob: 1.0
+
+eval_step: 10000
+checkpoint_step: 10000
+workers: 16
+device: 0
+seed: 0
+tags: [sampling_improvements, partial_cross_source, ukr_covid, p100, naive, plain]
+prefix: nm_pxsrc_p100

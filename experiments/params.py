@@ -284,6 +284,19 @@ def get_params():
             "'balanced' -> uniform over sources (gives small sources equal episode share)."
         ),
     )
+    args.add_argument(
+        "--neighbor_sampling_cross_source_prob",
+        default=0.0,
+        type=float,
+        help=(
+            "Partial cross-source episodes (remedy #4). Requires "
+            "--neighbor_sampling_episode_source=graph_id. Probability that a given "
+            "neighbor-matching episode is a naive MIXED-source episode instead of being "
+            "confined to one source. 0.0 -> pure within-source (default), 1.0 -> pure "
+            "naive; values in between interpolate, trading the cross-source shortcut "
+            "against source-discrimination signal."
+        ),
+    )
 
     args.add_argument("-way_u", "--n_way_upper", default=-1, type=int) # If defined, will set the upper bound for n_way
     args.add_argument("-shot_u", "--n_shots_upper", default=-1, type=int) # If defined, will set the upper bound for n_shots
