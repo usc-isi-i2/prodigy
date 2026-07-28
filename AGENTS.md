@@ -123,6 +123,25 @@ tmux new-session -d -s <name> 'export PATH="/home/mhchu/miniconda3/bin:$PATH"; b
 - Tucker repo path: `/dataMeR1/phil/gfm/prodigy`
 - Tucker data root: `/dataMeR1/phil/data`
 
+## Model Architecture
+
+PRODIGY is an in-context few-shot learner: one example is an *episode* of `n_way`
+labels × (`n_shots` support + `n_query` query) center nodes, each expanded into an
+`n_hop` sampled subgraph with a pooling supernode (`experiments/sampler.py`,
+`data/dataset.py`, batched in `data/dataloader.py`). The forward pass
+(`models/general_gnn.py`) walks the `--layers` string (default `S,U,M`, assembled in
+`experiments/layers.py`): **S** message-passes over each subgraph
+(`models/multilayer_gnn.py`), **U** pools it into a supernode = one data-point
+embedding, and **M** runs an attention GNN over the bipartite *metagraph* of
+data-point nodes × label nodes with edge attrs `(is_query, ±1 support label)` — this
+is where support labels reach the queries (`models/metaGNN.py`). The prediction is
+scaled cosine similarity between query and label embeddings (CE for `n_way>1`,
+BCE/margin-ranking for 1-way; `regression` swaps in an MLP head), and label
+embeddings are sentence-BERT text embeddings unless
+`ignore_label_embeddings`/`zero_label_embeddings` is set. Pretraining objectives
+(`nm`, `cl`, `fp`, `mix`, …) change only how episodes and labels are built, not the
+encoder — `fp`/`e4` add an auxiliary MLP head on node embeddings.
+
 ## Graph Catalog
 
 - `docs/graph_catalog.json` is the single source of truth (moved from `config/` on
