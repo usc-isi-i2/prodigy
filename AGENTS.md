@@ -109,15 +109,38 @@ tmux new-session -d -s <name> 'export PATH="/home/mhchu/miniconda3/bin:$PATH"; b
   `scripts/experiments/analysis/archive/` holds the ones kept in the working tree;
   the 23 removed on 2026-07-26 are only in git (see *Where to Start Reading*).
   `archive/README.md` is the authoritative split.
-- Paper planning: `docs/paper/` — currently `state_doc_jul22.md` and
-  `related_work/`; superseded drafts in `docs/paper/archive/`. Prose planning docs
-  belong here, **not** in `scripts/experiments/setup/`.
+- Paper planning: lives **outside this repo**, at `../paper/` (i.e.
+  `/Users/philipp/projects/gfm/paper`, sibling of `prodigy`) — moved out of
+  `docs/paper/` on 2026-07-27, and not under version control. Holds
+  `state_doc.md` (was `state_doc_jul22.md`), `directions_jul26.md`,
+  `LoG_extended_abstract/`, `related_work/`, and superseded drafts in
+  `archive/`. Prose planning docs belong there, **not** in
+  `scripts/experiments/setup/` and not in `docs/`.
 - There is no `slides/` tree. The decks and their pptxgenjs build scripts were
   removed from the repo on 2026-07-26 (`6dd1635`); recover from git if needed.
 - Training engine (trainer, params, sampler): `experiments/` at the repo root —
   note this is the model code, *not* the per-experiment folders above.
 - Tucker repo path: `/dataMeR1/phil/gfm/prodigy`
 - Tucker data root: `/dataMeR1/phil/data`
+
+## Model Architecture
+
+PRODIGY is an in-context few-shot learner: one example is an *episode* of `n_way`
+labels × (`n_shots` support + `n_query` query) center nodes, each expanded into an
+`n_hop` sampled subgraph with a pooling supernode (`experiments/sampler.py`,
+`data/dataset.py`, batched in `data/dataloader.py`). The forward pass
+(`models/general_gnn.py`) walks the `--layers` string (default `S,U,M`, assembled in
+`experiments/layers.py`): **S** message-passes over each subgraph
+(`models/multilayer_gnn.py`), **U** pools it into a supernode = one data-point
+embedding, and **M** runs an attention GNN over the bipartite *metagraph* of
+data-point nodes × label nodes with edge attrs `(is_query, ±1 support label)` — this
+is where support labels reach the queries (`models/metaGNN.py`). The prediction is
+scaled cosine similarity between query and label embeddings (CE for `n_way>1`,
+BCE/margin-ranking for 1-way; `regression` swaps in an MLP head), and label
+embeddings are sentence-BERT text embeddings unless
+`ignore_label_embeddings`/`zero_label_embeddings` is set. Pretraining objectives
+(`nm`, `cl`, `fp`, `mix`, …) change only how episodes and labels are built, not the
+encoder — `fp`/`e4` add an auxiliary MLP head on node embeddings.
 
 ## Graph Catalog
 
