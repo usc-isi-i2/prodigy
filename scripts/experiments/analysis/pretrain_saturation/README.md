@@ -1,8 +1,9 @@
 # Pretrain saturation — analysis
 
-**Status: complete.** 216/216 eval jobs finished 2026-07-27, zero failures.
-**Read [`FINDINGS.md`](FINDINGS.md) first** — including §5, which lists what this evidence
-cannot support (no error bars, and a splice that passes only a weak check).
+**Status: complete, with the three follow-up checks done (2026-07-29).** 216/216 eval jobs
+finished 2026-07-27, zero failures; plus a feature ablation, a run-to-run error bar, and a
+probe α sweep. **Read [`FINDINGS.md`](FINDINGS.md) first**, including §5 for what the
+evidence still cannot support.
 
 ## Question
 
@@ -44,7 +45,11 @@ Filter them to rows whose model key starts with `sat_`.
    confidence interval over seeds. Eval episodes are seeded by `sum(ord(c) for c in split)`
    and ignore `--seed`, so re-running with a different seed does not resample them. For
    robustness use agreement across datasets, not a spread across seeds.
-4. **The random-init floor is a separate 12-job control, not a row in the curve**
+4. **Error bars now exist for classification** (`data/classification_replicates.csv`):
+   two independent runs of the identical config differ by mean |Δ| 0.0122 across 48 cells.
+   The step-500 rise is 16× that; the plateau is 1.1×. Use this ruler, not intuition, when
+   calling a difference real — `twibot20` in particular is the noisiest graph.
+5. **The random-init floor is a separate 12-job control, not a row in the curve**
    (`data/random_init_floor.csv`). It bounds the untrained encoder on a subset of cells,
    so "+0.50 over an untrained encoder" in FINDINGS §2 is measured; but "% of eventual
    gain by step 500" in §1 is computed against each arm's own best checkpoint, not against

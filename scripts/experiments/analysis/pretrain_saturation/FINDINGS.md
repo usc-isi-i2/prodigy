@@ -35,7 +35,18 @@ already realised at step 500:
 | covid | 78.5 % | 0.040 |
 
 The remaining **98.75 % of the training budget** (500 → 40 000 steps, an 80× increase)
-buys `all8` nothing measurable. This is the headline the experiment was built to test, and
+buys `all8` nothing measurable — and "measurable" is now literal. Two independent runs of
+the identical config, scored on the same 48 (arm, step, graph) cells
+(`data/classification_replicates.csv`), differ by **mean |Δ| = 0.0122** (median 0.0077,
+max 0.0560). Against that ruler:
+
+| quantity | value | vs. run-to-run noise |
+|---|---|---|
+| rise, step 100 → 500 | 0.1998 | **16×** |
+| plateau spread, steps 500 → 40 000 | 0.0131 | **1.1×** |
+
+The rise is far outside the noise; the plateau is indistinguishable from flat. This is the
+error bar §5 used to say was missing. This is the headline the experiment was built to test, and
 it is only visible because of the dense 100/500 checkpoints — no prior run in this repo
 wrote a checkpoint below step 1000, so the entire rise was previously invisible.
 
@@ -62,11 +73,35 @@ three:
 - **ukr_rus_suspended sits at chance (0.487–0.516) at every checkpoint.** Pretraining
   never does anything for it. A flat line at 0.5 is not saturation.
 - **twibot20 gets *worse* with pretraining** — 0.668 at step 100 down to 0.626 at 40 000,
-  its best checkpoint being the *least*-trained one.
+  its best checkpoint being the *least*-trained one. **Weaker than it looks:** twibot20 is
+  also the noisiest graph (run-to-run mean |Δ| 0.0234, max 0.0560), so a 0.042 decline is
+  only ~1.8σ. An earlier draft called this "the most reproducible anti-result"; on
+  classification alone it is suggestive, not solid. It does reproduce independently on the
+  regression probe (§4b), which is what keeps it interesting.
 
 Against a random-init encoder these two are unambiguous: covid_political 0.429 and
 election2020 0.403 untrained (both *below* chance), versus 0.932 and 0.987 pretrained —
 gaps of +0.50 and +0.58. Whatever else is uncertain here, this effect is real.
+
+**But it is a FEATURE effect, not a topology effect** (`data/feature_ablation.csv`):
+
+| graph | step | none | permute | zero |
+|---|---|---|---|---|
+| election2020 | 500 | 0.9867 | 0.9852 | **0.5371** |
+| election2020 | 40 000 | 0.9842 | 0.9816 | **0.5095** |
+| covid_political | 500 | 0.9007 | 0.8947 | **0.6185** |
+| covid_political | 40 000 | 0.9267 | 0.9245 | **0.5685** |
+
+Zeroing node features drops both graphs to chance. So the 0.98 is carried by the bio-text
+features, not by graph structure. **Do not read the `permute` column as "features don't
+matter"** — `AblateAllFeatures("permute")` shuffles rows *within each sampled subgraph*
+(`data/augment.py:121`), so under neighbourhood feature-homophily a swapped neighbour
+carries the same label signal. This repo has been caught by that before; `zero` is the
+informative arm.
+
+**Still open:** there is no raw-feature classification floor (regression has one). Without
+it we cannot say whether the pretrained encoder adds anything *over the bio embeddings* —
+only that it adds a great deal over an untrained encoder on the same features.
 
 **`election2020` reaching 0.987 deserves scrutiny before it is cited.** A near-perfect
 frozen-probe ROC-AUC after 500 pretraining steps is more consistent with an easy or leaky
@@ -204,9 +239,27 @@ Two consequences for the claims above:
    floor is also the better-conditioned side and both get `alpha=1.0` despite 768 vs 256
    dimensions.
 
-Cheap fixes, none run: `probe_spearman(..., standardize=False)`, a variance floor in the
-scaler, or an `--alpha` sweep (the sweep already accepts a comma-separated list; only 1.0
-was used). Any of these would show whether the target split and the 6/8 survive.
+**Checked with an α sweep** (α ∈ {1, 10, 100, 1000} on midterm + twibot20,
+`data/reg_probe_alpha/`). The conclusion survives:
+
+| α | median −R² | encoders beat floor | `account_age` vs step | `followers` vs step |
+|---|---|---|---|---|
+| 1 | 266 | 3/4 | **+0.876 (6/6)** | −0.210 (2/6) |
+| 10 | 169 | 3/4 | **+0.714 (6/6)** | −0.476 (2/6) |
+| 100 | 27 | 3/4 | **+0.543 (6/6)** | −0.390 (2/6) |
+| 1000 | **1.0** | 3/4 | −0.114 (3/6) | −0.333 (2/6) |
+
+Conditioning improves monotonically with α and is fully repaired by α=1000 — but that is
+also where the probe stops working: Spearman collapses (e.g. midterm/followers
+0.161→0.085), because the ridge is shrunk to near-constant prediction. Across the usable
+range **α = 1–100 the target split is 6/6 positive every time and the beats-floor count is
+invariant at 3/4.**
+
+So the degeneracy is real but **not what produces the target split**, and the split is not
+an artefact of α=1.0. Two caveats stand: the absolute Spearman values at α=1.0 understate
+the encoders (α=10 is uniformly better), and the encoder-vs-floor comparison still applies
+one α across 768-d and 256-d feature spaces. `standardize=False` and a scaler variance
+floor remain untried.
 
 **Encoders beat the raw-feature floor on 6 of 8 cells** — the opposite of the
 midterm-only impression:
