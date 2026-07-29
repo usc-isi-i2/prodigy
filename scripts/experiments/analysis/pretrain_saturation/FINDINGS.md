@@ -176,6 +176,38 @@ features do not encode, while diluting node-local signal that they already encod
 the same dilution the `mean_nb(x)` measurement below quantifies. Stated as a hypothesis:
 this experiment establishes the correlation, not the mechanism.
 
+#### Read the +179 % with care — the ridge fits on encoder embeddings are degenerate
+
+Spearman is rank-based and survives, but the underlying fits do not. Comparing the probe's
+own diagnostics:
+
+| | median −R² | median RMSE (target is log1p, range ≈ 0–17) |
+|---|---|---|
+| raw-feature floor (768-d) | 0.02 – 0.30 | 1.2 – 3.1 |
+| frozen encoders (256-d) | **155 – 725** | **20 – 67** |
+
+`probe_spearman` fits `StandardScaler` on the **10 support nodes** and applies it to the
+queries. Encoder embeddings after BatchNorm+ReLU carry near-constant or dead dimensions;
+σ ≈ 0 across 10 samples sends the transformed queries — and the predictions — to the tens
+of thousands. The raw bio features are dense and condition fine, so **the degeneracy is
+specific to the encoder side of the encoder-vs-floor comparison.**
+
+Two consequences for the claims above:
+
+1. **The +179 % is a percentage of a very small base.** `account_age_days` moves
+   0.025 → 0.068 while the encoder-to-encoder scatter within a cell is σ ≈ 0.022 — so the
+   rise is roughly 2σ, not the clean staircase the percentage suggests. Its relative
+   instability (σ/mean = 0.43) is **3× that of `followers_count`** (0.14), and its fits are
+   the more degenerate of the two (median −R² 401 vs 252). The direction is probably real;
+   the strength is overstated by the framing.
+2. **"Beats the raw-feature floor on 6 of 8 cells" is not apples-to-apples**, since the
+   floor is also the better-conditioned side and both get `alpha=1.0` despite 768 vs 256
+   dimensions.
+
+Cheap fixes, none run: `probe_spearman(..., standardize=False)`, a variance floor in the
+scaler, or an `--alpha` sweep (the sweep already accepts a comma-separated list; only 1.0
+was used). Any of these would show whether the target split and the 6/8 survive.
+
 **Encoders beat the raw-feature floor on 6 of 8 cells** — the opposite of the
 midterm-only impression:
 

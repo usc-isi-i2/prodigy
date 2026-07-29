@@ -84,6 +84,8 @@ pretraining. On the two that work the effect is large and certain (+0.50/+0.58 o
 untrained encoder). The old regression eval measured nothing (a random-init encoder matched it: the
 `regression_head` is never in any checkpoint and never fitted). Re-scored with a fitted
 frozen-encoder ridge probe, the channel does work — beating the raw-feature floor on 6 of
-8 cells — and the effect of pretraining flips by target: `account_age_days` rises monotonically
-(12/12 series, +179 %, saturating ~10k) while `followers_count` is flat-to-declining
-(−13 %), its best encoder usually the least-trained one.
+8 cells — and the effect of pretraining differs by target: `account_age_days` rises (12/12 series,
++179 %, but on a base so small the rise is only ~2σ) while `followers_count` is
+flat-to-declining. Read FINDINGS §4b's conditioning caveat before quoting either: the
+ridge fits on encoder embeddings are numerically degenerate (median −R² 155–725) where the
+raw-feature floor's are not.
