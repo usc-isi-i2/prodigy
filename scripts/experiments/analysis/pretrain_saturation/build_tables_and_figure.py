@@ -48,7 +48,7 @@ TASKS = [
     ("classification", "node_classification/data/node_classification.csv", "roc_auc",
      "ROC-AUC", "Node classification  (4 graphs, 10-shot)"),
     ("regression", "node_regression/data/node_regression.csv", "spearman",
-     "Spearman", "Node regression  (4 graphs x 2 targets, 10-shot)"),
+     "Spearman", "Node regression — VOID, superseded (see probe_regression_curves.png)"),
 ]
 
 
@@ -147,9 +147,10 @@ def main() -> int:
              "throughout — no trend to saturate.",
              color=INK_MUTED, fontsize=9, ha="left")
     fig.text(0.008, -0.04,
-             "Steps 100/500 from dense retrains; 1000+ spliced from the original runs. "
-             "One run per arm — no error bars, so a flat segment is not evidence of "
-             "convergence.", color=INK_MUTED, fontsize=8, ha="left")
+             "Steps 100/500 from dense retrains; 1000+ spliced from the original runs. One run "
+             "per arm — no error bars, so a flat segment is not evidence of convergence. The "
+             "RIGHT PANEL IS VOID: it plots the episodic regression eval, whose regression_head "
+             "is random and never fitted. Valid regression is in probe_regression_curves.png.", color=INK_MUTED, fontsize=8, ha="left")
     fig.tight_layout(rect=[0, 0, 1, 0.90])
     out = HERE / "figures" / "pretrain_saturation.png"
     fig.savefig(out, dpi=200, bbox_inches="tight", facecolor="white")

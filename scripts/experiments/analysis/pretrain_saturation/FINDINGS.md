@@ -139,7 +139,8 @@ unexpected=…` only on a mismatch, and no `[load]` line appeared for any of the
 loads (`gnn_type=sage` for every arm).
 
 **The probe is stable where the old eval was not.** Old numbers swung across a 0.40 range
-with no structure; these move within ~0.035 across the whole step axis.
+with no structure; the probe's pooled mean moves within ~0.035 across the whole step axis
+— but see below, that pooled figure is itself misleading.
 
 Mean Spearman over 4 graphs × 2 targets:
 
@@ -152,13 +153,28 @@ Mean Spearman over 4 graphs × 2 targets:
 | 10 000 | 0.126 | 0.132 | 0.130 |
 | 40 000 | 0.124 | 0.121 | 0.131 |
 
-**There is no saturation *curve*, because there is barely a rise.** A 100-step encoder is
-as good as a 40 000-step one; the step-trend is weak (mean rank-correlation with step
-+0.331 across the 24 arm×cell series, 17/24 positive, only 5 strongly monotone) and
-several cells dip in the middle. If anything this is saturation *earlier* than
-classification — by step 100, the first point measured — but the dynamic range is so small
-that the honest statement is "pretraining budget barely moves this metric", not "it
-saturates at step N".
+![probe curves](figures/probe_regression_curves.png)
+
+**The step-trend flips sign by target, and the pooled mean hides it.** Pooled over all 24
+arm×cell series the trend looks weak (mean rank-correlation with step +0.331, 17/24
+positive). Split by target it is not weak at all — it is two opposite effects cancelling:
+
+| target | rank-corr with step | series positive | step 100 → 40 000 |
+|---|---|---|---|
+| `account_age_days` | **+0.757** | **12/12** | 0.025 → 0.068 (**+179 %**) |
+| `followers_count` | −0.095 | 5/12 | 0.211 → 0.183 (−13 %) |
+
+So **`account_age_days` does saturate**, rising monotonically to a plateau around step
+10 000 — later than classification's step 500, and consistently across every arm and
+dataset. **`followers_count` does not rise at all**; its best encoder is usually the
+least-trained one.
+
+Note which target is which. `followers_count` carries the **high** raw-feature floors
+(0.119–0.260) and `account_age_days` the near-zero ones (0.010–0.040). The pattern is
+therefore consistent with pretraining adding contextual/structural signal that the node
+features do not encode, while diluting node-local signal that they already encode well —
+the same dilution the `mean_nb(x)` measurement below quantifies. Stated as a hypothesis:
+this experiment establishes the correlation, not the mechanism.
 
 **Encoders beat the raw-feature floor on 6 of 8 cells** — the opposite of the
 midterm-only impression:
