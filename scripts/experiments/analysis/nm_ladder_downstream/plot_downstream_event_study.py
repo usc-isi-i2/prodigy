@@ -98,6 +98,10 @@ def main():
         p = sign_test_ge(pos, n)
         mean_d = sum(deltas) / n if n else float("nan")
         verdict = "significant" if p < 0.05 else "n.s."
+        # Printed as well as drawn: the sign test is the headline of this experiment,
+        # and reading it off a PNG is how a transcription error gets into a writeup.
+        print(f"{task:>4}: {pos}/{n} positive  p={p:.4f} ({verdict})  "
+              f"mean delta={mean_d:+.4f}")
         ax.set_title(title, fontsize=11, color=INK, pad=8)
         ax.annotate(f"entry $\\Delta$ > 0 in {pos}/{n} events\n"
                     f"sign test p = {p:.3f} ({verdict})\nmean $\\Delta$ = {mean_d:+.3f}",
