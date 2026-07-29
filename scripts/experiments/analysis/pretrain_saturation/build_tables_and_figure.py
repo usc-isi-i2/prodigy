@@ -67,6 +67,24 @@ def load(csv_rel: str, metric: str, task: str) -> pd.DataFrame:
     return df[[c for c in cols if c in df.columns]]
 
 
+def classification_sigma() -> float | None:
+    """Single-run sigma of ROC-AUC, from the paired replicate runs. None if absent."""
+    rep_path = HERE / "data" / "classification_replicates.csv"
+    if not rep_path.is_file():
+        return None
+    rep = pd.read_csv(rep_path)
+    orig = pd.read_csv(ANALYSIS / TASKS[0][1])
+    key = ["dataset", "shots"]
+    rep = rep.assign(k=rep.model.str.replace("^rep_", "", regex=True))
+    orig = orig[orig.model.astype(str).str.startswith("sat_")].assign(
+        k=lambda d: d.model.str.replace("^sat_", "", regex=True))
+    m = rep.merge(orig, on=["k"] + key, suffixes=("_rep", "_orig"))
+    if m.empty:
+        return None
+    diffs = (m.roc_auc_rep - m.roc_auc_orig).to_numpy()
+    return float(diffs.std(ddof=1) / (2 ** 0.5))
+
+
 def main() -> int:
     frames = [load(csv, metric, task) for task, csv, metric, _, _ in TASKS]
     long = pd.concat(frames, ignore_index=True).sort_values(
@@ -76,6 +94,12 @@ def main() -> int:
     if len(long) != expected:
         print(f"[warn] {len(long)} rows, expected {expected} -- an eval cell is missing",
               file=sys.stderr)
+
+    # Run-to-run uncertainty, measured: two independent runs of the identical config
+    # scored on the same cells (data/classification_replicates.csv). sigma for ONE run is
+    # the paired-difference sigma over sqrt(2); a band drawn at +/-sigma is therefore what
+    # a single curve is worth, not the gap between two of them.
+    band = classification_sigma()
 
     (HERE / "data").mkdir(exist_ok=True)
     (HERE / "figures").mkdir(exist_ok=True)
@@ -95,6 +119,9 @@ def main() -> int:
         ends = {}
         for arm in ARM_ORDER:
             s = (sub[sub["arm"] == arm].groupby("step")["value"].mean().sort_index())
+            if task == "classification" and band:
+                ax.fill_between(s.index, s.values - band, s.values + band,
+                                color=ARM_COLOR[arm], alpha=0.16, linewidth=0, zorder=2)
             ax.plot(s.index, s.values, color=ARM_COLOR[arm], linewidth=2,
                     marker="o", markersize=5.5, markeredgecolor="white",
                     markeredgewidth=1.2, label=ARM_LABEL[arm], zorder=3,
@@ -142,15 +169,16 @@ def main() -> int:
     fig.suptitle("Downstream transfer vs pretraining budget",
                  color=INK, fontsize=12.5, x=0.008, ha="left", y=1.0)
     fig.text(0.008, 0.935,
-             "Classification reaches its plateau by ~500 steps and moves within "
-             "±0.013 over the next 79x of training. Regression stays near zero "
-             "throughout — no trend to saturate.",
+             "Classification reaches its plateau by ~500 steps: the rise is 16x the run-to-run "
+             "noise, the plateau 1.1x it — i.e. flat to within measurement error.",
              color=INK_MUTED, fontsize=9, ha="left")
-    fig.text(0.008, -0.04,
-             "Steps 100/500 from dense retrains; 1000+ spliced from the original runs. One run "
-             "per arm — no error bars, so a flat segment is not evidence of convergence. The "
-             "RIGHT PANEL IS VOID: it plots the episodic regression eval, whose regression_head "
-             "is random and never fitted. Valid regression is in probe_regression_curves.png.", color=INK_MUTED, fontsize=8, ha="left")
+    fig.text(0.008, -0.10,
+             "Steps 100/500 from dense retrains; 1000+ spliced from the original runs.\n"
+             "Shaded band on the left = measured single-run sigma (0.012) from two independent "
+             "runs of the identical config.\n"
+             "RIGHT PANEL IS VOID — it plots the episodic regression eval, whose regression_head "
+             "is random and never fitted; valid regression is in probe_regression_curves.png.",
+             color=INK_MUTED, fontsize=8, ha="left", linespacing=1.5)
     fig.tight_layout(rect=[0, 0, 1, 0.90])
     out = HERE / "figures" / "pretrain_saturation.png"
     fig.savefig(out, dpi=200, bbox_inches="tight", facecolor="white")

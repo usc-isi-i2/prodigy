@@ -83,10 +83,13 @@ Built by [`build_tables_and_figure.py`](build_tables_and_figure.py) (Homebrew Py
 ## Result in one line
 
 Classification transfer is ~99 % complete by step 500 for the 8-source corpus and flat for
-the remaining 80× of training — but the mean is carried entirely by two of the four
-graphs, one of the other two sits at chance throughout, and the fourth gets *worse* with
-pretraining. On the two that work the effect is large and certain (+0.50/+0.58 over an
-untrained encoder). The old regression eval measured nothing (a random-init encoder matched it: the
+the remaining 80× of training — the rise is **16×** the measured run-to-run noise, the
+plateau **1.1×** it. But the mean is carried entirely by two of the four graphs, one of the
+other two sits at chance throughout, and the fourth gets *worse* with pretraining (only
+~1.8σ on its own noise, so: suggestive). On the two that work the effect is large versus an
+untrained encoder (+0.50/+0.58) — **but zeroing node features drops both to chance, so it
+is the bio-text features doing the work, not graph structure.** There is no raw-feature
+classification floor yet, so "the encoder beats the features" remains unproven. The old regression eval measured nothing (a random-init encoder matched it: the
 `regression_head` is never in any checkpoint and never fitted). Re-scored with a fitted
 frozen-encoder ridge probe, the channel does work — beating the raw-feature floor on 6 of
 8 cells — and the effect of pretraining differs by target: `account_age_days` rises (12/12 series,
