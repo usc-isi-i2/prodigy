@@ -44,9 +44,11 @@ Filter them to rows whose model key starts with `sat_`.
    confidence interval over seeds. Eval episodes are seeded by `sum(ord(c) for c in split)`
    and ignore `--seed`, so re-running with a different seed does not resample them. For
    robustness use agreement across datasets, not a spread across seeds.
-4. **There is no random-init floor row** in this design, so "saturation" here means
-   "stops improving", not "reaches a fraction of the total gain over an untrained
-   encoder". Do not report a percentage-of-gain without adding that row.
+4. **The random-init floor is a separate 12-job control, not a row in the curve**
+   (`data/random_init_floor.csv`). It bounds the untrained encoder on a subset of cells,
+   so "+0.50 over an untrained encoder" in FINDINGS §2 is measured; but "% of eventual
+   gain by step 500" in §1 is computed against each arm's own best checkpoint, not against
+   that floor. Do not mix the two denominators.
 
 ## Deliverables
 
