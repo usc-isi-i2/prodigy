@@ -102,6 +102,36 @@ through `SAGEConvSelfLoops`'s self pathway plus residual. Where the raw feature 
 node-local and strongly predictive, a 1-layer encoder is a lossy re-encoding of it. Any Δ
 computed on those two cells is drift on a degraded channel and is excluded above.
 
+## Per-order, per-target breakdown
+
+The three headline figures each collapse a dimension — the trajectory is order A only, the
+event study pools all orders into one cloud, the means figure averages over eval graphs.
+`plot_downstream_breakdown.py` emits the un-collapsed views into `figures/breakdown/`:
+
+- **15 figures** at `(order × task × target)`, one line per eval graph — the default.
+- **63 figures** at `(order × task × target × dataset)` under `breakdown/per_dataset/`,
+  one line each, via `--per-dataset`.
+
+Each carries its own entry Δ per series and its own floor line, and the x axis is built
+from that order's `added` column rather than order A's. Two things are much easier to see
+there than in the pooled event study:
+
+**Order C carries the static-LP result.** Entry deltas per order:
+
+| order | positive | mean Δ | max Δ |
+|---|---|---|---|
+| A (published topical) | 3/4 | +0.011 | +0.019 |
+| B (donor-strength descending) | 3/4 | +0.018 | +0.073 |
+| **C (isolates first)** | **5/5** | **+0.058** | **+0.094** |
+
+The pooled 11/13 is therefore not evenly sourced: order C supplies 5 of the 11 positives and
+most of the magnitude. C starts from the weakest seeds (election2020, covid-political,
+cp-hk), so every graph enters against a low baseline and has the most room to gain — an
+alternative reading to "adding the source helped", and one the pooled figure hides.
+
+And on regression the held-out trajectory frequently sits *above* the in-merge one —
+TwiBot-20 / followers is the clearest case.
+
 ## Caveats
 
 - **1 seed.** Sub-0.02 differences are noise. This holds for all three panels.
