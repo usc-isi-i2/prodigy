@@ -42,7 +42,7 @@ GRID = "#e1e0d9"
 PANELS = [
     ("slp", "Static link prediction", "AUC (degree-matched)"),
     ("pl", "Node classification", "ROC-AUC (10-shot)"),
-    ("reg", "Node regression", "Spearman (10-shot)"),
+    ("reg", "Node regression", "Spearman (10-shot ridge probe)"),
 ]
 RUNGS = list(range(1, 9))
 

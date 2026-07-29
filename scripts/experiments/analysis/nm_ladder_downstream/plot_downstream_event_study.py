@@ -44,6 +44,11 @@ PANELS = [
     ("reg", "Node regression", "Spearman"),
 ]
 
+# Regression is the frozen-encoder ridge probe, not the void episodic path the
+# 2026-07-27 version of this figure used. See assemble_downstream_tables.py.
+SUBTITLE = ("static LP: repaired pair evaluator  ·  regression: frozen-encoder ridge "
+            "probe (the episodic path is void)")
+
 
 def sign_test_ge(k, n):
     """One-sided P(X >= k) for X ~ Binomial(n, 0.5)."""
@@ -124,8 +129,9 @@ def main():
     fig.legend(handles=handles, loc="lower center", ncol=3, frameon=False,
                fontsize=8.5, bbox_to_anchor=(0.5, -0.03))
     fig.suptitle("Does adding a graph to pre-training help that graph downstream? "
-                 "(entry-aligned, 3 graph orders)", fontsize=12.5, color=INK, y=1.0)
-    fig.tight_layout(rect=(0, 0.05, 1, 0.96))
+                 "(entry-aligned, 3 graph orders)", fontsize=12.5, color=INK, y=1.02)
+    fig.text(0.5, 0.965, SUBTITLE, ha="center", fontsize=8.5, color=MUTED)
+    fig.tight_layout(rect=(0, 0.05, 1, 0.94))
 
     for ext in ("pdf", "png"):
         out = os.path.join(FIGS, f"nm_ladder_downstream_event_study.{ext}")
