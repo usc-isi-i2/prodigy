@@ -78,6 +78,10 @@ Built by [`build_tables_and_figure.py`](build_tables_and_figure.py) (Homebrew Py
   `regression_head` is random and never fitted) and are titled as such; they are kept only
   as evidence of that noise. Valid regression numbers are here.
 - `data/reg_probe/*.csv` — 152 rows, fitted frozen-encoder ridge probe + raw-feature floor.
+- `data/step0_anchor.csv` — the untrained (`state_dict_0`) encoder on all 12 cells. All
+  three arms share ONE t=0 (byte-identical, md5 `61adf822…`), so it is a single reference
+  level, and it cannot sit on a log x-axis — hence a horizontal line in the curve figures
+  and a real `0` column in the heatmaps.
 - [`FINDINGS.md`](FINDINGS.md).
 
 ## Result in one line

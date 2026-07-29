@@ -54,13 +54,31 @@ def load():
     return enc, floors
 
 
+def _steplab(v: int) -> str:
+    """Compact step tick: 0 / 100 / 500 / 1k / 2k / 10k / 40k. Seven columns of
+    comma-grouped numbers collide at this panel width."""
+    v = int(v)
+    return str(v) if v < 1000 else f"{v // 1000}k"
+
+
 def luminance(rgba):
     r, g, b = rgba[:3]
     f = lambda c: c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
     return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
 
 
+def step0_levels():
+    """Per-(dataset,target) step-0 Spearman; one shared untrained encoder."""
+    f = HERE / "data" / "step0_anchor.csv"
+    if not f.is_file():
+        return {}
+    d = pd.read_csv(f)
+    d = d[d.task == "regression"]
+    return {(r.dataset, r.target): r.value for r in d.itertuples()}
+
+
 def curves(enc, floors):
+    s0 = step0_levels()
     cells = sorted(enc.cell.unique())
     fig, axes = plt.subplots(2, 4, figsize=(16, 6.8), constrained_layout=True)
     for ax, cell in zip(axes.ravel(), cells):
@@ -72,6 +90,12 @@ def curves(enc, floors):
             ax.annotate(f"raw-feature floor {floor:.3f}", (1.0, floor), xycoords=("axes fraction", "data"),
                         xytext=(-2, 4), textcoords="offset points", ha="right", va="bottom",
                         fontsize=7.5, color=INK_MUTED)
+        lv = s0.get((ds, tgt))
+        if lv is not None:
+            ax.axhline(lv, color="#8a3ffc", linewidth=1.3, linestyle=(0, (2, 2)), zorder=1)
+            ax.annotate(f"step 0 = {lv:.3f}", (0.985, lv), xycoords=("axes fraction", "data"),
+                        xytext=(0, -4), textcoords="offset points", fontsize=7.5,
+                        color="#8a3ffc", va="top", ha="right")
         for arm in ARM_ORDER:
             s = sub[sub.arm == arm].groupby("step")["spearman"].mean().sort_index()
             ax.plot(s.index, s.values, color=ARM_COLOR[arm], linewidth=2, marker="o",
@@ -93,13 +117,15 @@ def curves(enc, floors):
     handles, labels = axes.ravel()[0].get_legend_handles_labels()
     fig.legend(handles, labels, frameon=False, fontsize=8.5, labelcolor=INK,
                loc="upper left", bbox_to_anchor=(0.004, 0.975), ncol=3)
-    fig.suptitle("Regression, re-scored with a fitted probe — the effect of pretraining flips by target",
+    fig.suptitle("Regression probe vs an UNTRAINED encoder — pretraining adds account_age, destroys followers",
                  fontsize=13, color=INK, x=0.004, ha="left", y=1.06)
     fig.text(0.004, -0.02,
-             "Frozen encoder, ridge fitted on the support set, held-out queries; 500 shared "
-             "episodes per cell. Dashed line = ridge on raw features. account_age_days RISES "
-             "with steps (12/12 series positive, +179%, saturating ~10k); followers_count is "
-             "flat-to-declining (-13%), its best encoder the least-trained one.",
+             "Frozen encoder, ridge on the support set, held-out queries; 500 shared episodes "
+             "per cell. Grey dashed = ridge on raw features. Purple dashed = the step-0 "
+             "untrained encoder (one t=0, byte-identical across arms).\n"
+             "Every account_age_days panel ends ABOVE step 0; every followers_count panel sits "
+             "AT or BELOW it — so pretraining builds the target the features do not encode and "
+             "erodes the one they do.",
              fontsize=8, color=INK_MUTED, ha="left")
     out = HERE / "figures" / "probe_regression_curves.png"
     fig.savefig(out, dpi=200, bbox_inches="tight", facecolor="white")
@@ -108,14 +134,22 @@ def curves(enc, floors):
 
 def heatmap(enc):
     cells = sorted(enc.cell.unique())
+    s0 = step0_levels()
     norm = Normalize(vmin=0.0, vmax=0.42)
     fig, axes = plt.subplots(1, 3, figsize=(15.5, 4.4), constrained_layout=True)
     for ax, arm in zip(axes, ARM_ORDER):
         mat = (enc[enc.arm == arm]
                .pivot_table(index="cell", columns="step", values="spearman").reindex(cells))
+        if s0:
+            # Step 0 is one shared untrained encoder, so the column is identical in all
+            # three panels by construction -- that is the point, it is the common origin.
+            col = {c: s0.get(tuple(c.split(" · ")[0:1] + [t_])) for c, t_ in
+                   ((c, ("account_age_days" if "account_age" in c else "followers_count"))
+                    for c in cells)}
+            mat.insert(0, 0, pd.Series(col))
         im = ax.imshow(mat.values, cmap=SEQ, norm=norm, aspect="auto")
         ax.set_xticks(range(len(mat.columns)))
-        ax.set_xticklabels([f"{c:,}" for c in mat.columns], fontsize=8.5, color=INK_MUTED)
+        ax.set_xticklabels([_steplab(c) for c in mat.columns], fontsize=8.5, color=INK_MUTED)
         ax.set_yticks(range(len(mat.index)))
         ax.set_yticklabels(mat.index, fontsize=8.5, color=INK_MUTED)
         ax.set_title(ARM_LABEL[arm], fontsize=10, color=INK, loc="left", pad=8)
@@ -138,7 +172,7 @@ def heatmap(enc):
     cb.set_label("Spearman (probe)", fontsize=8.5, color=INK_MUTED)
     cb.ax.tick_params(labelsize=8, colors=INK_MUTED)
     cb.outline.set_visible(False)
-    fig.suptitle("Regression probe by cell — account_age rises with steps, followers does not",
+    fig.suptitle("Regression probe by cell — step 0 included; account_age rises above it, followers does not",
                  fontsize=12.5, color=INK, x=0.004, ha="left")
     out = HERE / "figures" / "probe_regression_heatmap.png"
     fig.savefig(out, dpi=200, bbox_inches="tight", facecolor="white")

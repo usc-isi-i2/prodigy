@@ -79,9 +79,25 @@ three:
   classification alone it is suggestive, not solid. It does reproduce independently on the
   regression probe (§4b), which is what keeps it interesting.
 
-Against a random-init encoder these two are unambiguous: covid_political 0.429 and
-election2020 0.403 untrained (both *below* chance), versus 0.932 and 0.987 pretrained —
-gaps of +0.50 and +0.58. Whatever else is uncertain here, this effect is real.
+**Against the step-0 encoder** (`data/step0_anchor.csv`, a genuine `state_dict_0` rather
+than the `RANDOM_INIT` sentinel — the two agree to the digit on the graphs where both were
+run, so the sentinel is a faithful stand-in):
+
+| graph | step 0 | best trained | Δ |
+|---|---|---|---|
+| election2020 | 0.4027 | 0.987 | **+0.58** |
+| covid_political | 0.4291 | 0.932 | **+0.50** |
+| twibot20 | 0.5494 | 0.668 (at step 100) | +0.12, then decays to 0.626 |
+| ukr_rus_suspended | 0.5186 | 0.516 | **−0.00 — never leaves its starting value** |
+
+The step-0 anchor sharpens two of these. `ukr_rus_suspended` is not a plateau at chance,
+it is a graph the encoder never moves *at all*. And `twibot20`'s peak is at step 100, only
++0.12 over untrained, decaying thereafter. The two large effects are real and unambiguous.
+
+**All three arms share ONE t=0 encoder — verified byte-identical** (md5 `61adf822…` for
+`all8`, `ukr` and `covid`). Dataset loading happens before model construction, so this was
+not guaranteed; it is now measured, and it is why step 0 is drawn as a single reference
+level rather than three curve points.
 
 **But it is a FEATURE effect, not a topology effect** (`data/feature_ablation.csv`):
 
@@ -203,6 +219,20 @@ So **`account_age_days` does saturate**, rising monotonically to a plateau aroun
 10 000 — later than classification's step 500, and consistently across every arm and
 dataset. **`followers_count` does not rise at all**; its best encoder is usually the
 least-trained one.
+
+**The step-0 anchor states this far more cleanly than the rank correlations do.** Against
+a genuinely untrained encoder, on all 8 cells:
+
+| target | step 0 | trained encoders | verdict |
+|---|---|---|---|
+| `account_age_days` | 0.017 – 0.052 | reach 0.05 – 0.115 | **4/4 cells end ABOVE step 0** |
+| `followers_count` | 0.117 – 0.390 | 0.10 – 0.41 | **4/4 cells sit AT or BELOW step 0** |
+
+e.g. midterm/followers: step 0 = 0.2018 and the best trained encoder manages 0.2000;
+ukr/followers: 0.1628 vs 0.1612. So pretraining **builds** the target the node features do
+not encode and **erodes** the one they do — which is the same asymmetry §4b inferred from
+the floors, now stated against an untrained baseline instead of a rank correlation on a
+small base.
 
 Note which target is which. `followers_count` carries the **high** raw-feature floors
 (0.119–0.260) and `account_age_days` the near-zero ones (0.010–0.040). The pattern is

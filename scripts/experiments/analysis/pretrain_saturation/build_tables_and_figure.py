@@ -85,6 +85,15 @@ def classification_sigma() -> float | None:
     return float(diffs.std(ddof=1) / (2 ** 0.5))
 
 
+def step0_anchor() -> pd.DataFrame | None:
+    """Step-0 (untrained) values per cell. All three arms share ONE t=0 encoder --
+    verified byte-identical across arms -- so this is a single reference level per cell,
+    not a per-arm curve point. It also cannot be drawn ON a log x-axis (log(0)), which is
+    the other reason it is a horizontal line rather than a leftmost marker."""
+    f = HERE / "data" / "step0_anchor.csv"
+    return pd.read_csv(f) if f.is_file() else None
+
+
 def main() -> int:
     frames = [load(csv, metric, task) for task, csv, metric, _, _ in TASKS]
     long = pd.concat(frames, ignore_index=True).sort_values(
@@ -100,6 +109,7 @@ def main() -> int:
     # the paired-difference sigma over sqrt(2); a band drawn at +/-sigma is therefore what
     # a single curve is worth, not the gap between two of them.
     band = classification_sigma()
+    step0 = step0_anchor()
 
     (HERE / "data").mkdir(exist_ok=True)
     (HERE / "figures").mkdir(exist_ok=True)
@@ -139,6 +149,17 @@ def main() -> int:
         for side in ("left", "bottom"):
             ax.spines[side].set_color(GRID)
         ax.tick_params(colors=INK_MUTED, labelsize=8.5)
+        # CLASSIFICATION ONLY. The step-0 regression anchor is a PROBE Spearman; the
+        # right panel plots the void episodic Spearman. Drawing one on the other would
+        # put two different measurements on one axis. The probe's own step-0 line lives
+        # in probe_regression_curves.png, where it belongs.
+        if step0 is not None and task == "classification":
+            lvl = step0[step0.task == task]["value"].mean()
+            ax.axhline(lvl, color=INK_MUTED, linewidth=1.3, linestyle=(0, (5, 3)), zorder=1)
+            ax.annotate(f"untrained encoder (step 0) = {lvl:.3f}", (0.985, lvl),
+                        xycoords=("axes fraction", "data"), xytext=(0, 5),
+                        textcoords="offset points", fontsize=7.5, color=INK_MUTED,
+                        va="bottom", ha="right")
         ax.set_xlim(80, 90000)   # headroom for the direct labels
         if task == "regression":
             ax.axhline(0, color=INK_MUTED, linewidth=1, linestyle=(0, (4, 3)), zorder=1)
@@ -162,7 +183,8 @@ def main() -> int:
                         fontsize=9, va="center", ha="left", zorder=4,
                         annotation_clip=False)
 
-    axes[0].legend(frameon=False, fontsize=8.5, loc="lower right", labelcolor=INK)
+    # lower LEFT: the step-0 reference label now occupies the lower right.
+    axes[0].legend(frameon=False, fontsize=8.5, loc="lower left", labelcolor=INK)
     # Title states only what both panels support. Classification saturates by ~500 steps;
     # regression does not saturate at anything, it never leaves the noise around zero, so
     # a single "saturation is early" headline would misdescribe the right-hand panel.
