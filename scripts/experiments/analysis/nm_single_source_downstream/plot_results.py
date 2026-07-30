@@ -109,6 +109,24 @@ def main() -> int:
         fig.savefig(out_dir / f"single_source_downstream_heatmaps.{suffix}", dpi=180)
     plt.close(fig)
     print(f"wrote {out_dir}/single_source_downstream_heatmaps.(png|pdf)")
+
+    class_fig, class_ax = plt.subplots(figsize=(7.2, 7.4), constrained_layout=True)
+    draw_heatmap(
+        class_ax, class_data, CLASS_COLUMNS,
+        "10-shot ROC-AUC",
+        "RdYlGn", Normalize(0.5, 1.0), "ROC-AUC",
+    )
+    class_fig.suptitle(
+        "Node classification transfer of eight single-source NM encoders\n"
+        "rows follow NM donor-strength order · outlined cells are in-domain",
+        fontsize=13,
+    )
+    for suffix in ("png", "pdf"):
+        class_fig.savefig(
+            out_dir / f"single_source_classification_heatmap.{suffix}", dpi=180
+        )
+    plt.close(class_fig)
+    print(f"wrote {out_dir}/single_source_classification_heatmap.(png|pdf)")
     return 0
 
 
