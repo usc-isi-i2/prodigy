@@ -31,8 +31,14 @@ from sklearn.linear_model import Ridge
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import StandardScaler
 
-# repo root on sys.path so `data.*` imports work when run as a script
-sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+# Repo root on sys.path so ``data.*`` imports keep working if this script moves
+# within the setup tree.
+for parent in Path(__file__).resolve().parents:
+    if (parent / "data/structural_features.py").is_file():
+        sys.path.insert(0, str(parent))
+        break
+else:
+    raise RuntimeError("could not locate repository root containing data/structural_features.py")
 from data.structural_features import compute_structural_features, structural_feature_names
 
 # dataset -> (root_name, graph_filename); the focused datasets that carry node_targets.
