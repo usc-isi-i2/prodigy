@@ -25,6 +25,7 @@ cd "${REPO_ROOT}"
 
 checkpoint_for() {
   local prefix="$1"
+  [[ -d "${REPO_ROOT}/state" ]] || return 0
   find "${REPO_ROOT}/state" -maxdepth 3 -type f \
     -path "*/${prefix}_*/checkpoint/state_dict_40000.ckpt" \
     -print -quit 2>/dev/null
