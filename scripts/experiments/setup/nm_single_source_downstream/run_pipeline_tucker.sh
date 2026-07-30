@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# train -> resolve -> evaluate -> assemble -> plot, designed for detached Tucker tmux.
+# resolve -> evaluate -> assemble -> plot, designed for detached Tucker tmux.
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -11,7 +11,6 @@ mkdir -p "${LOG_DIR}"
 STATUS_FILE="${LOG_DIR}/pipeline_status.txt"
 PIPELOG="${LOG_DIR}/pipeline.log"
 PY="${PY:-/home/mhchu/miniconda3/envs/prodigy/bin/python}"
-TRAIN_GPUS="${TRAIN_GPUS:-0 1}"
 EVAL_GPUS="${EVAL_GPUS:-0,1}"
 ONLY="${ONLY:-}"
 
@@ -23,19 +22,11 @@ set_status() {
 fail() { set_status "$1" FAILED "${2:-}"; exit 1; }
 want() { [[ -z "${ONLY}" || "${ONLY}" == "$1" ]]; }
 
-say "pipeline start: train_gpus='${TRAIN_GPUS}' eval_gpus='${EVAL_GPUS}'"
-
-if want train; then
-  set_status train RUNNING
-  TRAIN_GPUS="${TRAIN_GPUS}" bash "${SCRIPT_DIR}/run_training.sh" \
-    >>"${PIPELOG}" 2>&1 || fail train "one or more training jobs failed"
-  set_status train OK
-fi
+say "pipeline start: eval_gpus='${EVAL_GPUS}'"
 
 if want resolve; then
   set_status resolve RUNNING
   "${PY}" "${SCRIPT_DIR}/resolve_models.py" \
-    --new-state-dir "${REPO_ROOT}/state" \
     >>"${PIPELOG}" 2>&1 || fail resolve "could not resolve all eight 40k checkpoints"
   count="$(grep -cve '^[[:space:]]*$' "${SCRIPT_DIR}/model_list.txt")"
   [[ "${count}" == "8" ]] || fail resolve "model list has ${count} rows, expected 8"

@@ -7,16 +7,15 @@ import csv
 from pathlib import Path
 
 MODELS = [
-    ("ukr_rus_twitter", "ukr_only_nm", "reused original"),
-    ("covid19_twitter", "nm_ss_covid19_twitter", "reused original"),
-    ("midterm", "nm_ss_midterm", "retrained"),
-    ("covid_political", "nm_ss_covid_political", "retrained"),
-    ("election2020", "nm_ss_election2020", "reused original"),
-    ("ukr_rus_suspended", "nm_ss_ukr_rus_suspended", "retrained"),
-    ("twibot20", "nm_ss_twibot20", "retrained"),
-    ("cp_hk_twitter", "nm_ss_cp_hk_twitter", "retrained"),
+    ("ukr_rus_twitter", "nm_ss_ukr_rus_twitter", "original NM matrix"),
+    ("covid19_twitter", "nm_ss_covid19_twitter", "original NM matrix"),
+    ("midterm", "nm_ss_midterm", "original NM matrix"),
+    ("covid_political", "nm_ss_covid_political", "original NM matrix"),
+    ("election2020", "nm_ss_election2020", "original NM matrix"),
+    ("ukr_rus_suspended", "nm_ss_ukr_rus_suspended", "original NM matrix"),
+    ("twibot20", "nm_ss_twibot20", "original NM matrix"),
+    ("cp_hk_twitter", "nm_ss_cp_hk_twitter", "original NM matrix"),
 ]
-REUSED = {"ukr_only_nm", "nm_ss_covid19_twitter", "nm_ss_election2020"}
 
 
 def resolve(state_dir: Path, prefix: str, step: int) -> Path | None:
@@ -37,7 +36,6 @@ def main() -> int:
     repo = here.parents[3]
     analysis_data = repo / "scripts/experiments/analysis/nm_single_source_downstream/data"
     parser = argparse.ArgumentParser()
-    parser.add_argument("--new-state-dir", default=str(repo / "state"))
     parser.add_argument("--reuse-state-dir", default="/dataMeR1/phil/gfm/prodigy/state")
     parser.add_argument("--step", type=int, default=40000)
     parser.add_argument("--model-list", default=str(here / "model_list.txt"))
@@ -47,7 +45,7 @@ def main() -> int:
     resolved = []
     missing = []
     for source, model, provenance in MODELS:
-        state_dir = Path(args.reuse_state_dir if model in REUSED else args.new_state_dir)
+        state_dir = Path(args.reuse_state_dir)
         checkpoint = resolve(state_dir, model, args.step)
         if checkpoint is None:
             missing.append(f"{model} under {state_dir}")
