@@ -124,6 +124,15 @@ def get_params():
 
 
     args.add_argument("-seed", "--seed", default=None, type=int)
+    args.add_argument(
+        "--eval_episode_seed_offset",
+        default=0,
+        type=int,
+        help=(
+            "Optional offset added to the deterministic split-derived eval episode "
+            "seed. Default 0 preserves the fixed historical episode sets."
+        ),
+    )
 
     args.add_argument("-metric", "--metric", default="Acc", choices=["Acc"])
 

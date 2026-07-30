@@ -121,6 +121,12 @@ def main() -> int:
                     help="Support size for the shot-matched ceiling (match the benchmark's n_shots).")
     ap.add_argument("--n-query", type=int, default=12, help="Query size per episode (match the benchmark).")
     ap.add_argument("--episodes", type=int, default=500, help="Number of few-shot episodes to accumulate.")
+    ap.add_argument(
+        "--seed",
+        type=int,
+        default=0,
+        help="Episode-sampling seed for the few-shot floor and CV seed for the full-data reference.",
+    )
     ap.add_argument("--skip-fulldata", action="store_true",
                     help="Skip the full-data Ridge reference (_cv_spearman). It fits on ALL "
                          "labeled nodes (O(n·d²)) — minutes-to-hours on the 23M-node graphs — "
@@ -188,12 +194,19 @@ def main() -> int:
                 xm = x[torch.from_numpy(idx)].float().numpy()
             else:
                 xm = feats[mask]
-            rho_fs = _fewshot_spearman(xm, yy, args.shots, args.n_query, args.episodes)
-            rho_full = float("nan") if args.skip_fulldata else _cv_spearman(xm, yy)
+            rho_fs = _fewshot_spearman(
+                xm, yy, args.shots, args.n_query, args.episodes, seed=args.seed
+            )
+            rho_full = (
+                float("nan")
+                if args.skip_fulldata
+                else _cv_spearman(xm, yy, seed=args.seed)
+            )
             rows.append({"dataset": name, "target": target,
                          "spearman": rho_fs,            # shot-matched (primary, fair)
                          "spearman_fulldata": rho_full,  # full-data reference (skippable)
-                         "shots": args.shots, "n": int(mask.sum())})
+                         "shots": args.shots, "n": int(mask.sum()),
+                         "seed": args.seed})
             ref = "skipped" if args.skip_fulldata else f"{rho_full:.3f}"
             print(f"[leakage] {name}/{target}: {args.shots}-shot Spearman={rho_fs:.3f} "
                   f"(full-data ref={ref}, n={int(mask.sum())})")
@@ -207,7 +220,8 @@ def main() -> int:
         w = csv.DictWriter(
             fh,
             fieldnames=[
-                "dataset", "target", "spearman", "spearman_fulldata", "shots", "n"
+                "dataset", "target", "spearman", "spearman_fulldata", "shots", "n",
+                "seed",
             ],
             lineterminator="\n",
         )

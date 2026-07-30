@@ -68,7 +68,7 @@ copy under this worktree's ignored `state/`; it does not overwrite the canonical
 graph in `/dataMeR1/phil/data`.
 
 The runner evaluates three matched 10-shot floors on Ukraine-suspended and
-twibot20:
+twibot20 over five seeds by default (`SEEDS=0,1,2,3,4`):
 
 - `raw_features`: episodic Ridge on raw 768-d bio embeddings;
 - `raw_degree`: episodic Ridge on directed structural features;
@@ -82,8 +82,10 @@ tmux new-session -d -s nmssd_regbase \
 ```
 
 The three targets are followers, statuses, and account age, with `log1p`,
-10 support nodes, 12 queries, and the same fixed episode seeding as the main
-regression evaluation.
+10 support nodes and 12 queries. Each seed resamples the support/query episodes
+for every floor; for `random_init` it also changes the encoder initialization.
+The experiment-only episode-seed offset defaults to zero everywhere else, so
+the repository's historical fixed eval episodes are unchanged.
 
 ## Deliverables
 
@@ -96,5 +98,6 @@ Under `analysis/nm_single_source_downstream/`:
 - `data/results_long.csv` — tidy source/task/dataset/target results;
 - `figures/single_source_downstream_heatmaps.{png,pdf}` — annotated
   classification and regression heatmaps.
+- `data/regression_baseline_seeds.csv` — all per-seed floor scores;
 - `data/regression_baselines.csv` and `figures/regression_baselines.{png,pdf}` —
-  the matched Ukraine-suspended/twibot20 regression floors.
+  mean ± sample SD for the matched Ukraine-suspended/twibot20 regression floors.

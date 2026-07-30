@@ -38,26 +38,52 @@ def main() -> int:
     ) as handle:
         rows = list(csv.DictReader(handle))
     values = {}
-    for row in rows:
-        for target in TARGETS:
-            values[(row["baseline"], row["dataset"], target)] = float(row[target])
+    deviations = {}
+    counts = {}
+    if rows and "target" in rows[0]:
+        for row in rows:
+            key = (row["baseline"], row["dataset"], row["target"])
+            values[key] = float(row["mean"])
+            deviations[key] = float(row["std"])
+            counts[key] = int(row["n"])
+    else:
+        # Backward-compatible rendering of the original single-seed wide CSV.
+        for row in rows:
+            for target in TARGETS:
+                key = (row["baseline"], row["dataset"], target)
+                values[key] = float(row[target])
+                deviations[key] = 0.0
+                counts[key] = 1
     columns = [
         (dataset, target)
         for dataset in DATASETS
         for target in TARGETS
     ]
-    data = np.array([
+    means = np.array([
         [
             values[(baseline, dataset, target)]
             for dataset, target in columns
         ]
         for baseline in BASELINES
     ])
+    stds = np.array([
+        [
+            deviations[(baseline, dataset, target)]
+            for dataset, target in columns
+        ]
+        for baseline in BASELINES
+    ])
+    seed_counts = {
+        counts[(baseline, dataset, target)]
+        for baseline in BASELINES
+        for dataset, target in columns
+    }
+    multi_seed = max(seed_counts) > 1
 
     plt.rcParams.update({"font.size": 10, "figure.dpi": 140})
-    fig, ax = plt.subplots(figsize=(9.2, 3.8), constrained_layout=True)
+    fig, ax = plt.subplots(figsize=(9.2, 4.1), constrained_layout=True)
     image = ax.imshow(
-        data,
+        means,
         cmap="RdYlGn",
         norm=TwoSlopeNorm(vmin=-0.25, vcenter=0.0, vmax=0.45),
         aspect="auto",
@@ -76,16 +102,26 @@ def main() -> int:
     ax.set_xlabel("evaluation graph and profile target")
     ax.set_title(
         "10-shot node-regression floors\n"
-        "Spearman by evaluation graph and profile target",
+        + (
+            f"mean Spearman ± sample SD across {min(seed_counts)} seeds"
+            if multi_seed
+            else "Spearman by evaluation graph and profile target"
+        ),
         fontsize=11,
     )
     for i in range(len(BASELINES)):
         for j in range(len(columns)):
-            value = data[i, j]
+            value = means[i, j]
+            label = (
+                f"{value:.3f}\n±{stds[i, j]:.3f}"
+                if multi_seed
+                else f"{value:.3f}"
+            )
             ax.text(
-                j, i, f"{value:.3f}",
+                j, i, label,
                 ha="center", va="center",
                 color=("white" if value < -0.15 or value > 0.35 else "black"),
+                fontsize=9 if multi_seed else 10,
             )
     ax.axvline(len(TARGETS) - 0.5, color="black", linewidth=2.0)
     ax.set_xticks(np.arange(-0.5, len(columns), 1), minor=True)

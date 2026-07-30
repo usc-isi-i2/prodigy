@@ -342,6 +342,8 @@ def build_command(
         str(args.device),
         "--seed",
         str(args.seed),
+        "--eval_episode_seed_offset",
+        str(args.eval_episode_seed_offset),
         "--eval_only",
         "True",
         "--eval_test_before_train",
@@ -658,6 +660,15 @@ def main() -> int:
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument(
+        "--eval-episode-seed-offset",
+        type=int,
+        default=0,
+        help=(
+            "Offset the fixed split-derived episode seed without changing the default "
+            "paired evaluation episodes."
+        ),
+    )
     parser.add_argument("--epochs", type=int, default=12)
     parser.add_argument("--eval-step", type=int, default=2000)
     parser.add_argument("--checkpoint-step", type=int, default=2000)
