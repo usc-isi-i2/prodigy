@@ -494,7 +494,7 @@ def build_command(
             "--n_shots",
             shots,
             "--n_query",
-            str(dataset.pl_n_query),
+            str(args.reg_n_query or dataset.pl_n_query),
             "--zero_shot",
             zero_shot(shots),
             "--dataset_len_cap",
@@ -687,6 +687,9 @@ def main() -> int:
     # node regression
     parser.add_argument("--reg-targets", default=",".join(DEFAULT_REG_TARGETS),
                         help="Comma-separated profile targets to evaluate; one eval run per target.")
+    parser.add_argument("--reg-n-query", type=int, default=0,
+                        help="Queries per regression episode; 0 uses each dataset's catalog "
+                             "pl_n_query. Set explicitly when matching an external floor.")
     parser.add_argument("--reg-transform", default="log1p", choices=["none", "log1p"],
                         help="Transform applied to regression targets (log1p for heavy-tailed counts).")
     parser.add_argument("--ablate-features", default="none", choices=["none", "zero", "permute", "noise"],

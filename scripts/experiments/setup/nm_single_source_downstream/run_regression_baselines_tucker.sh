@@ -42,7 +42,7 @@ ln -sfn "${CANONICAL_DATA_ROOT}/twibot20/graphs" \
   --model-list "${SCRIPT_DIR}/random_init_model_list.txt" \
   --python "${PY}" --data-root "${BASELINE_DATA_ROOT}" \
   --datasets "${DATASETS}" --tasks regression --shots 10 \
-  --reg-targets "${TARGETS}" --reg-transform log1p \
+  --reg-targets "${TARGETS}" --reg-n-query 12 --reg-transform log1p \
   --gpus "${EVAL_GPUS:-0,1}" --continue-on-error
 
 "${PY}" "${REPO_ROOT}/scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py" \
