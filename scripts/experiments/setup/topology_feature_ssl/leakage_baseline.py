@@ -39,6 +39,7 @@ from data.structural_features import compute_structural_features, structural_fea
 DATASETS = {
     "midterm": ("midterm", "retweet_graph_parquet.pt"),
     "ukr_rus_twitter": ("ukr_rus_twitter", "retweet_graph_parquet.pt"),
+    "ukr_rus_suspended": ("ukr_rus_suspended", "retweet_graph.pt"),
     "covid19_twitter": ("covid19_twitter", "retweet_graph_parquet.pt"),
     "twibot20": ("twibot20", "retweet_graph.pt"),
     "election2020": ("election2020", "retweet_graph.pt"),
@@ -197,8 +198,13 @@ def main() -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     import csv
     with out.open("w", newline="") as fh:
-        w = csv.DictWriter(fh, fieldnames=["dataset", "target", "spearman",
-                                           "spearman_fulldata", "shots", "n"])
+        w = csv.DictWriter(
+            fh,
+            fieldnames=[
+                "dataset", "target", "spearman", "spearman_fulldata", "shots", "n"
+            ],
+            lineterminator="\n",
+        )
         w.writeheader()
         w.writerows(rows)
     if args.features == "raw":
