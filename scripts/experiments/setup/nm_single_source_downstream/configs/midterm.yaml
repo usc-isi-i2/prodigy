@@ -1,0 +1,23 @@
+dataset: midterm
+root: /dataMeR1/phil/data/midterm/graphs
+graph_filename: retweet_graph_parquet.pt
+task_name: neighbor_matching
+edge_view: default
+feature_subset: all
+original_features: true
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+n_hop: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+epochs: 5
+eval_step: 100000
+checkpoint_step: 10000
+workers: 16
+device: 0
+seed: 0
+tags: [nm_single_source_downstream, midterm, plain]
+prefix: nm_ss_midterm
