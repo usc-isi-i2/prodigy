@@ -71,7 +71,10 @@ def main() -> int:
             for row in read_csv(path):
                 if row["dataset"] not in DATASETS or row["target"] not in TARGETS:
                     continue
-                seed = int(row.get("seed") or file_seed)
+                # The CSV's seed is the actual episode RNG seed (448 + run seed);
+                # the filename carries the cross-method experiment seed used by
+                # random_init_s<seed>.
+                seed = file_seed
                 cells[(baseline, row["dataset"], row["target"], seed)] = float(
                     row["spearman"]
                 )
