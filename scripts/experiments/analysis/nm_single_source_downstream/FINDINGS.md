@@ -40,6 +40,18 @@ frozen-encoder evaluation.
 | covid political | −.001 | −.011 | −.047 | −.012 | −.018 |
 | election 2020 | .003 | .001 | **−.031** | −.041 | −.017 |
 
+### Regression floors (Spearman, mean over three targets)
+
+| floor | ukr suspended | twibot20 |
+|---|---:|---:|
+| raw bio features | .080 | .105 |
+| raw directed degree | **.119** | **.246** |
+| untrained encoder | .003 | .114 |
+
+Ukraine-suspended uses an experiment-local graph copy enriched from the original
+`user_data.csv`; the canonical graph is unchanged. Each target has 56,440 finite
+labels. All floors use 10 support nodes, 12 queries, 500 episodes, and `log1p`.
+
 ## Takeaways
 
 1. **Classification transfer is mostly controlled by the evaluation graph.**
@@ -60,10 +72,18 @@ frozen-encoder evaluation.
    The strong diagonal from the NM pretext matrix therefore does not carry over
    as a general diagonal on classification.
 
-4. **Regression is a clean null.** Source means range only from .014 to −.099,
-   and every matched in-domain cell is negative (−.018, −.071, −.046, −.159).
-   No single-source NM encoder yields a useful or source-matched profile
-   regression representation under this frozen 10-shot probe.
+4. **Regression is a clean null, now anchored on twibot20.** Source means range
+   only from .014 to −.099, and every matched in-domain cell is negative
+   (−.018, −.071, −.046, −.159). On twibot20, the best pretrained source mean
+   is .054, below raw features (.105), the untrained encoder (.114), and raw
+   degree (.246). No single-source NM encoder clears even the no-pretraining
+   floors there.
+
+5. **The Ukraine-suspended regression labels existed but were not wired into the
+   graph.** Its raw-feature floor is .080 and raw-degree floor is .119, while the
+   untrained encoder is near zero (.003). These establish the floor, but the
+   eight pretrained encoders have not yet been evaluated on this new regression
+   target graph.
 
 Overall: **choose a broad source such as Ukraine/covid/twibot20 if a single NM
 encoder must support classification, but changing the single pretraining source
@@ -73,10 +93,9 @@ does not solve profile regression.**
 
 - One seed. Eval episodes are fixed by split, so the scores are paired across
   sources but do not provide across-seed confidence intervals.
-- This experiment compares pretrained sources, not pretraining against
-  `random_init` or raw-feature floors. It supports source-ranking and null-transfer
-  conclusions, not a causal claim that NM improves classification over no
-  pretraining.
+- Regression floors are available for twibot20 and Ukraine-suspended. The other
+  three regression evaluation graphs do not yet have experiment-owned floor
+  rows, and classification still lacks `random_init`/raw-feature floors.
 - Regression values above are dataset means over three targets. The full 8 × 12
   matrix is in `data/regression.csv`.
 
@@ -86,5 +105,7 @@ does not solve profile regression.**
 - `data/classification.csv`: classification matrix
 - `data/regression.csv`: full dataset × target regression matrix
 - `data/regression_by_dataset.csv`: regression matrix shown above
+- `data/regression_baselines.csv`: matched no-pretraining floors
 - `data/results_long.csv`: all 128 tidy result rows
 - `figures/single_source_downstream_heatmaps.{png,pdf}`: final figure
+- `figures/regression_baselines.{png,pdf}`: regression-floor figure
