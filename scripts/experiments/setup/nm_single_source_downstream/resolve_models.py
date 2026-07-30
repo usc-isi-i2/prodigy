@@ -67,7 +67,7 @@ def main() -> int:
     manifest = Path(args.manifest)
     manifest.parent.mkdir(parents=True, exist_ok=True)
     with manifest.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.writer(handle)
+        writer = csv.writer(handle, lineterminator="\n")
         writer.writerow(["source", "model", "provenance", "checkpoint_step", "checkpoint"])
         writer.writerows(resolved)
 
