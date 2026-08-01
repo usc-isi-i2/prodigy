@@ -539,6 +539,9 @@ class TrainerFS():
         kwargs["mix_cl_aug"] = self.parameter.get("mix_cl_aug", "NZ0.2")
         kwargs["e4_combine"] = self.parameter.get("e4_combine", "simultaneous")
         kwargs["e4_task_counts"] = self.parameter.get("e4_task_counts", "1,1,1")
+        kwargs["eval_episode_seed_offset"] = self.parameter.get(
+            "eval_episode_seed_offset", 0
+        )
         if self.parameter["all_test"]:
             kwargs["all_test"] = True
         if self.parameter["label_set"]:

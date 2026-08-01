@@ -3,7 +3,7 @@
 
 Reads scripts/experiments/analysis/nm_single_source_matrix/data/nm_single_source_matrix.csv
 (train_graph rows x 8 test-graph columns, NM 30-way/3-shot ROC-AUC @ matched-40k)
-and writes two figures next to this script (PDF + PNG):
+and writes figures to the adjacent figures/ directory (PDF + PNG):
 
   1. nmss_lineplot        — x = test graph, one LINE per trained model (8 colours),
                             each model's in-domain point ringed. "Performance profile
@@ -12,8 +12,14 @@ and writes two figures next to this script (PDF + PNG):
                             across the 8 test-graph columns (rank 1 = best of 8 models
                             on that column). Tight-near-top = consistent generalist;
                             wide = pure specialist.
+  3. nmss_heatmap         — train-source × test-graph AUC matrix, with a fixed
+                            red (0.5) → green (1.0) scale.
+  4. nmss_heatmap_donor_mean — the same matrix, sorted by mean off-diagonal
+                               transfer with that donor-strength mean at right.
+  5. nmss_transfer_summary — ranked off-diagonal donor strength and target
+                             transferability, for communicating the main result.
 
-    python plot_nmss.py --csv ../../experiments/nm_single_source_matrix/nm_single_source_matrix.csv
+    python plot_nmss.py
 
 Needs matplotlib + numpy (both in the prodigy env).
 """
@@ -28,6 +34,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+from matplotlib.backends.backend_pdf import PdfPages
 
 # Canonical graph order + short labels (matches the ladder table / CSV columns).
 GRAPHS = [
@@ -35,9 +42,9 @@ GRAPHS = [
     "election2020", "ukr_rus_suspended", "twibot20", "cp_hk_twitter",
 ]
 SHORT = {
-    "ukr_rus_twitter": "ukr", "covid19_twitter": "covid", "midterm": "midterm",
-    "covid_political": "cov_pol", "election2020": "elec20",
-    "ukr_rus_suspended": "ukr_susp", "twibot20": "twibot20", "cp_hk_twitter": "cp_hk",
+    "ukr_rus_twitter": "UKR", "covid19_twitter": "COVID", "midterm": "Twitter 2022",
+    "covid_political": "COV Labeled", "election2020": "Twitter 2020",
+    "ukr_rus_suspended": "UKR Labeled", "twibot20": "TwiBot-20", "cp_hk_twitter": "Hong Kong",
 }
 # Okabe-Ito colourblind-safe categorical palette (8 hues, fixed order per model).
 OKABE_ITO = [
@@ -94,6 +101,143 @@ def plot_lineplot(cells: dict, outdir: Path) -> None:
     fig.tight_layout()
     for ext in ("pdf", "png"):
         fig.savefig(outdir / f"nmss_lineplot.{ext}", bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_heatmap(cells: dict, outdir: Path, pdf: PdfPages | None = None) -> None:
+    """Plot the full train-source × test-graph AUC matrix on a fixed chance-to-perfect scale."""
+    matrix = np.array([[cells[(train, test)] for test in GRAPHS] for train in GRAPHS])
+    fig, ax = plt.subplots(figsize=(8.5, 7.0))
+    im = ax.imshow(matrix, cmap="RdYlGn", vmin=0.5, vmax=1.0, aspect="equal")
+
+    ax.set_xticks(np.arange(len(GRAPHS)), [SHORT[g] for g in GRAPHS], rotation=30, ha="right")
+    ax.set_yticks(np.arange(len(GRAPHS)), [SHORT[g] for g in GRAPHS])
+    ax.set_xlabel("test graph")
+    ax.set_ylabel("train source")
+    ax.set_title("Single-source NM transfer matrix (ROC-AUC)\n"
+                 "red = chance (0.5) · green = perfect (1.0) · @matched-40k, 1 seed",
+                 fontsize=11)
+
+    # Values remain readable over both the dark red and dark green ends of the scale.
+    for i, train in enumerate(GRAPHS):
+        for j, test in enumerate(GRAPHS):
+            value = matrix[i, j]
+            color = "white" if value < 0.70 or value > 0.88 else "black"
+            ax.text(j, i, f"{value:.3f}", ha="center", va="center", color=color,
+                    fontsize=9, fontweight=("bold" if train == test else "normal"))
+            if train == test:
+                ax.add_patch(plt.Rectangle((j - 0.5, i - 0.5), 1, 1, fill=False,
+                                           edgecolor="black", linewidth=2.0))
+
+    ax.set_xticks(np.arange(-0.5, len(GRAPHS), 1), minor=True)
+    ax.set_yticks(np.arange(-0.5, len(GRAPHS), 1), minor=True)
+    ax.grid(which="minor", color="white", linewidth=1.0)
+    ax.tick_params(which="minor", bottom=False, left=False)
+    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    cbar.set_label("NM ROC-AUC")
+    cbar.set_ticks(np.arange(0.5, 1.01, 0.1))
+    fig.tight_layout()
+    for ext in ("pdf", "png"):
+        fig.savefig(outdir / f"nmss_heatmap.{ext}", bbox_inches="tight")
+    if pdf is not None:
+        pdf.savefig(fig, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_heatmap_donor_mean(cells: dict, outdir: Path) -> None:
+    """Plot a donor-strength-sorted matrix with mean cross-graph transfer at right."""
+    means = {
+        train: np.mean([cells[(train, test)] for test in GRAPHS if test != train])
+        for train in GRAPHS
+    }
+    rows = sorted(GRAPHS, key=lambda train: means[train], reverse=True)
+    matrix = np.array([
+        [cells[(train, test)] for test in rows] + [means[train]]
+        for train in rows
+    ])
+    labels = [SHORT[test] for test in rows] + ["mean\n(off-diag)"]
+
+    fig, ax = plt.subplots(figsize=(9.1, 7.0))
+    im = ax.imshow(matrix, cmap="RdYlGn", vmin=0.5, vmax=1.0, aspect="equal")
+    ax.set_xticks(np.arange(len(labels)), labels, rotation=30, ha="right")
+    ax.set_yticks(np.arange(len(rows)), [SHORT[train] for train in rows])
+    ax.set_xlabel("test graph")
+    ax.set_ylabel("train source (sorted by mean off-diagonal transfer)")
+    ax.set_title("Single-source NM transfer, ranked by donor strength (ROC-AUC)\n"
+                 "right column = mean transfer to the other 7 graphs · red = 0.5 · green = 1.0",
+                 fontsize=11)
+
+    for i, train in enumerate(rows):
+        for j, value in enumerate(matrix[i]):
+            color = "white" if value < 0.70 or value > 0.88 else "black"
+            is_diagonal = j < len(rows) and train == rows[j]
+            ax.text(j, i, f"{value:.3f}", ha="center", va="center", color=color,
+                    fontsize=9, fontweight=("bold" if is_diagonal else "normal"))
+            if is_diagonal:
+                ax.add_patch(plt.Rectangle((j - 0.5, i - 0.5), 1, 1, fill=False,
+                                           edgecolor="black", linewidth=2.0))
+
+    # Visually separate the donor-strength summary from individual test graphs.
+    ax.axvline(len(GRAPHS) - 0.5, color="black", linewidth=2.0)
+    ax.set_xticks(np.arange(-0.5, len(labels), 1), minor=True)
+    ax.set_yticks(np.arange(-0.5, len(rows), 1), minor=True)
+    ax.grid(which="minor", color="white", linewidth=1.0)
+    ax.tick_params(which="minor", bottom=False, left=False)
+    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    cbar.set_label("NM ROC-AUC")
+    cbar.set_ticks(np.arange(0.5, 1.01, 0.1))
+    fig.tight_layout()
+    for ext in ("pdf", "png"):
+        fig.savefig(outdir / f"nmss_heatmap_donor_mean.{ext}", bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_transfer_summary(cells: dict, outdir: Path, pdf: PdfPages | None = None) -> None:
+    """Show the two marginal summaries that explain the matrix at a glance.
+
+    Donor strength is a row's mean transfer *out* to the other seven graphs;
+    target transferability is a column's mean transfer *in* from the other
+    seven sources.  In-domain cells are excluded from both quantities.
+    """
+    donor_mean = {
+        train: np.mean([cells[(train, test)] for test in GRAPHS if test != train])
+        for train in GRAPHS
+    }
+    target_mean = {
+        test: np.mean([cells[(train, test)] for train in GRAPHS if train != test])
+        for test in GRAPHS
+    }
+    donors = sorted(GRAPHS, key=donor_mean.get)
+    targets = sorted(GRAPHS, key=target_mean.get)
+
+    fig, axes = plt.subplots(1, 2, figsize=(10.5, 5.0), sharex=True)
+    panels = [
+        (axes[0], donors, donor_mean, "Best general pretraining sources",
+         "mean AUC when transferred to the other 7 graphs"),
+        (axes[1], targets, target_mean, "Easiest targets to transfer into",
+         "mean AUC received from the other 7 sources"),
+    ]
+    for ax, order, means, title, xlabel in panels:
+        values = [means[g] for g in order]
+        bars = ax.barh(range(len(order)), values, color="#4C78A8", height=0.68)
+        ax.set_yticks(range(len(order)), [SHORT[g] for g in order])
+        ax.set_title(title, fontsize=11)
+        ax.set_xlabel(xlabel)
+        ax.set_xlim(0.5, 0.9)
+        ax.axvline(0.5, color="0.45", lw=0.8, ls=":", zorder=0)
+        ax.grid(axis="y", visible=False)
+        for bar, value in zip(bars, values):
+            ax.text(value + 0.006, bar.get_y() + bar.get_height() / 2,
+                    f"{value:.3f}", va="center", ha="left", fontsize=9)
+
+    fig.suptitle("Single-source NM transfer: who generalizes, and which targets transfer well?\n"
+                 "Off-diagonal ROC-AUC at matched-40k (in-domain performance excluded)",
+                 fontsize=12, y=1.02)
+    fig.tight_layout()
+    for ext in ("pdf", "png"):
+        fig.savefig(outdir / f"nmss_transfer_summary.{ext}", bbox_inches="tight")
+    if pdf is not None:
+        pdf.savefig(fig, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -185,18 +329,21 @@ def plot_boxplot(cells: dict, outdir: Path, mode: str) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     here = Path(__file__).resolve().parent
-    ap.add_argument("--csv", default=str(
-        here / "../../experiments/nm_single_source_matrix/nm_single_source_matrix.csv"))
-    ap.add_argument("--outdir", default=str(here))
+    ap.add_argument("--csv", default=str(here / "data/nm_single_source_matrix.csv"))
+    ap.add_argument("--outdir", default=str(here / "figures"))
     args = ap.parse_args()
     outdir = Path(args.outdir); outdir.mkdir(parents=True, exist_ok=True)
     cells = load_matrix(Path(args.csv))
     n = len({k[0] for k in cells})
     print(f"loaded {len(cells)} cells over {n} train sources")
+    with PdfPages(outdir / "nmss_matrix_and_summary.pdf") as pdf:
+        plot_heatmap(cells, outdir, pdf=pdf)
+        plot_transfer_summary(cells, outdir, pdf=pdf)
+    plot_heatmap_donor_mean(cells, outdir)
     plot_lineplot(cells, outdir)
     plot_boxplot(cells, outdir, mode="rank")
     plot_boxplot(cells, outdir, mode="delta")
-    print(f"wrote nmss_lineplot / nmss_rank_boxplot / nmss_delta_boxplot .(pdf|png) to {outdir}")
+    print(f"wrote nmss_matrix_and_summary.pdf plus the individual figures to {outdir}")
     return 0
 
 

@@ -1,6 +1,17 @@
 # NM ladder — downstream tasks
 
-**Status:** scripts ready, 2026-07-27. Nothing run yet. No training: all 21 encoders exist.
+**Status:** run 2026-07-27; **regression column re-scored 2026-07-29** after the episodic
+regression eval was found void. No training: all 21 encoders exist.
+
+> **The regression numbers changed.** The first pass scored regression through the runner's
+> episodic `task_name=regression` path. That path predicts through a `regression_head` that
+> is in no checkpoint, loads with `strict=False` so it stays at random init, and
+> `--eval_only` never takes an optimizer step — the number it reports is a fixed random
+> projection of the frozen embedding (`setup/regression_probe_repair/README.md`, found
+> 2026-07-28, eleven hours after the first figures were built). Regression now comes from
+> `run_reg_probe_sweep.sh`, a frozen-encoder ridge probe fitted on the support set. Static
+> LP and classification are unaffected: static LP never used the runner, and classification
+> has no equivalent defect.
 
 ## What we are doing
 
@@ -53,13 +64,25 @@ same budget the NM table was read at — verified present 2026-07-27.
 
 | task | graphs | protocol | jobs |
 |---|---|---|---|
-| node regression | ukraine, covid, midterm, twibot20 | 10-shot, log1p, 3 targets | 252 |
+| node regression | ukraine, covid, midterm, twibot20 | 10-shot, log1p, 3 targets, **frozen-encoder ridge probe** | 4 graph passes |
 | node classification | covid-political, election2020, ukraine-susp, twibot20 | 10-shot | 84 |
 | static link prediction | ukraine, covid, midterm, twibot20, hongkong | pair-conditioned, degree-matched negatives | 5 graph passes |
 
 Shots, targets and transform are copied from `multitask_ssl_corpora/run_eval_sweep.sh`
 verbatim, so the ladder rows land in the shared CSVs directly comparable to the existing
 `cov_*` / `all8_*` / `B0` / `B1` / `E1` arms.
+
+**Neither regression nor static LP goes through the runner any more.** Both episodic paths
+are void, and both replacements invert the loop the same way: load the graph once, build
+**one shared evaluation set**, score all 21 encoders against it. Every rung therefore sees
+identical support/query nodes (regression) and identical positive/negative pairs (static
+LP), and the floors are computed on those same items. 4 + 5 graph passes replace 252 + 105
+runner jobs. Only the 84 classification jobs still use the runner.
+
+For regression that floor is `__features_only__`: a ridge probe on the raw 768-d input
+features, same episodes. It is the line an encoder must clear to be carrying anything the
+inputs did not already carry — and on the old void path, encoders sat *below* it on exactly
+the targets features predict best, which was the first sign something was wrong.
 
 **Static LP does not go through the runner.** Its episodic `slp` path is void — center-blind
 scoring, frozen random prototypes, degree-confounded negatives (AGENTS.md;
@@ -118,6 +141,28 @@ MODEL_LIST=scripts/experiments/setup/nm_ladder_downstream/model_list.txt bash sc
 GPU=0 bash scripts/experiments/setup/nm_ladder_downstream/run_pair_lp_sweep.sh
 ```
 
+Regression, after the gate passes (the gate is CPU-only and takes seconds — do not skip it,
+it is what proves the probe reproduces the published raw-feature floor):
+
+```bash
+bash scripts/experiments/setup/regression_probe_repair/run_gate.sh
+```
+
+```bash
+GPU=0 bash scripts/experiments/setup/nm_ladder_downstream/run_reg_probe_sweep.sh
+```
+
+Split across two GPUs by dataset if you want the wall-clock back — the small graphs finish
+while covid19 is still loading, and the four dataset passes write to separate files:
+
+```bash
+DATASETS=midterm,twibot20 GPU=0 bash scripts/experiments/setup/nm_ladder_downstream/run_reg_probe_sweep.sh
+```
+
+```bash
+DATASETS=ukr_rus_twitter,covid19_twitter GPU=1 bash scripts/experiments/setup/nm_ladder_downstream/run_reg_probe_sweep.sh
+```
+
 ```bash
 python3 scripts/experiments/setup/nm_ladder_downstream/assemble_downstream_tables.py
 ```
@@ -145,8 +190,12 @@ Into `analysis/nm_ladder_downstream/data/`:
   metric only (spearman / roc_auc / auc).
 - `nm_ladder_downstream_slp_floors.csv` — the heuristic floors each static-LP number must
   be read against.
+- `nm_ladder_downstream_reg_floors.csv` — the raw-feature floor each regression number must
+  be read against, per (dataset, target).
 - `data/pair_lp/<dataset>__pair_lp.csv` — the raw pair-evaluator output, including the
   validity columns.
+- `data/reg_probe/<dataset>__reg_probe.csv` — the raw probe output, including the
+  `__features_only__` floor rows and `n_labeled` / `n_pred`.
 
 Analysis and findings go in `analysis/nm_ladder_downstream/`, not here.
 

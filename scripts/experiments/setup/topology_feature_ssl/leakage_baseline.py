@@ -31,14 +31,21 @@ from sklearn.linear_model import Ridge
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import StandardScaler
 
-# repo root on sys.path so `data.*` imports work when run as a script
-sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+# Repo root on sys.path so ``data.*`` imports keep working if this script moves
+# within the setup tree.
+for parent in Path(__file__).resolve().parents:
+    if (parent / "data/structural_features.py").is_file():
+        sys.path.insert(0, str(parent))
+        break
+else:
+    raise RuntimeError("could not locate repository root containing data/structural_features.py")
 from data.structural_features import compute_structural_features, structural_feature_names
 
 # dataset -> (root_name, graph_filename); the focused datasets that carry node_targets.
 DATASETS = {
     "midterm": ("midterm", "retweet_graph_parquet.pt"),
     "ukr_rus_twitter": ("ukr_rus_twitter", "retweet_graph_parquet.pt"),
+    "ukr_rus_suspended": ("ukr_rus_suspended", "retweet_graph.pt"),
     "covid19_twitter": ("covid19_twitter", "retweet_graph_parquet.pt"),
     "twibot20": ("twibot20", "retweet_graph.pt"),
     "election2020": ("election2020", "retweet_graph.pt"),
@@ -114,6 +121,12 @@ def main() -> int:
                     help="Support size for the shot-matched ceiling (match the benchmark's n_shots).")
     ap.add_argument("--n-query", type=int, default=12, help="Query size per episode (match the benchmark).")
     ap.add_argument("--episodes", type=int, default=500, help="Number of few-shot episodes to accumulate.")
+    ap.add_argument(
+        "--seed",
+        type=int,
+        default=0,
+        help="Episode-sampling seed for the few-shot floor and CV seed for the full-data reference.",
+    )
     ap.add_argument("--skip-fulldata", action="store_true",
                     help="Skip the full-data Ridge reference (_cv_spearman). It fits on ALL "
                          "labeled nodes (O(n·d²)) — minutes-to-hours on the 23M-node graphs — "
@@ -181,12 +194,19 @@ def main() -> int:
                 xm = x[torch.from_numpy(idx)].float().numpy()
             else:
                 xm = feats[mask]
-            rho_fs = _fewshot_spearman(xm, yy, args.shots, args.n_query, args.episodes)
-            rho_full = float("nan") if args.skip_fulldata else _cv_spearman(xm, yy)
+            rho_fs = _fewshot_spearman(
+                xm, yy, args.shots, args.n_query, args.episodes, seed=args.seed
+            )
+            rho_full = (
+                float("nan")
+                if args.skip_fulldata
+                else _cv_spearman(xm, yy, seed=args.seed)
+            )
             rows.append({"dataset": name, "target": target,
                          "spearman": rho_fs,            # shot-matched (primary, fair)
                          "spearman_fulldata": rho_full,  # full-data reference (skippable)
-                         "shots": args.shots, "n": int(mask.sum())})
+                         "shots": args.shots, "n": int(mask.sum()),
+                         "seed": args.seed})
             ref = "skipped" if args.skip_fulldata else f"{rho_full:.3f}"
             print(f"[leakage] {name}/{target}: {args.shots}-shot Spearman={rho_fs:.3f} "
                   f"(full-data ref={ref}, n={int(mask.sum())})")
@@ -197,8 +217,14 @@ def main() -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     import csv
     with out.open("w", newline="") as fh:
-        w = csv.DictWriter(fh, fieldnames=["dataset", "target", "spearman",
-                                           "spearman_fulldata", "shots", "n"])
+        w = csv.DictWriter(
+            fh,
+            fieldnames=[
+                "dataset", "target", "spearman", "spearman_fulldata", "shots", "n",
+                "seed",
+            ],
+            lineterminator="\n",
+        )
         w.writeheader()
         w.writerows(rows)
     if args.features == "raw":

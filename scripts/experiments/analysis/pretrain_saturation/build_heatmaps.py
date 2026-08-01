@@ -120,7 +120,8 @@ def main() -> int:
     cb.set_label("Spearman   (0 = no signal)", fontsize=8.5, color=INK_MUTED)
     cb.ax.tick_params(labelsize=8, colors=INK_MUTED)
     cb.outline.set_visible(False)
-    fig.suptitle("Node regression by test graph x target — sign is unstable, no trend in step",
+    fig.suptitle("Node regression — VOID (random unfitted head). Kept as evidence of the noise; "
+                 "valid numbers in probe_regression_heatmap.png",
                  fontsize=12.5, color=INK, x=0.005, ha="left")
     out = HERE / "figures" / "heatmap_regression.png"
     fig.savefig(out, dpi=200, bbox_inches="tight", facecolor="white")

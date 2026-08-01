@@ -176,6 +176,11 @@ def _build_regression_node_splits(
     }
 
 
+def _episode_seed(split: str, offset: int = 0) -> int:
+    """Preserve historical split seeds unless an experiment opts into an offset."""
+    return sum(ord(char) for char in split) + int(offset or 0)
+
+
 def _get_dataloader(dataset_name: str, dataset: SubgraphDataset, split: str,
                     node_split: str, batch_size, n_way, n_shot, n_query,
                     batch_count: int, root: str, bert, num_workers: int,
@@ -183,7 +188,7 @@ def _get_dataloader(dataset_name: str, dataset: SubgraphDataset, split: str,
                     train_cap: Optional[int], linear_probe: bool,
                     label_set: Optional[Set[int]] = None, **kwargs) -> DataLoader:
     del root
-    seed = sum(ord(c) for c in split)
+    seed = _episode_seed(split, kwargs.get("eval_episode_seed_offset", 0))
     graph = dataset.graph
     task_name = kwargs.get("task_name", "neighbor_matching")
 

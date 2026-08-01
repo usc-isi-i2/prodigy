@@ -48,7 +48,7 @@ TASKS = [
     ("classification", "node_classification/data/node_classification.csv", "roc_auc",
      "ROC-AUC", "Node classification  (4 graphs, 10-shot)"),
     ("regression", "node_regression/data/node_regression.csv", "spearman",
-     "Spearman", "Node regression  (4 graphs x 2 targets, 10-shot)"),
+     "Spearman", "Node regression — VOID, superseded (see probe_regression_curves.png)"),
 ]
 
 
@@ -67,6 +67,33 @@ def load(csv_rel: str, metric: str, task: str) -> pd.DataFrame:
     return df[[c for c in cols if c in df.columns]]
 
 
+def classification_sigma() -> float | None:
+    """Single-run sigma of ROC-AUC, from the paired replicate runs. None if absent."""
+    rep_path = HERE / "data" / "classification_replicates.csv"
+    if not rep_path.is_file():
+        return None
+    rep = pd.read_csv(rep_path)
+    orig = pd.read_csv(ANALYSIS / TASKS[0][1])
+    key = ["dataset", "shots"]
+    rep = rep.assign(k=rep.model.str.replace("^rep_", "", regex=True))
+    orig = orig[orig.model.astype(str).str.startswith("sat_")].assign(
+        k=lambda d: d.model.str.replace("^sat_", "", regex=True))
+    m = rep.merge(orig, on=["k"] + key, suffixes=("_rep", "_orig"))
+    if m.empty:
+        return None
+    diffs = (m.roc_auc_rep - m.roc_auc_orig).to_numpy()
+    return float(diffs.std(ddof=1) / (2 ** 0.5))
+
+
+def step0_anchor() -> pd.DataFrame | None:
+    """Step-0 (untrained) values per cell. All three arms share ONE t=0 encoder --
+    verified byte-identical across arms -- so this is a single reference level per cell,
+    not a per-arm curve point. It also cannot be drawn ON a log x-axis (log(0)), which is
+    the other reason it is a horizontal line rather than a leftmost marker."""
+    f = HERE / "data" / "step0_anchor.csv"
+    return pd.read_csv(f) if f.is_file() else None
+
+
 def main() -> int:
     frames = [load(csv, metric, task) for task, csv, metric, _, _ in TASKS]
     long = pd.concat(frames, ignore_index=True).sort_values(
@@ -76,6 +103,13 @@ def main() -> int:
     if len(long) != expected:
         print(f"[warn] {len(long)} rows, expected {expected} -- an eval cell is missing",
               file=sys.stderr)
+
+    # Run-to-run uncertainty, measured: two independent runs of the identical config
+    # scored on the same cells (data/classification_replicates.csv). sigma for ONE run is
+    # the paired-difference sigma over sqrt(2); a band drawn at +/-sigma is therefore what
+    # a single curve is worth, not the gap between two of them.
+    band = classification_sigma()
+    step0 = step0_anchor()
 
     (HERE / "data").mkdir(exist_ok=True)
     (HERE / "figures").mkdir(exist_ok=True)
@@ -95,6 +129,9 @@ def main() -> int:
         ends = {}
         for arm in ARM_ORDER:
             s = (sub[sub["arm"] == arm].groupby("step")["value"].mean().sort_index())
+            if task == "classification" and band:
+                ax.fill_between(s.index, s.values - band, s.values + band,
+                                color=ARM_COLOR[arm], alpha=0.16, linewidth=0, zorder=2)
             ax.plot(s.index, s.values, color=ARM_COLOR[arm], linewidth=2,
                     marker="o", markersize=5.5, markeredgecolor="white",
                     markeredgewidth=1.2, label=ARM_LABEL[arm], zorder=3,
@@ -112,6 +149,17 @@ def main() -> int:
         for side in ("left", "bottom"):
             ax.spines[side].set_color(GRID)
         ax.tick_params(colors=INK_MUTED, labelsize=8.5)
+        # CLASSIFICATION ONLY. The step-0 regression anchor is a PROBE Spearman; the
+        # right panel plots the void episodic Spearman. Drawing one on the other would
+        # put two different measurements on one axis. The probe's own step-0 line lives
+        # in probe_regression_curves.png, where it belongs.
+        if step0 is not None and task == "classification":
+            lvl = step0[step0.task == task]["value"].mean()
+            ax.axhline(lvl, color=INK_MUTED, linewidth=1.3, linestyle=(0, (5, 3)), zorder=1)
+            ax.annotate(f"untrained encoder (step 0) = {lvl:.3f}", (0.985, lvl),
+                        xycoords=("axes fraction", "data"), xytext=(0, 5),
+                        textcoords="offset points", fontsize=7.5, color=INK_MUTED,
+                        va="bottom", ha="right")
         ax.set_xlim(80, 90000)   # headroom for the direct labels
         if task == "regression":
             ax.axhline(0, color=INK_MUTED, linewidth=1, linestyle=(0, (4, 3)), zorder=1)
@@ -135,21 +183,24 @@ def main() -> int:
                         fontsize=9, va="center", ha="left", zorder=4,
                         annotation_clip=False)
 
-    axes[0].legend(frameon=False, fontsize=8.5, loc="lower right", labelcolor=INK)
+    # lower LEFT: the step-0 reference label now occupies the lower right.
+    axes[0].legend(frameon=False, fontsize=8.5, loc="lower left", labelcolor=INK)
     # Title states only what both panels support. Classification saturates by ~500 steps;
     # regression does not saturate at anything, it never leaves the noise around zero, so
     # a single "saturation is early" headline would misdescribe the right-hand panel.
     fig.suptitle("Downstream transfer vs pretraining budget",
                  color=INK, fontsize=12.5, x=0.008, ha="left", y=1.0)
     fig.text(0.008, 0.935,
-             "Classification reaches its plateau by ~500 steps and moves within "
-             "±0.013 over the next 79x of training. Regression stays near zero "
-             "throughout — no trend to saturate.",
+             "Classification reaches its plateau by ~500 steps: the rise is 16x the run-to-run "
+             "noise, the plateau 1.1x it — i.e. flat to within measurement error.",
              color=INK_MUTED, fontsize=9, ha="left")
-    fig.text(0.008, -0.04,
-             "Steps 100/500 from dense retrains; 1000+ spliced from the original runs. "
-             "One run per arm — no error bars, so a flat segment is not evidence of "
-             "convergence.", color=INK_MUTED, fontsize=8, ha="left")
+    fig.text(0.008, -0.10,
+             "Steps 100/500 from dense retrains; 1000+ spliced from the original runs.\n"
+             "Shaded band on the left = measured single-run sigma (0.012) from two independent "
+             "runs of the identical config.\n"
+             "RIGHT PANEL IS VOID — it plots the episodic regression eval, whose regression_head "
+             "is random and never fitted; valid regression is in probe_regression_curves.png.",
+             color=INK_MUTED, fontsize=8, ha="left", linespacing=1.5)
     fig.tight_layout(rect=[0, 0, 1, 0.90])
     out = HERE / "figures" / "pretrain_saturation.png"
     fig.savefig(out, dpi=200, bbox_inches="tight", facecolor="white")

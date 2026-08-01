@@ -342,6 +342,8 @@ def build_command(
         str(args.device),
         "--seed",
         str(args.seed),
+        "--eval_episode_seed_offset",
+        str(args.eval_episode_seed_offset),
         "--eval_only",
         "True",
         "--eval_test_before_train",
@@ -494,7 +496,7 @@ def build_command(
             "--n_shots",
             shots,
             "--n_query",
-            str(dataset.pl_n_query),
+            str(args.reg_n_query or dataset.pl_n_query),
             "--zero_shot",
             zero_shot(shots),
             "--dataset_len_cap",
@@ -658,6 +660,15 @@ def main() -> int:
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument(
+        "--eval-episode-seed-offset",
+        type=int,
+        default=0,
+        help=(
+            "Offset the fixed split-derived episode seed without changing the default "
+            "paired evaluation episodes."
+        ),
+    )
     parser.add_argument("--epochs", type=int, default=12)
     parser.add_argument("--eval-step", type=int, default=2000)
     parser.add_argument("--checkpoint-step", type=int, default=2000)
@@ -687,6 +698,9 @@ def main() -> int:
     # node regression
     parser.add_argument("--reg-targets", default=",".join(DEFAULT_REG_TARGETS),
                         help="Comma-separated profile targets to evaluate; one eval run per target.")
+    parser.add_argument("--reg-n-query", type=int, default=0,
+                        help="Queries per regression episode; 0 uses each dataset's catalog "
+                             "pl_n_query. Set explicitly when matching an external floor.")
     parser.add_argument("--reg-transform", default="log1p", choices=["none", "log1p"],
                         help="Transform applied to regression targets (log1p for heavy-tailed counts).")
     parser.add_argument("--ablate-features", default="none", choices=["none", "zero", "permute", "noise"],

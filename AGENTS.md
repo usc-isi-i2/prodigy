@@ -212,6 +212,16 @@ Learned the hard way in the 2026-07-26 consolidation. Each of these fails *silen
   (`nm_ladder_fillin`, `nm_ladder_order_robustness`, `nm_single_source_matrix`, E2/E4)
   will now *also* emit `state_dict_50000`. Pin the comparison step explicitly in
   analyses; do not take "the highest-numbered checkpoint" across pre- and post-fix runs.
+- **`--ablate-features` runs are silently dropped by the shared parser.** The runner tags
+  the log dir with the ablation (`..._pl_ablP_10shot_...`), but `PL_RE`/`REG_RE` in
+  `scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py` expect `_pl_` to be
+  followed directly by the shot count, so every ablated run fails to match and is skipped
+  with no warning — the jobs succeed and `metrics_test_step0.json` is written, but nothing
+  reaches the CSVs. Read those JSONs directly (see
+  `analysis/pretrain_saturation/data/feature_ablation.csv`). **Do not "just widen the
+  regex":** without also adding the ablation tag to the dedup key, an ablated run and a
+  real run share a `(model, dataset, task, shots)` key and the newest-wins rule will
+  silently overwrite a genuine result with an ablated one — worse than skipping.
 - **Eval episode sampling ignores `--seed`.** Episodes are seeded by
   `seed = sum(ord(c) for c in split)` in all nine dataset modules (e.g.
   `data/covid19_twitter.py:218`), so the eval episode set is a fixed function of the
