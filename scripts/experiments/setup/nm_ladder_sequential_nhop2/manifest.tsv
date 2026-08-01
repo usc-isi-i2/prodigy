@@ -1,0 +1,9 @@
+rung	added	n_sources	sources	block_steps	boundaries	model_prefix	config
+1	ukr_rus	1	ukr_rus	40000	40000	nm_ladder_seq_h2m_r1	train_r1.yaml
+2	covid	2	ukr_rus,covid	20000,20000	20000,40000	nm_ladder_seq_h2m_r2	train_r2.yaml
+3	midterm	3	ukr_rus,covid,midterm	13334,13333,13333	13334,26667,40000	nm_ladder_seq_h2m_r3	train_r3.yaml
+4	covid_political	4	ukr_rus,covid,midterm,covid_political	10000,10000,10000,10000	10000,20000,30000,40000	nm_ladder_seq_h2m_r4	train_r4.yaml
+5	election2020	5	ukr_rus,covid,midterm,covid_political,election2020	8000,8000,8000,8000,8000	8000,16000,24000,32000,40000	nm_ladder_seq_h2m_r5	train_r5.yaml
+6	ukr_rus_suspended	6	ukr_rus,covid,midterm,covid_political,election2020,ukr_rus_suspended	6667,6667,6667,6667,6666,6666	6667,13334,20001,26668,33334,40000	nm_ladder_seq_h2m_r6	train_r6.yaml
+7	twibot20	7	ukr_rus,covid,midterm,covid_political,election2020,ukr_rus_suspended,twibot20	5715,5715,5714,5714,5714,5714,5714	5715,11430,17144,22858,28572,34286,40000	nm_ladder_seq_h2m_r7	train_r7.yaml
+8	cp_hk	8	ukr_rus,covid,midterm,covid_political,election2020,ukr_rus_suspended,twibot20,cp_hk	5000,5000,5000,5000,5000,5000,5000,5000	5000,10000,15000,20000,25000,30000,35000,40000	nm_ladder_seq_h2m_r8	train_r8.yaml

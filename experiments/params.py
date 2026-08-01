@@ -283,6 +283,28 @@ def get_params():
         ),
     )
     args.add_argument(
+        "--neighbor_sampling_source_sequence",
+        default="",
+        type=str,
+        help=(
+            "Optional comma-separated source order for BLOCKED sequential neighbor-matching "
+            "training. Names/ids use the same vocabulary as --neighbor_sampling_source_subset. "
+            "Every listed source is used for one contiguous block, in order, with block lengths "
+            "from --neighbor_sampling_source_sequence_steps. Requires batch_size=1, "
+            "--neighbor_sampling_episode_source=graph_id, and a zero cross-source probability. "
+            "Empty preserves the historical interleaved sampler."
+        ),
+    )
+    args.add_argument(
+        "--neighbor_sampling_source_sequence_steps",
+        default="",
+        type=str,
+        help=(
+            "Comma-separated positive episode counts for the blocked source sequence. The counts "
+            "must match the sequence length and sum to epochs * dataset_len_cap."
+        ),
+    )
+    args.add_argument(
         "--neighbor_sampling_episode_source_weighting",
         default="proportional",
         choices=["proportional", "balanced"],

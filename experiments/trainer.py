@@ -529,6 +529,15 @@ class TrainerFS():
         kwargs["neighbor_sampling_episode_source"] = self.parameter.get("neighbor_sampling_episode_source", "")
         kwargs["neighbor_sampling_episode_source_weighting"] = self.parameter.get("neighbor_sampling_episode_source_weighting", "proportional")
         kwargs["neighbor_sampling_source_subset"] = self.parameter.get("neighbor_sampling_source_subset", "")
+        kwargs["neighbor_sampling_source_sequence"] = self.parameter.get(
+            "neighbor_sampling_source_sequence", ""
+        )
+        kwargs["neighbor_sampling_source_sequence_steps"] = self.parameter.get(
+            "neighbor_sampling_source_sequence_steps", ""
+        )
+        # The blocked schedule validates against the full optimizer-step budget even though
+        # each BatchSampler iterator covers one dataset_len_cap-sized epoch.
+        kwargs["epochs"] = self.parameter["epochs"]
         kwargs["neighbor_sampling_cross_source_prob"] = self.parameter.get("neighbor_sampling_cross_source_prob", 0.0)
         kwargs["label_emb_texts"] = self.parameter.get("label_emb_texts", "")
         kwargs["midterm_lp_neg_ratio"] = self.parameter.get("midterm_lp_neg_ratio", 1)

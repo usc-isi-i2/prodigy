@@ -197,6 +197,78 @@ def resolve_source_subset(subset_spec, stratum_ids, source_names):
     return selected
 
 
+def resolve_source_sequence(sequence_spec, stratum_ids, source_names):
+    """Resolve an ordered source list, rejecting duplicates and omissions."""
+    tokens = [tok.strip() for tok in str(sequence_spec or "").split(",")]
+    tokens = [tok for tok in tokens if tok]
+    if not tokens:
+        return None
+
+    name_to_id = {name: idx for idx, name in enumerate(source_names)}
+    available = ", ".join(
+        f"{i}:{source_names[i]}" if i < len(source_names) else str(i)
+        for i in stratum_ids
+    )
+    sequence = []
+    for tok in tokens:
+        if tok in name_to_id:
+            graph_id = name_to_id[tok]
+        else:
+            try:
+                graph_id = int(tok)
+            except ValueError:
+                raise ValueError(
+                    f"neighbor_sampling_source_sequence: unknown source {tok!r}. "
+                    f"Available sources: {available}."
+                )
+        if graph_id not in stratum_ids:
+            raise ValueError(
+                f"neighbor_sampling_source_sequence: graph_id {graph_id} (from {tok!r}) "
+                f"is not active. Available sources: {available}."
+            )
+        if graph_id in sequence:
+            raise ValueError(
+                f"neighbor_sampling_source_sequence contains duplicate source {tok!r}."
+            )
+        sequence.append(graph_id)
+    if set(sequence) != set(stratum_ids):
+        missing = [graph_id for graph_id in stratum_ids if graph_id not in sequence]
+        raise ValueError(
+            "neighbor_sampling_source_sequence must list every active source exactly once; "
+            f"missing graph_ids {missing}."
+        )
+    return sequence
+
+
+def parse_source_sequence_steps(steps_spec, expected_count, expected_total):
+    """Parse and validate contiguous source-block episode counts."""
+    try:
+        steps = [
+            int(tok.strip())
+            for tok in str(steps_spec or "").split(",")
+            if tok.strip()
+        ]
+    except ValueError as exc:
+        raise ValueError(
+            "neighbor_sampling_source_sequence_steps must be comma-separated integers."
+        ) from exc
+    if len(steps) != expected_count:
+        raise ValueError(
+            "neighbor_sampling_source_sequence_steps must have one count per source: "
+            f"got {steps}, expected {expected_count} counts."
+        )
+    if any(step <= 0 for step in steps):
+        raise ValueError(
+            f"neighbor_sampling_source_sequence_steps must be positive, got {steps}."
+        )
+    if sum(steps) != expected_total:
+        raise ValueError(
+            "neighbor_sampling_source_sequence_steps must sum to the full training budget: "
+            f"sum={sum(steps)}, expected epochs * dataset_len_cap={expected_total}."
+        )
+    return steps
+
+
 def get_covid19_twitter_dataloader(
         dataset: SubgraphDataset,
         split: str,
@@ -231,6 +303,11 @@ def get_covid19_twitter_dataloader(
         strata_mode = kwargs.get("neighbor_sampling_strata", "")
         episode_source = kwargs.get("neighbor_sampling_episode_source", "")
         subset_spec = kwargs.get("neighbor_sampling_source_subset", "")
+        sequence_spec = kwargs.get("neighbor_sampling_source_sequence", "")
+        sequence_steps_spec = kwargs.get(
+            "neighbor_sampling_source_sequence_steps", ""
+        )
+        sequence_steps = None
         if strata_mode == "graph_id" or episode_source == "graph_id":
             if not hasattr(graph, "graph_id"):
                 raise ValueError("graph_id neighbor sampling requires graph.graph_id metadata.")
@@ -244,6 +321,34 @@ def get_covid19_twitter_dataloader(
             subset = resolve_source_subset(subset_spec, stratum_ids, source_names)
             if subset is not None:
                 stratum_ids = [graph_id for graph_id in stratum_ids if graph_id in subset]
+            if str(sequence_spec or "").strip():
+                is_training_stream = split == "train" and node_split != "val"
+                if not is_training_stream:
+                    sequence = None
+                else:
+                    if episode_source != "graph_id":
+                        raise ValueError(
+                            "neighbor_sampling_source_sequence requires "
+                            "neighbor_sampling_episode_source='graph_id'."
+                        )
+                    if batch_size != 1:
+                        raise ValueError(
+                            "neighbor_sampling_source_sequence requires batch_size=1 so one "
+                            "scheduled episode equals one optimizer step."
+                        )
+                    sequence = resolve_source_sequence(
+                        sequence_spec, stratum_ids, source_names
+                    )
+                    expected_total = batch_count * int(kwargs.get("epochs", 1))
+                    sequence_steps = parse_source_sequence_steps(
+                        sequence_steps_spec, len(sequence), expected_total
+                    )
+                    stratum_ids = sequence
+            elif str(sequence_steps_spec or "").strip():
+                raise ValueError(
+                    "neighbor_sampling_source_sequence_steps was set without "
+                    "neighbor_sampling_source_sequence."
+                )
             strata = [np.where(graph_ids == graph_id)[0].tolist() for graph_id in stratum_ids]
             confine_to_single_stratum = episode_source == "graph_id"
             summary = ", ".join(
@@ -253,11 +358,22 @@ def get_covid19_twitter_dataloader(
             mode = "confine-to-one-source" if confine_to_single_stratum else "balance-within-episode"
             scope = f" [subset {len(stratum_ids)}/{len(set(graph_ids.tolist()))} sources]" if subset else ""
             print(f"Neighbor sampling graph_id strata ({mode}){scope}: {summary}", flush=True)
-        elif str(subset_spec or "").strip():
+            if sequence_steps is not None:
+                schedule = ", ".join(
+                    f"{source_names[graph_id] if graph_id < len(source_names) else graph_id}:"
+                    f"{steps}"
+                    for graph_id, steps in zip(stratum_ids, sequence_steps)
+                )
+                print(f"Blocked source schedule: {schedule}", flush=True)
+        elif any(
+            str(spec or "").strip()
+            for spec in (subset_spec, sequence_spec, sequence_steps_spec)
+        ):
             raise ValueError(
-                "neighbor_sampling_source_subset requires neighbor_sampling_strata='graph_id' or "
-                "neighbor_sampling_episode_source='graph_id'; got neither, so the subset would be "
-                "silently ignored and the run would train on every source."
+                "neighbor_sampling_source_subset/source_sequence requires "
+                "neighbor_sampling_strata='graph_id' or "
+                "neighbor_sampling_episode_source='graph_id'; got neither, so the requested "
+                "source restriction would be silently ignored."
             )
         sampler = BatchSampler(
             batch_count,
@@ -270,6 +386,7 @@ def get_covid19_twitter_dataloader(
                 confine_to_single_stratum=confine_to_single_stratum,
                 stratum_weighting=kwargs.get("neighbor_sampling_episode_source_weighting", "proportional"),
                 cross_source_prob=float(kwargs.get("neighbor_sampling_cross_source_prob", 0.0)),
+                stratum_schedule_steps=sequence_steps,
             ),
             ParamSampler(batch_size, n_way, n_shot, n_query, 1),
             seed=seed,
