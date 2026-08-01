@@ -53,7 +53,8 @@ on the remote, a typical setup is:
 ```bash
 cd /dataMeR1/phil/gfm
 git -C prodigy fetch origin
-git -C prodigy worktree add ../prodigy-nmlh2 origin/codex/nm-ladder-nhop2
+git -C prodigy worktree add -b codex/nm-ladder-nhop2 \
+  ../prodigy-nmlh2 origin/codex/nm-ladder-nhop2
 cd /dataMeR1/phil/gfm/prodigy-nmlh2
 git config core.hooksPath .githooks
 ```
