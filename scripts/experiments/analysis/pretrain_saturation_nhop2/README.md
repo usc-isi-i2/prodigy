@@ -1,11 +1,11 @@
-# Pretrain saturation with `n_hop=2` — analysis
+# Compute-matched two-hop pretrain saturation — analysis
 
 Dedicated analysis for `setup/pretrain_saturation_nhop2/`. It does not read or mutate the
 append-only shared benchmark CSVs.
 
 `analyze_results.py` requires a complete result matrix and reads:
 
-- classification ROC-AUC directly from this worktree's `log/eval_sat_h2_*` metric JSONs;
+- classification ROC-AUC directly from this worktree's `log/eval_sat_h2m_*` metric JSONs;
 - repaired regression-probe CSVs from `data/reg_probe/`; and
 - the committed `n_hop=1` evidence in `analysis/pretrain_saturation/`.
 

@@ -102,7 +102,7 @@ def main() -> int:
 
     out = Path(args.out)
     out.write_text(
-        "# n_hop=2 pretrain saturation: one shared step-0 + 18 trained checkpoints.\n"
+        "# compute-matched h2 saturation: one shared step-0 + 18 trained checkpoints.\n"
         "# All state_dict_N files contain exactly N completed optimizer steps.\n"
         + "".join(f"{key} {path}\n" for key, path in rows),
         encoding="utf-8",

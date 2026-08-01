@@ -28,7 +28,7 @@ and it is the entry point to the analysis tree.
 | `nm_transfer_matrix/` | matched merged-vs-single comparison | `RESULTS.md` |
 | `pretrain_probe_matrix/` | frozen-probe matrix over pretraining strategies | `FINDINGS.md` |
 | `pretrain_saturation/` | downstream transfer vs pretraining step (`n_hop=1`) | `FINDINGS.md` |
-| `pretrain_saturation_nhop2/` | fresh literal-`n_hop=2` saturation replication | — (running) |
+| `pretrain_saturation_nhop2/` | compute-matched two-hop-context saturation replication | — (running) |
 | `slp_evaluator_repair/` | the 2026-07-23 static-LP evaluator repair (method; evaluator itself in `scripts/eval/pair_link_*.py`) | `README.md` |
 | `topology_feature_ssl/` | topology-vs-feature SSL objectives (E-series) | `FINDINGS.md`, `RESULTS_directed3log.md` |
 | `best_pretrain_strat/`, `sampling_strat_comparison/`, `pretrain_strategy_benchmark/`, `node_classification/`, `node_regression/`, `static_link_prediction/`, `covid_task_transfer_matrix/` | earlier notebook-only analyses; no findings file | — |

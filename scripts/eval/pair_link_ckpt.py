@@ -140,7 +140,14 @@ def load_frozen_encoder(checkpoint: str, params: dict, device: str = "cpu",
     return model
 
 
-def build_subgraph_dataset(blob, graph, n_hop: int, background_view: str):
+def build_subgraph_dataset(
+    blob,
+    graph,
+    n_hop: int,
+    background_view: str,
+    hop_sizes=None,
+    node_limit: int = 2000,
+):
     """SubgraphDataset over the background view only (held-out edges excluded).
 
     Builds a minimal Data that SHARES the feature tensor by reference. Cloning the
@@ -158,7 +165,9 @@ def build_subgraph_dataset(blob, graph, n_hop: int, background_view: str):
     if x is None:
         raise ValueError("graph artifact carries no node features 'x'")
     scoped = Data(x=x, edge_index=bg, num_nodes=int(graph.num_nodes))
-    sampler = NeighborSampler(scoped, num_hops=n_hop)
+    sampler = NeighborSampler(
+        scoped, num_hops=n_hop, hop_sizes=hop_sizes, limit=node_limit
+    )
     return SubgraphDataset(scoped, sampler, bidirectional=False)
 
 

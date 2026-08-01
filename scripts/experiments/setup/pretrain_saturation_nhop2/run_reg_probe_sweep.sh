@@ -37,7 +37,8 @@ for dataset in "${DATASET_ARR[@]}"; do
        --model-list "${MODEL_LIST}" --out-dir "${OUT_DIR}"
        --targets followers_count,account_age_days --transform log1p
        --shots 10 --n-query 12 --episodes 500 --alpha 1.0
-       --n-hop 2 --batch-size "${ENCODE_BATCH_SIZE:-32}" --device "cuda:${GPU}")
+       --n-hop 2 --hop-sizes 9,9 --node-limit 101
+       --batch-size "${ENCODE_BATCH_SIZE:-128}" --device "cuda:${GPU}")
   if [[ "${DRY_RUN:-0}" == "1" ]]; then
     printf 'DRY:'; printf ' %q' "${cmd[@]}"; printf '\n'
   else

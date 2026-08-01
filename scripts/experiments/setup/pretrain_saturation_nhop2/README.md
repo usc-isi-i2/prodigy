@@ -1,38 +1,44 @@
-# Pretrain saturation with literal `n_hop=2`
+# Pretrain saturation with compute-matched two-hop context
 
 Fresh replication of `pretrain_saturation`, isolated from its spliced historical
 trajectories. Three corpora are trained from random initialization to exactly 40,000
 optimizer steps and checkpointed at `0, 100, 500, 1k, 2k, 10k, 40k`.
 
-## What this intervention means
+## Controlled intervention
 
-`n_hop` is shared by two mechanisms in this repository. Setting it to 2:
+The historical `n_hop=1` sampler uses fanout 100 and therefore extracts at most about
+101 nodes (center + neighbours) and 100 sampled edges per subgraph. A naive `n_hop=2`
+setting branches again and can hit the 2,000-node cap, confounding context radius with up
+to 20x more nodes.
 
-1. makes NM positives the endpoints of two-step random walks instead of direct
-   neighbours (`NeighborTask` calls `neighbor_sampler.random_walk`); and
-2. extracts two-hop subgraphs around every support/query node.
+This experiment instead sets:
 
-The architecture remains one background layer, `S,U,M`. Two-hop nodes enter the global
-subgraph pooling readout, but this is not an `S2` two-layer-message-passing experiment.
-The registered claim is therefore: **does downstream budget saturation persist when NM
-uses two-step positives and two-hop sampled context?** It is not a context-only ablation.
+- `n_hop: 2` for two-hop context;
+- per-hop fanouts `9,9`, giving at most about 100 sampled nodes and 99 sampled edges;
+- hard node limit 101, matching the one-hop effective ceiling; and
+- `neighbor_matching_walk_hops: 1`, preserving direct-neighbour NM positives.
+
+Thus the positive definition and approximate node/edge budget stay fixed; only context
+radius changes. The architecture remains one background layer, `S,U,M`. Two-hop nodes
+enter the global subgraph pooling readout, but this is not an `S2` experiment.
 
 ## Registered protocol
 
 - Arms: `all8` (within-source, balanced), `ukr`, `covid`.
 - Seed 0, GraphSAGE, 256 dimensions, `S,U,M`, no augmentation.
-- `n_hop=2` in both pretraining and downstream embedding extraction.
+- Compute-matched `n_hop=2`, fanouts `9,9`, and node limit 101 in both pretraining and
+  downstream embedding extraction.
+- One-hop NM positive walks, matching the historical objective.
 - Classification: the same four labelled graphs and fixed 10-shot episodes as the
   original saturation experiment.
 - Regression: only the repaired frozen-encoder ridge probe, on `followers_count` and
   `account_age_days`. The runner's episodic regression path is void and is not invoked.
-- Dedicated model keys (`sat_h2_*`) and dedicated analysis outputs; shared benchmark
+- Dedicated model keys (`sat_h2m_*`) and dedicated analysis outputs; shared benchmark
   CSVs are not edited.
 
-The sampler uses fanout 100 and a 2,000-node cap. A 30-way `(3 support + 4 query)` NM
-episode contains 210 sampled subgraphs, so the dense-source smoke test is a hard resource
-gate. Registered configs use two loader workers and the regression encoder batches 32
-nodes at a time to bound host/GPU memory.
+The abandoned literal-h2 pilot used `sat_h2_*` keys and is not evidence. Its partial
+checkpoints may remain in the worktree state directory, but the resolver only accepts
+complete `sat_h2m_*` trajectories.
 
 ## Tucker workflow
 
@@ -56,10 +62,10 @@ GPU=0 bash scripts/experiments/setup/pretrain_saturation_nhop2/run_smoke_tucker.
 Only after finite loss, `state_dict_20.ckpt`, and acceptable memory/step time:
 
 ```bash
-tmux new-session -d -s sat_h2 \
-  'export PATH="/home/mhchu/miniconda3/bin:$PATH"; \
+tmux new-session -d -s sat_h2m \
+   'export PATH="/home/mhchu/miniconda3/bin:$PATH"; \
    GPUS="0 1 2" bash scripts/experiments/setup/pretrain_saturation_nhop2/run_all_train_tucker.sh \
-   > scripts/experiments/setup/pretrain_saturation_nhop2/run_logs/orchestrator.log 2>&1'
+   > scripts/experiments/setup/pretrain_saturation_nhop2/run_logs/orchestrator_h2m.log 2>&1'
 ```
 
 Resolve complete trajectories. The resolver refuses missing checkpoints and requires all

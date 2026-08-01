@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Assemble the complete n_hop=2 saturation rerun and compare it with n_hop=1."""
+"""Assemble compute-matched n_hop=2 saturation and compare it with n_hop=1."""
 
 from __future__ import annotations
 
@@ -34,10 +34,10 @@ REGRESSION_DATASETS = (
 )
 TARGETS = ("followers_count", "account_age_days")
 ARM_COLOR = {"all8": "#2a78d6", "ukr": "#eb6834", "covid": "#1baf7a"}
-MODEL_RE = re.compile(r"^sat_h2_(?P<arm>all8|ukr|covid)_s(?P<step>\d{6})$")
-SHARED_STEP0 = "sat_h2_shared_s000000"
+MODEL_RE = re.compile(r"^sat_h2m_(?P<arm>all8|ukr|covid)_s(?P<step>\d{6})$")
+SHARED_STEP0 = "sat_h2m_shared_s000000"
 RUN_RE = re.compile(
-    r"^eval_(?P<model>sat_h2_(?:shared|all8|ukr|covid)_s\d{6})_to_"
+    r"^eval_(?P<model>sat_h2m_(?:shared|all8|ukr|covid)_s\d{6})_to_"
     r"(?P<dataset>covid_political|election2020|ukr_rus_suspended|twibot20)_"
     r"pl_10shot(?:_|$)"
 )
@@ -57,7 +57,7 @@ def parse_h2_model(model: str) -> tuple[str, int]:
 
 def expected_raw_models() -> set[str]:
     return {SHARED_STEP0} | {
-        f"sat_h2_{arm}_s{step:06d}"
+        f"sat_h2m_{arm}_s{step:06d}"
         for arm in ARMS
         for step in STEPS
         if step > 0
@@ -79,7 +79,7 @@ def collect_classification(log_root: Path) -> pd.DataFrame:
     newest: dict[tuple[str, str], tuple[float, float, Path]] = {}
     if not log_root.is_dir():
         raise FileNotFoundError(f"log root not found: {log_root}")
-    for run_dir in log_root.glob("eval_sat_h2_*_to_*_pl_10shot*"):
+    for run_dir in log_root.glob("eval_sat_h2m_*_to_*_pl_10shot*"):
         if not run_dir.is_dir():
             continue
         match = RUN_RE.match(run_dir.name)
@@ -127,6 +127,15 @@ def collect_regression(probe_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
         frames.append(frame)
     raw = pd.concat(frames, ignore_index=True)
     raw = raw[(raw["target"].isin(TARGETS)) & (raw["alpha"] == 1.0)].copy()
+    provenance = {"n_hop": 2, "hop_sizes": "9,9", "node_limit": 101}
+    for column, expected_value in provenance.items():
+        if column not in raw.columns:
+            raise ValueError(f"regression output lacks matched-sampler column {column!r}")
+        actual_values = set(raw[column].dropna().tolist())
+        if actual_values != {expected_value}:
+            raise ValueError(
+                f"regression output has {column}={actual_values}, expected {expected_value!r}"
+            )
 
     encoder = raw[raw["model"].isin(expected_raw_models())].copy()
     expected = {
@@ -167,10 +176,13 @@ def expand_shared_step0(raw: pd.DataFrame, task: str, metric: str) -> pd.DataFra
                 "target": record.get("target", "") or "",
                 "metric": metric,
                 "value": float(record["value"]),
-                "model": f"sat_h2_{row_arm}_s{step:06d}",
+                "model": f"sat_h2m_{row_arm}_s{step:06d}",
                 "source_model": source_model,
                 "shared_step0": source_model == SHARED_STEP0,
                 "n_hop": 2,
+                "hop_sizes": "9,9",
+                "node_limit": 101,
+                "nm_walk_hops": 1,
                 "evidence_path": record.get("evidence_path", ""),
             })
     return pd.DataFrame(rows)
@@ -275,7 +287,8 @@ def make_figure(h1: pd.DataFrame, h2: pd.DataFrame, out: Path) -> None:
         ax.spines[["top", "right"]].set_visible(False)
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, frameon=False, ncol=6, loc="upper center", fontsize=8)
-    fig.suptitle("Pretrain saturation: literal n_hop=2 vs n_hop=1", y=1.04, fontsize=13)
+    fig.suptitle("Pretrain saturation: compute-matched two-hop context vs one hop",
+                 y=1.04, fontsize=13)
     fig.tight_layout(rect=[0, 0, 1, 0.92])
     out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, dpi=200, bbox_inches="tight", facecolor="white")

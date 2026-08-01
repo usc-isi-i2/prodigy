@@ -1,4 +1,4 @@
-# Fresh n_hop=2 saturation trajectory: covid19_twitter single-source corpus.
+# Compute-matched two-hop saturation trajectory: covid19_twitter single-source corpus.
 dataset: covid19_twitter
 root: /dataMeR1/phil/data/covid19_twitter/graphs
 graph_filename: retweet_graph_parquet.pt
@@ -18,6 +18,9 @@ n_shots: 3
 n_query: 4
 batch_size: 1
 n_hop: 2
+neighbor_sampling_hop_sizes: "9,9"
+neighbor_sampling_node_limit: 101
+neighbor_matching_walk_hops: 1
 dataset_len_cap: 10000
 val_len_cap: 500
 test_len_cap: 500
@@ -29,4 +32,4 @@ checkpoint_steps: "0,100,500,1000,2000,10000,40000"
 workers: 2
 device: 0
 seed: 0
-prefix: sat_h2_covid
+prefix: sat_h2m_covid

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 19 checkpoints x 4 labelled graphs, fixed 10-shot episodes, literal n_hop=2 eval.
+# 19 checkpoints x 4 labelled graphs, fixed 10-shot episodes, compute-matched h2 eval.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -23,4 +23,5 @@ python3 scripts/eval/eval_ckpts_all_graph_tasks_tucker.py \
   --datasets covid_political,election2020,ukr_rus_suspended,twibot20 \
   --tasks pl --shots 10 --workers 2 --continue-on-error \
   --gpus "${GPUS:-}" \
-  "$@" -- --n_hop 2
+  "$@" -- --n_hop 2 --neighbor_sampling_hop_sizes 9,9 \
+  --neighbor_sampling_node_limit 101 --neighbor_matching_walk_hops 1

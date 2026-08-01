@@ -28,7 +28,8 @@ def write_classification_matrix(root: Path) -> None:
 
 def write_probe_matrix(root: Path) -> None:
     fields = [
-        "dataset", "model", "target", "alpha", "features", "spearman",
+        "dataset", "model", "target", "alpha", "features", "n_hop", "hop_sizes",
+        "node_limit", "spearman",
         "rmse", "r2", "n_pred", "n_labeled",
     ]
     for dataset in analysis.REGRESSION_DATASETS:
@@ -38,12 +39,14 @@ def write_probe_matrix(root: Path) -> None:
             rows.append({
                 "dataset": dataset, "model": "__features_only__", "target": target,
                 "alpha": 1.0, "features": "raw_x", "spearman": 0.1,
+                "n_hop": 2, "hop_sizes": "9,9", "node_limit": 101,
                 "rmse": 1, "r2": 0, "n_pred": 10, "n_labeled": 100,
             })
             for model in analysis.expected_raw_models():
                 rows.append({
                     "dataset": dataset, "model": model, "target": target,
                     "alpha": 1.0, "features": "frozen_emb", "spearman": 0.2,
+                    "n_hop": 2, "hop_sizes": "9,9", "node_limit": 101,
                     "rmse": 1, "r2": 0, "n_pred": 10, "n_labeled": 100,
                 })
         with path.open("w", newline="", encoding="utf-8") as handle:

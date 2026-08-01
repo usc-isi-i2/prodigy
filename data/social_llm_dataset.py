@@ -17,7 +17,7 @@ import torch
 from torch.utils.data import DataLoader
 from torch_geometric.data import Data
 
-from experiments.sampler import NeighborSampler
+from experiments.sampler import NeighborSampler, sampler_kwargs_from_config
 from .augment import get_aug
 from .dataloader import ParamSampler, BatchSampler, Collator, NeighborTask, RegressionTask
 from .dataset import SubgraphDataset
@@ -118,7 +118,8 @@ def _get_dataset(dataset_name: str, root: str, n_hop: int = 1,
     print(f"Graph: {graph.num_nodes} nodes, {graph.edge_index.shape[1]} edges, "
           f"{graph.x.shape[1]} node features  labels={graph.label_names}")
     print("Building neighbor sampler...", flush=True)
-    neighbor_sampler = NeighborSampler(graph, num_hops=n_hop)
+    sampler_kwargs = sampler_kwargs_from_config(kwargs, n_hop)
+    neighbor_sampler = NeighborSampler(graph, num_hops=n_hop, **sampler_kwargs)
     print("Neighbor sampler ready.", flush=True)
     dataset = SubgraphDataset(graph, neighbor_sampler, bidirectional=False)
     if hasattr(graph, "edge_attr") and graph.edge_attr is not None:
@@ -139,7 +140,9 @@ def _get_dataset(dataset_name: str, root: str, n_hop: int = 1,
         if holdout_edge_index is not None:
             print("Building static-holdout neighbor sampler...", flush=True)
             holdout_graph = Data(edge_index=holdout_edge_index, num_nodes=graph.num_nodes)
-            dataset.future_neighbor_sampler = NeighborSampler(holdout_graph, num_hops=n_hop)
+            dataset.future_neighbor_sampler = NeighborSampler(
+                holdout_graph, num_hops=n_hop, **sampler_kwargs
+            )
             dataset.future_edge_view = resolved_target_view
             print("Static-holdout neighbor sampler ready.", flush=True)
     return dataset

@@ -1,4 +1,4 @@
-"""Registered arms and checkpoint keys for the fresh n_hop=2 saturation rerun."""
+"""Registered arms and keys for the compute-matched n_hop=2 saturation rerun."""
 
 from __future__ import annotations
 
@@ -18,9 +18,9 @@ class Arm:
 
 
 ARMS = (
-    Arm("all8", "train_all8.yaml", "sat_h2_all8", "8-source merge, within-balanced"),
-    Arm("ukr", "train_ukr.yaml", "sat_h2_ukr", "ukr_rus_twitter"),
-    Arm("covid", "train_covid.yaml", "sat_h2_covid", "covid19_twitter"),
+    Arm("all8", "train_all8.yaml", "sat_h2m_all8", "8-source merge, within-balanced"),
+    Arm("ukr", "train_ukr.yaml", "sat_h2m_ukr", "ukr_rus_twitter"),
+    Arm("covid", "train_covid.yaml", "sat_h2m_covid", "covid19_twitter"),
 )
 ARMS_BY_NAME = {arm.name: arm for arm in ARMS}
 
@@ -30,7 +30,7 @@ def model_key(arm: str, step: int) -> str:
         raise ValueError(f"unknown arm: {arm!r}")
     if step not in STEPS:
         raise ValueError(f"unregistered step: {step}")
-    return f"sat_h2_{arm}_s{step:06d}"
+    return f"sat_h2m_{arm}_s{step:06d}"
 
 
-SHARED_STEP0_KEY = "sat_h2_shared_s000000"
+SHARED_STEP0_KEY = "sat_h2m_shared_s000000"

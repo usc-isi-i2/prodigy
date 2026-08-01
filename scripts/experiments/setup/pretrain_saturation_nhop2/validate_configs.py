@@ -23,6 +23,9 @@ COMMON = {
     "n_query": 4,
     "batch_size": 1,
     "n_hop": 2,
+    "neighbor_sampling_hop_sizes": "9,9",
+    "neighbor_sampling_node_limit": 101,
+    "neighbor_matching_walk_hops": 1,
     "dataset_len_cap": 10_000,
     "val_len_cap": 500,
     "test_len_cap": 500,
@@ -38,19 +41,19 @@ ARM_FIELDS = {
         "dataset": "covid19_twitter",
         "root": "/dataMeR1/phil/data/merged/graphs",
         "graph_filename": "ukr_rus_covid_midterm_all8_retweet_graph.pt",
-        "prefix": "sat_h2_all8",
+        "prefix": "sat_h2m_all8",
     },
     "ukr": {
         "dataset": "ukr_rus_twitter",
         "root": "/dataMeR1/phil/data/ukr_rus_twitter/graphs",
         "graph_filename": "retweet_graph_parquet.pt",
-        "prefix": "sat_h2_ukr",
+        "prefix": "sat_h2m_ukr",
     },
     "covid": {
         "dataset": "covid19_twitter",
         "root": "/dataMeR1/phil/data/covid19_twitter/graphs",
         "graph_filename": "retweet_graph_parquet.pt",
-        "prefix": "sat_h2_covid",
+        "prefix": "sat_h2m_covid",
     },
 }
 
