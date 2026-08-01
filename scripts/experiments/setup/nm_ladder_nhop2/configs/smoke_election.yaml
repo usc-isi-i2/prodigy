@@ -1,0 +1,32 @@
+# Worst-case 2-hop resource smoke: election2020 only (high average degree).
+# This is intentionally a distinct 200-step run and is never used in ladder analysis.
+dataset: covid19_twitter
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_all8_retweet_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+emb_dim: 256
+layers: S,U,M
+n_hop: 2
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+dataset_len_cap: 200
+val_len_cap: 20
+test_len_cap: 20
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+neighbor_sampling_source_subset: election2020
+
+epochs: 1
+eval_step: 100000
+checkpoint_step: 200
+workers: 2
+device: 0
+seed: 0
+prefix: nm_ladder_h2_smoke_election
