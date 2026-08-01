@@ -55,16 +55,16 @@ balanced-within-source story, a different remedy.)
 
 ```bash
 # 1. train (check nvidia-smi first; our GPUs are 0-3). NM jobs are ~2 GB / per-step bound.
-GPUS="0 1 2 3 2" scripts/experiments/sampling_improvements/partial_cross_source/run_all_train_tucker.sh
+GPUS="0 1 2 3 2" scripts/experiments/setup/sampling_improvements/partial_cross_source/run_all_train_tucker.sh
 
 # 2. once checkpoints exist:
-scripts/experiments/sampling_improvements/partial_cross_source/make_model_list.sh
-scripts/experiments/sampling_improvements/partial_cross_source/eval_tucker.sh --device 2
+scripts/experiments/setup/sampling_improvements/partial_cross_source/make_model_list.sh
+scripts/experiments/setup/sampling_improvements/partial_cross_source/eval_tucker.sh --device 2
 
 # 3. table + verdict:
-python3 scripts/experiments/sampling_improvements/partial_cross_source/build_sweep.py \
+python3 scripts/experiments/setup/sampling_improvements/partial_cross_source/build_sweep.py \
   --log-root log --shots 3 --n-way 30 --metric all --out-csv \
-  scripts/experiments/sampling_improvements/partial_cross_source/sweep.csv
+  scripts/experiments/setup/sampling_improvements/partial_cross_source/sweep.csv
 ```
 
 ## Reading the result

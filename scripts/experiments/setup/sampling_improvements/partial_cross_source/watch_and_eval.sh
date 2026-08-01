@@ -8,7 +8,7 @@
 #      FINAL_STEP (default 110000), POLL_SEC (default 300).
 set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../../.." && pwd)"
 STATE_DIR="${STATE_DIR:-${REPO_ROOT}/state}"
 DEVICE="${DEVICE:-2}"
 FINAL_STEP="${FINAL_STEP:-110000}"

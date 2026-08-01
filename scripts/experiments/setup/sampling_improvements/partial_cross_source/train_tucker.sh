@@ -4,7 +4,7 @@
 #   DRY_RUN=1 ./train_tucker.sh p100_naive.yaml --device 3
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../../.." && pwd)"
 
 [[ $# -lt 1 ]] && { echo "usage: $0 <config.yaml> [extra args...]" >&2; exit 2; }
 CONFIG_NAME="$1"; shift

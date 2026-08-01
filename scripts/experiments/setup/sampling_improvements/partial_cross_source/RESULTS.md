@@ -66,9 +66,9 @@ keep pure within-source confinement.**
 
 ```bash
 # train (5 arms) then, from the worktree:
-scripts/experiments/sampling_improvements/partial_cross_source/make_model_list.sh
-scripts/experiments/sampling_improvements/partial_cross_source/eval_tucker.sh --device 0
-python3 scripts/experiments/sampling_improvements/partial_cross_source/build_sweep.py \
+scripts/experiments/setup/sampling_improvements/partial_cross_source/make_model_list.sh
+scripts/experiments/setup/sampling_improvements/partial_cross_source/eval_tucker.sh --device 0
+python3 scripts/experiments/setup/sampling_improvements/partial_cross_source/build_sweep.py \
   --log-root <repo>/log --shots 3 --n-way 30 --metric all --out-csv .../sweep.csv
 ```
 Note: `eval_tucker.sh` now defaults `--data-root /dataMeR1/phil/data` (the single-source

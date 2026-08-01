@@ -3,7 +3,7 @@
 #   STATE_DIR=/dataMeR1/phil/gfm/prodigy/state ./make_model_list.sh
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../../.." && pwd)"
 STATE_DIR="${STATE_DIR:-${REPO_ROOT}/state}"
 OUT="${SCRIPT_DIR}/model_list.txt"
 
