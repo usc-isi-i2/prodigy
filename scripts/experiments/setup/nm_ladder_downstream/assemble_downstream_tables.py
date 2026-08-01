@@ -4,9 +4,18 @@
 Reads the three result sources produced by the sweep and expands the 21 distinct
 encoders back into the 24 (order, rung) rows through ``row_map.csv``:
 
-  node regression      analysis/node_regression/data/node_regression.csv
+  node regression      analysis/nm_ladder_downstream/data/reg_probe/<dataset>__reg_probe.csv
   node classification  analysis/node_classification/data/node_classification.csv
   static link pred     analysis/nm_ladder_downstream/data/pair_lp/<dataset>__pair_lp.csv
+
+Regression comes from the frozen-encoder probe, NOT from the shared
+``node_regression.csv``. Those runner rows are void: the episodic ``task_name=regression``
+path predicts through a ``regression_head`` that is in no checkpoint, loads with
+``strict=False`` so it stays at random init, and ``--eval_only`` never takes an optimizer
+step -- the reported number is a fixed random projection of the frozen embedding
+(``setup/regression_probe_repair/README.md``). ``--reg-source runner`` still reads the old
+path, for reproducing what the superseded 2026-07-27 figures showed; it is not a default
+anyone should reach for.
 
 Emits into ``analysis/nm_ladder_downstream/data/``:
 
@@ -109,6 +118,45 @@ def load_runner_task(csv_path: Path, models: set[str], shots: str, metrics):
     return out
 
 
+def load_reg_probe(probe_dir: Path, models: set[str], shots: str):
+    """(model, dataset, target) -> {metric: value} from the frozen-encoder probe,
+    plus the per-(dataset, target) raw-feature floor.
+
+    The sweep writes one CSV per dataset and one row per (model, target, alpha). There
+    is no ``run`` column and no re-evaluation to collapse -- every arm was scored in a
+    single pass against one shared episode set -- so ``latest_by`` is not needed here.
+    A repeated (model, dataset, target) at more than one alpha is a caller error rather
+    than a duplicate to resolve, and is reported instead of silently collapsed.
+    """
+    cells: dict[tuple, dict] = {}
+    floors: dict[tuple, float] = {}
+    dupes: list[str] = []
+    for path in sorted(probe_dir.glob("*__reg_probe.csv")):
+        for row in read_rows(path):
+            if row.get("shots") != shots:
+                continue
+            dataset, model, target = row.get("dataset"), row.get("model"), row.get("target")
+            rho = to_float(row.get("spearman"))
+            if rho is None:
+                continue
+            if model == "__features_only__":
+                floors[(dataset, target)] = rho
+                continue
+            if model not in models:
+                continue
+            key = (model, dataset, target)
+            if key in cells:
+                dupes.append(f"{model}@{dataset}/{target} (alpha={row.get('alpha')})")
+                continue
+            cells[key] = {m: to_float(row.get(m)) for m in REG_METRICS}
+    if dupes:
+        print(f"WARNING: {len(dupes)} duplicate probe cells ignored (keeping the first "
+              f"-- pass a single --alpha to the sweep):", file=sys.stderr)
+        for line in dupes[:10]:
+            print(f"  {line}", file=sys.stderr)
+    return cells, floors
+
+
 def load_pair_lp(pair_dir: Path, models: set[str]):
     """(model, dataset) -> {metric: value}, plus per-dataset heuristic floors.
 
@@ -152,6 +200,12 @@ def main() -> int:
     ap.add_argument("--out-dir", default=str(ANALYSIS / "nm_ladder_downstream" / "data"))
     ap.add_argument("--pair-lp-dir",
                     default=str(ANALYSIS / "nm_ladder_downstream" / "data" / "pair_lp"))
+    ap.add_argument("--reg-source", choices=["probe", "runner"], default="probe",
+                    help="probe = the repaired frozen-encoder probe (default); "
+                         "runner = the void episodic path, for reproducing the "
+                         "superseded 2026-07-27 figures only.")
+    ap.add_argument("--reg-probe-dir",
+                    default=str(ANALYSIS / "nm_ladder_downstream" / "data" / "reg_probe"))
     ap.add_argument("--reg-csv",
                     default=str(ANALYSIS / "node_regression" / "data" / "node_regression.csv"))
     ap.add_argument("--pl-csv",
@@ -167,7 +221,20 @@ def main() -> int:
         return 2
     models = {r["model_key"] for r in rows}
 
-    reg = load_runner_task(Path(args.reg_csv), models, args.shots, REG_METRICS)
+    reg_floors: dict[tuple, float] = {}
+    if args.reg_source == "probe":
+        probe_dir = Path(args.reg_probe_dir)
+        if not probe_dir.is_dir():
+            print(f"ERROR: no probe results at {probe_dir}. Run "
+                  f"run_reg_probe_sweep.sh, or pass --reg-source runner to rebuild "
+                  f"the superseded figures from the void path.", file=sys.stderr)
+            return 2
+        reg, reg_floors = load_reg_probe(probe_dir, models, args.shots)
+    else:
+        print("WARNING: --reg-source runner reads the VOID episodic regression path "
+              "(random projection of the frozen embedding). Results are not a measure "
+              "of representation quality.", file=sys.stderr)
+        reg = load_runner_task(Path(args.reg_csv), models, args.shots, REG_METRICS)
     pl = load_runner_task(Path(args.pl_csv), models, args.shots, PL_METRICS)
     slp, floors, invalid = load_pair_lp(Path(args.pair_lp_dir), models)
 
@@ -278,6 +345,18 @@ def main() -> int:
                     w.writerow([dataset, *[floors[dataset].get(s, "")
                                            for s in HEURISTIC_SCORERS]])
         print(f"wrote {path} ({len(floors)} datasets)")
+
+    if reg_floors:
+        # The raw-feature floor on the SAME episodes -- the regression analogue of the
+        # static-LP heuristic floors, and the line an encoder has to clear to be
+        # carrying anything the 768-d input features did not already carry.
+        path = out_dir / "nm_ladder_downstream_reg_floors.csv"
+        with path.open("w", newline="", encoding="utf-8") as fh:
+            w = csv.writer(fh)
+            w.writerow(["dataset", "target", "features_only_spearman"])
+            for (dataset, target) in sorted(reg_floors):
+                w.writerow([dataset, target, reg_floors[(dataset, target)]])
+        print(f"wrote {path} ({len(reg_floors)} cells)")
 
     if missing:
         print(f"\n{len(missing)} missing cells (first 20):", file=sys.stderr)

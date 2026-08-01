@@ -69,7 +69,7 @@ def declutter(entries, min_gap):
 PANELS = [
     ("slp", "Static link prediction", "AUC (degree-matched)"),
     ("pl", "Node classification", "ROC-AUC (10-shot)"),
-    ("reg", "Node regression", "Spearman (10-shot, mean of 3 targets)"),
+    ("reg", "Node regression", "Spearman (10-shot ridge probe, mean of 3 targets)"),
 ]
 
 
