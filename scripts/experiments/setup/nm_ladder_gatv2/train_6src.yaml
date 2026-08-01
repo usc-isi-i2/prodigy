@@ -1,0 +1,36 @@
+# Canonical NM ladder, rung 6: + ukr_rus_suspended.
+dataset: covid19_twitter
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_6src_retweet_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+gnn_type: gat
+layers: S,U,M
+emb_dim: 256
+n_layer: 1
+dropout: 0
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+n_hop: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+
+epochs: 4
+eval_step: 100000
+checkpoint_step: 10000
+workers: 16
+device: 0
+seed: 0
+tags:
+  - nm_ladder_gatv2
+  - rung_6
+prefix: nm_ladder_gatv2_r6_6src
