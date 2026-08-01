@@ -129,6 +129,9 @@ def assemble(log_root: Path):
         wide.append(
             {
                 "n_hop": 2,
+                "hop_sizes": "9,9",
+                "node_limit": 101,
+                "nm_walk_hops": 1,
                 "checkpoint_step": 40000,
                 "order": order,
                 "rung": rung,
@@ -148,6 +151,9 @@ def assemble(log_root: Path):
             long_rows.append(
                 {
                     "n_hop": 2,
+                    "hop_sizes": "9,9",
+                    "node_limit": 101,
+                    "nm_walk_hops": 1,
                     "checkpoint_step": 40000,
                     "order": order,
                     "rung": rung,
@@ -192,7 +198,7 @@ def paired_rows(
                 "auc_h1": hop1_auc,
                 "auc_h2": hop2_auc,
                 "delta_h2_minus_h1": hop2_auc - hop1_auc,
-                "model_prefix_h2": row["model_prefix"],
+                "model_prefix_h2m": row["model_prefix"],
             }
         )
     return paired
@@ -234,15 +240,17 @@ def main() -> int:
     write_csv(
         args.out_dir / "nm_ladder_nhop2.csv",
         [
-            "n_hop", "checkpoint_step", "order", "rung", "n_sources", "added",
-            "sources", "model_prefix", "model_status", *DATASETS,
+            "n_hop", "hop_sizes", "node_limit", "nm_walk_hops", "checkpoint_step",
+            "order", "rung", "n_sources", "added", "sources", "model_prefix",
+            "model_status", *DATASETS,
         ],
         wide,
     )
     long_fields = [
-        "n_hop", "checkpoint_step", "order", "rung", "n_sources", "test_graph",
-        "test_canonical", "auc", "entry_rung", "rel_to_entry", "in_training",
-        "added", "sources", "model_prefix", "model_status", "eval_run",
+        "n_hop", "hop_sizes", "node_limit", "nm_walk_hops", "checkpoint_step",
+        "order", "rung", "n_sources", "test_graph", "test_canonical", "auc",
+        "entry_rung", "rel_to_entry", "in_training", "added", "sources",
+        "model_prefix", "model_status", "eval_run",
     ]
     write_csv(args.out_dir / "nm_ladder_nhop2_long.csv", long_fields, long_rows)
 
@@ -254,7 +262,7 @@ def main() -> int:
             [
                 "order", "rung", "test_graph", "entry_rung", "rel_to_entry",
                 "in_training", "auc_h1", "auc_h2", "delta_h2_minus_h1",
-                "model_prefix_h2",
+                "model_prefix_h2m",
             ],
             comparison,
         )

@@ -71,7 +71,7 @@ def test_plotter_renders_complete_paired_table(tmp_path):
     fieldnames = [
         "order", "rung", "test_graph", "entry_rung", "rel_to_entry",
         "in_training", "auc_h1", "auc_h2", "delta_h2_minus_h1",
-        "model_prefix_h2",
+        "model_prefix_h2m",
     ]
     rows = []
     for plan_row in assembler.PLAN.plan():
@@ -93,7 +93,7 @@ def test_plotter_renders_complete_paired_table(tmp_path):
                     "auc_h1": h1,
                     "auc_h2": h2,
                     "delta_h2_minus_h1": 0.01,
-                    "model_prefix_h2": plan_row["prefix"],
+                    "model_prefix_h2m": plan_row["prefix"],
                 }
             )
     with data_path.open("w", newline="", encoding="utf-8") as handle:

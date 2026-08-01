@@ -3,7 +3,9 @@
 
 The three curricula contain 24 (order, rung) rows but only 21 unique source sets:
 order B rung 2 reuses order A rung 2, and every order shares order A rung 8. All
-21 unique sets need new checkpoints because the existing ladder is n_hop=1.
+21 unique sets need new checkpoints because the existing ladder is n_hop=1. The
+two-hop sampler budget matches ``pretrain_saturation_nhop2`` exactly: fanouts 9,9,
+node limit 101, and one-hop neighbor-matching positive walks.
 
 Generated files are committed. Use ``--check`` to detect drift without writing.
 """
@@ -57,7 +59,7 @@ def canonical(key: str) -> str:
 
 
 def plan() -> list[dict[str, object]]:
-    """Return all 24 order/rung rows, mapping duplicate sets to one h2 model."""
+    """Return all 24 order/rung rows, mapping duplicate sets to one h2m model."""
     known: dict[frozenset[str], dict[str, object]] = {}
     rows: list[dict[str, object]] = []
     for order in ("A", "B", "C"):
@@ -67,7 +69,7 @@ def plan() -> list[dict[str, object]]:
             source_set = frozenset(sources)
             primary = known.get(source_set)
             if primary is None:
-                prefix = f"nm_ladder_h2_ord{order}_r{rung}"
+                prefix = f"nm_ladder_h2m_ord{order}_r{rung}"
                 config = f"train_ord{order}_r{rung}.yaml"
                 primary = {
                     "primary_order": order,
@@ -78,7 +80,7 @@ def plan() -> list[dict[str, object]]:
                 known[source_set] = primary
                 status = "train"
             else:
-                status = "reuse_h2"
+                status = "reuse_h2m"
             rows.append(
                 {
                     "order": order,
@@ -115,7 +117,7 @@ CONFIG_TEMPLATE = """\
 #
 # All rungs use the disjoint all8 merge. Restricting eligible graph_ids is exactly
 # equivalent to the corresponding sub-merge because sampled neighborhoods cannot cross
-# source components. n_hop is the only scientific change from the matched 1-hop ladder.
+# source components. The two-hop budget matches pretrain_saturation_nhop2.
 dataset: covid19_twitter
 root: /dataMeR1/phil/data/merged/graphs
 graph_filename: ukr_rus_covid_midterm_all8_retweet_graph.pt
@@ -128,7 +130,13 @@ original_features: true
 # Lock the original encoder while changing only sampled neighborhood radius.
 emb_dim: 256
 layers: S,U,M
+gnn_type: sage
+n_layer: 1
+dropout: 0
 n_hop: 2
+neighbor_sampling_hop_sizes: "9,9"
+neighbor_sampling_node_limit: 101
+neighbor_matching_walk_hops: 1
 
 n_way: 30
 n_shots: 3
@@ -148,7 +156,7 @@ neighbor_sampling_source_subset: {subset}
 epochs: 4
 eval_step: 100000
 checkpoint_step: 10000
-workers: 4
+workers: 2
 device: 0
 seed: 0
 prefix: {prefix}
@@ -156,11 +164,11 @@ prefix: {prefix}
 
 
 SMOKE_CONFIG = """\
-# Worst-case 2-hop resource smoke: election2020 only (high average degree).
-# This is intentionally a distinct 200-step run and is never used in ladder analysis.
-dataset: covid19_twitter
-root: /dataMeR1/phil/data/merged/graphs
-graph_filename: ukr_rus_covid_midterm_all8_retweet_graph.pt
+# Compute-matched 2-hop resource smoke: election2020 only (high average degree).
+# This distinct 20-step run is never used in ladder analysis.
+dataset: election2020
+root: /dataMeR1/phil/data/election2020/graphs
+graph_filename: retweet_graph.pt
 task_name: neighbor_matching
 
 edge_view: default
@@ -168,26 +176,29 @@ feature_subset: all
 original_features: true
 emb_dim: 256
 layers: S,U,M
+gnn_type: sage
+n_layer: 1
+dropout: 0
 n_hop: 2
+neighbor_sampling_hop_sizes: "9,9"
+neighbor_sampling_node_limit: 101
+neighbor_matching_walk_hops: 1
 
 n_way: 30
 n_shots: 3
 n_query: 4
 batch_size: 1
-dataset_len_cap: 200
+dataset_len_cap: 20
 val_len_cap: 20
 test_len_cap: 20
-neighbor_sampling_episode_source: graph_id
-neighbor_sampling_episode_source_weighting: balanced
-neighbor_sampling_source_subset: election2020
-
 epochs: 1
 eval_step: 100000
-checkpoint_step: 200
-workers: 2
+checkpoint_step: 20
+checkpoint_steps: "0,20"
+workers: 1
 device: 0
 seed: 0
-prefix: nm_ladder_h2_smoke_election
+prefix: nm_ladder_h2m_smoke_election
 """
 
 

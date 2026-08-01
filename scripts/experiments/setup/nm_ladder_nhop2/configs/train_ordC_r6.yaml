@@ -5,7 +5,7 @@
 #
 # All rungs use the disjoint all8 merge. Restricting eligible graph_ids is exactly
 # equivalent to the corresponding sub-merge because sampled neighborhoods cannot cross
-# source components. n_hop is the only scientific change from the matched 1-hop ladder.
+# source components. The two-hop budget matches pretrain_saturation_nhop2.
 dataset: covid19_twitter
 root: /dataMeR1/phil/data/merged/graphs
 graph_filename: ukr_rus_covid_midterm_all8_retweet_graph.pt
@@ -18,7 +18,13 @@ original_features: true
 # Lock the original encoder while changing only sampled neighborhood radius.
 emb_dim: 256
 layers: S,U,M
+gnn_type: sage
+n_layer: 1
+dropout: 0
 n_hop: 2
+neighbor_sampling_hop_sizes: "9,9"
+neighbor_sampling_node_limit: 101
+neighbor_matching_walk_hops: 1
 
 n_way: 30
 n_shots: 3
@@ -38,7 +44,7 @@ neighbor_sampling_source_subset: election2020,covid_political,cp_hk,ukr_rus_susp
 epochs: 4
 eval_step: 100000
 checkpoint_step: 10000
-workers: 4
+workers: 2
 device: 0
 seed: 0
-prefix: nm_ladder_h2_ordC_r6
+prefix: nm_ladder_h2m_ordC_r6

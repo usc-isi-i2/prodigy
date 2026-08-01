@@ -4,12 +4,12 @@
 #   PHASE=A ./run_all_train_tucker.sh             # canonical order, 8 models
 #   PHASE=robustness ./run_all_train_tucker.sh    # remaining B/C sets, 13 models
 #   PHASE=all ./run_all_train_tucker.sh           # all 21 unique sets
-#   PHASE=smoke ./run_all_train_tucker.sh         # 200-step election stress test
+#   PHASE=smoke ./run_all_train_tucker.sh         # 20-step election stress test
 #   DRY_RUN=1 PHASE=A ./run_all_train_tucker.sh
 #
-# Defaults to one owned GPU because every worker loads the 104 GB all8 graph and 2-hop
-# episode prefetch is substantially larger than 1-hop. Increase GPUS only after the
-# smoke run and a fresh host-RAM/GPU check. Never use Tucker GPUs 4-7.
+# Defaults to one owned GPU because every process loads the 104 GB all8 graph. The
+# 9,9/101 sampler matches the 1-hop subgraph budget, but multiple graph loads can still
+# exhaust shared host RAM. Increase GPUS only after a fresh check. Never use GPUs 4-7.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

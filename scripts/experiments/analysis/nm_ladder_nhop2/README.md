@@ -1,7 +1,8 @@
 # NM graph ladder at 2 hops — analysis
 
-Analysis for the matched setup in `../../setup/nm_ladder_nhop2/`. No 1-hop
-result is copied or overwritten.
+Analysis for the compute-matched setup in `../../setup/nm_ladder_nhop2/`. Every
+2-hop result uses fanouts `9,9`, node limit 101, and one-hop NM positive walks,
+matching `pretrain_saturation_nhop2`. No 1-hop result is copied or overwritten.
 
 After all 21 unique 2-hop models have been evaluated on the eight test graphs,
 assemble from the log directory in the same Tucker worktree that ran evaluation:

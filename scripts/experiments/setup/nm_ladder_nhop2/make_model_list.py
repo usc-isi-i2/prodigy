@@ -15,7 +15,7 @@ REPO_ROOT = HERE.parents[3]
 
 def prefixes(phase: str) -> list[str]:
     if phase == "smoke":
-        return ["nm_ladder_h2_smoke_election"]
+        return ["nm_ladder_h2m_smoke_election"]
     return [str(row["prefix"]) for row in phase_rows(phase)]
 
 
@@ -41,7 +41,7 @@ def main() -> int:
     parser.add_argument("--allow-partial", action="store_true")
     args = parser.parse_args()
 
-    step = args.step if args.step is not None else (200 if args.phase == "smoke" else 40000)
+    step = args.step if args.step is not None else (20 if args.phase == "smoke" else 40000)
     out = args.out or HERE / f"model_list_{args.phase}.txt"
     rows: list[str] = []
     missing: list[str] = []

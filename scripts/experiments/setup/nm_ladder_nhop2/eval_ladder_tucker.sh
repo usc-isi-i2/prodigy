@@ -10,15 +10,21 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 PHASE="${PHASE:-A}"
 MODEL_LIST="${MODEL_LIST:-${SCRIPT_DIR}/model_list_${PHASE}.txt}"
+SAMPLER_ARGS=(
+  --n_hop 2
+  --neighbor_sampling_hop_sizes 9,9
+  --neighbor_sampling_node_limit 101
+  --neighbor_matching_walk_hops 1
+)
 
 case "${PHASE}" in
   smoke)
     DATASETS="election2020"
-    EXTRA_EXPERIMENT_ARGS=(--n_hop 2 --val_len_cap 20 --test_len_cap 20)
+    EXTRA_EXPERIMENT_ARGS=("${SAMPLER_ARGS[@]}" --val_len_cap 20 --test_len_cap 20)
     ;;
   A|robustness|all)
     DATASETS="ukr_rus_twitter,covid19_twitter,midterm,covid_political,election2020,ukr_rus_suspended,twibot20,cp_hk_twitter"
-    EXTRA_EXPERIMENT_ARGS=(--n_hop 2)
+    EXTRA_EXPERIMENT_ARGS=("${SAMPLER_ARGS[@]}")
     ;;
   *)
     echo "unknown PHASE=${PHASE}; expected smoke, A, robustness, or all" >&2

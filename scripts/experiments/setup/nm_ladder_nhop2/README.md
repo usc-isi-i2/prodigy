@@ -1,12 +1,22 @@
 # NM graph ladder at 2 hops
 
-This is an isolated `n_hop=2` rerun of the matched-40k neighbor-matching graph
-ladder. It does not modify or write into the 1-hop setup or analysis folders.
+This is an isolated, compute-matched `n_hop=2` rerun of the matched-40k
+neighbor-matching graph ladder. It is based on the sampler implementation and
+registered protocol from branch `codex/pretrain-saturation-nhop2` at `3705bd5`.
+It does not modify or write into the 1-hop setup or analysis folders.
 
-The controlled change is sampled neighborhood radius only. The encoder remains
-`256 · S,U,M`, with 30-way/3-shot NM, seed 0, within-source balanced episodes,
-and a 40,000-episode budget. `S2,U,M` would be a different architecture
-experiment and is deliberately out of scope.
+The controlled change is sampled neighborhood radius. Matching the saturation
+experiment, every train and eval uses:
+
+- two extracted hops with fanouts `9,9`;
+- a hard limit of 101 nodes per subgraph, matching the 1-hop effective ceiling;
+- one-hop NM positive walks, preserving the original positive definition; and
+- the unchanged `256 · S,U,M` GraphSAGE encoder.
+
+The remaining protocol is 30-way/3-shot NM, seed 0, within-source balanced
+episodes, and a 40,000-episode budget. `S2,U,M` would be a different architecture
+experiment and is deliberately out of scope. Model prefixes use `h2m`; old or
+partial literal-2-hop `h2` artifacts are never resolved.
 
 ## Scope and run count
 
@@ -32,10 +42,11 @@ this is equivalent to building a separate nested merge for every rung.
 
 - `make_configs.py` owns the orders, unique-set plan, and generated configs.
 - `manifest.tsv` maps all 24 order/rung rows to the 21 unique models.
-- `configs/` contains explicit `n_hop: 2` configs and one resource smoke config.
+- `configs/` contains explicit compute-matched 2-hop configs and one resource smoke config.
 - `run_all_train_tucker.sh` trains `smoke`, `A`, `robustness`, or `all`.
 - `make_model_list.py` pins evaluation to `state_dict_40000.ckpt`.
-- `eval_ladder_tucker.sh` passes `--n_hop 2` to every evaluation process.
+- `eval_ladder_tucker.sh` passes the full `2 / 9,9 / 101 / walk=1` sampler tuple
+  to every evaluation process.
 - Results and plots belong in `analysis/nm_ladder_nhop2/`, never here.
 
 Generated-file integrity check:
@@ -64,9 +75,10 @@ Do not evaluate from the main Tucker checkout: these directories are per-worktre
 
 ## 1. Resource smoke
 
-Two-hop episodes can be much larger than 1-hop episodes. The stress config uses
-the relatively high-degree election2020 source exclusively, with 200 training
-episodes, 2 loader workers, and a separate prefix that analysis ignores.
+The compute-matched sampler prevents the naive fanout-100 explosion, but the
+stress config still exercises the relatively high-degree election2020 source.
+It runs 20 training episodes with one loader worker and a separate `h2m_smoke`
+prefix that analysis ignores.
 
 Before launching, check that an owned GPU (0–3) is actually free and inspect host
 RAM. GPUs 4–7 are not ours.
@@ -97,8 +109,8 @@ look correct.
 ## 2. Canonical order A
 
 The launcher defaults to one GPU because every process loads the ~104 GB all8
-artifact and 2-hop worker prefetch is larger than before. Increase parallelism
-only if the smoke and current Tucker memory state justify it.
+artifact. Increase parallelism only if the smoke and current Tucker host-memory
+state justify loading that graph more than once.
 
 ```bash
 DRY_RUN=1 PHASE=A GPUS="0" \
