@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 MODEL_LIST="${SCRIPT_DIR}/model_list.txt"
 [[ -s "${MODEL_LIST}" ]] || { echo "missing ${MODEL_LIST}; run make_model_list.sh" >&2; exit 2; }
 [[ "$(wc -l < "${MODEL_LIST}" | tr -d ' ')" == "8" ]] || {
