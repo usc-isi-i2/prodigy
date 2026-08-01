@@ -61,6 +61,12 @@ TASK_YLAB = {"slp": "AUC (degree-matched)", "pl": "ROC-AUC (10-shot)",
              "reg": "Spearman (10-shot ridge probe)"}
 TARGET_LABEL = {"followers_count": "followers", "statuses_count": "statuses",
                 "account_age_days": "account age"}
+# Short rung names, matching plot_downstream_trajectory.py's hardcoded XTICKS. Not
+# cosmetic: spelled out, "+ukr_rus_suspended" rotated 35 degrees descends far enough to
+# collide with the per-panel entry-delta line below the axes.
+SHORT = {"ukr_rus": "ukr", "covid": "covid", "midterm": "midterm",
+         "covid_political": "cov-pol", "election2020": "elec '20",
+         "ukr_rus_suspended": "ukr-susp", "twibot20": "twibot", "cp_hk": "cp-hk"}
 
 
 def declutter(entries, min_gap):
@@ -82,7 +88,8 @@ def xticks_for(df, order):
     seq = (df[df["order"] == order].drop_duplicates("rung").sort_values("rung"))
     out = []
     for r in seq.itertuples():
-        name = str(r.added).replace("_twitter", "").replace("_", "-")
+        key = str(r.added)
+        name = SHORT.get(key, key.replace("_twitter", "").replace("_", "-"))
         out.append(name if r.rung == 1 else f"+{name}")
     return out
 
@@ -146,11 +153,108 @@ def style(ax, xt, ylab):
     ax.tick_params(colors=MUTED, labelsize=8.5)
 
 
+def combine(df, orders, tasks, slp_floor, reg_floor, handles, out_dir):
+    """One figure per (task, target); the orders are panels on a SHARED y axis.
+
+    Shared y is the whole point: the orders are three routes to the same rung-8 model,
+    so the comparison worth making is across panels, and independent y limits would
+    make a +0.01 entry in one order look like a +0.09 entry in another.
+    """
+    written = 0
+    for task in tasks:
+        sub_t = df[df["task"] == task]
+        if sub_t.empty:
+            continue
+        for target in sorted(sub_t["target"].fillna("").unique()):
+            cells_t = sub_t[sub_t["target"].fillna("") == target]
+
+            def floor_of(ds, _t=target, _task=task):
+                if _task == "slp":
+                    return slp_floor.get(ds)
+                if _task == "reg":
+                    return reg_floor.get((ds, _t))
+                return None
+
+            fig, axes = plt.subplots(1, len(orders), figsize=(5.9 * len(orders), 5.5),
+                                     sharey=True)
+            axes = [axes] if len(orders) == 1 else list(axes)
+            drawn = False
+            for ax, order in zip(axes, orders):
+                cells = cells_t[cells_t["order"] == order]
+                if cells.empty:
+                    ax.set_visible(False)
+                    continue
+                datasets = sorted(cells["dataset"].unique())
+                labels, deltas = draw(ax, cells, datasets, floor_of)
+                if not labels:
+                    ax.set_visible(False)
+                    continue
+                drawn = True
+                xt = xticks_for(df, order)
+                style(ax, xt, TASK_YLAB[task] if ax is axes[0] else "")
+                pos = sum(1 for v in deltas.values() if v > 0)
+                head = f"order {order}"
+                if deltas:
+                    head += (f"   —   entry Δ > 0 in {pos}/{len(deltas)},  "
+                             f"mean {sum(deltas.values()) / len(deltas):+.3f}")
+                ax.set_title(head, fontsize=10.5, color=INK, pad=8)
+                if deltas:
+                    # Clear of the rotated tick labels: order C's "+ukr-rus-suspended"
+                    # is long enough to reach well below the axis.
+                    ax.annotate("  ".join(f"{LABEL.get(d, d)} {v:+.3f}"
+                                          for d, v in sorted(deltas.items())),
+                                xy=(0.5, -0.30), xycoords="axes fraction", ha="center",
+                                fontsize=7.5, color=MUTED)
+            if not drawn:
+                plt.close(fig)
+                continue
+
+            # End labels need the final shared y limits, so they are placed after every
+            # panel is drawn -- doing it inside the loop would use panel A's limits.
+            for ax, order in zip(axes, orders):
+                if not ax.get_visible():
+                    continue
+                cells = cells_t[cells_t["order"] == order]
+                lo, hi = ax.get_ylim()
+                ends = [(float(g.sort_values("rung")["value"].iloc[-1]),
+                         LABEL.get(ds, ds))
+                        for ds, g in cells.groupby("dataset")]
+                n_rungs = len(xticks_for(df, order))
+                for y, text in declutter(ends, (hi - lo) * 0.062):
+                    ax.annotate(text, xy=(n_rungs, y), xytext=(5, 0),
+                                textcoords="offset points", va="center", fontsize=7.5,
+                                color=MUTED, annotation_clip=False)
+
+            bits = [TASK_TITLE[task]]
+            if target:
+                bits.append(TARGET_LABEL.get(target, target))
+            fig.legend(handles=handles, loc="lower center", ncol=4, frameon=False,
+                       fontsize=8.5, bbox_to_anchor=(0.5, -0.055))
+            fig.suptitle(" · ".join(bits) + "   (the same 8-rung ladder under 3 graph "
+                                            "orders, shared y axis)",
+                         fontsize=13.0, color=INK, y=1.0)
+            fig.tight_layout(rect=(0, 0.04, 1, 0.96))
+
+            stem = f"nm_ladder_downstream_orders_{task}"
+            if target:
+                stem += f"_{target}"
+            for ext in ("pdf", "png"):
+                fig.savefig(os.path.join(out_dir, f"{stem}.{ext}"), bbox_inches="tight",
+                            dpi=200)
+            plt.close(fig)
+            written += 1
+            print(f"wrote {stem}")
+    return written
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--per-dataset", action="store_true",
                     help="one eval graph per figure (63 files) instead of one line each")
+    ap.add_argument("--combine-orders", action="store_true",
+                    help="one figure per (task, target) with the 3 orders as panels "
+                         "on a shared y axis (5 files)")
     ap.add_argument("--orders", default="A,B,C")
     ap.add_argument("--tasks", default="slp,pl,reg")
     ap.add_argument("--out-dir", default=FIGS)
@@ -169,8 +273,16 @@ def main():
         Line2D([], [], color=GRAY, lw=0.9, ls=":", label="floor (heuristic / raw-feature)"),
     ]
 
+    orders = [o.strip() for o in args.orders.split(",") if o.strip()]
+    tasks = [t.strip() for t in args.tasks.split(",") if t.strip()]
+
+    if args.combine_orders:
+        written = combine(df, orders, tasks, slp_floor, reg_floor, handles, args.out_dir)
+        print(f"\n{written} figures ({written * 2} files) in {args.out_dir}")
+        return
+
     written = 0
-    for order in [o.strip() for o in args.orders.split(",") if o.strip()]:
+    for order in orders:
         xt = xticks_for(df, order)
         for task in [t.strip() for t in args.tasks.split(",") if t.strip()]:
             sub = df[(df["order"] == order) & (df["task"] == task)]
