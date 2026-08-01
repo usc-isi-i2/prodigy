@@ -29,6 +29,7 @@ def sample_k_hop_subgraph(
     bidirectional: bool = True,
     size: int = 100,
     limit: int = 2000,
+    hop_sizes: Optional[List[int]] = None,
 ):
     '''
     input: similar to k_hop_subgraph (check https://pytorch-geometric.readthedocs.io/en/1.5.0/modules/utils.html?highlight=subgraph#torch_geometric.utils.k_hop_subgraph)
@@ -47,9 +48,21 @@ def sample_k_hop_subgraph(
 
     assert isinstance(whole_adj, SparseTensor)
 
+    if hop_sizes is None:
+        hop_sizes = [size] * num_hops
+    if len(hop_sizes) != num_hops:
+        raise ValueError(
+            f"hop_sizes must have one entry per hop: num_hops={num_hops}, "
+            f"hop_sizes={hop_sizes}"
+        )
+    if any(hop_size <= 0 for hop_size in hop_sizes):
+        raise ValueError(f"hop_sizes must be positive, got {hop_sizes}")
+    if limit <= 0:
+        raise ValueError(f"limit must be positive, got {limit}")
+
     adjs = []
-    for _ in range(num_hops):
-        adj, node_idx = whole_adj.sample_adj(node_idx, size, replace=False)
+    for hop_size in hop_sizes:
+        adj, node_idx = whole_adj.sample_adj(node_idx, hop_size, replace=False)
         adjs.append(adj.coo())
         if node_idx.size(0) >= limit:
             break
@@ -82,10 +95,16 @@ class NeighborSampler:
         num_hops: int,
         size: int = 100,
         limit: int = 2000,
+        hop_sizes: Optional[List[int]] = None,
+        walk_hops: Optional[int] = None,
     ):
         self.num_hops = num_hops
         self.size = size
         self.limit = limit
+        self.hop_sizes = list(hop_sizes) if hop_sizes is not None else None
+        self.walk_hops = num_hops if walk_hops is None else int(walk_hops)
+        if self.walk_hops <= 0:
+            raise ValueError(f"walk_hops must be positive, got {self.walk_hops}")
         self.whole_adj = preprocess(graph.edge_index, graph.num_nodes)
         self.whole_adj.share_memory_()
 
@@ -96,6 +115,7 @@ class NeighborSampler:
             whole_adj=self.whole_adj,
             size=self.size,
             limit=self.limit,
+            hop_sizes=self.hop_sizes,
         )
     
     def sample_edge(
@@ -128,7 +148,7 @@ class NeighborSampler:
         direction: "in", "out", "inout"
         """
         rowptr, col, e_id = self.whole_adj.csr()
-        for _ in range(self.num_hops):
+        for _ in range(self.walk_hops):
             row_start = rowptr[node_idx]
             row_end = rowptr[node_idx + 1]
             mask = row_start < row_end
@@ -160,10 +180,16 @@ class NeighborSamplerCacheAdj(NeighborSampler):
         num_hops: int,
         size: int = 100,
         limit: int = 2000,
+        hop_sizes: Optional[List[int]] = None,
+        walk_hops: Optional[int] = None,
     ):
         self.num_hops = num_hops
         self.size = size
         self.limit = limit
+        self.hop_sizes = list(hop_sizes) if hop_sizes is not None else None
+        self.walk_hops = num_hops if walk_hops is None else int(walk_hops)
+        if self.walk_hops <= 0:
+            raise ValueError(f"walk_hops must be positive, got {self.walk_hops}")
         if os.path.exists(cache_path):
             print(f"Loading adjacent matrix for neighbor sampling from {cache_path}")
             self.whole_adj = torch.load(cache_path)
@@ -175,6 +201,41 @@ class NeighborSamplerCacheAdj(NeighborSampler):
             torch.save(self.whole_adj, cache_path)
             print(f"Saved adjacent matrix for neighbor sampling to {cache_path}")
         self.whole_adj.share_memory_()
+
+
+def parse_hop_sizes(value: Union[str, List[int], Tuple[int, ...], None], num_hops: int):
+    """Parse an optional per-hop fanout specification without changing defaults."""
+    if value is None or value == "":
+        return None
+    if isinstance(value, str):
+        sizes = [int(part.strip()) for part in value.split(",") if part.strip()]
+    else:
+        sizes = [int(part) for part in value]
+    if len(sizes) != num_hops:
+        raise ValueError(
+            f"neighbor_sampling_hop_sizes must contain {num_hops} values, got {sizes}"
+        )
+    if any(size <= 0 for size in sizes):
+        raise ValueError(f"neighbor_sampling_hop_sizes must be positive, got {sizes}")
+    return sizes
+
+
+def sampler_kwargs_from_config(kwargs, num_hops: int):
+    """Translate experiment kwargs into NeighborSampler options.
+
+    Empty/default values reproduce the historical sampler exactly.
+    """
+    walk_hops = int(kwargs.get("neighbor_matching_walk_hops", 0) or 0)
+    limit = int(kwargs.get("neighbor_sampling_node_limit", 2000))
+    if limit <= 0:
+        raise ValueError(f"neighbor_sampling_node_limit must be positive, got {limit}")
+    return {
+        "hop_sizes": parse_hop_sizes(
+            kwargs.get("neighbor_sampling_hop_sizes", ""), num_hops
+        ),
+        "limit": limit,
+        "walk_hops": walk_hops or None,
+    }
 
 
 if __name__ == '__main__':

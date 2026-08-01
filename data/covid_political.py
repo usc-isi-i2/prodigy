@@ -5,7 +5,7 @@ import torch
 from torch.utils.data import DataLoader
 from torch_geometric.data import Data
 
-from experiments.sampler import NeighborSampler
+from experiments.sampler import NeighborSampler, sampler_kwargs_from_config
 from .augment import get_aug
 from .dataloader import ParamSampler, BatchSampler, Collator, NeighborTask
 from .dataset import SubgraphDataset
@@ -94,7 +94,9 @@ def get_covid_political_dataset(
         f"{graph.x.shape[1]} node features"
     )
     print("Building neighbor sampler (CSR preprocessing)...", flush=True)
-    neighbor_sampler = NeighborSampler(graph, num_hops=n_hop)
+    neighbor_sampler = NeighborSampler(
+        graph, num_hops=n_hop, **sampler_kwargs_from_config(kwargs, n_hop)
+    )
     print("Neighbor sampler ready.", flush=True)
     dataset = SubgraphDataset(graph, neighbor_sampler, bidirectional=False)
     if hasattr(graph, "edge_attr") and graph.edge_attr is not None:

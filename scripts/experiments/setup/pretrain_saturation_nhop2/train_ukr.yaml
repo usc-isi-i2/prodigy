@@ -1,0 +1,35 @@
+# Compute-matched two-hop saturation trajectory: ukr_rus_twitter single-source corpus.
+dataset: ukr_rus_twitter
+root: /dataMeR1/phil/data/ukr_rus_twitter/graphs
+graph_filename: retweet_graph_parquet.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+layers: S,U,M
+gnn_type: sage
+emb_dim: 256
+n_layer: 1
+dropout: 0
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+n_hop: 2
+neighbor_sampling_hop_sizes: "9,9"
+neighbor_sampling_node_limit: 101
+neighbor_matching_walk_hops: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+
+epochs: 4
+eval_step: 100000
+checkpoint_step: 10000
+checkpoint_steps: "0,100,500,1000,2000,10000,40000"
+workers: 2
+device: 0
+seed: 0
+prefix: sat_h2m_ukr
