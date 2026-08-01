@@ -13,6 +13,8 @@ import os
 import sys
 from pathlib import Path
 
+import torch
+
 from arms import ARMS, SHARED_STEP0_KEY, STEPS, TRAINED_STEPS, model_key
 
 
@@ -20,11 +22,28 @@ HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[3]
 
 
-def digest(path: Path) -> str:
+def file_digest(path: Path) -> str:
     hasher = hashlib.sha256()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def model_digest(path: Path) -> str:
+    """Hash model-state semantics, independent of torch archive metadata."""
+    payload = torch.load(path, map_location="cpu")
+    if not isinstance(payload, dict) or not isinstance(payload.get("model"), dict):
+        raise ValueError(f"checkpoint lacks a model state dict: {path}")
+
+    hasher = hashlib.sha256()
+    for key, value in payload["model"].items():
+        if not torch.is_tensor(value):
+            raise TypeError(f"model state entry {key!r} is not a tensor: {path}")
+        tensor = value.detach().cpu().contiguous()
+        metadata = f"{key}\0{tensor.dtype}\0{tuple(tensor.shape)}\0".encode()
+        hasher.update(metadata)
+        hasher.update(tensor.reshape(-1).view(torch.uint8).numpy().tobytes())
     return hasher.hexdigest()
 
 
@@ -82,13 +101,13 @@ def main() -> int:
         arm.name: run_dirs[arm.name] / "checkpoint" / "state_dict_0.ckpt"
         for arm in ARMS
     }
-    hashes = {arm: digest(path) for arm, path in step0_paths.items()}
+    hashes = {arm: model_digest(path) for arm, path in step0_paths.items()}
     if len(set(hashes.values())) != 1:
-        print("ERROR: step-0 checkpoints are not byte-identical:", file=sys.stderr)
+        print("ERROR: step-0 model states are not identical:", file=sys.stderr)
         for arm, value in hashes.items():
             print(f"  {arm}: {value}", file=sys.stderr)
         return 1
-    print(f"  shared step 0 sha256={next(iter(hashes.values()))[:16]}...")
+    print(f"  shared step-0 model sha256={next(iter(hashes.values()))[:16]}...")
 
     rows: list[tuple[str, Path]] = [
         (SHARED_STEP0_KEY, step0_paths[ARMS[0].name])

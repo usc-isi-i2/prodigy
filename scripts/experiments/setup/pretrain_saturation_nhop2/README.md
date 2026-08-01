@@ -69,7 +69,8 @@ tmux new-session -d -s sat_h2m \
 ```
 
 Resolve complete trajectories. The resolver refuses missing checkpoints and requires all
-three step-0 checkpoints to be byte-identical before collapsing them into one eval row.
+three step-0 model states to be tensor-identical before collapsing them into one eval row.
+It intentionally ignores serialization-only differences in the PyTorch archive bytes.
 
 ```bash
 python3 scripts/experiments/setup/pretrain_saturation_nhop2/make_model_list.py
