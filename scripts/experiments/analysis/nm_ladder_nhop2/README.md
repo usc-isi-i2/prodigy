@@ -38,9 +38,10 @@ Generate the paired summary figure locally with Homebrew Python 3.11:
 
 ```bash
 /opt/homebrew/bin/python3.11 \
-  scripts/experiments/analysis/nm_ladder_nhop2/plot_nhop_comparison.py
+  scripts/experiments/analysis/nm_ladder_nhop2/plot_nhop_comparison.py --phase A
 ```
 
-The figure compares mean ladder AUC and all 21 measurable entry jumps between
-1-hop and 2-hop. Add `FINDINGS.md` only after the complete result tables and
-figures exist; do not pre-write conclusions.
+The Order A figure compares mean ladder AUC and its seven measurable entry jumps
+between 1-hop and 2-hop. Once all orders are assembled, omit `--phase A` to
+render the 192-cell, 21-entry-event figure. Add `FINDINGS.md` only after the
+complete intended result tables and figures exist; do not pre-write conclusions.

@@ -130,3 +130,47 @@ def test_plotter_renders_complete_paired_table(tmp_path):
     plotter.main()
     assert (plotter.FIGURES / "nm_ladder_nhop_comparison.pdf").is_file()
     assert (plotter.FIGURES / "nm_ladder_nhop_comparison.png").is_file()
+
+
+def test_plotter_renders_order_a_subset(tmp_path):
+    assembler = load_assembler()
+    plotter = load_plotter()
+    data_path = tmp_path / "comparison_A.csv"
+    fieldnames = [
+        "order", "rung", "test_graph", "entry_rung", "rel_to_entry",
+        "in_training", "auc_h1", "auc_h2", "delta_h2_minus_h1",
+        "model_prefix_h2m",
+    ]
+    rows = []
+    for plan_row in assembler.PLAN.plan():
+        if plan_row["order"] != "A":
+            continue
+        rung = int(plan_row["rung"])
+        for dataset_index, dataset in enumerate(assembler.DATASETS):
+            source_key = assembler.KEY_OF_DATASET[dataset]
+            entry = assembler.PLAN.ORDERS["A"].index(source_key) + 1
+            h1 = 0.70 + rung / 100 + dataset_index / 1000
+            rows.append(
+                {
+                    "order": "A",
+                    "rung": rung,
+                    "test_graph": dataset,
+                    "entry_rung": entry,
+                    "rel_to_entry": rung - entry,
+                    "in_training": int(rung >= entry),
+                    "auc_h1": h1,
+                    "auc_h2": h1 + 0.01,
+                    "delta_h2_minus_h1": 0.01,
+                    "model_prefix_h2m": plan_row["prefix"],
+                }
+            )
+    with data_path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    plotter.DATA_A = data_path
+    plotter.FIGURES = tmp_path / "figures"
+    plotter.main("A")
+    assert (plotter.FIGURES / "nm_ladder_nhop_comparison_order_A.pdf").is_file()
+    assert (plotter.FIGURES / "nm_ladder_nhop_comparison_order_A.png").is_file()

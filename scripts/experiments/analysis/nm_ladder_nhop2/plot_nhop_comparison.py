@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import csv
 from collections import defaultdict
 from pathlib import Path
@@ -16,6 +17,7 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 DATA = HERE / "data" / "nm_ladder_nhop_comparison_long.csv"
+DATA_A = HERE / "data" / "nm_ladder_nhop_comparison_order_A_long.csv"
 FIGURES = HERE / "figures"
 
 H1 = "#8f8d87"
@@ -24,9 +26,9 @@ INK = "#111111"
 GRID = "#e1e0d9"
 
 
-def load_rows() -> list[dict[str, object]]:
+def load_rows(path: Path | None = None) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
-    with DATA.open(newline="", encoding="utf-8") as handle:
+    with (path or DATA).open(newline="", encoding="utf-8") as handle:
         for row in csv.DictReader(handle):
             rows.append(
                 {
@@ -47,10 +49,14 @@ def style(ax) -> None:
     ax.spines[["top", "right"]].set_visible(False)
 
 
-def main() -> None:
-    rows = load_rows()
-    if len(rows) != 192:
-        raise ValueError(f"expected 192 paired cells, found {len(rows)}")
+def main(phase: str = "all") -> None:
+    if phase not in {"A", "all"}:
+        raise ValueError(f"unknown phase {phase!r}")
+    data_path = DATA_A if phase == "A" else DATA
+    expected = 64 if phase == "A" else 192
+    rows = load_rows(data_path)
+    if len(rows) != expected:
+        raise ValueError(f"expected {expected} paired cells for phase {phase}, found {len(rows)}")
 
     by_rung = defaultdict(lambda: {"h1": [], "h2": []})
     auc = {}
@@ -75,7 +81,8 @@ def main() -> None:
         axes[0].plot(rungs, means, marker="o", linewidth=2.4, color=color, label=label)
     axes[0].set_xticks(rungs)
     axes[0].set_xlabel("rung (number of source graphs)")
-    axes[0].set_ylabel("mean NM AUC across orders and test graphs")
+    scope = "test graphs" if phase == "A" else "orders and test graphs"
+    axes[0].set_ylabel(f"mean NM AUC across {scope}")
     axes[0].set_title("Overall ladder performance")
     axes[0].legend(frameon=False)
     style(axes[0])
@@ -97,17 +104,24 @@ def main() -> None:
     axes[1].axhline(0, color=INK, linewidth=1, linestyle="--")
     axes[1].set_xticks(positions, ["1 hop", "2 hops"])
     axes[1].set_ylabel("entry jump (AUC after entry − before entry)")
-    axes[1].set_title("Twenty-one paired entry events")
+    axes[1].set_title(f"{len(jumps['h1'])} paired entry events")
     style(axes[1])
 
-    fig.suptitle("Does a 2-hop neighborhood change the graph-ladder result?", fontweight="bold")
+    prefix = "Order A: " if phase == "A" else ""
+    fig.suptitle(
+        f"{prefix}does a 2-hop neighborhood change the graph-ladder result?",
+        fontweight="bold",
+    )
     fig.tight_layout()
     FIGURES.mkdir(parents=True, exist_ok=True)
+    stem = "nm_ladder_nhop_comparison_order_A" if phase == "A" else "nm_ladder_nhop_comparison"
     for extension in ("pdf", "png"):
-        output = FIGURES / f"nm_ladder_nhop_comparison.{extension}"
+        output = FIGURES / f"{stem}.{extension}"
         fig.savefig(output, bbox_inches="tight", dpi=220)
         print(f"wrote {output}")
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--phase", choices=["A", "all"], default="all")
+    main(parser.parse_args().phase)
