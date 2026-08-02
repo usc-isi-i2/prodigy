@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import gc
 from pathlib import Path
+import sys
 
 import torch
 
@@ -13,6 +14,9 @@ from make_configs import SOURCES
 
 
 HERE = Path(__file__).resolve().parent
+REPO_ROOT = HERE.parents[3]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 MERGED = Path(
     "/dataMeR1/phil/data/merged/graphs/"
     "ukr_rus_covid_midterm_all8_static_split_retweet_graph.pt"
