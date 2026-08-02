@@ -1,0 +1,50 @@
+# Fixed-exposure 2-hop NM graph ladder -- order A, rung 4/8.
+# Order: published topical order.
+# Adds: covid_political (covid-political).
+# Active sources: ukraine, covid, midterm, covid-political.
+# Budget: 4 sources x 10,000 episodes/source = 40,000 total steps.
+#
+# All rungs read the disjoint all8 merge and restrict eligible graph_ids. Since
+# source components have no cross-source edges, sampled neighborhoods cannot leave
+# their source component. The sampler matches pretrain_saturation_nhop2.
+dataset: covid19_twitter
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_all8_retweet_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+
+# Fair 2-hop sampler: change context radius without increasing subgraph size.
+emb_dim: 256
+layers: S,U,M
+gnn_type: sage
+n_layer: 1
+dropout: 0
+n_hop: 2
+neighbor_sampling_hop_sizes: "9,9"
+neighbor_sampling_node_limit: 101
+neighbor_matching_walk_hops: 1
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+
+# Uniform source choice makes the expected exposure 10,000 episodes/source.
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+neighbor_sampling_source_subset: ukr_rus,covid,midterm,covid_political
+
+# Total steps = epochs x dataset_len_cap = rung x 10,000.
+epochs: 4
+eval_step: 100000
+checkpoint_step: 10000
+workers: 2
+device: 0
+seed: 0
+prefix: nm_ladder_fx10k_h2m_ordA_r4
