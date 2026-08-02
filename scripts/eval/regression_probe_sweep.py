@@ -46,7 +46,8 @@ from scripts.eval.pair_link_ckpt import (  # noqa: E402
 from scripts.eval.pair_link_eval import embeddings_by_node  # noqa: E402
 
 FIELDS = ["dataset", "model", "target", "transform", "shots", "n_query", "episodes",
-          "alpha", "features", "spearman", "rmse", "r2", "n_pred", "n_labeled"]
+          "alpha", "features", "n_hop", "hop_sizes", "node_limit", "spearman", "rmse",
+          "r2", "n_pred", "n_labeled"]
 
 
 def parse_model_list(path: str) -> List[Tuple[str, str]]:
@@ -98,6 +99,9 @@ def main() -> int:
                     help="Comma-separated ridge alphas; one row per alpha.")
     ap.add_argument("--background-view", default="static_background")
     ap.add_argument("--n-hop", type=int, default=1)
+    ap.add_argument("--hop-sizes", default="",
+                    help="Optional comma-separated fanout per extracted hop.")
+    ap.add_argument("--node-limit", type=int, default=2000)
     ap.add_argument("--emb-dim", type=int, default=256)
     ap.add_argument("--input-dim", type=int, default=768)
     ap.add_argument("--gnn-type", default="sage")
@@ -107,6 +111,10 @@ def main() -> int:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--device", default="cuda")
     args = ap.parse_args()
+    from experiments.sampler import parse_hop_sizes
+    hop_sizes = parse_hop_sizes(args.hop_sizes, args.n_hop)
+    provenance = dict(n_hop=args.n_hop, hop_sizes=args.hop_sizes,
+                      node_limit=args.node_limit)
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -148,13 +156,15 @@ def main() -> int:
                              target=target, transform=args.transform,
                              shots=args.shots, n_query=args.n_query,
                              episodes=args.episodes, features="raw_x",
-                             n_labeled=int(len(node_ids)), **res))
+                             n_labeled=int(len(node_ids)), **provenance, **res))
             print(f"  [floor] raw_x alpha={alpha}: rho={res['spearman']:+.4f}", flush=True)
 
         # ---- frozen encoders ------------------------------------------------
         if models and subgraph_ds is None:
-            subgraph_ds = build_subgraph_dataset(blob, graph, args.n_hop,
-                                                 args.background_view)
+            subgraph_ds = build_subgraph_dataset(
+                blob, graph, args.n_hop, args.background_view,
+                hop_sizes=hop_sizes, node_limit=args.node_limit,
+            )
         for name, ckpt in models:
             params = dict(ENCODER_DEFAULTS)
             params.update(emb_dim=args.emb_dim, input_dim=args.input_dim,
@@ -171,7 +181,7 @@ def main() -> int:
                                  transform=args.transform, shots=args.shots,
                                  n_query=args.n_query, episodes=args.episodes,
                                  features="frozen_emb",
-                                 n_labeled=int(len(node_ids)), **res))
+                                 n_labeled=int(len(node_ids)), **provenance, **res))
                 print(f"  {name} alpha={alpha}: rho={res['spearman']:+.4f} "
                       f"({time.time()-t0:.0f}s)", flush=True)
 

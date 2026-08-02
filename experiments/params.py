@@ -480,6 +480,32 @@ def get_params():
     #  Name of WanDB run to pull the best model from.
 
     args.add_argument("-n_hop", "--n_hop", default=1, type=int)  # number of hops for subgraph extraction
+    args.add_argument(
+        "--neighbor_sampling_hop_sizes",
+        default="",
+        type=str,
+        help=(
+            "Optional comma-separated fanout per extracted hop. Empty preserves the "
+            "historical fanout of 100 at every hop. Example: '9,9' gives a two-hop "
+            "subgraph of at most about 100 nodes before the hard node limit."
+        ),
+    )
+    args.add_argument(
+        "--neighbor_sampling_node_limit",
+        default=2000,
+        type=int,
+        help="Hard maximum nodes per sampled subgraph (historical default: 2000).",
+    )
+    args.add_argument(
+        "--neighbor_matching_walk_hops",
+        default=0,
+        type=int,
+        help=(
+            "Positive-pair random-walk length for neighbor matching. 0 follows --n_hop "
+            "for historical behavior; set 1 to hold the one-hop NM objective fixed while "
+            "extracting two-hop context."
+        ),
+    )
     args.add_argument("--graph_filename", default="graph_data.pt", type=str)  # graph file to load from root
     args.add_argument(
         "--target_feature",

@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import DataLoader
 from torch_geometric.data import Data
 
-from experiments.sampler import NeighborSampler
+from experiments.sampler import NeighborSampler, sampler_kwargs_from_config
 from .augment import get_aug
 from .dataloader import ParamSampler, BatchSampler, Collator, NeighborTask, RegressionTask
 from .dataset import SubgraphDataset
@@ -120,7 +120,8 @@ def get_ukr_rus_twitter_dataset(
         f"{graph.x.shape[1]} node features"
     )
     print("Building neighbor sampler (CSR preprocessing)...", flush=True)
-    neighbor_sampler = NeighborSampler(graph, num_hops=n_hop)
+    sampler_kwargs = sampler_kwargs_from_config(kwargs, n_hop)
+    neighbor_sampler = NeighborSampler(graph, num_hops=n_hop, **sampler_kwargs)
     print("Neighbor sampler ready.", flush=True)
     dataset = SubgraphDataset(graph, neighbor_sampler, bidirectional=False)
     if hasattr(graph, "edge_attr") and graph.edge_attr is not None:
@@ -142,7 +143,9 @@ def get_ukr_rus_twitter_dataset(
         if future_edge_index is not None:
             print("Building target-edge neighbor sampler...", flush=True)
             future_graph = Data(edge_index=future_edge_index, num_nodes=graph.num_nodes)
-            dataset.future_neighbor_sampler = NeighborSampler(future_graph, num_hops=n_hop)
+            dataset.future_neighbor_sampler = NeighborSampler(
+                future_graph, num_hops=n_hop, **sampler_kwargs
+            )
             dataset.future_edge_view = resolved_target_view
             print("Target-edge neighbor sampler ready.", flush=True)
         else:
