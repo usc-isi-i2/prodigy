@@ -4,6 +4,10 @@ Fresh replication of `pretrain_saturation`, isolated from its spliced historical
 trajectories. Three corpora are trained from random initialization to exactly 40,000
 optimizer steps and checkpointed at `0, 100, 500, 1k, 2k, 10k, 40k`.
 
+Status: complete (3/3 trajectories, 76/76 classification evaluations, and all four
+regression probes). Evidence and interpretation are in
+[`analysis/pretrain_saturation_nhop2/FINDINGS.md`](../../analysis/pretrain_saturation_nhop2/FINDINGS.md).
+
 ## Controlled intervention
 
 The historical `n_hop=1` sampler uses fanout 100 and therefore extracts at most about

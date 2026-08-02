@@ -286,10 +286,18 @@ def make_figure(h1: pd.DataFrame, h2: pd.DataFrame, out: Path) -> None:
         ax.grid(True, color="#e4e3dd", linewidth=0.8)
         ax.spines[["top", "right"]].set_visible(False)
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, frameon=False, ncol=6, loc="upper center", fontsize=8)
+    fig.legend(
+        handles,
+        labels,
+        frameon=False,
+        ncol=6,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 0.955),
+        fontsize=8,
+    )
     fig.suptitle("Pretrain saturation: compute-matched two-hop context vs one hop",
-                 y=1.04, fontsize=13)
-    fig.tight_layout(rect=[0, 0, 1, 0.92])
+                 y=0.995, fontsize=13)
+    fig.tight_layout(rect=[0, 0, 1, 0.88])
     out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, dpi=200, bbox_inches="tight", facecolor="white")
 

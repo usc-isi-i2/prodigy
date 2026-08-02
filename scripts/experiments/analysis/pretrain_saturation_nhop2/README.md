@@ -3,6 +3,9 @@
 Dedicated analysis for `setup/pretrain_saturation_nhop2/`. It does not read or mutate the
 append-only shared benchmark CSVs.
 
+Status: complete. See [`FINDINGS.md`](FINDINGS.md) for the interpretation and the exact
+scope of the claim.
+
 `analyze_results.py` requires a complete result matrix and reads:
 
 - classification ROC-AUC directly from this worktree's `log/eval_sat_h2m_*` metric JSONs;
@@ -18,9 +21,8 @@ writes:
 - `data/regression_floors.csv` — raw-feature floors from the same probe episodes; and
 - `figures/nhop_comparison.png` — h1 dashed versus h2 solid, including true step 0.
 
-Do not write findings until all three fresh 40k trajectories, 76 classification jobs,
-and four regression graph passes are complete and the raw evidence paths have been
-inspected.
+Completed evidence: three fresh 40k trajectories, 76/76 classification jobs, and four
+regression graph passes (40 rows each), with no logged failures.
 
 ```bash
 /opt/homebrew/bin/python3.11 \
