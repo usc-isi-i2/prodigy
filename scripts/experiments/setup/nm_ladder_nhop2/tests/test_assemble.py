@@ -64,6 +64,30 @@ def test_synthetic_logs_map_21_models_to_24_rows(tmp_path):
     assert all(abs(float(row["delta_h2_minus_h1"]) - 0.01) < 1e-12 for row in paired)
 
 
+def test_order_a_can_be_assembled_without_robustness_models(tmp_path):
+    assembler = load_assembler()
+    prefixes = {
+        str(row["prefix"])
+        for row in assembler.PLAN.plan()
+        if row["order"] == "A"
+    }
+    for model_index, prefix in enumerate(sorted(prefixes)):
+        for dataset_index, dataset in enumerate(assembler.DATASETS):
+            run = tmp_path / f"eval_{prefix}_to_{dataset}_nm_3shot_30way_20260801"
+            data = run / "data"
+            data.mkdir(parents=True)
+            value = 0.5 + model_index / 1000 + dataset_index / 10000
+            (data / "metrics_test_step0.json").write_text(
+                json.dumps({"test_roc_auc": value}), encoding="utf-8"
+            )
+
+    wide, long_rows, missing = assembler.assemble(tmp_path, orders={"A"})
+    assert missing == []
+    assert len(wide) == 8
+    assert len(long_rows) == 64
+    assert {row["order"] for row in wide} == {"A"}
+
+
 def test_plotter_renders_complete_paired_table(tmp_path):
     assembler = load_assembler()
     plotter = load_plotter()

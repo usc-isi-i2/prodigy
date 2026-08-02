@@ -106,17 +106,21 @@ def write_csv(path: Path, fieldnames: list[str], rows: list[dict[str, object]]) 
     print(f"wrote {path} ({len(rows)} rows)")
 
 
-def assemble(log_root: Path):
+def assemble(log_root: Path, orders: set[str] | None = None):
+    plan_rows = [
+        row for row in PLAN.plan()
+        if orders is None or str(row["order"]) in orders
+    ]
+    prefixes = {str(row["prefix"]) for row in plan_rows}
     model_values: dict[str, dict[str, float]] = {}
     model_provenance: dict[str, dict[str, str]] = {}
-    for row in PLAN.unique_rows():
-        prefix = str(row["prefix"])
+    for prefix in sorted(prefixes):
         model_values[prefix], model_provenance[prefix] = eval_row(log_root, prefix)
 
     wide: list[dict[str, object]] = []
     long_rows: list[dict[str, object]] = []
     missing: list[str] = []
-    for row in PLAN.plan():
+    for row in plan_rows:
         order = str(row["order"])
         rung = int(row["rung"])
         prefix = str(row["prefix"])
@@ -230,15 +234,21 @@ def main() -> int:
     parser.add_argument("--log-root", type=Path, default=Path("/dataMeR1/phil/gfm/prodigy-nmlh2/log"))
     parser.add_argument("--out-dir", type=Path, default=HERE / "data")
     parser.add_argument(
+        "--phase", choices=["A", "all"], default="all",
+        help="assemble canonical Order A only, or require all three orders",
+    )
+    parser.add_argument(
         "--hop1-long", type=Path,
         default=ANALYSIS_ROOT / "nm_ladder_order_robustness" / "data" / "nm_ladder_order_robustness_long.csv",
     )
     parser.add_argument("--allow-partial", action="store_true")
     args = parser.parse_args()
 
-    wide, long_rows, missing = assemble(args.log_root)
+    orders = {"A"} if args.phase == "A" else None
+    suffix = "_order_A" if args.phase == "A" else ""
+    wide, long_rows, missing = assemble(args.log_root, orders=orders)
     write_csv(
-        args.out_dir / "nm_ladder_nhop2.csv",
+        args.out_dir / f"nm_ladder_nhop2{suffix}.csv",
         [
             "n_hop", "hop_sizes", "node_limit", "nm_walk_hops", "checkpoint_step",
             "order", "rung", "n_sources", "added", "sources", "model_prefix",
@@ -252,13 +262,13 @@ def main() -> int:
         "entry_rung", "rel_to_entry", "in_training", "added", "sources",
         "model_prefix", "model_status", "eval_run",
     ]
-    write_csv(args.out_dir / "nm_ladder_nhop2_long.csv", long_fields, long_rows)
+    write_csv(args.out_dir / f"nm_ladder_nhop2{suffix}_long.csv", long_fields, long_rows)
 
     hop1 = read_hop1(args.hop1_long)
     if hop1:
         comparison = paired_rows(long_rows, hop1)
         write_csv(
-            args.out_dir / "nm_ladder_nhop_comparison_long.csv",
+            args.out_dir / f"nm_ladder_nhop_comparison{suffix}_long.csv",
             [
                 "order", "rung", "test_graph", "entry_rung", "rel_to_entry",
                 "in_training", "auc_h1", "auc_h2", "delta_h2_minus_h1",
