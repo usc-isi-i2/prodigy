@@ -354,12 +354,28 @@ class MultiAggSAGE(MessagePassing):
         return x_j if edge_attr is None else x_j + edge_attr
 
 
+class GATv2ConvOptionalEdgeAttr(GATv2Conv):
+    """GATv2 that ignores supplied edge attributes when edge features are disabled.
+
+    PRODIGY batches retain the graph's ``edge_attr`` tensor even when
+    ``use_edge_features=False``. Other background encoders already ignore that
+    tensor when constructed with ``edge_attr_dim=None``. PyG's GATv2Conv instead
+    asserts if it receives edge attributes without an ``edge_dim`` projection, so
+    normalize that case to ``edge_attr=None`` while preserving native behavior
+    whenever edge features were explicitly enabled.
+    """
+
+    def forward(self, x, edge_index, edge_attr=None, **kwargs):
+        if self.lin_edge is None:
+            edge_attr = None
+        return super().forward(x, edge_index, edge_attr=edge_attr, **kwargs)
+
+
 gnn_models = {
     "gin": GINConv,
     "no_msg_passing": NoMessagePassing,
     "sage": SAGEConvSelfLoops,
     "sage_multi": MultiAggSAGE,
     "molecule_sage": SimpleMoleculeGNN,
-    "gat": GATv2Conv
+    "gat": GATv2ConvOptionalEdgeAttr
 }
-
