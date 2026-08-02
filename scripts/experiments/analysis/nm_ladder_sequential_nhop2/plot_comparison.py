@@ -83,7 +83,10 @@ def plot_ladders(
 ) -> None:
     vmin = min(0.55, float(np.nanmin([interleaved, sequential])))
     vmax = 0.985
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.9), dpi=180)
+    fig = plt.figure(figsize=(14.5, 6.1), dpi=180)
+    grid = fig.add_gridspec(1, 3, width_ratios=(1, 1, 0.035), wspace=0.24)
+    axes = (fig.add_subplot(grid[0, 0]), fig.add_subplot(grid[0, 1]))
+    colorbar_ax = fig.add_subplot(grid[0, 2])
     draw_ladder(axes[0], interleaved, "Balanced interleaved", vmin=vmin, vmax=vmax)
     draw_ladder(axes[1], sequential, "Blocked sequential", vmin=vmin, vmax=vmax)
     fig.suptitle(
@@ -96,9 +99,9 @@ def plot_ladders(
         ha="center", va="top", fontsize=9, color="#686762",
     )
     scalar = plt.cm.ScalarMappable(norm=Normalize(vmin=vmin, vmax=vmax), cmap=BLUES)
-    colorbar = fig.colorbar(scalar, ax=axes, fraction=0.028, pad=0.025)
+    colorbar = fig.colorbar(scalar, cax=colorbar_ax)
     colorbar.set_label("ROC-AUC")
-    fig.subplots_adjust(left=0.07, right=0.91, bottom=0.18, top=0.87, wspace=0.18)
+    fig.subplots_adjust(left=0.06, right=0.94, bottom=0.18, top=0.87)
     output.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output, dpi=220, bbox_inches="tight")
     pdf_output = output.with_suffix(".pdf")
