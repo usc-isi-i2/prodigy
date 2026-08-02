@@ -18,6 +18,11 @@ from .dataloader import (
     MultiTaskSplitBatch,
 )
 from .dataset import SubgraphDataset
+from .neighbor_matching_split import (
+    configure_edge_split,
+    ensure_static_views,
+    positive_sampler_for_split,
+)
 from .midterm import (
     BinaryFutureLinkTask,
     StaticLinkTask,
@@ -105,6 +110,7 @@ def get_covid19_twitter_dataset(root: str, n_hop: int = 1, graph_filename: str =
     graph_path = os.path.join(root, graph_filename)
     print(f"Loading covid19_twitter graph from {graph_path}...")
     raw = torch.load(graph_path, map_location="cpu")
+    ensure_static_views(raw, kwargs)
 
     task_name = kwargs.get("task_name", "")
     if task_name == "temporal_link_prediction" and not kwargs.get("edge_view") and not kwargs.get("midterm_edge_view"):
@@ -151,6 +157,9 @@ def get_covid19_twitter_dataset(root: str, n_hop: int = 1, graph_filename: str =
         dataset.future_edge_view = None
     else:
         dataset.future_edge_view = None
+    configure_edge_split(
+        raw, dataset, kwargs, n_hop=n_hop, sampler_kwargs=sampler_kwargs
+    )
     return dataset
 
 
@@ -223,6 +232,7 @@ def get_covid19_twitter_dataloader(
     task_name = kwargs.get("task_name", "neighbor_matching")
     aug_by_task = None  # set only by the nm_fp_cl rotation branch (per-episode aug map)
     if task_name == "neighbor_matching":
+        positive_sampler = positive_sampler_for_split(dataset, split, kwargs)
         strata = None
         confine_to_single_stratum = False
         # Two graph_id-based modes (mutually exclusive in practice):
@@ -262,7 +272,7 @@ def get_covid19_twitter_dataloader(
         sampler = BatchSampler(
             batch_count,
             NeighborTask(
-                dataset.neighbor_sampler,
+                positive_sampler,
                 graph.num_nodes,
                 "inout",
                 kwargs.get("neighbor_sampling_strategy", "strict"),
@@ -270,6 +280,7 @@ def get_covid19_twitter_dataloader(
                 confine_to_single_stratum=confine_to_single_stratum,
                 stratum_weighting=kwargs.get("neighbor_sampling_episode_source_weighting", "proportional"),
                 cross_source_prob=float(kwargs.get("neighbor_sampling_cross_source_prob", 0.0)),
+                filter_min_degree=bool(kwargs.get("neighbor_matching_edge_split", False)),
             ),
             ParamSampler(batch_size, n_way, n_shot, n_query, 1),
             seed=seed,

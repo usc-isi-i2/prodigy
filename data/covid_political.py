@@ -9,6 +9,11 @@ from experiments.sampler import NeighborSampler, sampler_kwargs_from_config
 from .augment import get_aug
 from .dataloader import ParamSampler, BatchSampler, Collator, NeighborTask
 from .dataset import SubgraphDataset
+from .neighbor_matching_split import (
+    configure_edge_split,
+    ensure_static_views,
+    positive_sampler_for_split,
+)
 from .midterm import (
     _normalize_view_name,
     _load_named_tensor,
@@ -88,20 +93,23 @@ def get_covid_political_dataset(
     graph_path = os.path.join(root, graph_filename)
     print(f"Loading covid_political graph from {graph_path}...")
     raw = torch.load(graph_path, map_location="cpu")
+    ensure_static_views(raw, kwargs)
     graph, resolved_edge_view = _build_covid_political_graph(raw, **kwargs)
     print(
         f"Graph: {graph.num_nodes} nodes, {graph.edge_index.shape[1]} edges, "
         f"{graph.x.shape[1]} node features"
     )
     print("Building neighbor sampler (CSR preprocessing)...", flush=True)
-    neighbor_sampler = NeighborSampler(
-        graph, num_hops=n_hop, **sampler_kwargs_from_config(kwargs, n_hop)
-    )
+    sampler_kwargs = sampler_kwargs_from_config(kwargs, n_hop)
+    neighbor_sampler = NeighborSampler(graph, num_hops=n_hop, **sampler_kwargs)
     print("Neighbor sampler ready.", flush=True)
     dataset = SubgraphDataset(graph, neighbor_sampler, bidirectional=False)
     if hasattr(graph, "edge_attr") and graph.edge_attr is not None:
         print(f"Edge features: {graph.edge_attr.shape[1]} dims from edge view '{resolved_edge_view}'")
     dataset.future_edge_view = None
+    configure_edge_split(
+        raw, dataset, kwargs, n_hop=n_hop, sampler_kwargs=sampler_kwargs
+    )
     return dataset
 
 
@@ -131,13 +139,15 @@ def get_covid_political_dataloader(
     task_name = kwargs.get("task_name", "neighbor_matching")
 
     if task_name == "neighbor_matching":
+        positive_sampler = positive_sampler_for_split(dataset, split, kwargs)
         sampler = BatchSampler(
             batch_count,
             NeighborTask(
-                dataset.neighbor_sampler,
+                positive_sampler,
                 graph.num_nodes,
                 "inout",
                 kwargs.get("neighbor_sampling_strategy", "strict"),
+                filter_min_degree=bool(kwargs.get("neighbor_matching_edge_split", False)),
             ),
             ParamSampler(batch_size, n_way, n_shot, n_query, 1),
             seed=seed,

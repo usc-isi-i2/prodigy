@@ -306,6 +306,16 @@ def get_params():
             "against source-discrimination signal."
         ),
     )
+    args.add_argument(
+        "--neighbor_matching_edge_split",
+        default=False,
+        type=str2bool,
+        help=(
+            "Leakage-free NM protocol. Requires edge_view=static_background and "
+            "target_edge_view=static_holdout. Training positives and all message "
+            "passing use the background view; val/test positives use only holdout edges."
+        ),
+    )
 
     args.add_argument("-way_u", "--n_way_upper", default=-1, type=int) # If defined, will set the upper bound for n_way
     args.add_argument("-shot_u", "--n_shots_upper", default=-1, type=int) # If defined, will set the upper bound for n_shots

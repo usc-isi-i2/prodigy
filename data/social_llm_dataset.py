@@ -21,6 +21,11 @@ from experiments.sampler import NeighborSampler, sampler_kwargs_from_config
 from .augment import get_aug
 from .dataloader import ParamSampler, BatchSampler, Collator, NeighborTask, RegressionTask
 from .dataset import SubgraphDataset
+from .neighbor_matching_split import (
+    configure_edge_split,
+    ensure_static_views,
+    positive_sampler_for_split,
+)
 from .midterm import (
     StaticLinkTask,
     _normalize_view_name,
@@ -108,6 +113,7 @@ def _get_dataset(dataset_name: str, root: str, n_hop: int = 1,
     graph_path = os.path.join(root, graph_filename)
     print(f"Loading {dataset_name} graph from {graph_path}...")
     raw = torch.load(graph_path, map_location="cpu")
+    ensure_static_views(raw, kwargs)
 
     task_name = kwargs.get("task_name", "")
     if task_name == "static_link_prediction" and not kwargs.get("edge_view") and not kwargs.get("midterm_edge_view"):
@@ -145,6 +151,9 @@ def _get_dataset(dataset_name: str, root: str, n_hop: int = 1,
             )
             dataset.future_edge_view = resolved_target_view
             print("Static-holdout neighbor sampler ready.", flush=True)
+    configure_edge_split(
+        raw, dataset, kwargs, n_hop=n_hop, sampler_kwargs=sampler_kwargs
+    )
     return dataset
 
 
@@ -196,11 +205,13 @@ def _get_dataloader(dataset_name: str, dataset: SubgraphDataset, split: str,
     task_name = kwargs.get("task_name", "neighbor_matching")
 
     if task_name == "neighbor_matching":
+        positive_sampler = positive_sampler_for_split(dataset, split, kwargs)
         sampler = BatchSampler(
             batch_count,
             NeighborTask(
-                dataset.neighbor_sampler, graph.num_nodes, "inout",
+                positive_sampler, graph.num_nodes, "inout",
                 kwargs.get("neighbor_sampling_strategy", "strict"),
+                filter_min_degree=bool(kwargs.get("neighbor_matching_edge_split", False)),
             ),
             ParamSampler(batch_size, n_way, n_shot, n_query, 1),
             seed=seed,

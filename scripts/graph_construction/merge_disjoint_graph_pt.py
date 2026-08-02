@@ -111,6 +111,45 @@ def _load_graph(name: str, path: Path) -> dict[str, Any]:
     return raw
 
 
+def _ensure_static_split_views(
+    graph: dict[str, Any],
+    *,
+    name: str,
+    holdout_frac: float,
+    seed: int,
+) -> None:
+    """Derive static views in memory without rewriting a shared source artifact."""
+    background = graph.get("edge_index_views", {}).get("static_background")
+    holdout = graph.get("target_edge_index_views", {}).get("static_holdout")
+    if (background is None) != (holdout is None):
+        raise ValueError(
+            f"{name}: only one of static_background/static_holdout exists; "
+            "refusing to replace a partial stored split."
+        )
+    if background is not None:
+        _log(f"{name}: using stored static_background/static_holdout views")
+        return
+    try:
+        from scripts.graph_construction.benchmark_targets import build_static_edge_split
+    except ModuleNotFoundError:  # direct execution from scripts/graph_construction
+        from benchmark_targets import build_static_edge_split
+
+    split = build_static_edge_split(
+        graph["edge_index"], holdout_frac=holdout_frac, seed=seed
+    )
+    graph.setdefault("edge_index_views", {})[
+        "static_background"
+    ] = split.background_edge_index
+    graph.setdefault("target_edge_index_views", {})[
+        "static_holdout"
+    ] = split.holdout_edge_index
+    graph.setdefault("benchmark_target_stats", {})["static_split"] = split.stats
+    _log(
+        f"{name}: derived canonical static split in memory "
+        f"(seed={seed}, holdout_frac={holdout_frac}); source file unchanged"
+    )
+
+
 def _same_list(graphs: list[dict[str, Any]], key: str, default: list[Any] | None = None) -> list[Any]:
     values = [list(graph.get(key, default or [])) for graph in graphs]
     first = values[0]
@@ -151,7 +190,30 @@ def _merge_edge_index_views(
     graphs: list[dict[str, Any]],
     offsets: list[int],
     views_key: str,
+    selected_views: list[str] | None = None,
 ) -> dict[str, torch.Tensor]:
+    if selected_views is not None:
+        requested = list(dict.fromkeys(str(view) for view in selected_views))
+        for idx, graph in enumerate(graphs):
+            missing = [
+                view for view in requested
+                if view not in graph.get(views_key, {})
+            ]
+            if missing:
+                raise ValueError(
+                    f"Input {idx} is missing requested {views_key} views {missing}."
+                )
+        return {
+            view_name: torch.cat(
+                [
+                    _offset_edge_index(graph[views_key][view_name], offset)
+                    for graph, offset in zip(graphs, offsets)
+                ],
+                dim=1,
+            )
+            for view_name in requested
+        }
+
     view_sets = [set(graph.get(views_key, {}).keys()) for graph in graphs]
     if not any(view_sets):
         return {}
@@ -204,6 +266,8 @@ def _merge_graphs(
     paths: list[Path],
     graphs: list[dict[str, Any]],
     drop_edge_features: bool = False,
+    preserve_edge_views: list[str] | None = None,
+    preserve_target_edge_views: list[str] | None = None,
 ) -> dict[str, Any]:
     feature_names = _same_list(graphs, "feature_names")
     if drop_edge_features:
@@ -245,8 +309,12 @@ def _merge_graphs(
 
     if drop_edge_features:
         edge_attr = None
-        edge_index_views: dict[str, torch.Tensor] = {}
-        target_edge_index_views: dict[str, torch.Tensor] = {}
+        edge_index_views = _merge_edge_index_views(
+            graphs, offsets, "edge_index_views", preserve_edge_views
+        ) if preserve_edge_views else {}
+        target_edge_index_views = _merge_edge_index_views(
+            graphs, offsets, "target_edge_index_views", preserve_target_edge_views
+        ) if preserve_target_edge_views else {}
         edge_attr_views: dict[str, torch.Tensor] = {}
         edge_attr_feature_names_views: dict[str, Any] = {}
     else:
@@ -302,6 +370,15 @@ def _merge_graphs(
         "source_node_counts": dict(zip(names, node_counts)),
         "source_edge_counts": dict(zip(names, edge_counts)),
         "merge_policy": "disjoint_block_concat",
+        "preserved_edge_views": list(preserve_edge_views or []),
+        "preserved_target_edge_views": list(preserve_target_edge_views or []),
+        "source_static_split_stats": {
+            name: graph.get(
+                "static_split_stats",
+                graph.get("benchmark_target_stats", {}).get("static_split"),
+            )
+            for name, graph in zip(names, graphs)
+        },
     }
     if edge_index_views:
         merged["edge_index_views"] = edge_index_views
@@ -329,6 +406,16 @@ def _validate_merged(graph: dict[str, Any]) -> None:
         raise ValueError("edge_attr rows must equal edge count.")
     if torch.isnan(x).any():
         raise ValueError("x contains NaN.")
+    for views_key in ("edge_index_views", "target_edge_index_views"):
+        for view_name, view in graph.get(views_key, {}).items():
+            if view.dim() != 2 or view.shape[0] != 2:
+                raise ValueError(
+                    f"{views_key}[{view_name!r}] must have shape [2, E]."
+                )
+            if view.numel() and int(view.max()) >= x.shape[0]:
+                raise ValueError(
+                    f"{views_key}[{view_name!r}] contains an out-of-range node index."
+                )
 
 
 def parse_args() -> argparse.Namespace:
@@ -352,11 +439,38 @@ def main() -> None:
 
     graphs = [_load_graph(name, path) for name, path in zip(names, paths)]
 
+    if bool(config.get("build_static_split_if_missing", False)):
+        split_seed = int(config.get("static_split_seed", 0))
+        holdout_frac = float(config.get("static_holdout_frac", 0.15))
+        for name, graph in zip(names, graphs):
+            _ensure_static_split_views(
+                graph,
+                name=name,
+                holdout_frac=holdout_frac,
+                seed=split_seed,
+            )
+
     drop_edge_features = bool(config.get("drop_edge_features", False))
+    preserve_edge_views = [str(v) for v in config.get("preserve_edge_views", [])]
+    preserve_target_edge_views = [
+        str(v) for v in config.get("preserve_target_edge_views", [])
+    ]
     if drop_edge_features:
-        _log("drop_edge_features=True: dropping edge_attr + edge/label views (structure only)")
+        kept = preserve_edge_views + preserve_target_edge_views
+        suffix = f"; preserving requested structural views {kept}" if kept else ""
+        _log(
+            "drop_edge_features=True: dropping edge_attr + unrequested edge/label views"
+            + suffix
+        )
     _log("merging inputs as disjoint components")
-    merged = _merge_graphs(names, paths, graphs, drop_edge_features=drop_edge_features)
+    merged = _merge_graphs(
+        names,
+        paths,
+        graphs,
+        drop_edge_features=drop_edge_features,
+        preserve_edge_views=preserve_edge_views,
+        preserve_target_edge_views=preserve_target_edge_views,
+    )
     _validate_merged(merged)
 
     out_path = Path(str(out))
@@ -382,6 +496,17 @@ def main() -> None:
         "edges": int(merged["edge_index"].shape[1]),
         "node_feature_dim": int(merged["x"].shape[1]),
         "edge_feature_names": merged.get("edge_attr_feature_names", []),
+        "edge_views": {
+            name: int(view.shape[1])
+            for name, view in merged.get("edge_index_views", {}).items()
+        },
+        "target_edge_views": {
+            name: int(view.shape[1])
+            for name, view in merged.get("target_edge_index_views", {}).items()
+        },
+        "source_static_split_stats": merged.get("source_static_split_stats", {}),
+        "static_split_seed": int(config.get("static_split_seed", 0)),
+        "static_holdout_frac": float(config.get("static_holdout_frac", 0.15)),
         "elapsed_seconds": round(time.monotonic() - started, 3),
     }
     meta_path = out_path.with_suffix(".meta.json")

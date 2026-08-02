@@ -93,6 +93,7 @@ if __name__ == '__main__':
         edge_feature_subset=params["edge_feature_subset"],
         neighbor_sampling_strategy=params["neighbor_sampling_strategy"],
         neighbor_sampling_strata=params["neighbor_sampling_strata"],
+        neighbor_matching_edge_split=params["neighbor_matching_edge_split"],
         seed=params["seed"],
     )
 

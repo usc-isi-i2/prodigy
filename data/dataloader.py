@@ -223,7 +223,7 @@ class ContrastiveTask(TaskBase):
 class NeighborTask(TaskBase):
     def __init__(self, neighbor_sampler, size, direction, sampling_strategy="strict", strata=None,
                  confine_to_single_stratum=False, stratum_weighting="proportional",
-                 cross_source_prob=0.0):
+                 cross_source_prob=0.0, filter_min_degree=False):
         self.neighbor_sampler = neighbor_sampler
         self.size = size
         self.direction = direction
@@ -233,6 +233,8 @@ class NeighborTask(TaskBase):
                 "Use 'strict' or 'replacement'."
             )
         self.sampling_strategy = sampling_strategy
+        self.filter_min_degree = bool(filter_min_degree)
+        self._eligible_cache = {}
         self.strata = None
         if strata is not None:
             self.strata = [
@@ -303,10 +305,56 @@ class NeighborTask(TaskBase):
             return sampled[:num_member]
         return None
 
+    def _eligible_candidates(self, candidates, num_member, cache_key):
+        """Return centers with enough positive-view degree for a strict episode.
+
+        This is enabled only by the edge-split protocol.  Besides avoiding long
+        rejection loops on the 15% holdout view, it makes an infeasible 30-way
+        evaluation fail before sampling rather than hang.
+        """
+        if not self.filter_min_degree:
+            return candidates
+        key = (cache_key, int(num_member))
+        if key in self._eligible_cache:
+            return self._eligible_cache[key]
+
+        rowptr, _, _ = self.neighbor_sampler.whole_adj.csr()
+        if candidates is None:
+            degrees = rowptr[1:] - rowptr[:-1]
+            eligible = torch.nonzero(degrees >= int(num_member), as_tuple=False).flatten()
+        else:
+            candidate_tensor = torch.as_tensor(candidates, dtype=torch.long)
+            degrees = rowptr[candidate_tensor + 1] - rowptr[candidate_tensor]
+            eligible = candidate_tensor[degrees >= int(num_member)]
+        result = eligible.cpu().numpy()
+        self._eligible_cache[key] = result
+        return result
+
+    @staticmethod
+    def _require_candidates(candidates, num_label, split_description):
+        if len(candidates) < num_label:
+            raise RuntimeError(
+                f"Only {len(candidates)} eligible NM centers in {split_description}; "
+                f"need n_way={num_label}. Each center must have at least n_shot+n_query "
+                "distinct neighbors in the selected positive-edge view."
+            )
+
     def _sample_uniform(self, num_label, num_member, rng):
+        candidates = self._eligible_candidates(None, num_member, "all")
+        if self.filter_min_degree:
+            self._require_candidates(candidates, num_label, "the graph")
         task = {}
+        attempts = 0
+        max_attempts = max(1000, num_label * 1000)
         while len(task) < num_label:
-            center = rng.randrange(self.size)
+            attempts += 1
+            if self.filter_min_degree and attempts > max_attempts:
+                raise RuntimeError(
+                    f"Could only sample {len(task)} of {num_label} split-aware NM centers "
+                    f"after {max_attempts} attempts. The positive view's stored degree may "
+                    "include duplicate edges; inspect its unique-neighbor distribution."
+                )
+            center = int(rng.choice(candidates)) if self.filter_min_degree else rng.randrange(self.size)
             if center in task:
                 continue
             members = self._sample_center_members(center, num_member, rng)
@@ -323,12 +371,15 @@ class NeighborTask(TaskBase):
         max_attempts = max(1000, num_label * 1000)
 
         for stratum_idx, count in zip(stratum_order, counts):
-            candidates = list(self.strata[stratum_idx])
+            candidates = self._eligible_candidates(
+                self.strata[stratum_idx], num_member, ("stratum", stratum_idx)
+            )
+            self._require_candidates(candidates, count, f"neighbor stratum {stratum_idx}")
             attempts = 0
             sampled_from_stratum = 0
             while sampled_from_stratum < count and attempts < max_attempts:
                 attempts += 1
-                center = rng.choice(candidates)
+                center = int(rng.choice(candidates))
                 if center in used:
                     continue
                 members = self._sample_center_members(center, num_member, rng)
@@ -355,14 +406,17 @@ class NeighborTask(TaskBase):
         # Pick ONE stratum (source) proportional to its size, then draw the whole
         # episode from it so every center/negative shares a source.
         stratum_idx = rng.choices(range(len(self.strata)), weights=self.stratum_weights, k=1)[0]
-        candidates = self.strata[stratum_idx]
+        candidates = self._eligible_candidates(
+            self.strata[stratum_idx], num_member, ("stratum", stratum_idx)
+        )
+        self._require_candidates(candidates, num_label, f"single-source stratum {stratum_idx}")
         task = {}
         used = set()
         max_attempts = max(1000, num_label * 1000)
         attempts = 0
         while len(task) < num_label and attempts < max_attempts:
             attempts += 1
-            center = rng.choice(candidates)
+            center = int(rng.choice(candidates))
             if center in used:
                 continue
             members = self._sample_center_members(center, num_member, rng)
