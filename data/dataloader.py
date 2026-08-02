@@ -1,4 +1,5 @@
 import random
+from bisect import bisect_right
 from dataclasses import dataclass
 from collections import defaultdict
 import numpy as np
@@ -223,7 +224,7 @@ class ContrastiveTask(TaskBase):
 class NeighborTask(TaskBase):
     def __init__(self, neighbor_sampler, size, direction, sampling_strategy="strict", strata=None,
                  confine_to_single_stratum=False, stratum_weighting="proportional",
-                 cross_source_prob=0.0):
+                 cross_source_prob=0.0, stratum_schedule_steps=None):
         self.neighbor_sampler = neighbor_sampler
         self.size = size
         self.direction = direction
@@ -279,6 +280,35 @@ class NeighborTask(TaskBase):
                 "(set neighbor_sampling_episode_source=graph_id); it interpolates "
                 "between within-source and naive sampling."
             )
+        self.stratum_schedule_steps = None
+        self.stratum_schedule_boundaries = None
+        self.scheduled_episode = 0
+        if stratum_schedule_steps is not None:
+            if not self.confine_to_single_stratum:
+                raise ValueError(
+                    "stratum_schedule_steps requires confine_to_single_stratum=True."
+                )
+            if self.cross_source_prob != 0.0:
+                raise ValueError(
+                    "stratum_schedule_steps requires cross_source_prob=0: a mixed-source "
+                    "episode would violate the blocked curriculum."
+                )
+            steps = [int(step) for step in stratum_schedule_steps]
+            if len(steps) != len(self.strata):
+                raise ValueError(
+                    "stratum_schedule_steps must have one count per stratum: "
+                    f"steps={steps}, strata={len(self.strata)}."
+                )
+            if any(step <= 0 for step in steps):
+                raise ValueError(
+                    f"stratum_schedule_steps must be positive, got {steps}."
+                )
+            self.stratum_schedule_steps = steps
+            running = 0
+            self.stratum_schedule_boundaries = []
+            for step in steps:
+                running += step
+                self.stratum_schedule_boundaries.append(running)
 
     @staticmethod
     def _balanced_counts(total, num_groups):
@@ -354,7 +384,21 @@ class NeighborTask(TaskBase):
     def _sample_confined(self, num_label, num_member, rng):
         # Pick ONE stratum (source) proportional to its size, then draw the whole
         # episode from it so every center/negative shares a source.
-        stratum_idx = rng.choices(range(len(self.strata)), weights=self.stratum_weights, k=1)[0]
+        if self.stratum_schedule_boundaries is not None:
+            stratum_idx = bisect_right(
+                self.stratum_schedule_boundaries, self.scheduled_episode
+            )
+            if stratum_idx >= len(self.strata):
+                raise RuntimeError(
+                    "Blocked source schedule exhausted after "
+                    f"{self.stratum_schedule_boundaries[-1]} episodes; the trainer requested "
+                    f"episode {self.scheduled_episode + 1}."
+                )
+            self.scheduled_episode += 1
+        else:
+            stratum_idx = rng.choices(
+                range(len(self.strata)), weights=self.stratum_weights, k=1
+            )[0]
         candidates = self.strata[stratum_idx]
         task = {}
         used = set()
