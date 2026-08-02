@@ -10,6 +10,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap, Normalize
+from matplotlib.lines import Line2D
 from matplotlib.patches import Rectangle
 
 
@@ -27,6 +28,19 @@ BLUES = LinearSegmentedColormap.from_list(
     "nm_blue", ["#E6F1FB", "#85B7EB", "#185FA5", "#0C447C"]
 )
 CORAL = "#D85A30"
+BLUE = "#2a78d6"
+INK = "#111111"
+MUTED = "#898781"
+GRID = "#e1e0d9"
+RUNG_TICKS = [
+    "ukr", "+covid", "+midterm", "+cov-pol", "+elec '20",
+    "+ukr-susp", "+twibot", "+cp-hk\n(all 8)",
+]
+GRAPH_LABELS = [
+    "Ukr-Rus", "COVID-19", "Midterm", "COVID-pol.",
+    "Election '20", "Ukr-Rus susp.", "TwiBot-20", "CP-HK",
+]
+GRAY = "#8f8d87"
 
 
 def load_matrices(path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -111,6 +125,137 @@ def plot_ladders(
     plt.close(fig)
 
 
+def declutter_labels(items, gap: float, lower: float, upper: float):
+    items = sorted(items, key=lambda item: item["value"])
+    for item in items:
+        item["label_y"] = item["value"]
+    for index in range(1, len(items)):
+        if items[index]["label_y"] - items[index - 1]["label_y"] < gap:
+            items[index]["label_y"] = items[index - 1]["label_y"] + gap
+    if items[-1]["label_y"] > upper:
+        items[-1]["label_y"] = upper
+        for index in range(len(items) - 2, -1, -1):
+            if items[index + 1]["label_y"] - items[index]["label_y"] < gap:
+                items[index]["label_y"] = items[index + 1]["label_y"] - gap
+    for item in items:
+        item["label_y"] = min(max(item["label_y"], lower), upper)
+    return items
+
+
+def plot_trajectory(matrix: np.ndarray, output: Path) -> None:
+    x = np.arange(8)
+    lower = min(0.60, float(matrix.min()) - 0.02)
+    fig, ax = plt.subplots(figsize=(10.6, 5.9), dpi=200)
+    label_items = []
+    for graph_index, label in enumerate(GRAPH_LABELS):
+        values = matrix[:, graph_index]
+        entry_index = graph_index
+        for rung in range(7):
+            in_training = rung + 1 >= entry_index
+            ax.plot(
+                x[rung : rung + 2], values[rung : rung + 2],
+                color=BLUE if in_training else GRAY,
+                linewidth=1.9 if in_training else 1.5,
+                linestyle="-" if in_training else (0, (4, 2)),
+                zorder=3, solid_capstyle="round",
+            )
+        for rung in range(8):
+            in_training = rung >= entry_index
+            if rung == entry_index and entry_index > 0:
+                ax.scatter(
+                    x[rung], values[rung], s=95, facecolor=BLUE,
+                    edgecolor="white", linewidth=1.6, zorder=6,
+                )
+            else:
+                ax.scatter(
+                    x[rung], values[rung], s=24,
+                    facecolor=BLUE if in_training else "white",
+                    edgecolor=BLUE if in_training else GRAY,
+                    linewidth=1.4, zorder=5,
+                )
+        entry_delta = (
+            values[entry_index] - values[entry_index - 1]
+            if entry_index > 0 else 0.0
+        )
+        text = f"{label}   +{entry_delta:.2f}" if entry_delta >= 0.03 else label
+        label_items.append({"value": values[-1], "text": text})
+
+    mean = matrix.mean(axis=1)
+    ax.plot(
+        x, mean, color=INK, linewidth=2.8, zorder=8, marker="s", markersize=6,
+        markerfacecolor=INK, markeredgecolor="white", markeredgewidth=1.2,
+    )
+    ax.annotate(
+        "mean (all 8)", (x[0] - 0.06, mean[0]), ha="right", va="center",
+        fontsize=9, color=INK, fontweight="bold",
+    )
+
+    for item in declutter_labels(label_items, 0.023, lower + 0.012, 0.99):
+        ax.plot(
+            [x[-1] + 0.06, x[-1] + 0.28],
+            [item["value"], item["label_y"]],
+            color=MUTED, linewidth=0.6, zorder=2,
+        )
+        ax.annotate(
+            item["text"], (x[-1] + 0.34, item["label_y"]),
+            ha="left", va="center", fontsize=9.3, color=BLUE,
+            fontweight="bold",
+        )
+
+    ax.set_xlim(-0.62, 8.75)
+    ax.set_ylim(lower, 1.0)
+    ax.set_xticks(x, RUNG_TICKS, fontsize=9.2)
+    ax.set_xlabel(
+        "SSL pre-training graph  (one source added per rung, merge grows to the right)",
+        fontsize=10.5, color=INK,
+    )
+    ax.set_ylabel("NM ROC-AUC  (3-shot, 30-way)", fontsize=10.5, color=INK)
+    ax.tick_params(colors=MUTED, labelsize=9)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.spines[["left", "bottom"]].set_color("#c3c2b7")
+    ax.grid(axis="y", color=GRID, linewidth=0.8, zorder=0)
+    ax.set_axisbelow(True)
+    ax.set_title(
+        "Blocked sequential ladder: the newest graph rises while earlier graphs decay",
+        fontsize=12.5, color=INK, fontweight="bold", loc="left", pad=26,
+    )
+    ax.text(
+        0.0, 1.02,
+        "NM  3-shot / 30-way  ·  matched step 40k  ·  blocked sequential sampling  ·  "
+        "+d = gain at entry rung",
+        transform=ax.transAxes, ha="left", va="bottom", fontsize=9, color=MUTED,
+    )
+    legend = [
+        Line2D(
+            [0], [0], color=BLUE, linewidth=1.9, marker="o",
+            markerfacecolor=BLUE, markeredgecolor="white", markersize=7,
+            label="in training prefix",
+        ),
+        Line2D(
+            [0], [0], color=GRAY, linewidth=1.5, linestyle=(0, (4, 2)),
+            marker="o", markerfacecolor="white", markeredgecolor=GRAY,
+            markersize=7, label="held out",
+        ),
+        Line2D(
+            [0], [0], color=INK, linewidth=2.8, marker="s",
+            markerfacecolor=INK, markeredgecolor="white", markersize=7,
+            label="mean (all 8 graphs)",
+        ),
+    ]
+    ax.legend(
+        handles=legend, loc="lower right", frameon=False,
+        fontsize=9, handlelength=2.4,
+    )
+    fig.tight_layout()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output, dpi=220, bbox_inches="tight")
+    pdf_output = output.with_suffix(".pdf")
+    fig.savefig(pdf_output, bbox_inches="tight")
+    print(f"wrote {output}")
+    print(f"wrote {pdf_output}")
+    plt.close(fig)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -124,6 +269,10 @@ def main() -> int:
     parser.add_argument(
         "--ladder-output", type=Path,
         default=HERE / "figures" / "sequential_vs_interleaved_ladder.png",
+    )
+    parser.add_argument(
+        "--trajectory-output", type=Path,
+        default=HERE / "figures" / "nm_ladder_sequential_trajectory.png",
     )
     args = parser.parse_args()
 
@@ -144,6 +293,7 @@ def main() -> int:
     print(f"wrote {args.output}")
     plt.close(fig)
     plot_ladders(interleaved, sequential, args.ladder_output)
+    plot_trajectory(sequential, args.trajectory_output)
     return 0
 
 

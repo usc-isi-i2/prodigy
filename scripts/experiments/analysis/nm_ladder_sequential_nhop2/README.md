@@ -11,6 +11,8 @@ Registered outputs:
 - `data/nm_ladder_schedule_comparison_long.csv`: paired sequential versus interleaved;
 - `figures/sequential_vs_interleaved_ladder.{png,pdf}`: matched side-by-side ladder
   heatmaps with absolute AUCs and the newest graph outlined at each rung;
+- `figures/nm_ladder_sequential_trajectory.{png,pdf}`: canonical per-graph ladder
+  trajectory with held-out segments dashed and training-prefix segments solid;
 - `figures/sequential_minus_interleaved.png`: secondary paired-delta heatmap.
 
 The primary analysis uses only each run's terminal `state_dict_40000.ckpt`. Source-boundary
