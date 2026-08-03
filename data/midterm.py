@@ -11,6 +11,11 @@ from experiments.sampler import NeighborSampler, sampler_kwargs_from_config
 from .augment import get_aug
 from .dataloader import MulticlassTask, ParamSampler, BatchSampler, Collator, NeighborTask, RegressionTask
 from .dataset import SubgraphDataset
+from .neighbor_matching_split import (
+    configure_edge_split,
+    ensure_static_views,
+    positive_sampler_for_split,
+)
 
 
 class BinaryFutureLinkTask:
@@ -709,6 +714,7 @@ def get_midterm_dataset(
     graph_path = os.path.join(root, graph_filename)
     print(f"Loading midterm graph from {graph_path}...")
     raw = torch.load(graph_path, map_location='cpu')
+    ensure_static_views(raw, kwargs)
 
     task_name = kwargs.get("task_name", "")
     if task_name == "temporal_link_prediction" and not kwargs.get("edge_view") and not kwargs.get("midterm_edge_view"):
@@ -758,6 +764,9 @@ def get_midterm_dataset(
             dataset.future_edge_view = None
     else:
         dataset.future_edge_view = None
+    configure_edge_split(
+        raw, dataset, kwargs, n_hop=n_hop, sampler_kwargs=sampler_kwargs
+    )
     return dataset
 
 
@@ -867,13 +876,15 @@ def get_midterm_dataloader(
     graph = dataset.graph
 
     if task_name == "neighbor_matching":
+        positive_sampler = positive_sampler_for_split(dataset, split, kwargs)
         sampler = BatchSampler(
             batch_count,
             NeighborTask(
-                dataset.neighbor_sampler,
+                positive_sampler,
                 graph.num_nodes,
                 "inout",
                 kwargs.get("neighbor_sampling_strategy", "strict"),
+                filter_min_degree=bool(kwargs.get("neighbor_matching_edge_split", False)),
             ),
             ParamSampler(batch_size, n_way, n_shot, n_query, 1),
             seed=seed,

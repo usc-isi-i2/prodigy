@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "data_root": "/dataMeR1/phil/data",
-  "last_verified": "2026-07-20",
+  "last_verified": "2026-08-02",
   "verified_on": "tucker",
   "notes": "Canonical inventory of graph artifacts. Use canonical_name in prose and dataset_key for compatibility with existing code, configs, and logs. Sizes and graph statistics describe the current graph object on Tucker, not the total size of its source corpus.",
   "field_notes": {
@@ -314,6 +314,20 @@
       "tasks": {"supported": ["neighbor_matching"]},
       "sources": ["ukraine", "covid", "midterm", "covid-political", "election2020-political", "ukraine-suspended", "twibot20", "hongkong"],
       "construction": {"policy": "disjoint_block_concat", "config": "scripts/graph_construction/merge_ukr_rus_covid_midterm_all8.yaml"}
+    },
+    {
+      "canonical_name": "merged-all8-static-split",
+      "dataset_key": "merged_ukr_rus_covid_midterm_all8_static_split",
+      "kind": "merged",
+      "relative_path": "merged/graphs/ukr_rus_covid_midterm_all8_static_split_retweet_graph.pt",
+      "metadata_path": "merged/graphs/ukr_rus_covid_midterm_all8_static_split_retweet_graph.meta.json",
+      "artifact_size_bytes": 114450407108,
+      "artifact_size_gb": 114.450,
+      "statistics": {"nodes": 34482222, "edges": 191523118, "static_background_edges": 162794891, "static_holdout_edges": 28728227},
+      "features": {"node_feature_dim": 768, "edge_features": []},
+      "tasks": {"supported": ["neighbor_matching"], "details": {"neighbor_matching": "Training/context use static_background; validation/test positives use disjoint static_holdout edges."}},
+      "sources": ["ukraine", "covid", "midterm", "covid-political", "election2020-political", "ukraine-suspended", "twibot20", "hongkong"],
+      "construction": {"policy": "disjoint_block_concat_preserve_static_split", "config": "scripts/experiments/setup/nm_ladder_train_test_nhop2/merge_all8_static_split.yaml", "status": "built and read-only verified on Tucker 2026-08-02"}
     },
     {
       "canonical_name": "synthetic-probe-count-threshold",

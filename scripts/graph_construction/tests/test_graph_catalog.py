@@ -53,8 +53,17 @@ class GraphCatalogTest(unittest.TestCase):
     def test_inventory_fields_are_present(self):
         for graph in self.graphs:
             with self.subTest(graph=graph["dataset_key"]):
-                self.assertGreater(graph["artifact_size_bytes"], 0)
-                self.assertGreater(graph["artifact_size_gb"], 0)
+                status = str(graph.get("construction", {}).get("status", ""))
+                planned = status.startswith("planned")
+                if planned:
+                    # Planned artifacts are cataloged before construction so paths and
+                    # provenance have one source of truth. Unknown inventory values must
+                    # remain explicit nulls until read-only verification on Tucker.
+                    self.assertIsNone(graph["artifact_size_bytes"])
+                    self.assertIsNone(graph["artifact_size_gb"])
+                else:
+                    self.assertGreater(graph["artifact_size_bytes"], 0)
+                    self.assertGreater(graph["artifact_size_gb"], 0)
                 self.assertGreater(graph["statistics"]["nodes"], 0)
                 self.assertGreater(graph["statistics"]["edges"], 0)
                 self.assertTrue(graph["tasks"]["supported"])

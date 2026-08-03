@@ -1,0 +1,45 @@
+# Leakage-free NM ladder, canonical order, rung 5/8.
+# Active sources: ukraine, covid, midterm, covid-political, election2020-political.
+dataset: covid19_twitter
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_all8_static_split_retweet_graph.pt
+task_name: neighbor_matching
+
+# A real edge split: held-out positive edges never enter message passing or training.
+edge_view: static_background
+target_edge_view: static_holdout
+neighbor_matching_edge_split: true
+
+feature_subset: all
+original_features: true
+emb_dim: 256
+layers: S,U,M
+gnn_type: sage
+n_layer: 1
+dropout: 0
+
+# Fair compute-matched two-hop protocol from pretrain_saturation_nhop2.
+n_hop: 2
+neighbor_sampling_hop_sizes: "9,9"
+neighbor_sampling_node_limit: 101
+neighbor_matching_walk_hops: 1
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+neighbor_sampling_source_subset: ukr_rus,covid,midterm,covid_political,election2020
+
+epochs: 4
+eval_step: 100000
+checkpoint_step: 10000
+workers: 2
+device: 0
+seed: 0
+prefix: nm_ladder_tts_h2m_r5

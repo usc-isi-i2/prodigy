@@ -539,6 +539,9 @@ class TrainerFS():
         # each BatchSampler iterator covers one dataset_len_cap-sized epoch.
         kwargs["epochs"] = self.parameter["epochs"]
         kwargs["neighbor_sampling_cross_source_prob"] = self.parameter.get("neighbor_sampling_cross_source_prob", 0.0)
+        kwargs["neighbor_matching_edge_split"] = self.parameter.get(
+            "neighbor_matching_edge_split", False
+        )
         kwargs["label_emb_texts"] = self.parameter.get("label_emb_texts", "")
         kwargs["midterm_lp_neg_ratio"] = self.parameter.get("midterm_lp_neg_ratio", 1)
         kwargs["hard_negatives"] = self.parameter.get("hard_negatives", True)
