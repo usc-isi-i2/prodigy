@@ -14,6 +14,12 @@ degree-matched negatives. The assembler produces:
 - `data/pair_lp_floors.csv`: heuristic/raw-feature floors on the shared pair sets; and
 - `data/summary.json`: descriptive entry summaries and completeness metadata.
 
+The plotting script produces three PNG/PDF pairs in `figures/`:
+
+- `entry_jumps`: registered before/after entry effects across all trajectories;
+- `rung_trajectories`: every primary-metric trajectory with graph-entry markers; and
+- `controlled_vs_matched40k`: paired schedule/split/exposure deltas by graph role.
+
 Expected complete counts are 40 entry events (19 classification, 21 static LP) and 216
 controlled variant-vs-matched40k cells. These are paired measurements from one training
 seed, not independent replicates.
@@ -22,4 +28,5 @@ Reassemble on Tucker:
 
 ```bash
 python3 scripts/experiments/analysis/nm_ladder_downstream_nhop2/assemble_results.py
+python3 scripts/experiments/analysis/nm_ladder_downstream_nhop2/plot_results.py
 ```
