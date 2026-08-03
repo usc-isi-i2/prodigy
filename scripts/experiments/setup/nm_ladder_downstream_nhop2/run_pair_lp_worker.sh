@@ -9,6 +9,7 @@ OUT_DIR="${OUT_DIR:-${REPO_ROOT}/scripts/experiments/analysis/nm_ladder_downstre
 DATA_ROOT="${DATA_ROOT:-/dataMeR1/phil/data}"
 GPU="${GPU:-0}"
 DATASETS="${DATASETS:-cp_hk_twitter}"
+PY="${PY:-/home/mhchu/miniconda3/envs/prodigy/bin/python}"
 
 [[ "${GPU}" =~ ^[0-3]$ ]] || { echo "refusing GPU ${GPU}; only 0-3 are ours" >&2; exit 2; }
 [[ -s "${MODEL_LIST}" ]] || { echo "missing ${MODEL_LIST}" >&2; exit 2; }
@@ -44,7 +45,7 @@ for dataset in "${DATASET_ARRAY[@]}"; do
     echo "unknown static-LP dataset: ${dataset}" >&2
     exit 2
   }
-  CMD=(python3 scripts/eval/pair_link_sweep.py
+  CMD=("${PY}" scripts/eval/pair_link_sweep.py
     --graph "${DATA_ROOT}/${relative}"
     --dataset "${dataset}"
     --model-list "${MODEL_LIST}"
