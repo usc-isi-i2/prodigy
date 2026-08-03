@@ -72,6 +72,15 @@ def main() -> int:
     ap.add_argument("--negative-kinds", default="degree_matched,random,hard_2hop")
     ap.add_argument("--max-positives", type=int, default=2000)
     ap.add_argument("--n-hop", type=int, default=1)
+    ap.add_argument(
+        "--hop-sizes",
+        default="",
+        help=(
+            "Comma-separated NeighborSampler fanouts. Empty preserves the sampler "
+            "default; fair-two-hop experiments must pass 9,9."
+        ),
+    )
+    ap.add_argument("--node-limit", type=int, default=2000)
     ap.add_argument("--emb-dim", type=int, default=256)
     ap.add_argument("--input-dim", type=int, default=768)
     ap.add_argument("--gnn-type", default="sage")
@@ -80,7 +89,22 @@ def main() -> int:
     ap.add_argument("--batch-size", type=int, default=256)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--device", default="cuda")
+    ap.add_argument(
+        "--resume",
+        action="store_true",
+        help="Keep complete model rows already present in the dataset CSV and score only missing/invalid models.",
+    )
     args = ap.parse_args()
+
+    hop_sizes = (
+        [int(value.strip()) for value in args.hop_sizes.split(",") if value.strip()]
+        if args.hop_sizes
+        else None
+    )
+    if hop_sizes is not None and len(hop_sizes) != args.n_hop:
+        ap.error(
+            f"--hop-sizes has {len(hop_sizes)} values but --n-hop is {args.n_hop}"
+        )
 
     import torch
 
@@ -91,6 +115,65 @@ def main() -> int:
 
     models = parse_model_list(args.model_list)
     kinds = [k.strip() for k in args.negative_kinds.split(",")]
+
+    existing_rows: List[dict] = []
+    completed_models: set[str] = set()
+    existing_floor_keys: set[tuple[str, str]] = set()
+    if args.resume and csv_path.is_file():
+        with csv_path.open(newline="") as fh:
+            existing_rows = list(csv.DictReader(fh))
+        valid_kinds_by_model: Dict[str, set[str]] = {}
+        for row in existing_rows:
+            kind = row.get("negative_kind", "")
+            if row.get("model") == "__floor__":
+                existing_floor_keys.add((kind, row.get("scorer", "")))
+                continue
+            if row.get("scorer") != "encoder_cosine" or kind not in kinds:
+                continue
+            try:
+                leak = float(row["leakage_edges"])
+                sensitivity = float(row["endpoint_sensitivity"])
+                permutation = float(row["endpoint_permutation_auc"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            if leak == 0 and sensitivity >= 0.99 and abs(permutation - 0.5) < 0.05:
+                valid_kinds_by_model.setdefault(row.get("model", ""), set()).add(kind)
+        completed_models = {
+            model for model, present in valid_kinds_by_model.items() if set(kinds) <= present
+        }
+        before = len(models)
+        models = [item for item in models if item[0] not in completed_models]
+        # Drop partial/invalid rows for models that will be rescored. Otherwise an
+        # append-only retry would leave two degree-matched rows and make the result
+        # ambiguous. Complete models and the shared floors remain byte-for-byte.
+        remaining_names = {name for name, _ in models}
+        existing_rows = [
+            row for row in existing_rows
+            if row.get("model") == "__floor__" or row.get("model") not in remaining_names
+        ]
+        # A retry of an older append-only sweep may already contain duplicates.
+        # Keep the last row for each semantic key before writing the clean resume base.
+        deduplicated: Dict[tuple[str, str, str], dict] = {}
+        for row in existing_rows:
+            deduplicated[(
+                row.get("model", ""),
+                row.get("negative_kind", ""),
+                row.get("scorer", ""),
+            )] = row
+        existing_rows = list(deduplicated.values())
+        existing_floor_keys = {
+            (row.get("negative_kind", ""), row.get("scorer", ""))
+            for row in existing_rows if row.get("model") == "__floor__"
+        }
+        with csv_path.open("w", newline="") as fh:
+            writer = csv.DictWriter(fh, fieldnames=FIELDS)
+            writer.writeheader()
+            writer.writerows(existing_rows)
+        print(
+            f"[{args.dataset}] resume: {before - len(models)} complete, "
+            f"{len(models)} model(s) remaining",
+            flush=True,
+        )
 
     t0 = time.time()
     print(f"[{args.dataset}] loading graph artifact ...", flush=True)
@@ -123,7 +206,7 @@ def main() -> int:
     all_nodes = np.unique(np.concatenate([ps.nodes() for ps in pair_sets.values()]))
     print(f"[{args.dataset}] {all_nodes.size} distinct nodes to embed per model", flush=True)
 
-    rows: List[dict] = []
+    rows: List[dict] = list(existing_rows)
 
     def emit(row: dict) -> None:
         rows.append(row)
@@ -146,6 +229,8 @@ def main() -> int:
         ps, vm = pair_sets[kind], val_masks[kind]
         leak = float(leakage_check(background, ps))
         for h in HEURISTICS:
+            if (kind, h) in existing_floor_keys:
+                continue
             r = evaluate_scores(h, ps.label, heuristic_scores(h, ps, background), vm)
             emit({"dataset": args.dataset, "model": "__floor__", "negative_kind": kind,
                   "scorer": h, "auc": r.auc, "average_precision": r.average_precision,
@@ -154,6 +239,8 @@ def main() -> int:
                   "endpoint_permutation_auc": "", "endpoint_sensitivity": "",
                   "leakage_edges": leak})
         if raw_feats is not None:
+            if (kind, "raw_feature_cosine") in existing_floor_keys:
+                continue
             r = evaluate_scores("raw_feature_cosine", ps.label,
                                 pair_scores(raw_feats, ps, "cosine"), vm)
             emit({"dataset": args.dataset, "model": "__floor__", "negative_kind": kind,
@@ -164,7 +251,14 @@ def main() -> int:
                   "endpoint_sensitivity": "", "leakage_edges": leak})
     print(f"[{args.dataset}] floors done ({time.time()-t0:.0f}s)", flush=True)
 
-    dataset_obj = build_subgraph_dataset(blob, graph, args.n_hop, args.background_view)
+    dataset_obj = build_subgraph_dataset(
+        blob,
+        graph,
+        args.n_hop,
+        args.background_view,
+        hop_sizes=hop_sizes,
+        node_limit=args.node_limit,
+    )
 
     params = dict(ENCODER_DEFAULTS)
     params.update(emb_dim=args.emb_dim, input_dim=args.input_dim,
