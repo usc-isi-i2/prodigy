@@ -151,5 +151,9 @@ PHASE=A GPUS="0" \
   bash scripts/experiments/setup/nm_ladder_fixed_exposure_nhop2/eval_ladder_tucker.sh --dry-run
 ```
 
-For a complete audit after both phases, `make_model_list.py --phase all` must resolve
-all 21 rung-specific checkpoints before analysis begins.
+For a complete three-order audit, `make_model_list.py --phase all` must resolve all 21
+rung-specific checkpoints. The executed 2026-08-02 sweep intentionally covered Orders A
+and C only: 15 physical models (A1–A8 and C1–C7; C8 reuses A8), eight evaluation graphs,
+120/120 completed jobs, and zero failures. Order B remains deferred. Results and the
+two-order analysis live in
+[`../../analysis/nm_ladder_fixed_exposure_nhop2/`](../../analysis/nm_ladder_fixed_exposure_nhop2/).
