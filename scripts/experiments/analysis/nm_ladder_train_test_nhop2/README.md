@@ -15,3 +15,12 @@ python3 scripts/experiments/analysis/nm_ladder_train_test_nhop2/assemble_results
 The assembler requires all 64 cells and emits a wide table plus an entry-aligned long
 table under `data/`. `--allow-partial` is diagnostic only. Add `FINDINGS.md` only after
 the complete evidence is committed.
+
+## Figure
+
+```bash
+/opt/homebrew/bin/python3.11 \
+  scripts/experiments/analysis/nm_ladder_train_test_nhop2/plot_ladder.py
+```
+
+![Split-aware two-hop NM ladder](figures/nm_ladder_train_test_nhop2.png)
