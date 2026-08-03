@@ -28,8 +28,13 @@ Run the integrity tests:
 The primary metric is NM test ROC-AUC at 30-way/3-shot. See `FINDINGS.md` for the
 interpretation and caveats.
 
-`data/comparison_to_matched40k_orderA.csv` pairs the new canonical-order cells with
-the published historical ladder. That comparison is explicitly cross-protocol: the
-historical ladder used matched 40k and the default one-hop sampler, whereas this run
-uses fixed exposure and the fair two-hop sampler. It is a replication check, not a
-causal exposure ablation.
+The analysis preserves two distinct Order-A comparisons:
+
+- `data/comparison_to_matched40k_h2_orderA.csv` pairs against the committed matched-40k
+  fair-two-hop ladder. This is the controlled exposure comparison: source sets, sampler
+  tuple, evaluation protocol, and training seed match; only the total-step schedule
+  changes. The matched-40k H2 matrix currently covers Order A, so Orders B/C cannot
+  enter this direct comparison.
+- `data/comparison_to_matched40k_h1_orderA.csv` pairs against the historical matched-40k
+  one-hop ladder. This remains valuable as a cross-protocol replication check, but it
+  cannot isolate exposure because both budget schedule and context radius differ.

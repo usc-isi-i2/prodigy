@@ -108,21 +108,51 @@ the same all-eight model by design. The useful order evidence is that both paths
 positive entry jumps and near-zero incumbent movement despite very different early
 transfer baselines.
 
-## 4. The historical staircase replicates almost digit-for-digit
+## 4. Against matched-40k two-hop, 10k/source is already enough
 
-As a **cross-protocol replication check**, Order A can be paired with the published
-matched-40k ladder:
+Order A has the missing controlled comparison: a complete matched-40k ladder trained
+and evaluated with the same fair-two-hop sampler, source sets, seed, and NM protocol.
+Only the budget schedule changes.
 
-- across all 64 rung × graph cells, new minus historical mean = +.0032 and mean absolute
-  difference = .0084;
-- across the seven graph-entry jumps, mean difference = −.0006 and mean absolute
-  difference = .0106.
+| rung | fixed exposure steps | fixed-exposure mean | matched-40k mean | Δ |
+|---:|---:|---:|---:|---:|
+| 1 | 10k | .8643 | .8626 | +.0016 |
+| 2 | 20k | .8682 | .8644 | +.0038 |
+| 3 | 30k | .8686 | .8662 | +.0025 |
+| 4 | 40k | .8751 | .8750 | +.0001 |
+| 5 | 50k | .8865 | .8859 | +.0006 |
+| 6 | 60k | .9030 | .9034 | −.0003 |
+| 7 | 70k | .9074 | .9045 | +.0029 |
+| 8 | 80k | .9267 | .9223 | +.0044 |
 
-That is striking agreement: the fixed-exposure entry-jump vector is essentially the old
-staircase again. But it is not a clean causal exposure ablation. The historical ladder
-used the default one-hop sampler, while this experiment uses the fair two-hop sampler;
-both exposure schedule and context radius differ. The comparison supports robustness of
-the phenomenon, not an isolated estimate of either change.
+Across all 64 rung × graph cells, fixed exposure minus matched-40k has mean +.0019,
+median +.0017, and mean absolute difference .0043. The graph-entry jumps are likewise
+indistinguishable: mean +.0756 under fixed exposure versus +.0729 under matched-40k
+(difference +.0027; mean absolute difference .0041).
+
+Rung 1 is the sharpest budget test. Giving the UKR-only model 40k rather than 10k steps
+does not improve its eight-graph mean: .8626 versus .8643. The eight cell-level
+differences are mixed, and its in-domain UKR score is actually higher at 40k (.9455 vs
+.9381). The correct conclusion is therefore not that 10k is intrinsically better, but
+that **40k buys no measurable aggregate improvement over 10k**.
+
+Fixed exposure retains entry gains slightly better through all-eight: mean post-entry
+change −.0022 versus −.0067 under matched-40k, a +.0045 difference. That direction is
+consistent with reduced incumbent dilution, but its magnitude remains below the repo's
+.02 caution threshold and there are no training replicates.
+
+## 5. The one-hop matrix remains a useful replication check
+
+The historical matched-40k one-hop Order-A matrix is preserved as a separate,
+explicitly cross-protocol comparison. Across all 64 rung × graph cells, fixed-exposure
+two-hop minus historical one-hop has mean +.0032 and mean absolute difference .0084.
+Across the seven graph-entry jumps, the mean difference is −.0006 and the mean absolute
+difference is .0106.
+
+That close agreement shows that the interpolation staircase is robust across the
+sampler change. It is not a causal exposure comparison: total-step schedule and context
+radius both differ. The same-sampler two-hop matrix in §4 is the appropriate control for
+the exposure claim.
 
 ## Claim boundary
 
@@ -135,8 +165,8 @@ The experiment does not establish:
 - exact per-source quotas—the exposure control is stochastic and balanced in expectation;
 - training-seed uncertainty—there is one seed;
 - full three-order robustness—Order B was intentionally deferred; or
-- the causal difference from matched-40k at the same sampler settings—no matched-40k
-  fair-two-hop control matrix exists in this analysis.
+- schedule effects for Orders B/C—the committed matched-40k fair-two-hop control matrix
+  currently covers only Order A.
 
 Evaluation episodes are shared across arms, which makes cellwise comparisons paired but
 does not create independent evaluation replicates. As elsewhere in this repo, avoid
@@ -149,6 +179,9 @@ over-interpreting sub-.02 differences.
 - `data/rung_summary.csv`: order/rung means and in-vs-held-out split.
 - `data/adjacent_deltas.csv`: newcomer, incumbent, and held-out event deltas.
 - `data/entry_jumps.csv`: the 14 source-entry comparisons.
-- `data/comparison_to_matched40k_orderA.csv`: explicitly cross-protocol historical pairs.
+- `data/comparison_to_matched40k_h2_orderA.csv`: controlled fixed-exposure vs
+  matched-40k fair-two-hop Order-A pairs.
+- `data/comparison_to_matched40k_h1_orderA.csv`: cross-protocol fixed-exposure
+  fair-two-hop vs historical matched-40k one-hop Order-A pairs.
 - `data/summary.json`: machine-readable headline statistics.
 - `figures/fixed_exposure_analysis.{png,pdf}`: the primary figure.

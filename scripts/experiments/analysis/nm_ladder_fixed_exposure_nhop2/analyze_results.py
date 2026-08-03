@@ -13,6 +13,10 @@ Outputs:
 * ``data/rung_summary.csv``: all-graph, in-mixture, and held-out means;
 * ``data/adjacent_deltas.csv``: every cell's change after each source addition;
 * ``data/entry_jumps.csv``: the 14 measurable OOD-to-ID entry events;
+* ``data/comparison_to_matched40k_h1_orderA.csv``: cross-protocol fixed-exposure
+  fair-two-hop vs matched-40k one-hop Order-A cells;
+* ``data/comparison_to_matched40k_h2_orderA.csv``: controlled fixed-exposure vs
+  matched-40k fair-two-hop Order-A cells;
 * ``data/summary.json``: headline statistics used by ``FINDINGS.md``; and
 * ``figures/fixed_exposure_analysis.{png,pdf}``: heatmaps and event summaries.
 
@@ -39,7 +43,10 @@ from matplotlib.patches import Rectangle
 
 HERE = Path(__file__).resolve().parent
 SETUP = HERE.parents[1] / "setup" / "nm_ladder_fixed_exposure_nhop2"
-HISTORICAL_LADDER = HERE.parent / "nm_ladder" / "data" / "nm_ladder_full.csv"
+MATCHED40K_H1_LADDER = HERE.parent / "nm_ladder" / "data" / "nm_ladder_full.csv"
+MATCHED40K_H2_LADDER = (
+    HERE.parent / "nm_ladder_nhop2" / "data" / "nm_ladder_nhop2_order_A.csv"
+)
 
 DATASETS = (
     "ukr_rus_twitter",
@@ -229,26 +236,28 @@ def two_sided_sign_p(positive: int, total: int) -> float:
     return min(1.0, 2 * tail)
 
 
-def compare_historical_order_a(
-    logical: pd.DataFrame, historical_path: Path
+def compare_matched40k_h1_order_a(
+    logical: pd.DataFrame, matched40k_path: Path
 ) -> pd.DataFrame:
-    """Pair Order A with the published matched-40k one-hop ladder.
+    """Pair Order A with the historical matched-40k one-hop ladder.
 
-    This is deliberately labeled a cross-protocol comparison: both exposure and
-    sampler radius differ. It is useful as a replication check, not as an estimate
-    of the causal effect of fixed exposure.
+    Exposure schedule and sampler radius both differ, so this is a replication
+    comparison rather than a controlled exposure ablation.
     """
-    historical = pd.read_csv(historical_path)
+    matched40k = pd.read_csv(matched40k_path)
     expected_columns = {"rung", *DATASETS}
-    if not expected_columns.issubset(historical.columns) or len(historical) != 8:
-        raise ValueError("historical ladder table is incomplete")
-    old = historical.set_index("rung")
+    if not expected_columns.issubset(matched40k.columns) or len(matched40k) != 8:
+        raise ValueError("matched-40k one-hop ladder table is incomplete")
+    if set(matched40k.rung.astype(int)) != set(range(1, 9)):
+        raise ValueError("matched-40k one-hop ladder lacks a complete Order-A trajectory")
+
+    baseline = matched40k.set_index("rung")
     rows = []
     order_a = logical[logical.order == "A"].sort_values(["rung", "dataset"])
     for row in order_a.itertuples():
-        old_auc = float(old.loc[row.rung, row.dataset])
-        old_previous = (
-            float(old.loc[row.rung - 1, row.dataset]) if row.rung > 1 else np.nan
+        matched_auc = float(baseline.loc[row.rung, row.dataset])
+        matched_previous = (
+            float(baseline.loc[row.rung - 1, row.dataset]) if row.rung > 1 else np.nan
         )
         fixed_previous = (
             float(order_a[(order_a.rung == row.rung - 1) &
@@ -260,18 +269,87 @@ def compare_historical_order_a(
             "dataset": row.dataset,
             "added_dataset": row.added_dataset,
             "fixed_exposure_h2_auc": row.test_roc_auc,
-            "matched40k_h1_auc": old_auc,
-            "auc_difference": row.test_roc_auc - old_auc,
+            "matched40k_h1_auc": matched_auc,
+            "auc_difference": row.test_roc_auc - matched_auc,
             "is_entry_cell": row.rung > 1 and row.dataset == row.added_dataset,
             "fixed_entry_delta": (
                 row.test_roc_auc - fixed_previous
                 if row.rung > 1 and row.dataset == row.added_dataset else np.nan
             ),
             "matched40k_entry_delta": (
-                old_auc - old_previous
+                matched_auc - matched_previous
                 if row.rung > 1 and row.dataset == row.added_dataset else np.nan
             ),
             "comparison_scope": "cross-protocol: fixed-exposure h2 vs matched-40k h1",
+        })
+    return pd.DataFrame(rows)
+
+
+def compare_matched40k_h2_order_a(
+    logical: pd.DataFrame, matched40k_path: Path
+) -> pd.DataFrame:
+    """Pair Order A with the matched-40k ladder under the same fair-two-hop sampler."""
+    matched40k = pd.read_csv(matched40k_path)
+    expected_columns = {"rung", *DATASETS}
+    if not expected_columns.issubset(matched40k.columns) or len(matched40k) != 8:
+        raise ValueError("matched-40k two-hop ladder table is incomplete")
+    expected_protocol = {
+        "n_hop": 2,
+        "hop_sizes": "9,9",
+        "node_limit": 101,
+        "nm_walk_hops": 1,
+        "checkpoint_step": 40_000,
+        "order": "A",
+    }
+    for column, expected in expected_protocol.items():
+        if column not in matched40k.columns:
+            raise ValueError(f"matched-40k table lacks protocol column {column!r}")
+        values = set(matched40k[column].tolist())
+        if values != {expected}:
+            raise ValueError(
+                f"matched-40k table has {column}={values}, expected {expected!r}"
+            )
+    if set(matched40k.rung.astype(int)) != set(range(1, 9)):
+        raise ValueError("matched-40k two-hop ladder lacks a complete Order-A trajectory")
+
+    baseline = matched40k.set_index("rung")
+    rows = []
+    order_a = logical[logical.order == "A"].sort_values(["rung", "dataset"])
+    for row in order_a.itertuples():
+        matched_auc = float(baseline.loc[row.rung, row.dataset])
+        matched_previous = (
+            float(baseline.loc[row.rung - 1, row.dataset]) if row.rung > 1 else np.nan
+        )
+        fixed_previous = (
+            float(order_a[(order_a.rung == row.rung - 1) &
+                          (order_a.dataset == row.dataset)].test_roc_auc.iloc[0])
+            if row.rung > 1 else np.nan
+        )
+        rows.append({
+            "rung": row.rung,
+            "dataset": row.dataset,
+            "added_dataset": row.added_dataset,
+            "entry_rung": row.entry_rung,
+            "fixed_total_steps": row.target_step,
+            "matched40k_total_steps": 40_000,
+            "fixed_expected_steps_per_source": 10_000,
+            "matched40k_expected_steps_per_source": 40_000 / row.rung,
+            "fixed_exposure_h2_auc": row.test_roc_auc,
+            "matched40k_h2_auc": matched_auc,
+            "auc_difference": row.test_roc_auc - matched_auc,
+            "is_entry_cell": row.rung > 1 and row.dataset == row.added_dataset,
+            "fixed_entry_delta": (
+                row.test_roc_auc - fixed_previous
+                if row.rung > 1 and row.dataset == row.added_dataset else np.nan
+            ),
+            "matched40k_h2_entry_delta": (
+                matched_auc - matched_previous
+                if row.rung > 1 and row.dataset == row.added_dataset else np.nan
+            ),
+            "comparison_scope": (
+                "controlled Order A: same fair-two-hop sampler and source sets; "
+                "fixed 10k/source vs fixed 40k total"
+            ),
         })
     return pd.DataFrame(rows)
 
@@ -280,7 +358,8 @@ def headline_summary(
     logical: pd.DataFrame,
     rung_summary: pd.DataFrame,
     deltas: pd.DataFrame,
-    historical: pd.DataFrame | None = None,
+    matched40k_h1: pd.DataFrame | None = None,
+    matched40k_h2: pd.DataFrame | None = None,
 ) -> dict[str, object]:
     entry = deltas[deltas.role == "newcomer"]
     incumbent = deltas[deltas.role == "incumbent"]
@@ -323,20 +402,106 @@ def headline_summary(
             rung_summary[(rung_summary.order == "A") & (rung_summary.rung == 8)].mean_auc.iloc[0]
         ),
     }
-    if historical is not None:
-        entry_comparison = historical[historical.is_entry_cell].copy()
+    if matched40k_h1 is not None:
+        entry_comparison = matched40k_h1[matched40k_h1.is_entry_cell].copy()
         entry_comparison["entry_delta_difference"] = (
-            entry_comparison.fixed_entry_delta - entry_comparison.matched40k_entry_delta
+            entry_comparison.fixed_entry_delta
+            - entry_comparison.matched40k_entry_delta
         )
         result["historical_matched40k_h1_comparison"] = {
             "scope": "cross-protocol; exposure and sampler radius both differ",
-            "paired_cells": int(len(historical)),
-            "mean_auc_difference": float(historical.auc_difference.mean()),
-            "mean_absolute_auc_difference": float(historical.auc_difference.abs().mean()),
+            "paired_cells": int(len(matched40k_h1)),
+            "mean_auc_difference": float(matched40k_h1.auc_difference.mean()),
+            "mean_absolute_auc_difference": float(
+                matched40k_h1.auc_difference.abs().mean()
+            ),
             "entry_events": int(len(entry_comparison)),
+            "entry_delta_mean_difference": float(
+                entry_comparison.entry_delta_difference.mean()
+            ),
+            "entry_delta_mean_absolute_difference": float(
+                entry_comparison.entry_delta_difference.abs().mean()
+            ),
+        }
+    if matched40k_h2 is not None:
+        entry_comparison = matched40k_h2[matched40k_h2.is_entry_cell].copy()
+        entry_comparison["entry_delta_difference"] = (
+            entry_comparison.fixed_entry_delta
+            - entry_comparison.matched40k_h2_entry_delta
+        )
+        retention_rows = []
+        for dataset, group in matched40k_h2.groupby("dataset"):
+            entry_rung = int(group.entry_rung.iloc[0])
+            if entry_rung == 8:
+                continue
+            by_rung = group.set_index("rung")
+            retention_rows.append({
+                "dataset": dataset,
+                "fixed": (
+                    by_rung.loc[8, "fixed_exposure_h2_auc"]
+                    - by_rung.loc[entry_rung, "fixed_exposure_h2_auc"]
+                ),
+                "matched40k": (
+                    by_rung.loc[8, "matched40k_h2_auc"]
+                    - by_rung.loc[entry_rung, "matched40k_h2_auc"]
+                ),
+            })
+        retention_comparison = pd.DataFrame(retention_rows)
+        retention_comparison["difference"] = (
+            retention_comparison.fixed - retention_comparison.matched40k
+        )
+
+        rung_means = matched40k_h2.groupby("rung")[[
+            "fixed_exposure_h2_auc", "matched40k_h2_auc"
+        ]].mean()
+        result["matched40k_h2_order_a_comparison"] = {
+            "scope": (
+                "controlled Order A; same fair-two-hop sampler, source sets, and eval; "
+                "one training seed"
+            ),
+            "paired_cells": int(len(matched40k_h2)),
+            "mean_auc_difference": float(matched40k_h2.auc_difference.mean()),
+            "median_auc_difference": float(matched40k_h2.auc_difference.median()),
+            "mean_absolute_auc_difference": float(
+                matched40k_h2.auc_difference.abs().mean()
+            ),
+            "min_auc_difference": float(matched40k_h2.auc_difference.min()),
+            "max_auc_difference": float(matched40k_h2.auc_difference.max()),
+            "rung1_fixed_exposure_mean_auc": float(
+                rung_means.loc[1, "fixed_exposure_h2_auc"]
+            ),
+            "rung1_matched40k_mean_auc": float(rung_means.loc[1, "matched40k_h2_auc"]),
+            "rung1_mean_auc_difference": float(
+                rung_means.loc[1, "fixed_exposure_h2_auc"]
+                - rung_means.loc[1, "matched40k_h2_auc"]
+            ),
+            "rung4_mean_auc_difference": float(
+                rung_means.loc[4, "fixed_exposure_h2_auc"]
+                - rung_means.loc[4, "matched40k_h2_auc"]
+            ),
+            "rung8_mean_auc_difference": float(
+                rung_means.loc[8, "fixed_exposure_h2_auc"]
+                - rung_means.loc[8, "matched40k_h2_auc"]
+            ),
+            "entry_events": int(len(entry_comparison)),
+            "fixed_exposure_entry_jump_mean": float(
+                entry_comparison.fixed_entry_delta.mean()
+            ),
+            "matched40k_entry_jump_mean": float(
+                entry_comparison.matched40k_h2_entry_delta.mean()
+            ),
             "entry_delta_mean_difference": float(entry_comparison.entry_delta_difference.mean()),
             "entry_delta_mean_absolute_difference": float(
                 entry_comparison.entry_delta_difference.abs().mean()
+            ),
+            "fixed_exposure_post_entry_retention_mean": float(
+                retention_comparison.fixed.mean()
+            ),
+            "matched40k_post_entry_retention_mean": float(
+                retention_comparison.matched40k.mean()
+            ),
+            "post_entry_retention_mean_difference": float(
+                retention_comparison.difference.mean()
             ),
         }
     return result
@@ -458,8 +623,17 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--raw", type=Path, default=HERE / "data" / "raw_metrics.csv")
     parser.add_argument("--manifest", type=Path, default=SETUP / "manifest.tsv")
-    parser.add_argument("--historical-ladder", type=Path, default=HISTORICAL_LADDER)
+    parser.add_argument(
+        "--matched40k-h1-ladder", type=Path, default=MATCHED40K_H1_LADDER
+    )
+    parser.add_argument(
+        "--matched40k-h2-ladder", type=Path, default=MATCHED40K_H2_LADDER
+    )
     parser.add_argument("--out-dir", type=Path, default=HERE)
+    parser.add_argument(
+        "--skip-figures", action="store_true",
+        help="regenerate tables and JSON without rewriting unchanged figures",
+    )
     args = parser.parse_args()
 
     raw = pd.read_csv(args.raw)
@@ -468,8 +642,15 @@ def main() -> int:
     rung_summary = make_rung_summary(logical)
     deltas = make_adjacent_deltas(logical)
     entry = deltas[deltas.role == "newcomer"].copy()
-    historical = compare_historical_order_a(logical, args.historical_ladder)
-    summary = headline_summary(logical, rung_summary, deltas, historical)
+    matched40k_h1 = compare_matched40k_h1_order_a(
+        logical, args.matched40k_h1_ladder
+    )
+    matched40k_h2 = compare_matched40k_h2_order_a(
+        logical, args.matched40k_h2_ladder
+    )
+    summary = headline_summary(
+        logical, rung_summary, deltas, matched40k_h1, matched40k_h2
+    )
 
     data_dir = args.out_dir / "data"
     figure_dir = args.out_dir / "figures"
@@ -478,11 +659,17 @@ def main() -> int:
     rung_summary.to_csv(data_dir / "rung_summary.csv", index=False)
     deltas.to_csv(data_dir / "adjacent_deltas.csv", index=False)
     entry.to_csv(data_dir / "entry_jumps.csv", index=False)
-    historical.to_csv(data_dir / "comparison_to_matched40k_orderA.csv", index=False)
+    matched40k_h1.to_csv(
+        data_dir / "comparison_to_matched40k_h1_orderA.csv", index=False
+    )
+    matched40k_h2.to_csv(
+        data_dir / "comparison_to_matched40k_h2_orderA.csv", index=False
+    )
     (data_dir / "summary.json").write_text(
         json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
-    make_figure(logical, deltas, figure_dir)
+    if not args.skip_figures:
+        make_figure(logical, deltas, figure_dir)
 
     print("\nRung means")
     print(rung_summary.pivot(index="rung", columns="order", values="mean_auc").round(4))
