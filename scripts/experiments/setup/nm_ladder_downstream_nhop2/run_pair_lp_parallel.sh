@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# Four concurrent graph workers. Large graphs each get a GPU; the two small graphs share one.
+# One to four concurrent graph workers, balanced around the two largest artifacts.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GPUS="${GPUS:-0,1,2,3}"
 IFS=',' read -r -a GPU_ARRAY <<< "${GPUS}"
-[[ "${#GPU_ARRAY[@]}" == "4" ]] || {
-  echo "GPUS must name exactly four devices (default 0,1,2,3)" >&2
+GPU_COUNT="${#GPU_ARRAY[@]}"
+[[ "${GPU_COUNT}" -ge 1 && "${GPU_COUNT}" -le 4 ]] || {
+  echo "GPUS must name one to four devices from 0-3" >&2
   exit 2
 }
 for gpu in "${GPU_ARRAY[@]}"; do
@@ -15,15 +16,15 @@ done
 
 LOG_DIR="${WORKER_LOG_DIR:-${SCRIPT_DIR}/run_logs/pair_workers}"
 mkdir -p "${LOG_DIR}"
-ASSIGNMENTS=(
-  "covid19_twitter"
-  "ukr_rus_twitter"
-  "midterm,cp_hk_twitter"
-  "twibot20"
-)
+case "${GPU_COUNT}" in
+  1) ASSIGNMENTS=("covid19_twitter,ukr_rus_twitter,twibot20,midterm,cp_hk_twitter") ;;
+  2) ASSIGNMENTS=("covid19_twitter,midterm,cp_hk_twitter" "ukr_rus_twitter,twibot20") ;;
+  3) ASSIGNMENTS=("covid19_twitter" "ukr_rus_twitter" "twibot20,midterm,cp_hk_twitter") ;;
+  4) ASSIGNMENTS=("covid19_twitter" "ukr_rus_twitter" "midterm,cp_hk_twitter" "twibot20") ;;
+esac
 
 pids=()
-for index in 0 1 2 3; do
+for ((index=0; index<GPU_COUNT; index++)); do
   gpu="${GPU_ARRAY[$index]}"
   datasets="${ASSIGNMENTS[$index]}"
   echo "worker ${index}: GPU ${gpu} -> ${datasets}"
@@ -34,7 +35,7 @@ for index in 0 1 2 3; do
 done
 
 failed=0
-for index in 0 1 2 3; do
+for ((index=0; index<GPU_COUNT; index++)); do
   if wait "${pids[$index]}"; then
     echo "worker ${index}: OK"
   else

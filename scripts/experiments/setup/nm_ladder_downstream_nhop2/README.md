@@ -90,10 +90,11 @@ DRY_RUN=1 bash scripts/experiments/setup/nm_ladder_downstream_nhop2/run_classifi
 DRY_RUN=1 bash scripts/experiments/setup/nm_ladder_downstream_nhop2/run_pair_lp_parallel.sh
 ```
 
-## Four-GPU run
+## Parallel run
 
-The pipeline uses all four owned GPUs in each expensive phase. Classification launches a
-four-slot queue over GPUs 0–3. Static LP launches four graph workers concurrently:
+The pipeline uses every GPU named in `GPUS` in each expensive phase. Classification
+launches one queue slot per device. Static LP accepts one to four available devices and
+balances the five graph artifacts around the two largest loads. With all four free:
 
 | GPU slot | graph assignment |
 |---:|---|
@@ -103,7 +104,8 @@ four-slot queue over GPUs 0–3. Static LP launches four graph workers concurren
 | 3 | TwiBot-20 |
 
 This deliberately overlaps the large graph loads and assumes the host RAM check is green.
-Override `GPUS` only with four IDs from 0–3.
+Use only currently free IDs from the owned 0–3 set. For example, if GPUs 2–3 are occupied,
+`GPUS="0,1"` assigns COVID/Midterm/Hong Kong to GPU 0 and Ukraine/TwiBot-20 to GPU 1.
 
 ```bash
 tmux new-session -d -s nmld_h2 \

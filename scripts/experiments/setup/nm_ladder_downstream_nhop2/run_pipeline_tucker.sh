@@ -63,7 +63,7 @@ if want classification; then
     --log-root "${REPO_ROOT}/log" --out-dir "${RUNNER_OUT}" --overwrite \
     >> "${PIPE_LOG}" 2>&1 \
     || fail classification "classification log parse failed"
-  status classification OK "156 jobs across four GPUs"
+  status classification OK "156 jobs across GPUs ${GPUS}"
 fi
 
 if want static_lp; then
@@ -76,7 +76,7 @@ if want static_lp; then
     --pair-dir "${PAIR_DIR}" --model-list "${SCRIPT_DIR}/model_list.txt" \
     >> "${PIPE_LOG}" 2>&1 \
     || fail static_lp "195-cell completeness/validity gate failed"
-  status static_lp OK "39 encoders x five shared pair sets"
+  status static_lp OK "39 encoders x five shared pair sets on GPUs ${GPUS}"
 fi
 
 if want assemble; then
