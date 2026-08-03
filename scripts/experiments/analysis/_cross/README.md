@@ -22,8 +22,10 @@ and it is the entry point to the analysis tree.
 | `nm_covid_midterm/` | size-imbalance / exposure between covid and midterm | `RESULTS.md` |
 | `nm_cross_source_shortcut/` | cross-source-probability sweep on episode sampling | `RESULTS.md` |
 | `nm_ladder/` | the 8-rung merged-graph interpolation ladder | `RESULTS.md` |
+| `nm_ladder_fixed_exposure_nhop2/` | fixed 10k/source ladder with fair two-hop sampling (Orders A/C) | `FINDINGS.md` |
 | `nm_ladder_nhop2/` | compute-matched two-hop replication of the ladder and order study | — (setup ready) |
 | `nm_ladder_sequential_nhop2/` | compute-matched two-hop ladder with blocked sequential rather than interleaved source exposure | — (setup ready) |
+| `nm_ladder_train_test_nhop2/` | split-aware two-hop ladder with held-out NM-positive edges | `README.md` |
 | `nm_ladder_order_robustness/` | the ladder under different graph orders | — (in progress) |
 | `nm_single_source_downstream/` | classification/regression transfer of all 8 single-source NM encoders | `FINDINGS.md` |
 | `nm_single_source_matrix/` | 8×8 single-source transfer matrix | `FINDINGS.md` |
