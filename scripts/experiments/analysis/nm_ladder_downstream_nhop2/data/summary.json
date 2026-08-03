@@ -1,0 +1,113 @@
+{
+  "logical_rows": 40,
+  "physical_models": 39,
+  "entry_jumps": [
+    {
+      "variant": "fixed10k",
+      "order": "A",
+      "task": "classification",
+      "n": 4,
+      "positive": 3,
+      "mean_delta": 0.010162743055555576,
+      "min_delta": -0.015037486111111109,
+      "max_delta": 0.030310458333333345
+    },
+    {
+      "variant": "fixed10k",
+      "order": "A",
+      "task": "static_lp",
+      "n": 4,
+      "positive": 4,
+      "mean_delta": 0.015258418367346899,
+      "min_delta": 0.0033627551020407598,
+      "max_delta": 0.041116836734693796
+    },
+    {
+      "variant": "fixed10k",
+      "order": "C",
+      "task": "classification",
+      "n": 3,
+      "positive": 2,
+      "mean_delta": 0.007230004629629565,
+      "min_delta": -0.033558250000000234,
+      "max_delta": 0.0407342638888889
+    },
+    {
+      "variant": "fixed10k",
+      "order": "C",
+      "task": "static_lp",
+      "n": 5,
+      "positive": 5,
+      "mean_delta": 0.0712279081632653,
+      "min_delta": 0.0066515306122448825,
+      "max_delta": 0.15670612244897963
+    },
+    {
+      "variant": "matched40k",
+      "order": "A",
+      "task": "classification",
+      "n": 4,
+      "positive": 2,
+      "mean_delta": 0.001494652777777855,
+      "min_delta": -0.01764544444444427,
+      "max_delta": 0.02261605555555557
+    },
+    {
+      "variant": "matched40k",
+      "order": "A",
+      "task": "static_lp",
+      "n": 4,
+      "positive": 3,
+      "mean_delta": 0.0072388392857142825,
+      "min_delta": -0.00033954081632658895,
+      "max_delta": 0.026934693877550986
+    },
+    {
+      "variant": "sequential",
+      "order": "A",
+      "task": "classification",
+      "n": 4,
+      "positive": 1,
+      "mean_delta": 0.007969520833333354,
+      "min_delta": -0.016742111111111235,
+      "max_delta": 0.0548961944444446
+    },
+    {
+      "variant": "sequential",
+      "order": "A",
+      "task": "static_lp",
+      "n": 4,
+      "positive": 3,
+      "mean_delta": 0.05035522959183675,
+      "min_delta": -0.03641887755102047,
+      "max_delta": 0.21044719387755106
+    },
+    {
+      "variant": "split",
+      "order": "A",
+      "task": "classification",
+      "n": 4,
+      "positive": 1,
+      "mean_delta": -0.006873722222222212,
+      "min_delta": -0.020544986111110997,
+      "max_delta": 0.0014359999999998818
+    },
+    {
+      "variant": "split",
+      "order": "A",
+      "task": "static_lp",
+      "n": 4,
+      "positive": 4,
+      "mean_delta": 0.02310478316326528,
+      "min_delta": 0.013365306122448906,
+      "max_delta": 0.044895408163265316
+    }
+  ],
+  "paired_cells_to_matched40k": 216,
+  "notes": [
+    "One training seed; cell counts are paired measurements, not independent replicates.",
+    "Static LP primary negative set is degree_matched and uses the repaired pair evaluator.",
+    "Temporal LP is excluded because its evaluator remains invalid."
+  ],
+  "errors_allowed": []
+}
