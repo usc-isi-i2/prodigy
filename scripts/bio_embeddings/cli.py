@@ -56,7 +56,7 @@ def parse_shard_list(value: str) -> list[int] | None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Embed distinct normalized Twitter bios into deterministic fp16 shards.",
+        description="Embed distinct normalized profile biographies into deterministic fp16 shards.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("--config", default="", help="Optional YAML config to load before CLI overrides.")
