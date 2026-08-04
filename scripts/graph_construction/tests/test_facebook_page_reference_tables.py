@@ -12,6 +12,9 @@ import pandas as pd
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "build_facebook_page_reference_tables.py"
+PREPARE_EMBEDDING_INPUT = (
+    Path(__file__).resolve().parents[1] / "prepare_facebook_page_embedding_input.py"
+)
 
 
 def page_row(page_id: str, post_id: str, target_url: str | None = None) -> dict:
@@ -84,6 +87,22 @@ def test_recursive_build_and_growth() -> None:
         growth = pd.read_parquet(output / "growth_by_cutoff.parquet")
         assert growth["primary_nodes"].tolist() == [2, 3]
         assert growth["primary_directed_edges"].tolist() == [1, 2]
+
+        embedding_input = root / "embedding_input"
+        subprocess.run(
+            [
+                sys.executable,
+                str(PREPARE_EMBEDDING_INPUT),
+                "--tables-root",
+                str(output),
+                "--output-root",
+                str(embedding_input),
+            ],
+            check=True,
+        )
+        selected_profiles = pd.read_parquet(embedding_input / "page_profiles.parquet")
+        assert selected_profiles["account_id"].tolist() == ["a", "b", "c"]
+        assert "message" not in selected_profiles.columns
 
 
 if __name__ == "__main__":
