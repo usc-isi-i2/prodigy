@@ -8,13 +8,16 @@ import subprocess
 import sys
 import tempfile
 
+import numpy as np
 import pandas as pd
+import torch
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "build_facebook_page_reference_tables.py"
 PREPARE_EMBEDDING_INPUT = (
     Path(__file__).resolve().parents[1] / "prepare_facebook_page_embedding_input.py"
 )
+GENERATE_GRAPH = Path(__file__).resolve().parents[1] / "generate_facebook_page_reference_graph.py"
 
 
 def page_row(page_id: str, post_id: str, target_url: str | None = None) -> dict:
@@ -103,6 +106,51 @@ def test_recursive_build_and_growth() -> None:
         selected_profiles = pd.read_parquet(embedding_input / "page_profiles.parquet")
         assert selected_profiles["account_id"].tolist() == ["a", "b", "c"]
         assert "message" not in selected_profiles.columns
+
+        bio_root = root / "bio_embeddings"
+        shards = bio_root / "shards"
+        shards.mkdir(parents=True)
+        hashes = {user_id: f"hash-{user_id}" for user_id in ("a", "b", "c")}
+        pd.DataFrame(
+            [{"userid": user_id, "bio_hash": digest} for user_id, digest in hashes.items()]
+        ).to_parquet(bio_root / "user_bio_observations.parquet", index=False)
+        pd.DataFrame(
+            [
+                {
+                    "bio_hash": hashes[user_id],
+                    "embedding_shard": "shards/shard-000000.emb.npy",
+                    "embedding_row": index,
+                    "embedding_dim": 768,
+                }
+                for index, user_id in enumerate(("a", "b", "c"))
+            ]
+        ).to_parquet(bio_root / "bio_embedding_index.parquet", index=False)
+        vectors = np.eye(3, 768, dtype=np.float16)
+        np.save(shards / "shard-000000.emb.npy", vectors)
+
+        graph_path = root / "graphs" / "page_reference_graph.pt"
+        subprocess.run(
+            [
+                sys.executable,
+                str(GENERATE_GRAPH),
+                "--tables-root",
+                str(output),
+                "--bio-embeddings-root",
+                str(bio_root),
+                "--out",
+                str(graph_path),
+            ],
+            check=True,
+        )
+        graph = torch.load(graph_path, map_location="cpu", weights_only=False)
+        assert graph["x"].shape == (3, 768)
+        assert graph["edge_index"].shape == (2, 2)
+        assert set(graph["node_targets"]) == {"subscriber_count", "account_age_days"}
+        assert set(graph["node_classification_targets"]) == {
+            "page_category_top30", "admin_country_top30", "verified"
+        }
+        assert graph["target_edge_index_views"]["static_holdout"].shape[1] == 1
+        assert graph["target_edge_index_views"]["temporal_new"].shape[1] == 1
 
 
 if __name__ == "__main__":

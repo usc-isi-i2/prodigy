@@ -590,6 +590,10 @@ class TrainerFS():
             from data.ukr_rus_twitter import get_ukr_rus_twitter_dataloader
             kwargs["root"] = self.parameter["root"]
             get_dataloader = get_ukr_rus_twitter_dataloader
+        elif dataset_name == "facebook_page_reference":
+            from data.facebook_page_reference import get_facebook_page_reference_dataloader
+            kwargs["root"] = self.parameter["root"]
+            get_dataloader = get_facebook_page_reference_dataloader
         elif dataset_name in {"covid19_twitter", "merged_ukr_rus_covid", "merged_covid_midterm",
                                "merged_ukr_rus_covid_midterm"} or dataset_name.startswith("probe_"):
             # merged_* graphs and the synthetic probe_* graphs (capability probes)
