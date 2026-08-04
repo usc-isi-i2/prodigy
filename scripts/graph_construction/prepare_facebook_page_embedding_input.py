@@ -13,6 +13,8 @@ import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.parquet as pq
 
+from scripts.graph_construction.facebook_page_reference_nodes import select_page_nodes
+
 
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
@@ -26,6 +28,12 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tables-root", required=True, type=Path)
     parser.add_argument("--output-root", required=True, type=Path)
+    parser.add_argument(
+        "--target-node-count",
+        type=int,
+        default=0,
+        help="Keep all edge participants and add active page-profile isolates to this size.",
+    )
     return parser.parse_args()
 
 
@@ -48,8 +56,11 @@ def main() -> int:
     edges = pq.read_table(
         edges_path, columns=["source_account_id", "target_account_id"]
     )
-    graph_nodes = sorted(set(edges.column(0).to_pylist()) | set(edges.column(1).to_pylist()))
     profiles = pq.read_table(profiles_path)
+    structural_nodes = set(edges.column(0).to_pylist()) | set(edges.column(1).to_pylist())
+    graph_nodes, structural_nodes = select_page_nodes(
+        structural_nodes, profiles, args.target_node_count
+    )
     mask = pc.is_in(profiles.column("account_id"), value_set=pa.array(graph_nodes, type=pa.string()))
     selected = profiles.filter(mask)
     selected_ids = set(selected.column("account_id").to_pylist())
@@ -70,6 +81,9 @@ def main() -> int:
         "source_edges": str(edges_path),
         "source_profiles": str(profiles_path),
         "graph_nodes": len(graph_nodes),
+        "structural_nodes": len(structural_nodes),
+        "added_isolated_nodes": len(graph_nodes) - len(structural_nodes),
+        "target_node_count": args.target_node_count,
         "selected_profiles": selected.num_rows,
         "profiles_with_description": nonempty_descriptions,
         "description_coverage": nonempty_descriptions / max(1, selected.num_rows),

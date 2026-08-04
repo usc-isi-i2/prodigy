@@ -24,6 +24,7 @@ import pyarrow.parquet as pq
 import torch
 
 from scripts.graph_construction.benchmark_targets import build_static_edge_split
+from scripts.graph_construction.facebook_page_reference_nodes import select_page_nodes
 from scripts.graph_construction.generate_twibot20_retweet_graph import resolve_bio_features
 
 try:
@@ -49,6 +50,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--static-holdout-frac", type=float, default=0.15)
     parser.add_argument("--history-fraction", type=float, default=0.70)
+    parser.add_argument(
+        "--target-node-count",
+        type=int,
+        default=0,
+        help="Keep all edge participants and add active page-profile isolates to this size.",
+    )
     return parser.parse_args()
 
 
@@ -227,7 +234,10 @@ def main() -> int:
     ).to_pandas()
     source_ids = edges["source_account_id"].astype(str).tolist()
     target_ids = edges["target_account_id"].astype(str).tolist()
-    user_ids = sorted(set(source_ids) | set(target_ids))
+    profile_table = pq.read_table(profiles_path)
+    user_ids, structural_node_ids = select_page_nodes(
+        set(source_ids) | set(target_ids), profile_table, args.target_node_count
+    )
     u2i = {user_id: index for index, user_id in enumerate(user_ids)}
     pairs = list(zip(source_ids, target_ids))
     weights = list(zip(edges["n_reference_posts"], edges["n_content_reference_posts"]))
@@ -236,7 +246,6 @@ def main() -> int:
     log(f"nodes={len(user_ids):,} directed_edges={edge_index.shape[1]:,}")
 
     log("reading and aligning page profiles")
-    profile_table = pq.read_table(profiles_path)
     graph_nodes = set(user_ids)
     profiles = {
         str(row["account_id"]): row
@@ -280,6 +289,9 @@ def main() -> int:
         [float(profiles[user_id].get("source_post_count") or 0) for user_id in user_ids],
         dtype=torch.float32,
     )
+    structural_node_mask = torch.tensor(
+        [user_id in structural_node_ids for user_id in user_ids], dtype=torch.bool
+    )
 
     log("constructing link-prediction views")
     static = build_static_edge_split(
@@ -311,6 +323,7 @@ def main() -> int:
     data.edge_attr_feature_names = EDGE_FEATURE_NAMES
     data.user_ids = user_ids
     data.label_names = category_names
+    data.structural_node_mask = structural_node_mask
     for split, mask in split_masks.items():
         setattr(data, f"{split}_mask", mask)
 
@@ -338,7 +351,10 @@ def main() -> int:
         "node_split_masks": split_masks,
         "node_targets": node_targets,
         "node_target_names": list(node_targets),
-        "node_attributes": {"source_post_count": source_post_count},
+        "node_attributes": {
+            "source_post_count": source_post_count,
+            "structural_node_mask": structural_node_mask,
+        },
         "bio_embedding_policy": bio_stats["policy"],
         "static_split_stats": static.stats,
         "temporal_split_stats": temporal_stats,
@@ -358,6 +374,9 @@ def main() -> int:
         "canonical_name": "facebook-page-reference",
         "dataset_key": "facebook_page_reference",
         "nodes": len(user_ids),
+        "structural_nodes": len(structural_node_ids),
+        "added_isolated_nodes": len(user_ids) - len(structural_node_ids),
+        "target_node_count": args.target_node_count,
         "edges": int(edge_index.shape[1]),
         "reference_events": int(edge_attr[:, 0].sum()),
         "content_only_edges": int(content_mask.sum()),

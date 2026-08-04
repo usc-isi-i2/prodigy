@@ -60,6 +60,7 @@ def test_recursive_build_and_growth() -> None:
             pickle.dump([
                 page_row("a", "a1", "https://www.facebook.com/b/posts/b1"),
                 page_row("b", "b1"),
+                page_row("d", "d1"),
             ], handle)
         c_row = page_row("c", "c1", "https://www.facebook.com/a/posts/a1")
         c_row["date"] = c_row["updated"] = "2022-02-25T12:00:00Z"
@@ -85,7 +86,7 @@ def test_recursive_build_and_growth() -> None:
         assert forbidden.isdisjoint(events.columns)
 
         profiles = pd.read_parquet(output / "page_profiles.parquet")
-        assert len(profiles) == 3
+        assert len(profiles) == 4
         assert set(profiles["page_created_date"]) == {"2012-03-04T00:00:00Z"}
         growth = pd.read_parquet(output / "growth_by_cutoff.parquet")
         assert growth["primary_nodes"].tolist() == [2, 3]
@@ -100,17 +101,19 @@ def test_recursive_build_and_growth() -> None:
                 str(output),
                 "--output-root",
                 str(embedding_input),
+                "--target-node-count",
+                "4",
             ],
             check=True,
         )
         selected_profiles = pd.read_parquet(embedding_input / "page_profiles.parquet")
-        assert selected_profiles["account_id"].tolist() == ["a", "b", "c"]
+        assert selected_profiles["account_id"].tolist() == ["a", "b", "c", "d"]
         assert "message" not in selected_profiles.columns
 
         bio_root = root / "bio_embeddings"
         shards = bio_root / "shards"
         shards.mkdir(parents=True)
-        hashes = {user_id: f"hash-{user_id}" for user_id in ("a", "b", "c")}
+        hashes = {user_id: f"hash-{user_id}" for user_id in ("a", "b", "c", "d")}
         pd.DataFrame(
             [{"userid": user_id, "bio_hash": digest} for user_id, digest in hashes.items()]
         ).to_parquet(bio_root / "user_bio_observations.parquet", index=False)
@@ -122,10 +125,10 @@ def test_recursive_build_and_growth() -> None:
                     "embedding_row": index,
                     "embedding_dim": 768,
                 }
-                for index, user_id in enumerate(("a", "b", "c"))
+                for index, user_id in enumerate(("a", "b", "c", "d"))
             ]
         ).to_parquet(bio_root / "bio_embedding_index.parquet", index=False)
-        vectors = np.eye(3, 768, dtype=np.float16)
+        vectors = np.eye(4, 768, dtype=np.float16)
         np.save(shards / "shard-000000.emb.npy", vectors)
 
         graph_path = root / "graphs" / "page_reference_graph.pt"
@@ -139,12 +142,15 @@ def test_recursive_build_and_growth() -> None:
                 str(bio_root),
                 "--out",
                 str(graph_path),
+                "--target-node-count",
+                "4",
             ],
             check=True,
         )
         graph = torch.load(graph_path, map_location="cpu", weights_only=False)
-        assert graph["x"].shape == (3, 768)
+        assert graph["x"].shape == (4, 768)
         assert graph["edge_index"].shape == (2, 2)
+        assert int(graph["node_attributes"]["structural_node_mask"].sum()) == 3
         assert set(graph["node_targets"]) == {"subscriber_count", "account_age_days"}
         assert set(graph["node_classification_targets"]) == {
             "page_category_top30", "admin_country_top30", "verified"
