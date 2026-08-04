@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "data_root": "/dataMeR1/phil/data",
-  "last_verified": "2026-08-02",
+  "last_verified": "2026-08-04",
   "verified_on": "tucker",
   "notes": "Canonical inventory of graph artifacts. Use canonical_name in prose and dataset_key for compatibility with existing code, configs, and logs. Sizes and graph statistics describe the current graph object on Tucker, not the total size of its source corpus.",
   "field_notes": {
@@ -196,6 +196,78 @@
       "construction": {"script": "scripts/graph_construction/generate_cp_hk_retweet_graph_from_parquet.py"},
       "eval": {"supports_lp": true, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
       "default_eval": true
+    },
+    {
+      "canonical_name": "facebook-page-reference",
+      "dataset_key": "facebook_page_reference",
+      "kind": "source",
+      "relative_path": "facebook_page_reference/graphs/page_reference_graph.pt",
+      "metadata_path": "facebook_page_reference/graphs/page_reference_graph.meta.json",
+      "artifact_size_bytes": 487249867,
+      "artifact_size_gb": 0.487,
+      "statistics": {
+        "nodes": 150000,
+        "structural_nodes": 119228,
+        "added_isolated_nodes": 30772,
+        "edges": 167622,
+        "reference_events": 309628,
+        "content_only_edges": 156001
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "GTE multilingual page-description embeddings; 486 missing descriptions are zero-filled",
+        "edge_features": ["n_reference_posts", "n_content_reference_posts"]
+      },
+      "labels": {
+        "type": "multi-target node classification and regression",
+        "primary": "page_category_top30",
+        "primary_labeled_nodes": 107613,
+        "classification_targets": ["page_category_top30", "admin_country_top30", "verified"],
+        "regression_targets": ["subscriber_count", "account_age_days"]
+      },
+      "tasks": {
+        "supported": ["neighbor_matching", "temporal_link_prediction", "static_link_prediction", "node_classification", "node_regression"],
+        "unavailable": [],
+        "details": {
+          "structure": "119,228 pages participate in edges; structural_node_mask distinguishes them from 30,772 deterministically selected high-activity attributed isolates",
+          "temporal_link_prediction": "70% event history through 2022-04-07; future target contains 35,588 new edges",
+          "static_link_prediction": "142,479 background directed edges and 25,143 holdout directed edges; evaluate with scripts/eval/pair_link_eval.py",
+          "node_classification": "30-class page category is primary; top-30 admin country and verified status are auxiliary targets",
+          "node_regression": "subscriber count covers 150,000 nodes and account age covers 149,960"
+        }
+      },
+      "source_data": [
+        {
+          "role": "original post and page-profile records (read-only source)",
+          "path": "/project2/ll_774_951/uk_ru/facebook/uk_ru",
+          "format": "partitioned pickle files"
+        },
+        {
+          "role": "derived page-reference tables",
+          "path": "facebook_page_reference/tables/2022-02-24_to_2022-06-29_page_reference_v1",
+          "format": "Parquet"
+        },
+        {
+          "role": "page-description embeddings",
+          "path": "facebook_page_reference/bio_embeddings/gte-multilingual-base/version=v001",
+          "format": "Parquet indices plus NumPy shards"
+        }
+      ],
+      "construction": {
+        "script": "scripts/graph_construction/generate_facebook_page_reference_graph.py",
+        "table_builder": "scripts/graph_construction/build_facebook_page_reference_tables.py",
+        "window": "2022-02-24 through 2022-06-29",
+        "node_policy": "all page-to-page edge participants plus highest-source-activity page profiles to a transparent 150,000-node floor",
+        "post_text_retained": false
+      },
+      "eval": {
+        "supports_lp": true,
+        "nm_n_query": 4,
+        "pl_n_query": 4,
+        "val_cap": 500,
+        "test_cap": 500
+      },
+      "default_eval": false
     },
     {
       "canonical_name": "merged-ukraine-covid",

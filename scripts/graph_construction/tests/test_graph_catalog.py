@@ -41,6 +41,7 @@ class GraphCatalogTest(unittest.TestCase):
                 "election2020-political",
                 "twibot20",
                 "hongkong",
+                "facebook-page-reference",
             ],
         )
 
