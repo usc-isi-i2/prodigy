@@ -247,6 +247,12 @@ def main(argv: Optional[list] = None) -> int:
     ap.add_argument("--score-kind", default="cosine", choices=("cosine", "dot"))
     ap.add_argument("--max-positives", type=int, default=2000)
     ap.add_argument("--n-hop", type=int, default=1)
+    ap.add_argument(
+        "--hop-sizes",
+        default="",
+        help="Comma-separated NeighborSampler fanouts (for example 9,9).",
+    )
+    ap.add_argument("--node-limit", type=int, default=2000)
     ap.add_argument("--emb-dim", type=int, default=256)
     ap.add_argument("--input-dim", type=int, default=768)
     ap.add_argument("--gnn-type", default="sage")
@@ -257,6 +263,16 @@ def main(argv: Optional[list] = None) -> int:
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--out")
     args = ap.parse_args(argv)
+
+    hop_sizes = (
+        [int(value.strip()) for value in args.hop_sizes.split(",") if value.strip()]
+        if args.hop_sizes
+        else None
+    )
+    if hop_sizes is not None and len(hop_sizes) != args.n_hop:
+        ap.error(
+            f"--hop-sizes has {len(hop_sizes)} values but --n-hop is {args.n_hop}"
+        )
 
     import torch
 
@@ -298,7 +314,14 @@ def main(argv: Optional[list] = None) -> int:
                       gnn_type=args.gnn_type, n_layer=args.n_layer, layers=args.layers)
         model = load_frozen_encoder(args.checkpoint, params, device=args.device)
         print(f"[embed] embedding {nodes.size} nodes on the background view")
-        dataset = build_subgraph_dataset(blob, graph, args.n_hop, args.background_view)
+        dataset = build_subgraph_dataset(
+            blob,
+            graph,
+            args.n_hop,
+            args.background_view,
+            hop_sizes=hop_sizes,
+            node_limit=args.node_limit,
+        )
         embeddings = embeddings_by_node(
             model, dataset, nodes, n, device=args.device, batch_size=args.batch_size)
 
