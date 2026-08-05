@@ -1840,7 +1840,7 @@ class TrainerFS():
                     graph,
                     split_name=split_name,
                     printed_attr="_printed_eval_example",
-                    require_flag=False,
+                    require_flag=True,
                     raw_graph=raw_debug_graph,
                 )
                 printed_debug_this_eval = True

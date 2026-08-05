@@ -34,6 +34,11 @@ from .midterm import (
 )
 
 
+def _episode_seed(split: str, offset: int = 0) -> int:
+    """Keep historical split seeds while allowing explicit eval resampling."""
+    return sum(ord(char) for char in split) + int(offset or 0)
+
+
 def _build_ukr_rus_twitter_graph(raw: dict, **kwargs):
     edge_view = _normalize_view_name(kwargs.get("edge_view", kwargs.get("midterm_edge_view", "default")))
     edge_index, resolved_edge_view = _load_named_tensor(
@@ -185,7 +190,7 @@ def get_ukr_rus_twitter_dataloader(
         **kwargs
 ) -> DataLoader:
     del root
-    seed = sum(ord(c) for c in split)
+    seed = _episode_seed(split, kwargs.get("eval_episode_seed_offset", 0))
     graph = dataset.graph
     task_name = kwargs.get("task_name", "neighbor_matching")
 
