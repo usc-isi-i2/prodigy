@@ -180,3 +180,11 @@ python3 scripts/experiments/analysis/nm_ladder_nhop2/assemble_results.py \
 This writes the new 2-hop tables under
 `scripts/experiments/analysis/nm_ladder_nhop2/data/` and, when the committed
 1-hop order table is present, a paired 1-hop-vs-2-hop comparison table.
+
+## Archived Tucker artifacts
+
+`model_list_A_archived.txt` preserves the exact Order-A checkpoint paths. The
+retired worktree's ignored files are in
+`/dataMeR1/phil/gfm/artifacts/worktree_cleanup_20260805/nmlh2-ignored.tar`. The
+full pre-cleanup branch snapshot is tagged
+`archive/preservation-nm-ladder-nhop2-2026-08-05`.

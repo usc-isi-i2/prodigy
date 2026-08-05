@@ -82,3 +82,14 @@ expected to be small (the prior within-vs-naive gap was ~1–2 acc points); a se
 the follow-up if an interior optimum appears. The `eval-episode-seed-per-split` caveat
 applies — eval episodes are seeded per split, so cross-domain agreement (both ukr and
 covid pointing the same way) is the reliability signal, not a single cell.
+
+## Archived Tucker artifacts
+
+`RESULTS.txt` is the raw accuracy table referenced by `RESULTS.md`, and
+`model_list_110k_archived.txt` preserves the exact checkpoint paths. The retired
+worktree's ignored files are in
+`/dataMeR1/phil/gfm/artifacts/worktree_cleanup_20260805/sampling-ignored.tar`.
+The ten oversized raw logs are in
+`/dataMeR1/phil/gfm/artifacts/sampling-partial-cross-source/run_logs/`. The full
+pre-cleanup branch snapshot is tagged
+`archive/preservation-sampling-partial-cross-source-2026-08-05`.

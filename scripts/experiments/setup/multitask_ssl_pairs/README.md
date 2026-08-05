@@ -69,3 +69,11 @@ objective) that pins the LP driver.
 
 See `EXECUTION.md` for commands and `FINDINGS.md` (written after the sweep) for the
 result.
+
+## Archived Tucker artifacts
+
+`model_list_30k_archived.txt` preserves the exact pair and rotation checkpoint
+paths used by the completed sweep. The retired worktrees' ignored files are in
+`/dataMeR1/phil/gfm/artifacts/worktree_cleanup_20260805/{mtp,mtr}-ignored.tar`.
+The full pre-cleanup branch snapshot is tagged
+`archive/preservation-multitask-ssl-pairs-2026-08-05`.

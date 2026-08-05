@@ -1,0 +1,12 @@
+
+=== accuracy (rows = cross-source prob p) ===
+p                       test:ukr    test:covid
+----------------------------------------------
+p=0.00 (within)           0.5120        0.6710
+p=0.10                    0.5130        0.6707
+p=0.25                    0.5054        0.6654
+p=0.50                    0.4983        0.6608
+p=1.00 (naive)            0.4984        0.6607
+  test:ukr: argmax p=0.10 (0.5130)  within(p=0)=0.5120 naive(p=1)=0.4984 -> argmax interior p=0.10 but only +0.0010 over best endpoint (<= 0.005: noise) -> no interior optimum
+  test:covid: argmax p=0.00 (0.6710)  within(p=0)=0.6710 naive(p=1)=0.6607 -> within-source best
+  => remedy #4 NOT supported on accuracy: no single interior p beats within-source by > 0.005 across domains.

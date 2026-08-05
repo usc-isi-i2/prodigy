@@ -145,3 +145,11 @@ Kept standalone so it does not perturb that reading chain.
   (heterogeneous with the metric/recon heads); larger trainer change, deferred.
 - **Diagnostics reuse** — the `topology_feature_ssl` 2×2 ablation + capability probes
   run on these frozen encoders unchanged; fold in if the benchmark read is ambiguous.
+
+## Archived Tucker artifacts
+
+`model_list_30k_archived.txt` preserves the exact checkpoint paths used by the
+completed sweep. The retired worktree's ignored files are in
+`/dataMeR1/phil/gfm/artifacts/worktree_cleanup_20260805/mtr-ignored.tar`. The
+full pre-cleanup branch snapshot is tagged
+`archive/preservation-multitask-ssl-rotation-2026-08-05`.
