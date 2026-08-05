@@ -1,0 +1,224 @@
+[15:00:03] Loading dataset...
+Loading covid19_twitter graph from /dataMeR1/phil/data/merged/graphs/ukr_rus_covid_midterm_retweet_graph.pt...
+Using all midterm features (768 dims).
+Using all midterm edge features (1 dims): ['n_retweets']
+Graph: 33755533 nodes, 184974074 edges, 768 node features
+Building neighbor sampler (CSR preprocessing)...
+Neighbor sampler ready.
+Edge features: 1 dims from edge view 'default'
+[15:03:50] Dataset loaded. Initializing trainer...
+wandb: [wandb.login()] Loaded credentials for https://api.wandb.ai from /home/mhchu/.netrc.
+wandb: Currently logged in as: eibl (eibl-usc) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: setting up run xcfn1glo
+wandb: Tracking run with wandb version 0.27.2
+wandb: Run data is saved locally in /dataMeR1/phil/gfm/prodigy-mtr/wandb/run-20260709_150351-xcfn1glo
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run mtr_MIX_smoke_09_07_2026_15_00_03
+wandb: ⭐️ View project at https://wandb.ai/eibl-usc/graph-clip
+wandb: 🚀 View run at https://wandb.ai/eibl-usc/graph-clip/runs/xcfn1glo
+[15:03:51] Saved effective config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-mtr/wandb/run-20260709_150351-xcfn1glo/files/effective_config.yaml
+[15:03:51] Saved source config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-mtr/wandb/run-20260709_150351-xcfn1glo/files/MIX.yaml
+[15:03:51] Command: /home/mhchu/miniconda3/envs/prodigy/bin/python3 experiments/run_single_experiment.py --config /dataMeR1/phil/gfm/prodigy-mtr/scripts/experiments/multitask_ssl_rotation/configs/MIX.yaml --device 0 --epochs 1 -ds_cap 30 -eval_step 30 -ckpt_step 30 --prefix mtr_MIX_smoke
+[15:03:51] Initializing trainer
+---------- Parameters ----------
+  config: /dataMeR1/phil/gfm/prodigy-mtr/scripts/experiments/multitask_ssl_rotation/configs/MIX.yaml
+  root: /dataMeR1/phil/data/merged/graphs
+  dataset: merged_ukr_rus_covid_midterm
+  csv_filename: twitter_data.csv
+  facebook_pkl_filename: facebook_2022-06-24_2022-06-25_part1.pkl
+  facebook_edges_filename: facebook_2022-06-24_2022-06-25_part1_edges.csv
+  facebook_node_features_filename: facebook_2022-06-24_2022-06-25_part1_node_features.csv
+  facebook_data_source: csv
+  facebook_use_edge_features: False
+  facebook_edge_feature_columns: 
+  facebook_source_pkl_path: 
+  facebook_embeddings_path: 
+  facebook_embedding_ids_path: 
+  facebook_text_emb_model: 
+  facebook_target_dim: 768
+  facebook_filter_to_uk_ru: True
+  facebook_max_posts: None
+  label_type: verified
+  max_users: None
+  invalidate_cache: False
+  dataset_len_cap: 30
+  val_len_cap: 500
+  test_len_cap: 500
+  shuffle_index: False
+  force_cache: False
+  classification_only: False
+  early_stopping_patience: 20
+  reset_after_layer: None
+  original_features: True
+  override_log: False
+  seed: 0
+  metric: Acc
+  learning_rate: 0.001
+  epochs: 1
+  print_epoch: 10
+  eval_epoch: 10
+  checkpoint_epoch: 10
+  print_step: 2000
+  eval_step: 30
+  checkpoint_step: 30
+  batch_size: 1
+  weight_decay: 0.001
+  dropout: 0
+  text_features_dropout: 0
+  rel_sample_random_seed: None
+  split_train_nodes: False
+  verbose: False
+  workers: 16
+  device: cuda:0
+  input_dim: 768
+  emb_dim: 256
+  gnn_type: sage
+  n_layer: 1
+  meta_n_layer: 1
+  second_gnn: Atten
+  attention_mask_scheme: causal
+  skip_path: False
+  has_final_back: False
+  layers: S,U,M
+  ignore_label_embeddings: True
+  zero_label_embeddings: False
+  not_freeze_learned_label_embedding: False
+  linear_probe: False
+  fix_datasets_first: False
+  no_bn_metagraph: False
+  no_bn_encoder: False
+  calc_ranks: False
+  save_roc_curve: False
+  eval_only: False
+  eval_test_before_train: False
+  eval_val_before_train: False
+  eval_after_train: False
+  meta_gnn_pos_only: False
+  task_name: nm_fp_cl
+  zero_shot: False
+  no_split_labels: True
+  all_test: False
+  train_cap: None
+  label_set: None
+  csr_split: False
+  n_way: 30
+  n_shots: 3
+  n_query: 4
+  neighbor_sampling_strategy: strict
+  neighbor_sampling_strata: 
+  neighbor_sampling_episode_source: 
+  neighbor_sampling_episode_source_weighting: proportional
+  n_way_upper: -1
+  n_shots_upper: -1
+  n_query_upper: -1
+  max_length: -1
+  augmentation: 
+  augment_test: False
+  ablate_features: none
+  ablate_edges: none
+  structural_features: none
+  attr_regression_weight: 0.0
+  fp_mask_ratio: 0.3
+  fp_mask_strategy: zero
+  mix_task_counts: 1,1,1
+  mix_cl_aug: NZ0.2
+  prefix: mtr_MIX_smoke
+  timestamp: 09_07_2026_15_00_03
+  tags: ['multitask_ssl_rotation', 'MIX', 'nm_fp_cl', 'rotation', 'multitask', 'merged3way', 'global_sampling', 'budget40k']
+  log_dir: log
+  state_dir: state
+  bert_emb_model: multi-qa-distilbert-cos-v1
+  bert_cache: multi-qa-distilbert-cos-v1
+  label_emb_model: 
+  label_emb_texts: 
+  label_emb_revision: 
+  label_emb_trust_remote_code: True
+  label_emb_normalize: True
+  kg_emb_model: 
+  pretrained_model_run: 
+  n_hop: 1
+  graph_filename: ukr_rus_covid_midterm_retweet_graph.pt
+  target_feature: 
+  target_feature_keep_in_x: False
+  target_transform: none
+  feature_subset: all
+  midterm_label_downsample: 
+  eval_random_query: False
+  edge_view: default
+  target_edge_view: future
+  edge_feature_subset: all
+  midterm_lp_neg_ratio: 1
+  hard_negatives: True
+  use_edge_features: False
+  midterm_debug_print_episodes: 0
+  debug_print_predictions: 0
+  small_dataset: False
+  experiment_type: metagraph
+  exp_name: mtr_MIX_smoke_09_07_2026_15_00_03
+--------------------------------
+SingleLayerGeneralGNN(
+  (layer_list): ModuleList(
+    (0): MultiLayerGNN(
+      (module_list): ModuleList(
+        (0): SAGEConvSelfLoops()
+      )
+      (act): ReLU()
+      (reset_mlp): Linear(in_features=512, out_features=256, bias=True)
+      (reset_mlp_c): Linear(in_features=256, out_features=256, bias=True)
+      (reset_mlp_m): Linear(in_features=256, out_features=256, bias=True)
+    )
+    (1): BgGraphToSupernodePropagator()
+    (2): MetaGNN(
+      (gnn_layers): ModuleList(
+        (0): MetaGNNLayer()
+      )
+      (gnn_non_linear): GELU(approximate='none')
+    )
+  )
+  (cos): CosineSimilarity()
+  (initial_label_mlp): Linear(in_features=768, out_features=256, bias=True)
+  (initial_input_mlp): Identity()
+  (final_label_mlp): Identity()
+  (final_input_mlp): Identity()
+  (learned_label_embedding): Embedding(1000, 256)
+  (txt_dropout): Dropout(p=0, inplace=False)
+)
+Number of trainable parameters of the model: 1640514
+nm_fp_cl rotation (per-episode): nm:cl:fp counts = 1:1:1, cl_aug=NZ0.2, fp_aug=NZ0.3
+[15:03:53] Trainer initialized. Starting train/eval...
+  0%|          | 0/30 [00:00<?, ?it/s]  0%|          | 0/30 [00:02<?, ?it/s, acc=0.0167, aux=0.0000, load=1.52s, loss=3.5216, step=0.59s]  3%|▎         | 1/30 [00:02<01:01,  2.11s/it, acc=0.0167, aux=0.0000, load=1.52s, loss=3.5216, step=0.59s]  3%|▎         | 1/30 [00:02<01:01,  2.11s/it, acc=-0.0114, aux=0.0000, load=0.00s, loss=0.0114, step=0.04s]  3%|▎         | 1/30 [00:02<01:01,  2.11s/it, acc=0.0000, aux=0.0000, load=0.00s, loss=3.5204, step=0.02s]   3%|▎         | 1/30 [00:02<01:01,  2.11s/it, acc=0.0167, aux=0.0000, load=0.00s, loss=3.4301, step=0.11s] 13%|█▎        | 4/30 [00:02<00:11,  2.24it/s, acc=0.0167, aux=0.0000, load=0.00s, loss=3.4301, step=0.11s] 13%|█▎        | 4/30 [00:02<00:11,  2.24it/s, acc=-0.0085, aux=0.0000, load=0.00s, loss=0.0085, step=0.03s] 13%|█▎        | 4/30 [00:02<00:11,  2.24it/s, acc=0.1000, aux=0.0000, load=0.00s, loss=3.4282, step=0.02s]  13%|█▎        | 4/30 [00:02<00:11,  2.24it/s, acc=0.0333, aux=0.0000, load=0.00s, loss=3.4957, step=0.09s] 23%|██▎       | 7/30 [00:02<00:05,  4.25it/s, acc=0.0333, aux=0.0000, load=0.00s, loss=3.4957, step=0.09s] 23%|██▎       | 7/30 [00:02<00:05,  4.25it/s, acc=-0.0052, aux=0.0000, load=0.00s, loss=0.0052, step=0.03s] 23%|██▎       | 7/30 [00:02<00:05,  4.25it/s, acc=0.0333, aux=0.0000, load=0.00s, loss=3.5159, step=0.03s]  23%|██▎       | 7/30 [00:02<00:05,  4.25it/s, acc=0.0667, aux=0.0000, load=0.01s, loss=3.4011, step=0.11s] 33%|███▎      | 10/30 [00:02<00:03,  6.29it/s, acc=0.0667, aux=0.0000, load=0.01s, loss=3.4011, step=0.11s] 33%|███▎      | 10/30 [00:02<00:03,  6.29it/s, acc=-0.0037, aux=0.0000, load=0.00s, loss=0.0037, step=0.03s] 33%|███▎      | 10/30 [00:02<00:03,  6.29it/s, acc=0.0917, aux=0.0000, load=0.00s, loss=3.3872, step=0.03s]  33%|███▎      | 10/30 [00:02<00:03,  6.29it/s, acc=0.0417, aux=0.0000, load=0.00s, loss=3.4317, step=0.09s] 43%|████▎     | 13/30 [00:02<00:02,  8.49it/s, acc=0.0417, aux=0.0000, load=0.00s, loss=3.4317, step=0.09s] 43%|████▎     | 13/30 [00:02<00:02,  8.49it/s, acc=-0.0048, aux=0.0000, load=0.00s, loss=0.0048, step=0.04s] 43%|████▎     | 13/30 [00:02<00:02,  8.49it/s, acc=0.0500, aux=0.0000, load=0.00s, loss=3.5565, step=0.02s]  43%|████▎     | 13/30 [00:02<00:02,  8.49it/s, acc=0.0833, aux=0.0000, load=0.00s, loss=3.3836, step=0.09s] 53%|█████▎    | 16/30 [00:02<00:01, 10.50it/s, acc=0.0833, aux=0.0000, load=0.00s, loss=3.3836, step=0.09s] 53%|█████▎    | 16/30 [00:02<00:01, 10.50it/s, acc=-0.0034, aux=0.0000, load=0.01s, loss=0.0034, step=0.03s] 53%|█████▎    | 16/30 [00:03<00:01, 10.50it/s, acc=0.0667, aux=0.0000, load=0.00s, loss=3.4682, step=0.03s]  53%|█████▎    | 16/30 [00:03<00:01, 10.50it/s, acc=0.0250, aux=0.0000, load=0.00s, loss=3.4501, step=0.09s] 63%|██████▎   | 19/30 [00:03<00:00, 12.35it/s, acc=0.0250, aux=0.0000, load=0.00s, loss=3.4501, step=0.09s] 63%|██████▎   | 19/30 [00:03<00:00, 12.35it/s, acc=-0.0033, aux=0.0000, load=0.00s, loss=0.0033, step=0.03s] 63%|██████▎   | 19/30 [00:03<00:00, 12.35it/s, acc=0.0000, aux=0.0000, load=0.00s, loss=3.4324, step=0.03s]  63%|██████▎   | 19/30 [00:03<00:00, 12.35it/s, acc=0.0667, aux=0.0000, load=0.00s, loss=3.4106, step=0.09s] 73%|███████▎  | 22/30 [00:03<00:00, 14.11it/s, acc=0.0667, aux=0.0000, load=0.00s, loss=3.4106, step=0.09s] 73%|███████▎  | 22/30 [00:03<00:00, 14.11it/s, acc=-0.0025, aux=0.0000, load=0.00s, loss=0.0025, step=0.03s] 73%|███████▎  | 22/30 [00:03<00:00, 14.11it/s, acc=0.0333, aux=0.0000, load=0.00s, loss=3.4303, step=0.03s]  73%|███████▎  | 22/30 [00:03<00:00, 14.11it/s, acc=0.0667, aux=0.0000, load=0.00s, loss=3.3889, step=0.10s] 83%|████████▎ | 25/30 [00:03<00:00, 15.22it/s, acc=0.0667, aux=0.0000, load=0.00s, loss=3.3889, step=0.10s] 83%|████████▎ | 25/30 [00:03<00:00, 15.22it/s, acc=-0.0020, aux=0.0000, load=0.00s, loss=0.0020, step=0.02s] 83%|████████▎ | 25/30 [00:03<00:00, 15.22it/s, acc=0.0333, aux=0.0000, load=0.00s, loss=3.4383, step=0.02s]  83%|████████▎ | 25/30 [00:03<00:00, 15.22it/s, acc=0.0417, aux=0.0000, load=0.00s, loss=3.4153, step=0.11s] 93%|█████████▎| 28/30 [00:03<00:00, 16.17it/s, acc=0.0417, aux=0.0000, load=0.00s, loss=3.4153, step=0.11s] 93%|█████████▎| 28/30 [00:03<00:00, 16.17it/s, acc=-0.0020, aux=0.0000, load=0.00s, loss=0.0020, step=0.03s] 93%|█████████▎| 28/30 [00:03<00:00, 16.17it/s, acc=0.0667, aux=0.0000, load=0.00s, loss=3.3564, step=0.03s] 100%|██████████| 30/30 [00:03<00:00,  8.25it/s, acc=0.0667, aux=0.0000, load=0.00s, loss=3.3564, step=0.03s]
+[15:04:18] Training finished
+  best step:             0
+  best val acc:          -inf
+  best test acc:         -inf
+  test acc @ best val:   0.0000
+wandb: updating run metadata
+wandb: uploading history steps 0-29, summary, console lines 170-177
+wandb: 
+wandb: Run history:
+wandb:        load_time █▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb:        step_time █▁▁▂▁▁▂▁▁▂▁▁▂▁▁▂▁▁▂▁▁▂▁▁▂▁▁▂▁▁
+wandb:        train_acc ▃▁▂▃▁█▄▁▄▆▁▇▄▁▅▇▁▆▃▂▂▆▂▄▆▂▄▄▂▆
+wandb:   train_aux_loss ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb:       train_loss █▁██▁██▁██▁██▁██▁██▁██▁██▁██▁█
+wandb: train_total_loss █▁██▁██▁██▁██▁██▁██▁██▁██▁██▁█
+wandb: 
+wandb: Run summary:
+wandb:             best_step 0
+wandb:         best_test_acc -inf
+wandb:               command /home/mhchu/minicond...
+wandb: effective_config_file effective_config.yam...
+wandb:  final_validation_acc -inf
+wandb:             load_time 8e-05
+wandb:            num_params 1640514
+wandb:    source_config_file /dataMeR1/phil/gfm/p...
+wandb:             step_time 0.0323
+wandb:  test_acc_on_best_val 0
+wandb:                    +5 ...
+wandb: 
+wandb: 🚀 View run mtr_MIX_smoke_09_07_2026_15_00_03 at: https://wandb.ai/eibl-usc/graph-clip/runs/xcfn1glo
+wandb: ⭐️ View project at: https://wandb.ai/eibl-usc/graph-clip
+wandb: Synced 5 W&B file(s), 0 media file(s), 0 artifact file(s) and 2 other file(s)
+wandb: Find logs at: ./wandb/run-20260709_150351-xcfn1glo/logs
+No such best checkpoint to copy: state/mtr_MIX_smoke_09_07_2026_15_00_03/checkpoint/state_dict_0.ckpt. Saving current model state instead.
+Saved best model to state/mtr_MIX_smoke_09_07_2026_15_00_03/state_dict
