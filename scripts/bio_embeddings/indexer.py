@@ -144,6 +144,8 @@ def _nonempty_varchar_predicate(columns: set[str], candidates: list[str]) -> str
 
 def _timestamp_expr(columns: set[str]) -> str:
     exprs: list[str] = []
+    if "metadata_observed_at" in columns:
+        exprs.append("try_cast(metadata_observed_at AS TIMESTAMP)")
     if "created_ts" in columns:
         exprs.append("try_cast(created_ts AS TIMESTAMP)")
     if "created_at" in columns:
@@ -161,11 +163,19 @@ def _timestamp_expr(columns: set[str]) -> str:
 def _create_source_scan(conn: Any, input_root: Path) -> None:
     parquet_glob = input_root.as_posix().rstrip("/") + "/**/*.parquet"
     columns = _source_columns(conn, input_root)
-    tweetid_expr = _coalesce_varchar(columns, ["tweetid", "id_str", "id", "tweet_id", "tweet_id_num"])
-    date_expr = _first_varchar(columns, ["created_at", "date", "created_ts"])
+    tweetid_expr = _coalesce_varchar(
+        columns, ["tweetid", "id_str", "id", "tweet_id", "tweet_id_num", "account_id"]
+    )
+    date_expr = _first_varchar(
+        columns, ["created_at", "date", "created_ts", "metadata_observed_at"]
+    )
     tweet_text_expr = _coalesce_varchar(columns, ["extended_tweet.full_text", "full_text", "text"])
-    userid_expr = _coalesce_varchar(columns, ["userid", "user.id_str", "user.id", "user_id"])
-    description_expr = _coalesce_varchar(columns, ["description", "user.description", "user_description"])
+    userid_expr = _coalesce_varchar(
+        columns, ["userid", "user.id_str", "user.id", "user_id", "account_id"]
+    )
+    description_expr = _coalesce_varchar(
+        columns, ["description", "user.description", "user_description", "page_description"]
+    )
     rt_userid_expr = _coalesce_varchar(
         columns,
         ["rt_userid", "retweeted_status.user.id_str", "retweeted_status.user.id", "retweeted_user_id"],

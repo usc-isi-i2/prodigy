@@ -31,6 +31,9 @@ def get_dataset_wrap(root, dataset, **kwargs):
     if dataset == "ukr_rus_twitter":
         from data.ukr_rus_twitter import get_ukr_rus_twitter_dataset
         return get_ukr_rus_twitter_dataset(root=root, **kwargs)
+    if dataset == "facebook_page_reference":
+        from data.facebook_page_reference import get_facebook_page_reference_dataset
+        return get_facebook_page_reference_dataset(root=root, **kwargs)
     if dataset in {"covid19_twitter", "merged_ukr_rus_covid", "merged_covid_midterm",
                    "merged_ukr_rus_covid_midterm"} or dataset.startswith("probe_"):
         # The merged_* graphs are covid19_twitter-style graph dicts (built by the

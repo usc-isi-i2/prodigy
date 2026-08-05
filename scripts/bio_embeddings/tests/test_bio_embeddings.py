@@ -347,6 +347,70 @@ def test_duckdb_bio_index_nested_fixture(tmp_path: Path) -> None:
     assert by_user_bio[("q2", nested_hash)]["source_roles"] == "retweeted_quoted_author"
 
 
+def test_duckdb_bio_index_facebook_page_profiles(tmp_path: Path) -> None:
+    pa, pq = _parquet_modules()
+    pytest.importorskip("duckdb")
+    from scripts.bio_embeddings.indexer import build_bio_index
+
+    input_root = tmp_path / "input"
+    input_root.mkdir(parents=True)
+    path = input_root / "page_profiles.parquet"
+    rows = [
+        {
+            "account_id": "page-a",
+            "page_description": "Ukraine news @desk https://example.com",
+            "metadata_observed_at": "2022-03-01T12:00:00Z",
+        },
+        {
+            "account_id": "page-b",
+            "page_description": "Independent analysis",
+            "metadata_observed_at": "2022-03-01T13:00:00Z",
+        },
+        {
+            "account_id": "page-c",
+            "page_description": "",
+            "metadata_observed_at": "2022-03-01T14:00:00Z",
+        },
+    ]
+    pq.write_table(pa.Table.from_pylist(rows), path, compression="zstd")
+    stat = path.stat()
+    source_rows = [{
+        "source_file_index": 0,
+        "relative_path": path.name,
+        "row_count": len(rows),
+        "first_global_row_id": 0,
+        "size_bytes": stat.st_size,
+        "mtime_ns": stat.st_mtime_ns,
+        "sha256": "",
+    }]
+    cfg = {
+        "duckdb_temp_dir": str(tmp_path / "duckdb_tmp"),
+        "duckdb_memory_limit": "",
+        "duckdb_threads": 1,
+        "normalization_batch_size": 2,
+        "index_parquet_row_group_size": 2,
+        "keep_work_dir": False,
+    }
+    logger = logging.getLogger("test-facebook-page-bio-index")
+    logger.handlers.clear()
+    logger.addHandler(logging.NullHandler())
+
+    output_root = tmp_path / "out"
+    summary = build_bio_index(input_root, output_root, source_rows, cfg, logger)
+    bio_texts = pq.read_table(output_root / "bio_texts.parquet").to_pylist()
+    user_bios = pq.read_table(output_root / "user_bio_observations.parquet").to_pylist()
+
+    assert summary["source_rows"] == 3
+    assert summary["bio_observations"] == 3
+    assert summary["distinct_bio_texts"] == 2
+    assert summary["user_bio_pairs"] == 2
+    assert {row["normalized_bio_text"] for row in bio_texts} == {
+        "Ukraine news <USER> <URL>", "Independent analysis"
+    }
+    assert {row["userid"] for row in user_bios} == {"page-a", "page-b"}
+    assert all(row["source_roles"] == "author" for row in user_bios)
+
+
 def test_validate_basic_shard(tmp_path: Path) -> None:
     _parquet_modules()
     from scripts.bio_embeddings.schemas import BIO_SHARD_META_SCHEMA

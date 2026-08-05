@@ -8,6 +8,7 @@ Supported source layouts today:
 
 - flat `ukr_rus_twitter` parquet with columns such as `description`, `rt_user_description`, and `qtd_user_description`
 - nested `covid19_twitter/parquet/raw_nested` parquet with Twitter JSON structs such as `user.description`, `retweeted_status.user.description`, and `quoted_status.user.description`
+- deduplicated Facebook page-profile parquet with `account_id`, `page_description`, and `metadata_observed_at`
 
 ## What It Produces
 
