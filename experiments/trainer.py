@@ -1480,12 +1480,189 @@ class TrainerFS():
         except Exception:
             pass
         try:
+            if hasattr(raw_graph, "global_node_ids") and raw_graph.global_node_ids is not None:
+                snap["global_node_ids"] = raw_graph.global_node_ids.detach().cpu().clone()
+        except Exception:
+            pass
+        try:
             feature_names = getattr(raw_graph, "feature_names", None)
             if feature_names is not None:
                 snap["feature_names"] = list(feature_names)
         except Exception:
             pass
         return snap
+
+    @staticmethod
+    def _sampled_context_nodes(raw_graph, sample_idx, center_node, limit):
+        if not isinstance(raw_graph, dict):
+            return []
+        ptr = raw_graph.get("ptr")
+        global_ids = raw_graph.get("global_node_ids")
+        if ptr is None or global_ids is None or sample_idx + 1 >= int(ptr.numel()):
+            return []
+        start = int(ptr[sample_idx].item())
+        end = int(ptr[sample_idx + 1].item())
+        return [
+            int(node)
+            for node in global_ids[start:end].reshape(-1).tolist()
+            if int(node) >= 0 and int(node) != int(center_node)
+        ][:max(0, int(limit))]
+
+    def _prediction_records_for_batch(
+        self, batch, yt, yp, split_name, batch_index, raw_graph
+    ):
+        """Decode one episodic batch into stable, JSON-serialisable query rows."""
+        if not self.parameter.get("export_predictions", False):
+            return []
+        graph = batch[0]
+        center_nodes_t = getattr(graph, "center_node_idx", None)
+        if center_nodes_t is None:
+            return []
+        center_nodes = center_nodes_t.detach().cpu().reshape(-1).long()
+        n_samples = int(center_nodes.numel())
+        if n_samples == 0:
+            return []
+
+        query_raw = batch[5].detach().cpu()
+        if int(query_raw.numel()) % n_samples != 0:
+            return []
+        query_mask = query_raw.reshape(n_samples, -1)[:, 0].bool()
+        query_indices = torch.where(query_mask)[0].tolist()
+        if len(query_indices) != int(yp.shape[0]):
+            return []
+
+        task_ids_t = getattr(graph, "task_id_per_sample", None)
+        task_ids = (
+            task_ids_t.detach().cpu().reshape(-1).long()
+            if task_ids_t is not None
+            else torch.zeros(n_samples, dtype=torch.long)
+        )
+        task_label_map_t = getattr(graph, "task_label_map", None)
+        task_label_map = (
+            task_label_map_t.detach().cpu().long()
+            if task_label_map_t is not None
+            else None
+        )
+
+        labels_all = batch[2].detach().cpu()
+        multiway = yp.ndim == 2 and int(yp.shape[1]) > 1
+        if multiway:
+            sample_labels = torch.argmax(labels_all.reshape(n_samples, -1), dim=1).long()
+            probs = torch.softmax(yp.detach().cpu(), dim=1)
+            pred_local = torch.argmax(probs, dim=1).long()
+            true_local = torch.argmax(yt.detach().cpu(), dim=1).long()
+        else:
+            sample_labels = labels_all.reshape(n_samples, -1)[:, 0]
+            raw_pred = yp.detach().cpu().reshape(-1)
+            raw_true = yt.detach().cpu().reshape(-1)
+
+        context_limit = int(self.parameter.get("prediction_context_neighbors", 3) or 0)
+        support_limit = int(self.parameter.get("prediction_support_per_label", 3) or 0)
+        task_name = str(self.parameter.get("task_name", ""))
+        records = []
+
+        def global_label(task_id, local_label):
+            if task_label_map is None or task_label_map.ndim != 2:
+                return int(local_label)
+            if task_id >= int(task_label_map.shape[0]) or local_label >= int(task_label_map.shape[1]):
+                return int(local_label)
+            return int(task_label_map[task_id, local_label].item())
+
+        for out_idx, sample_idx in enumerate(query_indices):
+            task_id = int(task_ids[sample_idx].item())
+            center = int(center_nodes[sample_idx].item())
+            base = {
+                "schema_version": 1,
+                "task": task_name,
+                "dataset": self.dataset_name,
+                "split": split_name,
+                "run": str(self.parameter.get("exp_name", "")),
+                "checkpoint": str(self.parameter.get("pretrained_model_run", "")),
+                "batch_index": int(batch_index),
+                "task_id": task_id,
+                "sample_index": int(sample_idx),
+                "query_node_id": center,
+                "context_node_ids": self._sampled_context_nodes(
+                    raw_graph, sample_idx, center, context_limit
+                ),
+            }
+
+            if multiway:
+                gt_local = int(true_local[out_idx].item())
+                pr_local = int(pred_local[out_idx].item())
+                p = [float(value) for value in probs[out_idx].tolist()]
+                base.update({
+                    "gt_local": gt_local,
+                    "pred_local": pr_local,
+                    "gt": global_label(task_id, gt_local),
+                    "prediction": global_label(task_id, pr_local),
+                    "correct": bool(gt_local == pr_local),
+                    "probabilities": p,
+                    "confidence": float(max(p)),
+                    "true_probability": float(p[gt_local]),
+                })
+                if task_label_map is not None and task_id < int(task_label_map.shape[0]):
+                    base["episode_label_map"] = [
+                        int(value) for value in task_label_map[task_id].tolist()
+                    ]
+
+                support_rows = []
+                wanted_labels = {gt_local, pr_local}
+                counts = {label: 0 for label in wanted_labels}
+                for support_idx in range(n_samples):
+                    if query_mask[support_idx] or int(task_ids[support_idx].item()) != task_id:
+                        continue
+                    support_label = int(sample_labels[support_idx].item())
+                    if support_label not in wanted_labels or counts[support_label] >= support_limit:
+                        continue
+                    support_center = int(center_nodes[support_idx].item())
+                    support_rows.append({
+                        "node_id": support_center,
+                        "local_label": support_label,
+                        "label": global_label(task_id, support_label),
+                        "context_node_ids": self._sampled_context_nodes(
+                            raw_graph, support_idx, support_center, context_limit
+                        ),
+                    })
+                    counts[support_label] += 1
+                base["supports"] = support_rows
+            else:
+                gt_value = float(raw_true[out_idx].item())
+                pred_value = float(raw_pred[out_idx].item())
+                if task_name == "regression":
+                    base.update({
+                        "gt": gt_value,
+                        "prediction": pred_value,
+                        "signed_error": pred_value - gt_value,
+                        "absolute_error": abs(pred_value - gt_value),
+                    })
+                else:
+                    probability = float(torch.sigmoid(raw_pred[out_idx]).item())
+                    gt_binary = int(round(gt_value))
+                    pred_binary = int(probability >= 0.5)
+                    base.update({
+                        "gt": gt_binary,
+                        "prediction": pred_binary,
+                        "correct": bool(gt_binary == pred_binary),
+                        "logit": pred_value,
+                        "probability": probability,
+                        "confidence": max(probability, 1.0 - probability),
+                    })
+            records.append(base)
+        return records
+
+    def _write_prediction_records(self, records, split_name, step):
+        if not records or not self.parameter.get("export_predictions", False):
+            return
+        suffix = split_name if step is None else f"{split_name}_step{step}"
+        out_path = os.path.join(self.logging_dir, f"predictions_{suffix}.jsonl")
+        try:
+            with open(out_path, "w", encoding="utf-8") as handle:
+                for record in records:
+                    handle.write(json.dumps(record, sort_keys=True) + "\n")
+            _log(f"Exported {len(records)} prediction records to {out_path}")
+        except Exception as ex:
+            _log(f"Failed to export prediction records to {out_path}: {ex}")
 
 
     def save_best_state_dict(self, best_step):
@@ -1821,13 +1998,19 @@ class TrainerFS():
             ranks = []
         ytrueall, ypredall = None, None
         global_eval_parts = []
+        prediction_records = []
         all_aux_loss = []
         acc_all = []
         printed_debug_this_eval = False
-        for batch in tqdm(dataloader, leave=False):
+        for batch_index, batch in enumerate(tqdm(dataloader, leave=False)):
             batch = [i.to(self.device) for i in batch]
             raw_debug_graph = self._snapshot_debug_graph(batch)
             yt, yp, graph = self.model(*batch)  # apply the model
+            prediction_records.extend(
+                self._prediction_records_for_batch(
+                    batch, yt, yp, split_name, batch_index, raw_debug_graph
+                )
+            )
             if not printed_debug_this_eval:
                 self._maybe_print_debug_example(
                     batch,
@@ -1903,6 +2086,7 @@ class TrainerFS():
             split_name=split_name,
             step=step,
         )
+        self._write_prediction_records(prediction_records, split_name, step)
         torch.set_grad_enabled(True)
         if ranks is not None:
             ranks = {key: np.average([r[0][key] for r in ranks], weights=[r[1] for r in ranks]) for key in ranks[0][0]}

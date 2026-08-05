@@ -439,6 +439,57 @@ def split_val_mask(pairs: PairSet, rng: np.random.Generator, val_frac: float = 0
     return mask
 
 
+def balanced_accuracy(labels: np.ndarray, predictions: np.ndarray) -> float:
+    """Balanced accuracy for binary arrays, without an sklearn dependency."""
+    labels = np.asarray(labels, dtype=np.int8)
+    predictions = np.asarray(predictions, dtype=np.int8)
+    recalls = []
+    for label in (0, 1):
+        mask = labels == label
+        if mask.any():
+            recalls.append(float(np.mean(predictions[mask] == label)))
+    return float(np.mean(recalls)) if recalls else float("nan")
+
+
+def lock_decision_threshold(
+    labels: np.ndarray,
+    scores: np.ndarray,
+    val_mask: np.ndarray,
+    orientation: int,
+) -> tuple[float, float]:
+    """Choose a binary decision threshold on validation only.
+
+    Pair-LP's cosine score has no intrinsic probability threshold.  For a
+    correct/incorrect audit we orient it using validation AUC, then select the
+    threshold that maximises validation balanced accuracy.  The locked threshold
+    is applied unchanged to test pairs.  Returning the middle tied optimum keeps
+    the choice deterministic without favouring systematically high or low recall.
+    """
+    labels = np.asarray(labels, dtype=np.int8)
+    oriented = np.asarray(scores, dtype=np.float64) * int(orientation)
+    mask = np.asarray(val_mask, dtype=bool)
+    y = labels[mask]
+    s = oriented[mask]
+    if y.size == 0 or np.unique(y).size < 2:
+        raise ValueError("threshold locking requires validation examples from both classes")
+
+    unique = np.unique(s)
+    if unique.size == 1:
+        candidates = unique
+    else:
+        mids = (unique[:-1] + unique[1:]) / 2.0
+        eps = max(1.0, abs(float(unique[0])), abs(float(unique[-1]))) * 1e-12
+        candidates = np.concatenate(([unique[0] - eps], mids, [unique[-1] + eps]))
+
+    values = np.asarray([
+        balanced_accuracy(y, (s >= threshold).astype(np.int8))
+        for threshold in candidates
+    ])
+    best = float(np.nanmax(values))
+    tied = candidates[np.isclose(values, best, rtol=0.0, atol=1e-12)]
+    return float(np.median(tied)), best
+
+
 # --------------------------------------------------------------------------- #
 # Pair scoring from endpoint embeddings
 # --------------------------------------------------------------------------- #
@@ -530,7 +581,9 @@ def embed_nodes(
     node_ids: Sequence[int],
     device: str = "cuda",
     batch_size: int = 256,
-) -> np.ndarray:
+    return_context: bool = False,
+    context_size: int = 3,
+):
     """Pooled subgraph embedding per node, using the model's own encoder stack.
 
     Mirrors ``SingleLayerGeneralGNN.forward`` up to ``final_input_mlp`` but skips
@@ -538,7 +591,9 @@ def embed_nodes(
     with ``zero_shot=True``, under which ``forward_metagraph`` already bypasses
     message passing and returns its inputs unchanged.
 
-    Returns an array indexed by position in ``node_ids``.
+    Returns an array indexed by position in ``node_ids``.  With
+    ``return_context=True``, also returns ``{center: [sampled neighbour ids]}``
+    captured from the exact subgraph instance used for that embedding.
     """
     import torch
     from torch_geometric.data import Batch
@@ -553,11 +608,23 @@ def embed_nodes(
     model.to(device)
     skip_path = bool(model.params.get("skip_path", False))
     out: List[np.ndarray] = []
+    contexts: Dict[int, List[int]] = {}
 
     with torch.no_grad():
         for start in range(0, len(node_ids), batch_size):
             chunk = [int(n) for n in node_ids[start:start + batch_size]]
             graphs = [subgraph_dataset[n] for n in chunk]
+            if return_context:
+                for center, sampled in zip(chunk, graphs):
+                    global_ids = getattr(sampled, "global_node_ids", None)
+                    if global_ids is None:
+                        contexts[center] = []
+                        continue
+                    contexts[center] = [
+                        int(node)
+                        for node in global_ids.detach().cpu().reshape(-1).tolist()
+                        if int(node) >= 0 and int(node) != center
+                    ][:max(0, int(context_size))]
             graph = Batch.from_data_list(graphs).to(device)
 
             supernode_idx = graph.supernode + graph.ptr[:-1]
@@ -600,7 +667,8 @@ def embed_nodes(
                     "contain a supernode aggregation layer (e.g. 'S,U,M')")
             out.append(model.final_input_mlp(x_input).float().cpu().numpy())
 
-    return np.concatenate(out, axis=0)
+    packed = np.concatenate(out, axis=0)
+    return (packed, contexts) if return_context else packed
 
 
 class NodeEmbeddings:
@@ -634,9 +702,12 @@ class NodeEmbeddings:
 
 def embeddings_by_node(
     model, subgraph_dataset, nodes: np.ndarray, num_nodes: int, **kwargs
-) -> "NodeEmbeddings":
+):
     """Embed ``nodes`` and wrap them in a node-indexed sparse map."""
     packed = embed_nodes(model, subgraph_dataset, nodes.tolist(), **kwargs)
+    if isinstance(packed, tuple):
+        table, contexts = packed
+        return NodeEmbeddings(table, np.asarray(nodes), num_nodes), contexts
     return NodeEmbeddings(packed, np.asarray(nodes), num_nodes)
 
 

@@ -143,6 +143,70 @@ def probe_spearman(features: np.ndarray, episodes: EpisodeSet, alpha: float = 1.
     }
 
 
+def probe_prediction_records(
+    features: np.ndarray,
+    episodes: EpisodeSet,
+    alpha: float = 1.0,
+    standardize: bool = True,
+) -> list[dict]:
+    """Return every Ridge query prediction under the benchmark protocol.
+
+    This deliberately fits the same per-episode scaler and Ridge model as
+    :func:`probe_spearman`; it only retains query-level provenance for qualitative
+    error analysis.  Regression has no literal correct class, so callers should
+    compare low- and high-absolute-error quantiles rather than inventing equality.
+    """
+    from sklearn.linear_model import Ridge
+    from sklearn.preprocessing import StandardScaler
+
+    y = episodes.target
+    records: list[dict] = []
+    for episode_index, (sup, qry) in enumerate(zip(episodes.support, episodes.query)):
+        xs, ys = features[sup], y[sup]
+        if standardize:
+            scaler = StandardScaler().fit(xs)
+            xs_t, xq_t = scaler.transform(xs), scaler.transform(features[qry])
+        else:
+            xs_t, xq_t = xs, features[qry]
+        predictions = Ridge(alpha=alpha).fit(xs_t, ys).predict(xq_t)
+        support_nodes = [int(node) for node in episodes.nodes[sup].tolist()]
+        support_targets = [float(value) for value in y[sup].tolist()]
+        for query_slot, (query_row, prediction) in enumerate(zip(qry, predictions)):
+            target = float(y[query_row])
+            pred = float(prediction)
+            records.append({
+                "episode_index": int(episode_index),
+                "query_slot": int(query_slot),
+                "query_node_id": int(episodes.nodes[query_row]),
+                "gt": target,
+                "prediction": pred,
+                "signed_error": pred - target,
+                "absolute_error": abs(pred - target),
+                "support_node_ids": support_nodes,
+                "support_targets": support_targets,
+                "alpha": float(alpha),
+            })
+    return records
+
+
+def score_prediction_records(records: list[dict], alpha: float) -> dict:
+    """Compute the benchmark metrics from exported query rows."""
+    from scipy.stats import spearmanr
+
+    preds = np.asarray([row["prediction"] for row in records], dtype=np.float64)
+    trues = np.asarray([row["gt"] for row in records], dtype=np.float64)
+    rho = spearmanr(preds, trues).statistic
+    ss_res = float(np.sum((trues - preds) ** 2))
+    ss_tot = float(np.sum((trues - trues.mean()) ** 2))
+    return {
+        "spearman": float(rho) if np.isfinite(rho) else float("nan"),
+        "rmse": float(np.sqrt(ss_res / len(trues))),
+        "r2": float(1.0 - ss_res / ss_tot) if ss_tot > 0 else float("nan"),
+        "n_pred": int(len(trues)),
+        "alpha": float(alpha),
+    }
+
+
 # --------------------------------------------------------------------------- #
 # Self-test
 # --------------------------------------------------------------------------- #

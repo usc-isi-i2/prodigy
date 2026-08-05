@@ -37,7 +37,8 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.eval.regression_probe import (  # noqa: E402
-    apply_transform, build_episodes, probe_spearman,
+    apply_transform, build_episodes, probe_prediction_records, probe_spearman,
+    score_prediction_records,
 )
 from scripts.eval.pair_link_ckpt import (  # noqa: E402
     ENCODER_DEFAULTS, _get_field, build_subgraph_dataset, load_frozen_encoder,
@@ -110,6 +111,12 @@ def main() -> int:
     ap.add_argument("--batch-size", type=int, default=256)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--device", default="cuda")
+    ap.add_argument(
+        "--export-examples",
+        action="store_true",
+        help="Write every query prediction to <dataset>__reg_probe_examples.jsonl.",
+    )
+    ap.add_argument("--context-neighbors", type=int, default=3)
     args = ap.parse_args()
     from experiments.sampler import parse_hop_sizes
     hop_sizes = parse_hop_sizes(args.hop_sizes, args.n_hop)
@@ -119,6 +126,30 @@ def main() -> int:
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     csv_path = out_dir / f"{args.dataset}__reg_probe.csv"
+    examples_path = out_dir / f"{args.dataset}__reg_probe_examples.jsonl"
+    if args.export_examples and examples_path.exists():
+        examples_path.unlink()
+
+    def emit_examples(records, *, model_name, target_name, feature_kind, contexts=None):
+        if not args.export_examples:
+            return
+        contexts = contexts or {}
+        with examples_path.open("a", encoding="utf-8") as handle:
+            for record in records:
+                node_id = int(record["query_node_id"])
+                payload = {
+                    "schema_version": 1,
+                    "task": "regression",
+                    "dataset": args.dataset,
+                    "split": "test",
+                    "model": model_name,
+                    "target": target_name,
+                    "transform": args.transform,
+                    "features": feature_kind,
+                    "context_node_ids": contexts.get(node_id, []),
+                    **record,
+                }
+                handle.write(json.dumps(payload, sort_keys=True) + "\n")
 
     models = parse_model_list(args.model_list) if args.model_list and not args.no_encoder else []
     alphas = [float(a) for a in args.alpha.split(",") if a.strip()]
@@ -151,13 +182,26 @@ def main() -> int:
         # ---- raw-feature floor, on the SAME episodes ------------------------
         feats_raw = np.asarray(raw_x[ep.nodes], dtype=np.float64)
         for alpha in alphas:
-            res = probe_spearman(feats_raw, ep, alpha=alpha)
+            examples = (
+                probe_prediction_records(feats_raw, ep, alpha=alpha)
+                if args.export_examples else None
+            )
+            res = (
+                score_prediction_records(examples, alpha)
+                if examples is not None else probe_spearman(feats_raw, ep, alpha=alpha)
+            )
             rows.append(dict(dataset=args.dataset, model="__features_only__",
                              target=target, transform=args.transform,
                              shots=args.shots, n_query=args.n_query,
                              episodes=args.episodes, features="raw_x",
                              n_labeled=int(len(node_ids)), **provenance, **res))
             print(f"  [floor] raw_x alpha={alpha}: rho={res['spearman']:+.4f}", flush=True)
+            emit_examples(
+                examples or [],
+                model_name="__features_only__",
+                target_name=target,
+                feature_kind="raw_x",
+            )
 
         # ---- frozen encoders ------------------------------------------------
         if models and subgraph_ds is None:
@@ -171,12 +215,26 @@ def main() -> int:
                           gnn_type=args.gnn_type, n_layer=args.n_layer,
                           layers=args.layers)
             model = load_frozen_encoder(ckpt, params, device=args.device)
-            emb = embeddings_by_node(model, subgraph_ds, np.asarray(ep.nodes),
-                                     n_nodes, batch_size=args.batch_size,
-                                     device=args.device)
+            embedded = embeddings_by_node(
+                model, subgraph_ds, np.asarray(ep.nodes), n_nodes,
+                batch_size=args.batch_size, device=args.device,
+                return_context=args.export_examples,
+                context_size=args.context_neighbors,
+            )
+            if args.export_examples:
+                emb, contexts = embedded
+            else:
+                emb, contexts = embedded, {}
             feats = np.asarray(emb[np.asarray(ep.nodes)], dtype=np.float64)
             for alpha in alphas:
-                res = probe_spearman(feats, ep, alpha=alpha)
+                examples = (
+                    probe_prediction_records(feats, ep, alpha=alpha)
+                    if args.export_examples else None
+                )
+                res = (
+                    score_prediction_records(examples, alpha)
+                    if examples is not None else probe_spearman(feats, ep, alpha=alpha)
+                )
                 rows.append(dict(dataset=args.dataset, model=name, target=target,
                                  transform=args.transform, shots=args.shots,
                                  n_query=args.n_query, episodes=args.episodes,
@@ -184,6 +242,13 @@ def main() -> int:
                                  n_labeled=int(len(node_ids)), **provenance, **res))
                 print(f"  {name} alpha={alpha}: rho={res['spearman']:+.4f} "
                       f"({time.time()-t0:.0f}s)", flush=True)
+                emit_examples(
+                    examples or [],
+                    model_name=name,
+                    target_name=target,
+                    feature_kind="frozen_emb",
+                    contexts=contexts,
+                )
 
         # stream after each target so a long sweep is never lost
         with csv_path.open("w", newline="", encoding="utf-8") as fh:

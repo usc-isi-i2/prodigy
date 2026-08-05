@@ -36,7 +36,8 @@ if str(REPO_ROOT) not in sys.path:
 from scripts.eval.pair_link_eval import (  # noqa: E402
     Adjacency, HEURISTICS, NodeEmbeddings, PairSet, build_pair_set,
     embeddings_by_node, endpoint_permutation_auc, endpoint_sensitivity,
-    evaluate_scores, heuristic_scores, leakage_check, pair_scores, split_val_mask,
+    evaluate_scores, heuristic_scores, leakage_check, lock_decision_threshold,
+    pair_scores, split_val_mask,
 )
 from scripts.eval.pair_link_ckpt import (  # noqa: E402
     ENCODER_DEFAULTS, _get_field, _view_edge_index, build_subgraph_dataset,
@@ -80,6 +81,12 @@ def main() -> int:
     ap.add_argument("--batch-size", type=int, default=256)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--device", default="cuda")
+    ap.add_argument(
+        "--export-examples",
+        action="store_true",
+        help="Write validation-locked test-pair predictions to <dataset>__pair_lp_examples.jsonl.",
+    )
+    ap.add_argument("--context-neighbors", type=int, default=3)
     args = ap.parse_args()
 
     import torch
@@ -88,6 +95,9 @@ def main() -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     csv_path = out_dir / f"{args.dataset}__pair_lp.csv"
     json_path = out_dir / f"{args.dataset}__pair_lp.json"
+    examples_path = out_dir / f"{args.dataset}__pair_lp_examples.jsonl"
+    if args.export_examples and examples_path.exists():
+        examples_path.unlink()
 
     models = parse_model_list(args.model_list)
     kinds = [k.strip() for k in args.negative_kinds.split(",")]
@@ -175,8 +185,16 @@ def main() -> int:
         try:
             model = load_frozen_encoder(ckpt, params, device=args.device,
                                         strict_report=False)
-            emb = embeddings_by_node(model, dataset_obj, all_nodes, n,
-                                     device=args.device, batch_size=args.batch_size)
+            embedded = embeddings_by_node(
+                model, dataset_obj, all_nodes, n,
+                device=args.device, batch_size=args.batch_size,
+                return_context=args.export_examples,
+                context_size=args.context_neighbors,
+            )
+            if args.export_examples:
+                emb, contexts = embedded
+            else:
+                emb, contexts = embedded, {}
         except Exception as exc:  # keep the sweep alive; a failed arm is reported
             print(f"[{args.dataset}] {name}: FAILED -- {type(exc).__name__}: {exc}",
                   flush=True)
@@ -184,8 +202,8 @@ def main() -> int:
 
         for kind in kinds:
             ps, vm = pair_sets[kind], val_masks[kind]
-            r = evaluate_scores("encoder_cosine", ps.label,
-                                pair_scores(emb, ps, "cosine"), vm)
+            scores = pair_scores(emb, ps, "cosine")
+            r = evaluate_scores("encoder_cosine", ps.label, scores, vm)
             emit({
                 "dataset": args.dataset, "model": name, "negative_kind": kind,
                 "scorer": "encoder_cosine", "auc": r.auc,
@@ -197,6 +215,51 @@ def main() -> int:
                 "endpoint_sensitivity": endpoint_sensitivity(emb, ps),
                 "leakage_edges": float(leakage_check(background, ps)),
             })
+            if args.export_examples:
+                threshold, val_balanced_accuracy = lock_decision_threshold(
+                    ps.label, scores, vm, r.orientation
+                )
+                oriented = scores * int(r.orientation)
+                predictions = (oriented >= threshold).astype(np.int8)
+                test_indices = np.flatnonzero(~vm)
+                with examples_path.open("a", encoding="utf-8") as handle:
+                    for pair_index in test_indices.tolist():
+                        u = int(ps.u[pair_index])
+                        v = int(ps.v[pair_index])
+                        gt = int(ps.label[pair_index])
+                        pred = int(predictions[pair_index])
+                        common = int(np.intersect1d(
+                            background.neighbors(u), background.neighbors(v),
+                            assume_unique=True,
+                        ).size)
+                        payload = {
+                            "schema_version": 1,
+                            "task": "static_link_prediction",
+                            "dataset": args.dataset,
+                            "split": "test",
+                            "model": name,
+                            "negative_kind": kind,
+                            "pair_index": int(pair_index),
+                            "u": u,
+                            "v": v,
+                            "u_context_node_ids": contexts.get(u, []),
+                            "v_context_node_ids": contexts.get(v, []),
+                            "gt": gt,
+                            "prediction": pred,
+                            "correct": bool(gt == pred),
+                            "error_type": ("tp" if gt and pred else
+                                           "fn" if gt and not pred else
+                                           "fp" if not gt and pred else "tn"),
+                            "raw_score": float(scores[pair_index]),
+                            "oriented_score": float(oriented[pair_index]),
+                            "orientation": int(r.orientation),
+                            "decision_threshold": float(threshold),
+                            "validation_balanced_accuracy": float(val_balanced_accuracy),
+                            "u_degree": int(background.degree[u]),
+                            "v_degree": int(background.degree[v]),
+                            "common_neighbors": common,
+                        }
+                        handle.write(json.dumps(payload, sort_keys=True) + "\n")
         best = [r for r in rows if r["model"] == name and r["negative_kind"] == kinds[0]]
         auc = best[0]["auc"] if best else float("nan")
         print(f"[{args.dataset}] ({mi}/{len(models)}) {name}: "

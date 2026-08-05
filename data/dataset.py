@@ -24,6 +24,13 @@ class SubgraphDataset(Dataset):
         node_list, edge_index, edge_id = self.neighbor_sampler.sample_node(node_idx)
         data = {}
         data['center_node_idx'] = node_idx
+        # Preserve the full-graph ids of the nodes the sampler actually returned.
+        # Qualitative prediction audits need these ids to recover the exact profile
+        # context seen by the encoder.  Re-sampling after inference is not equivalent:
+        # SparseTensor.sample_adj is stochastic and may return different neighbours.
+        # Avoid "index" in the attribute name: PyG treats such fields as local
+        # indices and offsets them while batching.
+        data['global_node_ids'] = node_list.clone().long()
         data['edge_index'] = edge_index
         data['num_nodes'] = len(node_list)
         for key in self.node_attrs:
@@ -47,6 +54,11 @@ class SubgraphDataset(Dataset):
             data[key] = torch.cat((value, torch.zeros(1, *value.shape[1:], dtype=value.dtype, layout=value.layout, device=value.device)))
 
         supernode_idx = data.num_nodes
+        # The pooling node is synthetic and therefore has no full-graph id.
+        if hasattr(data, 'global_node_ids'):
+            data.global_node_ids = torch.cat(
+                (data.global_node_ids, torch.tensor([-1], dtype=torch.long))
+            )
         data.supernode = torch.tensor([supernode_idx])
         data.edge_index_supernode = torch.tensor([[0], [supernode_idx]], dtype=int)
         data.edge_index_from_supernode = torch.tensor([[supernode_idx], [0]], dtype=int)

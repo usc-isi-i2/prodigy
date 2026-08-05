@@ -660,6 +660,27 @@ def get_params():
             "For regression, prints input features, prediction, target, and error."
         ),
     )
+    args.add_argument(
+        "--export_predictions",
+        default=False,
+        type=str2bool,
+        help=(
+            "Write one JSONL record per eval query (including correct and incorrect "
+            "predictions) into the run log directory. Intended for qualitative audits."
+        ),
+    )
+    args.add_argument(
+        "--prediction_context_neighbors",
+        default=3,
+        type=int,
+        help="Number of exact sampled subgraph neighbours retained per exported query/support.",
+    )
+    args.add_argument(
+        "--prediction_support_per_label",
+        default=3,
+        type=int,
+        help="Maximum support examples retained for each GT/predicted episode label.",
+    )
 
     args.add_argument("-smalldataset", "--small_dataset", default=False,
                       type=str2bool)  # use for debugging  - very small dataset
