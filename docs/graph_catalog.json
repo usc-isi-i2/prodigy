@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "data_root": "/dataMeR1/phil/data",
-  "last_verified": "2026-08-04",
+  "last_verified": "2026-08-05",
   "verified_on": "tucker",
   "notes": "Canonical inventory of graph artifacts. Use canonical_name in prose and dataset_key for compatibility with existing code, configs, and logs. Sizes and graph statistics describe the current graph object on Tucker, not the total size of its source corpus.",
   "field_notes": {
@@ -393,13 +393,13 @@
       "kind": "merged",
       "relative_path": "merged/graphs/ukr_rus_covid_midterm_all9_facebook_graph.pt",
       "metadata_path": "merged/graphs/ukr_rus_covid_midterm_all9_facebook_graph.meta.json",
-      "artifact_size_bytes": null,
-      "artifact_size_gb": null,
+      "artifact_size_bytes": 111766997176,
+      "artifact_size_gb": 111.767,
       "statistics": {"nodes": 34601450, "edges": 191690740},
       "features": {"node_feature_dim": 768, "edge_features": []},
       "tasks": {"supported": ["neighbor_matching"]},
       "sources": ["ukraine", "covid", "midterm", "covid-political", "election2020-political", "ukraine-suspended", "twibot20", "hongkong", "facebook-page-reference"],
-      "construction": {"policy": "disjoint_block_concat", "config": "scripts/graph_construction/merge_ukr_rus_covid_midterm_all9_facebook.yaml", "status": "planned; build on Tucker"}
+      "construction": {"policy": "disjoint_block_concat", "config": "scripts/graph_construction/merge_ukr_rus_covid_midterm_all9_facebook.yaml", "status": "built and read-only verified on Tucker 2026-08-05"}
     },
     {
       "canonical_name": "merged-all8-static-split",
