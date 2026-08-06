@@ -12,7 +12,7 @@ over the profile targets actually stored in the graph (``node_target_names``).
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import json
 import os
 from pathlib import Path
@@ -134,6 +134,27 @@ def load_torch() -> Any:
 
 def parse_csv(value: str) -> list[str]:
     return [part.strip() for part in value.split(",") if part.strip()]
+
+
+def parse_graph_filenames(value: str) -> dict[str, str]:
+    """Parse ``dataset=filename`` graph overrides from a comma-separated CLI value."""
+    overrides: dict[str, str] = {}
+    for part in parse_csv(value):
+        dataset, separator, filename = part.partition("=")
+        dataset = dataset.strip()
+        filename = filename.strip()
+        if not separator or not dataset or not filename:
+            raise ValueError(
+                "Graph filename overrides must use dataset=filename, got "
+                f"{part!r}"
+            )
+        if Path(filename).name != filename:
+            raise ValueError(
+                "Graph filename overrides must be basenames within the dataset's "
+                f"graphs directory, got {filename!r}"
+            )
+        overrides[dataset] = filename
+    return overrides
 
 
 # Sentinel ckpt values that mean "evaluate an untrained encoder" (the random_init
@@ -645,6 +666,14 @@ def main() -> int:
     )
     parser.add_argument("--data-root", default=DEFAULT_DATA_ROOT)
     parser.add_argument("--datasets", default=",".join(DEFAULT_DATASETS))
+    parser.add_argument(
+        "--graph-filenames",
+        default="",
+        help=(
+            "Optional comma-separated dataset=filename overrides for graph artifacts "
+            "within each dataset's graphs directory."
+        ),
+    )
     parser.add_argument("--tasks", default="neighbor_matching,temporal_link_prediction,classification")
     parser.add_argument("--shots", default="0,3,10")
     parser.add_argument("--python", default="python3")
@@ -737,6 +766,13 @@ def main() -> int:
         args.extra_args = args.extra_args[1:]
 
     selected_datasets = parse_csv(args.datasets)
+    graph_filenames = parse_graph_filenames(args.graph_filenames)
+    unknown_graph_overrides = sorted(set(graph_filenames) - set(selected_datasets))
+    if unknown_graph_overrides:
+        raise ValueError(
+            "Graph filename overrides were provided for unselected datasets: "
+            f"{unknown_graph_overrides}"
+        )
     selected_tasks = [TASK_ALIASES[task] for task in parse_csv(args.tasks)]
     shots = parse_csv(args.shots)
     if args.checkpoint_run_dir:
@@ -759,6 +795,8 @@ def main() -> int:
         if dataset_name not in DATASETS:
             raise ValueError(f"Unknown dataset {dataset_name!r}. Known: {sorted(DATASETS)}")
         dataset = DATASETS[dataset_name]
+        if dataset_name in graph_filenames:
+            dataset = replace(dataset, graph_filename=graph_filenames[dataset_name])
         graph_path = Path(args.data_root) / dataset.root_name / "graphs" / dataset.graph_filename
         if not graph_path.exists():
             print(f"[skip] {dataset.name}: missing graph {graph_path}", flush=True)
