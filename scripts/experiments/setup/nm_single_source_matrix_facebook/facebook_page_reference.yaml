@@ -1,0 +1,33 @@
+# Ninth row of the historical one-hop NM single-source transfer matrix.
+# This deliberately matches setup/nm_single_source_matrix: plain GraphSAGE,
+# 30-way/3-shot NM, seed 0, and evaluation at state_dict_40000.ckpt.
+dataset: facebook_page_reference
+root: /dataMeR1/phil/data/facebook_page_reference/graphs
+graph_filename: page_reference_structural.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+n_hop: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+
+# Five epochs retain the historical matrix's explicit matched-40k checkpoint.
+epochs: 5
+eval_step: 100000
+checkpoint_step: 10000
+workers: 16
+device: 0
+seed: 0
+tags:
+  - nm_single_source_matrix
+  - facebook_page_reference
+  - plain
+prefix: nm_ss_facebook_page_reference
