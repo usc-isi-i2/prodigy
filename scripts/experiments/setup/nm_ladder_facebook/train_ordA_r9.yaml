@@ -1,0 +1,38 @@
+# Order A rung 9: published all-eight ladder + Facebook page-reference.
+# Train from random initialization and compare at the historical matched-40k checkpoint.
+dataset: covid19_twitter
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_all9_facebook_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+n_hop: 1
+dataset_len_cap: 10000
+val_len_cap: 500
+test_len_cap: 500
+
+# Keep every episode within one source and sample the nine sources uniformly.
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+
+# Five epochs guarantee that the matched 40k checkpoint is written. The post-fix
+# trainer also writes a terminal 50k checkpoint; analyses must continue to pin 40k.
+epochs: 5
+eval_step: 100000
+checkpoint_step: 10000
+workers: 16
+device: 0
+seed: 0
+tags:
+  - nm_ladder
+  - order_A
+  - rung_9
+  - facebook_page_reference
+prefix: nm_ladder_ordA_r9_facebook
