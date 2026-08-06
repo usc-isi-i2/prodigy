@@ -29,3 +29,23 @@ eight historical checkpoints, and the planned GPU split without launching jobs.
 Runtime model lists, logs, and status are written beneath the gitignored `run_logs/`
 directory. Although current trainers also emit a terminal 50k checkpoint, all ladder
 comparisons explicitly use `state_dict_40000.ckpt`.
+
+## Order D: insert Facebook at rung 6
+
+Order D reuses published Order A rungs 1–5, inserts Facebook at rung 6, then adds
+`ukr_rus_suspended` and `twibot20` at rungs 7 and 8. Rung 9 reuses the existing
+all-nine Order A rung-9 model because source-set identity, not the path through the
+ladder, determines a from-scratch within-source-balanced training run.
+
+Only rungs 6–8 are new. Train those three concurrently and then evaluate the resulting
+matched-40k checkpoints on all nine graphs with:
+
+```bash
+tmux new-session -d -s nm-ladder-facebook-orderD \
+  'export PATH="/home/mhchu/miniconda3/bin:$PATH"; \
+   bash scripts/experiments/setup/nm_ladder_facebook/run_orderD_tucker.sh'
+```
+
+The default GPU assignment is `0 2 3`, leaving GPU 1 untouched. Override with
+`TRAIN_GPUS="0 1 2"` and matching comma-separated `EVAL_GPUS` if availability changes.
+Use `DRY_RUN=1` to validate the graph, configs, and GPU assignment without launching.

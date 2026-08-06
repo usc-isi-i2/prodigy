@@ -29,3 +29,26 @@ def test_runner_pins_parallel_17_cell_plan():
     assert "--nm-n-way 30" in text
     assert text.count('"nm_ladder_ordA_r') >= 8
     assert "nm_ladder_ordA_r9_facebook" in text
+
+
+def test_order_d_inserts_facebook_at_rung_6_and_reuses_rung_9():
+    expected_subsets = {
+        6: "ukr_rus,covid,midterm,covid_political,election2020,facebook_page_reference",
+        7: "ukr_rus,covid,midterm,covid_political,election2020,facebook_page_reference,ukr_rus_suspended",
+        8: "ukr_rus,covid,midterm,covid_political,election2020,facebook_page_reference,ukr_rus_suspended,twibot20",
+    }
+    for rung, subset in expected_subsets.items():
+        text = (HERE / f"train_ordD_r{rung}.yaml").read_text()
+        assert "graph_filename: ukr_rus_covid_midterm_all9_facebook_graph.pt\n" in text
+        assert f"neighbor_sampling_source_subset: {subset}\n" in text
+        assert "n_hop: 1\n" in text
+        assert "epochs: 5\n" in text
+        assert "checkpoint_step: 10000\n" in text
+        assert "seed: 0\n" in text
+
+    runner = (HERE / "run_orderD_tucker.sh").read_text()
+    assert 'TRAIN_GPUS="${TRAIN_GPUS:-0 2 3}"' in runner
+    assert 'EVAL_GPUS="${EVAL_GPUS:-0,2,3}"' in runner
+    assert "CONFIGS=(train_ordD_r6.yaml train_ordD_r7.yaml train_ordD_r8.yaml)" in runner
+    assert "3 models x 9 graphs" in runner
+    assert "train_ordD_r9.yaml" not in runner
