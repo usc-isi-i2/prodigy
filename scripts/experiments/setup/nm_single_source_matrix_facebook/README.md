@@ -33,3 +33,9 @@ starting training or evaluation.
 Phase 1 trains Facebook on GPU 0 while GPUs 1-3 evaluate the old specialists on
 Facebook. Phase 2 evaluates the new Facebook specialist on all nine targets using
 GPUs 0-3.
+
+## Completed run
+
+The full pipeline completed on 2026-08-06 with all 17 new cells present and no eval
+failures. The committed matrix, exact metrics, provenance, and interpretation live
+in `scripts/experiments/analysis/nm_single_source_matrix_facebook/`.
