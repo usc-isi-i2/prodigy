@@ -1,0 +1,109 @@
+{
+  "best_foreign_by_twitter_target": {
+    "covid19_twitter": {
+      "roc_auc": 0.973043,
+      "source": "ukr_rus_twitter"
+    },
+    "covid_political": {
+      "roc_auc": 0.849781,
+      "source": "covid19_twitter"
+    },
+    "cp_hk_twitter": {
+      "roc_auc": 0.719586,
+      "source": "covid19_twitter"
+    },
+    "election2020": {
+      "roc_auc": 0.834535,
+      "source": "covid19_twitter"
+    },
+    "midterm": {
+      "roc_auc": 0.884235,
+      "source": "covid19_twitter"
+    },
+    "twibot20": {
+      "roc_auc": 0.925756,
+      "source": "covid19_twitter"
+    },
+    "ukr_rus_suspended": {
+      "roc_auc": 0.789419,
+      "source": "ukr_rus_twitter"
+    },
+    "ukr_rus_twitter": {
+      "roc_auc": 0.926438,
+      "source": "covid19_twitter"
+    }
+  },
+  "best_foreign_to_facebook": {
+    "roc_auc": 0.9752884646551725,
+    "source": "ukr_rus_twitter"
+  },
+  "facebook_diagonal_gain_over_best_foreign": 0.02418340675287356,
+  "facebook_diagonal_roc_auc": 0.999471871408046,
+  "facebook_foreign_donor_ranks": {
+    "covid19_twitter": 4,
+    "covid_political": 5,
+    "cp_hk_twitter": 4,
+    "election2020": 6,
+    "midterm": 4,
+    "twibot20": 4,
+    "ukr_rus_suspended": 4,
+    "ukr_rus_twitter": 4
+  },
+  "facebook_gap_to_best_twitter_foreign_donor": {
+    "covid19_twitter": -0.10227279436462311,
+    "covid_political": -0.044957830124520926,
+    "cp_hk_twitter": -0.09294709956896552,
+    "election2020": -0.05949237471264368,
+    "midterm": -0.07502533769157083,
+    "twibot20": -0.09059816736909332,
+    "ukr_rus_suspended": -0.13756254022988523,
+    "ukr_rus_twitter": -0.13979366607598964
+  },
+  "facebook_mean_foreign_donor_rank": 4.375,
+  "facebook_to_twitter_best": "covid19_twitter",
+  "facebook_to_twitter_mean_roc_auc": 0.7700178987328384,
+  "facebook_to_twitter_worst": "cp_hk_twitter",
+  "mean_foreign_to_facebook_roc_auc": 0.8614822703843391,
+  "mean_transfer_asymmetry": 0.09146437165150062,
+  "off_diagonal_donor_mean_roc_auc": {
+    "covid19_twitter": 0.8625753936063218,
+    "covid_political": 0.6718294367816092,
+    "cp_hk_twitter": 0.7087227894935345,
+    "election2020": 0.6537610461566092,
+    "facebook_page_reference": 0.7700178987328384,
+    "midterm": 0.793433167816092,
+    "twibot20": 0.8345891729525862,
+    "ukr_rus_suspended": 0.7535084554956897,
+    "ukr_rus_twitter": 0.8650449330818966
+  },
+  "off_diagonal_receiver_mean_roc_auc": {
+    "covid19_twitter": 0.8265464007044221,
+    "covid_political": 0.7968707712344348,
+    "cp_hk_twitter": 0.6362197375538793,
+    "election2020": 0.7743783281609196,
+    "facebook_page_reference": 0.8614822703843391,
+    "midterm": 0.7862929577885537,
+    "twibot20": 0.8116817290788634,
+    "ukr_rus_suspended": 0.6623751824712644,
+    "ukr_rus_twitter": 0.7576349167405013
+  },
+  "protocol": {
+    "checkpoint_step": 40000,
+    "eval_episodes": 500,
+    "n_hop": 1,
+    "n_shots": 3,
+    "n_way": 30,
+    "objective": "neighbor_matching",
+    "seeds": 1
+  },
+  "twitter_to_facebook_minus_facebook_to_twitter": {
+    "covid19_twitter": 0.10338894321519776,
+    "covid_political": -0.06280167562260563,
+    "cp_hk_twitter": 0.17740941551724143,
+    "election2020": -0.08927325603448277,
+    "midterm": 0.09137268022030653,
+    "twibot20": 0.11892055098978294,
+    "ukr_rus_suspended": 0.20405418419540255,
+    "ukr_rus_twitter": 0.18864413073116215
+  }
+}

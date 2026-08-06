@@ -29,6 +29,7 @@ and it is the entry point to the analysis tree.
 | `nm_ladder_order_robustness/` | the ladder under different graph orders | — (in progress) |
 | `nm_single_source_downstream/` | classification/regression transfer of all 8 single-source NM encoders | `FINDINGS.md` |
 | `nm_single_source_matrix/` | 8×8 single-source transfer matrix | `FINDINGS.md` |
+| `nm_single_source_matrix_facebook/` | 9×9 matrix extension with Facebook as source and target | `FINDINGS.md` |
 | `nm_transfer_matrix/` | matched merged-vs-single comparison | `RESULTS.md` |
 | `pretrain_probe_matrix/` | frozen-probe matrix over pretraining strategies | `FINDINGS.md` |
 | `pretrain_saturation/` | downstream transfer vs pretraining step (`n_hop=1`) | `FINDINGS.md` |
