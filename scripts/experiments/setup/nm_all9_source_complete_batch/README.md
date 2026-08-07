@@ -48,3 +48,13 @@ DEVICE=0 bash scripts/experiments/setup/nm_all9_source_complete_batch/train_tuck
 The required merged artifact is
 `/dataMeR1/phil/data/merged/graphs/ukr_rus_covid_midterm_all9_facebook_graph.pt`.
 
+## Status and result
+
+The full run and the 18 native-NM evaluations completed on 2026-08-07. At matched
+episode exposure, batch 9 averaged `0.3939` accuracy versus `0.4179` for the
+historical batch-1 model (`-0.0240`). At 40k optimizer steps, after nine times the
+episode exposure, batch 9 reached `0.4195` (`+0.0016`). The large batch therefore did
+not improve sample efficiency and is not recommended as the default.
+
+See `scripts/experiments/analysis/nm_all9_source_complete_batch/FINDINGS.md` for the
+per-dataset comparison and saved-run paths.
