@@ -14,6 +14,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 
 from scripts.graph_construction.benchmark_targets import build_static_train_val_test_split
 
+EXPECTED_SOURCES = {
+    "ukr_rus", "covid", "midterm", "covid_political", "election2020",
+    "ukr_rus_suspended", "twibot20", "cp_hk", "facebook_page_reference",
+}
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -26,6 +31,10 @@ def main() -> int:
     started = time.time()
     raw = torch.load(args.input, map_location="cpu")
     print(f"loaded in {time.time() - started:.1f}s", flush=True)
+    source_names = list(raw.get("source_graph_names", []))
+    print(f"source_graph_names={source_names}", flush=True)
+    if set(source_names) != EXPECTED_SOURCES or len(source_names) != 9:
+        raise ValueError(f"unexpected all-nine source registry: {source_names}")
     split = build_static_train_val_test_split(
         raw["edge_index"], validation_frac=0.15, test_frac=0.15, seed=0
     )
