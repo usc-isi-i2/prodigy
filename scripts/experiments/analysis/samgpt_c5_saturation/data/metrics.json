@@ -1,0 +1,161 @@
+{
+  "metrics": {
+    "accuracy_mean": 0.6186666666666666,
+    "accuracy_std": 0.10325583751248767,
+    "episodes": 500,
+    "roc_auc_mean": 0.7018402777777777,
+    "roc_auc_std": 0.12120124544322315
+  },
+  "pretraining": {
+    "best_epoch": 3931,
+    "best_loss": 6.470049811468925e-07,
+    "checkpoint": "/dataMeR1/phil/gfm/samgpt-c5-4k-trajectory/log/mixture_order_c_4k/samgpt_mix_order_c_r5_4k_trajectory_20260806T180301Z/checkpoint_best.pt",
+    "epochs_run": 4000,
+    "loss_aggregation": "mean_of_per_source_bce",
+    "pretrain_dataset_slots": 5,
+    "seconds": 6821.279762744904,
+    "source_names": [
+      "election2020",
+      "covid_political",
+      "cp_hk_twitter",
+      "ukr_rus_suspended",
+      "midterm"
+    ],
+    "source_prompt_slots": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "trajectory_checkpoints": [
+      {
+        "checkpoint": "/dataMeR1/phil/gfm/samgpt-c5-4k-trajectory/log/mixture_order_c_4k/samgpt_mix_order_c_r5_4k_trajectory_20260806T180301Z/trajectory_checkpoints/state_dict_epoch_0200.pt",
+        "elapsed_seconds": 342.3337881565094,
+        "epoch": 200,
+        "loss": 0.0012563327327370644
+      },
+      {
+        "checkpoint": "/dataMeR1/phil/gfm/samgpt-c5-4k-trajectory/log/mixture_order_c_4k/samgpt_mix_order_c_r5_4k_trajectory_20260806T180301Z/trajectory_checkpoints/state_dict_epoch_0400.pt",
+        "elapsed_seconds": 691.9835736751556,
+        "epoch": 400,
+        "loss": 0.0002634621923789382
+      },
+      {
+        "checkpoint": "/dataMeR1/phil/gfm/samgpt-c5-4k-trajectory/log/mixture_order_c_4k/samgpt_mix_order_c_r5_4k_trajectory_20260806T180301Z/trajectory_checkpoints/state_dict_epoch_0800.pt",
+        "elapsed_seconds": 1378.4729294776917,
+        "epoch": 800,
+        "loss": 5.3669820772483945e-05
+      },
+      {
+        "checkpoint": "/dataMeR1/phil/gfm/samgpt-c5-4k-trajectory/log/mixture_order_c_4k/samgpt_mix_order_c_r5_4k_trajectory_20260806T180301Z/trajectory_checkpoints/state_dict_epoch_1600.pt",
+        "elapsed_seconds": 2740.6222012043,
+        "epoch": 1600,
+        "loss": 1.011328731692629e-05
+      },
+      {
+        "checkpoint": "/dataMeR1/phil/gfm/samgpt-c5-4k-trajectory/log/mixture_order_c_4k/samgpt_mix_order_c_r5_4k_trajectory_20260806T180301Z/trajectory_checkpoints/state_dict_epoch_2500.pt",
+        "elapsed_seconds": 4271.073926687241,
+        "epoch": 2500,
+        "loss": 3.2686389204172883e-06
+      },
+      {
+        "checkpoint": "/dataMeR1/phil/gfm/samgpt-c5-4k-trajectory/log/mixture_order_c_4k/samgpt_mix_order_c_r5_4k_trajectory_20260806T180301Z/trajectory_checkpoints/state_dict_epoch_4000.pt",
+        "elapsed_seconds": 6821.197460174561,
+        "epoch": 4000,
+        "loss": 8.003196967365511e-07
+      }
+    ]
+  },
+  "protocol": {
+    "episode_seed": 448,
+    "feature_projection": "shared_gaussian_random",
+    "feature_projection_seed": 39,
+    "graph_direction": "symmetrized",
+    "queries_per_class": 12,
+    "readout": "frozen_cosine_prototypes",
+    "shots_per_class": 10,
+    "source": "mixture",
+    "sources": [
+      "election2020",
+      "covid_political",
+      "cp_hk_twitter",
+      "ukr_rus_suspended",
+      "midterm"
+    ],
+    "split": "test",
+    "target": "twibot20"
+  },
+  "validation_trajectory": {
+    "checkpoints": [
+      {
+        "accuracy_mean": 0.6359166666666668,
+        "accuracy_std": 0.10149252884457545,
+        "checkpoint": "/dataMeR1/phil/gfm/samgpt-c5-4k-trajectory/log/mixture_order_c_4k/samgpt_mix_order_c_r5_4k_trajectory_20260806T180301Z/trajectory_checkpoints/state_dict_epoch_0200.pt",
+        "episodes": 500,
+        "epoch": 200,
+        "roc_auc_mean": 0.7129930555555556,
+        "roc_auc_std": 0.1189067808951535,
+        "train_elapsed_seconds": 342.3337881565094,
+        "train_loss": 0.0012563327327370644
+      },
+      {
+        "accuracy_mean": 0.63775,
+        "accuracy_std": 0.0999641928210266,
+        "checkpoint": "/dataMeR1/phil/gfm/samgpt-c5-4k-trajectory/log/mixture_order_c_4k/samgpt_mix_order_c_r5_4k_trajectory_20260806T180301Z/trajectory_checkpoints/state_dict_epoch_0400.pt",
+        "episodes": 500,
+        "epoch": 400,
+        "roc_auc_mean": 0.7128541666666668,
+        "roc_auc_std": 0.11717051114103058,
+        "train_elapsed_seconds": 691.9835736751556,
+        "train_loss": 0.0002634621923789382
+      },
+      {
+        "accuracy_mean": 0.6371666666666667,
+        "accuracy_std": 0.1004015263257119,
+        "checkpoint": "/dataMeR1/phil/gfm/samgpt-c5-4k-trajectory/log/mixture_order_c_4k/samgpt_mix_order_c_r5_4k_trajectory_20260806T180301Z/trajectory_checkpoints/state_dict_epoch_0800.pt",
+        "episodes": 500,
+        "epoch": 800,
+        "roc_auc_mean": 0.7122847222222222,
+        "roc_auc_std": 0.11703248791542666,
+        "train_elapsed_seconds": 1378.4729294776917,
+        "train_loss": 5.3669820772483945e-05
+      },
+      {
+        "accuracy_mean": 0.6360833333333332,
+        "accuracy_std": 0.10178253606131024,
+        "checkpoint": "/dataMeR1/phil/gfm/samgpt-c5-4k-trajectory/log/mixture_order_c_4k/samgpt_mix_order_c_r5_4k_trajectory_20260806T180301Z/trajectory_checkpoints/state_dict_epoch_1600.pt",
+        "episodes": 500,
+        "epoch": 1600,
+        "roc_auc_mean": 0.7109652777777778,
+        "roc_auc_std": 0.11665327498762075,
+        "train_elapsed_seconds": 2740.6222012043,
+        "train_loss": 1.011328731692629e-05
+      },
+      {
+        "accuracy_mean": 0.63475,
+        "accuracy_std": 0.10276904748468035,
+        "checkpoint": "/dataMeR1/phil/gfm/samgpt-c5-4k-trajectory/log/mixture_order_c_4k/samgpt_mix_order_c_r5_4k_trajectory_20260806T180301Z/trajectory_checkpoints/state_dict_epoch_2500.pt",
+        "episodes": 500,
+        "epoch": 2500,
+        "roc_auc_mean": 0.7103541666666667,
+        "roc_auc_std": 0.11658489777033229,
+        "train_elapsed_seconds": 4271.073926687241,
+        "train_loss": 3.2686389204172883e-06
+      },
+      {
+        "accuracy_mean": 0.6340833333333332,
+        "accuracy_std": 0.10323545017046884,
+        "checkpoint": "/dataMeR1/phil/gfm/samgpt-c5-4k-trajectory/log/mixture_order_c_4k/samgpt_mix_order_c_r5_4k_trajectory_20260806T180301Z/trajectory_checkpoints/state_dict_epoch_4000.pt",
+        "episodes": 500,
+        "epoch": 4000,
+        "roc_auc_mean": 0.7098263888888889,
+        "roc_auc_std": 0.11688282898973837,
+        "train_elapsed_seconds": 6821.197460174561,
+        "train_loss": 8.003196967365511e-07
+      }
+    ],
+    "episode_seed": 323,
+    "split": "val"
+  }
+}

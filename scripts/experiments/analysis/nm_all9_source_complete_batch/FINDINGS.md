@@ -29,6 +29,9 @@ current form.
 
 ## Saved runs
 
+The exact comparison table is committed as `data/comparison.csv`, and
+`data/manifest.json` records the protocol plus the canonical Tucker artifacts.
+
 - batch-1 checkpoint: `state/nm_ladder_ordA_r9_facebook_06_08_2026_09_49_01/checkpoint/state_dict_40000.ckpt`
 - batch-9 checkpoints: `state/nm_all9_source_complete_b9_06_08_2026_22_32_07/checkpoint/state_dict_{4444,40000}.ckpt`
 - batch-9 evaluation log: `log/nm_all9_source_complete_batch/eval_all9_both_ckpts/eval.log`

@@ -1,0 +1,50 @@
+{
+  "controls": [
+    {
+      "accuracy_mean": 0.50125,
+      "accuracy_std": 0.09771788510881864,
+      "control": "projected_features_only",
+      "eligible_validation_nodes": 2365,
+      "episodes": 500,
+      "roc_auc_mean": 0.5301180555555556,
+      "roc_auc_std": 0.1193448034509642
+    },
+    {
+      "accuracy_mean": 0.49508333333333326,
+      "accuracy_std": 0.09802871507972849,
+      "control": "random_gcn_self_loops_only",
+      "eligible_validation_nodes": 2365,
+      "episodes": 500,
+      "roc_auc_mean": 0.5159722222222222,
+      "roc_auc_std": 0.1204653635825595
+    },
+    {
+      "accuracy_mean": 0.615,
+      "accuracy_std": 0.10560051896595217,
+      "control": "random_gcn_real_graph",
+      "eligible_validation_nodes": 2365,
+      "episodes": 500,
+      "roc_auc_mean": 0.6717916666666667,
+      "roc_auc_std": 0.12571761941727916
+    },
+    {
+      "accuracy_mean": 0.62075,
+      "accuracy_std": 0.10616893281795065,
+      "control": "random_gcn_real_graph_nonmissing_bios",
+      "eligible_validation_nodes": 2061,
+      "episodes": 500,
+      "roc_auc_mean": 0.6691666666666667,
+      "roc_auc_std": 0.12437963031270556
+    }
+  ],
+  "protocol": {
+    "checkpoint": "/dataMeR1/phil/gfm/samgpt-covid-saturation-4k/log/pretrain_saturation_covid_4k/samgpt_covid19_twitter_4k_trajectory_20260806T190046Z/trajectory_checkpoints/state_dict_epoch_0000.pt",
+    "config": "/dataMeR1/phil/gfm/samgpt-covid-correctness-ablation/configs/pretrain_saturation/covid_4k_trajectory.json",
+    "episodes": 500,
+    "feature_projection_seed": 39,
+    "queries_per_class": 12,
+    "shots_per_class": 10,
+    "split": "val",
+    "target": "/dataMeR1/phil/data/twibot20/graphs/retweet_graph.pt"
+  }
+}

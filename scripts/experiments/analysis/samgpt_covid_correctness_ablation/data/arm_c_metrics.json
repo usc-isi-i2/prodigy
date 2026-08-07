@@ -1,0 +1,100 @@
+{
+  "metrics": {
+    "accuracy_mean": 0.5678333333333334,
+    "accuracy_std": 0.10390009310671505,
+    "episodes": 500,
+    "roc_auc_mean": 0.6770833333333334,
+    "roc_auc_std": 0.1271978817341996
+  },
+  "pretraining": {
+    "best_epoch": 215,
+    "best_loss": 2.052386260942285e-09,
+    "checkpoint": "/dataMeR1/phil/gfm/samgpt-covid-correctness-ablation/log/covid_correctness_ablation/samgpt_covid_structure_fixed_resampled_500_20260806T210629Z/checkpoint_best.pt",
+    "correct_structure_prompt_routing": true,
+    "epochs_run": 500,
+    "loss_aggregation": "mean_of_per_source_bce",
+    "pretrain_dataset_slots": 9,
+    "resample_augmentations_each_epoch": true,
+    "seconds": 396.460782289505,
+    "source_names": [
+      "covid19_twitter"
+    ],
+    "source_prompt_slots": [
+      1
+    ],
+    "trajectory_checkpoints": [
+      {
+        "checkpoint": "/dataMeR1/phil/gfm/samgpt-covid-correctness-ablation/log/covid_correctness_ablation/samgpt_covid_structure_fixed_resampled_500_20260806T210629Z/trajectory_checkpoints/state_dict_epoch_0000.pt",
+        "elapsed_seconds": 0.0,
+        "epoch": 0,
+        "loss": null
+      },
+      {
+        "checkpoint": "/dataMeR1/phil/gfm/samgpt-covid-correctness-ablation/log/covid_correctness_ablation/samgpt_covid_structure_fixed_resampled_500_20260806T210629Z/trajectory_checkpoints/state_dict_epoch_0100.pt",
+        "elapsed_seconds": 80.26092553138733,
+        "epoch": 100,
+        "loss": 3.4471345777831175e-09
+      },
+      {
+        "checkpoint": "/dataMeR1/phil/gfm/samgpt-covid-correctness-ablation/log/covid_correctness_ablation/samgpt_covid_structure_fixed_resampled_500_20260806T210629Z/trajectory_checkpoints/state_dict_epoch_0500.pt",
+        "elapsed_seconds": 396.4276773929596,
+        "epoch": 500,
+        "loss": 3.1077855844330315e-09
+      }
+    ]
+  },
+  "protocol": {
+    "episode_seed": 448,
+    "feature_projection": "shared_gaussian_random",
+    "feature_projection_seed": 39,
+    "graph_direction": "symmetrized",
+    "queries_per_class": 12,
+    "readout": "frozen_cosine_prototypes",
+    "shots_per_class": 10,
+    "source": "covid19_twitter",
+    "sources": [
+      "covid19_twitter"
+    ],
+    "split": "test",
+    "target": "twibot20"
+  },
+  "validation_trajectory": {
+    "checkpoints": [
+      {
+        "accuracy_mean": 0.615,
+        "accuracy_std": 0.10560051896595217,
+        "checkpoint": "/dataMeR1/phil/gfm/samgpt-covid-correctness-ablation/log/covid_correctness_ablation/samgpt_covid_structure_fixed_resampled_500_20260806T210629Z/trajectory_checkpoints/state_dict_epoch_0000.pt",
+        "episodes": 500,
+        "epoch": 0,
+        "roc_auc_mean": 0.6717916666666667,
+        "roc_auc_std": 0.12571761941727916,
+        "train_elapsed_seconds": 0.0,
+        "train_loss": null
+      },
+      {
+        "accuracy_mean": 0.581,
+        "accuracy_std": 0.10402766276501561,
+        "checkpoint": "/dataMeR1/phil/gfm/samgpt-covid-correctness-ablation/log/covid_correctness_ablation/samgpt_covid_structure_fixed_resampled_500_20260806T210629Z/trajectory_checkpoints/state_dict_epoch_0100.pt",
+        "episodes": 500,
+        "epoch": 100,
+        "roc_auc_mean": 0.6890208333333334,
+        "roc_auc_std": 0.12236625825504466,
+        "train_elapsed_seconds": 80.26092553138733,
+        "train_loss": 3.4471345777831175e-09
+      },
+      {
+        "accuracy_mean": 0.581,
+        "accuracy_std": 0.10402766276501561,
+        "checkpoint": "/dataMeR1/phil/gfm/samgpt-covid-correctness-ablation/log/covid_correctness_ablation/samgpt_covid_structure_fixed_resampled_500_20260806T210629Z/trajectory_checkpoints/state_dict_epoch_0500.pt",
+        "episodes": 500,
+        "epoch": 500,
+        "roc_auc_mean": 0.6890208333333334,
+        "roc_auc_std": 0.12235085633963341,
+        "train_elapsed_seconds": 396.4276773929596,
+        "train_loss": 3.1077855844330315e-09
+      }
+    ],
+    "episode_seed": 323,
+    "split": "val"
+  }
+}
