@@ -432,6 +432,45 @@ def top_k_absdiff_probes(
     return out
 
 
+def top_k_node_dimension_probes(
+    x_train: np.ndarray,
+    y_train: np.ndarray,
+    x_test: np.ndarray,
+    y_test: np.ndarray,
+    node_feature_dim: int,
+    ks: tuple[int, ...] = (1, 4, 16, 64),
+) -> dict[str, Any]:
+    """Test compact sets of original node-feature dimensions.
+
+    Each original coordinate contributes three symmetric pair terms: absolute
+    difference, pair mean, and elementwise product. Coordinates are ranked using
+    training data only by the strongest univariate AUC among those three terms.
+    """
+    from sklearn.metrics import roc_auc_score
+
+    term_effects = np.empty((3, node_feature_dim), dtype=np.float64)
+    for term in range(3):
+        start = term * node_feature_dim
+        for coordinate in range(node_feature_dim):
+            auc = roc_auc_score(y_train, x_train[:, start + coordinate])
+            term_effects[term, coordinate] = abs(auc - 0.5)
+    dimension_effects = term_effects.max(axis=0)
+    order = np.argsort(dimension_effects)[::-1]
+    out: dict[str, Any] = {}
+    for k in ks:
+        selected = order[: min(k, node_feature_dim)]
+        columns = np.concatenate(
+            [selected + term * node_feature_dim for term in range(3)]
+        )
+        out[str(k)] = {
+            "selected_node_dimensions": [int(v) for v in selected],
+            **logistic_probe(
+                x_train[:, columns], y_train, x_test[:, columns], y_test, penalty="l2"
+            ),
+        }
+    return out
+
+
 def adjacent_vs_far_probe(blocks: list[Block], features: np.ndarray) -> dict[str, Any]:
     if len(blocks) < 100:
         return {"error": "fewer than 100 complete blocks"}
@@ -486,7 +525,10 @@ def adjacent_vs_far_probe(blocks: list[Block], features: np.ndarray) -> dict[str
     out["top_k_absdiff_coordinate_probes"] = top_k_absdiff_probes(
         x_train[:, :dim], y_train, x_test[:, :dim], y_test
     )
-    out["sparse_logistic_pair_probe"] = logistic_probe(
+    out["top_k_node_dimension_probes"] = top_k_node_dimension_probes(
+        x_train, y_train, x_test, y_test, dim
+    )
+    out["l1_logistic_pair_probe"] = logistic_probe(
         x_train, y_train, x_test, y_test, penalty="l1"
     )
     out["dense_logistic_pair_probe"] = logistic_probe(
