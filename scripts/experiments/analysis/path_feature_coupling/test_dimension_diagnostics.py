@@ -27,6 +27,13 @@ def test_column_pearson_recovers_signed_dimensions() -> None:
     assert np.isnan(corr[2])
 
 
+def test_auc_columns_matches_known_separation() -> None:
+    labels = np.asarray([0, 0, 1, 1], dtype=np.int8)
+    values = np.asarray([[0, 3], [1, 2], [2, 1], [3, 0]], dtype=np.float64)
+    auc = MOD.auc_columns(labels, values)
+    assert np.allclose(auc, [1.0, 0.0])
+
+
 def test_component_certificate_rules_out_distance_1000() -> None:
     from scipy.sparse import csr_matrix
 

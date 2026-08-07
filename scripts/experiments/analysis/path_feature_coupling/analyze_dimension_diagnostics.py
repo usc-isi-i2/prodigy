@@ -66,6 +66,20 @@ def column_pearson(values: np.ndarray, target: np.ndarray) -> np.ndarray:
     return out
 
 
+def auc_columns(labels: np.ndarray, values: np.ndarray) -> np.ndarray:
+    """ROC-AUC for every value column using vectorized Mann-Whitney ranks."""
+    from scipy.stats import rankdata
+
+    labels = labels.astype(bool, copy=False)
+    n_pos = int(labels.sum())
+    n_neg = int(len(labels) - n_pos)
+    if n_pos == 0 or n_neg == 0:
+        return np.full(values.shape[1], np.nan, dtype=np.float64)
+    ranks = rankdata(values, axis=0, method="average")
+    rank_sum_pos = ranks[labels].sum(axis=0)
+    return (rank_sum_pos - n_pos * (n_pos + 1) / 2) / (n_pos * n_neg)
+
+
 def component_distance_certificate(adjacency) -> dict[str, Any]:
     """Upper-bound component diameters tightly enough to rule on distance 1,000."""
     n_components, labels = connected_components(
@@ -340,8 +354,6 @@ def edge_vs_uniform_dimension_diagnostics(
     uniform_target: np.ndarray,
 ) -> dict[str, Any]:
     """Held-out univariate AUC for each pair term and original feature dimension."""
-    from sklearn.metrics import roc_auc_score
-
     all_nodes = np.concatenate((edge_anchor, edge_target, uniform_anchor, uniform_target))
     unique, inverse = np.unique(all_nodes, return_inverse=True)
     rows = gather_rows(x, unique)
@@ -384,12 +396,9 @@ def edge_vs_uniform_dimension_diagnostics(
         test_y = np.concatenate(
             (np.ones(test_e.sum(), dtype=np.int8), np.zeros(test_u.sum(), dtype=np.int8))
         )
-        term_auc = np.empty(train_x.shape[1], dtype=np.float64)
-        for dim in range(train_x.shape[1]):
-            train_auc = roc_auc_score(train_y, train_x[:, dim])
-            orientation = 1.0 if train_auc >= 0.5 else -1.0
-            term_auc[dim] = roc_auc_score(test_y, orientation * test_x[:, dim])
-        aucs[term] = term_auc
+        train_auc = auc_columns(train_y, train_x)
+        test_auc = auc_columns(test_y, test_x)
+        aucs[term] = np.where(train_auc >= 0.5, test_auc, 1.0 - test_auc)
 
     dimensions = []
     for dim in range(edge_a.shape[1]):
@@ -496,7 +505,7 @@ def graph_identity_diagnostics(
     graph_names: list[str],
     seed: int,
 ) -> dict[str, Any]:
-    from sklearn.metrics import balanced_accuracy_score, roc_auc_score
+    from sklearn.metrics import balanced_accuracy_score
 
     rng = np.random.default_rng(seed)
     train_parts: list[np.ndarray] = []
@@ -521,9 +530,8 @@ def graph_identity_diagnostics(
     per_class_auc = np.empty((len(graph_names), x_train.shape[1]), dtype=np.float64)
     for label in classes:
         binary = (y_test == label).astype(np.int8)
-        for dim in range(x_test.shape[1]):
-            auc = roc_auc_score(binary, x_test[:, dim])
-            per_class_auc[label, dim] = 0.5 + abs(auc - 0.5)
+        auc = auc_columns(binary, x_test)
+        per_class_auc[label] = 0.5 + np.abs(auc - 0.5)
 
     balanced_accuracy = np.empty(x_train.shape[1], dtype=np.float64)
     variances = np.empty((len(classes), x_train.shape[1]), dtype=np.float64)
