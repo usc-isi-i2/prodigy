@@ -561,7 +561,11 @@ class TrainerFS():
             print("Label set:", kwargs["label_set"])
         if self.parameter["csr_split"]:
             kwargs["csr_split"] = self.parameter["csr_split"]
-        if dataset_name == "arxiv":
+        if dataset_name in {"cora", "pubmed"}:
+            from data import tag_citation
+            kwargs["root"] = self.parameter["root"]
+            get_dataloader = getattr(tag_citation, f"get_{dataset_name}_dataloader")
+        elif dataset_name == "arxiv":
             from data.arxiv import get_arxiv_dataloader
             get_dataloader = get_arxiv_dataloader
         elif dataset_name == "mag240m":

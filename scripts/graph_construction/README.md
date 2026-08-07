@@ -2,6 +2,47 @@
 
 This directory contains graph builders for staged social graph artifacts.
 
+## Cora and PubMed Text-Attributed Citation Graphs
+
+`generate_tag_citation_graph.py` builds two literature-standard citation
+benchmarks with the same 768-dimensional GTE feature space as the social
+graphs. Nodes are papers, edges are citations, node text is the paper title and
+abstract, and labels are research/biomedical categories.
+
+The source graph/text files are pinned to the Apache-2.0
+`Graph-COM/Text-Attributed-Graphs` dataset revision
+`4a59e25d4ed77b6541d6830ef89be99942a01394`. Downloads are SHA-256 checked
+before any pickle is loaded. GTE is pinned to the repository-wide model revision
+`9bbca17d9273fd0d03d5725c7a4b0f6b45142062`.
+
+Run each graph on Tucker in `bio-embeddings-v001`:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 python -u scripts/graph_construction/generate_tag_citation_graph.py \
+  --dataset cora \
+  --download \
+  --device cuda:0
+
+CUDA_VISIBLE_DEVICES=0 python -u scripts/graph_construction/generate_tag_citation_graph.py \
+  --dataset pubmed \
+  --download \
+  --device cuda:0
+```
+
+Default outputs are:
+
+```text
+/dataMeR1/phil/data/cora/graphs/citation_graph.pt
+/dataMeR1/phil/data/cora/graphs/citation_graph.meta.json
+/dataMeR1/phil/data/pubmed/graphs/citation_graph.pt
+/dataMeR1/phil/data/pubmed/graphs/citation_graph.meta.json
+```
+
+Each artifact retains raw node text and canonical source masks, and also adds a
+seeded static background/holdout edge split. The PRODIGY dataset keys are
+`cora` and `pubmed`; both support neighbor matching, classification, and static
+link prediction through the shared citation loader.
+
 ## Ukraine/Russia Retweet Graph Builder
 
 Script:

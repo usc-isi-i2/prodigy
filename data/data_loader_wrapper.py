@@ -16,6 +16,9 @@ def sample_with_seed(lst, seed, k=3):
 
 def get_dataset_wrap(root, dataset, **kwargs):
     #  rel_sample_rand_seed: If not None, this is the seed used to sample relations for the KG datasets.
+    if dataset in {"cora", "pubmed"}:
+        from data import tag_citation
+        return getattr(tag_citation, f"get_{dataset}_dataset")(root=root, **kwargs)
     if dataset == "arxiv":
         from data.arxiv import get_arxiv_dataset
         return get_arxiv_dataset(root=os.path.join(root, "arxiv"), **kwargs)

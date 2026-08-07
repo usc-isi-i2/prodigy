@@ -1,0 +1,23 @@
+dataset: cora
+root: /dataMeR1/phil/data/cora/graphs
+graph_filename: citation_graph.pt
+task_name: classification
+
+original_features: true
+input_dim: 768
+n_way: 7
+n_shots: 1
+n_query: 2
+batch_size: 1
+n_hop: 1
+
+epochs: 1
+dataset_len_cap: 20
+val_len_cap: 10
+test_len_cap: 10
+eval_step: 20
+checkpoint_step: 20
+workers: 4
+device: 0
+seed: 0
+prefix: cora_gte_cls_smoke

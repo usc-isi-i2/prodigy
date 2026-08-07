@@ -270,6 +270,92 @@
       "default_eval": false
     },
     {
+      "canonical_name": "cora",
+      "dataset_key": "cora",
+      "kind": "source",
+      "relative_path": "cora/graphs/citation_graph.pt",
+      "metadata_path": "cora/graphs/citation_graph.meta.json",
+      "artifact_size_bytes": null,
+      "artifact_size_gb": null,
+      "statistics": {"nodes": 2708, "edges": null, "source_reported_directed_edges": 10556},
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "L2-normalized GTE multilingual embeddings of paper titles and abstracts"
+      },
+      "labels": {
+        "type": "7-class node classification",
+        "names": ["Case Based", "Genetic Algorithms", "Neural Networks", "Probabilistic Methods", "Reinforcement Learning", "Rule Learning", "Theory"],
+        "labeled_nodes": 2708
+      },
+      "tasks": {
+        "supported": ["neighbor_matching", "static_link_prediction", "node_classification"],
+        "unavailable": ["temporal_link_prediction", "node_regression"],
+        "details": {
+          "static_link_prediction": "Seeded 85/15 split over undirected citation pairs; reverse edges cannot leak across views",
+          "node_classification": "Converter retains the source benchmark masks; current episodic loader uses deterministic stratified splits"
+        }
+      },
+      "source_data": [
+        {
+          "role": "citation graph, labels, masks, and raw paper title/abstract text",
+          "path": "cora/raw/graph_com_tag",
+          "format": "Pinned PyTorch artifacts from Graph-COM/Text-Attributed-Graphs"
+        }
+      ],
+      "construction": {
+        "script": "scripts/graph_construction/generate_tag_citation_graph.py",
+        "source_revision": "4a59e25d4ed77b6541d6830ef89be99942a01394",
+        "embedding_model": "Alibaba-NLP/gte-multilingual-base",
+        "embedding_revision": "9bbca17d9273fd0d03d5725c7a4b0f6b45142062",
+        "status": "builder and loader implemented; graph artifact not yet built on Tucker"
+      },
+      "eval": {"supports_lp": true, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
+      "default_eval": false
+    },
+    {
+      "canonical_name": "pubmed",
+      "dataset_key": "pubmed",
+      "kind": "source",
+      "relative_path": "pubmed/graphs/citation_graph.pt",
+      "metadata_path": "pubmed/graphs/citation_graph.meta.json",
+      "artifact_size_bytes": null,
+      "artifact_size_gb": null,
+      "statistics": {"nodes": 19717, "edges": null, "source_reported_directed_edges": 88648},
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "L2-normalized GTE multilingual embeddings of paper titles and abstracts"
+      },
+      "labels": {
+        "type": "3-class node classification",
+        "names": ["Diabetes Mellitus Experimental", "Diabetes Mellitus Type 1", "Diabetes Mellitus Type 2"],
+        "labeled_nodes": 19717
+      },
+      "tasks": {
+        "supported": ["neighbor_matching", "static_link_prediction", "node_classification"],
+        "unavailable": ["temporal_link_prediction", "node_regression"],
+        "details": {
+          "static_link_prediction": "Seeded 85/15 split over undirected citation pairs; reverse edges cannot leak across views",
+          "node_classification": "Converter retains the source benchmark masks; current episodic loader uses deterministic stratified splits"
+        }
+      },
+      "source_data": [
+        {
+          "role": "citation graph, labels, masks, and raw paper title/abstract text",
+          "path": "pubmed/raw/graph_com_tag",
+          "format": "Pinned PyTorch artifacts from Graph-COM/Text-Attributed-Graphs"
+        }
+      ],
+      "construction": {
+        "script": "scripts/graph_construction/generate_tag_citation_graph.py",
+        "source_revision": "4a59e25d4ed77b6541d6830ef89be99942a01394",
+        "embedding_model": "Alibaba-NLP/gte-multilingual-base",
+        "embedding_revision": "9bbca17d9273fd0d03d5725c7a4b0f6b45142062",
+        "status": "builder and loader implemented; graph artifact not yet built on Tucker"
+      },
+      "eval": {"supports_lp": true, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
+      "default_eval": false
+    },
+    {
       "canonical_name": "merged-ukraine-covid",
       "dataset_key": "merged_ukr_rus_covid",
       "kind": "merged",
