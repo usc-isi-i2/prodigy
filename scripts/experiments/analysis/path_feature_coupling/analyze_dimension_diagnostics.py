@@ -40,6 +40,7 @@ from analyze_path_feature_coupling import (
     load_catalog,
     load_graph,
     log,
+    node_hash_fold,
     parse_overrides,
     uniform_nonmissing_sample,
 )
@@ -241,6 +242,166 @@ def sample_exact_distance_pairs(
     )
 
 
+def sample_uniform_node_pairs(
+    adjacency,
+    labels: np.ndarray,
+    n_anchors: int,
+    targets_per_anchor: int,
+    rng: np.random.Generator,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict[str, Any]]:
+    """Sample independent uniform node pairs and resolve finite distances exactly."""
+    n_nodes = adjacency.shape[0]
+    anchors = rng.choice(n_nodes, size=min(n_anchors, n_nodes), replace=False).astype(np.int64)
+    pair_anchor: list[np.ndarray] = []
+    pair_target: list[np.ndarray] = []
+    pair_distance: list[np.ndarray] = []
+    n_disconnected = 0
+    n_same_node = 0
+
+    for anchor in anchors:
+        targets = rng.integers(0, n_nodes, size=targets_per_anchor, dtype=np.int64)
+        same_component = labels[targets] == labels[anchor]
+        distances = np.full(targets_per_anchor, np.inf, dtype=np.float64)
+        if np.any(same_component):
+            from_anchor = dijkstra(
+                adjacency, directed=False, indices=int(anchor), unweighted=True
+            )
+            distances[same_component] = from_anchor[targets[same_component]]
+        n_disconnected += int((~same_component).sum())
+        n_same_node += int((targets == anchor).sum())
+        pair_anchor.append(np.full(targets_per_anchor, anchor, dtype=np.int64))
+        pair_target.append(targets)
+        pair_distance.append(distances)
+
+    all_anchor = np.concatenate(pair_anchor)
+    all_target = np.concatenate(pair_target)
+    all_distance = np.concatenate(pair_distance)
+    finite_positive = np.isfinite(all_distance) & (all_distance > 0)
+    finite_values = all_distance[finite_positive]
+    summary = {
+        "sampling": "uniform anchors x independent uniform targets",
+        "n_anchors": int(len(anchors)),
+        "targets_per_anchor": int(targets_per_anchor),
+        "n_pairs": int(len(all_distance)),
+        "n_disconnected": n_disconnected,
+        "disconnected_fraction": float(n_disconnected / len(all_distance)),
+        "n_same_node": n_same_node,
+        "n_finite_positive": int(finite_positive.sum()),
+        "finite_distance_min": int(finite_values.min()) if len(finite_values) else None,
+        "finite_distance_median": float(np.median(finite_values)) if len(finite_values) else None,
+        "finite_distance_mean": float(np.mean(finite_values)) if len(finite_values) else None,
+        "finite_distance_q90": float(np.quantile(finite_values, 0.9)) if len(finite_values) else None,
+        "finite_distance_q99": float(np.quantile(finite_values, 0.99)) if len(finite_values) else None,
+        "finite_distance_max": int(finite_values.max()) if len(finite_values) else None,
+    }
+    return all_anchor, all_target, all_distance, summary
+
+
+def sample_uniform_anchor_edges(
+    adjacency,
+    n_pairs: int,
+    rng: np.random.Generator,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Sample a uniform node, then one uniform neighbor, rejecting isolates."""
+    n_nodes = adjacency.shape[0]
+    anchors: list[int] = []
+    targets: list[int] = []
+    attempts = 0
+    while len(anchors) < n_pairs and attempts < 20 * n_pairs:
+        attempts += 1
+        anchor = int(rng.integers(n_nodes))
+        start, end = adjacency.indptr[anchor], adjacency.indptr[anchor + 1]
+        if start == end:
+            continue
+        target = int(adjacency.indices[start + rng.integers(end - start)])
+        anchors.append(anchor)
+        targets.append(target)
+    return np.asarray(anchors, dtype=np.int64), np.asarray(targets, dtype=np.int64)
+
+
+def edge_vs_uniform_dimension_diagnostics(
+    x,
+    edge_anchor: np.ndarray,
+    edge_target: np.ndarray,
+    uniform_anchor: np.ndarray,
+    uniform_target: np.ndarray,
+) -> dict[str, Any]:
+    """Held-out univariate AUC for each pair term and original feature dimension."""
+    from sklearn.metrics import roc_auc_score
+
+    all_nodes = np.concatenate((edge_anchor, edge_target, uniform_anchor, uniform_target))
+    unique, inverse = np.unique(all_nodes, return_inverse=True)
+    rows = gather_rows(x, unique)
+    observed = np.abs(rows).sum(axis=1) > 0
+    ne = len(edge_anchor)
+    nu = len(uniform_anchor)
+    ea = inverse[:ne]
+    et = inverse[ne : 2 * ne]
+    ua = inverse[2 * ne : 2 * ne + nu]
+    ut = inverse[2 * ne + nu :]
+    keep_e = observed[ea] & observed[et]
+    keep_u = observed[ua] & observed[ut]
+    edge_a, edge_t = rows[ea[keep_e]], rows[et[keep_e]]
+    uniform_a, uniform_t = rows[ua[keep_u]], rows[ut[keep_u]]
+
+    edge_node_a, edge_node_t = edge_anchor[keep_e], edge_target[keep_e]
+    uniform_node_a, uniform_node_t = uniform_anchor[keep_u], uniform_target[keep_u]
+    train_e = (node_hash_fold(edge_node_a) != 0) & (node_hash_fold(edge_node_t) != 0)
+    test_e = (node_hash_fold(edge_node_a) == 0) & (node_hash_fold(edge_node_t) == 0)
+    train_u = (node_hash_fold(uniform_node_a) != 0) & (node_hash_fold(uniform_node_t) != 0)
+    test_u = (node_hash_fold(uniform_node_a) == 0) & (node_hash_fold(uniform_node_t) == 0)
+
+    edge_terms = {
+        "absdiff": np.abs(edge_a - edge_t),
+        "mean": (edge_a + edge_t) * 0.5,
+        "product": edge_a * edge_t,
+    }
+    uniform_terms = {
+        "absdiff": np.abs(uniform_a - uniform_t),
+        "mean": (uniform_a + uniform_t) * 0.5,
+        "product": uniform_a * uniform_t,
+    }
+    aucs: dict[str, np.ndarray] = {}
+    for term in PAIR_TERMS:
+        train_x = np.concatenate((edge_terms[term][train_e], uniform_terms[term][train_u]))
+        train_y = np.concatenate(
+            (np.ones(train_e.sum(), dtype=np.int8), np.zeros(train_u.sum(), dtype=np.int8))
+        )
+        test_x = np.concatenate((edge_terms[term][test_e], uniform_terms[term][test_u]))
+        test_y = np.concatenate(
+            (np.ones(test_e.sum(), dtype=np.int8), np.zeros(test_u.sum(), dtype=np.int8))
+        )
+        term_auc = np.empty(train_x.shape[1], dtype=np.float64)
+        for dim in range(train_x.shape[1]):
+            train_auc = roc_auc_score(train_y, train_x[:, dim])
+            orientation = 1.0 if train_auc >= 0.5 else -1.0
+            term_auc[dim] = roc_auc_score(test_y, orientation * test_x[:, dim])
+        aucs[term] = term_auc
+
+    dimensions = []
+    for dim in range(edge_a.shape[1]):
+        term_auc = {term: float(aucs[term][dim]) for term in PAIR_TERMS}
+        best_term, best_auc = max(term_auc.items(), key=lambda item: item[1])
+        dimensions.append(
+            {
+                "dimension": dim,
+                "test_oriented_auc": term_auc,
+                "best_term": best_term,
+                "best_test_auc": best_auc,
+            }
+        )
+    return {
+        "task": "uniform-anchor adjacent pair versus independent uniform node pair",
+        "conditioning": "both endpoints have nonzero features",
+        "split": "node-disjoint hash fold 0 test; remaining folds train orientation",
+        "n_edge_pairs_nonmissing": int(len(edge_a)),
+        "n_uniform_pairs_nonmissing": int(len(uniform_a)),
+        "train_counts_uniform_edge": [int(train_u.sum()), int(train_e.sum())],
+        "test_counts_uniform_edge": [int(test_u.sum()), int(test_e.sum())],
+        "per_dimension": dimensions,
+    }
+
+
 def pair_feature_diagnostics(
     x,
     anchors: np.ndarray,
@@ -404,11 +565,11 @@ def main() -> int:
     parser.add_argument("--data-root", default="")
     parser.add_argument("--graphs", default=",".join(DEFAULT_DATASET_KEYS))
     parser.add_argument("--graph-path", action="append", default=[], metavar="KEY=RELATIVE_PATH")
-    parser.add_argument("--anchors-large", type=int, default=8)
-    parser.add_argument("--anchors-small", type=int, default=24)
+    parser.add_argument("--uniform-anchors-large", type=int, default=32)
+    parser.add_argument("--uniform-anchors-small", type=int, default=96)
     parser.add_argument("--large-node-threshold", type=int, default=1_000_000)
-    parser.add_argument("--candidate-targets", type=int, default=200_000)
-    parser.add_argument("--targets-per-distance", type=int, default=100)
+    parser.add_argument("--uniform-targets-per-anchor", type=int, default=256)
+    parser.add_argument("--edge-pairs", type=int, default=20_000)
     parser.add_argument("--graph-identity-sample", type=int, default=4_000)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument(
@@ -454,20 +615,28 @@ def main() -> int:
         certificate = component_distance_certificate(adjacency)
         labels = certificate.pop("labels")
         certificate.pop("largest_root_distances", None)
-        n_anchors = args.anchors_large if n_nodes >= args.large_node_threshold else args.anchors_small
-        anchors = sample_nonmissing_anchors(
-            x, labels, certificate["largest_component_label"], n_anchors, rng
+        n_anchors = (
+            args.uniform_anchors_large
+            if n_nodes >= args.large_node_threshold
+            else args.uniform_anchors_small
         )
-        pair_a, pair_t, pair_d, sample_meta = sample_exact_distance_pairs(
+        pair_a, pair_t, pair_d, uniform_summary = sample_uniform_node_pairs(
             adjacency,
             labels,
-            certificate["largest_component_label"],
-            anchors,
+            n_anchors,
+            args.uniform_targets_per_anchor,
             rng,
-            args.targets_per_distance,
-            args.candidate_targets,
         )
-        diagnostics = pair_feature_diagnostics(x, pair_a, pair_t, pair_d)
+        finite_positive = np.isfinite(pair_d) & (pair_d > 0)
+        diagnostics = pair_feature_diagnostics(
+            x, pair_a[finite_positive], pair_t[finite_positive], pair_d[finite_positive]
+        )
+        edge_a, edge_t = sample_uniform_anchor_edges(
+            adjacency, args.edge_pairs, rng
+        )
+        edge_vs_uniform = edge_vs_uniform_dimension_diagnostics(
+            x, edge_a, edge_t, pair_a, pair_t
+        )
         graph_samples[name] = uniform_nonmissing_sample(
             x, n_nodes, args.graph_identity_sample, rng
         )
@@ -477,13 +646,15 @@ def main() -> int:
             "n_nodes": n_nodes,
             "n_edges": int(edge_index.shape[1]),
             "component_distance_certificate": certificate,
-            "pair_sampling": sample_meta,
-            "exact_finite_distance_features": diagnostics,
+            "uniform_pair_distance_distribution": uniform_summary,
+            "uniform_connected_pair_feature_correlations": diagnostics,
+            "edge_vs_uniform_dimension_diagnostics": edge_vs_uniform,
             "elapsed_seconds": float(time.time() - started),
         }
         log(
             f"  done in {time.time()-started:.0f}s; global diameter upper "
-            f"{certificate['global_diameter_upper_bound']}; pairs "
+            f"{certificate['global_diameter_upper_bound']}; disconnected "
+            f"{uniform_summary['disconnected_fraction']:.3f}; finite feature pairs "
             f"{diagnostics.get('n_pairs_nonmissing', 0):,}"
         )
         del obj, x, edge_index, adjacency, labels
