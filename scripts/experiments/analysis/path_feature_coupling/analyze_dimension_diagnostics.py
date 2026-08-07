@@ -4,15 +4,11 @@
 This companion to ``analyze_path_feature_coupling.py`` answers two questions that
 whole-vector cosine distance cannot:
 
-1. For every feature dimension, how strongly do symmetric pair terms correlate
-   with exact finite shortest-path distance inside each graph?
+1. Under independent uniform node sampling, what fraction of pairs are disconnected,
+   what is the exact distance distribution of connected pairs, and how strongly does
+   every feature dimension correlate with those finite distances?
 2. For every raw feature dimension, how well can that dimension identify which
    graph a node came from?
-
-It also certifies whether an exact 1,000-hop pair can exist.  For every connected
-component with at least 1,001 nodes, one exact BFS gives root eccentricity ``e``;
-the component diameter is at most ``2e``.  Components smaller than 1,001 nodes
-cannot contain a 1,000-hop pair by size alone.
 """
 
 from __future__ import annotations
@@ -127,6 +123,23 @@ def component_distance_certificate(adjacency) -> dict[str, Any]:
         "labels": labels,
         "largest_root_distances": largest_root_distances,
     }
+
+
+def component_membership_summary(adjacency) -> tuple[dict[str, Any], np.ndarray]:
+    """Return component membership without expensive diameter certification."""
+    n_components, labels = connected_components(
+        adjacency, directed=False, return_labels=True
+    )
+    sizes = np.bincount(labels)
+    largest_label = int(np.argmax(sizes))
+    summary = {
+        "n_components": int(n_components),
+        "largest_component_label": largest_label,
+        "largest_component_nodes": int(sizes[largest_label]),
+        "largest_component_fraction": float(sizes[largest_label] / adjacency.shape[0]),
+        "isolated_component_fraction": float((sizes == 1).sum() / n_components),
+    }
+    return summary, labels
 
 
 def sample_nonmissing_anchors(
@@ -612,9 +625,7 @@ def main() -> int:
         n_nodes = int(x.shape[0])
         edge_index = as_numpy(obj["edge_index"]).astype(np.int64, copy=False)
         adjacency = build_undirected_csr(edge_index, n_nodes)
-        certificate = component_distance_certificate(adjacency)
-        labels = certificate.pop("labels")
-        certificate.pop("largest_root_distances", None)
+        component_summary, labels = component_membership_summary(adjacency)
         n_anchors = (
             args.uniform_anchors_large
             if n_nodes >= args.large_node_threshold
@@ -645,15 +656,14 @@ def main() -> int:
             "graph_path": str(path),
             "n_nodes": n_nodes,
             "n_edges": int(edge_index.shape[1]),
-            "component_distance_certificate": certificate,
+            "component_summary": component_summary,
             "uniform_pair_distance_distribution": uniform_summary,
             "uniform_connected_pair_feature_correlations": diagnostics,
             "edge_vs_uniform_dimension_diagnostics": edge_vs_uniform,
             "elapsed_seconds": float(time.time() - started),
         }
         log(
-            f"  done in {time.time()-started:.0f}s; global diameter upper "
-            f"{certificate['global_diameter_upper_bound']}; disconnected "
+            f"  done in {time.time()-started:.0f}s; disconnected "
             f"{uniform_summary['disconnected_fraction']:.3f}; finite feature pairs "
             f"{diagnostics.get('n_pairs_nonmissing', 0):,}"
         )
