@@ -312,6 +312,9 @@ def get_covid19_twitter_dataloader(
         #   neighbor_sampling_episode_source="graph_id"  -> confine each episode to ONE source
         strata_mode = kwargs.get("neighbor_sampling_strata", "")
         episode_source = kwargs.get("neighbor_sampling_episode_source", "")
+        batch_source_mode = kwargs.get(
+            "neighbor_sampling_batch_source_mode", "independent"
+        )
         subset_spec = kwargs.get("neighbor_sampling_source_subset", "")
         sequence_spec = kwargs.get("neighbor_sampling_source_sequence", "")
         sequence_steps_spec = kwargs.get(
@@ -368,6 +371,23 @@ def get_covid19_twitter_dataloader(
             mode = "confine-to-one-source" if confine_to_single_stratum else "balance-within-episode"
             scope = f" [subset {len(stratum_ids)}/{len(set(graph_ids.tolist()))} sources]" if subset else ""
             print(f"Neighbor sampling graph_id strata ({mode}){scope}: {summary}", flush=True)
+            if batch_source_mode == "complete":
+                if episode_source != "graph_id":
+                    raise ValueError(
+                        "neighbor_sampling_batch_source_mode='complete' requires "
+                        "neighbor_sampling_episode_source='graph_id'."
+                    )
+                if not isinstance(batch_size, int) or batch_size != len(strata):
+                    raise ValueError(
+                        "neighbor_sampling_batch_source_mode='complete' requires batch_size "
+                        f"to equal the number of active sources ({len(strata)}), got "
+                        f"{batch_size!r}."
+                    )
+                print(
+                    "Neighbor sampling batches: complete source coverage "
+                    f"({len(strata)} within-source episodes per batch)",
+                    flush=True,
+                )
             if sequence_steps is not None:
                 schedule = ", ".join(
                     f"{source_names[graph_id] if graph_id < len(source_names) else graph_id}:"
@@ -398,6 +418,7 @@ def get_covid19_twitter_dataloader(
                 cross_source_prob=float(kwargs.get("neighbor_sampling_cross_source_prob", 0.0)),
                 stratum_schedule_steps=sequence_steps,
                 filter_min_degree=bool(kwargs.get("neighbor_matching_edge_split", False)),
+                batch_source_mode=batch_source_mode,
             ),
             ParamSampler(batch_size, n_way, n_shot, n_query, 1),
             seed=seed,

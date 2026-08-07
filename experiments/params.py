@@ -316,6 +316,18 @@ def get_params():
         ),
     )
     args.add_argument(
+        "--neighbor_sampling_batch_source_mode",
+        default="independent",
+        choices=["independent", "complete"],
+        help=(
+            "How sources are assigned across neighbor-matching episodes in one batch. "
+            "'independent' preserves historical per-episode draws. 'complete' emits "
+            "exactly one internally within-source episode from every active graph_id "
+            "per batch; it requires batch_size to equal the active source count, "
+            "neighbor_sampling_episode_source=graph_id, and zero cross-source probability."
+        ),
+    )
+    args.add_argument(
         "--neighbor_sampling_cross_source_prob",
         default=0.0,
         type=float,

@@ -1,0 +1,40 @@
+# All-nine NM with one within-source episode per graph in every optimizer batch.
+dataset: covid19_twitter
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_all9_facebook_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+
+n_way: 30
+n_shots: 3
+n_query: 4
+n_hop: 1
+batch_size: 9
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+neighbor_sampling_batch_source_mode: complete
+neighbor_sampling_cross_source_prob: 0.0
+
+# 40k optimizer updates. Step 4,444 is approximately total-episode matched to the
+# historical batch-1 40k model; step 40k gives each of nine sources 40k episodes.
+dataset_len_cap: 10000
+epochs: 4
+val_len_cap: 500
+test_len_cap: 500
+learning_rate: 0.001
+eval_step: 100000
+checkpoint_step: 10000
+checkpoint_steps: "0,100,500,1000,2000,4444,10000,20000,40000"
+workers: 16
+device: 0
+seed: 0
+tags:
+  - nm_all9
+  - source_complete_batch
+  - batch9
+  - facebook_page_reference
+prefix: nm_all9_source_complete_b9
+
