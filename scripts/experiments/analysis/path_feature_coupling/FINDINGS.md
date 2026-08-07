@@ -28,6 +28,76 @@ This is evidence of *available* feature–structure coupling, not yet proof that
 trained GNN uses those coordinates. The causal follow-up is to mask or permute the
 selected dimensions and re-evaluate the frozen encoder.
 
+## What uniform center sampling actually produces
+
+The follow-up sampled independent nodes uniformly, matching the way training can
+choose distant centers, and computed exact undirected shortest paths rather than
+stopping at three hops. **Connected uniform pairs are not hundreds of hops apart in
+these graphs.** Their median distance is 3–5, their 99th percentile is 4–10, and the
+largest distance observed in this sweep is 14. The genuinely far case is often
+disconnection: its probability ranges from 0.0% to 51.8% across graphs.
+
+| graph | disconnected | finite median | finite mean | p90 | p99 | sampled max |
+|---|---:|---:|---:|---:|---:|---:|
+| covid | 3.0% | 5 | 4.75 | 6 | 7 | 10 |
+| ukraine | 1.8% | 4 | 4.37 | 5 | 6 | 11 |
+| midterm | 19.2% | 5 | 5.32 | 8 | 10 | 14 |
+| hongkong | 21.0% | 4 | 3.55 | 5 | 6 | 8 |
+| twibot20 | 1.5% | 4 | 4.05 | 5 | 6 | 11 |
+| election2020-political | 0.0% | 3 | 2.57 | 3 | 4 | 5 |
+| covid-political | 51.8% | 4 | 4.12 | 6 | 7 | 11 |
+| ukraine-suspended | 42.7% | 4 | 3.86 | 5 | 7 | 10 |
+
+This changes the interpretation of the earlier `>3_or_disconnected` bucket. It is
+a good operational contrast to adjacency, but it mixes moderately distant connected
+pairs with pairs in different components. The exact finite-distance analysis keeps
+those cases separate.
+
+## Every feature dimension versus node distance
+
+Yes: all 768 dimensions are now tested separately. Because node distance belongs to
+an unordered pair, each raw coordinate is represented by three symmetric quantities:
+`|x_u-x_v|` (coordinate-wise smoothness), `(x_u+x_v)/2` (feature region), and
+`x_u x_v` (same-sign/magnitude interaction). Across the eight graphs, the strongest
+single-coordinate Pearson correlation with exact finite path length is only
+**0.200–0.347 in absolute value**. This agrees with the weak whole-vector trend.
+
+But a more training-relevant contrast is much stronger. A single coordinate can
+distinguish a random edge from a uniformly sampled node pair with held-out,
+node-disjoint AUC **0.701–0.908** across the eight graphs. The best values are 0.908
+for COVID (dimension 343, pair mean), 0.880 for Ukraine (dimension 126, product),
+0.800 for Hong Kong (dimension 178, mean), and 0.765 for Ukraine-suspended
+(dimension 595, mean). Thus the user's concern is correct: strong localized
+structure signals can be drowned out by cosine or Euclidean aggregation over 768
+coordinates.
+
+Most winners use pair mean or product rather than absolute difference. That still
+gives the GNN useful information about which feature regions tend to participate in
+edges, but it should not be described as pure homophily or smoothness.
+
+## Every raw dimension versus graph identity
+
+All 768 raw coordinates were also evaluated as one-dimensional graph classifiers on
+held-out nodes. Across all eight graphs, the best coordinate reaches **18.8%**
+balanced accuracy (12.5% chance), and the strongest coordinate/graph one-vs-rest AUC
+is **0.746**. Restricting to the six same-pipeline graphs gives **22.7%** balanced
+accuracy (16.7% chance) and a maximum one-vs-rest AUC of **0.668**. Individual axes
+therefore carry real graph-domain information, but no single raw coordinate nearly
+determines graph identity. The much stronger previously observed full-feature
+graph-domain separation is multivariate.
+
+No coordinate was singled out in advance: the analysis ranks all 768. Across all
+eight graphs the best univariate graph-ID coordinates are 194, 454, 754, 119, 670,
+656, 712, and 320 (balanced accuracy 18.3–18.8%). In the cleaner same-pipeline scope
+the leaders are 179, 670, 320, 147, 414, 767, 295, and 543 (21.8–22.7%). These
+indices are empirical ranked signals, not semantically stable named concepts.
+
+The exhaustive tables are
+[`node_distance_per_dimension.csv`](data/node_distance_per_dimension.csv) and
+[`graph_identity_per_dimension.csv`](data/graph_identity_per_dimension.csv); the
+sampling metadata and full nested results are in
+[`dimension_diagnostics.json`](data/dimension_diagnostics.json).
+
 ## Results
 
 All probes distinguish exact distance 1 from a uniformly sampled endpoint verified
@@ -84,6 +154,9 @@ geometry as one scalar axis.
   over all pairs at a given distance.
 - The far endpoint is `>3_or_disconnected`, not a known numeric path length; only
   the 1–3 correlation uses exact lengths.
+- The uniform-pair extension computes exact lengths for connected pairs and treats
+  disconnected pairs as a separate outcome; it does not encode disconnection as an
+  invented distance such as 1,000.
 - The primary analysis conditions on all five nodes having nonzero text features,
   isolating embedding geometry. Missing-text patterns may provide additional signal.
 - The adjacent-versus-far probe can exploit absolute feature regions associated

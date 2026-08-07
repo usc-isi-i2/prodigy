@@ -29,6 +29,22 @@ The output includes three kinds of evidence:
 3. Mean random-pair cosine and Euclidean distances within and between graphs in the
    same units, unlike centroid cosine or proxy-A-distance.
 
+A second, uniform-pair diagnostic answers the follow-up about distances beyond
+three hops and exports every original feature coordinate. It samples nodes exactly
+as independent uniform center choices, computes exact finite shortest-path lengths,
+and records disconnected pairs separately. For each coordinate it correlates path
+length with three symmetric pair summaries: absolute difference, pair mean, and
+elementwise product. It also reports a node-disjoint edge-versus-uniform AUC. A
+separate held-out univariate Gaussian probe measures how well each raw coordinate
+predicts graph identity, both across all eight graphs and across the six graphs made
+with the same feature pipeline.
+
+The complete outputs are:
+
+- `data/dimension_diagnostics.json`: full sampling metadata and nested results.
+- `data/node_distance_per_dimension.csv`: one row per graph and feature coordinate.
+- `data/graph_identity_per_dimension.csv`: one row per scope and feature coordinate.
+
 ## Tucker run
 
 Use the `prodigy` environment. The defaults cover the eight single-source retweet
@@ -50,6 +66,15 @@ Pilot one smaller graph first:
   --out /tmp/path_feature_coupling_midterm_pilot.json
 ```
 
+Run the uniform-pair and per-dimension diagnostic, then export flat tables:
+
+```bash
+/home/mhchu/miniconda3/envs/prodigy/bin/python \
+  scripts/experiments/analysis/path_feature_coupling/analyze_dimension_diagnostics.py
+/home/mhchu/miniconda3/envs/prodigy/bin/python \
+  scripts/experiments/analysis/path_feature_coupling/export_dimension_tables.py
+```
+
 ## Interpretation cautions
 
 - The short-distance endpoints are random-walk sampled, not uniform over every
@@ -59,6 +84,16 @@ Pilot one smaller graph first:
 - `>3_or_disconnected` is an ordinal comparison bucket, not a known numeric path
   length. The reported 1–3 correlation uses exact distances only; the second
   correlation labels the far bucket as 4 and is explicitly descriptive.
+- The uniform-pair diagnostic resolves that bucket: connected uniform pairs have
+  exact finite lengths, while disconnected pairs have no finite path length and are
+  summarized separately rather than assigned an arbitrary large number.
+- Pair mean and product can reveal that edge endpoints occupy a special feature
+  region, including degree or sampling effects. They are GNN-accessible structure
+  signals, but are not by themselves evidence of feature homophily. Absolute
+  difference is the direct coordinate-wise smoothness statistic.
+- Raw embedding axes depend on the embedding pipeline. The same-pipeline graph-
+  identity scope is the cleaner comparison; the all-graph scope also contains the
+  known political-graph pipeline shift.
 - Conditioning on nonzero text features isolates semantic-feature geometry. Missing
   text itself may be informative to a GNN and should be analyzed separately if it
   becomes part of the mechanism claim.
