@@ -627,8 +627,22 @@ class TrainerFS():
         val_batch_count = self.parameter["val_len_cap"] if self.parameter["val_len_cap"] is not None else self.parameter["dataset_len_cap"]
         test_batch_count = self.parameter["test_len_cap"] if self.parameter["test_len_cap"] is not None else self.parameter["dataset_len_cap"]
 
-        val_dataloader = get_dataloader(dataset, split="val", node_split="", batch_count=val_batch_count, **kwargs)
-        test_dataloader = get_dataloader(dataset, split="test", node_split="", batch_count=test_batch_count, **kwargs)
+        eval_only = bool(self.parameter.get("eval_only", False))
+        eval_only_split = self.parameter.get("eval_only_split", "test")
+        need_val = not eval_only or eval_only_split in {"val", "both"} or bool(
+            self.parameter.get("eval_val_before_train", False)
+        )
+        need_test = not eval_only or eval_only_split in {"test", "both"} or bool(
+            self.parameter.get("eval_test_before_train", False)
+        )
+        val_dataloader = (
+            get_dataloader(dataset, split="val", node_split="", batch_count=val_batch_count, **kwargs)
+            if need_val else None
+        )
+        test_dataloader = (
+            get_dataloader(dataset, split="test", node_split="", batch_count=test_batch_count, **kwargs)
+            if need_test else None
+        )
 
         train_val_dataloader = None
         train_node_split = ""
@@ -644,7 +658,13 @@ class TrainerFS():
             kwargs["n_shot"] = range(kwargs["n_shot"], self.parameter["n_shots_upper"] + 1)
         if self.parameter["n_query_upper"] > 0:
             kwargs["n_query"] = range(kwargs["n_query"], self.parameter["n_query_upper"] + 1)
-        train_dataloader = get_dataloader(dataset, split="train", node_split=train_node_split, batch_count=self.parameter["dataset_len_cap"], **kwargs)
+        train_dataloader = None if eval_only else get_dataloader(
+            dataset,
+            split="train",
+            node_split=train_node_split,
+            batch_count=self.parameter["dataset_len_cap"],
+            **kwargs,
+        )
         return train_dataloader, train_val_dataloader, val_dataloader, test_dataloader
 
 
@@ -1701,18 +1721,22 @@ class TrainerFS():
         # training by step
         t_load, t_one_step = 0, 0
         steps_run = 0  # optimizer steps actually completed; used for the final checkpoint
-        train_dataloader_itr = iter(self.train_dataloader)
 
         bad_counts = 0
 
         def prefix_dict(d, prefix):
             return {prefix + key: value for key, value in d.items()}
 
-        run_test_before_train = bool(self.parameter.get("eval_test_before_train", False))
-        run_val_before_train = bool(self.parameter.get("eval_val_before_train", False))
         eval_only = bool(self.parameter.get("eval_only", False))
+        eval_only_split = self.parameter.get("eval_only_split", "test")
+        run_test_before_train = bool(self.parameter.get("eval_test_before_train", False)) or (
+            eval_only and eval_only_split in {"test", "both"}
+        )
+        run_val_before_train = bool(self.parameter.get("eval_val_before_train", False)) or (
+            eval_only and eval_only_split in {"val", "both"}
+        )
 
-        if run_test_before_train or eval_only:
+        if run_test_before_train:
             with torch.no_grad():
                 _log("Pre-training eval on test set...")
                 test_loss, test_acc, test_acc_std, test_aux_loss, ranks = self.do_eval(self.test_dataloader, split_name="test", step=0)
@@ -1728,11 +1752,6 @@ class TrainerFS():
                     for key in ranks:
                         start_log_dict["start_test_" + key] = ranks[key]
                 wandb.log(start_log_dict, step=0)
-
-        if eval_only:
-            _log("Evaluation only — done.")
-            wandb.finish()
-            return
 
         if run_val_before_train:
             with torch.no_grad():
@@ -1751,6 +1770,11 @@ class TrainerFS():
                         start_log_dict["start_val_" + key] = ranks[key]
                 wandb.log(start_log_dict, step=0)
 
+        if eval_only:
+            _log("Evaluation only — done.")
+            wandb.finish()
+            return
+
         # `steps_run` counts completed optimizer steps, so it never takes the value 0
         # inside the loop. Step 0 — the random-init anchor a saturation curve is measured
         # against — therefore has to be written here, before any gradient is applied.
@@ -1758,6 +1782,7 @@ class TrainerFS():
             _log("[step 0] saving pre-training checkpoint...")
             self.save_checkpoint(0)
 
+        train_dataloader_itr = iter(self.train_dataloader)
         pbar = trange(self.steps)
         for e in pbar:
             steps_run = e + 1

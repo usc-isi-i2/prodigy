@@ -23,25 +23,26 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-if __name__ == '__main__':
-    torch.set_num_threads(4)
 
-    params = get_params()
+def seed_everything(params):
+    """Apply the runner's historical deterministic seed setup."""
+    if params['seed'] is None:
+        return
+    seed = params['seed']
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    np.random.seed(seed)
+    random.seed(seed)
 
-    # control random seed
-    if params['seed'] is not None:
-        SEED = params['seed']
-        torch.manual_seed(SEED)
-        torch.cuda.manual_seed(SEED)
-        torch.backends.cudnn.deterministic = True
-        np.random.seed(SEED)
-        random.seed(SEED)
 
-    if params["dataset"] in ["FB15K-237", "NELL", "ConceptNet", "Wiki"]:
-        print("Using KG dataset - setting language model to sentence-transformers/all-mpnet-base-v2")
-        params["bert_emb_model"] = "sentence-transformers/all-mpnet-base-v2"
-    _log("Loading dataset...")
-    datasets = get_dataset_wrap(
+def load_dataset(params):
+    """Load one dataset from resolved experiment parameters.
+
+    Kept as a function so checkpoint sweeps can reuse the large immutable graph
+    object instead of reading it once per checkpoint.
+    """
+    return get_dataset_wrap(
         root=params["root"],
         dataset=params["dataset"],
         force_cache=params["force_cache"],
@@ -59,9 +60,9 @@ if __name__ == '__main__':
         rel_sample_rand_seed=params["rel_sample_random_seed"],
         calc_ranks=params["calc_ranks"],
         kg_emb_model=params["kg_emb_model"] if params["kg_emb_model"] != "" else None,
-        task_name = params["task_name"],
+        task_name=params["task_name"],
         shuffle_index=params["shuffle_index"],
-        node_graph = params["task_name"] == "sn_neighbor_matching",
+        node_graph=params["task_name"] == "sn_neighbor_matching",
         csv_filename=params["csv_filename"],
         label_type=params["label_type"],
         max_users=params["max_users"],
@@ -96,6 +97,19 @@ if __name__ == '__main__':
         neighbor_matching_edge_split=params["neighbor_matching_edge_split"],
         seed=params["seed"],
     )
+
+if __name__ == '__main__':
+    torch.set_num_threads(4)
+
+    params = get_params()
+
+    seed_everything(params)
+
+    if params["dataset"] in ["FB15K-237", "NELL", "ConceptNet", "Wiki"]:
+        print("Using KG dataset - setting language model to sentence-transformers/all-mpnet-base-v2")
+        params["bert_emb_model"] = "sentence-transformers/all-mpnet-base-v2"
+    _log("Loading dataset...")
+    datasets = load_dataset(params)
 
     _log("Dataset loaded. Initializing trainer...")
     trnr = TrainerFS(datasets, params)
