@@ -24,6 +24,9 @@ from experiments.sampler import NeighborSampler
 
 BACKGROUND_VIEW = "static_background"
 HOLDOUT_VIEW = "static_holdout"
+TRAIN_VIEW = "static_train"
+VALIDATION_VIEW = "static_validation"
+TEST_VIEW = "static_test"
 
 
 def enabled(kwargs: dict[str, Any]) -> bool:
@@ -55,6 +58,17 @@ def ensure_static_views(raw: Any, kwargs: dict[str, Any]) -> None:
         return
     if not isinstance(raw, dict):
         raise TypeError("split-aware neighbor matching requires a dict graph artifact")
+    if str(kwargs.get("edge_view", "default")) == TRAIN_VIEW:
+        train = raw.get("edge_index_views", {}).get(TRAIN_VIEW)
+        validation = raw.get("target_edge_index_views", {}).get(VALIDATION_VIEW)
+        test = raw.get("target_edge_index_views", {}).get(TEST_VIEW)
+        if train is None or validation is None or test is None:
+            raise ValueError(
+                "Three-way neighbor matching requires stored static_train, "
+                "static_validation, and static_test views; refusing an in-memory "
+                "split of a production artifact."
+            )
+        return
     background = raw.get("edge_index_views", {}).get(BACKGROUND_VIEW)
     holdout = raw.get("target_edge_index_views", {}).get(HOLDOUT_VIEW)
     if (background is None) != (holdout is None):
@@ -102,15 +116,19 @@ def configure_edge_split(
             "neighbor_matching_edge_split is only valid for task_name=neighbor_matching."
         )
     background_view = str(kwargs.get("edge_view", "default"))
-    if background_view != BACKGROUND_VIEW:
+    three_way = background_view == TRAIN_VIEW
+    required_background = TRAIN_VIEW if three_way else BACKGROUND_VIEW
+    if background_view != required_background:
         raise ValueError(
-            "neighbor_matching_edge_split requires edge_view=static_background; "
+            "neighbor_matching_edge_split requires edge_view=static_background "
+            "or edge_view=static_train; "
             f"got {background_view!r}."
         )
-    holdout_view = str(kwargs.get("target_edge_view", HOLDOUT_VIEW))
-    if holdout_view != HOLDOUT_VIEW:
+    holdout_view = str(kwargs.get("target_edge_view", TEST_VIEW if three_way else HOLDOUT_VIEW))
+    required_target = TEST_VIEW if three_way else HOLDOUT_VIEW
+    if holdout_view != required_target:
         raise ValueError(
-            "neighbor_matching_edge_split requires target_edge_view=static_holdout; "
+            f"neighbor_matching_edge_split requires target_edge_view={required_target}; "
             f"got {holdout_view!r}."
         )
     holdout_edge_index = _target_edge_index(raw, holdout_view)
@@ -126,21 +144,37 @@ def configure_edge_split(
             f"{tuple(holdout_edge_index.shape)}."
         )
 
-    holdout_graph = Data(
-        edge_index=holdout_edge_index,
-        num_nodes=int(dataset.graph.num_nodes),
-    )
-    dataset.nm_holdout_neighbor_sampler = NeighborSampler(
-        holdout_graph,
+    test_graph = Data(edge_index=holdout_edge_index, num_nodes=int(dataset.graph.num_nodes))
+    dataset.nm_test_neighbor_sampler = NeighborSampler(
+        test_graph,
         num_hops=n_hop,
         **sampler_kwargs,
     )
+    dataset.nm_holdout_neighbor_sampler = dataset.nm_test_neighbor_sampler
+    if three_way:
+        validation_edge_index = _target_edge_index(raw, VALIDATION_VIEW)
+        if validation_edge_index is None:
+            raise ValueError("three-way split has no static_validation target view")
+        validation_graph = Data(
+            edge_index=validation_edge_index,
+            num_nodes=int(dataset.graph.num_nodes),
+        )
+        dataset.nm_validation_neighbor_sampler = NeighborSampler(
+            validation_graph,
+            num_hops=n_hop,
+            **sampler_kwargs,
+        )
+    else:
+        validation_edge_index = holdout_edge_index
+        dataset.nm_validation_neighbor_sampler = dataset.nm_test_neighbor_sampler
     dataset.nm_background_edge_view = background_view
     dataset.nm_holdout_edge_view = holdout_view
     print(
-        "Neighbor-matching edge split: train/context=static_background "
+        f"Neighbor-matching edge split: train/context={background_view} "
         f"({dataset.graph.edge_index.shape[1]} directed edges), "
-        f"val/test positives=static_holdout ({holdout_edge_index.shape[1]} directed edges)",
+        f"validation positives={VALIDATION_VIEW if three_way else holdout_view} "
+        f"({validation_edge_index.shape[1]} directed edges), test positives={holdout_view} "
+        f"({holdout_edge_index.shape[1]} directed edges)",
         flush=True,
     )
 
@@ -149,7 +183,10 @@ def positive_sampler_for_split(dataset, split: str, kwargs: dict[str, Any]):
     """Return the positive-edge sampler for one NM dataloader split."""
     if not enabled(kwargs) or split == "train":
         return dataset.neighbor_sampler
-    sampler = getattr(dataset, "nm_holdout_neighbor_sampler", None)
+    attr = "nm_validation_neighbor_sampler" if split in {"val", "train_val"} else "nm_test_neighbor_sampler"
+    sampler = getattr(dataset, attr, None)
+    if sampler is None:
+        sampler = getattr(dataset, "nm_holdout_neighbor_sampler", None)
     if sampler is None:
         raise ValueError(
             "Split-aware neighbor matching requested for val/test, but the dataset "

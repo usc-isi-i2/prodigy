@@ -190,6 +190,83 @@ class StaticEdgeSplit:
     stats: dict[str, Any]
 
 
+@dataclass(frozen=True)
+class StaticTrainValTestEdgeSplit:
+    """Leakage-free three-way split over unordered edge pairs."""
+
+    train_mask: torch.Tensor
+    validation_mask: torch.Tensor
+    test_mask: torch.Tensor
+    train_edge_index: torch.Tensor
+    validation_edge_index: torch.Tensor
+    test_edge_index: torch.Tensor
+    stats: dict[str, Any]
+
+
+def build_static_train_val_test_split(
+    edge_index: torch.Tensor,
+    *,
+    validation_frac: float = 0.15,
+    test_frac: float = 0.15,
+    seed: int = 0,
+) -> StaticTrainValTestEdgeSplit:
+    """Split directed edges by unordered pair into fixed train/validation/test views."""
+    if edge_index.dim() != 2 or edge_index.shape[0] != 2:
+        raise ValueError("edge_index must have shape [2, E]")
+    if validation_frac <= 0 or test_frac <= 0 or validation_frac + test_frac >= 1:
+        raise ValueError("validation_frac and test_frac must be positive and sum to less than 1")
+
+    ei = edge_index.long().cpu().numpy()
+    src, dst = ei[0], ei[1]
+    pair_keys = np.stack([np.minimum(src, dst), np.maximum(src, dst)], axis=1)
+    _, inverse, counts = np.unique(pair_keys, axis=0, return_inverse=True, return_counts=True)
+    num_pairs = int(counts.shape[0])
+    if num_pairs < 3:
+        raise ValueError("at least three undirected pairs are required for a three-way split")
+
+    rng = np.random.default_rng(seed)
+    perm = rng.permutation(num_pairs)
+    n_validation = max(1, int(round(num_pairs * validation_frac)))
+    n_test = max(1, int(round(num_pairs * test_frac)))
+    if n_validation + n_test >= num_pairs:
+        overflow = n_validation + n_test - (num_pairs - 1)
+        n_test = max(1, n_test - overflow)
+    validation_pairs = np.zeros(num_pairs, dtype=bool)
+    test_pairs = np.zeros(num_pairs, dtype=bool)
+    validation_pairs[perm[:n_validation]] = True
+    test_pairs[perm[n_validation:n_validation + n_test]] = True
+    validation_np = validation_pairs[inverse]
+    test_np = test_pairs[inverse]
+    train_np = ~(validation_np | test_np)
+    train_mask = torch.from_numpy(train_np)
+    validation_mask = torch.from_numpy(validation_np)
+    test_mask = torch.from_numpy(test_np)
+    train_edge_index = edge_index[:, train_mask]
+    validation_edge_index = edge_index[:, validation_mask]
+    test_edge_index = edge_index[:, test_mask]
+    return StaticTrainValTestEdgeSplit(
+        train_mask=train_mask,
+        validation_mask=validation_mask,
+        test_mask=test_mask,
+        train_edge_index=train_edge_index,
+        validation_edge_index=validation_edge_index,
+        test_edge_index=test_edge_index,
+        stats={
+            "total_edges": int(ei.shape[1]),
+            "undirected_pairs": num_pairs,
+            "train_pairs": int(num_pairs - n_validation - n_test),
+            "validation_pairs": int(n_validation),
+            "test_pairs": int(n_test),
+            "validation_frac_requested": validation_frac,
+            "test_frac_requested": test_frac,
+            "train_edges": int(train_edge_index.shape[1]),
+            "validation_edges": int(validation_edge_index.shape[1]),
+            "test_edges": int(test_edge_index.shape[1]),
+            "seed": seed,
+        },
+    )
+
+
 def build_static_edge_split(
     edge_index: torch.Tensor,
     *,
@@ -293,6 +370,8 @@ __all__ = [
     "parse_twitter_datetime",
     "build_profile_node_targets",
     "StaticEdgeSplit",
+    "StaticTrainValTestEdgeSplit",
     "build_static_edge_split",
+    "build_static_train_val_test_split",
     "attach_benchmark_targets",
 ]
