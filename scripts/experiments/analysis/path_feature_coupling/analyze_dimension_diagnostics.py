@@ -201,7 +201,7 @@ def sample_exact_distance_pairs(
     eccentricities: list[int] = []
     exact_1000_candidates = 0
 
-    for anchor in anchors:
+    for anchor_index, anchor in enumerate(anchors):
         distances = dijkstra(
             adjacency, directed=False, indices=int(anchor), unweighted=True
         )
@@ -285,7 +285,7 @@ def sample_uniform_node_pairs(
     n_disconnected = 0
     n_same_node = 0
 
-    for anchor in anchors:
+    for anchor_index, anchor in enumerate(anchors):
         targets = rng.integers(0, n_nodes, size=targets_per_anchor, dtype=np.int64)
         same_component = labels[targets] == labels[anchor]
         distances = np.full(targets_per_anchor, np.inf, dtype=np.float64)
@@ -299,6 +299,8 @@ def sample_uniform_node_pairs(
         pair_anchor.append(np.full(targets_per_anchor, anchor, dtype=np.int64))
         pair_target.append(targets)
         pair_distance.append(distances)
+        if (anchor_index + 1) % 4 == 0 or anchor_index + 1 == len(anchors):
+            log(f"  resolved uniform-pair distances for {anchor_index + 1}/{len(anchors)} anchors")
 
     all_anchor = np.concatenate(pair_anchor)
     all_target = np.concatenate(pair_target)
@@ -586,10 +588,10 @@ def main() -> int:
     parser.add_argument("--data-root", default="")
     parser.add_argument("--graphs", default=",".join(DEFAULT_DATASET_KEYS))
     parser.add_argument("--graph-path", action="append", default=[], metavar="KEY=RELATIVE_PATH")
-    parser.add_argument("--uniform-anchors-large", type=int, default=32)
-    parser.add_argument("--uniform-anchors-small", type=int, default=96)
+    parser.add_argument("--uniform-anchors-large", type=int, default=12)
+    parser.add_argument("--uniform-anchors-small", type=int, default=48)
     parser.add_argument("--large-node-threshold", type=int, default=1_000_000)
-    parser.add_argument("--uniform-targets-per-anchor", type=int, default=256)
+    parser.add_argument("--uniform-targets-per-anchor", type=int, default=512)
     parser.add_argument("--edge-pairs", type=int, default=20_000)
     parser.add_argument("--graph-identity-sample", type=int, default=4_000)
     parser.add_argument("--seed", type=int, default=0)
