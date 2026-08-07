@@ -383,10 +383,11 @@ def logistic_probe(
     from sklearn.preprocessing import StandardScaler
 
     solver = "liblinear" if penalty == "l1" else "lbfgs"
+    l1_ratio = 1.0 if penalty == "l1" else 0.0
     model = make_pipeline(
         StandardScaler(),
         LogisticRegression(
-            penalty=penalty,
+            l1_ratio=l1_ratio,
             solver=solver,
             C=0.1 if penalty == "l1" else 1.0,
             max_iter=2_000,
@@ -403,6 +404,32 @@ def logistic_probe(
         "nonzero_coefficients": int(np.count_nonzero(np.abs(coef) > 1e-12)),
         "n_coefficients": int(len(coef)),
     }
+
+
+def top_k_absdiff_probes(
+    train_abs: np.ndarray,
+    y_train: np.ndarray,
+    test_abs: np.ndarray,
+    y_test: np.ndarray,
+    ks: tuple[int, ...] = (1, 4, 16, 64),
+) -> dict[str, Any]:
+    """Select coordinates on train only, then fit/evaluate compact held-out probes."""
+    from sklearn.metrics import roc_auc_score
+
+    train_aucs = np.asarray(
+        [roc_auc_score(y_train, train_abs[:, j]) for j in range(train_abs.shape[1])]
+    )
+    order = np.argsort(np.abs(train_aucs - 0.5))[::-1]
+    out: dict[str, Any] = {}
+    for k in ks:
+        selected = order[: min(k, train_abs.shape[1])]
+        out[str(k)] = {
+            "selected_dimensions": [int(v) for v in selected],
+            **logistic_probe(
+                train_abs[:, selected], y_train, test_abs[:, selected], y_test, penalty="l2"
+            ),
+        }
+    return out
 
 
 def adjacent_vs_far_probe(blocks: list[Block], features: np.ndarray) -> dict[str, Any]:
@@ -454,6 +481,9 @@ def adjacent_vs_far_probe(blocks: list[Block], features: np.ndarray) -> dict[str
         "test_class_counts_far_adjacent": np.bincount(y_test, minlength=2).astype(int).tolist(),
     }
     out["single_absdiff_coordinate"] = single_coordinate_probe(
+        x_train[:, :dim], y_train, x_test[:, :dim], y_test
+    )
+    out["top_k_absdiff_coordinate_probes"] = top_k_absdiff_probes(
         x_train[:, :dim], y_train, x_test[:, :dim], y_test
     )
     out["sparse_logistic_pair_probe"] = logistic_probe(

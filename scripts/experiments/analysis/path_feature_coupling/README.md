@@ -19,8 +19,8 @@ The output includes three kinds of evidence:
    cosine and Euclidean feature distance.
 2. A held-out adjacent-versus-far classifier built from symmetric pair features
    (`abs(x_u-x_v)`, pair mean, and elementwise product). A single-coordinate probe
-   and an L1-sparse probe specifically test whether one or a few informative GTE
-   dimensions are drowned out by whole-vector distances. Train/test pairs are
+   plus 1/4/16/64-coordinate and L1-sparse probes specifically test whether one or
+   a few informative GTE dimensions are drowned out by whole-vector distances. Train/test pairs are
    node-disjoint by deterministic node hash: both endpoints must fall entirely in
    the training or test partition.
 3. Mean random-pair cosine and Euclidean distances within and between graphs in the
