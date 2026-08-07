@@ -528,6 +528,9 @@ class TrainerFS():
         kwargs["neighbor_sampling_strata"] = self.parameter.get("neighbor_sampling_strata", "")
         kwargs["neighbor_sampling_episode_source"] = self.parameter.get("neighbor_sampling_episode_source", "")
         kwargs["neighbor_sampling_episode_source_weighting"] = self.parameter.get("neighbor_sampling_episode_source_weighting", "proportional")
+        kwargs["neighbor_sampling_batch_source_mode"] = self.parameter.get(
+            "neighbor_sampling_batch_source_mode", "independent"
+        )
         kwargs["neighbor_sampling_source_subset"] = self.parameter.get("neighbor_sampling_source_subset", "")
         kwargs["neighbor_sampling_source_sequence"] = self.parameter.get(
             "neighbor_sampling_source_sequence", ""

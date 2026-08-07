@@ -225,7 +225,7 @@ class NeighborTask(TaskBase):
     def __init__(self, neighbor_sampler, size, direction, sampling_strategy="strict", strata=None,
                  confine_to_single_stratum=False, stratum_weighting="proportional",
                  cross_source_prob=0.0, stratum_schedule_steps=None,
-                 filter_min_degree=False):
+                 filter_min_degree=False, batch_source_mode="independent"):
         self.neighbor_sampler = neighbor_sampler
         self.size = size
         self.direction = direction
@@ -283,6 +283,23 @@ class NeighborTask(TaskBase):
                 "(set neighbor_sampling_episode_source=graph_id); it interpolates "
                 "between within-source and naive sampling."
             )
+        if batch_source_mode not in {"independent", "complete"}:
+            raise ValueError(
+                f"Unknown batch_source_mode={batch_source_mode!r}; use 'independent' or "
+                "'complete'."
+            )
+        self.batch_source_mode = batch_source_mode
+        if self.batch_source_mode == "complete":
+            if not self.confine_to_single_stratum:
+                raise ValueError(
+                    "batch_source_mode='complete' requires confine_to_single_stratum=True "
+                    "(set neighbor_sampling_episode_source=graph_id)."
+                )
+            if self.cross_source_prob != 0.0:
+                raise ValueError(
+                    "batch_source_mode='complete' requires cross_source_prob=0 so every "
+                    "episode remains within one source."
+                )
         self.stratum_schedule_steps = None
         self.stratum_schedule_boundaries = None
         self.scheduled_episode = 0
@@ -295,6 +312,11 @@ class NeighborTask(TaskBase):
                 raise ValueError(
                     "stratum_schedule_steps requires cross_source_prob=0: a mixed-source "
                     "episode would violate the blocked curriculum."
+                )
+            if self.batch_source_mode == "complete":
+                raise ValueError(
+                    "batch_source_mode='complete' is incompatible with a blocked source "
+                    "schedule: every complete batch already contains every active source."
                 )
             steps = [int(step) for step in stratum_schedule_steps]
             if len(steps) != len(self.strata):
@@ -433,24 +455,8 @@ class NeighborTask(TaskBase):
             )
         return task
 
-    def _sample_confined(self, num_label, num_member, rng):
-        # Pick ONE stratum (source) proportional to its size, then draw the whole
-        # episode from it so every center/negative shares a source.
-        if self.stratum_schedule_boundaries is not None:
-            stratum_idx = bisect_right(
-                self.stratum_schedule_boundaries, self.scheduled_episode
-            )
-            if stratum_idx >= len(self.strata):
-                raise RuntimeError(
-                    "Blocked source schedule exhausted after "
-                    f"{self.stratum_schedule_boundaries[-1]} episodes; the trainer requested "
-                    f"episode {self.scheduled_episode + 1}."
-                )
-            self.scheduled_episode += 1
-        else:
-            stratum_idx = rng.choices(
-                range(len(self.strata)), weights=self.stratum_weights, k=1
-            )[0]
+    def _sample_from_stratum(self, num_label, num_member, rng, stratum_idx):
+        """Draw one complete episode from an explicitly selected source stratum."""
         candidates = self._eligible_candidates(
             self.strata[stratum_idx], num_member, ("stratum", stratum_idx)
         )
@@ -476,6 +482,50 @@ class NeighborTask(TaskBase):
                 "neighbor_sampling_strategy='replacement' or lower n_way."
             )
         return task
+
+    def _sample_confined(self, num_label, num_member, rng):
+        # Pick ONE stratum (source) proportional to its size, then draw the whole
+        # episode from it so every center/negative shares a source.
+        if self.stratum_schedule_boundaries is not None:
+            stratum_idx = bisect_right(
+                self.stratum_schedule_boundaries, self.scheduled_episode
+            )
+            if stratum_idx >= len(self.strata):
+                raise RuntimeError(
+                    "Blocked source schedule exhausted after "
+                    f"{self.stratum_schedule_boundaries[-1]} episodes; the trainer requested "
+                    f"episode {self.scheduled_episode + 1}."
+                )
+            self.scheduled_episode += 1
+        else:
+            stratum_idx = rng.choices(
+                range(len(self.strata)), weights=self.stratum_weights, k=1
+            )[0]
+        return self._sample_from_stratum(num_label, num_member, rng, stratum_idx)
+
+    def sample_batch(self, batch_param, rng):
+        """Return a source-complete batch, or None for ordinary independent sampling.
+
+        A complete batch has exactly one internally confined episode from every active
+        source. The source order is shuffled so no metagraph position is tied to a
+        particular source, while coverage is deterministic at the batch level.
+        """
+        if self.batch_source_mode != "complete":
+            return None
+        num_sources = len(self.strata)
+        if batch_param.batch_size != num_sources:
+            raise ValueError(
+                "batch_source_mode='complete' requires batch_size to equal the number "
+                f"of active sources ({num_sources}), got {batch_param.batch_size}."
+            )
+        stratum_order = list(range(num_sources))
+        rng.shuffle(stratum_order)
+        return [
+            self._sample_from_stratum(
+                batch_param.n_way, batch_param.n_member, rng, stratum_idx
+            )
+            for stratum_idx in stratum_order
+        ]
 
     def sample(self, num_label, num_member, num_shot, num_query, rng):
         # Task is dict
@@ -590,15 +640,20 @@ class BatchSampler(Sampler):
     def sample(self):
         batch_param = self.param_sampler(self.rng)
 
-        batch = []
-        for _ in range(batch_param.batch_size):
-            example = self.task.sample(
-                batch_param.n_way,
-                batch_param.n_member, 
-                batch_param.n_shot,
-                batch_param.n_query, 
-                self.rng)
-            batch.append(example)
+        batch = None
+        sample_batch = getattr(self.task, "sample_batch", None)
+        if sample_batch is not None:
+            batch = sample_batch(batch_param, self.rng)
+        if batch is None:
+            batch = []
+            for _ in range(batch_param.batch_size):
+                example = self.task.sample(
+                    batch_param.n_way,
+                    batch_param.n_member,
+                    batch_param.n_shot,
+                    batch_param.n_query,
+                    self.rng)
+                batch.append(example)
         return batch, batch_param
 
 
