@@ -341,6 +341,45 @@ def get_params():
         ),
     )
     args.add_argument(
+        "--neighbor_sampling_center_radii",
+        default="",
+        type=str,
+        help=(
+            "Optional comma-separated graph-distance radii for NM class-center sampling. "
+            "Positive integers confine all centers in an episode to a sampled ball around "
+            "one node; 'global' uses the complete graph. One radius is drawn independently "
+            "per episode. Empty preserves historical sampling exactly."
+        ),
+    )
+    args.add_argument(
+        "--neighbor_sampling_center_radius_weights",
+        default="",
+        type=str,
+        help=(
+            "Optional comma-separated positive weights aligned with "
+            "--neighbor_sampling_center_radii. Empty gives every configured radius equal "
+            "probability."
+        ),
+    )
+    args.add_argument(
+        "--neighbor_sampling_center_region_fanout",
+        default=64,
+        type=int,
+        help="Maximum neighbors expanded per frontier node while sampling a finite-radius center region.",
+    )
+    args.add_argument(
+        "--neighbor_sampling_center_region_node_limit",
+        default=4096,
+        type=int,
+        help="Maximum visited nodes while constructing one finite-radius center region.",
+    )
+    args.add_argument(
+        "--neighbor_sampling_center_region_candidate_limit",
+        default=512,
+        type=int,
+        help="Stop expanding once this many degree-eligible class centers have been found.",
+    )
+    args.add_argument(
         "--neighbor_matching_edge_split",
         default=False,
         type=str2bool,

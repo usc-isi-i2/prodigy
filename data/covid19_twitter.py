@@ -42,6 +42,46 @@ from .midterm import (
 )
 
 
+def _parse_center_radii(value):
+    if value is None or str(value).strip() == "":
+        return None
+    radii = []
+    for token in str(value).split(","):
+        token = token.strip().lower()
+        if not token:
+            continue
+        if token in {"global", "none", "unbounded"}:
+            radii.append(None)
+        else:
+            radius = int(token)
+            if radius <= 0:
+                raise ValueError(
+                    f"neighbor_sampling_center_radii values must be positive or global, got {token!r}."
+                )
+            radii.append(radius)
+    if not radii:
+        raise ValueError("neighbor_sampling_center_radii did not contain a radius.")
+    return radii
+
+
+def _parse_center_radius_weights(value, count):
+    if count is None or value is None or str(value).strip() == "":
+        return None
+    weights = [
+        float(token.strip())
+        for token in str(value).split(",")
+        if token.strip()
+    ]
+    if len(weights) != count:
+        raise ValueError(
+            "neighbor_sampling_center_radius_weights must have one value per radius: "
+            f"expected {count}, got {len(weights)}."
+        )
+    if any(weight <= 0 for weight in weights):
+        raise ValueError(f"center radius weights must be positive, got {weights}.")
+    return weights
+
+
 def _build_covid19_twitter_graph(raw: dict, **kwargs):
     edge_view = _normalize_view_name(kwargs.get("edge_view", kwargs.get("midterm_edge_view", "default")))
     edge_index, resolved_edge_view = _load_named_tensor(
@@ -305,6 +345,13 @@ def get_covid19_twitter_dataloader(
     aug_by_task = None  # set only by the nm_fp_cl rotation branch (per-episode aug map)
     if task_name == "neighbor_matching":
         positive_sampler = positive_sampler_for_split(dataset, split, kwargs)
+        center_radii = _parse_center_radii(
+            kwargs.get("neighbor_sampling_center_radii", "")
+        )
+        center_radius_weights = _parse_center_radius_weights(
+            kwargs.get("neighbor_sampling_center_radius_weights", ""),
+            None if center_radii is None else len(center_radii),
+        )
         strata = None
         confine_to_single_stratum = False
         # Two graph_id-based modes (mutually exclusive in practice):
@@ -419,6 +466,20 @@ def get_covid19_twitter_dataloader(
                 stratum_schedule_steps=sequence_steps,
                 filter_min_degree=bool(kwargs.get("neighbor_matching_edge_split", False)),
                 batch_source_mode=batch_source_mode,
+                center_radii=center_radii,
+                center_radius_weights=center_radius_weights,
+                center_region_fanout=int(
+                    kwargs.get("neighbor_sampling_center_region_fanout", 64)
+                ),
+                center_region_node_limit=int(
+                    kwargs.get("neighbor_sampling_center_region_node_limit", 4096)
+                ),
+                center_region_candidate_limit=int(
+                    kwargs.get("neighbor_sampling_center_region_candidate_limit", 512)
+                ),
+                # Define graph distance on the leakage-free background adjacency even
+                # when validation/test positives come from their disjoint holdout views.
+                center_region_sampler=dataset.neighbor_sampler,
             ),
             ParamSampler(batch_size, n_way, n_shot, n_query, 1),
             seed=seed,

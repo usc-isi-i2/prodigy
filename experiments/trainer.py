@@ -542,6 +542,21 @@ class TrainerFS():
         # each BatchSampler iterator covers one dataset_len_cap-sized epoch.
         kwargs["epochs"] = self.parameter["epochs"]
         kwargs["neighbor_sampling_cross_source_prob"] = self.parameter.get("neighbor_sampling_cross_source_prob", 0.0)
+        kwargs["neighbor_sampling_center_radii"] = self.parameter.get(
+            "neighbor_sampling_center_radii", ""
+        )
+        kwargs["neighbor_sampling_center_radius_weights"] = self.parameter.get(
+            "neighbor_sampling_center_radius_weights", ""
+        )
+        kwargs["neighbor_sampling_center_region_fanout"] = self.parameter.get(
+            "neighbor_sampling_center_region_fanout", 64
+        )
+        kwargs["neighbor_sampling_center_region_node_limit"] = self.parameter.get(
+            "neighbor_sampling_center_region_node_limit", 4096
+        )
+        kwargs["neighbor_sampling_center_region_candidate_limit"] = self.parameter.get(
+            "neighbor_sampling_center_region_candidate_limit", 512
+        )
         kwargs["neighbor_matching_edge_split"] = self.parameter.get(
             "neighbor_matching_edge_split", False
         )

@@ -225,8 +225,12 @@ class NeighborTask(TaskBase):
     def __init__(self, neighbor_sampler, size, direction, sampling_strategy="strict", strata=None,
                  confine_to_single_stratum=False, stratum_weighting="proportional",
                  cross_source_prob=0.0, stratum_schedule_steps=None,
-                 filter_min_degree=False, batch_source_mode="independent"):
+                 filter_min_degree=False, batch_source_mode="independent",
+                 center_radii=None, center_radius_weights=None,
+                 center_region_fanout=64, center_region_node_limit=4096,
+                 center_region_candidate_limit=512, center_region_sampler=None):
         self.neighbor_sampler = neighbor_sampler
+        self.center_region_sampler = center_region_sampler or neighbor_sampler
         self.size = size
         self.direction = direction
         if sampling_strategy not in {"strict", "replacement"}:
@@ -237,6 +241,59 @@ class NeighborTask(TaskBase):
         self.sampling_strategy = sampling_strategy
         self.filter_min_degree = bool(filter_min_degree)
         self._eligible_cache = {}
+        self.center_radii = None
+        self.center_radius_weights = None
+        self.center_region_fanout = int(center_region_fanout)
+        self.center_region_node_limit = int(center_region_node_limit)
+        self.center_region_candidate_limit = int(center_region_candidate_limit)
+        self.last_sampled_center_radius = None
+        self._radius_global_eligible = {}
+        if center_radii:
+            parsed_radii = []
+            for value in center_radii:
+                if value is None or str(value).strip().lower() in {"global", "none", "unbounded"}:
+                    parsed_radii.append(None)
+                else:
+                    radius = int(value)
+                    if radius <= 0:
+                        raise ValueError(f"center radii must be positive or global, got {value!r}.")
+                    parsed_radii.append(radius)
+            if not parsed_radii:
+                raise ValueError("center_radii must contain at least one radius.")
+            if self.sampling_strategy != "strict":
+                raise ValueError(
+                    "distance-confined center sampling requires sampling_strategy='strict' "
+                    "so a node cannot be repeated across labels."
+                )
+            if self.center_region_fanout <= 0:
+                raise ValueError("center_region_fanout must be positive.")
+            if self.center_region_node_limit <= 0:
+                raise ValueError("center_region_node_limit must be positive.")
+            if self.center_region_candidate_limit <= 0:
+                raise ValueError("center_region_candidate_limit must be positive.")
+            if center_radius_weights is None:
+                parsed_weights = [1.0] * len(parsed_radii)
+            else:
+                parsed_weights = [float(weight) for weight in center_radius_weights]
+                if len(parsed_weights) != len(parsed_radii):
+                    raise ValueError(
+                        "center_radius_weights must have one value per center radius: "
+                        f"radii={len(parsed_radii)}, weights={len(parsed_weights)}."
+                    )
+                if any(weight <= 0 for weight in parsed_weights):
+                    raise ValueError(
+                        f"center_radius_weights must be positive, got {parsed_weights}."
+                    )
+            if strata is not None or confine_to_single_stratum or cross_source_prob != 0.0:
+                raise ValueError(
+                    "distance-confined center sampling is source-unaware and cannot be combined "
+                    "with graph_id strata, per-source episode confinement, or cross-source "
+                    "interpolation. Use a global radius to include cross-source episodes."
+                )
+            self.center_radii = parsed_radii
+            self.center_radius_weights = parsed_weights
+            rowptr, _, _ = self.neighbor_sampler.whole_adj.csr()
+            self._center_degrees = (rowptr[1:] - rowptr[:-1]).cpu()
         self.strata = None
         if strata is not None:
             self.strata = [
@@ -357,6 +414,125 @@ class NeighborTask(TaskBase):
                 sampled.append(rng.choice(sampled))
             return sampled[:num_member]
         return None
+
+    def _sample_center_members_disjoint(self, center, num_member, forbidden):
+        """Sample unique positives while preventing cross-label target collisions."""
+        node_idx = torch.full(
+            (num_member * 20,), int(center), dtype=torch.long
+        )
+        node_idx = self.neighbor_sampler.random_walk(node_idx, self.direction)
+        if node_idx.numel() == 0:
+            return None
+        members = []
+        for node in torch.unique(node_idx).tolist():
+            node = int(node)
+            if node not in forbidden:
+                members.append(node)
+            if len(members) == num_member:
+                return members
+        return None
+
+    def _build_disjoint_task(self, centers, num_member):
+        centers = [int(center) for center in centers]
+        forbidden = set(centers)
+        task = {}
+        for center in centers:
+            members = self._sample_center_members_disjoint(
+                center, num_member, forbidden
+            )
+            if members is None:
+                return None
+            task[center] = members
+            forbidden.update(members)
+        return task
+
+    def _eligible_center(self, node, num_member):
+        return int(self._center_degrees[int(node)].item()) >= int(num_member)
+
+    def _sample_region_centers(self, anchor, radius, num_label, num_member, rng):
+        """Return candidate centers from a bounded sampled ball around ``anchor``.
+
+        Every returned node has graph distance at most ``radius`` from the anchor.
+        Per-frontier fanout and global limits bound work on dense social graphs; this
+        deliberately samples a region rather than materializing a potentially huge
+        exact ego ball.
+        """
+        rowptr, col, _ = self.center_region_sampler.whole_adj.csr()
+        visited = {int(anchor)}
+        frontier = [int(anchor)]
+        eligible = []
+        if self._eligible_center(anchor, num_member):
+            eligible.append(int(anchor))
+
+        for _ in range(int(radius)):
+            next_frontier = []
+            rng.shuffle(frontier)
+            for node in frontier:
+                start = int(rowptr[node].item())
+                end = int(rowptr[node + 1].item())
+                neighbors = col[start:end].tolist()
+                if len(neighbors) > self.center_region_fanout:
+                    neighbors = rng.sample(neighbors, self.center_region_fanout)
+                else:
+                    rng.shuffle(neighbors)
+                for neighbor in neighbors:
+                    neighbor = int(neighbor)
+                    if neighbor in visited:
+                        continue
+                    visited.add(neighbor)
+                    next_frontier.append(neighbor)
+                    if self._eligible_center(neighbor, num_member):
+                        eligible.append(neighbor)
+                        if len(eligible) >= max(
+                            num_label, self.center_region_candidate_limit
+                        ):
+                            return rng.sample(eligible, num_label)
+                    if len(visited) >= self.center_region_node_limit:
+                        if len(eligible) < num_label:
+                            return None
+                        return rng.sample(eligible, num_label)
+            frontier = next_frontier
+            if not frontier:
+                break
+        if len(eligible) < num_label:
+            return None
+        return rng.sample(eligible, num_label)
+
+    def _sample_radius_episode(self, num_label, num_member, rng):
+        radius = rng.choices(
+            self.center_radii, weights=self.center_radius_weights, k=1
+        )[0]
+        self.last_sampled_center_radius = radius
+        max_attempts = max(200, num_label * 20)
+        for _ in range(max_attempts):
+            if radius is None:
+                if num_member not in self._radius_global_eligible:
+                    self._radius_global_eligible[num_member] = torch.nonzero(
+                        self._center_degrees >= int(num_member), as_tuple=False
+                    ).flatten().tolist()
+                eligible = self._radius_global_eligible[num_member]
+                if len(eligible) < num_label:
+                    raise RuntimeError(
+                        f"Only {len(eligible)} globally eligible NM centers; "
+                        f"need n_way={num_label}."
+                    )
+                chosen = rng.sample(eligible, num_label)
+            else:
+                anchor = rng.randrange(self.size)
+                chosen = self._sample_region_centers(
+                    anchor, radius, num_label, num_member, rng
+                )
+                if chosen is None:
+                    continue
+            task = self._build_disjoint_task(chosen, num_member)
+            if task is not None:
+                return task
+        radius_text = "global" if radius is None else str(radius)
+        raise RuntimeError(
+            f"Could not construct a collision-free {num_label}-way NM episode at center "
+            f"radius {radius_text} after {max_attempts} attempts. Inspect the radius "
+            "feasibility probe or increase the radius/region limits."
+        )
 
     def _eligible_candidates(self, candidates, num_member, cache_key):
         """Return centers with enough positive-view degree for a strict episode.
@@ -531,6 +707,8 @@ class NeighborTask(TaskBase):
         # Task is dict
         # Key: center node (int)
         # Value: list of nodes (list of int), list of nodes is the members of the task
+        if self.center_radii is not None:
+            return self._sample_radius_episode(num_label, num_member, rng)
         if self.confine_to_single_stratum:
             # Partial cross-source: each episode is a naive mixed-source episode with
             # probability cross_source_prob, otherwise confined to one source. The
