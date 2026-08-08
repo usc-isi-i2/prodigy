@@ -48,6 +48,8 @@ The complete outputs are:
   metrics and graph-identity probes for the training-style neighborhood summary.
 - `data/neighbor_augmented_3d.csv`: 3D PCA coordinates for raw centers, sampled-
   neighbor means, and their concatenation.
+- `figures/neighbor-augmented-feature-space.html`: portable interactive 3D view
+  with raw-center, neighbor-mean, and concatenated-space selection.
 
 ## Tucker run
 

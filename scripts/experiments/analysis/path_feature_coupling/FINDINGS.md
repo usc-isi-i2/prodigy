@@ -133,6 +133,8 @@ thus driven mostly by aggregating all available neighbors rather than truncating
 large neighborhoods.
 
 The 3D PCA export is [`neighbor_augmented_3d.csv`](data/neighbor_augmented_3d.csv),
+the portable interactive view is
+[`neighbor-augmented-feature-space.html`](figures/neighbor-augmented-feature-space.html),
 and all distance and probe results are in
 [`neighbor_augmented_features.json`](data/neighbor_augmented_features.json).
 The first three PCs explain 11.9% of raw-center variance and 13.6% of concatenated
