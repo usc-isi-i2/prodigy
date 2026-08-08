@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Strict aggregation for the completed three-arm, three-seed radius experiment."""
+"""Strict aggregation for completed radius arms over an explicit seed set."""
 
 from __future__ import annotations
 
@@ -30,16 +30,26 @@ def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--results-root", required=True, type=Path)
     parser.add_argument("--output-root", required=True, type=Path)
+    parser.add_argument(
+        "--seeds",
+        default="0,1,2",
+        help="Comma-separated completed seeds (default: 0,1,2).",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+    seeds = tuple(int(seed.strip()) for seed in args.seeds.split(",") if seed.strip())
+    if not seeds or any(seed not in (0, 1, 2) for seed in seeds):
+        raise ValueError(f"invalid seed set: {seeds}")
+    if len(set(seeds)) != len(seeds):
+        raise ValueError(f"duplicate seeds: {seeds}")
     validation_rows = []
     test_rows = []
     selections = []
     for arm in ARMS:
-        for seed in (0, 1, 2):
+        for seed in seeds:
             directory = args.results_root / f"seed_{seed}" / arm.arm_id
             selection_path = directory / "selection.json"
             result_path = directory / "result.json"
@@ -81,8 +91,8 @@ def main() -> int:
                     }
                 )
 
-    expected_validation = len(ARMS) * 3 * len(CHECKPOINT_STEPS) * 3
-    expected_test = len(ARMS) * 3 * len(PANELS)
+    expected_validation = len(ARMS) * len(seeds) * len(CHECKPOINT_STEPS) * 3
+    expected_test = len(ARMS) * len(seeds) * len(PANELS)
     if len(validation_rows) != expected_validation or len(test_rows) != expected_test:
         raise ValueError(
             f"unexpected row counts: validation={len(validation_rows)}/{expected_validation}, "
@@ -102,7 +112,7 @@ def main() -> int:
                     "arm": arm.arm_id,
                     "panel": panel.panel_id,
                     "mean_score": statistics.mean(scores),
-                    "seed_std": statistics.stdev(scores),
+                    "seed_std": statistics.stdev(scores) if len(scores) > 1 else 0.0,
                     "scores": scores,
                 }
             )
@@ -115,6 +125,7 @@ def main() -> int:
         json.dumps(
             {
                 "protocol": "nm_all9_radius_finalcore_summary_v1",
+                "seeds": list(seeds),
                 "summary": summary,
             },
             indent=2,

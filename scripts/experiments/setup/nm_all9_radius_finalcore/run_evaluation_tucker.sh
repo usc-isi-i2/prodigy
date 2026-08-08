@@ -15,11 +15,17 @@ SLOTS_PER_GPU="${SLOTS_PER_GPU:-1}"
 SEEDS_TEXT="${SEEDS:-0 1 2}"
 PHASE="${PHASE:-all}"
 DRY_RUN="${DRY_RUN:-0}"
+VALIDATION_MODE="${VALIDATION_MODE:-shared}"
+EVAL_BATCH_COUNT="${EVAL_BATCH_COUNT:-}"
+EVAL_WORKERS="${EVAL_WORKERS:-}"
 read -r -a GPU_IDS <<< "$GPUS_TEXT"
 read -r -a SEED_IDS <<< "$SEEDS_TEXT"
 
 [[ "$PHASE" =~ ^(validation|test|all)$ ]] || { echo "PHASE must be validation, test, or all" >&2; exit 2; }
+[[ "$VALIDATION_MODE" =~ ^(shared|legacy)$ ]] || { echo "VALIDATION_MODE must be shared or legacy" >&2; exit 2; }
 [[ "$SLOTS_PER_GPU" =~ ^[1-9][0-9]*$ ]] || { echo "SLOTS_PER_GPU must be positive" >&2; exit 2; }
+[[ -z "$EVAL_BATCH_COUNT" || "$EVAL_BATCH_COUNT" =~ ^[1-9][0-9]*$ ]] || { echo "EVAL_BATCH_COUNT must be positive" >&2; exit 2; }
+[[ -z "$EVAL_WORKERS" || "$EVAL_WORKERS" =~ ^[0-9]+$ ]] || { echo "EVAL_WORKERS must be non-negative" >&2; exit 2; }
 for gpu in "${GPU_IDS[@]}"; do
   [[ "$gpu" =~ ^[0-3]$ ]] || { echo "refusing non-owned Tucker GPU $gpu" >&2; exit 2; }
 done
@@ -88,7 +94,10 @@ run_phase() {
              --evaluation-state-root "$EVAL_STATE_ROOT"
              --evaluation-log-root "$EVAL_LOG_ROOT/runs"
              --results-root "$RESULTS_ROOT"
-             --evaluation-run-stamp "$EVALUATION_RUN_STAMP")
+             --evaluation-run-stamp "$EVALUATION_RUN_STAMP"
+             --validation-mode "$VALIDATION_MODE")
+        [[ -z "$EVAL_BATCH_COUNT" ]] || cmd+=(--eval-batch-count "$EVAL_BATCH_COUNT")
+        [[ -z "$EVAL_WORKERS" ]] || cmd+=(--workers "$EVAL_WORKERS")
         if [[ "$DRY_RUN" == 1 ]]; then
           printf 'DRY phase=%s gpu=%s' "$phase" "$gpu"; printf ' %q' "${cmd[@]}"; printf '\n'
         else
@@ -129,7 +138,8 @@ if [[ "$PHASE" == test || "$PHASE" == all ]]; then
   run_phase test
   if [[ "$DRY_RUN" != 1 ]]; then
     "$PYTHON" "$SCRIPT_DIR/aggregate_radius_results.py" \
-      --results-root "$RESULTS_ROOT" --output-root "$SUMMARY_ROOT"
+      --results-root "$RESULTS_ROOT" --output-root "$SUMMARY_ROOT" \
+      --seeds "${SEEDS_TEXT// /,}"
     date -u +%FT%TZ > "$EVAL_LOG_ROOT/test_complete_utc.txt"
   fi
 fi

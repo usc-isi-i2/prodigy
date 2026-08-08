@@ -119,10 +119,18 @@ tmux new-session -d -s radiusfc_train \
 
 ## Frozen evaluation
 
-Checkpoint selection uses 500 fixed validation episodes on each of three primary
-panels: radius 2, radius 3, and global. It selects the largest macro-average across the
-panels; an exact tie chooses the earlier checkpoint. Test remains locked until all nine
-selections exist.
+Checkpoint selection uses 500 deterministic validation batches (four episodes per
+batch, 2,000 episodes total) on each of three primary panels: radius 2, radius 3, and
+global. It selects the largest macro-average across the panels; an exact tie chooses
+the earlier checkpoint. Test remains locked until every requested arm/seed selection
+exists.
+
+Validation defaults to `VALIDATION_MODE=shared`: each CPU-sampled/collated batch is
+forwarded through all four checkpoint models on the same GPU. This preserves the
+checkpoint-by-panel cells and their deterministic episode stream while avoiding four
+copies of the dominant CPU work. `VALIDATION_MODE=legacy` retains the one-checkpoint-
+per-stream implementation for equivalence checks. Test already has only one frozen
+checkpoint and therefore uses the legacy single-model stream.
 
 The frozen checkpoint is tested once on the same three panels plus the historical
 balanced within-source panel as a secondary compatibility diagnostic. The compatibility
@@ -138,6 +146,15 @@ tmux new-session -d -s radiusfc_eval \
    bash scripts/experiments/setup/nm_all9_radius_finalcore/run_evaluation_tucker.sh'
 ```
 
+For the explicitly reduced one-seed follow-up, use `SEEDS=0` and three GPUs; aggregation
+records the requested seed set and reports `seed_std=0` rather than implying a
+multi-seed estimate:
+
+```bash
+DRY_RUN=1 PHASE=all SEEDS=0 GPUS="0 1 2" \
+  bash scripts/experiments/setup/nm_all9_radius_finalcore/run_evaluation_tucker.sh
+```
+
 Strict aggregation writes validation trajectories, selected steps, per-seed test rows,
-and a three-seed summary under `log/nm_all9_radius_finalcore_eval/summary/`. Analysis and
-findings belong in a matching analysis directory only after these results exist.
+and a seed-aware summary under `log/nm_all9_radius_finalcore_eval/summary/`. Analysis
+and findings belong in a matching analysis directory only after these results exist.

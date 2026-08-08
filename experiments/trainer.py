@@ -2058,7 +2058,16 @@ class TrainerFS():
         printed_debug_this_eval = False
         for batch_index, batch in enumerate(tqdm(dataloader, leave=False)):
             batch = [i.to(self.device) for i in batch]
-            raw_debug_graph = self._snapshot_debug_graph(batch)
+            # Snapshotting copies the full collated graph (including x) from GPU
+            # back to CPU.  It is only consumed by the first debug example or by
+            # prediction export, so repeating it for every eval batch is pure cost.
+            need_raw_snapshot = (
+                not printed_debug_this_eval
+                or bool(self.parameter.get("export_predictions", False))
+            )
+            raw_debug_graph = (
+                self._snapshot_debug_graph(batch) if need_raw_snapshot else None
+            )
             yt, yp, graph = self.model(*batch)  # apply the model
             prediction_records.extend(
                 self._prediction_records_for_batch(

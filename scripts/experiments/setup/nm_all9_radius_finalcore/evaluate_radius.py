@@ -32,6 +32,7 @@ from radius_plan import (  # noqa: E402
     get_panel,
     select_validation_checkpoint,
 )
+from shared_eval import score_models_on_shared_batches  # noqa: E402
 
 
 def utc_now() -> str:
@@ -93,6 +94,13 @@ def resolved_params(
         "--eval_test_before_train", "False",
         "--eval_val_before_train", "False",
     ]
+    if args.eval_batch_count is not None:
+        argv.extend([
+            "--val_len_cap", str(args.eval_batch_count),
+            "--test_len_cap", str(args.eval_batch_count),
+        ])
+    if args.workers is not None:
+        argv.extend(["--workers", str(args.workers)])
     return get_params(argv)
 
 
@@ -149,6 +157,88 @@ def evaluate_checkpoint(
             torch.cuda.empty_cache()
 
 
+def evaluate_checkpoints_shared(
+    dataset,
+    base_params: dict[str, Any],
+    checkpoints: dict[int, Path],
+    split: str,
+    panel_id: str,
+) -> list[dict[str, Any]]:
+    """Score all checkpoints on one sampled batch stream.
+
+    Episode construction and PyG collation dominate this evaluation.  The eval
+    stream is deterministic for a (split, panel), so rebuilding it once per
+    checkpoint only repeats CPU work.  Keep four tiny checkpoint models on the
+    same GPU and forward every sampled batch through each model instead.
+    """
+    steps = list(CHECKPOINT_STEPS)
+    first_step = steps[0]
+    params = deepcopy(base_params)
+    params["pretrained_model_run"] = str(checkpoints[first_step])
+    params["eval_only_split"] = split
+    params["exp_name"] = (
+        f"radiusfc_eval_{params['prefix'].removeprefix('radiusfc_eval_')}"
+        f"_shared_{utc_now().replace(':', '').replace('+', '_')}"
+    )
+    seed_everything(params)
+    trainer = TrainerFS(dataset, params)
+    models: dict[int, torch.nn.Module] = {first_step: trainer.model}
+    try:
+        if trainer.calc_ranks:
+            raise ValueError("shared checkpoint evaluation does not support calc_ranks")
+        if params.get("export_predictions", False):
+            raise ValueError(
+                "shared checkpoint evaluation requires export_predictions=False"
+            )
+        dataloader = (
+            trainer.val_dataloader if split == "val" else trainer.test_dataloader
+        )
+        if dataloader is None:
+            raise RuntimeError(f"{split} dataloader was not built")
+
+        for step in steps[1:]:
+            model = deepcopy(trainer.model)
+            state_dict = torch.load(checkpoints[step], map_location=trainer.device)
+            if "model" not in state_dict:
+                raise KeyError(f"checkpoint has no model state: {checkpoints[step]}")
+            model.load_state_dict(state_dict["model"], strict=False)
+            model.eval()
+            models[step] = model
+        for model in models.values():
+            model.eval()
+
+        metrics = score_models_on_shared_batches(
+            models=models,
+            steps=steps,
+            dataloader=dataloader,
+            device=trainer.device,
+            get_loss_and_score=trainer.get_loss_and_acc,
+            get_aux_loss=trainer.get_aux_loss,
+        )
+        results = []
+        for step in steps:
+            payload = {
+                "checkpoint": str(checkpoints[step]),
+                "checkpoint_step": step,
+                "panel": panel_id,
+                "split": split,
+                **metrics[step],
+            }
+            if not all(
+                math.isfinite(float(payload[key]))
+                for key in ("score", "score_std", "loss")
+            ):
+                raise ValueError(f"non-finite evaluation result: {payload}")
+            results.append(payload)
+        return results
+    finally:
+        wandb.finish()
+        models.clear()
+        del trainer
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+
 def result_dir(args: argparse.Namespace) -> Path:
     return args.results_root / f"seed_{args.seed}" / args.arm
 
@@ -190,13 +280,28 @@ def run_validation(args: argparse.Namespace) -> Path:
     dataset = load_dataset(first_params)
     validations = []
     for panel in primary_panels:
-        for step in CHECKPOINT_STEPS:
-            params = resolved_params(args, panel.panel_id, "val", checkpoints[step])
-            validations.append(
-                evaluate_checkpoint(
-                    dataset, params, checkpoints[step], "val", step, panel.panel_id
+        params = resolved_params(args, panel.panel_id, "val", checkpoints[first_step])
+        if args.validation_mode == "shared":
+            validations.extend(
+                evaluate_checkpoints_shared(
+                    dataset, params, checkpoints, "val", panel.panel_id
                 )
             )
+        else:
+            for step in CHECKPOINT_STEPS:
+                step_params = resolved_params(
+                    args, panel.panel_id, "val", checkpoints[step]
+                )
+                validations.append(
+                    evaluate_checkpoint(
+                        dataset,
+                        step_params,
+                        checkpoints[step],
+                        "val",
+                        step,
+                        panel.panel_id,
+                    )
+                )
 
     selection_summary = select_validation_checkpoint(validations)
     selected_step = int(selection_summary["selected"]["checkpoint_step"])
@@ -291,11 +396,28 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--evaluation-log-root", required=True, type=Path)
     parser.add_argument("--results-root", required=True, type=Path)
     parser.add_argument("--evaluation-run-stamp", default="20260807")
+    parser.add_argument(
+        "--validation-mode", choices=["shared", "legacy"], default="shared"
+    )
+    parser.add_argument(
+        "--eval-batch-count",
+        type=int,
+        help="Override val/test batch count (intended for equivalence smoke tests).",
+    )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        help="Override dataloader worker count.",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+    if args.eval_batch_count is not None and args.eval_batch_count <= 0:
+        raise ValueError("--eval-batch-count must be positive")
+    if args.workers is not None and args.workers < 0:
+        raise ValueError("--workers must be non-negative")
     get_arm(args.arm)
     if args.phase == "validation":
         run_validation(args)
