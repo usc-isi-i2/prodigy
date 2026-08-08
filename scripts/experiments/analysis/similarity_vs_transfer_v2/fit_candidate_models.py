@@ -51,6 +51,8 @@ def model(kind: str):
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--extended", type=Path, default=DEFAULT_EXTENDED)
+    p.add_argument("--transfer", type=Path, default=TRANSFER)
+    p.add_argument("--metric", default="roc_auc")
     p.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
     args = p.parse_args()
     base = json.loads(BASE.read_text())
@@ -58,9 +60,14 @@ def main() -> None:
     names = base["graphs"]
     if ext["graphs"] != names:
         raise ValueError("graph order mismatch")
-    transfer = pd.read_csv(TRANSFER)
-    auc = (transfer[transfer.metric == "roc_auc"].pivot(index="train", columns="test", values="value")
-           .reindex(index=names, columns=names).to_numpy(float))
+    transfer = pd.read_csv(args.transfer)
+    outcome = (
+        transfer[transfer.metric == args.metric]
+        .pivot(index="train", columns="test", values="value")
+        .reindex(index=names, columns=names).to_numpy(float)
+    )
+    if not np.isfinite(outcome).all():
+        raise ValueError(f"{args.metric} matrix is incomplete after graph-name alignment")
     pairwise = {**base["pairwise"], **ext["pairwise"]}
     full_pairwise = {k: np.asarray(v, float) for k, v in pairwise.items()
                      if np.isfinite(np.asarray(v, float)).all()}
@@ -75,7 +82,7 @@ def main() -> None:
         for target in range(len(names)):
             if source == target:
                 continue
-            row = {"source": names[source], "target": names[target], "auc": auc[source, target]}
+            row = {"source": names[source], "target": names[target], "outcome": outcome[source, target]}
             features = {}
             for key in SOURCE_FEATURES:
                 sv = base["per_graph"][names[source]].get(key)
@@ -106,12 +113,12 @@ def main() -> None:
                 test = meta.target == held_graph
                 train = (meta.target != held_graph) & (meta.source != held_graph)
                 estimator = model(algorithm)
-                estimator.fit(features.loc[train, columns], meta.loc[train, "auc"])
+                estimator.fit(features.loc[train, columns], meta.loc[train, "outcome"])
                 pred = estimator.predict(features.loc[test, columns])
                 for index, value in zip(meta.index[test], pred):
                     predictions.append({"feature_set": set_name, "algorithm": algorithm,
                                         "held_graph": held_graph, "source": meta.loc[index, "source"],
-                                        "truth": meta.loc[index, "auc"], "prediction": float(value)})
+                                        "truth": meta.loc[index, "outcome"], "prediction": float(value)})
     pred = pd.DataFrame(predictions)
     ranking = []
     for (feature_set, algorithm), group in pred.groupby(["feature_set", "algorithm"]):
