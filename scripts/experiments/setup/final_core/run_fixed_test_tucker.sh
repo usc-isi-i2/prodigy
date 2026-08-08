@@ -16,6 +16,10 @@ MIN_HOST_RESERVE_GIB="${MIN_HOST_RESERVE_GIB:-256}"
 MAX_SUMMED_VRAM_GIB="${MAX_SUMMED_VRAM_GIB:-70}"
 PRELOAD_GIB_PER_WORKER="${PRELOAD_GIB_PER_WORKER:-125}"
 CPU_THREADS_PER_WORKER="${CPU_THREADS_PER_WORKER:-24}"
+SMOKE_MAX_CHECKPOINTS="${SMOKE_MAX_CHECKPOINTS:-2}"
+SMOKE_ONLY="${SMOKE_ONLY:-0}"
+SKIP_SMOKE="${SKIP_SMOKE:-0}"
+PRODUCTION_RESULTS_ROOT="${PRODUCTION_RESULTS_ROOT:-}"
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
 source "$(conda info --base)/etc/profile.d/conda.sh"
@@ -140,7 +144,7 @@ launch_workers() {
          --ready-dir "$ready_dir" --expected-workers "$WORKER_COUNT"
          --min-host-reserve-gib "$MIN_HOST_RESERVE_GIB")
     if [[ "$kind" == smoke ]]; then
-      cmd+=(--max-checkpoints 1)
+      cmd+=(--max-checkpoints "$SMOKE_MAX_CHECKPOINTS")
     fi
     echo "LAUNCH kind=$kind batch=$batch_size worker=$worker gpu=$gpu targets=$targets"
     CUDA_VISIBLE_DEVICES="$gpu" "${cmd[@]}" \
@@ -157,8 +161,9 @@ launch_workers() {
 
 run_smoke() {
   local batch_size="$1"
-  local smoke_root="$EVAL_LOG_ROOT/smoke/bs${batch_size}/results"
+  local smoke_root="$EVAL_LOG_ROOT/smoke/bs${batch_size}/${RUN_ID}/results"
   local ready_dir="$EVAL_LOG_ROOT/ready/smoke_bs${batch_size}_${RUN_ID}"
+  local expected_cells=$((10 * SMOKE_MAX_CHECKPOINTS))
   wait_for_resources
   if ! launch_workers smoke "$batch_size" "$smoke_root" "$ready_dir"; then
     echo "SMOKE_WORKER_FAILURE batch_size=$batch_size" >&2
@@ -166,14 +171,17 @@ run_smoke() {
   fi
   "$PYTHON" "$SCRIPT_DIR/verify_fixed_smoke.py" \
     --results-root "$smoke_root" --ready-dir "$ready_dir" \
-    --expected-workers "$WORKER_COUNT" --expected-cells 10 \
+    --expected-workers "$WORKER_COUNT" --expected-cells "$expected_cells" \
     --batch-size "$batch_size" \
     --max-summed-vram-gib-per-gpu "$MAX_SUMMED_VRAM_GIB" \
-    > "$EVAL_LOG_ROOT/smoke/bs${batch_size}/verification.json"
+    --min-host-reserve-gib "$MIN_HOST_RESERVE_GIB" \
+    > "$EVAL_LOG_ROOT/smoke/bs${batch_size}/${RUN_ID}/verification.json"
 }
 
 selected_batch_size="$PREFERRED_BATCH_SIZE"
-if run_smoke "$PREFERRED_BATCH_SIZE"; then
+if [[ "$SKIP_SMOKE" == 1 ]]; then
+  echo "SMOKE_SKIPPED by explicit SKIP_SMOKE=1"
+elif run_smoke "$PREFERRED_BATCH_SIZE"; then
   echo "SMOKE_OK using preferred batch size $PREFERRED_BATCH_SIZE"
 else
   if [[ "$FALLBACK_BATCH_SIZE" == "$PREFERRED_BATCH_SIZE" ]]; then
@@ -186,7 +194,12 @@ else
   echo "SMOKE_OK using fallback batch size $FALLBACK_BATCH_SIZE"
 fi
 
-RESULTS_ROOT="$EVAL_LOG_ROOT/production/bs${selected_batch_size}/results"
+if [[ "$SMOKE_ONLY" == 1 ]]; then
+  echo "FINAL_CORE_CACHED_SMOKE_COMPLETE batch_size=$selected_batch_size"
+  exit 0
+fi
+
+RESULTS_ROOT="${PRODUCTION_RESULTS_ROOT:-$EVAL_LOG_ROOT/production/bs${selected_batch_size}/results}"
 SUMMARY_ROOT="$EVAL_LOG_ROOT/production/bs${selected_batch_size}/summary"
 READY_DIR="$EVAL_LOG_ROOT/ready/production_bs${selected_batch_size}_${RUN_ID}"
 mkdir -p "$RESULTS_ROOT" "$SUMMARY_ROOT" "$READY_DIR"
@@ -201,10 +214,12 @@ mkdir -p "$RESULTS_ROOT" "$SUMMARY_ROOT" "$READY_DIR"
   echo "batch_size=$selected_batch_size"
   echo "batch_count=$((512 / selected_batch_size))"
   echo "episode_count=512"
+  echo "batch_replay_mode=materialized_cpu_clone_v1"
   echo "workers=8"
   echo "gpus=0,1,2,3"
   echo "slots_per_gpu=2"
   echo "cpu_threads_per_worker=$CPU_THREADS_PER_WORKER"
+  echo "production_results_root=$RESULTS_ROOT"
   echo "started_utc=$(date -u +%FT%TZ)"
 } > "$EVAL_LOG_ROOT/production/bs${selected_batch_size}/provenance.txt"
 

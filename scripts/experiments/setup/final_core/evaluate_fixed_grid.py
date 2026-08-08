@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """Evaluate assigned final-core checkpoints on nine fixed target streams.
 
-One long-lived process loads the all-nine graph exactly once, materializes the
-small raw episode plans for its targets, and then reuses both across every
-assigned checkpoint.  There is no validation or checkpoint selection path.
+One long-lived process loads the all-nine graph exactly once.  For each target
+it samples and collates the 16 fixed CPU batches once, replays cloned batches
+across every assigned checkpoint, and releases that target cache before moving
+to the next target.  There is no validation or checkpoint selection path.
 """
 
 from __future__ import annotations
 
 import argparse
+import gc
 from dataclasses import asdict
 from datetime import datetime, timezone
 import hashlib
@@ -21,7 +23,7 @@ import resource
 import struct
 import sys
 import time
-from typing import Any, Iterable
+from typing import Any, Iterable, Iterator
 
 import numpy as np
 import torch
@@ -90,6 +92,58 @@ class FrozenBatchSampler:
 
     def __iter__(self):
         return iter(self.batches)
+
+    def __len__(self) -> int:
+        return len(self.batches)
+
+
+def clone_batch(batch: Any) -> Any:
+    """Clone a collated CPU batch so TrainerFS may move it without mutating cache."""
+    if isinstance(batch, torch.Tensor):
+        return batch.clone()
+    if isinstance(batch, tuple):
+        return tuple(clone_batch(value) for value in batch)
+    if isinstance(batch, list):
+        return [clone_batch(value) for value in batch]
+    clone = getattr(batch, "clone", None)
+    if callable(clone):
+        return clone()
+    raise TypeError(f"cached batch contains unsupported value {type(batch)!r}")
+
+
+def iter_batch_tensors(value: Any) -> Iterator[torch.Tensor]:
+    """Yield tensors recursively, including tensors stored on PyG data objects."""
+    if isinstance(value, torch.Tensor):
+        yield value
+        return
+    if isinstance(value, (tuple, list)):
+        for item in value:
+            yield from iter_batch_tensors(item)
+        return
+    to_dict = getattr(value, "to_dict", None)
+    if callable(to_dict):
+        for item in to_dict().values():
+            yield from iter_batch_tensors(item)
+
+
+def assert_cpu_batches(batches: Iterable[Any]) -> None:
+    for batch_index, batch in enumerate(batches):
+        for tensor in iter_batch_tensors(batch):
+            if tensor.device.type != "cpu":
+                raise AssertionError(
+                    f"cached batch {batch_index} escaped CPU onto {tensor.device}"
+                )
+
+
+class ReplayLoader:
+    """Replay immutable cached CPU batches through fresh clones on every pass."""
+
+    def __init__(self, batches: list[Any]):
+        self.batches = batches
+
+    def __iter__(self):
+        for batch in self.batches:
+            yield clone_batch(batch)
 
     def __len__(self) -> int:
         return len(self.batches)
@@ -319,6 +373,56 @@ def make_frozen_loader(dataset, collate_fn, batches: list[Any]) -> DataLoader:
     )
 
 
+def materialize_target_batches(
+    dataset,
+    target_plan: dict[str, Any],
+    *,
+    target: str,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    """Collate one target stream once and keep immutable CPU templates."""
+    reset_fixed_eval_rng(target)
+    loader = make_frozen_loader(
+        dataset, target_plan["collate_fn"], target_plan["batches"]
+    )
+    audited = AuditedLoader(loader, args.batch_size)
+    cached_batches: list[Any] = []
+    min_available = mem_available_gib()
+    started = time.monotonic()
+    for batch in audited:
+        cached_batches.append(batch)
+        available = mem_available_gib()
+        min_available = min(min_available, available)
+        if available < args.min_host_reserve_gib:
+            raise MemoryError(
+                f"target {target} materialization left {available:.1f} GiB available; "
+                f"required reserve is {args.min_host_reserve_gib:.1f} GiB"
+            )
+    elapsed = time.monotonic() - started
+    if audited.batch_count != args.batch_count or audited.episode_count != EPISODE_COUNT:
+        raise AssertionError(
+            f"materialized {audited.batch_count} batches/{audited.episode_count} "
+            f"episodes for {target}; expected {args.batch_count}/{EPISODE_COUNT}"
+        )
+    assert_cpu_batches(cached_batches)
+    payload = {
+        "batches": cached_batches,
+        "observed_fingerprint": audited.fingerprint,
+        "elapsed_seconds": elapsed,
+        "min_mem_available_gib": min_available,
+        "max_rss_gib": max_rss_gib(),
+    }
+    print(
+        f"CACHE target={target} batches={len(cached_batches)} "
+        f"episodes={audited.episode_count} seconds={elapsed:.1f} "
+        f"min_mem_available_gib={min_available:.1f} "
+        f"max_rss_gib={payload['max_rss_gib']:.1f} "
+        f"fingerprint={audited.fingerprint}",
+        flush=True,
+    )
+    return payload
+
+
 def validate_existing(
     payload: dict[str, Any],
     *,
@@ -350,10 +454,21 @@ def validate_existing(
             )
 
 
+def load_checkpoint_strict(trainer: TrainerFS, checkpoint: Path) -> None:
+    """Reload all evaluator modules without allowing prior-model state to leak."""
+    state = torch.load(checkpoint, map_location=trainer.device)
+    missing_modules = sorted(set(trainer.all_saveable_modules) - set(state))
+    if missing_modules:
+        raise KeyError(f"checkpoint {checkpoint} is missing modules {missing_modules}")
+    for key, module in trainer.all_saveable_modules.items():
+        module.load_state_dict(state[key], strict=True)
+    del state
+
+
 def evaluate_cell(
     trainer: TrainerFS,
-    dataset,
     target_plan: dict[str, Any],
+    target_cache: dict[str, Any],
     *,
     target: str,
     job,
@@ -374,12 +489,10 @@ def evaluate_cell(
         print(f"SKIP {job.model.model_id} seed={job.seed} target={target}", flush=True)
         return
 
-    reset_fixed_eval_rng(target)
     if torch.cuda.is_available():
         torch.cuda.reset_peak_memory_stats()
-    loader = make_frozen_loader(
-        dataset, target_plan["collate_fn"], target_plan["batches"]
-    )
+    assert_cpu_batches(target_cache["batches"])
+    loader = ReplayLoader(target_cache["batches"])
     audited = AuditedLoader(loader, args.batch_size)
     started = time.monotonic()
     with torch.no_grad():
@@ -393,6 +506,12 @@ def evaluate_cell(
             f"consumed {audited.batch_count} batches/{audited.episode_count} episodes; "
             f"expected {args.batch_count}/{EPISODE_COUNT}"
         )
+    if audited.fingerprint != target_cache["observed_fingerprint"]:
+        raise AssertionError(
+            f"cached replay fingerprint changed for {job.key}/{target}: "
+            f"expected {target_cache['observed_fingerprint']}, got {audited.fingerprint}"
+        )
+    assert_cpu_batches(target_cache["batches"])
     numeric = {
         "score": _to_float(score),
         "score_std": _to_float(score_std),
@@ -421,6 +540,10 @@ def evaluate_cell(
         "episode_count": audited.episode_count,
         "episode_plan_fingerprint": target_plan["fingerprint"],
         "observed_episode_fingerprint": audited.fingerprint,
+        "batch_replay_mode": "materialized_cpu_clone_v1",
+        "cache_materialization_seconds": target_cache["elapsed_seconds"],
+        "cache_min_mem_available_gib": target_cache["min_mem_available_gib"],
+        "cache_max_rss_gib": target_cache["max_rss_gib"],
         "elapsed_seconds": elapsed,
         "max_rss_gib": max_rss_gib(),
         "peak_cuda_allocated_gib": (
@@ -572,40 +695,111 @@ def main() -> int:
         )
     trainer.test_dataloader = None
 
-    for job_index, job in enumerate(assigned):
-        checkpoint = checkpoint_path(args.training_state_root, job, args.training_run_stamp)
-        if job_index > 0:
-            wandb.finish()
-            del trainer
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-            params = resolved_params(
-                args,
-                seed=job.seed,
-                model_id=job.model.model_id,
-                target=targets[0],
-                checkpoint=checkpoint,
+    for target in targets:
+        pending: list[tuple[Any, Path, Path]] = []
+        existing_observed_fingerprints: set[str] = set()
+        for job in assigned:
+            checkpoint = checkpoint_path(
+                args.training_state_root, job, args.training_run_stamp
             )
-            seed_everything(params)
-            trainer = TrainerFS(dataset, params)
-            trainer.test_dataloader = None
-        for target in targets:
             result_path = (
                 args.results_root
                 / f"seed_{job.seed}"
                 / job.model.model_id
                 / f"{target}.json"
             )
+            if result_path.is_file():
+                existing_payload = json.loads(result_path.read_text(encoding="utf-8"))
+                validate_existing(
+                    existing_payload,
+                    job=job,
+                    target=target,
+                    checkpoint=checkpoint,
+                    args=args,
+                    plan_fingerprint=target_plans[target]["fingerprint"],
+                )
+                print(
+                    f"SKIP {job.model.model_id} seed={job.seed} target={target}",
+                    flush=True,
+                )
+                existing_observed_fingerprints.add(
+                    existing_payload["observed_episode_fingerprint"]
+                )
+            else:
+                pending.append((job, checkpoint, result_path))
+        if len(existing_observed_fingerprints) > 1:
+            raise AssertionError(
+                f"existing results disagree on observed fingerprint for {target}: "
+                f"{sorted(existing_observed_fingerprints)}"
+            )
+        if not pending:
+            print(f"TARGET_COMPLETE target={target} existing={len(assigned)}", flush=True)
+            continue
+
+        target_cache = materialize_target_batches(
+            dataset,
+            target_plans[target],
+            target=target,
+            args=args,
+        )
+        if target_cache["observed_fingerprint"] != target_plans[target].get(
+            "observed_fingerprint", target_cache["observed_fingerprint"]
+        ):
+            raise AssertionError(f"target {target} cache fingerprint changed")
+        target_plans[target]["observed_fingerprint"] = target_cache[
+            "observed_fingerprint"
+        ]
+        if (
+            existing_observed_fingerprints
+            and existing_observed_fingerprints
+            != {target_cache["observed_fingerprint"]}
+        ):
+            raise AssertionError(
+                f"cached stream for {target} does not match resumed results: "
+                f"cache={target_cache['observed_fingerprint']} "
+                f"existing={sorted(existing_observed_fingerprints)}"
+            )
+
+        for job, checkpoint, result_path in pending:
+            params = resolved_params(
+                args,
+                seed=job.seed,
+                model_id=job.model.model_id,
+                target=target,
+                checkpoint=checkpoint,
+            )
+            seed_everything(params)
+            load_checkpoint_strict(trainer, checkpoint)
+            trainer.parameter.update(
+                seed=job.seed,
+                neighbor_sampling_source_subset=target,
+                pretrained_model_run=str(checkpoint),
+            )
             evaluate_cell(
                 trainer,
-                dataset,
                 target_plans[target],
+                target_cache,
                 target=target,
                 job=job,
                 checkpoint=checkpoint,
                 result_path=result_path,
                 args=args,
             )
+        del target_cache
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        available = mem_available_gib()
+        if available < args.min_host_reserve_gib:
+            raise MemoryError(
+                f"after releasing target {target}, only {available:.1f} GiB available; "
+                f"required reserve is {args.min_host_reserve_gib:.1f} GiB"
+            )
+        print(
+            f"TARGET_DONE target={target} evaluated={len(pending)} "
+            f"mem_available_gib={available:.1f}",
+            flush=True,
+        )
     wandb.finish()
     print(
         f"WORKER_DONE index={args.worker_index} jobs={len(assigned)} "

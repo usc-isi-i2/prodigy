@@ -23,6 +23,7 @@ def main() -> int:
     parser.add_argument("--expected-cells", default=10, type=int)
     parser.add_argument("--batch-size", required=True, type=int)
     parser.add_argument("--max-summed-vram-gib-per-gpu", default=70.0, type=float)
+    parser.add_argument("--min-host-reserve-gib", default=256.0, type=float)
     args = parser.parse_args()
     payloads = [
         json.loads(path.read_text(encoding="utf-8"))
@@ -48,10 +49,16 @@ def main() -> int:
             "episode_count": EPISODE_COUNT,
             "edge_view": "static_train",
             "target_edge_view": "static_test",
+            "batch_replay_mode": "materialized_cpu_clone_v1",
         }
         for field, value in expected.items():
             if row.get(field) != value:
                 raise AssertionError(f"smoke {field}: expected {value!r}, got {row.get(field)!r}")
+        if float(row["cache_min_mem_available_gib"]) < args.min_host_reserve_gib:
+            raise MemoryError(
+                f"worker {row['worker_index']} cache left only "
+                f"{row['cache_min_mem_available_gib']:.1f} GiB available"
+            )
     if {row["target"] for row in payloads} != set(SOURCES):
         raise AssertionError("smoke run did not cover all nine targets")
     for target in SOURCES:
@@ -85,6 +92,15 @@ def main() -> int:
                 "workers": len(ready),
                 "min_mem_available_at_barrier_gib": min(row["mem_available_gib"] for row in ready),
                 "max_worker_rss_at_barrier_gib": max(row["max_rss_gib"] for row in ready),
+                "max_worker_rss_after_cache_gib": max(row["max_rss_gib"] for row in payloads),
+                "min_mem_available_during_cache_gib": min(
+                    row["cache_min_mem_available_gib"] for row in payloads
+                ),
+                "mean_cache_materialization_seconds": sum(
+                    row["cache_materialization_seconds"] for row in payloads
+                ) / len(payloads),
+                "mean_replay_cell_seconds": sum(row["elapsed_seconds"] for row in payloads)
+                / len(payloads),
                 "per_worker_peak_cuda_gib": per_worker_peak,
             },
             indent=2,

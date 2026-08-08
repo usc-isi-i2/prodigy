@@ -33,10 +33,13 @@ The replacement is `run_fixed_test_tucker.sh`. Its contract is:
 - only `state_dict_2500.ckpt`; no validation dataloader and no checkpoint selection;
 - 512 fixed `static_test` episodes per target and cell, with message passing on
   `static_train` only;
-- preferred batch size 64 (8 full batches), with a concurrent eight-worker smoke
-  test and an automatic fallback to batch size 32 (16 full batches) if unsafe;
+- batch size 32 (16 full batches); batch size 64 is forbidden for this artifact
+  because the concurrent smoke reproducibly triggered invalid CUDA indices;
 - 3 seeds x 31 physical models x 9 individual targets = 837 unique cells;
 - one graph load per persistent worker, two workers on each owned GPU 0--3;
+- target-major materialization: each worker collates one target's 16 CPU batches
+  once, replays fresh clones across its assigned checkpoints, and releases that
+  cache before materializing the next target;
 - per-target raw and observed episode-stream fingerprints that must agree across
   all models, training seeds, and persistent workers;
 - strict 243-cell specialist matrix, 675-cell physical ladder, and 729-row
@@ -56,3 +59,9 @@ tmux new-session -d -s finalcore_fixed_test \
 The queue is resumable: completed physical cells are validated before being
 skipped. Raw evidence and strict matrices/tables are under
 `log/final_core_fixed_test/production/bs{64,32}/`.
+
+For a replacement smoke, set `SMOKE_ONLY=1`; it evaluates two checkpoints per
+worker so replay is exercised, then exits. After that passes, production can
+resume an earlier result tree by setting `SKIP_SMOKE=1` and
+`PRODUCTION_RESULTS_ROOT=/absolute/path/to/results`. Existing cells must match
+the frozen plan and observed stream fingerprints before they are accepted.
