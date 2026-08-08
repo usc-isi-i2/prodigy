@@ -1,0 +1,36 @@
+{
+  "graphs": [
+    "covid19_twitter",
+    "ukr_rus_twitter",
+    "midterm",
+    "cp_hk_twitter",
+    "twibot20",
+    "election2020",
+    "covid_political",
+    "ukr_rus_suspended",
+    "facebook_page_reference"
+  ],
+  "outcome": "three-seed mean fixed-test episodic NM accuracy",
+  "cells_per_seed": 81,
+  "self_cells_excluded": true,
+  "permutations": 9999,
+  "permutation_unit": "joint graph identity",
+  "permutation_draws_shared_across_predictors": true,
+  "best_pairwise_by_priority": {
+    "predictor": "neighbor_mean_projected_frechet",
+    "kind": "pairwise_distance",
+    "mean_target_spearman_accuracy": -0.7751322751322751,
+    "seed_0_rho": -0.7936507936507938,
+    "seed_1_rho": -0.7486772486772488,
+    "seed_2_rho": -0.7698412698412699,
+    "graph_permutation_p_two_sided": 0.0003,
+    "targets_expected_direction": 9,
+    "targets_with_correlation": 9,
+    "priority_score": 0.7748997354497354,
+    "evaluable_targets": 9,
+    "top1_hits": 6,
+    "top1_rate": 0.6666666666666666,
+    "mean_regret": 0.017080198688271604,
+    "mean_selected_rank": 2.6666666666666665
+  }
+}

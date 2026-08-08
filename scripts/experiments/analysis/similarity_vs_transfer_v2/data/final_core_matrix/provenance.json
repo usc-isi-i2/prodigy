@@ -1,0 +1,31 @@
+{
+  "batch_count": 16,
+  "batch_size": 32,
+  "canonical_graph_names": [
+    "covid19_twitter",
+    "ukr_rus_twitter",
+    "cp_hk_twitter",
+    "midterm",
+    "twibot20",
+    "election2020",
+    "covid_political",
+    "ukr_rus_suspended",
+    "facebook_page_reference"
+  ],
+  "checkpoint_step": 2500,
+  "episode_count_per_cell": 512,
+  "imported_rows": 243,
+  "ladder_checkpoint_seeds": 75,
+  "ladder_physical_cells": 675,
+  "ladder_reported_rows": 729,
+  "matrix_cells": 243,
+  "matrix_checkpoint_seeds": 27,
+  "outcome": "episodic 30-way neighbor-matching accuracy",
+  "overlap_cells": 81,
+  "overlap_checkpoint_seeds": 9,
+  "protocol": "fixed_test_512_static_test_on_static_train_v1",
+  "roc_auc_note": "The fixed-grid result JSON and strict aggregate store score/accuracy. Trainer sidecars compute multiclass ROC-AUC, but ROC-AUC was not included in the complete 243-cell aggregate.",
+  "source_summary_root": "/dataMeR1/phil/gfm/prodigy-final-core-cache/log/final_core_cached_test/production/bs32/summary",
+  "union_cells": 837,
+  "union_checkpoint_seeds": 93
+}
