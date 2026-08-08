@@ -557,6 +557,9 @@ class TrainerFS():
         kwargs["neighbor_sampling_center_region_candidate_limit"] = self.parameter.get(
             "neighbor_sampling_center_region_candidate_limit", 512
         )
+        kwargs["neighbor_sampling_center_max_attempts"] = self.parameter.get(
+            "neighbor_sampling_center_max_attempts", 200
+        )
         kwargs["neighbor_matching_edge_split"] = self.parameter.get(
             "neighbor_matching_edge_split", False
         )

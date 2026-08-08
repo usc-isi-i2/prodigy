@@ -228,7 +228,8 @@ class NeighborTask(TaskBase):
                  filter_min_degree=False, batch_source_mode="independent",
                  center_radii=None, center_radius_weights=None,
                  center_region_fanout=64, center_region_node_limit=4096,
-                 center_region_candidate_limit=512, center_region_sampler=None):
+                 center_region_candidate_limit=512, center_region_sampler=None,
+                 center_max_attempts=200):
         self.neighbor_sampler = neighbor_sampler
         self.center_region_sampler = center_region_sampler or neighbor_sampler
         self.size = size
@@ -246,8 +247,9 @@ class NeighborTask(TaskBase):
         self.center_region_fanout = int(center_region_fanout)
         self.center_region_node_limit = int(center_region_node_limit)
         self.center_region_candidate_limit = int(center_region_candidate_limit)
+        self.center_max_attempts = int(center_max_attempts)
         self.last_sampled_center_radius = None
-        self._radius_global_eligible = {}
+        self.last_center_sampling_attempts = None
         if center_radii:
             parsed_radii = []
             for value in center_radii:
@@ -271,6 +273,8 @@ class NeighborTask(TaskBase):
                 raise ValueError("center_region_node_limit must be positive.")
             if self.center_region_candidate_limit <= 0:
                 raise ValueError("center_region_candidate_limit must be positive.")
+            if self.center_max_attempts <= 0:
+                raise ValueError("center_max_attempts must be positive.")
             if center_radius_weights is None:
                 parsed_weights = [1.0] * len(parsed_radii)
             else:
@@ -449,6 +453,21 @@ class NeighborTask(TaskBase):
     def _eligible_center(self, node, num_member):
         return int(self._center_degrees[int(node)].item()) >= int(num_member)
 
+    def _sample_global_centers(self, num_label, num_member, rng):
+        """Draw degree-eligible centers without materializing a whole-graph list."""
+        centers = []
+        used = set()
+        max_draws = max(1000, num_label * 1000)
+        for _ in range(max_draws):
+            center = rng.randrange(self.size)
+            if center in used or not self._eligible_center(center, num_member):
+                continue
+            centers.append(center)
+            used.add(center)
+            if len(centers) == num_label:
+                return centers
+        return None
+
     def _sample_region_centers(self, anchor, radius, num_label, num_member, rng):
         """Return candidate centers from a bounded sampled ball around ``anchor``.
 
@@ -503,20 +522,12 @@ class NeighborTask(TaskBase):
             self.center_radii, weights=self.center_radius_weights, k=1
         )[0]
         self.last_sampled_center_radius = radius
-        max_attempts = max(200, num_label * 20)
-        for _ in range(max_attempts):
+        max_attempts = self.center_max_attempts
+        for attempt in range(1, max_attempts + 1):
             if radius is None:
-                if num_member not in self._radius_global_eligible:
-                    self._radius_global_eligible[num_member] = torch.nonzero(
-                        self._center_degrees >= int(num_member), as_tuple=False
-                    ).flatten().tolist()
-                eligible = self._radius_global_eligible[num_member]
-                if len(eligible) < num_label:
-                    raise RuntimeError(
-                        f"Only {len(eligible)} globally eligible NM centers; "
-                        f"need n_way={num_label}."
-                    )
-                chosen = rng.sample(eligible, num_label)
+                chosen = self._sample_global_centers(num_label, num_member, rng)
+                if chosen is None:
+                    continue
             else:
                 anchor = rng.randrange(self.size)
                 chosen = self._sample_region_centers(
@@ -526,7 +537,9 @@ class NeighborTask(TaskBase):
                     continue
             task = self._build_disjoint_task(chosen, num_member)
             if task is not None:
+                self.last_center_sampling_attempts = attempt
                 return task
+        self.last_center_sampling_attempts = max_attempts
         radius_text = "global" if radius is None else str(radius)
         raise RuntimeError(
             f"Could not construct a collision-free {num_label}-way NM episode at center "

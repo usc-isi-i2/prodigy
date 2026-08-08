@@ -480,6 +480,9 @@ def get_covid19_twitter_dataloader(
                 # Define graph distance on the leakage-free background adjacency even
                 # when validation/test positives come from their disjoint holdout views.
                 center_region_sampler=dataset.neighbor_sampler,
+                center_max_attempts=int(
+                    kwargs.get("neighbor_sampling_center_max_attempts", 200)
+                ),
             ),
             ParamSampler(batch_size, n_way, n_shot, n_query, 1),
             seed=seed,

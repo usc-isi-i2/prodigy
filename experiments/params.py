@@ -389,6 +389,12 @@ def get_params(argv=None):
         help="Stop expanding once this many degree-eligible class centers have been found.",
     )
     args.add_argument(
+        "--neighbor_sampling_center_max_attempts",
+        default=200,
+        type=int,
+        help="Maximum complete-region/episode construction attempts before failing loudly.",
+    )
+    args.add_argument(
         "--neighbor_matching_edge_split",
         default=False,
         type=str2bool,
