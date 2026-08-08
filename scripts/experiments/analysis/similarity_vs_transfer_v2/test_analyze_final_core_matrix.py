@@ -33,6 +33,17 @@ class VectorizedPermutationTests(unittest.TestCase):
         actual = permuted_pairwise_stats(self.predictor, self.outcome, self.orders)
         np.testing.assert_allclose(actual, expected, atol=1e-12)
 
+    def test_pairwise_with_missing_values_matches_serial_definition(self):
+        predictor = self.predictor.copy()
+        predictor[0, :] = np.nan
+        predictor[:, 0] = np.nan
+        expected = np.asarray([
+            within_target_stat(predictor[np.ix_(order, order)], self.outcome)[0]
+            for order in self.orders
+        ])
+        actual = permuted_pairwise_stats(predictor, self.outcome, self.orders)
+        np.testing.assert_allclose(actual, expected, atol=1e-12)
+
     def test_scalar_modes_match_serial_definition(self):
         for mode in ("source", "absolute_gap"):
             expected = np.asarray([

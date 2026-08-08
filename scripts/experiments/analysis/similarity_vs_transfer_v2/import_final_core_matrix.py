@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Import the strict final-core three-seed specialist transfer matrix."""
+"""Import the legacy accuracy-only final-core specialist aggregate.
+
+Use import_final_core_auc.py for the authoritative metric-preserving rerun.
+"""
 
 from __future__ import annotations
 
@@ -104,9 +107,8 @@ def main() -> None:
         "canonical_graph_names": graph_order,
         "outcome": "episodic 30-way neighbor-matching accuracy",
         "roc_auc_note": (
-            "The fixed-grid result JSON and strict aggregate store score/accuracy. "
-            "Trainer sidecars compute multiclass ROC-AUC, but ROC-AUC was not included "
-            "in the complete 243-cell aggregate."
+            "This legacy aggregate stores score/accuracy only. The later proper-AUC "
+            "rerun is imported separately by import_final_core_auc.py."
         ),
     }
     (args.out_dir / "provenance.json").write_text(

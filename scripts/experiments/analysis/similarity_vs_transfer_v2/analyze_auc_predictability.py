@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
@@ -25,8 +26,17 @@ def correlation(x, y, kind="pearson") -> float:
 
 
 def main() -> None:
-    frame = pd.read_csv(TRANSFER)
-    auc = frame[frame.metric == "roc_auc"].pivot(index="train", columns="test", values="value")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--transfer", type=Path, default=TRANSFER)
+    parser.add_argument("--metric", default="roc_auc")
+    parser.add_argument("--out-dir", type=Path, default=OUT)
+    args = parser.parse_args()
+    frame = pd.read_csv(args.transfer)
+    auc = frame[frame.metric == args.metric].pivot(
+        index="train", columns="test", values="value"
+    )
+    if auc.shape != (9, 9) or not np.isfinite(auc.to_numpy(float)).all():
+        raise ValueError(f"expected a complete 9x9 {args.metric} matrix")
     names = list(auc.index)
     values = auc.to_numpy(float)
     n = len(names)
@@ -94,6 +104,8 @@ def main() -> None:
 
     pairs = pd.DataFrame(target_pair_rows)
     summary = {
+        "transfer_matrix": str(args.transfer),
+        "metric": args.metric,
         "n_graphs": n,
         "foreign_auc_range": [float(np.min(row_mean_truth)), float(np.max(row_mean_truth))],
         "one_other_graph_identity_prediction": metrics(observed, held_out),
@@ -120,9 +132,11 @@ def main() -> None:
         },
         "interpretation": "AUC on another foreign graph is useful for donor ranking but is not an accurate uncalibrated forecast of absolute target AUC.",
     }
-    OUT.mkdir(parents=True, exist_ok=True)
-    pairs.to_csv(OUT / "target_pair_auc_correlations.csv", index=False)
-    (OUT / "auc_predictability_summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+    pairs.to_csv(args.out_dir / "target_pair_auc_correlations.csv", index=False)
+    (args.out_dir / "auc_predictability_summary.json").write_text(
+        json.dumps(summary, indent=2) + "\n"
+    )
 
 
 if __name__ == "__main__":

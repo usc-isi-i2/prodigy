@@ -1,18 +1,21 @@
 # What predicts GNN transfer? Nine-graph predictor study (v2)
 
-**Status:** complete. The baseline and extended all-nine predictor sweeps have
-been run, then replicated against the final-core matrix: 9 sources × 9 targets
-× 3 training seeds = 243 fixed-test specialist cells.
+**Status:** complete, including the proper final-core ROC-AUC extension. The
+baseline and extended all-nine predictor sweeps have been run, then tested on a
+strict final-core matrix: 9 sources × 9 targets × 3 training seeds = 243
+fixed-test specialist cells with accuracy, macro-F1, and multiclass ROC-AUC.
 
 ## Question and design
 
 For each target graph, exclude self-transfer and rank its eight possible source
-graphs. The historical outcome is NM transfer ROC-AUC; the final-core replicated
-outcome is 30-way episodic NM accuracy. A pairwise predictor is good when its
-source ranking agrees with the transfer ranking. The headline statistic is mean
-within-target Spearman rho over the nine targets. This avoids pooling 72
-dependent directed cells and removes target difficulty. Graph-label permutation
-tests jointly relabel rows and columns; they never pretend matrix cells are IID.
+graphs. The historical outcome is NM transfer ROC-AUC; the authoritative
+final-core outcome is three-seed mean 30-way one-vs-rest macro ROC-AUC, with
+accuracy retained as a companion robustness outcome. A pairwise predictor is
+good when its source ranking agrees with the transfer ranking. The headline
+statistic is mean within-target Spearman rho over the nine targets. This avoids
+pooling 72 dependent directed cells and removes target difficulty. Graph-label
+permutation tests jointly relabel rows and columns; they never pretend matrix
+cells are IID.
 
 Donor selection reports how often the metric chooses the best foreign source,
 mean regret from the oracle donor, and selected-donor rank. Both matrices are
@@ -79,26 +82,27 @@ signatures, not isolated causal effects.
 
 ## Can AUC on one graph predict AUC on another?
 
-**It predicts relative donor quality better than absolute AUC.** Across all 36
-pairs of targets, the seven common foreign donors have median Spearman rank
-correlation **0.929** (mean 0.896; minimum 0.714). Thus, a source that ranks well
-on one target usually ranks well on another.
+**It predicts relative donor quality better than absolute AUC.** On the proper
+final-core matrix, the seven common foreign donors across each pair of targets
+have median Spearman rank correlation **0.821** (mean 0.773; minimum 0.429).
+This is weaker than the historical matrix's median 0.929, but the qualitative
+result survives: broadly strong donors tend to remain strong.
 
-But copying one observed foreign AUC as the prediction for another target gives
-only Pearson 0.380 and **MAE 0.101 AUC** across all mutually distinct
-source/reference/target triples. Averaging a source's other seven foreign AUCs
-improves held-out-target MAE to 0.076, still too coarse for a precise forecast.
-Self/in-domain AUC is especially weak: its Spearman correlation with mean
-foreign AUC is only 0.233, with identity MAE 0.180.
+Copying one observed foreign AUC as the prediction for another target gives
+Pearson 0.328, Spearman 0.307, and **MAE 0.068 AUC** across all 504 mutually
+distinct source/reference/target triples. Averaging a source's other seven
+foreign AUCs improves held-out-target MAE to 0.048. Self/in-domain AUC is still
+not a calibrated forecast: Spearman with mean foreign AUC is 0.450 and identity
+MAE is 0.101.
 
 If other sources have already been evaluated on the desired target, a
 leave-one-cell-out additive `source effect + target effect` model reaches MAE
-0.032 and R² 0.847. That is useful matrix completion, but it is **not zero-shot
+0.027 and R² 0.770. That is useful matrix completion, but it is **not zero-shot
 target prediction**, because it uses target-specific AUC observations.
 
 Therefore we can credibly say “performance on another graph identifies broadly
-strong donors,” but not yet “this observed AUC determines the new graph's AUC.”
-Calibrated forecasting needs both a donor-quality term and target descriptors.
+strong donors,” but not “this observed AUC determines the new graph's AUC.” A
+zero-shot forecast still needs a donor-quality term and target descriptors.
 
 ## What the literature says to test next
 
@@ -130,14 +134,14 @@ overlap, and embedding-derived topic composition reported below.
 |---|---|---|
 | user overlap | measured where comparable | Twitter pairs; Facebook pairs NA; no predictive signal |
 | in/out degree distribution | complete 9/9 | in-degree moderate; out-degree weak |
-| raw node-feature distances | complete 9/9 | strongest pairwise family |
+| raw node-feature distances | complete 9/9 | proxy A is the top proper-AUC rank predictor |
 | mean / left-right feature skew | complete 9/9 | aligned skew L1 is moderate; skew-distribution Wasserstein is weak |
-| sampled-neighbor features | complete 9/9 | projected Fréchet is the top individual rank predictor |
-| center + neighbor features | complete 9/9 | proxy A is the best practical donor selector |
+| sampled-neighbor features | complete 9/9 | projected Fréchet is a close second for proper AUC |
+| center + neighbor features | complete 9/9 | proxy A has the lowest proper-AUC regret among tested pair metrics |
 | node / edge count | complete 9/9 | dominant donor baseline, not pair similarity |
 | feature homophily | complete 9/9 | raw pair gap has no signal |
 | label homophily | partial 5/9 | report only on observed subset |
-| feature separability / proxy A | complete 9/9 | best current pairwise predictor |
+| feature separability / proxy A | complete 9/9 | best current proper-AUC pairwise predictor |
 | time distribution | missing/incomparable | requires raw-source timestamp extraction |
 | local computation-tree signature | complete 9/9 | degree-moment/histogram distances are weak |
 | full WL / ego-Laplacian distance | missing | lower priority after weak lightweight structure result |
@@ -185,83 +189,108 @@ graph (0.059 versus 0.101). The complete 109-feature model does not improve
 further, so pairwise association has not yet become incremental out-of-graph
 predictive value.
 
-## Final-core three-seed 9×9 replication
+## Final-core three-seed 9×9 proper-AUC replication
 
-The authoritative rerun retrains every specialist with seeds 0/1/2, exactly
-2,500 balanced-source updates, and evaluates only the terminal step-2,500
-checkpoint. Every source/seed checkpoint is evaluated separately on each of the
+The authoritative rerun uses every final-core specialist trained with seeds
+0/1/2 for exactly 2,500 balanced-source updates and evaluates only the terminal
+step-2,500 checkpoint. Every source/seed checkpoint is evaluated on each of the
 nine targets using 512 fixed `static_test` episodes, with message passing
 restricted to `static_train`. This is a strict **243-cell specialist matrix**.
 
-The complete aggregate records 30-way episodic NM accuracy. The trainer also
-computes multiclass ROC-AUC, but that field was not copied into the complete
-243-cell result aggregate; therefore the replicated analysis correctly uses
-accuracy rather than relabeling `score` as AUC.
+The new metric contract preserves accuracy, macro-F1, and multiclass one-vs-rest
+macro ROC-AUC from the same logits. It also verifies each observed episode
+stream against the published fixed-grid fingerprint ledger. The proper AUC
+matrix is therefore directly comparable across sources without relabeling the
+accuracy field.
 
-### The historical transfer ranking replicates
+### The historical AUC ranking replicates, but not perfectly
 
-- Mean within-target correlation between historical AUC donor ranks and new
-  accuracy donor ranks: **rho = 0.934**.
-- Same best donor in **7/9** targets.
-- Correlation of sources' mean foreign performance: **rho = 0.967**.
-- Mean cross-seed within-target donor-rank stability: **rho = 0.950**.
+- Mean within-target correlation between historical and final-core AUC donor
+  ranks: **rho = 0.854**.
+- Same best donor in **5/9** targets.
+- Overall correlation across the 72 foreign cells: **rho = 0.827**.
+- Correlation of sources' mean foreign AUC: **rho = 0.933**.
+- Mean cross-seed within-target donor-rank stability: **rho = 0.944**.
 
-Thus the newer matrix does close the per-target and training-seed replication
-gaps. The old result was not an artifact of one training seed or pooled testing.
+The result is a strong replication of broad donor quality and within-target
+ordering, though weaker than the companion accuracy comparison (rho 0.934 and
+7/9 best-donor agreement). The metric choice changes some close donor rankings;
+it does not erase the transfer structure.
 
-### Predictor ranking on the replicated matrix
+### Predictor ranking against proper final-core AUC
 
-| priority | candidate | mean target rho | seed rhos (0/1/2) | p | donor hits | accuracy regret |
+| priority | candidate | mean target rho | seed rhos (0/1/2) | p | donor hits | AUC regret |
 |---:|---|---:|---|---:|---:|---:|
-| 1 | neighbor-mean projected Fréchet | **−0.775** | −0.794/−0.749/−0.770 | 0.0003 | 6/9 | 0.0171 |
-| 2 | raw feature proxy A | −0.763 | −0.776/−0.731/−0.758 | 0.0003 | 6/9 | 0.0120 |
-| 3 | center+neighbor projected Fréchet | −0.712 | −0.706/−0.661/−0.741 | 0.0029 | 5/9 | 0.0151 |
-| 4 | center+neighbor proxy A | −0.671 | −0.676/−0.644/−0.696 | 0.0016 | **6/9** | **0.0053** |
-| 5 | embedding-topic JS | −0.648 | −0.651/−0.601/−0.664 | 0.0075 | 5/9 | 0.0069 |
+| 1 | raw feature proxy A | **−0.738** | −0.735/−0.725/−0.694 | 0.0006 | 4/9 | 0.0141 |
+| 2 | neighbor-mean projected Fréchet | −0.733 | −0.730/−0.722/−0.749 | 0.0006 | **5/9** | 0.0278 |
+| 3 | center+neighbor projected Fréchet | −0.693 | −0.680/−0.664/−0.733 | 0.0018 | **5/9** | 0.0208 |
+| 4 | embedding-topic JS | −0.672 | −0.669/−0.635/−0.672 | 0.0017 | **5/9** | 0.0082 |
+| 5 | raw feature Fréchet | −0.661 | −0.640/−0.632/−0.622 | 0.0012 | 4/9 | 0.0110 |
+| 6 | center+neighbor proxy A | −0.660 | −0.654/−0.626/−0.656 | 0.0016 | **5/9** | **0.0080** |
 
-The ordering is almost unchanged from the historical AUC sweep. Neighbor-mean
-Fréchet remains the strongest rank correlate; center+neighbor proxy A remains
-the best low-regret compatibility selector.
+Raw feature proxy A, not neighbor Fréchet, is the top proper-AUC rank
+predictor. The two are close and stable across seeds. Center+neighbor proxy A
+remains the lowest-regret pairwise selector, while topic JS is nearly tied.
 
-Source strength also replicates under fixed exposure: feature effective
-dimension has rho **+0.778** (p=0.0066), node count +0.741 (p=0.0142), in-degree
-maximum +0.735 (p=0.0163), and edge count +0.556 (p=0.0855). The earlier claim
-that node count fell to 0.400 came from the wrong aggregate summary and is
-withdrawn.
+The negative controls also hold. In-degree KS is moderate (rho −0.434,
+p=0.0379), out-degree KS is weak (−0.175, p=0.4488), the lightweight local
+computation-tree proxy A is weak (−0.254, p=0.3448), and user Jaccard is null
+(−0.051, p=0.887; Twitter-only coverage). Raw feature-homophily gap is also null
+(+0.098, p=0.670), whereas the random-pair feature-similarity gap remains
+informative (−0.484, p=0.0131).
 
-### Hard graph-holdout prediction on the replicated matrix
+Source strength survives fixed exposure and proper AUC: feature effective
+dimension has rho **+0.735** (p=0.0103), in-degree maximum +0.706 (p=0.0173),
+node count +0.677 (p=0.0242), and edge count +0.611 (p=0.0433). These correlated
+descriptors remain a mandatory baseline, not separate causal explanations.
 
-| model | mean target rho | MAE accuracy | R² | donor hits |
+### Hard graph-holdout prediction against proper AUC
+
+For each held-out graph, training excludes every pair having that graph as
+source or target. No model sees any transfer result involving the test graph.
+
+| model | mean target rho | MAE AUC | R² | donor hits |
 |---|---:|---:|---:|---:|
-| source-only Extra Trees | **0.870** | 0.0668 | 0.022 | 4/9 |
-| source-only ridge | 0.852 | 0.0681 | −0.019 | 5/9 |
-| handpicked source + compatibility, Extra Trees | 0.804 | **0.0472** | 0.402 | **7/9** |
-| all full-coverage features, ridge | 0.563 | 0.0493 | **0.481** | 2/9 |
+| source + original distances, ridge | **0.841** | 0.0616 | −0.158 | **6/9** |
+| source-only Extra Trees | 0.828 | 0.0484 | 0.232 | 5/9 |
+| all full-coverage features, Extra Trees | 0.802 | 0.0488 | 0.327 | 3/9 |
+| all full-coverage features, ridge | 0.759 | 0.0473 | 0.320 | 3/9 |
+| handpicked source + compatibility, Extra Trees | 0.746 | **0.0470** | **0.394** | 4/9 |
 
-Universal source strength remains the best pure ranking signal. However, the
-handpicked model now improves donor hits from 4/9 to 7/9 and reduces MAE from
-0.0668 to 0.0472 relative to source-only Extra Trees. Pairwise compatibility is
-therefore operationally useful once layered on top of the donor-strength
-baseline, even though indiscriminately adding all 109 features is not.
+No combined model dominates. Adding the original distances to ridge improves
+ranking and donor hits but damages absolute calibration. The handpicked model
+slightly improves MAE and R² over source-only Extra Trees but worsens ranking
+and donor hits. Thus pairwise distances have strong univariate association, but
+their **incremental zero-shot value is modest and metric-dependent**. The
+accuracy companion result was more favorable to the handpicked combination;
+that claim should not be generalized to AUC.
 
 ### Revised priority
 
-1. Make source-only strength the mandatory donor-ranking baseline.
-2. Use center+neighbor proxy A as the primary compatibility metric and
-   neighbor-mean Fréchet as its ranking-oriented companion.
-3. Retain embedding-topic JS and aligned skew L1 as low-cost content controls.
-4. Test incremental value with graph-level holdout, never random matrix cells.
+1. Make source-only strength the mandatory donor-ranking and forecasting
+   baseline.
+2. Use raw feature proxy A as the primary proper-AUC compatibility metric;
+   retain neighbor-mean Fréchet as its message-passing-aware companion.
+3. Use center+neighbor proxy A when low selection regret matters, and retain
+   embedding-topic JS as a low-cost content control.
+4. Test incremental value with graph-level holdout, never random matrix cells;
+   report ranking and calibration separately because they select different
+   models here.
 5. Keep user overlap as a leakage diagnostic; deprioritize the current
    degree-only computation-tree metrics.
 6. Next expensive candidate: fixed-checkpoint layer representations. Temporal
-   distance remains partial because timestamps are not comparable across all
+   distance remains missing because timestamps are not comparable across all
    nine final graph artifacts.
 
 ## Reproducibility and limitations
 
 - Branch/worktree and Tucker commands are in the paired setup README.
-- Machine-readable tables and the availability ledger are in `data/`.
+- Raw final-core AUC evidence, imported matrices, predictor rankings, graph-
+  holdout predictions, and the availability ledger are in `data/final_core_auc/`
+  and `data/`.
 - The checked-in permutation run uses 9,999 seeded graph-label permutations.
+- Partial-coverage permutation tests retain their finite source/target mask;
+  unavailable Facebook↔Twitter identity overlap is never converted to zero.
 - There are only nine domains and many scalars identify the same large corpora.
   The final-core matrix has three independent training seeds but deliberately
   reuses one fixed 512-episode stream per target across every cell. These are

@@ -49,6 +49,19 @@ def rowwise_spearman(x: np.ndarray, y: np.ndarray) -> np.ndarray:
     )
 
 
+def rowwise_spearman_masked(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+    """Rowwise Spearman with a potentially different finite mask per row."""
+    valid = np.isfinite(x) & np.isfinite(y)[None, :]
+    masks, inverse = np.unique(valid, axis=0, return_inverse=True)
+    result = np.full(len(x), np.nan, dtype=float)
+    for mask_index, mask in enumerate(masks):
+        rows = np.flatnonzero(inverse == mask_index)
+        if mask.sum() < 3:
+            continue
+        result[rows] = rowwise_spearman(x[rows][:, mask], y[mask])
+    return result
+
+
 def permuted_pairwise_stats(
     predictor: np.ndarray, outcome: np.ndarray, orders: np.ndarray
 ) -> np.ndarray:
@@ -57,7 +70,7 @@ def permuted_pairwise_stats(
     for target in range(len(outcome)):
         keep = np.arange(len(outcome)) != target
         x = predictor[orders[:, keep], orders[:, target, None]]
-        by_target.append(rowwise_spearman(x, outcome[keep, target]))
+        by_target.append(rowwise_spearman_masked(x, outcome[keep, target]))
     stacked = np.column_stack(by_target)
     counts = np.sum(np.isfinite(stacked), axis=1)
     return np.divide(
@@ -103,16 +116,26 @@ def permuted_asymmetry_stats(
 
 
 def permutation_p(null: np.ndarray, observed: float) -> float:
-    return float((np.sum(np.abs(null) >= abs(observed) - 1e-12) + 1) / (len(null) + 1))
+    finite = null[np.isfinite(null)]
+    if not np.isfinite(observed) or not len(finite):
+        return float("nan")
+    return float(
+        (np.sum(np.abs(finite) >= abs(observed) - 1e-12) + 1) / (len(finite) + 1)
+    )
 
 
-def matrix(frame: pd.DataFrame, graphs: list[str], seed: int | None = None) -> np.ndarray:
+def matrix(
+    frame: pd.DataFrame, graphs: list[str], metric: str = "accuracy",
+    seed: int | None = None,
+) -> np.ndarray:
+    if metric not in frame:
+        raise ValueError(f"metric column not found: {metric}")
     if seed is not None:
         frame = frame[frame.seed == seed]
     else:
-        frame = frame.groupby(["source", "target"], as_index=False).accuracy.mean()
+        frame = frame.groupby(["source", "target"], as_index=False)[metric].mean()
     return (
-        frame.pivot(index="source", columns="target", values="accuracy")
+        frame.pivot(index="source", columns="target", values=metric)
         .reindex(index=graphs, columns=graphs).to_numpy(float)
     )
 
@@ -123,6 +146,7 @@ def main() -> None:
     parser.add_argument("--base", type=Path, default=BASE)
     parser.add_argument("--extended", type=Path, default=EXTENDED)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
+    parser.add_argument("--metric", default="accuracy")
     parser.add_argument("--permutations", type=int, default=9_999)
     parser.add_argument("--seed", type=int, default=20260808)
     args = parser.parse_args()
@@ -133,8 +157,10 @@ def main() -> None:
     if extended["graphs"] != graphs:
         raise ValueError("extended predictor graph order does not match base data")
     cells = pd.read_csv(args.cells)
-    outcome = matrix(cells, graphs)
-    seed_outcomes = {seed: matrix(cells, graphs, seed) for seed in (0, 1, 2)}
+    outcome = matrix(cells, graphs, args.metric)
+    seed_outcomes = {
+        seed: matrix(cells, graphs, args.metric, seed) for seed in (0, 1, 2)
+    }
     if not np.isfinite(outcome).all() or not all(np.isfinite(x).all() for x in seed_outcomes.values()):
         raise ValueError("final-core matrix is incomplete after graph-name alignment")
 
@@ -151,7 +177,7 @@ def main() -> None:
         row = {
             "predictor": name,
             "kind": "pairwise_similarity" if is_similarity else "pairwise_distance",
-            "mean_target_spearman_accuracy": stat,
+            f"mean_target_spearman_{args.metric}": stat,
             "seed_0_rho": within_target_stat(predictor, seed_outcomes[0])[0],
             "seed_1_rho": within_target_stat(predictor, seed_outcomes[1])[0],
             "seed_2_rho": within_target_stat(predictor, seed_outcomes[2])[0],
@@ -170,7 +196,7 @@ def main() -> None:
         row.update(selection_stats(predictor, outcome, prefer_low=not is_similarity))
         pair_rows.append(row)
         target_rows.extend(
-            {"predictor": name, "target": graph, "spearman_accuracy": value}
+            {"predictor": name, "target": graph, f"spearman_{args.metric}": value}
             for graph, value in zip(graphs, targets)
         )
 
@@ -195,7 +221,7 @@ def main() -> None:
             row = {
                 "predictor": name,
                 "kind": mode,
-                "mean_target_spearman_accuracy": stat,
+                f"mean_target_spearman_{args.metric}": stat,
                 "seed_0_rho": within_target_stat(predictor, seed_outcomes[0])[0],
                 "seed_1_rho": within_target_stat(predictor, seed_outcomes[1])[0],
                 "seed_2_rho": within_target_stat(predictor, seed_outcomes[2])[0],
@@ -210,7 +236,7 @@ def main() -> None:
         direction_rows.append({
             "predictor": name,
             "kind": "signed_source_minus_target",
-            "spearman_with_accuracy_asymmetry": observed,
+            f"spearman_with_{args.metric}_asymmetry": observed,
             "graph_permutation_p_two_sided": permutation_p(
                 permuted_asymmetry_stats(values, outcome, orders), observed
             ),
@@ -222,20 +248,20 @@ def main() -> None:
         "pairwise_predictors.csv": pair_frame,
         "targetwise_correlations.csv": pd.DataFrame(target_rows),
         "source_predictors.csv": pd.DataFrame(source_rows).sort_values(
-            "mean_target_spearman_accuracy", ascending=False
+            f"mean_target_spearman_{args.metric}", ascending=False
         ),
         "scalar_gap_predictors.csv": pd.DataFrame(gap_rows).sort_values(
-            "mean_target_spearman_accuracy"
+            f"mean_target_spearman_{args.metric}"
         ),
         "direction_predictors.csv": pd.DataFrame(direction_rows).sort_values(
-            "spearman_with_accuracy_asymmetry", key=lambda x: x.abs(), ascending=False
+            f"spearman_with_{args.metric}_asymmetry", key=lambda x: x.abs(), ascending=False
         ),
     }
     for filename, frame in outputs.items():
         frame.to_csv(args.out_dir / filename, index=False)
     summary = {
         "graphs": graphs,
-        "outcome": "three-seed mean fixed-test episodic NM accuracy",
+        "outcome": f"three-seed mean fixed-test episodic NM {args.metric}",
         "cells_per_seed": 81,
         "self_cells_excluded": True,
         "permutations": args.permutations,
