@@ -13,6 +13,7 @@ BATCH_SIZE="${BATCH_SIZE:-32}"
 WORKER_COUNT=8
 MIN_HOST_RESERVE_GIB="${MIN_HOST_RESERVE_GIB:-256}"
 PRELOAD_GIB_PER_WORKER="${PRELOAD_GIB_PER_WORKER:-125}"
+MAX_EXISTING_GPU_MIB="${MAX_EXISTING_GPU_MIB:-1000}"
 CPU_THREADS_PER_WORKER="${CPU_THREADS_PER_WORKER:-24}"
 REFERENCE_FINGERPRINTS="${REFERENCE_FINGERPRINTS:-/dataMeR1/phil/gfm/prodigy-final-core-cache/log/final_core_cached_test/production/bs32/summary/episode_fingerprints.tsv}"
 SMOKE_ONLY="${SMOKE_ONLY:-0}"
@@ -72,8 +73,8 @@ wait_for_resources() {
     local clear=1 gpu used available_kib available_gib
     for gpu in 0 1 2 3; do
       used="$(nvidia-smi -i "$gpu" --query-gpu=memory.used --format=csv,noheader,nounits | tr -d ' ')"
-      if (( used > 1000 )); then
-        echo "WAIT GPU $gpu is busy (${used} MiB); not launching or stopping it" >&2
+      if (( used > MAX_EXISTING_GPU_MIB )); then
+        echo "WAIT GPU $gpu is busy (${used} MiB > ${MAX_EXISTING_GPU_MIB} MiB limit); not launching or stopping it" >&2
         clear=0
       fi
     done
