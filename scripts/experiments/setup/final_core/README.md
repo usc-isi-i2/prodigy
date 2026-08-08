@@ -67,7 +67,9 @@ ROC-AUC already computed inside `TrainerFS`. Because logits were not retained,
 missing AUC cells cannot be reconstructed offline. The dedicated AUC queue
 replays the same frozen test protocol for only the 27 specialist checkpoints
 (3 seeds x 9 sources x 9 targets = 243 cells), and atomically stores accuracy,
-macro F1, and macro one-vs-rest ROC-AUC in every result JSON.
+macro F1, and macro one-vs-rest ROC-AUC in every result JSON. Both the raw plan
+and observed-stream hashes must match the published fixed-test fingerprint
+ledger before any result is accepted.
 
 Run it from the isolated `experiment/final-core-auc-grid` worktree after owned
 GPUs 0--3 are free. Its resource gate waits rather than competing with an

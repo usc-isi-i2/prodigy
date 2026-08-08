@@ -14,6 +14,7 @@ WORKER_COUNT=8
 MIN_HOST_RESERVE_GIB="${MIN_HOST_RESERVE_GIB:-256}"
 PRELOAD_GIB_PER_WORKER="${PRELOAD_GIB_PER_WORKER:-125}"
 CPU_THREADS_PER_WORKER="${CPU_THREADS_PER_WORKER:-24}"
+REFERENCE_FINGERPRINTS="${REFERENCE_FINGERPRINTS:-/dataMeR1/phil/gfm/prodigy-final-core-cache/log/final_core_cached_test/production/bs32/summary/episode_fingerprints.tsv}"
 SMOKE_ONLY="${SMOKE_ONLY:-0}"
 SKIP_SMOKE="${SKIP_SMOKE:-0}"
 
@@ -60,6 +61,10 @@ for seed in 0 1 2; do
   done
 done
 (( missing == 0 )) || { echo "$missing specialist checkpoints are missing" >&2; exit 1; }
+[[ -f "$REFERENCE_FINGERPRINTS" ]] || {
+  echo "MISSING reference fingerprint ledger $REFERENCE_FINGERPRINTS" >&2
+  exit 1
+}
 
 wait_for_resources() {
   local required_gib=$((WORKER_COUNT * PRELOAD_GIB_PER_WORKER + MIN_HOST_RESERVE_GIB))
@@ -119,6 +124,7 @@ launch_workers() {
          --evaluation-log-root "$EVAL_LOG_ROOT/internal/${kind}_bs${BATCH_SIZE}"
          --results-root "$results_root"
          --evaluation-run-stamp "${RUN_ID}_${kind}_bs${BATCH_SIZE}"
+         --reference-fingerprints "$REFERENCE_FINGERPRINTS"
          --ready-dir "$ready_dir" --expected-workers "$WORKER_COUNT"
          --min-host-reserve-gib "$MIN_HOST_RESERVE_GIB")
     [[ "$kind" == smoke ]] && cmd+=(--max-checkpoints 1)
@@ -161,6 +167,7 @@ mkdir -p "$results_root" "$summary_root" "$ready_dir"
   echo "training_state_root=$TRAINING_STATE_ROOT"
   echo "checkpoint_step=2500"
   echo "specialist_cells=243"
+  echo "reference_fingerprints=$REFERENCE_FINGERPRINTS"
   echo "started_utc=$(date -u +%FT%TZ)"
 } > "$EVAL_LOG_ROOT/production/bs${BATCH_SIZE}/provenance.txt"
 

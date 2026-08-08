@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import json
 import math
 from pathlib import Path
@@ -31,3 +32,22 @@ def load_metric_sidecar(logging_dir: str | Path, target: str, step: int) -> dict
             raise ValueError(f"{path}: missing or non-finite {sidecar_name}")
         metrics[output_name] = value
     return metrics
+
+
+def load_reference_fingerprints(
+    path: Path | None, expected_targets: tuple[str, ...]
+) -> dict[str, dict[str, str]]:
+    if path is None:
+        return {}
+    if not path.is_file():
+        raise FileNotFoundError(path)
+    with path.open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle, delimiter="\t"))
+    by_target = {row["target"]: row for row in rows}
+    if len(rows) != len(expected_targets) or set(by_target) != set(expected_targets):
+        raise ValueError(f"reference fingerprint ledger has the wrong targets: {path}")
+    for target, row in by_target.items():
+        for key in ("episode_plan_fingerprint", "observed_episode_fingerprint"):
+            if len(row.get(key, "")) != 64:
+                raise ValueError(f"{path}: target {target} has invalid {key}")
+    return by_target

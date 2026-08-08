@@ -7,7 +7,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from aggregate_auc_matrix import aggregate, specialist_jobs  # noqa: E402
-from auc_contract import METRIC_CONTRACT, load_metric_sidecar  # noqa: E402
+from auc_contract import (  # noqa: E402
+    METRIC_CONTRACT,
+    load_metric_sidecar,
+    load_reference_fingerprints,
+)
 from core_plan import SOURCES  # noqa: E402
 from fixed_test_plan import CHECKPOINT_STEP, EPISODE_COUNT, PROTOCOL  # noqa: E402
 
@@ -87,3 +91,23 @@ def test_auc_aggregate_is_exactly_three_seed_9x9(tmp_path):
     completeness = json.loads((summary / "completeness.json").read_text())
     assert completeness["specialist_cells"] == 243
     assert completeness["metric_contract"] == METRIC_CONTRACT
+
+
+def test_reference_fingerprint_ledger_is_exact(tmp_path):
+    path = tmp_path / "episode_fingerprints.tsv"
+    rows = ["target\tcell_count\tepisode_count_per_cell\tepisode_plan_fingerprint\tobserved_episode_fingerprint"]
+    rows.extend(
+        f"{target}\t93\t512\t{index + 1:064x}\t{index + 101:064x}"
+        for index, target in enumerate(SOURCES)
+    )
+    path.write_text("\n".join(rows) + "\n", encoding="utf-8")
+    loaded = load_reference_fingerprints(path, tuple(SOURCES))
+    assert set(loaded) == set(SOURCES)
+    rows.pop()
+    path.write_text("\n".join(rows) + "\n", encoding="utf-8")
+    try:
+        load_reference_fingerprints(path, tuple(SOURCES))
+    except ValueError as error:
+        assert "wrong targets" in str(error)
+    else:
+        raise AssertionError("incomplete fingerprint ledger must fail")

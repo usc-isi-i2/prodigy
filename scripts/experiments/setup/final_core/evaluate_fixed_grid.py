@@ -35,7 +35,12 @@ REPO_ROOT = HERE.parents[3]
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(HERE))
 
-from auc_contract import METRIC_CONTRACT, load_metric_sidecar, metric_sidecar_path  # noqa: E402
+from auc_contract import (  # noqa: E402
+    METRIC_CONTRACT,
+    load_metric_sidecar,
+    load_reference_fingerprints,
+    metric_sidecar_path,
+)
 from core_plan import SOURCES  # noqa: E402
 from experiments.params import get_params  # noqa: E402
 from experiments.run_single_experiment import load_dataset, seed_everything  # noqa: E402
@@ -613,6 +618,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--expected-workers", default=1, type=int)
     parser.add_argument("--barrier-timeout-seconds", default=1800, type=int)
     parser.add_argument("--min-host-reserve-gib", default=256.0, type=float)
+    parser.add_argument("--reference-fingerprints", type=Path)
     args = parser.parse_args()
     if not 0 <= args.worker_index < args.worker_count:
         parser.error("worker-index must be in [0, worker-count)")
@@ -637,6 +643,9 @@ def main() -> int:
         flush=True,
     )
     targets = parse_targets(args.targets)
+    reference_fingerprints = load_reference_fingerprints(
+        args.reference_fingerprints, tuple(SOURCES)
+    )
     jobs = physical_jobs()
     if args.specialists_only:
         jobs = [job for job in jobs if job.model.model_id.startswith("ss_")]
@@ -708,6 +717,12 @@ def main() -> int:
             raise AssertionError(
                 f"target {target}: {len(batches)} batches/{episode_count} episodes"
             )
+        if reference_fingerprints and fingerprint != reference_fingerprints[target][
+            "episode_plan_fingerprint"
+        ]:
+            raise AssertionError(
+                f"target {target} raw plan differs from published fixed-test fingerprint"
+            )
         target_plans[target] = {
             "batches": batches,
             "collate_fn": loader.collate_fn,
@@ -774,6 +789,12 @@ def main() -> int:
         target_plans[target]["observed_fingerprint"] = target_cache[
             "observed_fingerprint"
         ]
+        if reference_fingerprints and target_cache["observed_fingerprint"] != (
+            reference_fingerprints[target]["observed_episode_fingerprint"]
+        ):
+            raise AssertionError(
+                f"target {target} observed stream differs from published fixed-test fingerprint"
+            )
         if (
             existing_observed_fingerprints
             and existing_observed_fingerprints
