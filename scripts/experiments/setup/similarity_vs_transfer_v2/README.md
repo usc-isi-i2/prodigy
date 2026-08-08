@@ -5,10 +5,10 @@ experiment asked whether six graph distances tracked a small transfer pilot;
 v2 evaluates predictors against the complete directed 9×9 single-source NM
 matrix and adds predictors closer to what a message-passing GNN observes.
 
-The laptop analysis consumes the already committed transfer matrix and graph
-divergence artifact.  The optional Tucker job generates the missing expensive
-predictors: exact user overlap, feature skew summaries, and distributional
-distances in raw-center, sampled-neighbor-mean, and concatenated spaces.
+The laptop analysis consumes the committed transfer matrix and graph-divergence
+artifact. The Tucker job generates user overlap, feature skew, and distances in
+raw-center, sampled-neighbor-mean, concatenated, local-structure, and
+embedding-topic spaces. The complete run was generated on 2026-08-07.
 
 ## Worktree and branch
 

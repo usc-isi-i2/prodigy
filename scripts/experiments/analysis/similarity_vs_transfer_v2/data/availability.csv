@@ -10,11 +10,11 @@ node and edge counts,available,9/9,graph_divergence_data.json
 feature homophily,available,9/9,graph_divergence_data.json
 label homophily,partial,5/9,do not impute missing labels
 feature separability (proxy A),available,9/9,graph_divergence_data.json
-user overlap,not generated,Twitter pairs only,run Tucker v2 extractor; Facebook pairs are NA
-feature skewness,not generated,planned 9/9,run Tucker v2 extractor
-neighbor-mean distribution distances,partial,8/9 means only,run Tucker v2 extractor for 9/9 PAD/MMD/projected Frechet
-center-plus-neighbor distribution distances,partial,8/9 means only,run Tucker v2 extractor for 9/9 PAD/MMD/projected Frechet
+user overlap,available partial,Twitter pairs,Facebook pairs are NA; Jaccard is null
+feature skewness,available,9/9,aligned L1 and Wasserstein metrics generated
+neighbor-mean distribution distances,available,9/9,PAD MMD centroid and projected Frechet generated
+center-plus-neighbor distribution distances,available,9/9,PAD MMD centroid and projected Frechet generated
 time distribution,not available,heterogeneous subset,extract comparable event timestamps from raw source files
-message-passing topology distance,not available,0/9,add rooted ego/WL or computation-tree distance
+message-passing topology distance,available lightweight,9/9,degree-binned one-hop signature; full WL/ego-Laplacian missing
 encoder representation distance,not available,0/9,extract layerwise embeddings from a fixed checkpoint
-language/topic composition,not available,0/9,derive from bios/posts with a shared encoder or topic model
+language/topic composition,available proxy,9/9,shared 64-cluster embedding-topic JS distance
