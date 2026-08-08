@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 
 SOURCES = (
@@ -62,6 +63,17 @@ def build_models() -> list[CoreModel]:
     if len(models) != 31:
         raise AssertionError(f"expected 31 unique models, got {len(models)}")
     return models
+
+
+def select_validation_checkpoint(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Select by validation score only, using earlier step as the fixed tie-break."""
+    if not rows:
+        raise ValueError("validation results must not be empty")
+    required = {100, 300, 900, 2500}
+    steps = {int(row["checkpoint_step"]) for row in rows}
+    if steps != required or len(rows) != len(required):
+        raise ValueError(f"expected one result for each checkpoint {sorted(required)}, got {sorted(steps)}")
+    return max(rows, key=lambda row: (float(row["score"]), -int(row["checkpoint_step"])))
 
 
 def main() -> int:
