@@ -44,6 +44,10 @@ The complete outputs are:
 - `data/dimension_diagnostics.json`: full sampling metadata and nested results.
 - `data/node_distance_per_dimension.csv`: one row per graph and feature coordinate.
 - `data/graph_identity_per_dimension.csv`: one row per scope and feature coordinate.
+- `data/neighbor_augmented_features.json`: matched raw-versus-neighborhood distance
+  metrics and graph-identity probes for the training-style neighborhood summary.
+- `data/neighbor_augmented_3d.csv`: 3D PCA coordinates for raw centers, sampled-
+  neighbor means, and their concatenation.
 
 ## Tucker run
 
@@ -75,6 +79,15 @@ Run the uniform-pair and per-dimension diagnostic, then export flat tables:
   scripts/experiments/analysis/path_feature_coupling/export_dimension_tables.py
 ```
 
+Compare raw centers with the center-plus-neighbor-mean representation. The default
+samples up to 100 undirected neighbors without replacement, matching the historical
+one-hop sampler:
+
+```bash
+/home/mhchu/miniconda3/envs/prodigy/bin/python \
+  scripts/experiments/analysis/path_feature_coupling/analyze_neighbor_augmented_features.py
+```
+
 ## Interpretation cautions
 
 - The short-distance endpoints are random-walk sampled, not uniform over every
@@ -94,6 +107,11 @@ Run the uniform-pair and per-dimension diagnostic, then export flat tables:
 - Raw embedding axes depend on the embedding pipeline. The same-pipeline graph-
   identity scope is the cleaner comparison; the all-graph scope also contains the
   known political-graph pipeline shift.
+- The concatenation is an information-level diagnostic, not the literal hidden state
+  of the trained encoder. The default SAGE layer projects and mean-aggregates neighbor
+  messages, applies its neighbor MLP, then adds a separately projected center (and an
+  optional residual) before normalization/ReLU. The raw concatenation asks what is
+  jointly available before those learned transformations.
 - Conditioning on nonzero text features isolates semantic-feature geometry. Missing
   text itself may be informative to a GNN and should be analyzed separately if it
   becomes part of the mechanism claim.

@@ -98,6 +98,54 @@ The exhaustive tables are
 sampling metadata and full nested results are in
 [`dimension_diagnostics.json`](data/dimension_diagnostics.json).
 
+## Adding sampled-neighborhood context
+
+Concatenating each non-missing center feature with the mean of up to 100 sampled
+undirected neighbor features changes the picture substantially. Neighbor averaging
+makes all nodes closer overall, but it improves the *contrast* between within-graph
+and between-graph pairs:
+
+| space | mean within-graph cosine distance | mean between-graph cosine distance | between − within |
+|---|---:|---:|---:|
+| raw center | 0.475 | 0.492 | 0.017 |
+| neighbor mean only | 0.281 | 0.314 | 0.033 |
+| center + neighbor mean | 0.432 | 0.459 | 0.027 |
+
+The same pattern appears in held-out multivariate graph-identity prediction. Across
+all eight graphs, balanced accuracy increases from **0.404** for raw centers to
+**0.659** for the concatenation (chance 0.125). Across only the six same-pipeline
+graphs it increases from **0.358** to **0.588** (chance 0.167). Neighbor mean alone
+is even stronger at 0.676 and 0.643 respectively. Sampled topology therefore adds
+substantial graph-domain information beyond the center bio.
+
+For exact local path length, the answer is more nuanced. The 1→2→3 cosine-distance
+correlation remains weak: raw-center Spearman rho is 0.011–0.141 and concatenated
+rho is 0.034–0.169. But the adjacent-versus-far/disconnected standardized effect
+becomes much clearer and consistent: **0.59–1.21** for the concatenation, compared
+with **−0.05–0.71** for raw centers. Even ukraine-suspended, the prior exception,
+moves from −0.05 to 0.81. The representation is therefore much better at encoding
+“same local neighborhood versus unrelated region,” without becoming a precise
+shortest-path ruler.
+
+Although the fanout cap is 100, these sparse retweet graphs supply only 3.3–37.4
+sampled neighbors per uniformly drawn non-missing center on average. The result is
+thus driven mostly by aggregating all available neighbors rather than truncating
+large neighborhoods.
+
+The 3D PCA export is [`neighbor_augmented_3d.csv`](data/neighbor_augmented_3d.csv),
+and all distance and probe results are in
+[`neighbor_augmented_features.json`](data/neighbor_augmented_features.json).
+The first three PCs explain 11.9% of raw-center variance and 13.6% of concatenated
+variance, so the visualization is useful qualitatively but not a complete view of
+the 1,536-dimensional geometry.
+
+One implementation detail matters for interpretation: PRODIGY's default SAGE layer
+does not retain this raw concatenation as its hidden state. It separately projects
+and mean-aggregates neighbor messages, applies the neighbor MLP, then adds a separately
+projected center (plus an optional residual) before normalization/ReLU. This analysis
+tests the information made available by the two inputs; measuring the actual learned
+space requires exporting hidden states from a chosen checkpoint.
+
 ## Results
 
 All probes distinguish exact distance 1 from a uniformly sampled endpoint verified
