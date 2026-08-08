@@ -1,13 +1,14 @@
-# Graph divergence: pairwise comparison of all retweet graphs
+# Graph divergence: pairwise comparison of all source social graphs
 
-Diagnoses **how the retweet graphs differ**, to ground graph-transfer analysis.
+Diagnoses **how the source graphs differ**, to ground graph-transfer analysis.
 Instead of one blended similarity score, it separates three axes and then measures
 the coupling a message-passing GNN actually transfers:
 
 1. **Topology** — degree distributions (directed in/out), density, reciprocity,
    degree assortativity, approximate clustering, largest WCC/SCC fraction.
-2. **Features** — GTE bio embeddings (`x`, zero-filled when a user has no bio):
-   missing-bio rate, feature norm, effective dimensionality.
+2. **Features** — GTE text embeddings (`x`: user bios for Twitter/X, page
+   descriptions for Facebook; zero-filled when text is missing): missing-text
+   rate, feature norm, effective dimensionality.
 3. **Feature–structure coupling** — edge feature homophily vs. a random-pair
    baseline, Dirichlet energy, and label homophily where labels exist.
 
@@ -25,8 +26,10 @@ clouds; 0 = indistinguishable, 2 = perfectly separable).
 
 ## Graphs compared
 
-Single-source retweet graphs only (merged graphs are unions of these, not
-independent domains). Defaults, relative to `--data-root` (`/dataMeR1/phil/data`):
+Single-source social graphs only (merged graphs are unions of these, not
+independent domains). Defaults, relative to `--data-root` (`/dataMeR1/phil/data`).
+Facebook uses the 119,228-node structural view used by the nine-graph transfer
+experiments, excluding the 30,772 deterministically selected attributed isolates:
 
 | name | path | ~nodes | ~edges | labels |
 |------|------|-------:|-------:|--------|
@@ -38,13 +41,14 @@ independent domains). Defaults, relative to `--data-root` (`/dataMeR1/phil/data`
 | election2020 | `election2020/graphs/retweet_graph.pt` | 79k | 2.82M | conservative |
 | covid_political | `covid_political/graphs/retweet_graph.pt` | 79k | 181k | conservative |
 | ukr_rus_suspended | `ukr_rus_suspended/graphs/retweet_graph.pt` | 72k | 354k | suspended |
+| facebook_page_reference | `facebook_page_reference/graphs/page_reference_structural.pt` | 119k | 168k | page category, admin country, verified, regression targets |
 
 ## How to run (on Tucker)
 
 Loading a 75GB graph is heavy, but the runner memory-maps the feature tensor
 (`torch.load(..., mmap=True)`) and subsamples nodes/edges for every feature metric,
 so only `edge_index` is materialised in full — peak RAM is a few GB and the whole
-8-graph sweep takes ~5 min. Non-interactive shells don't have `conda` on PATH, so
+9-graph sweep takes ~7 min. Non-interactive shells don't have `conda` on PATH, so
 call the env's Python directly:
 
 ```bash
@@ -62,7 +66,8 @@ notebook reads it directly. Useful flags: `--graphs a,b,c` (subset),
 ## Data artifact schema (`graph_divergence_data.json`)
 
 ```
-meta:        generated_at, data_root, git_commit, hostname, seed, config{...}
+meta:        generated_at, data_root, git_commit, hostname, seed, config{...},
+             graph_paths{name -> path relative to data_root}
 graphs:      [ordered graph names]
 per_graph:   name -> { topology scalars, in/out degree CCDFs, feature scalars,
                        coupling scalars, class_balance, label_homophily, ... }
@@ -73,12 +78,16 @@ pairwise:    metric -> NxN matrix (row/col order == `graphs`), for metrics
 
 ## Method notes / caveats
 
-- **Feature stats are on non-missing-bio nodes.** `missing_bio_rate` is reported
-  separately (estimated from a uniform node sample) and is a first-order confound:
-  a graph with many empty bios has less feature signal to transfer.
-- **Cross-pipeline confound.** `election2020` / `covid_political` embeddings use
+- **Feature stats are on nodes with nonzero text embeddings.** The historical JSON
+  key `missing_bio_rate` is retained for schema compatibility; for Facebook it
+  means missing page descriptions. It is estimated from a uniform node sample and
+  is a first-order confound: a graph with many empty texts has less feature signal.
+- **Cross-pipeline/platform confounds.** `election2020` / `covid_political` embeddings use
   meanpool pooling with 0% missing bios, unlike the other graphs (zero-filled). A
   large feature divergence to those two is partly construction, not domain shift.
+  Facebook is a page-reference graph with page-description features rather than a
+  Twitter/X retweet graph with user-bio features, so its divergence also combines
+  platform, relation, and population differences.
 - **Subsampling** (seeded): `--feat-sample` non-missing nodes per graph for feature
   clouds; `--edge-sample` edges for homophily/coupling; degree KS on ≤50k-degree
   samples; MMD on ≤`--mmd-cap` points/graph; clustering on `--clustering-nodes`

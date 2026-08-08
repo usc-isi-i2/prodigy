@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Compute per-graph statistics and pairwise divergences across retweet graphs.
+"""Compute per-graph statistics and pairwise divergences across social graphs.
 
 Runs on Tucker (graphs live under ``/dataMeR1/phil/data/<name>/graphs``). Every
-graph is a ``torch.save`` dict with keys ``x`` (node bio-embedding features,
-zero-filled when a user has no bio), ``edge_index`` (directed retweet edges),
+graph is a ``torch.save`` dict with keys ``x`` (node text-embedding features,
+zero-filled when text is missing), ``edge_index`` (directed social edges),
 ``edge_attr``, ``y`` and ``label_names`` (see ``scripts/graph_construction``).
 
 The script emits a single JSON artifact holding, for every graph:
@@ -45,7 +45,7 @@ from typing import Any
 
 import numpy as np
 
-# name -> path relative to --data-root. Single-source retweet graphs only
+# name -> path relative to --data-root. Single-source social graphs only
 # (merged graphs are excluded: they are unions of these and not independent
 # domains). Override with --graphs / --data-root; missing files are skipped.
 DEFAULT_GRAPHS: dict[str, str] = {
@@ -57,6 +57,10 @@ DEFAULT_GRAPHS: dict[str, str] = {
     "election2020": "election2020/graphs/retweet_graph.pt",
     "covid_political": "covid_political/graphs/retweet_graph.pt",
     "ukr_rus_suspended": "ukr_rus_suspended/graphs/retweet_graph.pt",
+    # Match the representation used in the nine-graph transfer experiments:
+    # pages that participate in the page-reference structure, without the
+    # deterministically added attributed isolates in page_reference_graph.pt.
+    "facebook_page_reference": "facebook_page_reference/graphs/page_reference_structural.pt",
 }
 
 
@@ -536,6 +540,7 @@ def main() -> None:
 
     result["pairwise"] = pw
     result.pop("feature_moments", None)  # mus already folded into pairwise
+    result["meta"]["graph_paths"] = {name: graphs[name] for name in names}
 
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
