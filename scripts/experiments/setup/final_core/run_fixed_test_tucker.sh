@@ -15,6 +15,7 @@ WORKER_COUNT=8
 MIN_HOST_RESERVE_GIB="${MIN_HOST_RESERVE_GIB:-256}"
 MAX_SUMMED_VRAM_GIB="${MAX_SUMMED_VRAM_GIB:-70}"
 PRELOAD_GIB_PER_WORKER="${PRELOAD_GIB_PER_WORKER:-125}"
+CPU_THREADS_PER_WORKER="${CPU_THREADS_PER_WORKER:-24}"
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
 source "$(conda info --base)/etc/profile.d/conda.sh"
@@ -22,6 +23,12 @@ conda activate prodigy
 export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 export PYTHONDONTWRITEBYTECODE=1
 export WANDB_MODE="${WANDB_MODE:-disabled}"
+export FINAL_CORE_CPU_THREADS="$CPU_THREADS_PER_WORKER"
+export OMP_NUM_THREADS="$CPU_THREADS_PER_WORKER"
+export MKL_NUM_THREADS="$CPU_THREADS_PER_WORKER"
+export OPENBLAS_NUM_THREADS="$CPU_THREADS_PER_WORKER"
+export NUMEXPR_NUM_THREADS="$CPU_THREADS_PER_WORKER"
+export NUMEXPR_MAX_THREADS="$CPU_THREADS_PER_WORKER"
 PYTHON="${PYTHON:-${CONDA_PREFIX}/bin/python}"
 
 mkdir -p "$EVAL_STATE_ROOT" "$EVAL_LOG_ROOT" "$EVAL_LOG_ROOT/queue" "$EVAL_LOG_ROOT/ready"
@@ -167,6 +174,7 @@ mkdir -p "$RESULTS_ROOT" "$SUMMARY_ROOT" "$READY_DIR"
   echo "workers=8"
   echo "gpus=0,1,2,3"
   echo "slots_per_gpu=2"
+  echo "cpu_threads_per_worker=$CPU_THREADS_PER_WORKER"
   echo "started_utc=$(date -u +%FT%TZ)"
 } > "$EVAL_LOG_ROOT/production/bs${selected_batch_size}/provenance.txt"
 

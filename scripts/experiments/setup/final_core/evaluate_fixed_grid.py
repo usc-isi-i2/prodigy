@@ -434,6 +434,16 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    cpu_threads = int(os.environ.get("FINAL_CORE_CPU_THREADS", "24"))
+    if cpu_threads <= 0:
+        raise ValueError("FINAL_CORE_CPU_THREADS must be positive")
+    torch.set_num_threads(cpu_threads)
+    torch.set_num_interop_threads(1)
+    print(
+        f"CPU_THREADS intraop={torch.get_num_threads()} "
+        f"interop={torch.get_num_interop_threads()}",
+        flush=True,
+    )
     targets = parse_targets(args.targets)
     assigned = [
         job for index, job in enumerate(physical_jobs())
