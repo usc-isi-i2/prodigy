@@ -9,15 +9,22 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy.stats import rankdata
 
-from analyze_predictors import (
-    asymmetry_stat,
-    graph_permutation_p,
-    scalar_matrix,
-    scalar_permutation_p,
-    selection_stats,
-    within_target_stat,
-)
+try:
+    from .analyze_predictors import (
+        asymmetry_stat,
+        scalar_matrix,
+        selection_stats,
+        within_target_stat,
+    )
+except ImportError:  # Direct script execution.
+    from analyze_predictors import (
+        asymmetry_stat,
+        scalar_matrix,
+        selection_stats,
+        within_target_stat,
+    )
 
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -25,6 +32,68 @@ BASE = ROOT / "scripts/experiments/analysis/graph_divergence/data/graph_divergen
 EXTENDED = Path(__file__).resolve().parent / "data/extended_predictors.json"
 CELLS = Path(__file__).resolve().parent / "data/final_core_matrix/specialist_cells_three_seed.csv"
 DEFAULT_OUT = Path(__file__).resolve().parent / "data/final_core_matrix/predictors"
+
+
+def rowwise_spearman(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+    """Spearman correlation between every row of x and one finite vector y."""
+    xr = rankdata(x, axis=1)
+    yr = rankdata(y)
+    xr = xr - xr.mean(axis=1, keepdims=True)
+    yr = yr - yr.mean()
+    denominator = np.sqrt(np.sum(xr * xr, axis=1) * np.sum(yr * yr))
+    return np.divide(
+        xr @ yr,
+        denominator,
+        out=np.full(len(xr), np.nan, dtype=float),
+        where=denominator > 0,
+    )
+
+
+def permuted_pairwise_stats(
+    predictor: np.ndarray, outcome: np.ndarray, orders: np.ndarray
+) -> np.ndarray:
+    """Vectorized equivalent of jointly permuting predictor graph identities."""
+    by_target = []
+    for target in range(len(outcome)):
+        keep = np.arange(len(outcome)) != target
+        x = predictor[orders[:, keep], orders[:, target, None]]
+        by_target.append(rowwise_spearman(x, outcome[keep, target]))
+    return np.nanmean(np.column_stack(by_target), axis=1)
+
+
+def permuted_scalar_stats(
+    values: np.ndarray, outcome: np.ndarray, mode: str, orders: np.ndarray
+) -> np.ndarray:
+    permuted = values[orders]
+    by_target = []
+    for target in range(len(outcome)):
+        keep = np.arange(len(outcome)) != target
+        if mode == "source":
+            x = permuted[:, keep]
+        elif mode == "absolute_gap":
+            x = np.abs(permuted[:, keep] - permuted[:, target, None])
+        else:
+            raise ValueError(mode)
+        by_target.append(rowwise_spearman(x, outcome[keep, target]))
+    return np.nanmean(np.column_stack(by_target), axis=1)
+
+
+def permuted_asymmetry_stats(
+    values: np.ndarray, outcome: np.ndarray, orders: np.ndarray
+) -> np.ndarray:
+    permuted = values[orders]
+    left, right, y = [], [], []
+    for a in range(len(values)):
+        for b in range(a + 1, len(values)):
+            left.append(a)
+            right.append(b)
+            y.append(outcome[a, b] - outcome[b, a])
+    x = permuted[:, left] - permuted[:, right]
+    return rowwise_spearman(x, np.asarray(y))
+
+
+def permutation_p(null: np.ndarray, observed: float) -> float:
+    return float((np.sum(np.abs(null) >= abs(observed) - 1e-12) + 1) / (len(null) + 1))
 
 
 def matrix(frame: pd.DataFrame, graphs: list[str], seed: int | None = None) -> np.ndarray:
@@ -60,6 +129,7 @@ def main() -> None:
         raise ValueError("final-core matrix is incomplete after graph-name alignment")
 
     rng = np.random.default_rng(args.seed)
+    orders = np.stack([rng.permutation(len(graphs)) for _ in range(args.permutations)])
     pairwise = {**base["pairwise"], **extended["pairwise"]}
     pair_rows, target_rows = [], []
     for name, raw in pairwise.items():
@@ -75,8 +145,8 @@ def main() -> None:
             "seed_0_rho": within_target_stat(predictor, seed_outcomes[0])[0],
             "seed_1_rho": within_target_stat(predictor, seed_outcomes[1])[0],
             "seed_2_rho": within_target_stat(predictor, seed_outcomes[2])[0],
-            "graph_permutation_p_two_sided": graph_permutation_p(
-                predictor, outcome, stat, rng, args.permutations
+            "graph_permutation_p_two_sided": permutation_p(
+                permuted_pairwise_stats(predictor, outcome, orders), stat
             ),
             "targets_expected_direction": int(
                 np.sum(np.asarray(targets) > 0 if is_similarity else np.asarray(targets) < 0)
@@ -119,23 +189,21 @@ def main() -> None:
                 "seed_0_rho": within_target_stat(predictor, seed_outcomes[0])[0],
                 "seed_1_rho": within_target_stat(predictor, seed_outcomes[1])[0],
                 "seed_2_rho": within_target_stat(predictor, seed_outcomes[2])[0],
-                "graph_permutation_p_two_sided": scalar_permutation_p(
-                    values, outcome, stat, mode, rng, args.permutations
+                "graph_permutation_p_two_sided": permutation_p(
+                    permuted_scalar_stats(values, outcome, mode, orders), stat
                 ),
                 "targets_same_sign_as_mean": int(np.sum(np.sign(targets) == np.sign(stat))),
             }
             row.update(selection_stats(predictor, outcome, prefer_low=(stat < 0)))
             sink.append(row)
         observed = asymmetry_stat(values, outcome)
-        exceed = sum(
-            abs(asymmetry_stat(rng.permutation(values), outcome)) >= abs(observed) - 1e-12
-            for _ in range(args.permutations)
-        )
         direction_rows.append({
             "predictor": name,
             "kind": "signed_source_minus_target",
             "spearman_with_accuracy_asymmetry": observed,
-            "graph_permutation_p_two_sided": (exceed + 1) / (args.permutations + 1),
+            "graph_permutation_p_two_sided": permutation_p(
+                permuted_asymmetry_stats(values, outcome, orders), observed
+            ),
         })
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -162,6 +230,7 @@ def main() -> None:
         "self_cells_excluded": True,
         "permutations": args.permutations,
         "permutation_unit": "joint graph identity",
+        "permutation_draws_shared_across_predictors": True,
         "best_pairwise_by_priority": pair_frame.iloc[0].to_dict(),
     }
     (args.out_dir / "summary.json").write_text(
