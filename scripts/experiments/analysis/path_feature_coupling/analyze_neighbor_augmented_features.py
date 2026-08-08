@@ -189,6 +189,11 @@ def identity_probe(
     seed: int,
 ) -> dict[str, Any]:
     """Held-out multinomial linear graph-identity probe."""
+    if len(graph_names) < 2:
+        return {
+            "graphs": graph_names,
+            "error": "graph identity requires at least two graphs",
+        }
     from sklearn.linear_model import LogisticRegression
     from sklearn.metrics import balanced_accuracy_score, roc_auc_score
     from sklearn.model_selection import train_test_split

@@ -3,6 +3,7 @@ from scipy.sparse import csr_matrix
 
 from analyze_neighbor_augmented_features import (
     distance_summary,
+    identity_probe,
     sampled_neighbor_means,
     spaces,
 )
@@ -41,3 +42,10 @@ def test_distance_summary_uses_fixed_pair_indices():
     assert out["n"] == 1
     assert np.isclose(out["mean_cosine_distance"], 1.0)
     assert np.isclose(out["mean_euclidean_distance"], np.sqrt(2.0))
+
+
+def test_identity_probe_skips_single_graph_pilots():
+    one = np.ones((4, 2), dtype=np.float32)
+    samples = {"g": spaces(one, one)}
+    result = identity_probe(samples, ["g"], "raw_center", seed=0)
+    assert "at least two graphs" in result["error"]
