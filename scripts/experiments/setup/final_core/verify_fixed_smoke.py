@@ -11,6 +11,7 @@ import sys
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
+from auc_contract import METRIC_CONTRACT  # noqa: E402
 from core_plan import SOURCES  # noqa: E402
 from fixed_test_plan import CHECKPOINT_STEP, EPISODE_COUNT, PROTOCOL  # noqa: E402
 
@@ -50,10 +51,15 @@ def main() -> int:
             "edge_view": "static_train",
             "target_edge_view": "static_test",
             "batch_replay_mode": "materialized_cpu_clone_v1",
+            "metric_contract": METRIC_CONTRACT,
         }
         for field, value in expected.items():
             if row.get(field) != value:
                 raise AssertionError(f"smoke {field}: expected {value!r}, got {row.get(field)!r}")
+        for field in ("accuracy", "f1_macro", "roc_auc_ovr_macro"):
+            value = float(row.get(field, float("nan")))
+            if not 0.0 <= value <= 1.0:
+                raise AssertionError(f"smoke {field} is invalid: {value}")
         if float(row["cache_min_mem_available_gib"]) < args.min_host_reserve_gib:
             raise MemoryError(
                 f"worker {row['worker_index']} cache left only "

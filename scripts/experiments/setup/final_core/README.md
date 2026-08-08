@@ -60,6 +60,29 @@ The queue is resumable: completed physical cells are validated before being
 skipped. Raw evidence and strict matrices/tables are under
 `log/final_core_fixed_test/production/bs{64,32}/`.
 
+## Complete specialist ROC-AUC matrix
+
+The first strict aggregate retained `score`/accuracy but not the multiclass
+ROC-AUC already computed inside `TrainerFS`. Because logits were not retained,
+missing AUC cells cannot be reconstructed offline. The dedicated AUC queue
+replays the same frozen test protocol for only the 27 specialist checkpoints
+(3 seeds x 9 sources x 9 targets = 243 cells), and atomically stores accuracy,
+macro F1, and macro one-vs-rest ROC-AUC in every result JSON.
+
+Run it from the isolated `experiment/final-core-auc-grid` worktree after owned
+GPUs 0--3 are free. Its resource gate waits rather than competing with an
+existing job:
+
+```bash
+tmux new-session -d -s finalcore_auc \
+  'export PATH="/home/mhchu/miniconda3/bin:$PATH"; \
+   cd /dataMeR1/phil/gfm/prodigy-final-core-auc; \
+   bash scripts/experiments/setup/final_core/run_auc_matrix_tucker.sh'
+```
+
+The final mean matrix is
+`log/final_core_auc/production/bs32/summary/single_source_roc_auc_ovr_macro_three_seed_mean.csv`.
+
 For a replacement smoke, set `SMOKE_ONLY=1`; it evaluates two checkpoints per
 worker so replay is exercised, then exits. After that passes, production can
 resume an earlier result tree by setting `SKIP_SMOKE=1` and

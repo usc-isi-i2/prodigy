@@ -35,6 +35,7 @@ REPO_ROOT = HERE.parents[3]
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(HERE))
 
+from auc_contract import METRIC_CONTRACT, load_metric_sidecar, metric_sidecar_path  # noqa: E402
 from core_plan import SOURCES  # noqa: E402
 from experiments.params import get_params  # noqa: E402
 from experiments.run_single_experiment import load_dataset, seed_everything  # noqa: E402
@@ -445,12 +446,19 @@ def validate_existing(
         "episode_plan_fingerprint": plan_fingerprint,
         "edge_view": "static_train",
         "target_edge_view": "static_test",
+        "metric_contract": METRIC_CONTRACT,
     }
     for key, value in expected.items():
         if payload.get(key) != value:
             raise ValueError(
                 f"existing result mismatch for {job.key}/{target}: "
                 f"{key} expected {value!r}, got {payload.get(key)!r}"
+            )
+    for key in ("accuracy", "f1_macro", "roc_auc_ovr_macro"):
+        if not math.isfinite(float(payload.get(key, float("nan")))):
+            raise ValueError(
+                f"existing result mismatch for {job.key}/{target}: "
+                f"missing or non-finite {key}"
             )
 
 
@@ -494,6 +502,8 @@ def evaluate_cell(
     assert_cpu_batches(target_cache["batches"])
     loader = ReplayLoader(target_cache["batches"])
     audited = AuditedLoader(loader, args.batch_size)
+    metrics_path = metric_sidecar_path(trainer.logging_dir, target, CHECKPOINT_STEP)
+    metrics_path.unlink(missing_ok=True)
     started = time.monotonic()
     with torch.no_grad():
         trainer.model.eval()
@@ -501,6 +511,7 @@ def evaluate_cell(
             audited, split_name=f"test_{target}", step=CHECKPOINT_STEP
         )
     elapsed = time.monotonic() - started
+    metrics = load_metric_sidecar(trainer.logging_dir, target, CHECKPOINT_STEP)
     if audited.batch_count != args.batch_count or audited.episode_count != EPISODE_COUNT:
         raise AssertionError(
             f"consumed {audited.batch_count} batches/{audited.episode_count} episodes; "
@@ -517,9 +528,15 @@ def evaluate_cell(
         "score_std": _to_float(score_std),
         "loss": _to_float(loss),
         "aux_loss": _to_float(aux_loss),
+        **metrics,
     }
     if not all(math.isfinite(float(value)) for value in numeric.values()):
         raise ValueError(f"non-finite result for {job.key}/{target}: {numeric}")
+    if not math.isclose(numeric["score"], numeric["accuracy"], abs_tol=1e-12):
+        raise ValueError(
+            f"score/accuracy mismatch for {job.key}/{target}: "
+            f"{numeric['score']} versus {numeric['accuracy']}"
+        )
     payload = {
         "protocol": PROTOCOL,
         "created_utc": utc_now(),
@@ -535,6 +552,7 @@ def evaluate_cell(
         "split": "test",
         "edge_view": "static_train",
         "target_edge_view": "static_test",
+        "metric_contract": METRIC_CONTRACT,
         "batch_size": args.batch_size,
         "batch_count": audited.batch_count,
         "episode_count": audited.episode_count,
@@ -557,7 +575,8 @@ def evaluate_cell(
     atomic_json(result_path, payload)
     print(
         f"DONE model={job.model.model_id} seed={job.seed} target={target} "
-        f"score={numeric['score']:.6f} seconds={elapsed:.1f}",
+        f"score={numeric['score']:.6f} auc={numeric['roc_auc_ovr_macro']:.6f} "
+        f"seconds={elapsed:.1f}",
         flush=True,
     )
 
@@ -579,6 +598,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--worker-index", required=True, type=int)
     parser.add_argument("--worker-count", required=True, type=int)
     parser.add_argument("--max-checkpoints", type=int)
+    parser.add_argument("--specialists-only", action="store_true")
     parser.add_argument("--targets", default=",".join(SOURCES))
     parser.add_argument("--batch-size", default=64, type=int)
     parser.add_argument("--episode-count", default=EPISODE_COUNT, type=int)
@@ -617,8 +637,13 @@ def main() -> int:
         flush=True,
     )
     targets = parse_targets(args.targets)
+    jobs = physical_jobs()
+    if args.specialists_only:
+        jobs = [job for job in jobs if job.model.model_id.startswith("ss_")]
+        if len(jobs) != 27:
+            raise AssertionError(f"expected 27 specialist checkpoints, got {len(jobs)}")
     assigned = [
-        job for index, job in enumerate(physical_jobs())
+        job for index, job in enumerate(jobs)
         if index % args.worker_count == args.worker_index
     ]
     if args.max_checkpoints is not None:
