@@ -12,10 +12,12 @@ SEEDS_TEXT="${SEEDS:-0 1 2}"
 RUN_STAMP="${RUN_STAMP:-20260807}"
 MODE="${MODE:-train}"
 DRY_RUN="${DRY_RUN:-0}"
+ALLOW_BUSY_GPUS="${ALLOW_BUSY_GPUS:-0}"
 read -r -a GPU_IDS <<< "$GPUS_TEXT"
 read -r -a SEED_IDS <<< "$SEEDS_TEXT"
 
 [[ "$MODE" =~ ^(smoke|train)$ ]] || { echo "MODE must be smoke or train" >&2; exit 2; }
+[[ "$ALLOW_BUSY_GPUS" =~ ^(0|1)$ ]] || { echo "ALLOW_BUSY_GPUS must be 0 or 1" >&2; exit 2; }
 [[ "$SLOTS_PER_GPU" =~ ^[1-9][0-9]*$ ]] || { echo "SLOTS_PER_GPU must be positive" >&2; exit 2; }
 for gpu in "${GPU_IDS[@]}"; do
   [[ "$gpu" =~ ^[0-3]$ ]] || { echo "refusing non-owned Tucker GPU $gpu" >&2; exit 2; }
@@ -61,7 +63,14 @@ worker_count=$(( ${#GPU_IDS[@]} * SLOTS_PER_GPU ))
 if [[ "$DRY_RUN" != 1 ]]; then
   for gpu in "${GPU_IDS[@]}"; do
     used="$(nvidia-smi -i "$gpu" --query-gpu=memory.used --format=csv,noheader,nounits | tr -d ' ')"
-    (( used <= 1000 )) || { echo "GPU $gpu is busy (${used} MiB); refusing launch" >&2; exit 1; }
+    if (( used > 1000 )); then
+      if [[ "$ALLOW_BUSY_GPUS" == 1 ]]; then
+        echo "WARNING: GPU $gpu is busy (${used} MiB); proceeding under explicit ALLOW_BUSY_GPUS=1"
+      else
+        echo "GPU $gpu is busy (${used} MiB); refusing launch" >&2
+        exit 1
+      fi
+    fi
   done
   available_kib="$(awk '/MemAvailable:/ {print $2}' /proc/meminfo)"
   required_gib=$((worker_count * 125 + 100))
@@ -120,6 +129,7 @@ worker() {
   echo "seeds=$SEEDS_TEXT"
   echo "gpus=$GPUS_TEXT"
   echo "slots_per_gpu=$SLOTS_PER_GPU"
+  echo "allow_busy_gpus=$ALLOW_BUSY_GPUS"
   echo "feasibility_report=$FEASIBILITY_REPORT"
   echo "started_utc=$(date -u +%FT%TZ)"
 } > "$LOG_ROOT/launch/provenance_${MODE}.txt"

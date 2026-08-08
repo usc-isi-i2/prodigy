@@ -100,6 +100,11 @@ tmux new-session -d -s radiusfc_smoke \
 Require a finite loss and an honest step-5 checkpoint for all three arms before the
 full queue.
 
+When Tucker is intentionally shared with a low-utilization job, the busy-GPU check can
+be overridden explicitly with `ALLOW_BUSY_GPUS=1`. The ownership and host-RAM checks
+remain mandatory. Use one GPU and one slot, and apply low CPU/I/O priority to the outer
+launcher; never combine this override with parallel graph loads.
+
 ## Training
 
 ```bash
