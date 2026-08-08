@@ -183,6 +183,32 @@ graph (0.059 versus 0.101). The complete 109-feature model does not improve
 further, so pairwise association has not yet become incremental out-of-graph
 predictive value.
 
+### Final-core three-seed rerun: independent confirmation of donor strength
+
+The later final-core protocol retrained every specialist with three seeds,
+exactly 2,500 balanced-source updates, validation-only checkpoint selection,
+and one 500-episode fixed held-out test per seed. Its test score is episodic NM
+accuracy, not ROC-AUC, so this is a robustness comparison rather than a
+replacement 9×9 matrix.
+
+The nine specialists' new mean test scores correlate **rho = 0.800** with their
+historical mean foreign-transfer ROC-AUC. The ranking is stable at the top:
+COVID (0.579), Ukraine/Russia (0.447), suspended Ukraine/Russia (0.366), and
+TwiBot-20 (0.333). Across-source seed standard deviations are small
+(0.0007–0.0032) except Facebook (0.0132), whose selected checkpoints also vary.
+
+Feature effective dimension remains the strongest measured source descriptor
+(rho = 0.800 with the new score). Node count falls from rho 0.743 in the old
+matrix analysis to **0.400** under fixed exposure, while edge count is 0.467.
+Thus the original “large sources win” result was partly exposure/coverage
+confounding, but a reproducible source-quality axis remains after controlling
+the optimizer budget.
+
+This closes the training-seed and checkpoint-selection gaps for universal
+specialist quality. It does **not** close the per-target replication gap: the
+rerun evaluates a shared all-nine held-out test distribution rather than nine
+separate target columns.
+
 ### Revised priority
 
 1. Make source-only strength the mandatory donor-ranking baseline.
