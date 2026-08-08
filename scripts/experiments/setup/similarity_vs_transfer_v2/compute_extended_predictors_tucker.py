@@ -19,6 +19,8 @@ from pathlib import Path
 import numpy as np
 from scipy.linalg import sqrtm
 from scipy.stats import skew, wasserstein_distance
+from scipy.spatial.distance import jensenshannon
+from sklearn.cluster import MiniBatchKMeans
 from sklearn.decomposition import PCA
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -70,6 +72,37 @@ def centroid_cosine(a: np.ndarray, b: np.ndarray) -> float:
     return float(1 - x @ y / denom) if denom else np.nan
 
 
+def local_structure_signatures(adjacency, nodes: np.ndarray, fanout: int, rng) -> np.ndarray:
+    """Degree-binned one-hop computation-tree signatures for sampled centers."""
+    degrees = np.diff(adjacency.indptr)
+    bins = np.asarray([0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 1024, np.inf])
+    result = np.zeros((len(nodes), 6 + len(bins) - 1), dtype=np.float32)
+    for row, node in enumerate(nodes):
+        nbrs = adjacency.indices[adjacency.indptr[node]:adjacency.indptr[node + 1]]
+        if len(nbrs) > fanout:
+            nbrs = rng.choice(nbrs, fanout, replace=False)
+        nbr_degree = degrees[nbrs].astype(float)
+        log_degree = np.log1p(nbr_degree)
+        result[row, :6] = [np.log1p(degrees[node]), len(nbrs),
+                           log_degree.mean() if len(nbrs) else 0,
+                           log_degree.std() if len(nbrs) else 0,
+                           np.max(log_degree) if len(nbrs) else 0,
+                           np.mean(nbr_degree == 1) if len(nbrs) else 0]
+        if len(nbrs):
+            result[row, 6:] = np.histogram(nbr_degree, bins=bins)[0] / len(nbrs)
+    return result
+
+
+def shared_projection(samples: dict[str, np.ndarray], dims: int, seed: int):
+    names = list(samples)
+    lengths = [len(samples[name]) for name in names]
+    joined = np.vstack([samples[name] for name in names])
+    n_dims = min(dims, joined.shape[1], len(joined) - 1)
+    projected = PCA(n_components=n_dims, svd_solver="randomized", random_state=seed).fit_transform(joined)
+    cuts = np.cumsum([0] + lengths)
+    return {name: projected[cuts[i]:cuts[i + 1]].astype(np.float32) for i, name in enumerate(names)}
+
+
 def hash_ids(ids) -> np.ndarray:
     def mix64(x):
         x = np.asarray(x, dtype=np.uint64).copy()
@@ -116,7 +149,7 @@ def main() -> None:
     p.add_argument("--seed", type=int, default=20260807)
     args = p.parse_args()
     names = list(DEFAULT_GRAPHS)
-    samples, summaries, availability = {}, {}, {}
+    samples, summaries, availability, structure_samples = {}, {}, {}, {}
     with tempfile.TemporaryDirectory(prefix="gfm-transfer-users-") as temp:
         temp = Path(temp)
         user_files = {}
@@ -130,6 +163,7 @@ def main() -> None:
             adjacency = build_undirected_csr(as_numpy(edge_index), int(x.shape[0]))
             neighbor, degree, sampled = sampled_neighbor_means(x, adjacency, nodes, args.fanout, rng)
             samples[name] = spaces(raw, neighbor)
+            structure_samples[name] = local_structure_signatures(adjacency, nodes, args.fanout, rng)
             summaries[name] = {
                 "n_sampled_centers": int(len(nodes)), "fanout": args.fanout,
                 "mean_center_degree": finite(np.mean(degree)),
@@ -149,30 +183,60 @@ def main() -> None:
             del graph, x, edge_index, adjacency
             gc.collect()
 
+        # A shared projection makes all pairwise metrics comparable and keeps
+        # proxy-A/MMD/Frechet tractable in the 1536-D concatenated space.
+        projected = {}
+        for si, space in enumerate(next(iter(samples.values()))):
+            projected[space] = shared_projection(
+                {name: samples[name][space] for name in names}, args.frechet_dims,
+                args.seed + 10_000 + si,
+            )
+        projected["local_structure"] = structure_samples
+
         n = len(names)
         pairwise = {}
-        for space in next(iter(samples.values())):
+        for space, space_samples in projected.items():
             for metric in ("centroid_cosdist", "mmd2", "proxy_a_distance", "projected_frechet", "skew_l1", "skew_wasserstein"):
+                if space == "local_structure" and metric.startswith("skew_"):
+                    continue
                 pairwise[f"{space}_{metric}"] = matrix(n)
             for i, a_name in enumerate(names):
-                a = samples[a_name][space]
-                a_skew = np.asarray(summaries[a_name]["spaces"][space]["coefficients"])
+                a = space_samples[a_name]
+                a_skew = (np.asarray(summaries[a_name]["spaces"][space]["coefficients"])
+                          if space != "local_structure" else None)
                 for j, b_name in enumerate(names):
                     if j < i:
                         continue
-                    b = samples[b_name][space]
-                    b_skew = np.asarray(summaries[b_name]["spaces"][space]["coefficients"])
+                    b = space_samples[b_name]
+                    b_skew = (np.asarray(summaries[b_name]["spaces"][space]["coefficients"])
+                              if space != "local_structure" else None)
                     values = {
                         "centroid_cosdist": centroid_cosine(a, b),
                         "mmd2": 0.0 if i == j else rbf_mmd2(a, b, np.random.default_rng(args.seed + 1000*i + j)),
                         "proxy_a_distance": 0.0 if i == j else proxy_a_distance(a, b, np.random.default_rng(args.seed + 1000*i + j)),
-                        "projected_frechet": 0.0 if i == j else projected_frechet(a, b, args.seed + 1000*i + j, args.frechet_dims),
-                        "skew_l1": float(np.mean(np.abs(a_skew - b_skew))),
-                        "skew_wasserstein": float(wasserstein_distance(a_skew, b_skew)),
+                        "projected_frechet": 0.0 if i == j else projected_frechet(a, b, args.seed + 1000*i + j, min(args.frechet_dims, a.shape[1])),
                     }
+                    if a_skew is not None:
+                        values["skew_l1"] = float(np.mean(np.abs(a_skew - b_skew)))
+                        values["skew_wasserstein"] = float(wasserstein_distance(a_skew, b_skew))
                     for metric, value in values.items():
                         pairwise[f"{space}_{metric}"][i][j] = finite(value)
                         pairwise[f"{space}_{metric}"][j][i] = finite(value)
+
+        # Embedding-derived topic composition: a shared unsupervised vocabulary
+        # over raw node features, compared by Jensen-Shannon distance.
+        raw_projected = projected["raw_center"]
+        joined = np.vstack([raw_projected[name] for name in names])
+        topic_model = MiniBatchKMeans(n_clusters=64, batch_size=2048,
+                                      random_state=args.seed, n_init=10).fit(joined)
+        topic_mix = {}
+        for name in names:
+            counts = np.bincount(topic_model.predict(raw_projected[name]), minlength=64).astype(float) + 1e-8
+            topic_mix[name] = counts / counts.sum()
+        pairwise["embedding_topic_js_distance"] = matrix(n)
+        for i, a_name in enumerate(names):
+            for j, b_name in enumerate(names):
+                pairwise["embedding_topic_js_distance"][i][j] = float(jensenshannon(topic_mix[a_name], topic_mix[b_name]) ** 2)
 
         for metric in ("user_jaccard", "user_source_containment", "user_target_containment"):
             pairwise[metric] = matrix(n)
@@ -188,7 +252,9 @@ def main() -> None:
                 pairwise["user_target_containment"][i][j] = shared / max(len(b), 1)
 
         artifact = {"meta": {"seed": args.seed, "sample_nodes": args.sample_nodes, "fanout": args.fanout,
-                              "frechet_projection_dims": args.frechet_dims,
+                              "shared_projection_dims": args.frechet_dims,
+                              "local_structure_signature": "center degree plus sampled-neighbor degree moments and histogram",
+                              "embedding_topic_clusters": 64,
                               "warning": "64-bit user hashes have negligible but nonzero collision probability"},
                     "graphs": names, "per_graph": summaries, "user_id_availability": availability,
                     "pairwise": pairwise}

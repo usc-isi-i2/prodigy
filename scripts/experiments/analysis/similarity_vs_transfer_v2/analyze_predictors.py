@@ -59,14 +59,20 @@ def selection_stats(score: np.ndarray, outcome: np.ndarray, prefer_low: bool) ->
     hits, regrets, ranks = 0, [], []
     for target in range(len(outcome)):
         candidates = np.flatnonzero(np.arange(len(outcome)) != target)
-        chosen = candidates[np.nanargmin(score[candidates, target]) if prefer_low else np.nanargmax(score[candidates, target])]
+        candidates = candidates[np.isfinite(score[candidates, target]) & np.isfinite(outcome[candidates, target])]
+        if len(candidates) < 2:
+            continue
+        chosen = candidates[np.argmin(score[candidates, target]) if prefer_low else np.argmax(score[candidates, target])]
         values = outcome[candidates, target]
         best = float(np.nanmax(values))
         selected = float(outcome[chosen, target])
         hits += bool(np.isclose(selected, best))
         ranks.append(float(rankdata(-values, method="average")[np.flatnonzero(candidates == chosen)[0]]))
         regrets.append(best - selected)
-    return {"top1_hits": hits, "top1_rate": hits / len(outcome), "mean_regret": float(np.mean(regrets)), "mean_selected_rank": float(np.mean(ranks))}
+    return {"evaluable_targets": len(regrets), "top1_hits": hits,
+            "top1_rate": hits / len(regrets) if regrets else np.nan,
+            "mean_regret": float(np.mean(regrets)) if regrets else np.nan,
+            "mean_selected_rank": float(np.mean(ranks)) if ranks else np.nan}
 
 
 def scalar_matrix(values: np.ndarray, mode: str) -> np.ndarray:
@@ -130,6 +136,8 @@ def main() -> None:
                "mean_target_spearman_auc": auc_stat, "mean_target_spearman_accuracy": acc_stat,
                "auc_graph_permutation_p_two_sided": graph_permutation_p(matrix, auc, auc_stat, rng, args.permutations),
                "targets_expected_direction": int(np.sum(np.asarray(auc_targets) > 0 if is_similarity else np.asarray(auc_targets) < 0))}
+        row["targets_with_correlation"] = int(np.isfinite(auc_targets).sum())
+        row["priority_score"] = abs(auc_stat) * row["targets_with_correlation"] / len(graphs) * (1 - row["auc_graph_permutation_p_two_sided"])
         row.update(selection_stats(matrix, auc, prefer_low=not is_similarity))
         pair_rows.append(row)
         target_rows.extend({"predictor": name, "target": graph, "spearman_auc": value}
@@ -163,7 +171,7 @@ def main() -> None:
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     outputs = {
-        "pairwise_predictors.csv": pd.DataFrame(pair_rows).sort_values("mean_target_spearman_auc"),
+        "pairwise_predictors.csv": pd.DataFrame(pair_rows).sort_values("priority_score", ascending=False),
         "targetwise_correlations.csv": pd.DataFrame(target_rows),
         "source_predictors.csv": pd.DataFrame(source_rows).sort_values("mean_target_spearman_auc", ascending=False),
         "scalar_gap_predictors.csv": pd.DataFrame(gap_rows).sort_values("mean_target_spearman_auc"),
