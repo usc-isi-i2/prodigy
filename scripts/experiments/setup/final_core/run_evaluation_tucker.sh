@@ -12,6 +12,7 @@ SUMMARY_ROOT="${SUMMARY_ROOT:-${EVAL_LOG_ROOT}/summary}"
 TRAINING_RUN_STAMP="${TRAINING_RUN_STAMP:-20260807}"
 EVALUATION_RUN_STAMP="${EVALUATION_RUN_STAMP:-20260807}"
 GPUS_TEXT="${GPUS:-0 1 2 3}"
+SLOTS_PER_GPU="${SLOTS_PER_GPU:-2}"
 SEEDS_TEXT="${SEEDS:-0 1 2}"
 PHASE="${PHASE:-all}"
 DRY_RUN="${DRY_RUN:-0}"
@@ -19,6 +20,7 @@ read -r -a GPU_IDS <<< "$GPUS_TEXT"
 read -r -a SEED_IDS <<< "$SEEDS_TEXT"
 
 [[ "$PHASE" =~ ^(validation|test|all)$ ]] || { echo "PHASE must be validation, test, or all" >&2; exit 2; }
+[[ "$SLOTS_PER_GPU" =~ ^[1-9][0-9]*$ ]] || { echo "SLOTS_PER_GPU must be a positive integer" >&2; exit 2; }
 for gpu in "${GPU_IDS[@]}"; do
   [[ "$gpu" =~ ^[0-3]$ ]] || { echo "refusing non-owned Tucker GPU $gpu" >&2; exit 2; }
 done
@@ -44,6 +46,21 @@ while IFS=$'\t' read -r model_id _n_sources sources _aliases; do
   for seed in "${SEED_IDS[@]}"; do jobs+=("${seed}:${model_id}:${sources}"); done
 done < "$PLAN"
 
+worker_count=$(( ${#GPU_IDS[@]} * SLOTS_PER_GPU ))
+if [[ "$DRY_RUN" != 1 ]]; then
+  for gpu in "${GPU_IDS[@]}"; do
+    used="$(nvidia-smi -i "$gpu" --query-gpu=memory.used --format=csv,noheader,nounits | tr -d ' ')"
+    (( used <= 1000 )) || { echo "GPU $gpu is busy (${used} MiB); refusing launch" >&2; exit 1; }
+  done
+  available_kib="$(awk '/MemAvailable:/ {print $2}' /proc/meminfo)"
+  required_gib=$((worker_count * 125 + 100))
+  required_kib=$((required_gib * 1024 * 1024))
+  (( available_kib >= required_kib )) || {
+    echo "insufficient host RAM for $worker_count graph loads: need ${required_gib} GiB available" >&2
+    exit 1
+  }
+fi
+
 if [[ "$DRY_RUN" != 1 && ( "$PHASE" == validation || "$PHASE" == all ) ]]; then
   missing=0
   for item in "${jobs[@]}"; do
@@ -57,7 +74,7 @@ if [[ "$DRY_RUN" != 1 && ( "$PHASE" == validation || "$PHASE" == all ) ]]; then
 fi
 
 run_phase() {
-  local phase="$1" worker_count="${#GPU_IDS[@]}" status=0
+  local phase="$1" status=0
   local -a pids=()
   worker() {
     local worker_index="$1" gpu="$2" item seed model_id sources index=0
@@ -84,8 +101,11 @@ run_phase() {
       ((index+=1))
     done
   }
-  for worker_index in "${!GPU_IDS[@]}"; do
-    worker "$worker_index" "${GPU_IDS[$worker_index]}" & pids+=("$!")
+  for gpu_index in "${!GPU_IDS[@]}"; do
+    for ((slot=0; slot<SLOTS_PER_GPU; slot++)); do
+      worker_index=$((gpu_index * SLOTS_PER_GPU + slot))
+      worker "$worker_index" "${GPU_IDS[$gpu_index]}" & pids+=("$!")
+    done
   done
   for pid in "${pids[@]}"; do wait "$pid" || status=1; done
   return "$status"
@@ -98,6 +118,8 @@ run_phase() {
   echo "training_run_stamp=$TRAINING_RUN_STAMP"
   echo "seeds=$SEEDS_TEXT"
   echo "gpus=$GPUS_TEXT"
+  echo "slots_per_gpu=$SLOTS_PER_GPU"
+  echo "parallel_workers=$worker_count"
   echo "started_utc=$(date -u +%FT%TZ)"
 } > "$EVAL_LOG_ROOT/provenance.txt"
 

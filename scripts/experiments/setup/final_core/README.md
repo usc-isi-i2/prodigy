@@ -33,8 +33,10 @@ Evaluation has a hard phase barrier:
 
 Validation-only evaluation does not construct or iterate a test dataloader.
 `evaluate_model.py` loads the large graph once and reuses it for all four
-validation checkpoints. The queue uses one process per H100 (four concurrent
-graph loads), not multiple evaluation slots per GPU.
+validation checkpoints. The Tucker default uses two processes per H100 (eight
+concurrent graph loads). Each measured process uses about 118 GiB host RAM but
+only about 3.3 GiB VRAM, so the queue enforces a host-memory reserve before it
+starts. Override with `SLOTS_PER_GPU=1` on a host with less available RAM.
 
 Run this from a separate descendant worktree after training completes. Point it
 at the state root of the worktree that is already training; do not switch or pull
