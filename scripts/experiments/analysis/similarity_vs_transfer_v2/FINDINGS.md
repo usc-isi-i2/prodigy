@@ -22,12 +22,12 @@ and exclude the diagonal.
 
 | pairwise distance | mean target rho, AUC | rho, accuracy | graph-permutation p | best donor | mean AUC regret |
 |---|---:|---:|---:|---:|---:|
-| feature proxy-A distance | **−0.755** | −0.746 | 0.0005 | 5/9 | 0.0153 |
-| feature Frechet | −0.664 | −0.667 | 0.0020 | 5/9 | **0.0131** |
-| feature MMD² | −0.648 | −0.635 | 0.0055 | 5/9 | 0.0436 |
-| feature centroid cosine distance | −0.640 | −0.635 | 0.0030 | 5/9 | 0.0177 |
-| in-degree KS | −0.542 | −0.550 | 0.0060 | 2/9 | 0.0615 |
-| out-degree KS | −0.204 | −0.177 | 0.3755 | 2/9 | 0.1005 |
+| feature proxy-A distance | **−0.755** | −0.746 | 0.0007 | 5/9 | 0.0153 |
+| feature Frechet | −0.664 | −0.667 | 0.0024 | 5/9 | **0.0131** |
+| feature MMD² | −0.648 | −0.635 | 0.0034 | 5/9 | 0.0436 |
+| feature centroid cosine distance | −0.640 | −0.635 | 0.0042 | 5/9 | 0.0177 |
+| in-degree KS | −0.542 | −0.550 | 0.0061 | 2/9 | 0.0615 |
+| out-degree KS | −0.204 | −0.177 | 0.3891 | 2/9 | 0.1005 |
 
 Every target has a negative proxy-A rho. Thus, among the distances we have now,
 **raw feature-domain separability is the clearest predictor of transfer**.
@@ -39,11 +39,11 @@ Treating each per-graph scalar as a donor property gives:
 
 | source property | mean target rho | permutation p | best donor | mean regret |
 |---|---:|---:|---:|---:|
-| feature effective dimension | **+0.780** | 0.0095 | 7/9 | 0.00049 |
-| node count | +0.743 | 0.0200 | **7/9** | **0.00049** |
-| degree assortativity | +0.733 | 0.0205 | 0/9 | 0.0407 |
-| edge count | +0.481 | 0.1655 | 7/9 | 0.00049 |
-| feature homophily | −0.460 | 0.1680 | 4/9 | 0.00348 |
+| feature effective dimension | **+0.780** | 0.0088 | 7/9 | 0.00049 |
+| node count | +0.743 | 0.0150 | **7/9** | **0.00049** |
+| degree assortativity | +0.733 | 0.0203 | 0/9 | 0.0407 |
+| edge count | +0.481 | 0.1610 | 7/9 | 0.00049 |
+| feature homophily | −0.460 | 0.1802 | 4/9 | 0.00348 |
 
 The largest available foreign graph is the best AUC donor for 7/9 targets and
 has essentially zero regret. It is also best by accuracy for 9/9 targets. Node
@@ -59,7 +59,7 @@ separate source-quality and source–target-compatibility terms.
 
 ## Result 3: raw homophily is not a pairwise compatibility predictor
 
-Absolute feature-homophily gap has mean rho **+0.003** (p=0.995): effectively
+Absolute feature-homophily gap has mean rho **+0.003** (p=0.996): effectively
 none. The random-pair feature-similarity gap is more predictive (rho −0.497),
 which implies the raw homophily scalar mixes feature-cloud geometry with actual
 edge/feature coupling. Future work should use homophily lift over the random
@@ -74,6 +74,29 @@ missing-bio rate (+0.890), in-degree Gini (+0.844), feature norm (+0.811), and
 feature effective dimension (+0.714). Raw feature homophily is −0.612. These are
 valuable hypotheses, but with nine graphs they are strongly entangled donor
 signatures, not isolated causal effects.
+
+## Can AUC on one graph predict AUC on another?
+
+**It predicts relative donor quality better than absolute AUC.** Across all 36
+pairs of targets, the seven common foreign donors have median Spearman rank
+correlation **0.929** (mean 0.896; minimum 0.714). Thus, a source that ranks well
+on one target usually ranks well on another.
+
+But copying one observed foreign AUC as the prediction for another target gives
+only Pearson 0.380 and **MAE 0.101 AUC** across all mutually distinct
+source/reference/target triples. Averaging a source's other seven foreign AUCs
+improves held-out-target MAE to 0.076, still too coarse for a precise forecast.
+Self/in-domain AUC is especially weak: its Spearman correlation with mean
+foreign AUC is only 0.233, with identity MAE 0.180.
+
+If other sources have already been evaluated on the desired target, a
+leave-one-cell-out additive `source effect + target effect` model reaches MAE
+0.032 and R² 0.847. That is useful matrix completion, but it is **not zero-shot
+target prediction**, because it uses target-specific AUC observations.
+
+Therefore we can credibly say “performance on another graph identifies broadly
+strong donors,” but not yet “this observed AUC determines the new graph's AUC.”
+Calibrated forecasting needs both a donor-quality term and target descriptors.
 
 ## What the literature says to test next
 
@@ -123,7 +146,7 @@ distance and language/topic composition are plausible social-corpus controls.
 
 - Branch/worktree and Tucker commands are in the paired setup README.
 - Machine-readable tables and the availability ledger are in `data/`.
-- The checked-in permutation run uses 1,999 seeded graph-label permutations.
+- The checked-in permutation run uses 9,999 seeded graph-label permutations.
 - There are only nine domains, many scalars identify the same large corpora,
   and the transfer matrix has one realization per source–target pair. These are
   ranking results and hypothesis generators, not causal estimates.
