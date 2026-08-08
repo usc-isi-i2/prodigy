@@ -113,6 +113,7 @@ class AuditedLoader:
     def __iter__(self):
         for batch_index, batch in enumerate(self.loader):
             graph = batch[0]
+            self._audit_indices(batch_index, batch)
             task_ids = graph.task_id_per_sample.detach().cpu().long()
             episodes = int(torch.unique(task_ids).numel())
             if episodes != self.expected_batch_size:
@@ -133,6 +134,54 @@ class AuditedLoader:
                 update_int(self._digest, tensor.numel())
                 self._digest.update(self._tensor_bytes(tensor))
             yield batch
+
+    @staticmethod
+    def _audit_indices(batch_index: int, batch: Any) -> None:
+        graph = batch[0]
+        num_nodes = int(graph.num_nodes)
+        if int(graph.ptr[0]) != 0 or int(graph.ptr[-1]) != num_nodes:
+            raise AssertionError(
+                f"batch {batch_index}: invalid ptr bounds for {num_nodes} nodes"
+            )
+        if torch.any(graph.ptr[1:] < graph.ptr[:-1]):
+            raise AssertionError(f"batch {batch_index}: graph.ptr is not monotonic")
+        if int(graph.x.size(0)) != num_nodes:
+            raise AssertionError(
+                f"batch {batch_index}: x has {graph.x.size(0)} rows for {num_nodes} nodes"
+            )
+        for name in ("edge_index", "edge_index_supernode", "edge_index_from_supernode"):
+            index = getattr(graph, name)
+            if index.numel() == 0:
+                continue
+            low = int(index.min())
+            high = int(index.max())
+            if low < 0 or high >= num_nodes:
+                raise AssertionError(
+                    f"batch {batch_index}: {name} range [{low}, {high}] is outside "
+                    f"[0, {num_nodes})"
+                )
+        graph_sizes = graph.ptr[1:] - graph.ptr[:-1]
+        if graph.supernode.numel() != graph_sizes.numel():
+            raise AssertionError(
+                f"batch {batch_index}: {graph.supernode.numel()} supernodes for "
+                f"{graph_sizes.numel()} sampled graphs"
+            )
+        if torch.any(graph.supernode < 0) or torch.any(graph.supernode >= graph_sizes):
+            raise AssertionError(f"batch {batch_index}: invalid local supernode index")
+        global_supernodes = graph.supernode + graph.ptr[:-1]
+        if torch.any(global_supernodes >= num_nodes):
+            raise AssertionError(f"batch {batch_index}: invalid global supernode index")
+
+        metagraph_edge_index = batch[3]
+        metagraph_nodes = int(graph.supernode.numel() + batch[1].size(0))
+        if metagraph_edge_index.numel():
+            low = int(metagraph_edge_index.min())
+            high = int(metagraph_edge_index.max())
+            if low < 0 or high >= metagraph_nodes:
+                raise AssertionError(
+                    f"batch {batch_index}: metagraph edge range [{low}, {high}] is "
+                    f"outside [0, {metagraph_nodes})"
+                )
 
     def __len__(self) -> int:
         return len(self.loader)
