@@ -66,9 +66,23 @@ def main() -> int:
         for field in ("episode_plan_fingerprint", "observed_episode_fingerprint"):
             if len({row[field] for row in target_rows}) != 1:
                 raise AssertionError(f"smoke target {target} disagrees on {field}")
-    repeated = [target for target in SOURCES if sum(row["target"] == target for row in payloads) > 1]
-    if repeated != ["ukr_rus"]:
-        raise AssertionError(f"expected cross-worker ukr_rus repeat, got {repeated}")
+    repeated_across_workers = [
+        target
+        for target in SOURCES
+        if len(
+            {
+                row["worker_index"]
+                for row in payloads
+                if row["target"] == target
+            }
+        )
+        > 1
+    ]
+    if repeated_across_workers != ["ukr_rus"]:
+        raise AssertionError(
+            "expected cross-worker ukr_rus repeat, got "
+            f"{repeated_across_workers}"
+        )
     per_worker_peak = {}
     for row in payloads:
         worker = int(row["worker_index"])
