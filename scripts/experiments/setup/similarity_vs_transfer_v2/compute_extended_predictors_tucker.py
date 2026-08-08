@@ -147,8 +147,13 @@ def main() -> None:
     p.add_argument("--fanout", type=int, default=100)
     p.add_argument("--frechet-dims", type=int, default=64)
     p.add_argument("--seed", type=int, default=20260807)
+    p.add_argument("--graphs", default="", help="comma-separated subset for smoke tests")
     args = p.parse_args()
-    names = list(DEFAULT_GRAPHS)
+    names = ([name.strip() for name in args.graphs.split(",") if name.strip()]
+             if args.graphs else list(DEFAULT_GRAPHS))
+    unknown = set(names) - set(DEFAULT_GRAPHS)
+    if unknown:
+        raise ValueError(f"unknown graph names: {sorted(unknown)}")
     samples, summaries, availability, structure_samples = {}, {}, {}, {}
     with tempfile.TemporaryDirectory(prefix="gfm-transfer-users-") as temp:
         temp = Path(temp)
@@ -227,11 +232,12 @@ def main() -> None:
         # over raw node features, compared by Jensen-Shannon distance.
         raw_projected = projected["raw_center"]
         joined = np.vstack([raw_projected[name] for name in names])
-        topic_model = MiniBatchKMeans(n_clusters=64, batch_size=2048,
+        n_topics = min(64, len(joined))
+        topic_model = MiniBatchKMeans(n_clusters=n_topics, batch_size=2048,
                                       random_state=args.seed, n_init=10).fit(joined)
         topic_mix = {}
         for name in names:
-            counts = np.bincount(topic_model.predict(raw_projected[name]), minlength=64).astype(float) + 1e-8
+            counts = np.bincount(topic_model.predict(raw_projected[name]), minlength=n_topics).astype(float) + 1e-8
             topic_mix[name] = counts / counts.sum()
         pairwise["embedding_topic_js_distance"] = matrix(n)
         for i, a_name in enumerate(names):
@@ -254,7 +260,7 @@ def main() -> None:
         artifact = {"meta": {"seed": args.seed, "sample_nodes": args.sample_nodes, "fanout": args.fanout,
                               "shared_projection_dims": args.frechet_dims,
                               "local_structure_signature": "center degree plus sampled-neighbor degree moments and histogram",
-                              "embedding_topic_clusters": 64,
+                              "embedding_topic_clusters": n_topics,
                               "warning": "64-bit user hashes have negligible but nonzero collision probability"},
                     "graphs": names, "per_graph": summaries, "user_id_availability": availability,
                     "pairwise": pairwise}
