@@ -58,7 +58,12 @@ def permuted_pairwise_stats(
         keep = np.arange(len(outcome)) != target
         x = predictor[orders[:, keep], orders[:, target, None]]
         by_target.append(rowwise_spearman(x, outcome[keep, target]))
-    return np.nanmean(np.column_stack(by_target), axis=1)
+    stacked = np.column_stack(by_target)
+    counts = np.sum(np.isfinite(stacked), axis=1)
+    return np.divide(
+        np.nansum(stacked, axis=1), counts,
+        out=np.full(len(stacked), np.nan, dtype=float), where=counts > 0,
+    )
 
 
 def permuted_scalar_stats(
@@ -75,7 +80,12 @@ def permuted_scalar_stats(
         else:
             raise ValueError(mode)
         by_target.append(rowwise_spearman(x, outcome[keep, target]))
-    return np.nanmean(np.column_stack(by_target), axis=1)
+    stacked = np.column_stack(by_target)
+    counts = np.sum(np.isfinite(stacked), axis=1)
+    return np.divide(
+        np.nansum(stacked, axis=1), counts,
+        out=np.full(len(stacked), np.nan, dtype=float), where=counts > 0,
+    )
 
 
 def permuted_asymmetry_stats(

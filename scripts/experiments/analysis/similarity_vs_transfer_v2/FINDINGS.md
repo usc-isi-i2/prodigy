@@ -1,24 +1,26 @@
 # What predicts GNN transfer? Nine-graph predictor study (v2)
 
 **Status:** complete. The baseline and extended all-nine predictor sweeps have
-been run, including user overlap, feature skew, one-hop aggregated features,
-local computation-tree signatures, and embedding-derived topic mixtures.
+been run, then replicated against the final-core matrix: 9 sources × 9 targets
+× 3 training seeds = 243 fixed-test specialist cells.
 
 ## Question and design
 
 For each target graph, exclude self-transfer and rank its eight possible source
-graphs by NM transfer ROC-AUC. A pairwise predictor is good when its source
-ranking agrees with that transfer ranking. The headline statistic is mean
+graphs. The historical outcome is NM transfer ROC-AUC; the final-core replicated
+outcome is 30-way episodic NM accuracy. A pairwise predictor is good when its
+source ranking agrees with the transfer ranking. The headline statistic is mean
 within-target Spearman rho over the nine targets. This avoids pooling 72
 dependent directed cells and removes target difficulty. Graph-label permutation
 tests jointly relabel rows and columns; they never pretend matrix cells are IID.
 
 Donor selection reports how often the metric chooses the best foreign source,
-mean ROC-AUC regret from the oracle donor, and selected-donor rank. Accuracy is
-included as a robustness outcome. All results use the committed complete matrix
-and exclude the diagonal.
+mean regret from the oracle donor, and selected-donor rank. Both matrices are
+complete and all headline analyses exclude the diagonal. The final-core matrix
+is the stronger evidence because it fixes the optimizer budget, checkpoint,
+target episode stream, and repeats training across three seeds.
 
-## Result 1: feature shift predicts source ranking; out-degree shift does not
+## Historical result 1: feature shift predicts source ranking; out-degree shift does not
 
 | pairwise distance | mean target rho, AUC | rho, accuracy | graph-permutation p | best donor | mean AUC regret |
 |---|---:|---:|---:|---:|---:|
@@ -33,7 +35,7 @@ Every target has a negative proxy-A rho. Thus, among the distances we have now,
 **raw feature-domain separability is the clearest predictor of transfer**.
 Degree distributions add a weaker structural signal, concentrated in in-degree.
 
-## Result 2: source quality/scale is at least as important as similarity
+## Historical result 2: source quality/scale is at least as important as similarity
 
 Treating each per-graph scalar as a donor property gives:
 
@@ -57,7 +59,7 @@ positive rho (+0.402), meaning a more different-sized pair often transfers
 better because the source is larger. A predictive model therefore needs
 separate source-quality and source–target-compatibility terms.
 
-## Result 3: raw homophily is not a pairwise compatibility predictor
+## Historical result 3: raw homophily is not a pairwise compatibility predictor
 
 Absolute feature-homophily gap has mean rho **+0.003** (p=0.996): effectively
 none. The random-pair feature-similarity gap is more predictive (rho −0.497),
@@ -66,7 +68,7 @@ edge/feature coupling. Future work should use homophily lift over the random
 baseline and message-passing-aware feature distributions, not raw homophily
 alone. Label homophily exists for only 5/9 graphs and must not be imputed.
 
-## Result 4: directionality exposes large but confounded source effects
+## Historical result 4: directionality exposes large but confounded source effects
 
 Across the 36 unordered graph pairs, correlate `property(A)-property(B)` with
 `AUC(A→B)-AUC(B→A)`. The largest associations are edge bio coverage (rho −0.904),
@@ -142,7 +144,7 @@ overlap, and embedding-derived topic composition reported below.
 | fixed-encoder layer representation distance | missing | tests model-specific rather than raw-data shift |
 | embedding topic composition | complete 9/9 | shared 64-cluster JS distance is competitive |
 
-## Extended candidate sweep: measured ranking
+## Historical extended candidate sweep: measured ranking
 
 The Tucker run sampled 2,000 feature-bearing centers per graph, used undirected
 fanout 100, and projected all graphs through the same 64-dimensional PCA. The
@@ -183,31 +185,64 @@ graph (0.059 versus 0.101). The complete 109-feature model does not improve
 further, so pairwise association has not yet become incremental out-of-graph
 predictive value.
 
-### Final-core three-seed rerun: independent confirmation of donor strength
+## Final-core three-seed 9×9 replication
 
-The later final-core protocol retrained every specialist with three seeds,
-exactly 2,500 balanced-source updates, validation-only checkpoint selection,
-and one 500-episode fixed held-out test per seed. Its test score is episodic NM
-accuracy, not ROC-AUC, so this is a robustness comparison rather than a
-replacement 9×9 matrix.
+The authoritative rerun retrains every specialist with seeds 0/1/2, exactly
+2,500 balanced-source updates, and evaluates only the terminal step-2,500
+checkpoint. Every source/seed checkpoint is evaluated separately on each of the
+nine targets using 512 fixed `static_test` episodes, with message passing
+restricted to `static_train`. This is a strict **243-cell specialist matrix**.
 
-The nine specialists' new mean test scores correlate **rho = 0.800** with their
-historical mean foreign-transfer ROC-AUC. The ranking is stable at the top:
-COVID (0.579), Ukraine/Russia (0.447), suspended Ukraine/Russia (0.366), and
-TwiBot-20 (0.333). Across-source seed standard deviations are small
-(0.0007–0.0032) except Facebook (0.0132), whose selected checkpoints also vary.
+The complete aggregate records 30-way episodic NM accuracy. The trainer also
+computes multiclass ROC-AUC, but that field was not copied into the complete
+243-cell result aggregate; therefore the replicated analysis correctly uses
+accuracy rather than relabeling `score` as AUC.
 
-Feature effective dimension remains the strongest measured source descriptor
-(rho = 0.800 with the new score). Node count falls from rho 0.743 in the old
-matrix analysis to **0.400** under fixed exposure, while edge count is 0.467.
-Thus the original “large sources win” result was partly exposure/coverage
-confounding, but a reproducible source-quality axis remains after controlling
-the optimizer budget.
+### The historical transfer ranking replicates
 
-This closes the training-seed and checkpoint-selection gaps for universal
-specialist quality. It does **not** close the per-target replication gap: the
-rerun evaluates a shared all-nine held-out test distribution rather than nine
-separate target columns.
+- Mean within-target correlation between historical AUC donor ranks and new
+  accuracy donor ranks: **rho = 0.934**.
+- Same best donor in **7/9** targets.
+- Correlation of sources' mean foreign performance: **rho = 0.967**.
+- Mean cross-seed within-target donor-rank stability: **rho = 0.950**.
+
+Thus the newer matrix does close the per-target and training-seed replication
+gaps. The old result was not an artifact of one training seed or pooled testing.
+
+### Predictor ranking on the replicated matrix
+
+| priority | candidate | mean target rho | seed rhos (0/1/2) | p | donor hits | accuracy regret |
+|---:|---|---:|---|---:|---:|---:|
+| 1 | neighbor-mean projected Fréchet | **−0.775** | −0.794/−0.749/−0.770 | 0.0003 | 6/9 | 0.0171 |
+| 2 | raw feature proxy A | −0.763 | −0.776/−0.731/−0.758 | 0.0003 | 6/9 | 0.0120 |
+| 3 | center+neighbor projected Fréchet | −0.712 | −0.706/−0.661/−0.741 | 0.0029 | 5/9 | 0.0151 |
+| 4 | center+neighbor proxy A | −0.671 | −0.676/−0.644/−0.696 | 0.0016 | **6/9** | **0.0053** |
+| 5 | embedding-topic JS | −0.648 | −0.651/−0.601/−0.664 | 0.0075 | 5/9 | 0.0069 |
+
+The ordering is almost unchanged from the historical AUC sweep. Neighbor-mean
+Fréchet remains the strongest rank correlate; center+neighbor proxy A remains
+the best low-regret compatibility selector.
+
+Source strength also replicates under fixed exposure: feature effective
+dimension has rho **+0.778** (p=0.0066), node count +0.741 (p=0.0142), in-degree
+maximum +0.735 (p=0.0163), and edge count +0.556 (p=0.0855). The earlier claim
+that node count fell to 0.400 came from the wrong aggregate summary and is
+withdrawn.
+
+### Hard graph-holdout prediction on the replicated matrix
+
+| model | mean target rho | MAE accuracy | R² | donor hits |
+|---|---:|---:|---:|---:|
+| source-only Extra Trees | **0.870** | 0.0668 | 0.022 | 4/9 |
+| source-only ridge | 0.852 | 0.0681 | −0.019 | 5/9 |
+| handpicked source + compatibility, Extra Trees | 0.804 | **0.0472** | 0.402 | **7/9** |
+| all full-coverage features, ridge | 0.563 | 0.0493 | **0.481** | 2/9 |
+
+Universal source strength remains the best pure ranking signal. However, the
+handpicked model now improves donor hits from 4/9 to 7/9 and reduces MAE from
+0.0668 to 0.0472 relative to source-only Extra Trees. Pairwise compatibility is
+therefore operationally useful once layered on top of the donor-strength
+baseline, even though indiscriminately adding all 109 features is not.
 
 ### Revised priority
 
@@ -227,6 +262,8 @@ separate target columns.
 - Branch/worktree and Tucker commands are in the paired setup README.
 - Machine-readable tables and the availability ledger are in `data/`.
 - The checked-in permutation run uses 9,999 seeded graph-label permutations.
-- There are only nine domains, many scalars identify the same large corpora,
-  and the transfer matrix has one realization per source–target pair. These are
-  ranking results and hypothesis generators, not causal estimates.
+- There are only nine domains and many scalars identify the same large corpora.
+  The final-core matrix has three independent training seeds but deliberately
+  reuses one fixed 512-episode stream per target across every cell. These are
+  robust ranking results and hypothesis generators, not causal estimates or an
+  eval-episode confidence interval.
