@@ -16,6 +16,7 @@ and it is the entry point to the analysis tree.
 |---|---|---|
 | `feature_ablation/` | what NM actually uses (noise/permute ablation) | `FINDINGS.md` |
 | `error_audit/` | prediction-level correct/error cards for NM, classification, repaired regression, and repaired static LP | `README.md` |
+| `final_core/` | frozen 512-episode final matrix and ladder across three training seeds, including the metric-complete specialist replay | `FINDINGS.md` |
 | `graph_divergence/`, `similarity_vs_transfer/` | graph-distance statistics and whether they predict transfer | `FINDINGS.md` |
 | `mix_slp_ablation/` | eval-time 2×2 (rewire × permute) on MIX's static LP | `FINDINGS.md` — ⚠️ premise voided by the rescore |
 | `multitask_ssl/` | the {NM, CL, FP} objective lattice — singles, pairs, triple | `FINDINGS.md`, `FINDINGS_rescore.md` |
