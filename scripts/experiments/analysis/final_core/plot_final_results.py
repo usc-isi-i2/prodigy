@@ -448,6 +448,104 @@ def plot_ladder_trajectories(rows: list[dict[str, str]]) -> None:
     save(fig, "ladder_trajectories")
 
 
+def plot_ladder_seed_bands(rows: list[dict[str, str]]) -> None:
+    """Plot PRODIGY ladder means and observed ranges across training seeds."""
+    buckets: dict[tuple[int, str, str], dict[int, float]] = defaultdict(dict)
+    for row in observed(rows, "PRODIGY", "ladder"):
+        key = (int(row["training_seed_slot"]), row["order"], row["test_graph"])
+        rung = int(row["rung"])
+        if rung in buckets[key]:
+            raise ValueError(f"duplicate PRODIGY ladder cell {key + (rung,)}")
+        buckets[key][rung] = float(row["primary_value"])
+
+    values: dict[tuple[int, str, str], np.ndarray] = {}
+    for seed_slot in range(3):
+        for order in ORDERS:
+            for target in GRAPHS:
+                rung_values = buckets[(seed_slot, order, target)]
+                if set(rung_values) != set(range(1, 10)):
+                    raise ValueError(
+                        f"PRODIGY seed-band series {(seed_slot, order, target)} "
+                        f"has rungs {sorted(rung_values)}"
+                    )
+                values[(seed_slot, order, target)] = np.array(
+                    [rung_values[rung] for rung in range(1, 10)]
+                )
+
+    entries = entry_rungs(rows, "PRODIGY")
+    rungs = np.arange(1, 10)
+    fig, axes = plt.subplots(1, 3, figsize=(14.0, 4.7), sharex=True, sharey=True)
+    for column_index, order in enumerate(ORDERS):
+        ax = axes[column_index]
+        seed_target_means = np.zeros((3, 9))
+        for target in GRAPHS:
+            seed_values = np.vstack(
+                [values[(seed_slot, order, target)] for seed_slot in range(3)]
+            )
+            mean = seed_values.mean(axis=0)
+            ax.fill_between(
+                rungs,
+                seed_values.min(axis=0),
+                seed_values.max(axis=0),
+                color=TARGET_COLORS[target],
+                alpha=0.11,
+                linewidth=0,
+                zorder=1,
+            )
+            ax.plot(rungs, mean, color=TARGET_COLORS[target], lw=1.35, alpha=0.88, zorder=2)
+            entry = entries[(order, target)]
+            ax.scatter(
+                entry,
+                mean[entry - 1],
+                s=31,
+                color=TARGET_COLORS[target],
+                edgecolor="white",
+                linewidth=0.55,
+                zorder=4,
+            )
+            for seed_slot in range(3):
+                seed_target_means[seed_slot] += seed_values[seed_slot] / len(GRAPHS)
+
+        overall_mean = seed_target_means.mean(axis=0)
+        ax.fill_between(
+            rungs,
+            seed_target_means.min(axis=0),
+            seed_target_means.max(axis=0),
+            color=INK,
+            alpha=0.14,
+            linewidth=0,
+            zorder=3,
+        )
+        ax.plot(rungs, overall_mean, color=INK, lw=2.4, marker="s", ms=3.8, zorder=5)
+        ax.set_title(f"Order {order}", fontweight="bold")
+        ax.set_xticks(range(1, 10))
+        ax.set_xlabel("cumulative training rung")
+        if column_index == 0:
+            ax.set_ylabel("NM accuracy")
+            panel_label(ax, "A")
+        clean_axis(ax)
+
+    handles = [Line2D([0], [0], color=TARGET_COLORS[target], lw=2, label=SHORT[target]) for target in GRAPHS]
+    handles.extend(
+        [
+            Line2D([0], [0], color=INK, marker="s", lw=2.3, label="mean over targets"),
+            Patch(facecolor="#888888", alpha=0.22, edgecolor="none", label="seed min–max range"),
+        ]
+    )
+    fig.legend(handles=handles, loc="lower center", ncol=6, frameon=False, bbox_to_anchor=(0.5, 0.03))
+    fig.text(
+        0.5,
+        0.005,
+        "Lines show means across training seeds 0, 1, and 2 · shaded areas show the observed min–max range (n=3)",
+        ha="center",
+        va="bottom",
+        color=MUTED,
+        fontsize=8,
+    )
+    fig.tight_layout(rect=(0.02, 0.18, 1.0, 1.0), w_pad=1.7)
+    save(fig, "prodigy_ladder_seed_bands")
+
+
 def plot_coverage(rows: list[dict[str, str]]) -> None:
     row_specs = (
         ("PRODIGY", "matrix", 81),
@@ -508,8 +606,9 @@ def main() -> None:
     plot_order_robustness(events)
     plot_seed_stability(events)
     plot_ladder_trajectories(rows)
+    plot_ladder_seed_bands(rows)
     plot_coverage(rows)
-    print(f"FINAL_CORE_FIGURES_OK figures=7 formats=png,pdf output={OUT}")
+    print(f"FINAL_CORE_FIGURES_OK figures=8 formats=png,pdf output={OUT}")
 
 
 if __name__ == "__main__":

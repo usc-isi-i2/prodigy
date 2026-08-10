@@ -11,6 +11,7 @@ These figures are generated from the canonical
 | `order_robustness` | Target-entry effect distributions for orders A, B, and C. |
 | `prodigy_seed_stability` | Completed three-seed robustness evidence for PRODIGY. |
 | `ladder_trajectories` | Complete per-target ladder trajectories for all three orders and both architectures. |
+| `prodigy_ladder_seed_bands` | PRODIGY ladder means with observed min–max bands across its three training seeds. |
 | `coverage_status` | Observed and pending experiment blocks, including the two remaining SAMGPT seeds. |
 
 PNG files are convenient for review and Markdown. PDFs are vector versions for
