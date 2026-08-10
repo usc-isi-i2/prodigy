@@ -126,8 +126,13 @@ def panel_label(ax: Any, label: str) -> None:
 
 def save(fig: Any, stem: str) -> None:
     OUT.mkdir(parents=True, exist_ok=True)
-    for suffix in ("png", "pdf"):
-        fig.savefig(OUT / f"{stem}.{suffix}", dpi=240, bbox_inches="tight")
+    fig.savefig(OUT / f"{stem}.png", dpi=240, bbox_inches="tight")
+    fig.savefig(
+        OUT / f"{stem}.pdf",
+        dpi=240,
+        bbox_inches="tight",
+        metadata={"CreationDate": None, "ModDate": None},
+    )
     plt.close(fig)
 
 
@@ -384,10 +389,14 @@ def plot_seed_stability(events: list[dict[str, Any]]) -> None:
     save(fig, "prodigy_seed_stability")
 
 
-def ladder_series(rows: list[dict[str, str]], architecture: str) -> dict[tuple[str, str], list[float]]:
+def ladder_series(
+    rows: list[dict[str, str]],
+    architecture: str,
+    metric: str = "primary_value",
+) -> dict[tuple[str, str], list[float]]:
     buckets: dict[tuple[str, str, int], list[float]] = defaultdict(list)
     for row in observed(rows, architecture, "ladder"):
-        buckets[(row["order"], row["test_graph"], int(row["rung"]))].append(float(row["primary_value"]))
+        buckets[(row["order"], row["test_graph"], int(row["rung"]))].append(float(row[metric]))
     expected_replicates = 3 if architecture == "PRODIGY" else 1
     result = {}
     for order in ORDERS:
@@ -446,6 +455,56 @@ def plot_ladder_trajectories(rows: list[dict[str, str]]) -> None:
     fig.legend(handles=handles, loc="lower center", ncol=5, frameon=False, bbox_to_anchor=(0.5, 0.005))
     fig.tight_layout(rect=(0.03, 0.10, 1.0, 1.0), h_pad=2.0, w_pad=1.7)
     save(fig, "ladder_trajectories")
+
+
+def plot_ladder_auc_trajectories(rows: list[dict[str, str]]) -> None:
+    """Plot the log-recovered PRODIGY ROC-AUC ladder trajectories."""
+    series = ladder_series(rows, "PRODIGY", "nm_roc_auc_ovr_macro")
+    entries = entry_rungs(rows, "PRODIGY")
+    fig, axes = plt.subplots(1, 3, figsize=(14.0, 4.7), sharex=True, sharey=True)
+    rungs = np.arange(1, 10)
+    for column_index, order in enumerate(ORDERS):
+        ax = axes[column_index]
+        for target in GRAPHS:
+            values = series[(order, target)]
+            ax.plot(rungs, values, color=TARGET_COLORS[target], lw=1.35, alpha=0.82)
+            entry = entries[(order, target)]
+            ax.scatter(
+                entry,
+                values[entry - 1],
+                s=31,
+                color=TARGET_COLORS[target],
+                edgecolor="white",
+                linewidth=0.55,
+                zorder=4,
+            )
+        mean_by_rung = [
+            float(np.mean([series[(order, target)][rung - 1] for target in GRAPHS]))
+            for rung in range(1, 10)
+        ]
+        ax.plot(rungs, mean_by_rung, color=INK, lw=2.4, marker="s", ms=3.8, zorder=5)
+        ax.set_title(f"Order {order}", fontweight="bold")
+        ax.set_xticks(range(1, 10))
+        ax.set_xlabel("cumulative training rung")
+        if column_index == 0:
+            ax.set_ylabel("NM ROC-AUC\n(mean of 3 seeds)")
+            panel_label(ax, "A")
+        clean_axis(ax)
+
+    handles = [Line2D([0], [0], color=TARGET_COLORS[target], lw=2, label=SHORT[target]) for target in GRAPHS]
+    handles.append(Line2D([0], [0], color=INK, marker="s", lw=2.3, label="mean over targets"))
+    fig.legend(handles=handles, loc="lower center", ncol=5, frameon=False, bbox_to_anchor=(0.5, 0.055))
+    fig.text(
+        0.5,
+        0.012,
+        "PRODIGY · values recovered from original fixed-test logs (four-decimal printed precision)",
+        ha="center",
+        va="bottom",
+        color=MUTED,
+        fontsize=8,
+    )
+    fig.tight_layout(rect=(0.02, 0.18, 1.0, 1.0), w_pad=1.7)
+    save(fig, "ladder_trajectories_auc")
 
 
 def plot_ladder_seed_bands(rows: list[dict[str, str]]) -> None:
@@ -606,9 +665,10 @@ def main() -> None:
     plot_order_robustness(events)
     plot_seed_stability(events)
     plot_ladder_trajectories(rows)
+    plot_ladder_auc_trajectories(rows)
     plot_ladder_seed_bands(rows)
     plot_coverage(rows)
-    print(f"FINAL_CORE_FIGURES_OK figures=8 formats=png,pdf output={OUT}")
+    print(f"FINAL_CORE_FIGURES_OK figures=9 formats=png,pdf output={OUT}")
 
 
 if __name__ == "__main__":

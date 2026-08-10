@@ -60,7 +60,10 @@ Metrics remain architecture-native. `primary_metric`, `primary_value`, and
 `primary_direction` give a common analysis interface, while the `nm_*` and
 `graphcl_*` columns preserve the available metric families without pretending
 that their raw scales are comparable. Pending rows have blank measurements,
-not fabricated values.
+not fabricated values. PRODIGY ladder macro-F1 and ROC-AUC are recovered from
+the original worker logs at their printed four-decimal precision; the
+`nm_f1_auc_source_precision` column distinguishes those values from the
+full-precision specialist AUC replay.
 
 Regenerate both tables with `build_full_results.py`. The full verifier rebuilds
 their expected contents from the pinned raw evidence and rejects a stale row,
@@ -70,11 +73,11 @@ observed source path.
 ## Visualizations
 
 The reproducible figure set is under `figures/`, with PNG review copies and PDF
-vector versions. `plot_final_results.py` regenerates all eight figures directly
+vector versions. `plot_final_results.py` regenerates all nine figures directly
 from `data/results_full_long.tsv`: specialist transfer matrices, target-entry
 effects, before/after comparisons, order robustness, PRODIGY seed stability,
-complete ladder trajectories, PRODIGY ladder seed ranges, and experiment
-coverage. `figures/README.md`
+complete primary-metric ladder trajectories, PRODIGY ROC-AUC ladder
+trajectories, PRODIGY ladder seed ranges, and experiment coverage. `figures/README.md`
 documents the intended role of each figure.
 
 For inspection without result-oriented annotations or aggregation across seeds
@@ -149,6 +152,8 @@ The complete PRODIGY component is stored under `data/prodigy_final_core/`:
 - `fixed_test/summary/`: the 729-row alias-expanded ladder and strict matrices;
 - `auc/results/`: 243 metric-complete specialist result JSON files;
 - `auc/summary/`: per-seed and three-seed accuracy, macro-F1, and ROC-AUC;
+- `log_recovered_metrics/physical_metrics.tsv`: all 837 physical fixed-test
+  cells' accuracy, macro-F1, and ROC-AUC as printed in the original logs;
 - `manifest.json`: per-file sizes, hashes, producing commits, and source paths.
 
 The original fixed-test workers wrote every expected raw cell but stopped before
@@ -161,6 +166,10 @@ for every target in both executions.
 Of 243 repeated PRODIGY specialist cells, 233 accuracies are bit-identical. The
 other ten differ by exactly one prediction out of 61,440 query predictions
 (maximum absolute difference `1.627604166667962e-05`); none differs by more.
+All 243 log-recovered specialist AUC values agree with the full-precision replay
+to the expected four-decimal rounding tolerance. The production, recovery, and
+continuation logs jointly provide 837 unique completed physical metric records,
+matching the fixed-test archive exactly.
 
 Verify the PRODIGY archive from the repository root:
 

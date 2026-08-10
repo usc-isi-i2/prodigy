@@ -1,11 +1,12 @@
 {
   "architecture": "PRODIGY",
   "archive_contract": "prodigy_final_core_evidence_archive_v1",
-  "archive_sha256": "0db1418396594d662f33d542164afb93e39c48d471c2510515ae388dc66c7c90",
+  "archive_sha256": "5f660c7f752397c6de1e43cd6c1536c1594f1fe0368d53ef9700dd36cb39475c",
   "counts": {
     "auc_specialist_cells": 243,
     "fixed_test_alias_expanded_ladder_rows": 729,
     "fixed_test_physical_cells": 837,
+    "log_recovered_metric_cells": 837,
     "sources": 9,
     "targets": 9,
     "training_seeds": 3
@@ -16,7 +17,7 @@
     "max_absolute_accuracy_delta": 1.627604166667962e-05,
     "one_prediction_delta_cells": 10
   },
-  "file_count": 1116,
+  "file_count": 1118,
   "files": [
     {
       "bytes": 21,
@@ -5589,6 +5590,16 @@
       "sha256": "98a5cc320f67206f02c563bee479acff9e2911066f7ea7ade878b19b6b479d86"
     },
     {
+      "bytes": 1026,
+      "path": "log_recovered_metrics/README.md",
+      "sha256": "4f514d761110302b1d30ede0904ced4790e6b84e3a92b0e05ae33690628990ab"
+    },
+    {
+      "bytes": 180881,
+      "path": "log_recovered_metrics/physical_metrics.tsv",
+      "sha256": "0f069853f7d31f5a61f2e6b74bcf607d5848e12b5eeb0dcfa4fca7ff89b650a2"
+    },
+    {
       "bytes": 2318,
       "path": "training/plan.tsv",
       "sha256": "b55542946433f8b98546e40d6df2d2476d5e13c3ee620ee752e64f775da07033"
@@ -5608,6 +5619,8 @@
     "auc_supplement": "/dataMeR1/phil/gfm/prodigy-final-core-auc/log/final_core_auc/production/bs32",
     "fingerprint_ledger": "/dataMeR1/phil/gfm/prodigy-final-core-cache/log/final_core_cached_test/production/bs32/summary/episode_fingerprints.tsv",
     "fixed_test": "/dataMeR1/phil/gfm/prodigy-final-core-fixed-test/log/final_core_fixed_test/production/bs32",
+    "logged_metrics_cache_workers": "/dataMeR1/phil/gfm/prodigy-final-core-cache/log/final_core_cached_test",
+    "logged_metrics_continuation_workers": "/dataMeR1/phil/gfm/prodigy-final-core-fixed-test/log/final_core_fixed_test",
     "training_state": "/dataMeR1/phil/gfm/prodigy-final-core/state/final_core"
   }
 }

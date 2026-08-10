@@ -293,6 +293,58 @@ def validate_cross_run_replay(
     }
 
 
+def validate_logged_metrics(
+    fixed: dict[tuple[int, str, str], dict[str, Any]],
+    auc: dict[tuple[int, str, str], dict[str, Any]],
+) -> None:
+    path = DATA / "log_recovered_metrics/physical_metrics.tsv"
+    with path.open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle, delimiter="\t"))
+    if len(rows) != 837:
+        fail(f"{path}: expected 837 rows, found {len(rows)}")
+    by_key: dict[tuple[int, str, str], dict[str, str]] = {}
+    tolerance = 5.1e-5
+    for row in rows:
+        key = (int(row["seed"]), row["model_id"], row["target"])
+        if key in by_key:
+            fail(f"{path}: duplicate key {key}")
+        by_key[key] = row
+        expected_id = (
+            f"prodigy|seed={key[0]}|model={key[1]}|target={key[2]}|checkpoint=2500"
+        )
+        if row["physical_result_id"] != expected_id:
+            fail(f"{path}: invalid physical_result_id for {key}")
+        if row["printed_decimal_places"] != "4":
+            fail(f"{path}: unexpected printed precision for {key}")
+        if not row["source_log"].startswith("/dataMeR1/phil/gfm/prodigy-final-core-"):
+            fail(f"{path}: unexpected source log for {key}")
+        for field in (
+            "accuracy_logged",
+            "f1_macro_logged",
+            "roc_auc_ovr_macro_logged",
+        ):
+            value = float(row[field])
+            if not math.isfinite(value) or not 0.0 <= value <= 1.0:
+                fail(f"{path}: invalid {field}={value!r} for {key}")
+        if not math.isclose(
+            float(row["accuracy_logged"]),
+            float(fixed[key]["score"]),
+            rel_tol=0,
+            abs_tol=tolerance,
+        ):
+            fail(f"{path}: logged accuracy disagrees with fixed result {key}")
+    if set(by_key) != set(fixed):
+        fail(f"{path}: keys do not equal the fixed-test physical grid")
+    for key, payload in auc.items():
+        if not math.isclose(
+            float(by_key[key]["roc_auc_ovr_macro_logged"]),
+            float(payload["roc_auc_ovr_macro"]),
+            rel_tol=0,
+            abs_tol=tolerance,
+        ):
+            fail(f"{path}: logged AUC disagrees with full-precision replay {key}")
+
+
 def data_files() -> list[Path]:
     manifest = DATA / "manifest.json"
     return sorted(path for path in DATA.rglob("*") if path.is_file() and path != manifest)
@@ -330,12 +382,15 @@ def build_manifest(reconciliation: dict[str, Any]) -> dict[str, Any]:
             "training_state": "/dataMeR1/phil/gfm/prodigy-final-core/state/final_core",
             "fixed_test": "/dataMeR1/phil/gfm/prodigy-final-core-fixed-test/log/final_core_fixed_test/production/bs32",
             "auc_supplement": "/dataMeR1/phil/gfm/prodigy-final-core-auc/log/final_core_auc/production/bs32",
+            "logged_metrics_cache_workers": "/dataMeR1/phil/gfm/prodigy-final-core-cache/log/final_core_cached_test",
+            "logged_metrics_continuation_workers": "/dataMeR1/phil/gfm/prodigy-final-core-fixed-test/log/final_core_fixed_test",
             "fingerprint_ledger": "/dataMeR1/phil/gfm/prodigy-final-core-cache/log/final_core_cached_test/production/bs32/summary/episode_fingerprints.tsv",
         },
         "counts": {
             "fixed_test_physical_cells": 837,
             "fixed_test_alias_expanded_ladder_rows": 729,
             "auc_specialist_cells": 243,
+            "log_recovered_metric_cells": 837,
             "sources": 9,
             "targets": 9,
             "training_seeds": 3,
@@ -365,6 +420,7 @@ def validate() -> tuple[dict[str, Any], dict[str, Any]]:
     validate_fingerprints("fixed test", fixed, ledger)
     validate_fingerprints("AUC supplement", auc, ledger)
     reconciliation = validate_cross_run_replay(fixed, auc)
+    validate_logged_metrics(fixed, auc)
     return build_manifest(reconciliation), reconciliation
 
 

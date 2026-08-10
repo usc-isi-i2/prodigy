@@ -30,6 +30,10 @@ PRODIGY_TRAIN_PLAN = (
     "prodigy_final_core/training/plan.tsv"
 )
 PRODIGY_FIXED_EVAL_CONFIG = "scripts/experiments/setup/final_core/run_fixed_test_tucker.sh"
+PRODIGY_LOGGED_METRICS = (
+    "scripts/experiments/analysis/final_core/data/prodigy_final_core/"
+    "log_recovered_metrics/physical_metrics.tsv"
+)
 PRODIGY_FIXED_EVAL_HASHES = {
     "045ba527ec42b6ca6750d3f1ac1775698496b1b5":
         "3e8346f15121db0fe52283b0efde560ec675f887640990561dfe99ab863b793a",
@@ -91,12 +95,14 @@ LONG_FIELDS = (
     "source_result_path",
     "source_result_key",
     "aux_result_path",
+    "aux_result_key",
     "physical_result_id",
     "primary_metric",
     "primary_value",
     "nm_accuracy",
     "nm_f1_macro",
     "nm_roc_auc_ovr_macro",
+    "nm_f1_auc_source_precision",
     "nm_loss",
     "nm_score_std",
     "nm_auc_replay_accuracy",
@@ -128,6 +134,11 @@ def load_json(path: Path) -> dict[str, Any]:
 def read_csv(path: Path) -> list[dict[str, str]]:
     with path.open(encoding="utf-8", newline="") as handle:
         return list(csv.DictReader(handle))
+
+
+def read_tsv(path: Path) -> list[dict[str, str]]:
+    with path.open(encoding="utf-8", newline="") as handle:
+        return list(csv.DictReader(handle, delimiter="\t"))
 
 
 def format_value(value: Any) -> str:
@@ -178,6 +189,7 @@ def prodigy_row(
     order: str = "",
     rung: int | None = None,
     added_graph: str = "",
+    logged_metric: dict[str, str],
 ) -> dict[str, str]:
     result_path = prodigy_result_path(seed, model_id, target)
     payload = load_json(result_path)
@@ -193,6 +205,16 @@ def prodigy_row(
         f"prodigy|seed={seed}|model={model_id}|target={target}|"
         f"checkpoint={payload['checkpoint_step']}"
     )
+    if logged_metric["physical_result_id"] != physical_id:
+        raise ValueError(
+            f"{result_path}: logged metric key mismatch "
+            f"{logged_metric['physical_result_id']} versus {physical_id}"
+        )
+    logged_delta = float(logged_metric["accuracy_logged"]) - float(payload["score"])
+    if abs(logged_delta) > 5.1e-5:
+        raise ValueError(
+            f"{result_path}: logged accuracy differs from result by {logged_delta}"
+        )
     row = blank_row()
     row.update({
         "cell_id": cell_id,
@@ -228,12 +250,16 @@ def prodigy_row(
         "eval_units": format_value(payload["episode_count"]),
         "source_result_path": repo_relative(result_path),
         "source_result_key": "json_root",
-        "aux_result_path": "",
+        "aux_result_path": PRODIGY_LOGGED_METRICS,
+        "aux_result_key": physical_id,
         "physical_result_id": physical_id,
         "primary_metric": "neighbor_matching_accuracy",
         "primary_value": format_value(payload["score"]),
         "primary_direction": "maximize",
         "nm_accuracy": format_value(payload["score"]),
+        "nm_f1_macro": logged_metric["f1_macro_logged"],
+        "nm_roc_auc_ovr_macro": logged_metric["roc_auc_ovr_macro_logged"],
+        "nm_f1_auc_source_precision": "fixed_test_stdout_4_decimal",
         "nm_loss": format_value(payload["loss"]),
         "nm_score_std": format_value(payload["score_std"]),
     })
@@ -244,8 +270,10 @@ def prodigy_row(
         replay_delta = float(auc["accuracy"]) - float(payload["score"])
         row.update({
             "aux_result_path": repo_relative(auc_path),
+            "aux_result_key": "json_root",
             "nm_f1_macro": format_value(auc["f1_macro"]),
             "nm_roc_auc_ovr_macro": format_value(auc["roc_auc_ovr_macro"]),
+            "nm_f1_auc_source_precision": "auc_replay_json_full_precision",
             "nm_auc_replay_accuracy": format_value(auc["accuracy"]),
             "nm_auc_replay_delta": format_value(replay_delta),
         })
@@ -253,6 +281,16 @@ def prodigy_row(
 
 
 def build_prodigy_rows() -> list[dict[str, str]]:
+    logged_rows = read_tsv(REPO / PRODIGY_LOGGED_METRICS)
+    logged = {
+        (int(row["seed"]), row["model_id"], row["target"]): row
+        for row in logged_rows
+    }
+    if len(logged_rows) != 837 or len(logged) != 837:
+        raise ValueError(
+            f"logged PRODIGY metrics do not match 837 physical cells: "
+            f"rows={len(logged_rows)} unique={len(logged)}"
+        )
     rows = []
     for seed in (0, 1, 2):
         for source in GRAPHS:
@@ -263,6 +301,7 @@ def build_prodigy_rows() -> list[dict[str, str]]:
                     train_graphs=(source,),
                     target=target,
                     model_id=f"ss_{source}",
+                    logged_metric=logged[(seed, f"ss_{source}", target)],
                 ))
         for order, sequence in ORDERS.items():
             for rung in range(1, 10):
@@ -278,6 +317,7 @@ def build_prodigy_rows() -> list[dict[str, str]]:
                         order=order,
                         rung=rung,
                         added_graph=sequence[rung - 1],
+                        logged_metric=logged[(seed, model_id, target)],
                     ))
     return rows
 
@@ -342,6 +382,7 @@ def samgpt_base_row(
         "source_result_path": "",
         "source_result_key": "",
         "aux_result_path": "",
+        "aux_result_key": "",
         "physical_result_id": "",
         "primary_metric": "graphcl_bce_loss",
         "primary_value": "",
@@ -456,6 +497,9 @@ def validate_rows(rows: list[dict[str, str]]) -> None:
         raise ValueError("an observed row is missing its primary metric")
     if any(row["primary_value"] != "" for row in pending):
         raise ValueError("a pending row contains an observed primary metric")
+    prodigy = [row for row in observed if row["architecture"] == "PRODIGY"]
+    if any(not row["nm_roc_auc_ovr_macro"] for row in prodigy):
+        raise ValueError("an observed PRODIGY row is missing ROC-AUC")
 
 
 def write_tsv(path: Path, fieldnames: tuple[str, ...], rows: list[dict[str, str]]) -> None:
