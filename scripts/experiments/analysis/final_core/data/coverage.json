@@ -1,0 +1,49 @@
+{
+  "experiment_contract": "architecture_native_pretext_matrix_ladder_v1",
+  "architectures": {
+    "PRODIGY": {
+      "native_pretext": "neighbor_matching",
+      "matrix": {
+        "expected_cells": 243,
+        "observed_cells": 243,
+        "observed_training_seeds": 3,
+        "status": "complete"
+      },
+      "ladder": {
+        "expected_cells": 729,
+        "observed_cells": 729,
+        "observed_training_seeds": 3,
+        "status": "complete"
+      }
+    },
+    "SAMGPT": {
+      "native_pretext": "graphcl_discrimination",
+      "matrix": {
+        "expected_cells": 243,
+        "observed_cells": 81,
+        "observed_training_seeds": 1,
+        "status": "two_training_seeds_pending"
+      },
+      "ladder": {
+        "expected_cells": 729,
+        "observed_cells": 243,
+        "observed_training_seeds": 1,
+        "status": "two_training_seeds_pending"
+      }
+    }
+  },
+  "design": {
+    "architectures": 2,
+    "training_seeds": 3,
+    "source_graphs": 9,
+    "target_graphs": 9,
+    "orders": 3,
+    "rungs": 9,
+    "expected_matrix_cells": 486,
+    "expected_ladder_cells": 1458,
+    "expected_total_cells": 1944
+  },
+  "observed_total_cells": 1296,
+  "pending_samgpt_cells": 648,
+  "interpretation_status": "directional_conclusions_supported_seed_uncertainty_pending_for_samgpt"
+}

@@ -15,7 +15,7 @@ from typing import Any
 
 
 HERE = Path(__file__).resolve().parent
-DATA = HERE / "data"
+DATA = HERE / "data/prodigy_final_core"
 SOURCES = (
     "ukr_rus",
     "covid",
@@ -319,7 +319,8 @@ def archive_digest(records: list[dict[str, Any]]) -> str:
 def build_manifest(reconciliation: dict[str, Any]) -> dict[str, Any]:
     records = [file_record(path) for path in data_files()]
     return {
-        "archive_contract": "final_core_evidence_archive_v1",
+        "archive_contract": "prodigy_final_core_evidence_archive_v1",
+        "architecture": "PRODIGY",
         "protocol": PROTOCOL,
         "producing_commits": {
             "fixed_test": "c5be3b9022d0f8638525e138050c11472fe05d60",
@@ -384,7 +385,7 @@ def main() -> int:
     else:
         validate_manifest(expected)
     print(
-        "FINAL_CORE_ARCHIVE_OK "
+        "PRODIGY_FINAL_CORE_ARCHIVE_OK "
         f"fixed_cells=837 auc_cells=243 files={expected['file_count']} "
         f"replay_exact={reconciliation['bit_identical_cells']}/243 "
         f"sha256={expected['archive_sha256']}"
@@ -396,5 +397,5 @@ if __name__ == "__main__":
     try:
         raise SystemExit(main())
     except (AssertionError, KeyError, OSError, TypeError, ValueError) as error:
-        print(f"FINAL_CORE_ARCHIVE_INVALID: {error}", file=sys.stderr)
+        print(f"PRODIGY_FINAL_CORE_ARCHIVE_INVALID: {error}", file=sys.stderr)
         raise SystemExit(1)

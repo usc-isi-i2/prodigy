@@ -86,9 +86,12 @@ The final mean matrix is
 `log/final_core_auc/production/bs32/summary/single_source_roc_auc_ovr_macro_three_seed_mean.csv`.
 
 The durable, checksum-verified copy of both the 837-cell fixed-test sweep and
-the 243-cell metric-complete specialist replay lives in
-`scripts/experiments/analysis/final_core/`. Use its `verify_archive.py` before
-reporting or regenerating tables from the archived evidence.
+the 243-cell metric-complete specialist replay lives under
+`scripts/experiments/analysis/final_core/data/prodigy_final_core/`. Use
+`verify_prodigy_archive.py` before reporting or regenerating tables from the
+archived evidence. The parent analysis folder tracks this complete PRODIGY
+component alongside the one-seed SAMGPT component of the two-architecture
+experiment.
 
 For a replacement smoke, set `SMOKE_ONLY=1`; it evaluates two checkpoints per
 worker so replay is exercised, then exits. After that passes, production can
