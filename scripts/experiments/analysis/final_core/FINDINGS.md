@@ -67,6 +67,15 @@ their expected contents from the pinned raw evidence and rejects a stale row,
 wrong column, missing design cell, incorrect graph indicator, or unresolved
 observed source path.
 
+## Visualizations
+
+The reproducible figure set is under `figures/`, with PNG review copies and PDF
+vector versions. `plot_final_results.py` regenerates all seven figures directly
+from `data/results_full_long.tsv`: specialist transfer matrices, target-entry
+effects, before/after comparisons, order robustness, PRODIGY seed stability,
+complete ladder trajectories, and experiment coverage. `figures/README.md`
+documents the intended role of each figure.
+
 ## Headline finding
 
 Across both architectures, a target graph becomes easier under the model's own
