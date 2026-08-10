@@ -39,6 +39,34 @@ cells and 486 ladder cells. They remain part of the planned completeness
 contract, but they do not prevent interpretation of the evidence already in
 hand.
 
+## Canonical full result tables
+
+Two generated TSV files provide one stable interface to the complete design:
+
+- `data/results_full_long.tsv` has one row per logical experiment cell and
+  compact `train_graphs`/`test_graph` fields;
+- `data/results_full_graphwide.tsv` contains the same rows and columns, plus
+  nine `train:<graph>` and nine `test:<graph>` indicator columns.
+
+Each file has all **1,944 logical cells**, including the 1,296 observed results
+and 648 explicit `pending` rows for the two unrun SAMGPT seeds. A stable
+`cell_id` identifies each cell. The provenance columns pin the training and
+evaluation repositories, commits, configs and config hashes, run/checkpoint
+identity where available, source-result path and source-result key. Matrix and
+ladder identity is represented by `component`, `order`, `rung`, `added_graph`,
+and the exact training-graph set.
+
+Metrics remain architecture-native. `primary_metric`, `primary_value`, and
+`primary_direction` give a common analysis interface, while the `nm_*` and
+`graphcl_*` columns preserve the available metric families without pretending
+that their raw scales are comparable. Pending rows have blank measurements,
+not fabricated values.
+
+Regenerate both tables with `build_full_results.py`. The full verifier rebuilds
+their expected contents from the pinned raw evidence and rejects a stale row,
+wrong column, missing design cell, incorrect graph indicator, or unresolved
+observed source path.
+
 ## Headline finding
 
 Across both architectures, a target graph becomes easier under the model's own
@@ -128,10 +156,10 @@ Verify the PRODIGY archive from the repository root:
 
 The observed SAMGPT seed remains in its existing name-aligned archives rather
 than being duplicated. `data/samgpt/observed_seed.json` pins the canonical
-matrix, ladder, and derived-analysis files by repository path and SHA-256. Its
-legacy export does not encode the training seed ID, so it is intentionally not
-relabeled as seed 0. Target-specific `eval_seed` values identify fixed evaluation
-views, not training seeds.
+matrix, ladder, and derived-analysis files by repository path and SHA-256. The
+exports do not carry the training seed field, but their pinned configs identify
+it exactly as seed 39. Target-specific `eval_seed` values identify fixed
+evaluation views, not training seeds.
 
 `data/coverage.json` is the machine-readable completion ledger for the full
 two-architecture design. When the additional SAMGPT seeds run, they can be added

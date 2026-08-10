@@ -18,6 +18,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(REPO / "scripts/experiments/setup/final_core"))
 
 import verify_prodigy_archive as prodigy  # noqa: E402
+import build_full_results as full_results  # noqa: E402
 from core_plan import ORDERS  # noqa: E402
 
 
@@ -45,6 +46,12 @@ def verify_registered_file(record: dict[str, Any]) -> Path:
 def read_csv(path: Path) -> list[dict[str, str]]:
     with path.open(encoding="utf-8", newline="") as handle:
         return list(csv.DictReader(handle))
+
+
+def read_tsv(path: Path) -> tuple[list[str], list[dict[str, str]]]:
+    with path.open(encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle, delimiter="\t")
+        return list(reader.fieldnames or ()), list(reader)
 
 
 def verify_samgpt() -> tuple[int, int, int]:
@@ -133,15 +140,92 @@ def verify_coverage(matrix_cells: int, ladder_cells: int) -> dict[str, Any]:
     return coverage
 
 
+def verify_full_result_tables() -> tuple[int, int, int]:
+    expected = full_results.build_prodigy_rows() + full_results.build_samgpt_rows()
+    expected.sort(key=full_results.row_sort_key)
+    full_results.validate_rows(expected)
+
+    long_fields, observed_long = read_tsv(HERE / "data/results_full_long.tsv")
+    if long_fields != list(full_results.LONG_FIELDS):
+        raise ValueError("results_full_long.tsv has the wrong columns or column order")
+    if observed_long != expected:
+        mismatch = next(
+            (
+                index
+                for index, (observed, wanted) in enumerate(zip(observed_long, expected))
+                if observed != wanted
+            ),
+            min(len(observed_long), len(expected)),
+        )
+        raise ValueError(f"results_full_long.tsv is stale or incorrect at row {mismatch + 2}")
+
+    wide_fields, observed_wide = read_tsv(HERE / "data/results_full_graphwide.tsv")
+    expected_wide = [full_results.wide_row(row) for row in expected]
+    if wide_fields != [*full_results.LONG_FIELDS, *full_results.GRAPH_FIELDS]:
+        raise ValueError("results_full_graphwide.tsv has the wrong columns or column order")
+    if observed_wide != expected_wide:
+        mismatch = next(
+            (
+                index
+                for index, (observed, wanted) in enumerate(zip(observed_wide, expected_wide))
+                if observed != wanted
+            ),
+            min(len(observed_wide), len(expected_wide)),
+        )
+        raise ValueError(
+            f"results_full_graphwide.tsv is stale or incorrect at row {mismatch + 2}"
+        )
+
+    counts = {
+        (architecture, component, status): sum(
+            row["architecture"] == architecture
+            and row["component"] == component
+            and row["result_status"] == status
+            for row in expected
+        )
+        for architecture in ("PRODIGY", "SAMGPT")
+        for component in ("matrix", "ladder")
+        for status in ("observed", "pending")
+    }
+    wanted_counts = {
+        ("PRODIGY", "matrix", "observed"): 243,
+        ("PRODIGY", "matrix", "pending"): 0,
+        ("PRODIGY", "ladder", "observed"): 729,
+        ("PRODIGY", "ladder", "pending"): 0,
+        ("SAMGPT", "matrix", "observed"): 81,
+        ("SAMGPT", "matrix", "pending"): 162,
+        ("SAMGPT", "ladder", "observed"): 243,
+        ("SAMGPT", "ladder", "pending"): 486,
+    }
+    if counts != wanted_counts:
+        raise ValueError(f"full result table coverage is incorrect: {counts}")
+
+    for row in expected:
+        if row["result_status"] == "observed":
+            source_path = REPO / row["source_result_path"]
+            if not source_path.is_file():
+                raise FileNotFoundError(source_path)
+        if row["aux_result_path"] and not (REPO / row["aux_result_path"]).is_file():
+            raise FileNotFoundError(REPO / row["aux_result_path"])
+
+    observed_count = sum(row["result_status"] == "observed" for row in expected)
+    return len(expected), observed_count, len(expected) - observed_count
+
+
 def main() -> int:
     expected_manifest, _ = prodigy.validate()
     prodigy.validate_manifest(expected_manifest)
     prodigy_entry = verify_prodigy_entry_effect()
     matrix_cells, ladder_cells, samgpt_entry = verify_samgpt()
     coverage = verify_coverage(matrix_cells, ladder_cells)
+    result_cells, observed_cells, pending_cells = verify_full_result_tables()
+    if observed_cells != coverage["observed_total_cells"]:
+        raise ValueError("canonical tables disagree with the coverage ledger")
+    if pending_cells != coverage["pending_samgpt_cells"]:
+        raise ValueError("canonical tables disagree with the pending-cell ledger")
     print(
         "FINAL_EXPERIMENT_EVIDENCE_OK "
-        f"observed={coverage['observed_total_cells']}/1944 "
+        f"observed={observed_cells}/{result_cells} "
         f"prodigy_entry={prodigy_entry}/72 "
         f"samgpt_entry={samgpt_entry}/24 "
         f"samgpt_pending={coverage['pending_samgpt_cells']}"

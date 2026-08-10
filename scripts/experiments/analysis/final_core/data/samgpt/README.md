@@ -16,7 +16,7 @@ unseen evaluation views. Their role is to measure seed variance and confirm
 the stability of the current conclusions, not to change the pretext or force
 raw metric comparability with PRODIGY.
 
-The legacy exports do not encode the training seed identifier, so the observed
-run is deliberately called `observed_seed` rather than assuming it is seed 0.
-The `eval_seed` column identifies each target's fixed evaluation view and must
-not be interpreted as a training seed.
+The result exports themselves do not encode the training seed, but their pinned
+training configs at commit `b8bc1223ec65af5d9c71578647c56654b6f81016`
+identify it exactly as seed 39. The `eval_seed` column identifies each target's
+fixed evaluation view and must not be interpreted as a training seed.
