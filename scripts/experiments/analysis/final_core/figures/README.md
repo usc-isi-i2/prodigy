@@ -16,3 +16,7 @@ These figures are generated from the canonical
 PNG files are convenient for review and Markdown. PDFs are vector versions for
 papers and presentations. Raw PRODIGY and SAMGPT metric values never share an
 axis: cross-architecture effects are direction-aligned within separate panels.
+
+The `neutral_detailed/` subfolder is a separate descriptive suite: raw primary
+metrics, one matrix per observed seed, and one nine-target ladder breakdown per
+architecture, seed, and order, without finding-oriented annotations.

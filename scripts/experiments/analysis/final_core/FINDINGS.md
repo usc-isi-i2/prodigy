@@ -76,6 +76,11 @@ effects, before/after comparisons, order robustness, PRODIGY seed stability,
 complete ladder trajectories, and experiment coverage. `figures/README.md`
 documents the intended role of each figure.
 
+For inspection without result-oriented annotations or aggregation across seeds
+and orders, `figures/neutral_detailed/` contains a separate 16-figure suite.
+`plot_neutral_detailed.py` regenerates its per-seed matrices and per-target,
+per-order ladder panels from the same canonical table.
+
 ## Headline finding
 
 Across both architectures, a target graph becomes easier under the model's own
