@@ -1,10 +1,12 @@
 from scripts.experiments.setup.identity_overlap_audit.audit_identity_overlap import (
+    REPO_ROOT,
     overlap_metrics,
     pair_status,
 )
 
 
 def test_overlap_metrics() -> None:
+    assert (REPO_ROOT / "scripts" / "graph_construction").is_dir()
     metrics = overlap_metrics(10, 20, 5)
     assert metrics == {
         "fraction_a": 0.5,
