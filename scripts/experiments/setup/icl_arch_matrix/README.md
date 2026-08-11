@@ -64,3 +64,15 @@ support nodes. There is no pretraining, query-label tuning, neighborhood aggrega
 or target-wide fitting. The aggregator requires exactly eight rows and rejects any
 episode fingerprint that differs from the frozen trained matrix. This launcher is
 CPU-only; it does not reserve or inspect a Tucker GPU.
+
+## Topology-only controls
+
+`run_topology_features_tucker.sh` evaluates two label-free structural controls on
+the same four fingerprinted episode streams. Each target graph is represented by
+three directed degree features: target-graph-z-scored `log1p` in-degree,
+out-degree, and total degree. Cosine prototypes and fixed L2 logistic regression
+are fit only on the 20 support nodes in each episode. The controls use the loaded
+target graph's edge index but never node text, query labels, or target-wide label
+fitting. This is a transductive degree/topology floor, not a trained GNN or label-
+propagation result. The CPU-only launcher rejects any episode fingerprint that
+differs from the frozen trained matrix.
