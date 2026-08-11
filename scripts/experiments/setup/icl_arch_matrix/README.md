@@ -76,3 +76,16 @@ target graph's edge index but never node text, query labels, or target-wide labe
 fitting. This is a transductive degree/topology floor, not a trained GNN or label-
 propagation result. The CPU-only launcher rejects any episode fingerprint that
 differs from the frozen trained matrix.
+
+## Target-supervised references
+
+`run_supervised_target_tucker.sh` trains one target-specific raw-feature MLP and
+one two-layer GraphSAGE per classification target. Both use the repository's
+deterministic 60/20/20 stratified node split, seed 0, and 100 updates. A fixed
+two-value learning-rate grid (`1e-3`, `3e-4`) is selected by 32 validation
+episodes at update 100. Final scoring uses only query nodes from the exact 128
+frozen test episodes; test support labels and query labels are not used for
+fitting or selection. These models have much more target supervision than the
+10-shot in-context systems and are therefore supervised references, not matched-
+label-budget competitors. The launcher uses only Tucker GPUs 0 and 1 and refuses
+to start if either is occupied.
