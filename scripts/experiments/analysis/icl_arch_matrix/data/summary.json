@@ -1,0 +1,112 @@
+{
+  "architectures": [
+    {
+      "architecture": "prodigy",
+      "best_specialist_mae": 0.14713582446679524,
+      "best_specialist_pearson": 0.24275139154341896,
+      "best_specialist_within_target_pearson": -0.09441946775519497,
+      "fraction_below_best_specialist": 0.8977272727272727,
+      "held_out_cells": 40,
+      "held_out_mae": 0.0957799929159659,
+      "held_out_mean_residual": -0.077757289674547,
+      "in_mixture_cells": 48,
+      "in_mixture_mae": 0.18993235075915296,
+      "in_mixture_mean_residual": -0.18927622282946546,
+      "mean_mixture_residual": -0.13858579866813892,
+      "mean_roc_auc_all_cells": 0.5840374708460508,
+      "mean_roc_auc_mixtures": 0.5790206880280465,
+      "mean_roc_auc_specialists": 0.5963007177345055,
+      "mixture_cells": 88
+    },
+    {
+      "architecture": "vision",
+      "best_specialist_mae": 0.019203072043781744,
+      "best_specialist_pearson": 0.9974050706538411,
+      "best_specialist_within_target_pearson": 0.6234505754652687,
+      "fraction_below_best_specialist": 0.9318181818181818,
+      "held_out_cells": 40,
+      "held_out_mae": 0.021197509765624976,
+      "held_out_mean_residual": -0.02005767822265623,
+      "in_mixture_cells": 48,
+      "in_mixture_mae": 0.01754104060891238,
+      "in_mixture_mean_residual": -0.01747608479158382,
+      "mean_mixture_residual": -0.018649536351162187,
+      "mean_roc_auc_all_cells": 0.7390682512144319,
+      "mean_roc_auc_mixtures": 0.7502182236424197,
+      "mean_roc_auc_specialists": 0.7118127630571278,
+      "mixture_cells": 88
+    },
+    {
+      "architecture": "gilt",
+      "best_specialist_mae": 0.030377531693840654,
+      "best_specialist_pearson": 0.9928220560704943,
+      "best_specialist_within_target_pearson": 0.8658124674139192,
+      "fraction_below_best_specialist": 1.0,
+      "held_out_cells": 40,
+      "held_out_mae": 0.026800275731969758,
+      "held_out_mean_residual": -0.026800275731969758,
+      "in_mixture_cells": 48,
+      "in_mixture_mae": 0.03335857832873307,
+      "in_mixture_mean_residual": -0.03335857832873307,
+      "mean_mixture_residual": -0.030377531693840654,
+      "mean_roc_auc_all_cells": 0.6831340151733253,
+      "mean_roc_auc_mixtures": 0.6962512021112924,
+      "mean_roc_auc_specialists": 0.6510697804360723,
+      "mixture_cells": 88
+    }
+  ],
+  "checkpoint_step": 100,
+  "claim_boundary": "One training seed and a matched 100-update budget; use for qualitative architecture sensitivity and composition replication, not final ranking.",
+  "episode_fingerprints": {
+    "covid_political": "db497c203ef6c4249fb91b34083c59d3c400dc84b821c0835e3d5426fbbe2750",
+    "election2020": "4b5288ebc0896afebadb04ad14ebc9ec53fb1a88beeae490bd1d31ace91f14ef",
+    "twibot20": "c52eedbda4ef0539387be507588f0477560fc57987270d62405daeda5fe6d92d",
+    "ukr_rus_suspended": "c4b969d4c4f558104e8052335698b2ea62a3f94fa5af7e021a7bf0d46e2e3347"
+  },
+  "generated_utc": "2026-08-11T13:49:37.685063+00:00",
+  "input": "data/raw_aggregate/summary/classification_long.csv",
+  "input_rows": 372,
+  "input_sha256": "b57d2da2fbff28021071433650fe374de66ada325a4f4afc356a2f7b0bcb57a5",
+  "paired_architecture_contrasts": [
+    {
+      "cells": 124,
+      "contrast": "vision_minus_prodigy",
+      "fraction_positive": 0.7096774193548387,
+      "mean_delta": 0.1550307803683811,
+      "median_delta": 0.05377197265625,
+      "pearson": 0.19458448620467914,
+      "spearman": 0.30913637130844557
+    },
+    {
+      "cells": 124,
+      "contrast": "gilt_minus_prodigy",
+      "fraction_positive": 0.5806451612903226,
+      "mean_delta": 0.09909654432727442,
+      "median_delta": 0.01226806640625,
+      "pearson": 0.1671383200407614,
+      "spearman": 0.3360702944793809
+    },
+    {
+      "cells": 124,
+      "contrast": "gilt_minus_vision",
+      "fraction_positive": 0.08870967741935484,
+      "mean_delta": -0.05593423604110664,
+      "median_delta": -0.04811053805881077,
+      "pearson": 0.9686189304135978,
+      "spearman": 0.9526680944635547
+    }
+  ],
+  "seed": 0,
+  "upstream_pins": {
+    "gilt": {
+      "commit": "ba46cf4ebd1931712854708c221eaba646641785",
+      "license": null,
+      "repository": "https://github.com/yiming421/inductnode.git"
+    },
+    "vision": {
+      "commit": "0524eae9d0890979b56c0c773e9b808ba8991cbb",
+      "license": "MIT",
+      "repository": "https://github.com/KEAML-JLU/VISION.git"
+    }
+  }
+}
