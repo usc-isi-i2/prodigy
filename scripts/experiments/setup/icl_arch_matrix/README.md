@@ -33,3 +33,7 @@ If an adapter OOM leaves a partial run, preserve its state and log under a times
 archive, create a recovery worktree at the fixed commit, and launch
 `queue_oom_recovery_tucker.sh`. It waits for the original tmux session and both owned GPUs,
 then resumes only missing terminal checkpoints into a separate recovery log root.
+For the recorded worker-0 OOM, `queue_worker0_recovery_tucker.sh` can recover its exact
+remaining parity-assigned jobs on GPU 0 while the complementary GPU-1 worker finishes;
+each recovered job writes to a distinct log directory and the final queued recovery still
+performs the complete-grid evaluation gate.
