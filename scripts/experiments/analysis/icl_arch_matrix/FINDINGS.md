@@ -77,6 +77,19 @@ Degree logistic is the stronger topology control in the four-target mean. Relati
 
 Taken together, VISION clears both the raw-text and degree floors on average. GILT clears degree but is tied with raw text, while PRODIGY clears neither stronger floor at update 100. This sharpens the result boundary: the low-budget architecture matrix establishes system differences, but it does not establish learned graph-representation value for every system. The degree control is not a trained structural encoder, shallow GNN, or label-propagation model, so it also does not exhaust topology-only alternatives.
 
+## Target-supervised references
+
+The target-supervised references use the repository's deterministic 60/20/20 stratified node splits. A raw-feature MLP and two-layer GraphSAGE each train for 100 updates at two fixed learning rates (`1e-3`, `3e-4`); 32 validation episodes select the learning rate, then the chosen update-100 model scores only query nodes from the unchanged 128 test episodes. Test support labels and query labels are never used for fitting or selection. These models see thousands of labeled training centers and are supervised references, not matched-label-budget competitors for 10-shot in-context learning.
+
+| Reference | Covid Political | Election 2020 | Ukraine Suspended | TwiBot-20 | Mean |
+|---|---:|---:|---:|---:|---:|
+| Supervised MLP | 0.9117 | 0.9188 | 0.6125 | 0.7188 | 0.7905 |
+| Supervised GraphSAGE | 0.9556 | 0.9885 | 0.5971 | 0.7955 | 0.8342 |
+
+Relative to supervised GraphSAGE, update-100 VISION/GILT/PRODIGY average -0.0951/-0.1510/-0.2501 ROC-AUC; 7.3%/0.0%/0.0% of their source-set/target cells are higher. Against the supervised MLP, the gaps are -0.0514/-0.1073/-0.2064 and 41.9%/16.9%/1.6% of cells are higher. GraphSAGE improves the four-target mean over the MLP by 0.0437, although the MLP is better on Ukraine Suspended.
+
+The supervised result supplies the missing conventional reference and shows substantial headroom under target labels. It does not imply that target-specific training is preferable in the intended few-shot setting: the label budgets and adaptation regimes differ by design. It does establish that the one-seed update-100 architecture audit should be presented as an early-budget in-context systems comparison, not state-of-the-art downstream performance.
+
 ## Protocol boundaries
 
 - Parameter counts differ: PRODIGY 1.64M, VISION 2.05M, GILT 2.12M.
