@@ -17,7 +17,9 @@ This is a lightweight, descriptive comparison—not a final paper-number run.
   `ukr_rus_suspended`, and `twibot20`; query counts follow the graph catalog (12, 1, 1,
   and 12 per class). ROC-AUC is primary; accuracy and F1 are retained as diagnostics.
 - Every result records a hash of the actual support/query nodes. Aggregation refuses the
-  grid unless the hashes agree across all architectures.
+  grid unless the hashes agree across all architectures. The episode RNG is reset after
+  architecture-specific model initialization, and the audit includes global centers,
+  sampled neighborhood node IDs, and sampled edges.
 
 Use `MODEL_IDS=ss_ukr_rus` with the Tucker launchers for a one-cell pilot. A full launch
 uses all 31 source sets. Only Tucker GPUs 0 and 1 are accepted by the training launcher.

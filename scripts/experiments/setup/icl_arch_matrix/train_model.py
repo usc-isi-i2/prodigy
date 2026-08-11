@@ -25,6 +25,7 @@ from scripts.experiments.setup.icl_arch_matrix.common_protocol import (
     build_loader,
     iter_episodes,
     load_config,
+    reset_episode_rng,
 )
 
 
@@ -93,6 +94,7 @@ def main() -> int:
         raise FileExistsError(f"refusing ambiguous resume into existing run: {run_dir}")
     run_dir.mkdir(parents=True)
     started = time.time()
+    reset_episode_rng()
     with metrics_path.open("w", encoding="utf-8") as metrics:
         for step, batch in enumerate(loader, start=1):
             model.train()

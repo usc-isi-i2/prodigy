@@ -4,10 +4,12 @@
 from __future__ import annotations
 
 import hashlib
+import random
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator
 
+import numpy as np
 import torch
 import yaml
 
@@ -22,6 +24,7 @@ EVAL_N_SHOT = 10
 N_WAY = 30
 N_SHOT = 3
 N_QUERY = 4
+EPISODE_RNG_SEED = 271828
 
 
 @dataclass
@@ -35,6 +38,7 @@ class Episode:
     query_mask: torch.Tensor
     global_centers: torch.Tensor
     label_map: torch.Tensor | None = None
+    global_node_ids: torch.Tensor | None = None
 
     @property
     def support_mask(self) -> torch.Tensor:
@@ -167,8 +171,6 @@ def iter_episodes(
     query_mask = query_mask_from_batch(batch, n_way=n_way)
     task_ids = graphs.task_id_per_sample.long()
     ptr = graphs.ptr.long()
-    global_centers_all = graphs.center_node_idx.reshape(-1).long()
-
     for task_id in task_ids.unique(sorted=True).tolist():
         sample_ids = torch.where(task_ids == task_id)[0]
         expected = torch.arange(sample_ids[0], sample_ids[-1] + 1, device=sample_ids.device)
@@ -205,12 +207,13 @@ def iter_episodes(
             centers=centers,
             labels=labels[sample_ids],
             query_mask=query_mask[sample_ids],
-            global_centers=global_centers_all[sample_ids],
+            global_centers=local_global_ids[center_old],
             label_map=(
                 graphs.task_label_map[task_id].long()
                 if hasattr(graphs, "task_label_map")
                 else torch.arange(n_way, device=labels.device)
             ),
+            global_node_ids=local_global_ids[keep],
         )
         _validate_episode(
             episode,
@@ -346,14 +349,27 @@ def build_classification_loader(
 
 
 def update_episode_fingerprint(hasher, episode: Episode) -> None:
+    if episode.label_map is None or episode.global_node_ids is None:
+        raise ValueError("fingerprinting requires global label and sampled-node identities")
     for tensor in (
         episode.global_centers,
         episode.labels,
         episode.query_mask.long(),
         episode.label_map,
+        episode.global_node_ids,
+        episode.edge_index,
     ):
         hasher.update(tensor.detach().cpu().contiguous().numpy().tobytes())
 
 
 def new_fingerprint():
     return hashlib.sha256()
+
+
+def reset_episode_rng(seed: int = EPISODE_RNG_SEED) -> None:
+    """Reset sampling RNG after architecture-specific model initialization."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)

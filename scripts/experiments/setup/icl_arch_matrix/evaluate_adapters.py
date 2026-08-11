@@ -22,6 +22,7 @@ from scripts.experiments.setup.icl_arch_matrix.common_protocol import (
     classification_targets,
     iter_episodes,
     new_fingerprint,
+    reset_episode_rng,
     update_episode_fingerprint,
 )
 
@@ -37,6 +38,7 @@ def parse_args():
     parser.add_argument("--device", default="0")
     parser.add_argument("--workers", type=int, default=0)
     parser.add_argument("--model-ids", default="")
+    parser.add_argument("--datasets", default="")
     return parser.parse_args()
 
 
@@ -45,6 +47,7 @@ def evaluate_model(model, loader, device, *, n_query: int, equal_query_counts: b
     fingerprint = new_fingerprint()
     episode_count = 0
     model.eval()
+    reset_episode_rng()
     with torch.no_grad():
         for batch in loader:
             graphs = batch[0].to(device)
@@ -89,6 +92,7 @@ def evaluate_model(model, loader, device, *, n_query: int, equal_query_counts: b
 
 def main() -> int:
     args = parse_args()
+    torch.set_num_threads(16)
     torch.manual_seed(0)
     torch.cuda.manual_seed_all(0)
     device = torch.device(f"cuda:{args.device}" if torch.cuda.is_available() else "cpu")
@@ -103,6 +107,12 @@ def main() -> int:
         raise FileExistsError(f"refusing to overwrite results: {result_path}")
     result_path.parent.mkdir(parents=True, exist_ok=True)
     targets = classification_targets(args.catalog)
+    selected_datasets = set(filter(None, args.datasets.split(",")))
+    if selected_datasets:
+        missing = selected_datasets - targets.keys()
+        if missing:
+            raise ValueError(f"unknown classification datasets: {sorted(missing)}")
+        targets = {name: target for name, target in targets.items() if name in selected_datasets}
     expected_fingerprints = {}
 
     with result_path.open("w", encoding="utf-8") as handle:

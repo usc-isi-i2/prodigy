@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import random
+
+import numpy as np
 import torch
 from torch_geometric.data import Batch, Data
 
@@ -8,6 +11,9 @@ from scripts.experiments.setup.icl_arch_matrix.common_protocol import (
     N_SHOT,
     N_WAY,
     iter_episodes,
+    new_fingerprint,
+    reset_episode_rng,
+    update_episode_fingerprint,
 )
 
 
@@ -66,12 +72,43 @@ def _synthetic_classification_batch():
 def test_episode_extraction_removes_pooling_nodes_and_preserves_counts():
     episodes = list(iter_episodes(_synthetic_batch()))
     assert len(episodes) == 2
-    for episode in episodes:
+    samples_per_task = N_WAY * (N_SHOT + N_QUERY)
+    for task, episode in enumerate(episodes):
         assert episode.x.shape == (N_WAY * (N_SHOT + N_QUERY) * 3, 768)
         assert episode.centers.numel() == N_WAY * (N_SHOT + N_QUERY)
         assert int(episode.support_mask.sum()) == N_WAY * N_SHOT
         assert int(episode.query_mask.sum()) == N_WAY * N_QUERY
         assert (episode.centers >= 0).all()
+        expected = torch.arange(
+            1000 + task * samples_per_task,
+            1000 + (task + 1) * samples_per_task,
+        )
+        assert torch.equal(episode.global_centers, expected)
+        assert episode.global_node_ids is not None
+        assert (episode.global_node_ids >= 0).all()
+
+
+def test_episode_rng_reset_restores_all_sampling_streams():
+    reset_episode_rng()
+    first = (random.random(), np.random.random(), torch.rand(1).item())
+
+    random.random()
+    np.random.random()
+    torch.rand(100)
+    reset_episode_rng()
+    second = (random.random(), np.random.random(), torch.rand(1).item())
+
+    assert first == second
+
+
+def test_episode_fingerprint_uses_global_sampled_node_ids():
+    episode, *_ = iter_episodes(_synthetic_batch())
+    first = new_fingerprint()
+    update_episode_fingerprint(first, episode)
+    episode.global_node_ids[0] += 1
+    second = new_fingerprint()
+    update_episode_fingerprint(second, episode)
+    assert first.hexdigest() != second.hexdigest()
 
 
 def test_episode_extraction_supports_downstream_classification_shape():

@@ -50,7 +50,7 @@ worker() {
         run_name="archmatrix_prodigy_${model_id}_s0_${RUN_STAMP}"
         run_dir="$STATE_ROOT/prodigy/$run_name"
         checkpoint="$STATE_ROOT/prodigy/$run_name/checkpoint/state_dict_500.ckpt"
-        cmd=("$PYTHON" -u experiments/run_single_experiment.py --config "$CONFIG"
+        cmd=("$PYTHON" -u -m scripts.experiments.setup.icl_arch_matrix.train_prodigy --config "$CONFIG"
              --device "$gpu" --seed 0 --prefix "archmatrix_prodigy_${model_id}_s0"
              --timestamp "$RUN_STAMP" --state_dir "$STATE_ROOT/prodigy"
              --log_dir "$LOG_ROOT/prodigy" --neighbor_sampling_source_subset "$sources")

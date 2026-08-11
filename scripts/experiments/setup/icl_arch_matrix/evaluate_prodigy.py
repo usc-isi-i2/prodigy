@@ -23,6 +23,7 @@ from scripts.experiments.setup.icl_arch_matrix.common_protocol import (
     classification_targets,
     iter_episodes,
     new_fingerprint,
+    reset_episode_rng,
     update_episode_fingerprint,
 )
 
@@ -69,6 +70,7 @@ def parse_args():
     parser.add_argument("--run-stamp", default="20260810")
     parser.add_argument("--device", default="0")
     parser.add_argument("--model-ids", default="")
+    parser.add_argument("--datasets", default="")
     return parser.parse_args()
 
 
@@ -115,6 +117,7 @@ def resolved_params(args, dataset_name, target, graph_path, checkpoint, model_id
 
 def main() -> int:
     args = parse_args()
+    torch.set_num_threads(16)
     selected = set(filter(None, args.model_ids.split(",")))
     models = [model for model in build_models() if not selected or model.model_id in selected]
     if selected and selected != {model.model_id for model in models}:
@@ -125,9 +128,16 @@ def main() -> int:
     result_path.parent.mkdir(parents=True, exist_ok=True)
     Path(args.log_root).mkdir(parents=True, exist_ok=True)
     expected_fingerprints = {}
+    targets = classification_targets(args.catalog)
+    selected_datasets = set(filter(None, args.datasets.split(",")))
+    if selected_datasets:
+        missing = selected_datasets - targets.keys()
+        if missing:
+            raise ValueError(f"unknown classification datasets: {sorted(missing)}")
+        targets = {name: target for name, target in targets.items() if name in selected_datasets}
 
     with result_path.open("w", encoding="utf-8") as handle:
-        for dataset_name, target in classification_targets(args.catalog).items():
+        for dataset_name, target in targets.items():
             dataset, _, graph_path = build_classification_dataset(
                 dataset_name=dataset_name, data_root=args.data_root, target=target
             )
@@ -154,6 +164,7 @@ def main() -> int:
                 )
                 try:
                     trainer.model.eval()
+                    reset_episode_rng()
                     with torch.no_grad():
                         trainer.do_eval(audited, split_name="test", step=500)
                     metrics_path = Path(trainer.logging_dir) / "metrics_test_step500.json"
