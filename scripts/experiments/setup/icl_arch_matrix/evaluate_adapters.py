@@ -7,6 +7,7 @@ import argparse
 import gc
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import torch
@@ -32,7 +33,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--architecture", choices=("vision", "gilt"), required=True)
     parser.add_argument("--upstream-root", required=True)
-    parser.add_argument("--state-root", required=True)
+    parser.add_argument("--state-root", default="")
     parser.add_argument("--data-root", default="/dataMeR1/phil/data")
     parser.add_argument("--catalog", default="docs/graph_catalog.json")
     parser.add_argument("--results", required=True)
@@ -40,6 +41,11 @@ def parse_args():
     parser.add_argument("--workers", type=int, default=0)
     parser.add_argument("--model-ids", default="")
     parser.add_argument("--datasets", default="")
+    parser.add_argument(
+        "--random-init",
+        action="store_true",
+        help="Evaluate one deterministically initialized, untrained model.",
+    )
     return parser.parse_args()
 
 
@@ -98,10 +104,17 @@ def main() -> int:
     torch.cuda.manual_seed_all(0)
     device = torch.device(f"cuda:{args.device}" if torch.cuda.is_available() else "cpu")
     selected = set(filter(None, args.model_ids.split(",")))
-    models = [model for model in build_models() if not selected or model.model_id in selected]
-    if selected != {model.model_id for model in models} and selected:
-        missing = selected - {model.model_id for model in models}
-        raise ValueError(f"unknown model ids: {sorted(missing)}")
+    if args.random_init:
+        if selected:
+            raise ValueError("--model-ids cannot be combined with --random-init")
+        models = [SimpleNamespace(model_id="random_init", sources=())]
+    else:
+        if not args.state_root:
+            raise ValueError("--state-root is required unless --random-init is used")
+        models = [model for model in build_models() if not selected or model.model_id in selected]
+        if selected != {model.model_id for model in models} and selected:
+            missing = selected - {model.model_id for model in models}
+            raise ValueError(f"unknown model ids: {sorted(missing)}")
 
     result_path = Path(args.results)
     if result_path.exists():
@@ -124,16 +137,21 @@ def main() -> int:
                 target=target,
             )
             for plan_model in models:
-                checkpoint_path = (
-                    Path(args.state_root)
-                    / args.architecture
-                    / plan_model.model_id
-                    / "checkpoint"
-                    / f"state_dict_{TRAIN_STEPS}.pt"
-                )
-                checkpoint = torch.load(checkpoint_path, map_location="cpu")
+                torch.manual_seed(0)
+                torch.cuda.manual_seed_all(0)
                 model = build_adapter(args.architecture, args.upstream_root)
-                model.load_state_dict(checkpoint["model_state"], strict=True)
+                checkpoint = None
+                checkpoint_step = 0 if args.random_init else TRAIN_STEPS
+                if not args.random_init:
+                    checkpoint_path = (
+                        Path(args.state_root)
+                        / args.architecture
+                        / plan_model.model_id
+                        / "checkpoint"
+                        / f"state_dict_{TRAIN_STEPS}.pt"
+                    )
+                    checkpoint = torch.load(checkpoint_path, map_location="cpu")
+                    model.load_state_dict(checkpoint["model_state"], strict=True)
                 model.to(device)
                 loader = build_classification_loader(
                     dataset_name=dataset_name,
@@ -163,7 +181,8 @@ def main() -> int:
                     "model_id": plan_model.model_id,
                     "sources": list(plan_model.sources),
                     "seed": 0,
-                    "checkpoint_step": TRAIN_STEPS,
+                    "checkpoint_step": checkpoint_step,
+                    "baseline": "random_init" if args.random_init else "pretrained",
                     "task": "classification",
                     "dataset": dataset_name,
                     "n_way": EVAL_N_WAY,

@@ -7,6 +7,7 @@ import argparse
 import gc
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import torch
 import wandb
@@ -73,6 +74,11 @@ def parse_args():
     parser.add_argument("--device", default="0")
     parser.add_argument("--model-ids", default="")
     parser.add_argument("--datasets", default="")
+    parser.add_argument(
+        "--random-init",
+        action="store_true",
+        help="Evaluate one deterministically initialized, untrained PRODIGY model.",
+    )
     return parser.parse_args()
 
 
@@ -103,7 +109,6 @@ def resolved_params(args, dataset_name, target, graph_path, checkpoint, model_id
         "--eval_only_split", "test",
         "--eval_test_before_train", "False",
         "--eval_val_before_train", "False",
-        "--pretrained_model_run", str(checkpoint),
         "--ignore_label_embeddings", "False",
         "--linear_probe", "False",
         "--device", str(args.device),
@@ -113,6 +118,8 @@ def resolved_params(args, dataset_name, target, graph_path, checkpoint, model_id
         "--log_dir", args.log_root,
         "--override_log", "True",
     ]
+    if checkpoint is not None:
+        argv.extend(["--pretrained_model_run", str(checkpoint)])
     if target["eval_random_query"]:
         argv.extend(["--eval_random_query", "True"])
     return get_params(argv)
@@ -122,9 +129,14 @@ def main() -> int:
     args = parse_args()
     torch.set_num_threads(16)
     selected = set(filter(None, args.model_ids.split(",")))
-    models = [model for model in build_models() if not selected or model.model_id in selected]
-    if selected and selected != {model.model_id for model in models}:
-        raise ValueError(f"unknown model ids: {sorted(selected - {m.model_id for m in models})}")
+    if args.random_init:
+        if selected:
+            raise ValueError("--model-ids cannot be combined with --random-init")
+        models = [SimpleNamespace(model_id="random_init", sources=())]
+    else:
+        models = [model for model in build_models() if not selected or model.model_id in selected]
+        if selected and selected != {model.model_id for model in models}:
+            raise ValueError(f"unknown model ids: {sorted(selected - {m.model_id for m in models})}")
     result_path = Path(args.results)
     if result_path.exists():
         raise FileExistsError(f"refusing to overwrite results: {result_path}")
@@ -145,15 +157,18 @@ def main() -> int:
                 dataset_name=dataset_name, data_root=args.data_root, target=target
             )
             for plan_model in models:
-                checkpoint = (
-                    Path(args.state_root)
-                    / "prodigy"
-                    / f"archmatrix_prodigy_{plan_model.model_id}_s0_{args.run_stamp}"
-                    / "checkpoint"
-                    / f"state_dict_{TRAIN_STEPS}.ckpt"
-                )
-                if not checkpoint.is_file():
-                    raise FileNotFoundError(checkpoint)
+                checkpoint = None
+                checkpoint_step = 0 if args.random_init else TRAIN_STEPS
+                if not args.random_init:
+                    checkpoint = (
+                        Path(args.state_root)
+                        / "prodigy"
+                        / f"archmatrix_prodigy_{plan_model.model_id}_s0_{args.run_stamp}"
+                        / "checkpoint"
+                        / f"state_dict_{TRAIN_STEPS}.ckpt"
+                    )
+                    if not checkpoint.is_file():
+                        raise FileNotFoundError(checkpoint)
                 params = resolved_params(
                     args, dataset_name, target, graph_path, checkpoint, plan_model.model_id
                 )
@@ -169,9 +184,9 @@ def main() -> int:
                     trainer.model.eval()
                     reset_episode_rng()
                     with torch.no_grad():
-                        trainer.do_eval(audited, split_name="test", step=TRAIN_STEPS)
+                        trainer.do_eval(audited, split_name="test", step=checkpoint_step)
                     metrics_path = (
-                        Path(trainer.logging_dir) / f"metrics_test_step{TRAIN_STEPS}.json"
+                        Path(trainer.logging_dir) / f"metrics_test_step{checkpoint_step}.json"
                     )
                     metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
                     metrics = {key.removeprefix("test_"): value for key, value in metrics.items()}
@@ -187,7 +202,8 @@ def main() -> int:
                         "model_id": plan_model.model_id,
                         "sources": list(plan_model.sources),
                         "seed": 0,
-                        "checkpoint_step": TRAIN_STEPS,
+                        "checkpoint_step": checkpoint_step,
+                        "baseline": "random_init" if args.random_init else "pretrained",
                         "task": "classification",
                         "dataset": dataset_name,
                         "n_way": EVAL_N_WAY,

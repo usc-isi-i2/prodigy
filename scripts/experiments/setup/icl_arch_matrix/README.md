@@ -41,3 +41,14 @@ If GPU 0 becomes occupied by an unrelated user, archive any partial retry and us
 `queue_gpu1_final_recovery_tucker.sh`: it waits for the original GPU-1 worker, trains all
 remaining checkpoints only on GPU 1, and delays the two-GPU evaluation until both devices
 are below the free-memory threshold.
+
+## Random-initialization control
+
+`run_random_init_tucker.sh` evaluates one deterministic untrained instance of each
+architecture on the same four fingerprinted episode streams.  It does not associate the
+untrained model with any source set.  The aggregator requires exactly 12 cells, step 0,
+seed 0, no sources, cross-architecture fingerprint agreement, and exact agreement with
+the frozen 372-cell trained matrix fingerprints.  It reports random-init ROC-AUC, the
+update-100 mean, their delta, and the fraction of update-100 source-set models above the
+architecture/target-specific random baseline.  Set `DEVICE=0` or `DEVICE=1`; any other
+GPU is rejected and a busy owned GPU causes a no-clobber exit.
