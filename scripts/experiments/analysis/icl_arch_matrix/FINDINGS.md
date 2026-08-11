@@ -64,6 +64,19 @@ Two no-topology controls use only each center node's L2-normalized raw 768-dimen
 
 The two raw controls agree within 0.0002 in their four-target means. Relative to raw logistic, update-100 VISION averages +0.0561 ROC-AUC and 75.0% of its source-set/target cells are higher. GILT is effectively tied in the mean (+0.0002), although only 33.1% of its cells are higher; this reflects strong target dependence rather than uniform equivalence. PRODIGY averages -0.0989 and only 29.0% of its cells are higher. Thus the update-100 comparison does **not** establish learned graph-representation value for GILT or PRODIGY over raw text; only VISION clears this floor on average at the tested budget. These are transductive few-shot episode controls, not trained supervised target baselines.
 
+## Topology-only degree controls
+
+The topology controls discard node text and represent each center by three full-target-graph features: target-graph-z-scored `log1p` directed in-degree, out-degree, and total degree. Cosine prototypes and fixed L2 logistic regression are again fit only on each episode's 20 support nodes. The edge index is visible transductively, but no query labels or target-wide label fit are used. All eight rows exactly match the trained matrix's episode fingerprints.
+
+| Control | Covid Political | Election 2020 | Ukraine Suspended | TwiBot-20 | Mean |
+|---|---:|---:|---:|---:|---:|
+| Degree cosine prototype | 0.6047 | 0.5034 | 0.5391 | 0.6669 | 0.5785 |
+| Degree logistic | 0.5986 | 0.5275 | 0.5247 | 0.7148 | 0.5914 |
+
+Degree logistic is the stronger topology control in the four-target mean. Relative to it, update-100 VISION averages +0.1477 ROC-AUC, GILT +0.0918, and PRODIGY -0.0073; 53.2%, 50.0%, and 26.6% of their respective source-set/target cells are higher. The cell fractions show that even the positive VISION/GILT mean gaps are target-dependent rather than uniform.
+
+Taken together, VISION clears both the raw-text and degree floors on average. GILT clears degree but is tied with raw text, while PRODIGY clears neither stronger floor at update 100. This sharpens the result boundary: the low-budget architecture matrix establishes system differences, but it does not establish learned graph-representation value for every system. The degree control is not a trained structural encoder, shallow GNN, or label-propagation model, so it also does not exhaust topology-only alternatives.
+
 ## Protocol boundaries
 
 - Parameter counts differ: PRODIGY 1.64M, VISION 2.05M, GILT 2.12M.
