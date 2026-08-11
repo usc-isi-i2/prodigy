@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 import matplotlib
@@ -18,6 +20,20 @@ import pandas as pd
 
 ARCHITECTURES = ("prodigy", "vision", "gilt")
 TARGETS = ("covid_political", "election2020", "ukr_rus_suspended", "twibot20")
+EXPECTED_MODEL_IDS = (
+    "all9",
+    *(f"ord{order}_r{rung}" for order in "ABC" for rung in range(2, 9)),
+    "ss_covid",
+    "ss_covid_political",
+    "ss_cp_hk",
+    "ss_election2020",
+    "ss_facebook_page_reference",
+    "ss_midterm",
+    "ss_twibot20",
+    "ss_ukr_rus",
+    "ss_ukr_rus_suspended",
+)
+QUERY_COUNTS = {"covid_political": 12, "election2020": 1, "ukr_rus_suspended": 1, "twibot20": 12}
 DISPLAY = {
     "prodigy": "PRODIGY",
     "vision": "VISION",
@@ -34,6 +50,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", required=True, help="aggregate classification_long.csv")
     parser.add_argument("--output-root", default=str(Path(__file__).parent))
+    parser.add_argument("--overwrite", action="store_true")
     return parser.parse_args()
 
 
@@ -60,6 +77,34 @@ def validate(frame: pd.DataFrame) -> None:
     counts = frame.groupby("architecture").model_id.nunique().to_dict()
     if counts != {architecture: 31 for architecture in ARCHITECTURES}:
         raise ValueError(f"model-count mismatch: {counts}")
+    expected_grid = {
+        (architecture, model_id, target)
+        for architecture in ARCHITECTURES
+        for model_id in EXPECTED_MODEL_IDS
+        for target in TARGETS
+    }
+    if set(map(tuple, frame[keys].itertuples(index=False, name=None))) != expected_grid:
+        raise ValueError("architecture/model/target grid differs from the registered Cartesian product")
+    expected_protocol = {"task": {"classification"}, "n_way": {2}, "n_shot": {10}, "episodes": {128}}
+    for column, expected_values in expected_protocol.items():
+        if set(frame[column]) != expected_values:
+            raise ValueError(f"protocol mismatch for {column}: {sorted(set(frame[column]))}")
+    for target, n_query in QUERY_COUNTS.items():
+        part = frame[frame.dataset == target]
+        if set(part.n_query.astype(int)) != {n_query}:
+            raise ValueError(f"query-count mismatch for {target}")
+        if set(part.queries.astype(int)) != {128 * 2 * n_query}:
+            raise ValueError(f"total-query mismatch for {target}")
+    if not np.isfinite(frame[["roc_auc", "accuracy", "f1"]].to_numpy(float)).all():
+        raise ValueError("non-finite metric")
+    if not frame[["roc_auc", "accuracy", "f1"]].apply(lambda s: s.between(0, 1).all()).all():
+        raise ValueError("metric outside [0,1]")
+    source_maps = frame.groupby(["architecture", "model_id"]).sources.nunique()
+    if not source_maps.eq(1).all():
+        raise ValueError("source string drift within a model")
+    cross_arch_sources = frame.groupby("model_id").sources.nunique()
+    if not cross_arch_sources.eq(1).all():
+        raise ValueError("source registry differs across architectures")
 
 
 def add_max_rule(frame: pd.DataFrame) -> pd.DataFrame:
@@ -241,7 +286,21 @@ def main() -> int:
     output_root = Path(args.output_root)
     data_root = output_root / "data"
     data_root.mkdir(parents=True, exist_ok=True)
+    generated_outputs = [
+        data_root / "architecture_summary.csv",
+        data_root / "max_rule_cells.csv",
+        data_root / "paired_architecture_cells.csv",
+        data_root / "paired_architecture_summary.csv",
+        data_root / "target_summary.csv",
+        data_root / "summary.json",
+        output_root / "figures" / "architecture_comparison.pdf",
+        output_root / "figures" / "architecture_comparison.png",
+    ]
+    existing = [path for path in generated_outputs if path.exists()]
+    if existing and not args.overwrite:
+        raise FileExistsError(f"refusing to overwrite generated artifacts: {existing}")
 
+    input_bytes = input_path.read_bytes()
     frame = pd.read_csv(input_path)
     validate(frame)
     mixtures = add_max_rule(frame)
@@ -264,7 +323,9 @@ def main() -> int:
 
     summary = {
         "input": str(input_path),
+        "input_sha256": hashlib.sha256(input_bytes).hexdigest(),
         "input_rows": len(frame),
+        "generated_utc": datetime.now(timezone.utc).isoformat(),
         "seed": 0,
         "checkpoint_step": 100,
         "architectures": architecture.to_dict(orient="records"),
@@ -273,6 +334,9 @@ def main() -> int:
             target: frame[frame.dataset == target].episode_fingerprint.iloc[0]
             for target in TARGETS
         },
+        "upstream_pins": json.loads(
+            (Path(__file__).parents[2] / "setup" / "icl_arch_matrix" / "upstream_pins.json").read_text()
+        ),
         "claim_boundary": (
             "One training seed and a matched 100-update budget; use for qualitative "
             "architecture sensitivity and composition replication, not final ranking."
