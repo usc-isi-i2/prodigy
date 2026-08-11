@@ -52,3 +52,15 @@ the frozen 372-cell trained matrix fingerprints.  It reports random-init ROC-AUC
 update-100 mean, their delta, and the fraction of update-100 source-set models above the
 architecture/target-specific random baseline.  Set `DEVICE=0` or `DEVICE=1`; any other
 GPU is rejected and a busy owned GPU causes a no-clobber exit.
+
+## Raw-feature-only controls
+
+`run_raw_features_tucker.sh` evaluates two topology-free controls on the exact same
+four fingerprinted episode streams: cosine nearest-prototype classification and a
+fixed L2 logistic regression (`C=1`, `liblinear`). Both use only each center node's
+L2-normalized raw 768-dimensional text feature. The prototype is computed from the
+20 support nodes in each episode; logistic regression is also fit only on those
+support nodes. There is no pretraining, query-label tuning, neighborhood aggregation,
+or target-wide fitting. The aggregator requires exactly eight rows and rejects any
+episode fingerprint that differs from the frozen trained matrix. This launcher is
+CPU-only; it does not reserve or inspect a Tucker GPU.
