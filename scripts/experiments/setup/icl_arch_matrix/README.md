@@ -28,3 +28,8 @@ Use `MODEL_IDS=ss_ukr_rus` with the Tucker launchers for a one-cell pilot. A ful
 uses all 31 source sets. Only Tucker GPUs 0 and 1 are accepted by the training launcher.
 `run_matrix_tucker.sh` waits for both owned GPUs, runs and hash-validates that pilot, and
 only then advances to the remaining matrix and full aggregation.
+
+If an adapter OOM leaves a partial run, preserve its state and log under a timestamped
+archive, create a recovery worktree at the fixed commit, and launch
+`queue_oom_recovery_tucker.sh`. It waits for the original tmux session and both owned GPUs,
+then resumes only missing terminal checkpoints into a separate recovery log root.
