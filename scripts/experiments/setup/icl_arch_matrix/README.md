@@ -37,3 +37,7 @@ For the recorded worker-0 OOM, `queue_worker0_recovery_tucker.sh` can recover it
 remaining parity-assigned jobs on GPU 0 while the complementary GPU-1 worker finishes;
 each recovered job writes to a distinct log directory and the final queued recovery still
 performs the complete-grid evaluation gate.
+If GPU 0 becomes occupied by an unrelated user, archive any partial retry and use
+`queue_gpu1_final_recovery_tucker.sh`: it waits for the original GPU-1 worker, trains all
+remaining checkpoints only on GPU 1, and delays the two-GPU evaluation until both devices
+are below the free-memory threshold.
