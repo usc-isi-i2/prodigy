@@ -557,6 +557,7 @@ class TrainerFS():
         kwargs["eval_episode_seed_offset"] = self.parameter.get(
             "eval_episode_seed_offset", 0
         )
+        kwargs["eval_random_query"] = self.parameter.get("eval_random_query", False)
         if self.parameter["all_test"]:
             kwargs["all_test"] = True
         if self.parameter["label_set"]:
