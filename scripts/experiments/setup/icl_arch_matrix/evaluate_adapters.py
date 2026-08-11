@@ -17,6 +17,7 @@ from scripts.experiments.setup.icl_arch_matrix.architecture_adapters import buil
 from scripts.experiments.setup.icl_arch_matrix.common_protocol import (
     EVAL_N_SHOT,
     EVAL_N_WAY,
+    TRAIN_STEPS,
     build_classification_dataset,
     build_classification_loader,
     classification_targets,
@@ -128,7 +129,7 @@ def main() -> int:
                     / args.architecture
                     / plan_model.model_id
                     / "checkpoint"
-                    / "state_dict_500.pt"
+                    / f"state_dict_{TRAIN_STEPS}.pt"
                 )
                 checkpoint = torch.load(checkpoint_path, map_location="cpu")
                 model = build_adapter(args.architecture, args.upstream_root)
@@ -162,7 +163,7 @@ def main() -> int:
                     "model_id": plan_model.model_id,
                     "sources": list(plan_model.sources),
                     "seed": 0,
-                    "checkpoint_step": 500,
+                    "checkpoint_step": TRAIN_STEPS,
                     "task": "classification",
                     "dataset": dataset_name,
                     "n_way": EVAL_N_WAY,

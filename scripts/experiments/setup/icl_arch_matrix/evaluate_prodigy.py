@@ -19,6 +19,7 @@ from scripts.experiments.setup.icl_arch_matrix.common_protocol import (
     EVAL_EPISODES,
     EVAL_N_SHOT,
     EVAL_N_WAY,
+    TRAIN_STEPS,
     build_classification_dataset,
     classification_targets,
     iter_episodes,
@@ -149,7 +150,7 @@ def main() -> int:
                     / "prodigy"
                     / f"archmatrix_prodigy_{plan_model.model_id}_s0_{args.run_stamp}"
                     / "checkpoint"
-                    / "state_dict_500.ckpt"
+                    / f"state_dict_{TRAIN_STEPS}.ckpt"
                 )
                 if not checkpoint.is_file():
                     raise FileNotFoundError(checkpoint)
@@ -168,8 +169,10 @@ def main() -> int:
                     trainer.model.eval()
                     reset_episode_rng()
                     with torch.no_grad():
-                        trainer.do_eval(audited, split_name="test", step=500)
-                    metrics_path = Path(trainer.logging_dir) / "metrics_test_step500.json"
+                        trainer.do_eval(audited, split_name="test", step=TRAIN_STEPS)
+                    metrics_path = (
+                        Path(trainer.logging_dir) / f"metrics_test_step{TRAIN_STEPS}.json"
+                    )
                     metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
                     metrics = {key.removeprefix("test_"): value for key, value in metrics.items()}
                     if audited.episodes != EVAL_EPISODES:
@@ -184,7 +187,7 @@ def main() -> int:
                         "model_id": plan_model.model_id,
                         "sources": list(plan_model.sources),
                         "seed": 0,
-                        "checkpoint_step": 500,
+                        "checkpoint_step": TRAIN_STEPS,
                         "task": "classification",
                         "dataset": dataset_name,
                         "n_way": EVAL_N_WAY,

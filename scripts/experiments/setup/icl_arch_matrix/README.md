@@ -5,8 +5,8 @@ This is a lightweight, descriptive comparison—not a final paper-number run.
 - Seed: `0` only.
 - Pretraining: the final-core 31 physical source sets, all using the same source-confined
   30-way/3-shot/4-query neighbor-matching stream.
-- Budget: 500 optimizer updates, batch size 4 (2,000 episodes per model), with checkpoints
-  at 20, 60, 180, and 500 updates.
+- Budget: 100 optimizer updates, batch size 4 (400 episodes per model), with checkpoints
+  at 20, 60, and 100 updates.
 - Architectures: repository PRODIGY and thin adapters over pinned official VISION/GILT
   implementations (see `upstream_pins.json`).
 - GILT keeps its official model/optimizer defaults but uses one frozen seed-0 orthogonal

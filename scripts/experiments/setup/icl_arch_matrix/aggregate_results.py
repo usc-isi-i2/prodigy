@@ -10,6 +10,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from scripts.experiments.setup.final_core.core_plan import build_models
+from scripts.experiments.setup.icl_arch_matrix.common_protocol import TRAIN_STEPS
 
 
 ARCHITECTURES = ("prodigy", "vision", "gilt")
@@ -39,6 +40,8 @@ def main() -> int:
         loaded = read_jsonl(path)
         if any(row["architecture"] != architecture for row in loaded):
             raise ValueError(f"architecture mismatch in {path}")
+        if any(int(row["checkpoint_step"]) != TRAIN_STEPS for row in loaded):
+            raise ValueError(f"checkpoint-step mismatch in {path}; expected {TRAIN_STEPS}")
         rows.extend(loaded)
 
     selected = set(filter(None, args.model_ids.split(",")))
@@ -107,7 +110,7 @@ def main() -> int:
     summary = {
         "protocol": "descriptive_one_seed_fixed_episode_classification_comparison",
         "seed": 0,
-        "checkpoint_step": 500,
+        "checkpoint_step": TRAIN_STEPS,
         "models_per_architecture": len(model_order),
         "targets": list(TARGETS),
         "mean_roc_auc_over_all_cells": {

@@ -12,6 +12,7 @@ GPUS_TEXT="${GPUS:-0 1}"
 ARCHITECTURES_TEXT="${ARCHITECTURES:-prodigy vision gilt}"
 MODEL_IDS_TEXT="${MODEL_IDS:-}"
 RUN_STAMP="${RUN_STAMP:-20260810}"
+FINAL_STEP="${FINAL_STEP:-100}"
 DRY_RUN="${DRY_RUN:-0}"
 read -r -a GPU_IDS <<< "$GPUS_TEXT"
 read -r -a ARCHITECTURES <<< "$ARCHITECTURES_TEXT"
@@ -19,6 +20,7 @@ read -r -a ARCHITECTURES <<< "$ARCHITECTURES_TEXT"
 for gpu in "${GPU_IDS[@]}"; do
   [[ "$gpu" =~ ^[01]$ ]] || { echo "refusing non-owned Tucker GPU $gpu" >&2; exit 2; }
 done
+[[ "$FINAL_STEP" == 100 ]] || { echo "registered comparison step is 100" >&2; exit 2; }
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
 source "$(conda info --base)/etc/profile.d/conda.sh"
@@ -49,14 +51,14 @@ worker() {
       if [[ "$architecture" == prodigy ]]; then
         run_name="archmatrix_prodigy_${model_id}_s0_${RUN_STAMP}"
         run_dir="$STATE_ROOT/prodigy/$run_name"
-        checkpoint="$STATE_ROOT/prodigy/$run_name/checkpoint/state_dict_500.ckpt"
+        checkpoint="$STATE_ROOT/prodigy/$run_name/checkpoint/state_dict_${FINAL_STEP}.ckpt"
         cmd=("$PYTHON" -u -m scripts.experiments.setup.icl_arch_matrix.train_prodigy --config "$CONFIG"
              --device "$gpu" --seed 0 --prefix "archmatrix_prodigy_${model_id}_s0"
              --timestamp "$RUN_STAMP" --state_dir "$STATE_ROOT/prodigy"
              --log_dir "$LOG_ROOT/prodigy" --neighbor_sampling_source_subset "$sources")
       else
         run_dir="$STATE_ROOT/$architecture/$model_id"
-        checkpoint="$STATE_ROOT/$architecture/$model_id/checkpoint/state_dict_500.pt"
+        checkpoint="$STATE_ROOT/$architecture/$model_id/checkpoint/state_dict_${FINAL_STEP}.pt"
         upstream="$VISION_ROOT"
         [[ "$architecture" == gilt ]] && upstream="$GILT_ROOT"
         cmd=("$PYTHON" -u -m scripts.experiments.setup.icl_arch_matrix.train_model
@@ -86,7 +88,7 @@ worker() {
   echo "commit=$(git rev-parse HEAD)"
   echo "branch=$(git rev-parse --abbrev-ref HEAD)"
   echo "seed=0"
-  echo "steps=500"
+  echo "steps=$FINAL_STEP"
   echo "gpus=$GPUS_TEXT"
   echo "architectures=$ARCHITECTURES_TEXT"
   echo "started_utc=$(date -u +%FT%TZ)"
