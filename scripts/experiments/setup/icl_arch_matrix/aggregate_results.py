@@ -22,6 +22,7 @@ def parse_args():
     parser.add_argument("--vision", required=True)
     parser.add_argument("--gilt", required=True)
     parser.add_argument("--output-root", required=True)
+    parser.add_argument("--model-ids", default="")
     return parser.parse_args()
 
 
@@ -40,7 +41,11 @@ def main() -> int:
             raise ValueError(f"architecture mismatch in {path}")
         rows.extend(loaded)
 
-    model_order = {model.model_id: index for index, model in enumerate(build_models())}
+    selected = set(filter(None, args.model_ids.split(",")))
+    plan_models = [model for model in build_models() if not selected or model.model_id in selected]
+    if selected != {model.model_id for model in plan_models} and selected:
+        raise ValueError(f"unknown model ids: {sorted(selected - {m.model_id for m in plan_models})}")
+    model_order = {model.model_id: index for index, model in enumerate(plan_models)}
     expected = {
         (architecture, model_id, target)
         for architecture in ARCHITECTURES
@@ -81,7 +86,7 @@ def main() -> int:
     wide_fields = ["architecture", "model_id", "n_sources", "sources", *TARGETS, "mean_roc_auc"]
     wide_rows = []
     for architecture in ARCHITECTURES:
-        for plan_model in build_models():
+        for plan_model in plan_models:
             scores = [lookup[(architecture, plan_model.model_id, target)]["roc_auc"] for target in TARGETS]
             wide_rows.append({
                 "architecture": architecture,
@@ -105,7 +110,7 @@ def main() -> int:
         "checkpoint_step": 500,
         "models_per_architecture": len(model_order),
         "targets": list(TARGETS),
-        "mean_roc_auc_over_all_124_cells": {
+        "mean_roc_auc_over_all_cells": {
             architecture: sum(scores) / len(scores)
             for architecture, scores in architecture_scores.items()
         },

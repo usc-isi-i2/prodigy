@@ -26,6 +26,7 @@ model_arg=()
 [[ -n "$MODEL_IDS" ]] && model_arg=(--model-ids "${MODEL_IDS// /,}")
 prodigy_cmd=("$PYTHON" -u -m scripts.experiments.setup.icl_arch_matrix.evaluate_prodigy
   --state-root "$STATE_ROOT" --log-root "$LOG_ROOT/prodigy_runs"
+  --eval-state-root "$LOG_ROOT/prodigy_state"
   --results "$RESULTS_ROOT/prodigy.jsonl" --run-stamp "$RUN_STAMP" --device 0
   "${model_arg[@]}")
 vision_cmd=("$PYTHON" -u -m scripts.experiments.setup.icl_arch_matrix.evaluate_adapters
@@ -50,10 +51,11 @@ wait "$p1" || status=1
 (( status == 0 )) || exit "$status"
 CUDA_VISIBLE_DEVICES=0 "${gilt_cmd[@]}" > "$LOG_ROOT/queue/gilt.log" 2>&1
 
-if [[ -z "$MODEL_IDS" ]]; then
-  "$PYTHON" -m scripts.experiments.setup.icl_arch_matrix.aggregate_results \
-    --prodigy "$RESULTS_ROOT/prodigy.jsonl" \
-    --vision "$RESULTS_ROOT/vision.jsonl" \
-    --gilt "$RESULTS_ROOT/gilt.jsonl" \
-    --output-root "$RESULTS_ROOT/summary"
-fi
+aggregate_model_arg=()
+[[ -n "$MODEL_IDS" ]] && aggregate_model_arg=(--model-ids "${MODEL_IDS// /,}")
+"$PYTHON" -m scripts.experiments.setup.icl_arch_matrix.aggregate_results \
+  --prodigy "$RESULTS_ROOT/prodigy.jsonl" \
+  --vision "$RESULTS_ROOT/vision.jsonl" \
+  --gilt "$RESULTS_ROOT/gilt.jsonl" \
+  --output-root "$RESULTS_ROOT/summary" \
+  "${aggregate_model_arg[@]}"

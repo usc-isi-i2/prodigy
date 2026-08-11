@@ -63,6 +63,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default=str(Path(__file__).with_name("prodigy_training.yaml")))
     parser.add_argument("--state-root", required=True)
+    parser.add_argument("--eval-state-root")
     parser.add_argument("--data-root", default="/dataMeR1/phil/data")
     parser.add_argument("--catalog", default="docs/graph_catalog.json")
     parser.add_argument("--log-root", required=True)
@@ -75,6 +76,7 @@ def parse_args():
 
 
 def resolved_params(args, dataset_name, target, graph_path, checkpoint, model_id):
+    eval_state_root = args.eval_state_root or str(Path(args.state_root) / "eval")
     argv = [
         "--config", args.config,
         "--dataset", dataset_name,
@@ -106,7 +108,7 @@ def resolved_params(args, dataset_name, target, graph_path, checkpoint, model_id
         "--device", str(args.device),
         "--prefix", f"archmatrix_prodigy_eval_{model_id}_{dataset_name}",
         "--timestamp", args.run_stamp,
-        "--state_dir", str(Path(args.state_root) / "eval"),
+        "--state_dir", eval_state_root,
         "--log_dir", args.log_root,
         "--override_log", "True",
     ]

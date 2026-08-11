@@ -23,3 +23,5 @@ This is a lightweight, descriptive comparison—not a final paper-number run.
 
 Use `MODEL_IDS=ss_ukr_rus` with the Tucker launchers for a one-cell pilot. A full launch
 uses all 31 source sets. Only Tucker GPUs 0 and 1 are accepted by the training launcher.
+`run_matrix_tucker.sh` waits for both owned GPUs, runs and hash-validates that pilot, and
+only then advances to the remaining matrix and full aggregation.
