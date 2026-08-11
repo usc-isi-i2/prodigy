@@ -88,4 +88,5 @@ frozen test episodes; test support labels and query labels are not used for
 fitting or selection. These models have much more target supervision than the
 10-shot in-context systems and are therefore supervised references, not matched-
 label-budget competitors. The launcher uses only Tucker GPUs 0 and 1 and refuses
-to start if either is occupied.
+to start on an occupied device. Set both `GPU_MLP` and `GPU_GNN` to the same owned
+GPU to run the models serially when only one device is available.

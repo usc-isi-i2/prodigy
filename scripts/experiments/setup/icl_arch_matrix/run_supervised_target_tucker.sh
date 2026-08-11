@@ -12,7 +12,6 @@ DRY_RUN="${DRY_RUN:-0}"
 
 [[ "$GPU_MLP" =~ ^[01]$ ]] || { echo "refusing non-owned Tucker GPU $GPU_MLP" >&2; exit 2; }
 [[ "$GPU_GNN" =~ ^[01]$ ]] || { echo "refusing non-owned Tucker GPU $GPU_GNN" >&2; exit 2; }
-[[ "$GPU_MLP" != "$GPU_GNN" ]] || { echo "MLP and GNN require distinct owned GPUs" >&2; exit 2; }
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
 source "$(conda info --base)/etc/profile.d/conda.sh"
@@ -46,17 +45,22 @@ for gpu in "$GPU_MLP" "$GPU_GNN"; do
   (( used <= 2000 )) || { echo "GPU $gpu already uses ${used} MiB; refusing to collide" >&2; exit 3; }
 done
 
-set +e
-CUDA_VISIBLE_DEVICES="$GPU_MLP" "${mlp_cmd[@]}" > "$LOG_ROOT/queue/mlp.log" 2>&1 &
-mlp_pid=$!
-CUDA_VISIBLE_DEVICES="$GPU_GNN" "${gnn_cmd[@]}" > "$LOG_ROOT/queue/graphsage.log" 2>&1 &
-gnn_pid=$!
-wait "$mlp_pid"; mlp_status=$?
-wait "$gnn_pid"; gnn_status=$?
-set -e
-(( mlp_status == 0 && gnn_status == 0 )) || {
-  echo "supervised worker failure: mlp=$mlp_status graphsage=$gnn_status" >&2
-  exit 4
-}
+if [[ "$GPU_MLP" == "$GPU_GNN" ]]; then
+  CUDA_VISIBLE_DEVICES="$GPU_MLP" "${mlp_cmd[@]}" > "$LOG_ROOT/queue/mlp.log" 2>&1
+  CUDA_VISIBLE_DEVICES="$GPU_GNN" "${gnn_cmd[@]}" > "$LOG_ROOT/queue/graphsage.log" 2>&1
+else
+  set +e
+  CUDA_VISIBLE_DEVICES="$GPU_MLP" "${mlp_cmd[@]}" > "$LOG_ROOT/queue/mlp.log" 2>&1 &
+  mlp_pid=$!
+  CUDA_VISIBLE_DEVICES="$GPU_GNN" "${gnn_cmd[@]}" > "$LOG_ROOT/queue/graphsage.log" 2>&1 &
+  gnn_pid=$!
+  wait "$mlp_pid"; mlp_status=$?
+  wait "$gnn_pid"; gnn_status=$?
+  set -e
+  (( mlp_status == 0 && gnn_status == 0 )) || {
+    echo "supervised worker failure: mlp=$mlp_status graphsage=$gnn_status" >&2
+    exit 4
+  }
+fi
 
 "${aggregate_cmd[@]}" > "$LOG_ROOT/queue/aggregate.log" 2>&1
