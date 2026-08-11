@@ -53,6 +53,17 @@ All three update-100 means exceed their random-init anchor. VISION is already st
 
 The preserved 500-update single-source (`ss_ukr_rus`) pilot uses the same four targets and evaluation fingerprints. Its architecture means are PRODIGY 0.7592, VISION 0.7578, and GILT 0.6829, versus VISION 0.6609, GILT 0.6261, and PRODIGY 0.5896 at the 100-update pilot. The rank change on one source set confirms that 100 updates is pre-saturation and prevents a claim of architecture superiority.
 
+## Raw-feature-only controls
+
+Two no-topology controls use only each center node's L2-normalized raw 768-dimensional text feature. Cosine prototypes are support-class means; fixed L2 logistic regression (`C=1`, `liblinear`) is fit independently on the same 20 support nodes in each episode. Neither control pretrains, tunes on query labels, aggregates neighborhoods, or fits across the target dataset. All eight control rows exactly match the trained matrix's four episode fingerprints.
+
+| Control | Covid Political | Election 2020 | Ukraine Suspended | TwiBot-20 | Mean |
+|---|---:|---:|---:|---:|---:|
+| Raw cosine prototype | 0.8228 | 0.8354 | 0.5119 | 0.5609 | 0.6827 |
+| Raw logistic | 0.8242 | 0.8369 | 0.5165 | 0.5542 | 0.6830 |
+
+The two raw controls agree within 0.0002 in their four-target means. Relative to raw logistic, update-100 VISION averages +0.0561 ROC-AUC and 75.0% of its source-set/target cells are higher. GILT is effectively tied in the mean (+0.0002), although only 33.1% of its cells are higher; this reflects strong target dependence rather than uniform equivalence. PRODIGY averages -0.0989 and only 29.0% of its cells are higher. Thus the update-100 comparison does **not** establish learned graph-representation value for GILT or PRODIGY over raw text; only VISION clears this floor on average at the tested budget. These are transductive few-shot episode controls, not trained supervised target baselines.
+
 ## Protocol boundaries
 
 - Parameter counts differ: PRODIGY 1.64M, VISION 2.05M, GILT 2.12M.
