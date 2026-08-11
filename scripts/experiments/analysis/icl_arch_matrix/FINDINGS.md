@@ -27,7 +27,7 @@ The architecture effect is target-dependent. VISION/GILT are strongest on Covid 
 
 ## Composition rule
 
-The best-included-specialist envelope recurs strongly for VISION and GILT but not for undertrained PRODIGY:
+At update 100, the best-included-specialist envelope is strong for VISION and GILT but not PRODIGY:
 
 | Architecture | Best-specialist MAE | Pooled r | Target-demeaned r | Mean residual |
 |---|---:|---:|---:|---:|
@@ -35,7 +35,19 @@ The best-included-specialist envelope recurs strongly for VISION and GILT but no
 | GILT | 0.0304 | 0.993 | 0.866 | -0.0304 |
 | PRODIGY | 0.1471 | 0.243 | -0.094 | -0.1386 |
 
-Thus the primary 2,500-update PRODIGY composition result is not an architecture-free property at update 100: it appears in VISION/GILT immediately, while PRODIGY has not yet learned a stable source-composition geometry.
+Thus the primary 2,500-update PRODIGY composition result is not an architecture-free property at update 100: early-budget composition behavior differs across these systems. The later pilot contains only one source set, so it cannot establish that PRODIGY learns the full composition envelope later.
+
+## Random-initialization control
+
+One deterministic, untrained instance per architecture was evaluated on the exact same four episode streams. The model has no associated source set; it retains each architecture's native raw-feature transforms, random message passing, and support-label mechanism. The comparison with update 100 therefore measures the end-to-end effect of 100 pretraining updates, not gain over a raw-feature-only floor.
+
+| Architecture | Random-init mean | Update-100 mean | Mean delta | Update-100 cells above random |
+|---|---:|---:|---:|---:|
+| PRODIGY | 0.4169 | 0.5840 | +0.1671 | 91.1% |
+| VISION | 0.6485 | 0.7391 | +0.0906 | 73.4% |
+| GILT | 0.5348 | 0.6831 | +0.1483 | 82.3% |
+
+All three update-100 means exceed their random-init anchor. VISION is already strong at random initialization on Covid Political (0.7312) and Election 2020 (0.7849), so its early lead is partly architectural rather than wholly learned in pretraining. Ukraine Suspended is the exception: update-100 means change by only +0.0046 for PRODIGY and decrease by 0.0350/0.0050 for VISION/GILT. The aggregate is one initialization and the update-100 side averages 31 source-set models; it is not a paired checkpoint trajectory.
 
 ## Budget sensitivity
 
