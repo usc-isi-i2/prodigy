@@ -20,6 +20,9 @@ This is a lightweight, descriptive comparison—not a final paper-number run.
   grid unless the hashes agree across all architectures. The episode RNG is reset after
   architecture-specific model initialization, and the audit includes global centers,
   sampled neighborhood node IDs, and sampled edges.
+- VISION/GILT adapter updates backpropagate the four episode losses sequentially before
+  one optimizer step. This preserves the registered effective batch of four while avoiding
+  retention of four large architecture graphs in GPU memory.
 
 Use `MODEL_IDS=ss_ukr_rus` with the Tucker launchers for a one-cell pilot. A full launch
 uses all 31 source sets. Only Tucker GPUs 0 and 1 are accepted by the training launcher.

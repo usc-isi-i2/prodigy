@@ -100,17 +100,25 @@ def main() -> int:
             model.train()
             graphs = batch[0].to(device)
             moved = (graphs,) + tuple(x.to(device) if torch.is_tensor(x) else x for x in batch[1:])
+            optimizer.zero_grad(set_to_none=True)
             losses, accuracies = [], []
             for episode in iter_episodes(moved):
-                loss, accuracy = model.episode_loss_and_accuracy(episode)
-                losses.append(loss)
+                episode_loss, accuracy = model.episode_loss_and_accuracy(episode)
+                # Backpropagate each episode immediately. This is mathematically the
+                # same mean loss over the registered four-episode update, while
+                # avoiding retention of four large VISION autograd graphs at once.
+                (episode_loss / TRAIN_BATCH_SIZE).backward()
+                losses.append(episode_loss.detach())
                 accuracies.append(accuracy.detach())
-            loss = torch.stack(losses).mean()
-            optimizer.zero_grad(set_to_none=True)
-            loss.backward()
+            if len(losses) != TRAIN_BATCH_SIZE:
+                raise RuntimeError(
+                    f"expected {TRAIN_BATCH_SIZE} episodes in an update, got {len(losses)}"
+                )
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
             scheduler.step()
+
+            loss = torch.stack(losses).mean()
 
             row = {
                 "step": step,
