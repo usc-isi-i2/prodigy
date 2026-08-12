@@ -6,6 +6,7 @@ import torch
 from scripts.experiments.setup.entity_disjoint_eval.protocol import (
     canonical_global_id,
     AllowedNodePositiveSampler,
+    induced_neighbor_sampler,
     select_center_clean_batches,
 )
 
@@ -69,3 +70,31 @@ def test_allowed_positive_sampler_filters_walk_outputs():
         Base(), torch.tensor([False, True, False, True, False])
     )
     assert sampler.random_walk(torch.tensor([0]), "inout").tolist() == [1, 3]
+
+
+def test_induced_neighbor_sampler_preserves_global_indices_and_edge_values():
+    SparseTensor = pytest.importorskip("torch_sparse").SparseTensor
+    class Base:
+        size = 2
+        limit = 10
+        num_hops = 1
+        hop_sizes = None
+        walk_hops = 1
+
+    base = Base()
+    base.whole_adj = SparseTensor(
+        row=torch.tensor([0, 0, 1, 2, 3]),
+        col=torch.tensor([1, 2, 0, 3, 2]),
+        value=torch.tensor([10, 11, 12, 13, 14]),
+        sparse_sizes=(4, 4),
+    )
+    cloned, metadata = induced_neighbor_sampler(
+        base, torch.tensor([True, True, False, False])
+    )
+    row, col, value = cloned.whole_adj.coo()
+    assert row.tolist() == [0, 1]
+    assert col.tolist() == [1, 0]
+    assert value.tolist() == [10, 12]
+    assert cloned.whole_adj.sparse_sizes() == (4, 4)
+    assert metadata == {"original_adjacency_nnz": 5, "induced_adjacency_nnz": 2}
+    assert base.whole_adj.nnz() == 5

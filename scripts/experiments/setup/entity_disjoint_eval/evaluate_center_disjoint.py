@@ -32,10 +32,12 @@ from experiments.run_single_experiment import load_dataset, seed_everything  # n
 from experiments.trainer import TrainerFS, _to_float  # noqa: E402
 from fixed_test_plan import CHECKPOINT_STEP, checkpoint_path, physical_jobs  # noqa: E402
 from protocol import (  # noqa: E402
+    CENTER_PROTOCOL,
     EPISODE_COUNT,
-    PROTOCOL,
+    INDUCED_PROTOCOL,
     TARGETS,
     configure_allowed_episode_centers,
+    induced_neighbor_sampler,
     select_center_clean_batches,
     sha256_file,
 )
@@ -44,11 +46,19 @@ from protocol import (  # noqa: E402
 class CleanAuditedLoader(base.AuditedLoader):
     """Fingerprint exact sampled context and quantify residual context overlap."""
 
-    def __init__(self, loader, expected_batch_size: int, excluded_mask: torch.Tensor):
+    def __init__(
+        self,
+        loader,
+        expected_batch_size: int,
+        excluded_mask: torch.Tensor,
+        *,
+        require_zero_overlap: bool,
+    ):
         super().__init__(loader, expected_batch_size)
         if excluded_mask.dtype != torch.bool or excluded_mask.ndim != 1:
             raise ValueError("excluded_mask must be a one-dimensional bool tensor")
         self.excluded_mask = excluded_mask.cpu()
+        self.require_zero_overlap = require_zero_overlap
         self.context_node_occurrences = 0
         self.context_overlap_occurrences = 0
         self._context_overlap_nodes: set[int] = set()
@@ -64,6 +74,8 @@ class CleanAuditedLoader(base.AuditedLoader):
                 raise AssertionError("sampled global node ID exceeds graph bounds")
             real_ids = global_ids[valid]
             overlap = self.excluded_mask[real_ids]
+            if self.require_zero_overlap and bool(overlap.any()):
+                raise AssertionError("induced-subgraph sampler returned an excluded node")
             self.context_node_occurrences += int(real_ids.numel())
             self.context_overlap_occurrences += int(overlap.sum())
             self._context_overlap_nodes.update(int(value) for value in torch.unique(real_ids[overlap]).tolist())
@@ -135,17 +147,20 @@ def evaluate_cell(
     result_path: Path,
     args: argparse.Namespace,
 ) -> None:
+    protocol = INDUCED_PROTOCOL if args.exclusion_level == "induced_subgraph" else CENTER_PROTOCOL
     if result_path.is_file():
         existing = json.loads(result_path.read_text())
         checks = {
-            "protocol": PROTOCOL,
+            "protocol": protocol,
             "model_id": job.model.model_id,
             "seed": job.seed,
             "target": target,
             "checkpoint_step": CHECKPOINT_STEP,
+            "exclusion_level": args.exclusion_level,
             "episode_plan_fingerprint": target_plan["fingerprint"],
             "unfiltered_prefix_plan_fingerprint": target_plan["unfiltered_prefix_fingerprint"],
             "exclusion_artifact_sha256": target_plan["exclusion"]["exclusion_artifact_sha256"],
+            **target_plan["induced_adjacency"],
         }
         for field, wanted in checks.items():
             if existing.get(field) != wanted:
@@ -156,15 +171,22 @@ def evaluate_cell(
     base.reset_fixed_eval_rng(target)
     if torch.cuda.is_available():
         torch.cuda.reset_peak_memory_stats()
-    loader = base.make_frozen_loader(dataset, target_plan["collate_fn"], target_plan["batches"])
+    loader = base.make_frozen_loader(
+        target_plan["dataset"], target_plan["collate_fn"], target_plan["batches"]
+    )
     audited = CleanAuditedLoader(
-        loader, args.batch_size, target_plan["excluded_mask"]
+        loader,
+        args.batch_size,
+        target_plan["context_forbidden_mask"],
+        require_zero_overlap=args.exclusion_level == "induced_subgraph",
     )
     started = time.monotonic()
     with torch.no_grad():
         trainer.model.eval()
         loss, score, score_std, aux_loss, ranks = trainer.do_eval(
-            audited, split_name=f"test_center_clean_{target}", step=CHECKPOINT_STEP
+            audited,
+            split_name=f"test_{args.exclusion_level}_{target}",
+            step=CHECKPOINT_STEP,
         )
     elapsed = time.monotonic() - started
     if audited.batch_count != args.batch_count or audited.episode_count != EPISODE_COUNT:
@@ -178,7 +200,7 @@ def evaluate_cell(
     if not all(math.isfinite(float(value)) for value in numeric.values()):
         raise ValueError(f"non-finite result for {job.key}/{target}: {numeric}")
     payload = {
-        "protocol": PROTOCOL,
+        "protocol": protocol,
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "evaluation_commit": base.git_commit(),
         "worker_index": args.worker_index,
@@ -192,7 +214,7 @@ def evaluate_cell(
         "split": "test",
         "edge_view": "static_train",
         "target_edge_view": "static_test",
-        "exclusion_level": "episode_centers",
+        "exclusion_level": args.exclusion_level,
         "exclusion_scope": "target IDs recurring in either other full exact-ID graph",
         "batch_size": args.batch_size,
         "batch_count": audited.batch_count,
@@ -211,6 +233,7 @@ def evaluate_cell(
         "sampled_context_unique_overlap_nodes": audited.context_unique_overlap_nodes,
         **target_plan["exclusion"],
         **target_plan["sampling"],
+        **target_plan["induced_adjacency"],
         **numeric,
     }
     if ranks:
@@ -230,6 +253,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--targets", default=",".join(TARGETS))
     parser.add_argument("--batch-size", default=32, type=int)
     parser.add_argument("--candidate-multiplier", default=8, type=int)
+    parser.add_argument(
+        "--exclusion-level",
+        choices=("episode_centers", "induced_subgraph"),
+        default="episode_centers",
+    )
     parser.add_argument(
         "--model-ids",
         default="ss_ukr_rus,ss_covid,ss_midterm",
@@ -355,12 +383,30 @@ def main() -> int:
                     f"original plan for {job.key}"
                 )
         base.reset_fixed_eval_rng(target)
-        _, _, _, loader = trainer._build_dataloaders(dataset, trainer.dataset_name)
+        target_dataset = dataset
         target_id = list(dataset.graph.source_graph_names).index(target)
         allowed_mask = dataset.graph.graph_id == target_id
         excluded_tensor = torch.tensor(sorted(excluded), dtype=torch.long)
         allowed_mask[excluded_tensor] = False
         allowed = torch.nonzero(allowed_mask, as_tuple=False).flatten().long()
+        induced_adjacency: dict[str, int] = {}
+        if args.exclusion_level == "induced_subgraph":
+            target_dataset = copy.copy(dataset)
+            target_dataset.neighbor_sampler, background_meta = induced_neighbor_sampler(
+                dataset.neighbor_sampler, allowed_mask
+            )
+            target_dataset.nm_test_neighbor_sampler, positive_meta = induced_neighbor_sampler(
+                dataset.nm_test_neighbor_sampler, allowed_mask
+            )
+            target_dataset.nm_holdout_neighbor_sampler = target_dataset.nm_test_neighbor_sampler
+            induced_adjacency = {
+                "background_original_adjacency_nnz": background_meta["original_adjacency_nnz"],
+                "background_induced_adjacency_nnz": background_meta["induced_adjacency_nnz"],
+                "positive_original_adjacency_nnz": positive_meta["original_adjacency_nnz"],
+                "positive_induced_adjacency_nnz": positive_meta["induced_adjacency_nnz"],
+                "allowed_target_nodes": int(allowed.numel()),
+            }
+        _, _, _, loader = trainer._build_dataloaders(target_dataset, trainer.dataset_name)
         allowed_set = configure_allowed_episode_centers(loader, allowed)
         candidate_batches = list(loader.batch_sampler)
         clean_batches, sampling = select_center_clean_batches(
@@ -374,18 +420,24 @@ def main() -> int:
             raise AssertionError("clean plan does not contain 512 episodes")
         target_plans[target] = {
             "batches": clean_batches,
+            "dataset": target_dataset,
             "collate_fn": loader.collate_fn,
             "fingerprint": fingerprint,
             "unfiltered_prefix_fingerprint": unfiltered_prefix_fingerprint,
             "exclusion": exclusion_meta,
             "sampling": sampling,
-            "excluded_mask": ~allowed_mask & (dataset.graph.graph_id == target_id),
+            "context_forbidden_mask": (
+                ~allowed_mask
+                if args.exclusion_level == "induced_subgraph"
+                else ~allowed_mask & (dataset.graph.graph_id == target_id)
+            ),
+            "induced_adjacency": induced_adjacency,
         }
         print(
             f"CLEAN_PLAN target={target} fingerprint={fingerprint} "
             f"unfiltered_prefix={unfiltered_prefix_fingerprint} "
             f"sampling={sampling} excluded_nodes={len(excluded)} "
-            f"allowed_nodes={len(allowed_set)}", flush=True
+            f"allowed_nodes={len(allowed_set)} induced_adjacency={induced_adjacency}", flush=True
         )
         del excluded, excluded_tensor, allowed, allowed_mask, allowed_set
     trainer.test_dataloader = None

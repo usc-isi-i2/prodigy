@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import copy
 import hashlib
 from pathlib import Path
 from typing import Any, Iterable
@@ -16,7 +17,9 @@ DB_TABLE = {
     "covid": "ids_covid",
     "midterm": "ids_midterm",
 }
-PROTOCOL = "final_core_exact_id_center_disjoint_union3_v1"
+CENTER_PROTOCOL = "final_core_exact_id_center_disjoint_union3_v1"
+INDUCED_PROTOCOL = "final_core_exact_id_induced_disjoint_union3_v1"
+PROTOCOL = CENTER_PROTOCOL
 EPISODE_COUNT = 512
 
 
@@ -117,6 +120,43 @@ class AllowedNodePositiveSampler:
         if values.numel() == 0:
             return values
         return values[self.allowed_mask[values.detach().cpu()].to(values.device)]
+
+
+def induced_neighbor_sampler(base_sampler: Any, allowed_mask: torch.Tensor) -> tuple[Any, dict[str, int]]:
+    """Clone a sampler with the full-index induced adjacency on allowed nodes.
+
+    Sparse values are preserved because they encode original edge IDs (and the
+    reverse-edge sign convention) used by ``SubgraphDataset``.
+    """
+    if allowed_mask.dtype != torch.bool or allowed_mask.ndim != 1:
+        raise ValueError("allowed_mask must be a one-dimensional bool tensor")
+    from torch_sparse import SparseTensor
+
+    whole_adj = base_sampler.whole_adj
+    sizes = tuple(int(value) for value in whole_adj.sparse_sizes())
+    if sizes != (allowed_mask.numel(), allowed_mask.numel()):
+        raise ValueError(
+            f"adjacency shape {sizes} does not match allowed mask length {allowed_mask.numel()}"
+        )
+    row, col, value = whole_adj.coo()
+    allowed = allowed_mask.to(row.device)
+    keep = allowed[row] & allowed[col]
+    induced = SparseTensor(
+        row=row[keep],
+        col=col[keep],
+        value=value[keep] if value is not None else None,
+        sparse_sizes=sizes,
+        is_sorted=True,
+        trust_data=True,
+    )
+    cloned = copy.copy(base_sampler)
+    cloned.whole_adj = induced
+    metadata = {
+        "original_adjacency_nnz": int(whole_adj.nnz()),
+        "induced_adjacency_nnz": int(induced.nnz()),
+    }
+    del row, col, value, allowed, keep
+    return cloned, metadata
 
 
 def configure_allowed_episode_centers(loader: Any, allowed_indices: torch.Tensor) -> set[int]:

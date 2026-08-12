@@ -16,7 +16,7 @@ from typing import Any
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from protocol import EPISODE_COUNT, PROTOCOL, TARGETS
+from protocol import CENTER_PROTOCOL, EPISODE_COUNT, INDUCED_PROTOCOL, TARGETS
 
 
 SPECIALISTS = tuple(f"ss_{target}" for target in TARGETS)
@@ -43,7 +43,14 @@ def main() -> int:
     parser.add_argument("--results-root", required=True, type=Path)
     parser.add_argument("--original-results-root", required=True, type=Path)
     parser.add_argument("--output-root", required=True, type=Path)
+    parser.add_argument(
+        "--variant", choices=("center_clean", "induced"), default="center_clean"
+    )
     args = parser.parse_args()
+    expected_protocol = INDUCED_PROTOCOL if args.variant == "induced" else CENTER_PROTOCOL
+    expected_level = "induced_subgraph" if args.variant == "induced" else "episode_centers"
+    controlled_score_key = f"{args.variant}_score"
+    delta_key = f"delta_{args.variant}_minus_original"
     args.output_root.mkdir(parents=True, exist_ok=True)
     rows = []
     plan_by_target: dict[str, set[str]] = {target: set() for target in TARGETS}
@@ -62,12 +69,12 @@ def main() -> int:
                 clean = json.loads(clean_path.read_text())
                 original = json.loads(original_path.read_text())
                 checks = {
-                    "protocol": PROTOCOL,
+                    "protocol": expected_protocol,
                     "seed": seed,
                     "model_id": model_id,
                     "target": target,
                     "episode_count": EPISODE_COUNT,
-                    "exclusion_level": "episode_centers",
+                    "exclusion_level": expected_level,
                 }
                 for field, wanted in checks.items():
                     if clean.get(field) != wanted:
@@ -79,6 +86,13 @@ def main() -> int:
                 for field in ("score", "score_std", "loss", "aux_loss"):
                     if not math.isfinite(float(clean[field])):
                         raise ValueError(f"{clean_path}: non-finite {field}")
+                if args.variant == "induced":
+                    for field in (
+                        "sampled_context_overlap_occurrences",
+                        "sampled_context_unique_overlap_nodes",
+                    ):
+                        if int(clean[field]) != 0:
+                            raise ValueError(f"{clean_path}: induced result has nonzero {field}")
                 plan_by_target[target].add(clean["episode_plan_fingerprint"])
                 observed_by_target[target].add(clean["observed_episode_fingerprint"])
                 context_by_target[target].add((
@@ -91,8 +105,8 @@ def main() -> int:
                     "source": source,
                     "target": target,
                     "original_score": float(original["score"]),
-                    "center_clean_score": float(clean["score"]),
-                    "delta_clean_minus_original": float(clean["score"]) - float(original["score"]),
+                    controlled_score_key: float(clean["score"]),
+                    delta_key: float(clean["score"]) - float(original["score"]),
                     "excluded_target_nodes": int(clean["excluded_node_count"]),
                     "target_graph_nodes": int(clean["target_graph_nodes"]),
                     "sampled_context_overlap_occurrences": int(clean["sampled_context_overlap_occurrences"]),
@@ -119,18 +133,19 @@ def main() -> int:
                 "source": source,
                 "target": target,
                 "original_mean": statistics.mean(row["original_score"] for row in selected),
-                "center_clean_mean": statistics.mean(row["center_clean_score"] for row in selected),
-                "delta_mean": statistics.mean(row["delta_clean_minus_original"] for row in selected),
-                "seed_deltas": [row["delta_clean_minus_original"] for row in selected],
+                f"{args.variant}_mean": statistics.mean(row[controlled_score_key] for row in selected),
+                "delta_mean": statistics.mean(row[delta_key] for row in selected),
+                "seed_deltas": [row[delta_key] for row in selected],
             })
     payload = {
-        "protocol": PROTOCOL,
+        "protocol": expected_protocol,
+        "variant": args.variant,
         "cells": 18,
         "seeds": 3,
         "directions": 6,
         "original_mean": statistics.mean(row["original_score"] for row in rows),
-        "center_clean_mean": statistics.mean(row["center_clean_score"] for row in rows),
-        "delta_mean": statistics.mean(row["delta_clean_minus_original"] for row in rows),
+        f"{args.variant}_mean": statistics.mean(row[controlled_score_key] for row in rows),
+        "delta_mean": statistics.mean(row[delta_key] for row in rows),
         "directions_improved": sum(item["delta_mean"] > 0 for item in pair_summaries),
         "pairs": pair_summaries,
         "episode_plan_fingerprints": {target: next(iter(values)) for target, values in plan_by_target.items()},
