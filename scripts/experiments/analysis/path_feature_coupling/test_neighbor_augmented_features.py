@@ -53,6 +53,19 @@ def test_identity_probe_skips_single_graph_pilots():
     assert "at least two graphs" in result["error"]
 
 
+def test_identity_probe_supports_two_graph_pilots():
+    rng = np.random.default_rng(11)
+    left = rng.normal(-2, 0.1, size=(20, 3)).astype(np.float32)
+    right = rng.normal(2, 0.1, size=(20, 3)).astype(np.float32)
+    samples = {
+        "left": spaces(left, left),
+        "right": spaces(right, right),
+    }
+    result = identity_probe(samples, ["left", "right"], "raw_center", seed=0)
+    assert result["test_balanced_accuracy"] == 1.0
+    assert result["test_macro_ovr_auc"] == 1.0
+
+
 def test_projection_split_is_balanced_and_deterministic():
     one = np.ones((10, 2), dtype=np.float32)
     samples = {name: spaces(one, one) for name in ("a", "b", "c")}

@@ -219,16 +219,20 @@ def identity_probe(
     model.fit(x_train, y_train)
     prediction = model.predict(x_test)
     probability = model.predict_proba(x_test)
-    binary = label_binarize(y_test, classes=np.arange(len(graph_names)))
+    if len(graph_names) == 2:
+        macro_auc = roc_auc_score(y_test, probability[:, 1])
+    else:
+        binary = label_binarize(y_test, classes=np.arange(len(graph_names)))
+        macro_auc = roc_auc_score(
+            binary, probability, average="macro", multi_class="ovr"
+        )
     return {
         "graphs": graph_names,
         "n_train": int(len(x_train)),
         "n_test": int(len(x_test)),
         "chance_balanced_accuracy": float(1.0 / len(graph_names)),
         "test_balanced_accuracy": float(balanced_accuracy_score(y_test, prediction)),
-        "test_macro_ovr_auc": float(
-            roc_auc_score(binary, probability, average="macro", multi_class="ovr")
-        ),
+        "test_macro_ovr_auc": float(macro_auc),
     }
 
 
