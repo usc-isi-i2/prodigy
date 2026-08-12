@@ -11,7 +11,8 @@ The script emits a single JSON artifact holding, for every graph:
     approx. clustering, largest WCC/SCC fraction) and in/out degree CCDFs,
   * feature scalars (missing-bio rate, feature norm, effective dimensionality),
   * feature/structure coupling (edge feature homophily vs. a random-pair
-    baseline, Dirichlet energy, and label homophily where labels exist),
+    baseline, Dirichlet energy, and, where labels exist, raw edge homophily plus
+    directed Newman's nominal assortativity and class-conditional mixing),
 and, for every ordered pair of graphs:
   * degree-distribution KS distance (in and out),
   * feature centroid cosine distance, Frechet distance, RBF-MMD^2, and
@@ -287,6 +288,82 @@ def effective_dim(rows: np.ndarray) -> float:
     return float(s * s / (ev @ ev)) if (ev @ ev) > 0 else float("nan")
 
 
+def directed_label_mixing(yu: np.ndarray, yv: np.ndarray) -> dict[str, Any]:
+    """Summarize nominal label mixing on a directed labeled-edge sample.
+
+    Newman's nominal assortativity corrects raw same-label edge homophily for
+    the source and destination endpoint marginals of the *observed edges*.  This
+    matters for imbalanced labels and directed graphs: the global node-label
+    balance is generally not the correct chance baseline.
+    """
+    yu = np.asarray(yu, dtype=np.int64).reshape(-1)
+    yv = np.asarray(yv, dtype=np.int64).reshape(-1)
+    if len(yu) != len(yv):
+        raise ValueError("source and destination label arrays must have equal length")
+    if len(yu) == 0:
+        return {
+            "label_homophily": None,
+            "label_homophily_expected": None,
+            "label_assortativity_newman": None,
+            "labeled_edge_count": 0,
+            "label_mixing": None,
+        }
+
+    classes = np.union1d(yu, yv)
+    src_idx = np.searchsorted(classes, yu)
+    dst_idx = np.searchsorted(classes, yv)
+    counts = np.zeros((len(classes), len(classes)), dtype=np.int64)
+    np.add.at(counts, (src_idx, dst_idx), 1)
+
+    total = int(counts.sum())
+    mixing = counts.astype(np.float64) / total
+    source_marginal = mixing.sum(axis=1)
+    destination_marginal = mixing.sum(axis=0)
+    observed = float(np.trace(mixing))
+    expected = float(source_marginal @ destination_marginal)
+    denominator = 1.0 - expected
+    assortativity = ((observed - expected) / denominator
+                     if denominator > np.finfo(np.float64).eps else None)
+
+    diagonal = np.diag(counts).astype(np.float64)
+    source_counts = counts.sum(axis=1)
+    destination_counts = counts.sum(axis=0)
+
+    def keyed(values: np.ndarray) -> dict[str, float | int | None]:
+        return {
+            str(int(label)): (value.item() if hasattr(value, "item") else value)
+            for label, value in zip(classes, values)
+        }
+
+    source_rates = np.divide(
+        diagonal, source_counts, out=np.full(len(classes), np.nan), where=source_counts > 0)
+    destination_rates = np.divide(
+        diagonal, destination_counts, out=np.full(len(classes), np.nan),
+        where=destination_counts > 0)
+
+    return {
+        "label_homophily": observed,
+        "label_homophily_expected": expected,
+        "label_assortativity_newman": (float(assortativity)
+                                        if assortativity is not None else None),
+        "labeled_edge_count": total,
+        "label_mixing": {
+            "classes": [int(label) for label in classes],
+            "counts": counts.tolist(),
+            "source_endpoint_counts": keyed(source_counts),
+            "destination_endpoint_counts": keyed(destination_counts),
+            "same_label_rate_by_source_class": {
+                key: (None if np.isnan(value) else float(value))
+                for key, value in keyed(source_rates).items()
+            },
+            "same_label_rate_by_destination_class": {
+                key: (None if np.isnan(value) else float(value))
+                for key, value in keyed(destination_rates).items()
+            },
+        },
+    }
+
+
 def coupling_metrics(
     x, edge_index: np.ndarray, n_nodes: int, y: np.ndarray | None,
     has_labels: bool, rng: np.random.Generator, n_edge_sample: int,
@@ -296,9 +373,11 @@ def coupling_metrics(
     n_edges = edge_index.shape[1]
     esel = rng.choice(n_edges, size=min(n_edge_sample, n_edges), replace=False)
     u, v = edge_index[0][esel].astype(np.int64), edge_index[1][esel].astype(np.int64)
+    out["sampled_edge_count"] = int(len(esel))
     xu, xv = gather_rows(x, u), gather_rows(x, v)
     both = (np.abs(xu).sum(1) > 0) & (np.abs(xv).sum(1) > 0)
     out["edge_bio_coverage"] = float(both.mean())
+    out["feature_edge_count"] = int(both.sum())
     if both.sum() >= 10:
         a, b = unit_norm(xu[both]), unit_norm(xv[both])
         cos = (a * b).sum(1)
@@ -313,24 +392,38 @@ def coupling_metrics(
         fs = unit_norm(feat_sample[:m])
         cos_rand = (fs[: m // 2] * fs[m // 2 :]).sum(1)
         out["feature_homophily_random"] = float(cos_rand.mean())
+        out["feature_random_pair_count"] = int(len(cos_rand))
     else:
         out["feature_homophily_random"] = None
+        out["feature_random_pair_count"] = 0
 
     # label homophily over edges where both endpoints carry a valid label
     if has_labels and y is not None:
         yu, yv = y[u], y[v]
         lab = (yu >= 0) & (yv >= 0)
-        if lab.sum() >= 10:
-            out["label_homophily"] = float((yu[lab] == yv[lab]).mean())
-            out["labeled_edge_fraction"] = float(lab.mean())
+        if lab.any():
+            out.update(directed_label_mixing(yu[lab], yv[lab]))
+            # Preserve the effective count and mixing matrix for diagnosis, but
+            # do not publish unstable scalar summaries from fewer than 10 edges.
+            if lab.sum() < 10:
+                out["label_homophily"] = None
+                out["label_homophily_expected"] = None
+                out["label_assortativity_newman"] = None
         else:
-            out["label_homophily"] = None
+            out.update(directed_label_mixing(
+                np.zeros(0, dtype=np.int64), np.zeros(0, dtype=np.int64)))
+        out["labeled_edge_fraction"] = float(lab.mean())
         labeled = y[y >= 0]
         vals, counts = np.unique(labeled, return_counts=True)
         out["class_balance"] = {int(k): int(c) for k, c in zip(vals, counts)}
         out["n_labeled_nodes"] = int(len(labeled))
     else:
         out["label_homophily"] = None
+        out["label_homophily_expected"] = None
+        out["label_assortativity_newman"] = None
+        out["labeled_edge_count"] = 0
+        out["labeled_edge_fraction"] = None
+        out["label_mixing"] = None
         out["class_balance"] = None
     return out
 

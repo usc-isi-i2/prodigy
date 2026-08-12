@@ -10,7 +10,10 @@ the coupling a message-passing GNN actually transfers:
    descriptions for Facebook; zero-filled when text is missing): missing-text
    rate, feature norm, effective dimensionality.
 3. **Feature–structure coupling** — edge feature homophily vs. a random-pair
-   baseline, Dirichlet energy, and label homophily where labels exist.
+   baseline, Dirichlet energy, and label mixing where labels exist. Label output
+   includes raw same-label edge homophily, the directed endpoint-marginal chance
+   baseline, Newman's nominal assortativity, per-class conditional rates, and the
+   effective labeled-edge count.
 
 For every **ordered pair** of graphs it also computes: in/out degree-distribution
 KS distance, feature centroid cosine distance, Frechet distance, RBF-MMD², and
@@ -22,7 +25,9 @@ clouds; 0 = indistinguishable, 2 = perfectly separable).
 - `compute_graph_divergence.py` — the runner. Loads each graph, computes all of the
   above, writes one JSON artifact.
 - Plots + write-up: [`scripts/experiments/analysis/graph_divergence/graph_divergence.ipynb`](../../plotting/graph_divergence/graph_divergence.ipynb),
-  reading `graph_divergence_data.json` in that folder.
+  reading `graph_divergence_data.json` in that folder. Running the notebook exports
+  the scalar `figures/per_graph_summary.csv` and long-form class-conditional
+  `figures/per_class_label_mixing.csv` findings tables.
 
 ## Graphs compared
 
@@ -70,7 +75,10 @@ meta:        generated_at, data_root, git_commit, hostname, seed, config{...},
              graph_paths{name -> path relative to data_root}
 graphs:      [ordered graph names]
 per_graph:   name -> { topology scalars, in/out degree CCDFs, feature scalars,
-                       coupling scalars, class_balance, label_homophily, ... }
+                       coupling scalars, class_balance, label_homophily,
+                       label_homophily_expected, label_assortativity_newman,
+                       labeled_edge_count, label_mixing{classes, counts,
+                       endpoint counts, per-class same-label rates}, ... }
 pairwise:    metric -> NxN matrix (row/col order == `graphs`), for metrics
              indegree_ks, outdegree_ks, feat_centroid_cosdist, feat_frechet,
              feat_mmd2, proxy_a_distance
@@ -93,4 +101,10 @@ pairwise:    metric -> NxN matrix (row/col order == `graphs`), for metrics
   samples; MMD on ≤`--mmd-cap` points/graph; clustering on `--clustering-nodes`
   sampled nodes with a per-hub neighbor cap (so `avg_clustering_approx` is an
   estimate). Reciprocity/assortativity are exact unless E > `--max-edges-exact`.
+- **Label imbalance and direction are handled explicitly.** Raw label homophily is
+  descriptive only. `label_homophily_expected` is computed from the source and
+  destination label marginals among sampled labeled edges—not from the global node
+  class balance—and `label_assortativity_newman` chance-corrects the raw rate using
+  that baseline. Inspect `labeled_edge_count`, `labeled_edge_fraction`, and the
+  per-class rates before comparing graphs with different label coverage.
 - Every metric is wrapped so one failure yields `null` rather than aborting the run.
