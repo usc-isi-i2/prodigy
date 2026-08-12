@@ -1,4 +1,4 @@
-# Findings: exact-ID-clean episode centers
+# Findings: exact-ID-disjoint transfer
 
 ## Design
 
@@ -13,7 +13,7 @@ The preflight exactly reproduced each original target plan fingerprint before
 scoring. The clean run contains 18 physical cells: six directed source--target
 pairs by three seeds.
 
-## Result
+## Center-clean result
 
 Across the 18 cells, mean accuracy changes from **0.3192** on the original fixed
 streams to **0.3148** on exact-ID-clean episode centers, a **-0.0044** absolute
@@ -43,9 +43,43 @@ Covid context, and 30.6% of Midterm context (741,996; 666,362; and 77,297 unique
 overlapping nodes respectively). Therefore this stage is not evidence for fully
 entity-disjoint graph abstraction.
 
-The diagnostic warrants the stronger second stage: rebuild message-passing
-samplers on the allowed-node induced subgraphs and rescore the same 18 cells.
-Only that result can address repeated identities in sampled encoder context.
+This motivated the stronger second stage below.
+
+## Fully induced result
+
+The second stage rebuilds both the static-train message-passing adjacency and
+the static-test positive adjacency on the allowed target nodes. Across
+16,613,455 sampled node occurrences, the evaluator observed **zero forbidden
+nodes**. The exclusion is also a substantial domain intervention: it removes
+41.8% of Ukraine nodes, 18.8% of Covid nodes, and 70.4% of Midterm nodes. Each
+target plan and sampled stream was identical across the evaluated donor/seed
+checkpoints.
+
+| Source -> target | Original | Center-clean | Fully induced | Induced - original |
+|---|---:|---:|---:|---:|
+| Ukraine -> Covid | .5557 | .4820 | .4500 | -.1057 |
+| Ukraine -> Midterm | .2145 | .1869 | .1653 | -.0492 |
+| Covid -> Ukraine | .3844 | .4262 | .3877 | +.0033 |
+| Covid -> Midterm | .2136 | .1938 | .1711 | -.0426 |
+| Midterm -> Ukraine | .2166 | .2729 | .2429 | +.0264 |
+| Midterm -> Covid | .3302 | .3271 | .2998 | -.0304 |
+| **Mean** | **.3192** | **.3148** | **.2861** | **-.0330** |
+
+The fully induced mean is 2.87 percentage points below center-clean and 3.30
+points below the original streams. Nevertheless, transfer remains far above
+30-way chance (3.33%) in every direction. Two of six directions remain above
+their original accuracy, and the other four fall by 3.0--10.6 points.
+
+The correct conclusion is therefore narrower than “identity overlap explains
+transfer” or “identity overlap is irrelevant.” Removing literal recurring
+identities is associated with lower scores in some directions, especially
+Ukraine to Covid, but nontrivial cross-graph transfer remains. This is a
+distributional comparison: the original, center-clean, and fully induced
+episode streams differ, so their deltas are not paired-episode causal effects.
+
+This control applies only to the three graphs with compatible complete Twitter
+IDs. It does not establish entity-disjoint transfer for graphs whose identifiers
+are local, hashed with incompatible provenance, partial, or cross-platform.
 
 ## Provenance
 
@@ -60,3 +94,16 @@ Only that result can address repeated identities in sampled encoder context.
   `bb3f933de1de0f054e861faa66a7dcef4686217594200d7af8558f45f0f1dfec`.
 - Frozen original, clean-plan, and observed-stream fingerprints are stored in
   `data/center_clean_paired_cells.tsv` and `data/center_clean_summary.json`.
+
+Fully induced stage:
+
+- Implementation-only branch: `codex/entity-disjoint-induced-run`, commits
+  `29c642b` and `91e4b4b`; result-documentation branch remains local.
+- Run: `state/entity_disjoint_eval/induced_disjoint_v001`.
+- Completed UTC: `2026-08-12T08:28:35Z`.
+- Paired table SHA-256:
+  `6161c64d6e15f44c4cdb743aff376b1ecba40be02a17a6c30ae9b43eefa577b4`.
+- Aggregate summary SHA-256:
+  `401a1bae83837dafa55b03085ba464027bc6db23b297c342f71d15a414c4d611`.
+- Frozen plan, observed-stream, adjacency-size, and zero-overlap audits are in
+  `data/induced_paired_cells.tsv` and `data/induced_summary.json`.
