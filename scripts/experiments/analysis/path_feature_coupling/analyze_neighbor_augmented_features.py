@@ -12,8 +12,9 @@ included in the neighbor mean.
 
 The runner compares raw, neighbor-mean-only, and concatenated spaces using the
 same nodes and pair draws; repeats the matched exact-distance 1/2/3/far analysis;
-fits held-out graph-identity probes; and exports separate 3D PCA coordinates for
-an interactive raw-versus-augmented visualization.
+fits held-out graph-identity probes; and exports both unsupervised 3D PCA and
+supervised 3D LDA coordinates. Both projections are fit on the same 70% training
+split, while the interactive view displays only the held-out 30% of nodes.
 """
 
 from __future__ import annotations
@@ -267,21 +268,90 @@ def matched_path_metrics(
     return result
 
 
-def pca_projection(
+def projection_split(
     samples: dict[str, dict[str, np.ndarray]],
     graph_names: list[str],
-    space_name: str,
+    seed: int,
+) -> tuple[np.ndarray, np.ndarray, dict[str, Any]]:
+    """Create one balanced per-graph train/test split shared by every projection."""
+    rng = np.random.default_rng(seed)
+    total = sum(len(samples[name]["raw_center"]) for name in graph_names)
+    test_mask = np.zeros(total, dtype=bool)
+    labels = np.empty(total, dtype=np.int16)
+    start = 0
+    counts: dict[str, dict[str, int]] = {}
+    for label, name in enumerate(graph_names):
+        n = len(samples[name]["raw_center"])
+        stop = start + n
+        labels[start:stop] = label
+        order = rng.permutation(n)
+        n_test = min(n - 1, max(1, int(round(0.30 * n))))
+        test_mask[start + order[:n_test]] = True
+        counts[name] = {"train": int(n - n_test), "test": int(n_test)}
+        start = stop
+    return test_mask, labels, {
+        "method": "independent deterministic 70/30 split within each graph",
+        "seed": seed,
+        "counts_by_graph": counts,
+        "n_train": int((~test_mask).sum()),
+        "n_test": int(test_mask.sum()),
+    }
+
+
+def pca_projection(
+    matrix: np.ndarray,
+    train_mask: np.ndarray,
     seed: int,
 ) -> tuple[np.ndarray, dict[str, Any]]:
     from sklearn.decomposition import PCA
 
-    matrix = np.concatenate([samples[name][space_name] for name in graph_names], axis=0)
     pca = PCA(n_components=3, svd_solver="randomized", random_state=seed)
-    coordinates = pca.fit_transform(matrix).astype(np.float32)
+    pca.fit(matrix[train_mask])
+    coordinates = pca.transform(matrix).astype(np.float32)
     return coordinates, {
-        "space": space_name,
+        "method": "PCA fit on projection training split",
         "explained_variance_ratio": [float(v) for v in pca.explained_variance_ratio_],
         "explained_variance_ratio_sum": float(pca.explained_variance_ratio_.sum()),
+    }
+
+
+def lda_projection(
+    matrix: np.ndarray,
+    labels: np.ndarray,
+    train_mask: np.ndarray,
+) -> tuple[np.ndarray, dict[str, Any]]:
+    """Fit graph-label-supervised LDA on train nodes and transform all nodes."""
+    from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+    from sklearn.metrics import balanced_accuracy_score
+    from sklearn.preprocessing import StandardScaler
+
+    scaler = StandardScaler()
+    train = scaler.fit_transform(matrix[train_mask])
+    all_scaled = scaler.transform(matrix)
+    n_components = min(3, len(np.unique(labels[train_mask])) - 1, matrix.shape[1])
+    lda = LinearDiscriminantAnalysis(n_components=n_components, solver="svd")
+    lda.fit(train, labels[train_mask])
+    coordinates = lda.transform(all_scaled).astype(np.float32)
+    if n_components < 3:
+        coordinates = np.pad(coordinates, ((0, 0), (0, 3 - n_components)))
+
+    train_coordinates = coordinates[train_mask]
+    classes = np.unique(labels[train_mask])
+    centroids = np.stack(
+        [train_coordinates[labels[train_mask] == label].mean(axis=0) for label in classes]
+    )
+    heldout = coordinates[~train_mask]
+    squared_distance = ((heldout[:, None, :] - centroids[None, :, :]) ** 2).sum(axis=2)
+    prediction = classes[np.argmin(squared_distance, axis=1)]
+    return coordinates, {
+        "method": "standardized LDA fit with graph labels on projection training split",
+        "n_nonzero_components": n_components,
+        "explained_discriminant_ratio": [float(v) for v in lda.explained_variance_ratio_[:3]],
+        "explained_discriminant_ratio_sum": float(lda.explained_variance_ratio_[:3].sum()),
+        "heldout_nearest_centroid_balanced_accuracy_in_3d": float(
+            balanced_accuracy_score(labels[~train_mask], prediction)
+        ),
+        "chance_balanced_accuracy": float(1.0 / len(classes)),
     }
 
 
@@ -292,7 +362,8 @@ def write_projection_csv(
     degree: dict[str, np.ndarray],
     sampled_count: dict[str, np.ndarray],
     samples: dict[str, dict[str, np.ndarray]],
-    projections: dict[str, np.ndarray],
+    projections: dict[str, dict[str, np.ndarray]],
+    test_mask: np.ndarray,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fields = [
@@ -300,7 +371,9 @@ def write_projection_csv(
         "node_id",
         "degree",
         "sampled_neighbors",
+        "projection_split",
         *[f"{space}_pc{component}" for space in SPACE_NAMES for component in (1, 2, 3)],
+        *[f"{space}_lda{component}" for space in SPACE_NAMES for component in (1, 2, 3)],
     ]
     offsets: dict[str, tuple[int, int]] = {}
     start = 0
@@ -319,11 +392,15 @@ def write_projection_csv(
                     "node_id": int(node_ids[graph][local]),
                     "degree": int(degree[graph][local]),
                     "sampled_neighbors": int(sampled_count[graph][local]),
+                    "projection_split": "test" if test_mask[begin + local] else "train",
                 }
                 for space in SPACE_NAMES:
                     for component in range(3):
                         row[f"{space}_pc{component + 1}"] = float(
-                            projections[space][begin + local, component]
+                            projections[space]["pca"][begin + local, component]
+                        )
+                        row[f"{space}_lda{component + 1}"] = float(
+                            projections[space]["lda"][begin + local, component]
                         )
                 writer.writerow(row)
 
@@ -465,13 +542,30 @@ def main() -> int:
             for space in SPACE_NAMES
         }
 
-    projections: dict[str, np.ndarray] = {}
+    test_mask, projection_labels, split_metadata = projection_split(
+        graph_samples, graph_names, args.seed + 50_000
+    )
+    train_mask = ~test_mask
+    result["projection"]["split"] = split_metadata
+    projections: dict[str, dict[str, np.ndarray]] = {}
     for offset, space in enumerate(SPACE_NAMES):
-        coordinates, metadata = pca_projection(
-            graph_samples, graph_names, space, args.seed + 50_000 + offset
+        matrix = np.concatenate(
+            [graph_samples[name][space] for name in graph_names], axis=0
         )
-        projections[space] = coordinates
-        result["projection"][space] = metadata
+        pca_coordinates, pca_metadata = pca_projection(
+            matrix, train_mask, args.seed + 60_000 + offset
+        )
+        lda_coordinates, lda_metadata = lda_projection(
+            matrix, projection_labels, train_mask
+        )
+        projections[space] = {
+            "pca": pca_coordinates,
+            "lda": lda_coordinates,
+        }
+        result["projection"][space] = {
+            "pca": pca_metadata,
+            "lda": lda_metadata,
+        }
     write_projection_csv(
         Path(args.projection_out),
         graph_names,
@@ -480,6 +574,7 @@ def main() -> int:
         sampled_counts,
         graph_samples,
         projections,
+        test_mask,
     )
 
     out_path = Path(args.out)
