@@ -44,3 +44,10 @@ nodes, so its exact-ID intersections are lower bounds for the full graph. Hong
 Kong and TwiBot-20 retain dataset-internal string namespaces whose compatibility
 with Twitter snowflakes is not established; those are not compared as account
 IDs.
+
+## Completed run
+
+The completed aggregate is documented under
+`scripts/experiments/analysis/identity_overlap_audit/`. Tucker `v002` ran at
+commit `c44720c`; the first `v001` attempt failed before scanning data because
+the repository root was missing from `sys.path` and is preserved unchanged.
