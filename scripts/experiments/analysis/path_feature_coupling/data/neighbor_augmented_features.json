@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generated_at": "2026-08-07 17:24:04",
+    "generated_at": "2026-08-12 12:46:59",
     "hostname": "tucker",
-    "git_commit": "292791cbd11bbd84fd903d36b50cd8651a5e7fad",
+    "git_commit": "a6aae69f5ee516a6a98a14856f471400b4e5c381",
     "data_root": "/dataMeR1/phil/data",
     "seed": 0,
     "representation": "concat(center feature, mean of sampled undirected neighbor features)",
@@ -297,7 +297,7 @@
           }
         }
       },
-      "elapsed_seconds": 69.8805685043335
+      "elapsed_seconds": 192.86586022377014
     },
     "ukr_rus_twitter": {
       "graph_path": "/dataMeR1/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.pt",
@@ -560,7 +560,7 @@
           }
         }
       },
-      "elapsed_seconds": 39.439258337020874
+      "elapsed_seconds": 33.14210295677185
     },
     "midterm": {
       "graph_path": "/dataMeR1/phil/data/midterm/graphs/retweet_graph_parquet.pt",
@@ -823,7 +823,7 @@
           }
         }
       },
-      "elapsed_seconds": 2.0781850814819336
+      "elapsed_seconds": 2.0791258811950684
     },
     "cp_hk_twitter": {
       "graph_path": "/dataMeR1/phil/data/cp_hk_twitter/graphs/retweet_graph.pt",
@@ -1086,7 +1086,7 @@
           }
         }
       },
-      "elapsed_seconds": 2.2529404163360596
+      "elapsed_seconds": 2.547614097595215
     },
     "twibot20": {
       "graph_path": "/dataMeR1/phil/data/twibot20/graphs/retweet_graph.pt",
@@ -1349,7 +1349,7 @@
           }
         }
       },
-      "elapsed_seconds": 1.9063191413879395
+      "elapsed_seconds": 2.2401461601257324
     },
     "election2020": {
       "graph_path": "/dataMeR1/phil/data/election2020/graphs/retweet_graph.pt",
@@ -1612,7 +1612,7 @@
           }
         }
       },
-      "elapsed_seconds": 11.424717426300049
+      "elapsed_seconds": 10.929849624633789
     },
     "covid_political": {
       "graph_path": "/dataMeR1/phil/data/covid_political/graphs/retweet_graph.pt",
@@ -1875,7 +1875,7 @@
           }
         }
       },
-      "elapsed_seconds": 0.962580680847168
+      "elapsed_seconds": 0.9954056739807129
     },
     "ukr_rus_suspended": {
       "graph_path": "/dataMeR1/phil/data/ukr_rus_suspended/graphs/retweet_graph.pt",
@@ -2138,7 +2138,7 @@
           }
         }
       },
-      "elapsed_seconds": 1.2976667881011963
+      "elapsed_seconds": 1.3902652263641357
     }
   },
   "random_pair_distances": {
@@ -3218,32 +3218,114 @@
     }
   },
   "projection": {
+    "split": {
+      "method": "independent deterministic 70/30 split within each graph",
+      "seed": 50000,
+      "counts_by_graph": {
+        "covid19_twitter": {
+          "train": 1400,
+          "test": 600
+        },
+        "ukr_rus_twitter": {
+          "train": 1400,
+          "test": 600
+        },
+        "midterm": {
+          "train": 1400,
+          "test": 600
+        },
+        "cp_hk_twitter": {
+          "train": 1400,
+          "test": 600
+        },
+        "twibot20": {
+          "train": 1400,
+          "test": 600
+        },
+        "election2020": {
+          "train": 1400,
+          "test": 600
+        },
+        "covid_political": {
+          "train": 1400,
+          "test": 600
+        },
+        "ukr_rus_suspended": {
+          "train": 1400,
+          "test": 600
+        }
+      },
+      "n_train": 11200,
+      "n_test": 4800
+    },
     "raw_center": {
-      "space": "raw_center",
-      "explained_variance_ratio": [
-        0.04930851608514786,
-        0.04313144460320473,
-        0.026778357103466988
-      ],
-      "explained_variance_ratio_sum": 0.11921831965446472
+      "pca": {
+        "method": "PCA fit on projection training split",
+        "explained_variance_ratio": [
+          0.049512751400470734,
+          0.0437670573592186,
+          0.02693125233054161
+        ],
+        "explained_variance_ratio_sum": 0.12021106481552124
+      },
+      "lda": {
+        "method": "standardized LDA fit with graph labels on projection training split",
+        "n_nonzero_components": 3,
+        "explained_discriminant_ratio": [
+          0.5745076537132263,
+          0.14694729447364807,
+          0.10880797356367111
+        ],
+        "explained_discriminant_ratio_sum": 0.8302629590034485,
+        "heldout_nearest_centroid_balanced_accuracy_in_3d": 0.38208333333333333,
+        "chance_balanced_accuracy": 0.125
+      }
     },
     "neighbor_mean": {
-      "space": "neighbor_mean",
-      "explained_variance_ratio": [
-        0.17650964856147766,
-        0.05843639373779297,
-        0.03276479244232178
-      ],
-      "explained_variance_ratio_sum": 0.2677108347415924
+      "pca": {
+        "method": "PCA fit on projection training split",
+        "explained_variance_ratio": [
+          0.17462338507175446,
+          0.05919789895415306,
+          0.03338373079895973
+        ],
+        "explained_variance_ratio_sum": 0.26720502972602844
+      },
+      "lda": {
+        "method": "standardized LDA fit with graph labels on projection training split",
+        "n_nonzero_components": 3,
+        "explained_discriminant_ratio": [
+          0.41810518503189087,
+          0.24078437685966492,
+          0.1173665001988411
+        ],
+        "explained_discriminant_ratio_sum": 0.7762560248374939,
+        "heldout_nearest_centroid_balanced_accuracy_in_3d": 0.5597916666666667,
+        "chance_balanced_accuracy": 0.125
+      }
     },
     "center_plus_neighbor_mean": {
-      "space": "center_plus_neighbor_mean",
-      "explained_variance_ratio": [
-        0.06672613322734833,
-        0.04261786490678787,
-        0.02628551982343197
-      ],
-      "explained_variance_ratio_sum": 0.13562951982021332
+      "pca": {
+        "method": "PCA fit on projection training split",
+        "explained_variance_ratio": [
+          0.06622076779603958,
+          0.04281797632575035,
+          0.026525432243943214
+        ],
+        "explained_variance_ratio_sum": 0.1355641782283783
+      },
+      "lda": {
+        "method": "standardized LDA fit with graph labels on projection training split",
+        "n_nonzero_components": 3,
+        "explained_discriminant_ratio": [
+          0.45119497179985046,
+          0.20350533723831177,
+          0.11083696782588959
+        ],
+        "explained_discriminant_ratio_sum": 0.7655372619628906,
+        "heldout_nearest_centroid_balanced_accuracy_in_3d": 0.5516666666666667,
+        "chance_balanced_accuracy": 0.125
+      }
     }
   }
 }
