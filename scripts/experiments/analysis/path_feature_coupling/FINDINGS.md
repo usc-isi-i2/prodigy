@@ -132,14 +132,26 @@ sampled neighbors per uniformly drawn non-missing center on average. The result 
 thus driven mostly by aggregating all available neighbors rather than truncating
 large neighborhoods.
 
-The 3D PCA export is [`neighbor_augmented_3d.csv`](data/neighbor_augmented_3d.csv),
+The held-out 3D PCA/LDA export is
+[`neighbor_augmented_3d.csv`](data/neighbor_augmented_3d.csv),
 the portable interactive view is
 [`neighbor-augmented-feature-space.html`](figures/neighbor-augmented-feature-space.html),
 and all distance and probe results are in
 [`neighbor_augmented_features.json`](data/neighbor_augmented_features.json).
-The first three PCs explain 11.9% of raw-center variance and 13.6% of concatenated
+The first three PCs explain 12.0% of raw-center variance and 13.6% of concatenated
 variance, so the visualization is useful qualitatively but not a complete view of
 the 1,536-dimensional geometry.
+
+The supervised LDA view directly answers whether three *linear directions* can expose
+graph identity. LDA is fit with graph labels on 70% of the nodes per graph, while the
+interactive view shows only the held-out 30%. Its first three axes account for 83.0%
+of discriminant variance in raw-center space, 77.6% for neighbor means, and 76.5% for
+the concatenation. A nearest-centroid classifier using only those three held-out LDA
+coordinates reaches balanced accuracy **0.382**, **0.560**, and **0.552**, respectively
+(chance 0.125). The visual separation is therefore not merely a display of training
+labels: sampled-neighborhood context creates a large graph-specific signal that
+generalizes to unseen nodes. These are weighted combinations of all coordinates, not
+three individually selected embedding dimensions.
 
 One implementation detail matters for interpretation: PRODIGY's default SAGE layer
 does not retain this raw concatenation as its hidden state. It separately projects

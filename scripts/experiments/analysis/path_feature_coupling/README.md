@@ -46,10 +46,10 @@ The complete outputs are:
 - `data/graph_identity_per_dimension.csv`: one row per scope and feature coordinate.
 - `data/neighbor_augmented_features.json`: matched raw-versus-neighborhood distance
   metrics and graph-identity probes for the training-style neighborhood summary.
-- `data/neighbor_augmented_3d.csv`: 3D PCA coordinates for raw centers, sampled-
-  neighbor means, and their concatenation.
+- `data/neighbor_augmented_3d.csv`: held-out 3D PCA and graph-label-supervised LDA
+  coordinates for raw centers, sampled-neighbor means, and their concatenation.
 - `figures/neighbor-augmented-feature-space.html`: portable interactive 3D view
-  with raw-center, neighbor-mean, and concatenated-space selection.
+  with PCA/LDA and raw-center/neighbor-mean/concatenated-space selection.
 
 ## Tucker run
 
@@ -114,6 +114,10 @@ one-hop sampler:
   messages, applies its neighbor MLP, then adds a separately projected center (and an
   optional residual) before normalization/ReLU. The raw concatenation asks what is
   jointly available before those learned transformations.
+- The LDA view consists of learned linear combinations of all input coordinates, not
+  three selected raw dimensions. Its axes are fit with graph labels on a balanced 70%
+  training split, and the interactive plot shows only the held-out 30%. PCA is fit on
+  the same training nodes without labels so the two views use identical held-out data.
 - Conditioning on nonzero text features isolates semantic-feature geometry. Missing
   text itself may be informative to a GNN and should be analyzed separately if it
   becomes part of the mechanism claim.
