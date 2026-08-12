@@ -7,6 +7,7 @@ and it is the entry point to the analysis tree.
 | doc | covers |
 |---|---|
 | [`PROGRAM_FINDINGS.md`](PROGRAM_FINDINGS.md) | the whole program (~13 experiments), thrusts A–H. Last consolidated 2026-07-20; **LP claims superseded 2026-07-23**, see its banner. |
+| [`../entity_disjoint_eval/FINDINGS.md`](../entity_disjoint_eval/FINDINGS.md) | exact-ID-clean Ukraine/Covid/Midterm off-diagonal specialist diagnostic |
 | [`NM_MERGED_VS_SINGLE_SUMMARY.md`](NM_MERGED_VS_SINGLE_SUMMARY.md) | merged-vs-single NM across two source pairs: `nm_transfer_matrix`, `nm_covid_midterm` |
 | [`NM_CROSS_SOURCE_STUDY.md`](NM_CROSS_SOURCE_STUDY.md) | the cross-source-shortcut study: `nm_cross_source_shortcut`, `sampling_strat_comparison` |
 
