@@ -26,8 +26,8 @@ clouds; 0 = indistinguishable, 2 = perfectly separable).
   above, writes one JSON artifact.
 - Plots + write-up: [`scripts/experiments/analysis/graph_divergence/graph_divergence.ipynb`](../../plotting/graph_divergence/graph_divergence.ipynb),
   reading `graph_divergence_data.json` in that folder. Running the notebook exports
-  the scalar `figures/per_graph_summary.csv` and long-form class-conditional
-  `figures/per_class_label_mixing.csv` findings tables.
+  the scalar `data/per_graph_summary.csv` and long-form class-conditional
+  `data/per_class_label_mixing.csv` findings tables.
 
 ## Graphs compared
 
