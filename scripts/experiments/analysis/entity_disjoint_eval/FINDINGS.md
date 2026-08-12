@@ -54,7 +54,9 @@ Only that result can address repeated identities in sampled encoder context.
   `/dataMeR1/phil/gfm/prodigy-entitydisjoint`.
 - Run: `state/entity_disjoint_eval/center_clean_v001`.
 - Completed UTC: `2026-08-12T06:10:17Z`.
-- Paired table SHA-256 before the denominator-column regeneration:
-  `e3dd1177830deb9ef79c15ef0530d47c2604b06674a15091fc0534dba8908129`.
+- Final paired table SHA-256:
+  `cca09927def35f2cfabf6c2e4759588f9555a9602bc6a1b7f254c25201ec5c3a`.
+- Final aggregate summary SHA-256:
+  `bb3f933de1de0f054e861faa66a7dcef4686217594200d7af8558f45f0f1dfec`.
 - Frozen original, clean-plan, and observed-stream fingerprints are stored in
   `data/center_clean_paired_cells.tsv` and `data/center_clean_summary.json`.
