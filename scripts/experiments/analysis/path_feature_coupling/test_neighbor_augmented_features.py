@@ -77,3 +77,12 @@ def test_lda_projection_is_fit_on_train_and_separates_heldout_classes():
     coordinates, metadata = lda_projection(matrix, labels, ~test_mask)
     assert coordinates.shape == (60, 3)
     assert metadata["heldout_nearest_centroid_balanced_accuracy_in_3d"] == 1.0
+
+
+def test_lda_projection_skips_single_graph_pilot():
+    matrix = np.ones((10, 4), dtype=np.float32)
+    labels = np.zeros(10, dtype=np.int16)
+    train_mask = np.arange(10) >= 3
+    coordinates, metadata = lda_projection(matrix, labels, train_mask)
+    np.testing.assert_array_equal(coordinates, np.zeros((10, 3), dtype=np.float32))
+    assert "at least two graphs" in metadata["error"]

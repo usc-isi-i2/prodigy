@@ -325,10 +325,17 @@ def lda_projection(
     from sklearn.metrics import balanced_accuracy_score
     from sklearn.preprocessing import StandardScaler
 
+    classes = np.unique(labels[train_mask])
+    if len(classes) < 2:
+        return np.zeros((len(matrix), 3), dtype=np.float32), {
+            "method": "LDA unavailable",
+            "error": "graph-separating projection requires at least two graphs",
+            "n_nonzero_components": 0,
+        }
     scaler = StandardScaler()
     train = scaler.fit_transform(matrix[train_mask])
     all_scaled = scaler.transform(matrix)
-    n_components = min(3, len(np.unique(labels[train_mask])) - 1, matrix.shape[1])
+    n_components = min(3, len(classes) - 1, matrix.shape[1])
     lda = LinearDiscriminantAnalysis(n_components=n_components, solver="svd")
     lda.fit(train, labels[train_mask])
     coordinates = lda.transform(all_scaled).astype(np.float32)
@@ -336,7 +343,6 @@ def lda_projection(
         coordinates = np.pad(coordinates, ((0, 0), (0, 3 - n_components)))
 
     train_coordinates = coordinates[train_mask]
-    classes = np.unique(labels[train_mask])
     centroids = np.stack(
         [train_coordinates[labels[train_mask] == label].mean(axis=0) for label in classes]
     )
