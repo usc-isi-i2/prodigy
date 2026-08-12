@@ -32,7 +32,9 @@ def write_tsv(path: Path, rows: list[dict[str, Any]]) -> None:
     fields = list(rows[0])
     temp = path.with_suffix(path.suffix + ".tmp")
     with temp.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields, delimiter="\t")
+        writer = csv.DictWriter(
+            handle, fieldnames=fields, delimiter="\t", lineterminator="\n"
+        )
         writer.writeheader()
         writer.writerows(rows)
     temp.replace(path)
@@ -109,6 +111,7 @@ def main() -> int:
                     delta_key: float(clean["score"]) - float(original["score"]),
                     "excluded_target_nodes": int(clean["excluded_node_count"]),
                     "target_graph_nodes": int(clean["target_graph_nodes"]),
+                    "sampled_context_node_occurrences": int(clean["sampled_context_node_occurrences"]),
                     "sampled_context_overlap_occurrences": int(clean["sampled_context_overlap_occurrences"]),
                     "sampled_context_unique_overlap_nodes": int(clean["sampled_context_unique_overlap_nodes"]),
                     "episode_plan_fingerprint": clean["episode_plan_fingerprint"],
@@ -137,6 +140,17 @@ def main() -> int:
                 "delta_mean": statistics.mean(row[delta_key] for row in selected),
                 "seed_deltas": [row[delta_key] for row in selected],
             })
+    context_by_target_summary = {}
+    for target in TARGETS:
+        row = next(item for item in rows if item["target"] == target)
+        total = int(row["sampled_context_node_occurrences"])
+        overlap = int(row["sampled_context_overlap_occurrences"])
+        context_by_target_summary[target] = {
+            "sampled_node_occurrences": total,
+            "overlap_occurrences": overlap,
+            "overlap_occurrence_fraction": overlap / total,
+            "unique_overlap_nodes": int(row["sampled_context_unique_overlap_nodes"]),
+        }
     payload = {
         "protocol": expected_protocol,
         "variant": args.variant,
@@ -148,6 +162,7 @@ def main() -> int:
         "delta_mean": statistics.mean(row[delta_key] for row in rows),
         "directions_improved": sum(item["delta_mean"] > 0 for item in pair_summaries),
         "pairs": pair_summaries,
+        "residual_sampled_context_overlap": context_by_target_summary,
         "episode_plan_fingerprints": {target: next(iter(values)) for target, values in plan_by_target.items()},
         "observed_episode_fingerprints": {target: next(iter(values)) for target, values in observed_by_target.items()},
         "paired_cells_sha256": hashlib.sha256((args.output_root / "paired_cells.tsv").read_bytes()).hexdigest(),
