@@ -14,8 +14,10 @@ evaluation and are not reported.
 The first diagnostic filters all episode-level identities: the 30 anchor centers
 and all support/query node centers. Sampled two-hop encoder context can still
 contain recurring identities; its overlap occurrences and unique-node count are
-audited in every result record. A second-stage induced-subgraph filter should run
-only if the episode-center-clean result survives.
+audited in every result record. The second stage rebuilds both the static-train
+message-passing adjacency and the static-test positive adjacency as full-index
+induced subgraphs on allowed target nodes. It fails if any forbidden node is
+observed in sampled encoder context.
 
 Internal exclusion `.pt` files contain global graph-row indices but no user IDs.
 Only aggregate counts, hashes, and performance differences belong in the
@@ -34,6 +36,9 @@ From the isolated Tucker worktree, after verifying GPUs 0 and 1 are free:
 ```bash
 RUN_ID=center_clean_v001 \
   bash scripts/experiments/setup/entity_disjoint_eval/run_center_disjoint_tucker.sh
+
+RUN_ID=induced_disjoint_v001 \
+  bash scripts/experiments/setup/entity_disjoint_eval/run_induced_disjoint_tucker.sh
 ```
 
 The launcher refuses occupied GPUs, requires at least 380 GiB available host
