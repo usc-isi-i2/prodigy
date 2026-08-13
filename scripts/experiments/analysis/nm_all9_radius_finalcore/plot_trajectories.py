@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plot all validation accuracy and loss trajectories for the radius experiment."""
+"""Plot available validation trajectories without inventing missing cells."""
 
 from __future__ import annotations
 
@@ -16,9 +16,8 @@ HERE = Path(__file__).resolve().parent
 DEFAULT_INPUT = HERE / "data" / "validation_trajectory.csv"
 DEFAULT_OUTPUT_DIR = HERE / "figures"
 
-ARMS = ("global", "radius_mix", "close_only")
-PANELS = ("radius2", "radius3", "global")
-STEPS = (100, 300, 900, 2500)
+ARM_ORDER = ("global", "radius_mix", "close_only")
+PANEL_ORDER = ("radius2", "radius3", "global", "within_source")
 
 ARM_LABELS = {
     "global": "Global",
@@ -29,6 +28,7 @@ PANEL_LABELS = {
     "radius2": "Radius 2 evaluation",
     "radius3": "Radius 3 evaluation",
     "global": "Global evaluation",
+    "within_source": "Within-source evaluation",
 }
 COLORS = {
     "global": "#0072B2",
@@ -46,6 +46,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument("--basename", default="validation_trajectories")
+    parser.add_argument(
+        "--title",
+        default="All-nine radius experiment: validation trajectories",
+    )
     return parser.parse_args()
 
 
@@ -61,35 +66,38 @@ def validate(data: pd.DataFrame) -> None:
     missing = required.difference(data.columns)
     if missing:
         raise ValueError(f"missing columns: {sorted(missing)}")
-    expected = {
-        (arm, seed, step, panel)
-        for arm in ARMS
-        for seed in (0, 1, 2)
-        for step in STEPS
-        for panel in PANELS
-    }
-    observed = set(
+    keys = list(
         data[["arm", "seed", "checkpoint_step", "panel"]]
         .itertuples(index=False, name=None)
     )
-    if observed != expected or len(data) != len(expected):
-        raise ValueError(
-            "input must contain every arm x seed x checkpoint x panel cell exactly once"
-        )
+    if len(keys) != len(set(keys)):
+        raise ValueError("input contains duplicate arm x seed x checkpoint x panel cells")
+    if data.empty:
+        raise ValueError("input contains no trajectories")
 
 
-def plot_metric(ax, data: pd.DataFrame, panel: str, metric: str) -> None:
+def plot_metric(
+    ax,
+    data: pd.DataFrame,
+    panel: str,
+    metric: str,
+    arms: tuple[str, ...],
+    steps: tuple[int, ...],
+) -> None:
     panel_data = data[data["panel"] == panel]
-    for arm in ARMS:
+    for arm in arms:
         arm_data = panel_data[panel_data["arm"] == arm]
+        if arm_data.empty:
+            continue
         pivot = arm_data.pivot(
             index="checkpoint_step", columns="seed", values=metric
-        ).reindex(STEPS)
+        ).reindex(steps)
 
         for seed in pivot.columns:
+            series = pivot[seed].dropna()
             ax.plot(
-                STEPS,
-                pivot[seed],
+                series.index,
+                series,
                 color=COLORS[arm],
                 linewidth=0.9,
                 alpha=0.24,
@@ -99,20 +107,21 @@ def plot_metric(ax, data: pd.DataFrame, panel: str, metric: str) -> None:
                 zorder=1,
             )
 
-        mean = pivot.mean(axis=1)
-        low = pivot.min(axis=1)
-        high = pivot.max(axis=1)
-        ax.fill_between(
-            STEPS,
-            low.to_numpy(),
-            high.to_numpy(),
-            color=COLORS[arm],
-            alpha=0.08,
-            linewidth=0,
-            zorder=0,
-        )
+        mean = pivot.mean(axis=1).dropna()
+        if len(pivot.columns) > 1:
+            low = pivot.min(axis=1).reindex(mean.index)
+            high = pivot.max(axis=1).reindex(mean.index)
+            ax.fill_between(
+                mean.index,
+                low.to_numpy(),
+                high.to_numpy(),
+                color=COLORS[arm],
+                alpha=0.08,
+                linewidth=0,
+                zorder=0,
+            )
         ax.plot(
-            STEPS,
+            mean.index,
             mean,
             color=COLORS[arm],
             linewidth=2.3,
@@ -123,8 +132,9 @@ def plot_metric(ax, data: pd.DataFrame, panel: str, metric: str) -> None:
             zorder=3,
         )
 
-    ax.set_xscale("log")
-    ax.set_xticks(STEPS, [str(step) for step in STEPS])
+    if max(steps) / min(steps) > 5:
+        ax.set_xscale("log")
+    ax.set_xticks(steps, [f"{step:,}" for step in steps])
     ax.grid(axis="y", color="#B8B8B8", linewidth=0.6, alpha=0.35)
     ax.grid(axis="x", visible=False)
     ax.spines[["top", "right"]].set_visible(False)
@@ -135,6 +145,15 @@ def main() -> int:
     args = parse_args()
     data = pd.read_csv(args.input)
     validate(data)
+    arms = tuple(arm for arm in ARM_ORDER if arm in set(data["arm"]))
+    panels = tuple(panel for panel in PANEL_ORDER if panel in set(data["panel"]))
+    steps = tuple(sorted(int(step) for step in data["checkpoint_step"].unique()))
+    unknown_arms = sorted(set(data["arm"]) - set(arms))
+    unknown_panels = sorted(set(data["panel"]) - set(panels))
+    if unknown_arms or unknown_panels:
+        raise ValueError(
+            f"unknown arms or panels: arms={unknown_arms}, panels={unknown_panels}"
+        )
 
     plt.rcParams.update(
         {
@@ -147,8 +166,8 @@ def main() -> int:
     )
     fig, axes = plt.subplots(
         2,
-        3,
-        figsize=(13.5, 7.4),
+        len(panels),
+        figsize=(4.1 * len(panels), 7.4),
         sharex="col",
         sharey="row",
     )
@@ -161,18 +180,15 @@ def main() -> int:
         wspace=0.04,
     )
 
-    for column, panel in enumerate(PANELS):
-        plot_metric(axes[0, column], data, panel, "score")
-        plot_metric(axes[1, column], data, panel, "loss")
+    for column, panel in enumerate(panels):
+        plot_metric(axes[0, column], data, panel, "score", arms, steps)
+        plot_metric(axes[1, column], data, panel, "loss", arms, steps)
         axes[0, column].set_title(PANEL_LABELS[panel], pad=9)
         axes[1, column].set_xlabel("Completed optimizer updates")
 
     axes[0, 0].set_ylabel("Validation accuracy")
     axes[1, 0].set_ylabel("Validation cross-entropy loss")
     axes[0, 0].yaxis.set_major_formatter(PercentFormatter(xmax=1.0, decimals=0))
-    axes[0, 0].set_ylim(0.03, 0.66)
-    axes[1, 0].set_ylim(1.05, 3.35)
-
     for ax in axes[0]:
         ax.axhline(
             1 / 30,
@@ -195,7 +211,7 @@ def main() -> int:
             markersize=6,
             label=ARM_LABELS[arm],
         )
-        for arm in ARMS
+        for arm in arms
     ]
     legend_handles.append(
         Line2D(
@@ -211,20 +227,20 @@ def main() -> int:
         handles=legend_handles,
         loc="upper center",
         bbox_to_anchor=(0.5, 0.935),
-        ncol=4,
+        ncol=len(arms) + 1,
         frameon=False,
         fontsize=10,
     )
     fig.suptitle(
-        "All-nine radius experiment: validation trajectories",
+        args.title,
         fontsize=14,
         fontweight="normal",
         y=0.985,
     )
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    png_path = args.output_dir / "validation_trajectories.png"
-    pdf_path = args.output_dir / "validation_trajectories.pdf"
+    png_path = args.output_dir / f"{args.basename}.png"
+    pdf_path = args.output_dir / f"{args.basename}.pdf"
     fig.savefig(png_path, dpi=300, bbox_inches="tight")
     fig.savefig(pdf_path, bbox_inches="tight")
     plt.close(fig)
