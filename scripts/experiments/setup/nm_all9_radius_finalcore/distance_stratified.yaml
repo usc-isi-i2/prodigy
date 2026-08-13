@@ -38,6 +38,8 @@ neighbor_sampling_center_distance_weights: "1,1,1"
 neighbor_sampling_center_region_fanout: 16
 neighbor_sampling_center_region_node_limit: 4096
 neighbor_sampling_center_region_candidate_limit: 512
+# Holdout-positive views need more rejection retries for a fully collision-free episode.
+neighbor_sampling_center_max_attempts: 500
 
 epochs: 1
 eval_step: 100000
