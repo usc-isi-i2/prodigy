@@ -16,6 +16,7 @@ def test_eval_only_split_preserves_test_default():
 
 def _eval_only_trainer(split):
     trainer = TrainerFS.__new__(TrainerFS)
+    trainer.resume_step = 0
     trainer.parameter = {
         "eval_only": True,
         "eval_only_split": split,
