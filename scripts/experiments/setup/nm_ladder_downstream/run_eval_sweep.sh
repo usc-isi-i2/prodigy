@@ -8,7 +8,7 @@
 #
 # Static link prediction is NOT run here. The runner's episodic slp path is void
 # (center-blind scoring, frozen random prototypes, degree-confounded negatives -- see
-# AGENTS.md and analysis/objectives/multitask_ssl/multitask_ssl/FINDINGS_rescore.md); sLP goes through
+# AGENTS.md and analysis/objectives/multitask/multitask_ssl/FINDINGS_rescore.md); sLP goes through
 # run_pair_lp_sweep.sh instead. Temporal LP has the same unrepaired defect and is
 # deliberately out of scope.
 #
@@ -70,6 +70,6 @@ run python3 "${RUNNER}" "${COMMON[@]}" \
 # logs when the sweep runs from an isolated worktree.
 echo "=== parse into shared CSVs ==="
 run python3 scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py \
-  --log-root "${REPO_ROOT}/log" --out-dir scripts/experiments/analysis/evaluation/shared_task_tables
+  --log-root "${REPO_ROOT}/log" --out-dir scripts/experiments/analysis/evaluation/task_tables
 
 echo "NM_LADDER_DOWNSTREAM_EVAL_SWEEP_DONE"

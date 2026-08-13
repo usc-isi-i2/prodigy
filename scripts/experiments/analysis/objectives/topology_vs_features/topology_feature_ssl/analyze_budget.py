@@ -15,7 +15,7 @@ from pathlib import Path
 import pandas as pd
 
 REPO = next(p for p in Path(__file__).resolve().parents if (p / "AGENTS.md").is_file())
-PLOT = REPO / "scripts/experiments/analysis/evaluation/shared_task_tables"
+PLOT = REPO / "scripts/experiments/analysis/evaluation/task_tables"
 STEP_RE = re.compile(r"^(?P<arm>B0|B1|E1)_step(?P<step>\d+)$")
 TASKS = [("node_regression", "spearman"), ("node_classification", "roc_auc"),
          ("static_link_prediction", "roc_auc")]

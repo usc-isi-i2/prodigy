@@ -1,6 +1,6 @@
 # Multi-task SSL rotation — one encoder, all SSL tasks
 
-**Status: 1-seed result in → see [FINDINGS.md](../../analysis/objectives/multitask_ssl/multitask_ssl/FINDINGS.md).** Headline: MIX
+**Status: 1-seed result in → see [FINDINGS.md](../../analysis/objectives/multitask/multitask_ssl/FINDINGS.md).** Headline: MIX
 (rotation) is the only generalist and the only arm with real static-LP
 (AUC 0.76 vs ≤0.47 chance for every single-objective control). Standalone
 experiment (sibling to, not part of, `topology_feature_ssl`'s six-arm reading chain).
@@ -96,7 +96,7 @@ datasets, keyed by `model = arm`. The headline is a table subtraction:
 
 _1 seed, mean over datasets (test). MIX − max(NM,CL,FP): cls −0.015, reg −0.068,
 **static-LP +0.293**. Joint min(feature=cls, topological=sLP) bar: MIX 0.759 vs
-≤0.467 for every control. Full reading + per-dataset LP in [FINDINGS.md](../../analysis/objectives/multitask_ssl/multitask_ssl/FINDINGS.md)._
+≤0.467 for every control. Full reading + per-dataset LP in [FINDINGS.md](../../analysis/objectives/multitask/multitask_ssl/FINDINGS.md)._
 
 ## What we can conclude — the reading
 

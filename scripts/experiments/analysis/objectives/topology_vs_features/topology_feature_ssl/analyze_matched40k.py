@@ -10,7 +10,7 @@ from pathlib import Path
 import pandas as pd
 
 REPO = next(p for p in Path(__file__).resolve().parents if (p / "AGENTS.md").is_file())
-PLOT = REPO / "scripts/experiments/analysis/evaluation/shared_task_tables"
+PLOT = REPO / "scripts/experiments/analysis/evaluation/task_tables"
 OUT = Path(__file__).resolve().parent / "RESULTS_matched40k.md"
 ARMS = ["B0_40k", "B1_40k", "E1_40k", "E2_40k", "E2b_40k", "E4_40k", "E4r_40k"]
 REG6 = ["followers_count", "friends_count", "statuses_count",

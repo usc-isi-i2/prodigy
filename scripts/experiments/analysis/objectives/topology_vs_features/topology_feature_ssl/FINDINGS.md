@@ -182,9 +182,9 @@ dropping regression (or vice versa) has *failed* the cross-task goal.
 ## 4. Results — raw data
 
 **All raw per-run rows:**
-`scripts/experiments/analysis/evaluation/shared_task_tables/node_regression/data/node_regression.csv`,
-`scripts/experiments/analysis/evaluation/shared_task_tables/node_classification/data/node_classification.csv`,
-`scripts/experiments/analysis/evaluation/shared_task_tables/static_link_prediction/data/static_link_prediction.csv`,
+`scripts/experiments/analysis/evaluation/task_tables/node_regression/data/node_regression.csv`,
+`scripts/experiments/analysis/evaluation/task_tables/node_classification/data/node_classification.csv`,
+`scripts/experiments/analysis/evaluation/task_tables/static_link_prediction/data/static_link_prediction.csv`,
 `scripts/experiments/analysis/objectives/topology_vs_features/topology_feature_ssl/{capability_probes_40k,budget_sweep}.csv`.
 Filter to `split == "test"` and the `*_40k` arms. Consolidated workbook:
 `topology_feature_ssl_results.xlsx`.

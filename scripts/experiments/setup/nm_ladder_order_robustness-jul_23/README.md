@@ -146,4 +146,4 @@ regimes, similar positions. Report composition alongside rung index.
 
 - `setup/nm_ladder_fillin/` — the single-order ladder this extends (protocol source of truth).
 - `setup/nm_single_source_matrix/` — donor strengths, and the specialist rows reused as rung 1.
-- `analysis/transfer/ladders/prodigy_nm/canonical/nm_ladder/RESULTS.md` — the published 8×8 table (order A).
+- `analysis/transfer/ladders/prodigy_nm/baseline/nm_ladder/RESULTS.md` — the published 8×8 table (order A).

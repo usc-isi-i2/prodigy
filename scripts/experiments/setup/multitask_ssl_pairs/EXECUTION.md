@@ -68,7 +68,7 @@ cat $PAIRS/model_list.txt          # expect 7 lines: <ARM> <30k ckpt>
 
 ```bash
 MODEL_LIST=$PAIRS/model_list.txt bash $PAIRS/run_eval_sweep.sh --gpus 0,1,2,3
-# writes reg/slp/cls rows keyed by model=arm into scripts/experiments/analysis/evaluation/shared_task_tables/*/data/*.csv
+# writes reg/slp/cls rows keyed by model=arm into scripts/experiments/analysis/evaluation/task_tables/*/data/*.csv
 # and prints MULTITASK_SSL_PAIRS_EVAL_SWEEP_DONE. Runs from $REPO so --log-root
 # resolves to $REPO/log (the parser derives it from REPO_ROOT — do not hardcode).
 ```
@@ -76,7 +76,7 @@ MODEL_LIST=$PAIRS/model_list.txt bash $PAIRS/run_eval_sweep.sh --gpus 0,1,2,3
 ## 4. Aggregate → the subset-lattice table
 
 ```bash
-python3 $PAIRS/aggregate_results.py --plotting-root scripts/experiments/analysis/evaluation/shared_task_tables
+python3 $PAIRS/aggregate_results.py --plotting-root scripts/experiments/analysis/evaluation/task_tables
 ```
 Reads the 7 arms and prints: the lattice table (cls/reg/sLP + min-bar by k),
 capability-vs-#objectives, the ranked generalist bar, and the HEADLINE — which

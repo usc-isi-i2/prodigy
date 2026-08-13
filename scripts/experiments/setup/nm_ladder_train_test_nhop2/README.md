@@ -112,6 +112,6 @@ The registered result is the complete 8×8 terminal-checkpoint table. Do not tre
 partial table or the training-view monitor as test evidence.
 
 ```bash
-python3 scripts/experiments/analysis/transfer/ablations/train_test_separation/nm_ladder_train_test_nhop2/assemble_results.py \
+python3 scripts/experiments/analysis/transfer/ablations/prodigy_nm/split_integrity/nm_ladder_train_test_nhop2/assemble_results.py \
   --log-root /dataMeR1/phil/gfm/prodigy-nmlsplit-h2/log
 ```

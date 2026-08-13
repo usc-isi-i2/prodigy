@@ -156,4 +156,4 @@ rung-specific checkpoints. The executed 2026-08-02 sweep intentionally covered O
 and C only: 15 physical models (A1–A8 and C1–C7; C8 reuses A8), eight evaluation graphs,
 120/120 completed jobs, and zero failures. Order B remains deferred. Results and the
 two-order analysis live in
-[`nm_ladder_fixed_exposure_nhop2` analysis](../../analysis/transfer/ablations/source_exposure/nm_ladder_fixed_exposure_nhop2/).
+[`nm_ladder_fixed_exposure_nhop2` analysis](../../analysis/transfer/ablations/prodigy_nm/source_exposure/nm_ladder_fixed_exposure_nhop2/).

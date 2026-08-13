@@ -56,4 +56,4 @@ gates on its presence.
      --checkpoint-run-dir /dataMeR2/phil/gfm/prodigy/state/<run> --gpus 0,1
    ```
 
-Results are collected in `scripts/experiments/analysis/evaluation/shared_task_tables/static_link_prediction/`.
+Results are collected in `scripts/experiments/analysis/evaluation/task_tables/static_link_prediction/`.

@@ -22,7 +22,7 @@ Do not run the Tucker extraction from a checkout that is serving another job.
 
 ```bash
 /opt/homebrew/bin/python3.11 \
-  scripts/experiments/analysis/graph_characterization/similarity_vs_transfer/similarity_vs_transfer_v2/analyze_predictors.py
+  scripts/experiments/analysis/graphs/transfer_prediction/similarity_vs_transfer_v2/analyze_predictors.py
 ```
 
 ## Proper final-core AUC extension
@@ -43,37 +43,37 @@ episodes, checkpoints, predictions, or metrics. The evaluator first passed a
 fingerprints from the published final-core ledger.
 
 The raw aggregate and its provenance are committed under
-`analysis/graph_characterization/similarity_vs_transfer/similarity_vs_transfer_v2/data/final_core_auc/raw/`. Rebuild all local
+`analysis/graphs/transfer_prediction/similarity_vs_transfer_v2/data/final_core_auc/raw/`. Rebuild all local
 evidence with Homebrew Python 3.11:
 
 ```bash
 /opt/homebrew/bin/python3.11 \
-  scripts/experiments/analysis/graph_characterization/similarity_vs_transfer/similarity_vs_transfer_v2/import_final_core_auc.py
+  scripts/experiments/analysis/graphs/transfer_prediction/similarity_vs_transfer_v2/import_final_core_auc.py
 
 /opt/homebrew/bin/python3.11 \
-  scripts/experiments/analysis/graph_characterization/similarity_vs_transfer/similarity_vs_transfer_v2/analyze_final_core_matrix.py \
-  --cells scripts/experiments/analysis/graph_characterization/similarity_vs_transfer/similarity_vs_transfer_v2/data/final_core_auc/specialist_cells_three_seed.csv \
+  scripts/experiments/analysis/graphs/transfer_prediction/similarity_vs_transfer_v2/analyze_final_core_matrix.py \
+  --cells scripts/experiments/analysis/graphs/transfer_prediction/similarity_vs_transfer_v2/data/final_core_auc/specialist_cells_three_seed.csv \
   --metric roc_auc_ovr_macro \
-  --out-dir scripts/experiments/analysis/graph_characterization/similarity_vs_transfer/similarity_vs_transfer_v2/data/final_core_auc/predictors \
+  --out-dir scripts/experiments/analysis/graphs/transfer_prediction/similarity_vs_transfer_v2/data/final_core_auc/predictors \
   --permutations 9999 --seed 20260808
 
 /opt/homebrew/bin/python3.11 \
-  scripts/experiments/analysis/graph_characterization/similarity_vs_transfer/similarity_vs_transfer_v2/compare_final_core_historical.py \
-  --final-core scripts/experiments/analysis/graph_characterization/similarity_vs_transfer/similarity_vs_transfer_v2/data/final_core_auc/specialist_cells_three_seed.csv \
+  scripts/experiments/analysis/graphs/transfer_prediction/similarity_vs_transfer_v2/compare_final_core_historical.py \
+  --final-core scripts/experiments/analysis/graphs/transfer_prediction/similarity_vs_transfer_v2/data/final_core_auc/specialist_cells_three_seed.csv \
   --final-core-metric roc_auc_ovr_macro \
-  --out-dir scripts/experiments/analysis/graph_characterization/similarity_vs_transfer/similarity_vs_transfer_v2/data/final_core_auc/comparison
+  --out-dir scripts/experiments/analysis/graphs/transfer_prediction/similarity_vs_transfer_v2/data/final_core_auc/comparison
 
 /opt/homebrew/bin/python3.11 \
-  scripts/experiments/analysis/graph_characterization/similarity_vs_transfer/similarity_vs_transfer_v2/fit_candidate_models.py \
-  --transfer scripts/experiments/analysis/graph_characterization/similarity_vs_transfer/similarity_vs_transfer_v2/data/final_core_auc/transfer_matrix_three_seed_mean_long.csv \
+  scripts/experiments/analysis/graphs/transfer_prediction/similarity_vs_transfer_v2/fit_candidate_models.py \
+  --transfer scripts/experiments/analysis/graphs/transfer_prediction/similarity_vs_transfer_v2/data/final_core_auc/transfer_matrix_three_seed_mean_long.csv \
   --metric roc_auc_ovr_macro \
-  --out-dir scripts/experiments/analysis/graph_characterization/similarity_vs_transfer/similarity_vs_transfer_v2/data/final_core_auc/models
+  --out-dir scripts/experiments/analysis/graphs/transfer_prediction/similarity_vs_transfer_v2/data/final_core_auc/models
 
 /opt/homebrew/bin/python3.11 \
-  scripts/experiments/analysis/graph_characterization/similarity_vs_transfer/similarity_vs_transfer_v2/analyze_auc_predictability.py \
-  --transfer scripts/experiments/analysis/graph_characterization/similarity_vs_transfer/similarity_vs_transfer_v2/data/final_core_auc/transfer_matrix_three_seed_mean_long.csv \
+  scripts/experiments/analysis/graphs/transfer_prediction/similarity_vs_transfer_v2/analyze_auc_predictability.py \
+  --transfer scripts/experiments/analysis/graphs/transfer_prediction/similarity_vs_transfer_v2/data/final_core_auc/transfer_matrix_three_seed_mean_long.csv \
   --metric roc_auc_ovr_macro \
-  --out-dir scripts/experiments/analysis/graph_characterization/similarity_vs_transfer/similarity_vs_transfer_v2/data/final_core_auc/predictability
+  --out-dir scripts/experiments/analysis/graphs/transfer_prediction/similarity_vs_transfer_v2/data/final_core_auc/predictability
 ```
 
 ## Generate the missing feature/user predictors on Tucker
@@ -91,7 +91,7 @@ conda activate prodigy
 export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 python scripts/experiments/setup/similarity_vs_transfer_v2/compute_extended_predictors_tucker.py \
   --data-root /dataMeR1/phil/data \
-  --out scripts/experiments/analysis/graph_characterization/similarity_vs_transfer/similarity_vs_transfer_v2/data/extended_predictors.json
+  --out scripts/experiments/analysis/graphs/transfer_prediction/similarity_vs_transfer_v2/data/extended_predictors.json
 ```
 
 The extractor writes only a final JSON artifact. It loads graphs one at a time,

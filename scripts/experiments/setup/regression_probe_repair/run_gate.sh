@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # THE GATE — reproduce a number we already have, before trusting anything new.
 #
-# `analysis/evaluation/shared_task_tables/node_regression/data/features_only_floor.csv` records the raw-feature
+# `analysis/evaluation/task_tables/node_regression/data/features_only_floor.csv` records the raw-feature
 # floor at 10 shots. This runs OUR probe implementation on the SAME raw features and
 # must land on those values. If it does not, the protocol differs from the published
 # floor and every encoder-vs-floor comparison built on it would be invalid.
@@ -47,7 +47,7 @@ import csv, sys
 from pathlib import Path
 
 csv_path, tol = Path(sys.argv[1]), float(sys.argv[2])
-ref_path = Path("scripts/experiments/analysis/evaluation/shared_task_tables/node_regression/data/features_only_floor.csv")
+ref_path = Path("scripts/experiments/analysis/evaluation/task_tables/node_regression/data/features_only_floor.csv")
 ref = {}
 for r in csv.DictReader(ref_path.open()):
     if r["dataset"] == "midterm" and r["shots"] == "10":

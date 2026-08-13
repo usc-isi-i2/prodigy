@@ -38,6 +38,6 @@ sweep(){  # $1=model_list  $2..=extra (e.g. --structural-features directed3)
 [ -s "$B0L" ] && sweep "$B0L"
 [ -s "$E1L" ] && sweep "$E1L" --structural-features directed3
 
-python3 scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py --log-root "$LOG_ROOT" --out-dir scripts/experiments/analysis/evaluation/shared_task_tables
+python3 scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py --log-root "$LOG_ROOT" --out-dir scripts/experiments/analysis/evaluation/task_tables
 python3 "$DIR/analyze_budget.py"
 echo "BUDGET_SWEEP_DONE"

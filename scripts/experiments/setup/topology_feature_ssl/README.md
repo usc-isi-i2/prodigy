@@ -180,7 +180,7 @@ packages — within-package attribution is deferred to the A-arms.
 
 Everything is keyed by **arm** (`B0, B1, E1, E2, E3, E4`) so the reading-chain
 deltas are direct table subtractions. Benchmark CSVs land under
-`scripts/experiments/analysis/evaluation/shared_task_tables/{node_regression,static_link_prediction,node_classification}/data/`
+`scripts/experiments/analysis/evaluation/task_tables/{node_regression,static_link_prediction,node_classification}/data/`
 (one `model=<arm>` column, as in the pretrain-strategy benchmark); diagnostics land
 in `scripts/experiments/analysis/objectives/topology_vs_features/topology_feature_ssl/` and are joined in that folder's
 notebook. Three tables:

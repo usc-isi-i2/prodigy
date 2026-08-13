@@ -13,7 +13,7 @@ Usage (laptop or Tucker, needs pandas):
 
     python scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py \
         --log-root /dataMeR2/phil/gfm/prodigy/log \
-        --out-dir scripts/experiments/analysis/evaluation/shared_task_tables
+        --out-dir scripts/experiments/analysis/evaluation/task_tables
 
 The output CSVs are append-only accumulations across experiments, so this MERGES into
 whatever is already on disk rather than replacing it, deduping on (model, dataset,
@@ -139,7 +139,7 @@ def main() -> int:
     ap.add_argument("--log-root", required=True, help="Directory containing eval_* run dirs.")
     ap.add_argument(
         "--out-dir",
-        default="scripts/experiments/analysis/evaluation/shared_task_tables",
+        default="scripts/experiments/analysis/evaluation/task_tables",
         help="Base dir; CSVs land under <out-dir>/{node_regression,static_link_prediction}/data.",
     )
     ap.add_argument("--reg-glob", default="eval_*_reg_*")

@@ -116,13 +116,13 @@ with neighborhood radius.
 ## Assemble
 
 After the separate interleaved control has produced
-`analysis/transfer/ablations/context_hops/nm_ladder_nhop2/data/nm_ladder_nhop2_long.csv`:
+`analysis/transfer/ablations/prodigy_nm/context_depth/nm_ladder_nhop2/data/nm_ladder_nhop2_long.csv`:
 
 ```bash
-python3 scripts/experiments/analysis/transfer/ablations/sampling_schedule/nm_ladder_sequential_nhop2/assemble_results.py \
+python3 scripts/experiments/analysis/transfer/ablations/prodigy_nm/source_schedule/nm_ladder_sequential_nhop2/assemble_results.py \
   --log-root /dataMeR1/phil/gfm/prodigy-nmlh2seq/log \
   --control-long /path/to/nm_ladder_nhop2_long.csv
-python3 scripts/experiments/analysis/transfer/ablations/sampling_schedule/nm_ladder_sequential_nhop2/plot_comparison.py
+python3 scripts/experiments/analysis/transfer/ablations/prodigy_nm/source_schedule/nm_ladder_sequential_nhop2/plot_comparison.py
 ```
 
 The primary estimand is paired `AUC_sequential − AUC_interleaved` for the same rung and

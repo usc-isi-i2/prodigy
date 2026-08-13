@@ -6,7 +6,7 @@ optimizer steps and checkpointed at `0, 100, 500, 1k, 2k, 10k, 40k`.
 
 Status: complete (3/3 trajectories, 76/76 classification evaluations, and all four
 regression probes). Evidence and interpretation are in
-[`pretrain_saturation_nhop2/FINDINGS.md`](../../analysis/transfer/ablations/saturation/prodigy_nm/two_hop/pretrain_saturation_nhop2/FINDINGS.md).
+[`pretrain_saturation_nhop2/FINDINGS.md`](../../analysis/transfer/ablations/prodigy_nm/saturation/pretrain_saturation_nhop2/FINDINGS.md).
 
 ## Controlled intervention
 
@@ -85,7 +85,7 @@ Then evaluate and assemble:
 ```bash
 GPUS="0,1,2" bash scripts/experiments/setup/pretrain_saturation_nhop2/run_classification_sweep.sh
 GPU=0 bash scripts/experiments/setup/pretrain_saturation_nhop2/run_reg_probe_sweep.sh
-python3 scripts/experiments/analysis/transfer/ablations/saturation/prodigy_nm/two_hop/pretrain_saturation_nhop2/analyze_results.py \
+python3 scripts/experiments/analysis/transfer/ablations/prodigy_nm/saturation/pretrain_saturation_nhop2/analyze_results.py \
   --log-root "$PWD/log"
 ```
 

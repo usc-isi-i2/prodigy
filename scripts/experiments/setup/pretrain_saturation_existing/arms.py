@@ -5,7 +5,7 @@ the 18 rows will not join:
 
   setup/pretrain_saturation_existing/  -> steps 1000, 2000, 10000, 40000 (no training)
   setup/pretrain_saturation_dense/     -> steps 100, 500 (three short retrains)
-  analysis/transfer/ablations/saturation/prodigy_nm/one_hop/pretrain_saturation/        -> the joined curve
+  analysis/transfer/ablations/prodigy_nm/saturation/pretrain_saturation/        -> the joined curve
 
 This module is the single definition of both. ``pretrain_saturation_dense`` imports it
 by path (same pattern as ``nm_ladder_downstream/make_model_list.py`` importing

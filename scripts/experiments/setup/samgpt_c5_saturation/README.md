@@ -20,4 +20,4 @@ Canonical output:
 `/dataMeR1/phil/gfm/samgpt-c5-4k-trajectory/log/mixture_order_c_4k/samgpt_mix_order_c_r5_4k_trajectory_20260806T180301Z/`
 
 Checkpoints and target embeddings remain on Tucker. Compact metrics and provenance are
-committed under `analysis/transfer/ablations/saturation/samgpt/five_source/samgpt_c5_saturation/data/`.
+committed under `analysis/transfer/ablations/samgpt_graphcl/saturation/samgpt_c5_saturation/data/`.

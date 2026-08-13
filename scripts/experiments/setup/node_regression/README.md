@@ -51,4 +51,4 @@ automatically (the runner gates on the targets actually present in each artifact
    One eval run is produced per (model, dataset, target, shot); the target name is
    encoded in the run-dir prefix (`eval_<model>_to_<ds>_reg_<target>_<shots>shot`).
 
-Results are collected in `scripts/experiments/analysis/evaluation/shared_task_tables/node_regression/`.
+Results are collected in `scripts/experiments/analysis/evaluation/task_tables/node_regression/`.

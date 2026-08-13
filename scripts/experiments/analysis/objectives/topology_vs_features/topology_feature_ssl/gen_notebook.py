@@ -33,7 +33,7 @@ def _repo_root():
             return c
     raise RuntimeError("run the notebook from inside the prodigy repository")
 REPO = _repo_root()
-PLOT = REPO / "scripts/experiments/analysis/evaluation/shared_task_tables"
+PLOT = REPO / "scripts/experiments/analysis/evaluation/task_tables"
 TF = REPO / "scripts/experiments/analysis/objectives/topology_vs_features/topology_feature_ssl"
 
 def bload(task):  # benchmark CSVs: node_regression / static_link_prediction / node_classification

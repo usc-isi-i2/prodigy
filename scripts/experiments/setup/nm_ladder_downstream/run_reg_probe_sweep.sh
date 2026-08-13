@@ -36,7 +36,7 @@ export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 cd "${REPO_ROOT}"
 
 DATA_ROOT="${DATA_ROOT:-/dataMeR1/phil/data}"
-OUT_DIR="${OUT_DIR:-${REPO_ROOT}/scripts/experiments/analysis/transfer/ablations/downstream/one_hop/nm_ladder_downstream/data/reg_probe}"
+OUT_DIR="${OUT_DIR:-${REPO_ROOT}/scripts/experiments/analysis/transfer/ablations/prodigy_nm/downstream/nm_ladder_downstream/data/reg_probe}"
 GPU="${GPU:-0}"
 
 # The 4 graphs carrying the profile panel, with their catalog relative_paths. Note

@@ -49,10 +49,10 @@ Runs are named `msc_<corpus>_<ARM>` (8 total: msc_cov_NM ... msc_all8_MIX).
   model-list + eval sweep + commits result CSVs. Log ends "ALL COMPLETE".
 - `EXECUTION.md` — the exact commands as run.
 
-Results land in `scripts/experiments/analysis/evaluation/shared_task_tables/{node_regression,
+Results land in `scripts/experiments/analysis/evaluation/task_tables/{node_regression,
 static_link_prediction,node_classification}/data/*.csv` keyed by
 model = `<corpus>_<ARM>`; the reading goes to
-`scripts/experiments/analysis/objectives/multitask_ssl/multitask_ssl_corpora/FINDINGS.md`
+`scripts/experiments/analysis/objectives/multitask/multitask_ssl_corpora/FINDINGS.md`
 (**interpretation embargoed** until the parallel `mix_slp_ablation` verdict).
 
 ## Eval notes (known, intended)

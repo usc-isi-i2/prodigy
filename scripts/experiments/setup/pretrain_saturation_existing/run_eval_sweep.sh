@@ -20,7 +20,7 @@
 #
 # Static LP does NOT go through this runner: its episodic slp path is void (center-blind
 # scoring, frozen random prototypes, degree-confounded negatives -- see AGENTS.md and
-# analysis/objectives/multitask_ssl/multitask_ssl/FINDINGS_rescore.md). Temporal LP has the same unrepaired defect.
+# analysis/objectives/multitask/multitask_ssl/FINDINGS_rescore.md). Temporal LP has the same unrepaired defect.
 # Both are deliberately out of scope.
 #
 # Usage (Tucker, from the worktree holding this branch):
@@ -99,7 +99,7 @@ fi
 # is only correct when --log-root really holds every arm ever run.
 echo "=== parse into shared CSVs ==="
 run python3 scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py \
-  --log-root "${REPO_ROOT}/log" --out-dir scripts/experiments/analysis/evaluation/shared_task_tables
+  --log-root "${REPO_ROOT}/log" --out-dir scripts/experiments/analysis/evaluation/task_tables
 
 # Neutral sentinel: pretrain_saturation_dense/run_eval_sweep.sh execs this same script
 # with a different model list, so the marker must not claim which half just finished.

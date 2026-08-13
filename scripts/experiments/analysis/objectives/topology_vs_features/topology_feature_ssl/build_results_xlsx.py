@@ -21,7 +21,7 @@ from openpyxl.utils import get_column_letter
 
 HERE = Path(__file__).resolve().parent
 REPO = next(p for p in HERE.parents if (p / "AGENTS.md").is_file())
-PLOT = REPO / "scripts/experiments/analysis/evaluation/shared_task_tables"
+PLOT = REPO / "scripts/experiments/analysis/evaluation/task_tables"
 TF = HERE / "data"
 OUT = HERE / "topology_feature_ssl_results.xlsx"
 

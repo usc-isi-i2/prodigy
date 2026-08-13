@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Static link prediction for the NM ladder, through the REPAIRED pair-conditioned
 # evaluator (scripts/eval/pair_link_sweep.py). Do not use the runner's `--tasks slp`
-# path: it is void (AGENTS.md, analysis/objectives/multitask_ssl/multitask_ssl/FINDINGS_rescore.md).
+# path: it is void (AGENTS.md, analysis/objectives/multitask/multitask_ssl/FINDINGS_rescore.md).
 #
 # pair_link_sweep inverts the loop -- the graph is loaded once and every checkpoint is
 # scored against ONE shared pair set, so all 21 rungs see identical positives and
@@ -31,7 +31,7 @@ export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 cd "${REPO_ROOT}"
 
 DATA_ROOT="${DATA_ROOT:-/dataMeR1/phil/data}"
-OUT_DIR="${OUT_DIR:-${REPO_ROOT}/scripts/experiments/analysis/transfer/ablations/downstream/one_hop/nm_ladder_downstream/data/pair_lp}"
+OUT_DIR="${OUT_DIR:-${REPO_ROOT}/scripts/experiments/analysis/transfer/ablations/prodigy_nm/downstream/nm_ladder_downstream/data/pair_lp}"
 GPU="${GPU:-0}"
 
 # The 5 graphs carrying a static_holdout view, with their catalog relative_paths

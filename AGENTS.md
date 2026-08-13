@@ -198,7 +198,7 @@ Learned the hard way in the 2026-07-26 consolidation. Each of these fails *silen
   path in the old runner is invalid (center-blind scoring, frozen random prototypes,
   degree-confounded negatives). Every sLP number produced before 2026-07-23 is void —
   do not cite one without checking it against
-  `analysis/objectives/multitask_ssl/multitask_ssl/FINDINGS_rescore.md`. Findings that still carry void numbers
+  `analysis/objectives/multitask/multitask_ssl/FINDINGS_rescore.md`. Findings that still carry void numbers
   are banner-marked; temporal LP has the same defect and was never rescored.
 - **Runs before 2026-07-26 are one `checkpoint_step` shorter than their label.**
   The training loop is `trange(self.steps)`, so `e` never reaches `self.steps` and the
@@ -220,7 +220,7 @@ Learned the hard way in the 2026-07-26 consolidation. Each of these fails *silen
   followed directly by the shot count, so every ablated run fails to match and is skipped
   with no warning — the jobs succeed and `metrics_test_step0.json` is written, but nothing
   reaches the CSVs. Read those JSONs directly (see
-  `analysis/transfer/ablations/saturation/prodigy_nm/one_hop/pretrain_saturation/data/feature_ablation.csv`). **Do not "just widen the
+  `analysis/transfer/ablations/prodigy_nm/saturation/pretrain_saturation/data/feature_ablation.csv`). **Do not "just widen the
   regex":** without also adding the ablation tag to the dedup key, an ablated run and a
   real run share a `(model, dataset, task, shots)` key and the newest-wins rule will
   silently overwrite a genuine result with an ablated one — worse than skipping.
@@ -237,7 +237,7 @@ Learned the hard way in the 2026-07-26 consolidation. Each of these fails *silen
 ## Where to Start Reading
 
 - `scripts/experiments/analysis/README.md` — canonical index of every analysis folder.
-- `scripts/experiments/analysis/program/cross_experiment_syntheses/` — findings that
+- `scripts/experiments/analysis/synthesis/cross_experiment/` — findings that
   synthesize evidence across several experiments.
 - The 23 analyses retired on 2026-07-26 are **not** in the working tree: branch
   `archive/retired-analyses-2026-07` and tag `archive/retired-analyses-2026-07-26`.
@@ -254,7 +254,7 @@ Learned the hard way in the 2026-07-26 consolidation. Each of these fails *silen
   - `scripts/experiments/analysis/<area>/.../<name>/` — notebooks and
     plotting/table code, findings, plus `data/` and `figures/` subfolders. Group
     analyses by research question (`transfer`, `objectives`,
-    `graph_characterization`, or `evaluation`), then by study type/model.
+    `graphs`, or `evaluation`), then by study type/model.
 - The trees are independent: an experiment with no analysis yet, or an analysis
   with no dedicated experiment folder, is normal. Do not create empty shells.
 - Keep the leaf analysis folder identical to its setup folder when possible. The

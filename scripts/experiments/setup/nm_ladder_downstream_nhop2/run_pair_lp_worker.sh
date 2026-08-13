@@ -5,7 +5,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 MODEL_LIST="${MODEL_LIST:-${SCRIPT_DIR}/model_list.txt}"
-OUT_DIR="${OUT_DIR:-${REPO_ROOT}/scripts/experiments/analysis/transfer/ablations/downstream/two_hop/nm_ladder_downstream_nhop2/data/raw/pair_lp}"
+OUT_DIR="${OUT_DIR:-${REPO_ROOT}/scripts/experiments/analysis/transfer/ablations/prodigy_nm/downstream/nm_ladder_downstream_nhop2/data/raw/pair_lp}"
 DATA_ROOT="${DATA_ROOT:-/dataMeR1/phil/data}"
 GPU="${GPU:-0}"
 DATASETS="${DATASETS:-cp_hk_twitter}"

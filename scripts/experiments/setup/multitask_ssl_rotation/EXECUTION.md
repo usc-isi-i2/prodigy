@@ -18,14 +18,14 @@ launched by the user; this repo ships the code + scripts.
 | Train / model-list / eval-sweep scripts | scripts | ✅ built |
 | Smoke test passed on Tucker | run | ✅ done |
 | Pretrains (NM/CL/FP/MIX), 1 seed, 40k | run | ✅ done (worktree, best-val=30k) |
-| Eval sweep + T1 table | run | ✅ done → **[FINDINGS.md](../../analysis/objectives/multitask_ssl/multitask_ssl/FINDINGS.md)** |
+| Eval sweep + T1 table | run | ✅ done → **[FINDINGS.md](../../analysis/objectives/multitask/multitask_ssl/FINDINGS.md)** |
 | Aggregation (`aggregate_results.py`) | code | ✅ built |
 | Multi-seed hardening (NM/MIX ×3) | run | ⛔ scoped out (single-seed, 2026-07-10) |
 | WHY-LP ablation (eval-time, no retrain) | run | ⏳ next (Step 3 below) |
 
 **Result:** MIX (rotation) is the only generalist — near-best cls, 2nd reg, and the
 **only** arm with real static-LP (AUC 0.76 vs ≤0.47 chance for every control),
-consistent across all 4 LP datasets. Full reading in [FINDINGS.md](../../analysis/objectives/multitask_ssl/multitask_ssl/FINDINGS.md).
+consistent across all 4 LP datasets. Full reading in [FINDINGS.md](../../analysis/objectives/multitask/multitask_ssl/FINDINGS.md).
 
 **Ops note (worktree):** the 1-seed run executed from the isolated worktree
 `/dataMeR1/phil/gfm/prodigy-mtr` (branch `mtr-run`). `run_eval_sweep.sh` now derives
@@ -105,15 +105,15 @@ tmux new-session -d -s mtr_eval 'bash -lc "MODEL_LIST=scripts/experiments/multit
 ```
 
 Results land (keyed by `model` = arm ∈ {NM,CL,FP,MIX}) in
-`scripts/experiments/analysis/evaluation/shared_task_tables/{node_regression,static_link_prediction,node_classification}/data/*.csv`.
+`scripts/experiments/analysis/evaluation/task_tables/{node_regression,static_link_prediction,node_classification}/data/*.csv`.
 Then aggregate into the T1 table + headline reading:
 
 ```bash
-python scripts/experiments/analysis/objectives/multitask_ssl/multitask_ssl/aggregate_results.py \
-  --plotting-root scripts/experiments/analysis/evaluation/shared_task_tables     # prints T1, MIX−max(NM,CL,FP), min-bar, per-dataset LP
+python scripts/experiments/analysis/objectives/multitask/multitask_ssl/aggregate_results.py \
+  --plotting-root scripts/experiments/analysis/evaluation/task_tables     # prints T1, MIX−max(NM,CL,FP), min-bar, per-dataset LP
 ```
 
-Reading recorded in [FINDINGS.md](../../analysis/objectives/multitask_ssl/multitask_ssl/FINDINGS.md). **1 seed** — done.
+Reading recorded in [FINDINGS.md](../../analysis/objectives/multitask/multitask_ssl/FINDINGS.md). **1 seed** — done.
 
 ## Step 3 — WHY does rotation yield LP? (eval-time ablation, NO retraining)
 

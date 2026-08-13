@@ -48,6 +48,6 @@ IDs.
 ## Completed run
 
 The completed aggregate is documented under
-`scripts/experiments/analysis/graph_characterization/dataset_overlap/identity_overlap_audit/`. Tucker `v002` ran at
+`scripts/experiments/analysis/graphs/overlap/identity_overlap_audit/`. Tucker `v002` ran at
 commit `c44720c`; the first `v001` attempt failed before scanning data because
 the repository root was missing from `sys.path` and is preserved unchanged.

@@ -4,7 +4,7 @@ Does downstream transfer performance saturate early in pretraining? This folder 
 twelve of the eighteen points on that curve from checkpoint trajectories that already
 exist on Tucker. The other six (steps 100 and 500) come from
 [`../pretrain_saturation_dense/`](../pretrain_saturation_dense/). Both halves feed one
-analysis folder, `analysis/transfer/ablations/saturation/prodigy_nm/one_hop/pretrain_saturation/`.
+analysis folder, `analysis/transfer/ablations/prodigy_nm/saturation/pretrain_saturation/`.
 
 ## The curve
 
@@ -47,7 +47,7 @@ checkpoint) if you want rows directly comparable to the NM ladder tables.
 
 **Static and temporal LP are out of scope.** The runner's episodic `slp` path is void —
 center-blind scoring, frozen random prototypes, degree-confounded negatives (see
-AGENTS.md and `analysis/objectives/multitask_ssl/multitask_ssl/FINDINGS_rescore.md`). Temporal LP has the same
+AGENTS.md and `analysis/objectives/multitask/multitask_ssl/FINDINGS_rescore.md`). Temporal LP has the same
 unrepaired defect. Valid static LP would have to go through
 `scripts/eval/pair_link_eval.py`.
 

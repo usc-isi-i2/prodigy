@@ -8,7 +8,7 @@
 # Headline tasks are the diverse new ones (node regression + static LP); nm and
 # classification are included for completeness. Results land in the shared
 # per-task CSVs (keyed by model = strategy) and are compared in
-# scripts/experiments/analysis/objectives/legacy_strategy_comparisons/pretrain_strategy_benchmark/.
+# scripts/experiments/analysis/objectives/legacy/pretrain_strategy_benchmark/.
 #
 # Pass overrides through "$@" (e.g. --gpus 0,1).
 set -euo pipefail
@@ -39,7 +39,7 @@ python3 "${RUNNER}" "${COMMON[@]}" --tasks nm,pl --shots 3 "$@"
 
 # parse the new-task results (reg + slp) into the plotting CSVs
 python3 scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py \
-  --log-root /dataMeR1/phil/gfm/prodigy/log --out-dir scripts/experiments/analysis/evaluation/shared_task_tables
+  --log-root /dataMeR1/phil/gfm/prodigy/log --out-dir scripts/experiments/analysis/evaluation/task_tables
 
 # NOTE: to run this in a *detached* tmux, launch it through a login shell so
 # ~/.bashrc initialises conda, e.g.:

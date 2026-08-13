@@ -60,7 +60,7 @@ python3 "$DIR/leakage_baseline.py" --data-root "$DATA_ROOT" --targets "$REG6" \
   --out scripts/experiments/analysis/objectives/topology_vs_features/topology_feature_ssl/data/leakage_baseline_6panel.csv || say "leakage FAILED"
 
 say "parse + analyze"
-python3 scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py --log-root "$LOG_ROOT" --out-dir scripts/experiments/analysis/evaluation/shared_task_tables
+python3 scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py --log-root "$LOG_ROOT" --out-dir scripts/experiments/analysis/evaluation/task_tables
 python3 "$DIR/parse_2x2.py" --log-root "$LOG_ROOT" --model-list "$DIR/model_list_40k_all.txt" --out scripts/experiments/analysis/objectives/topology_vs_features/topology_feature_ssl/data/ablation_2x2_40k.csv || say "2x2 parse FAILED"
 python3 "$DIR/parse_capability_probes.py" --log-root "$LOG_ROOT" --model-list "$DIR/model_list_40k_all.txt" --out scripts/experiments/analysis/objectives/topology_vs_features/topology_feature_ssl/data/capability_probes_40k.csv || say "probe parse FAILED"
 python3 "$DIR/analyze_matched40k.py" || say "analyze FAILED"

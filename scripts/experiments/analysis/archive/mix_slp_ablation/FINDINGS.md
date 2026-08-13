@@ -12,8 +12,8 @@
 > rewire × permute with split-seeded episodes) is sound and worth re-running against
 > `scripts/eval/pair_link_eval.py`; the *verdict* cannot be cited.
 >
-> Rescore: [`../multitask_ssl/FINDINGS_rescore.md`](../../objectives/multitask_ssl/multitask_ssl/FINDINGS_rescore.md) ·
-> corrected lattice: [`../multitask_ssl/FINDINGS.md`](../../objectives/multitask_ssl/multitask_ssl/FINDINGS.md)
+> Rescore: [`../multitask_ssl/FINDINGS_rescore.md`](../../objectives/multitask/multitask_ssl/FINDINGS_rescore.md) ·
+> corrected lattice: [`../multitask_ssl/FINDINGS.md`](../../objectives/multitask/multitask_ssl/FINDINGS.md)
 
 
 **Question.** Is MIX's emergent 0-shot static-link-prediction ability

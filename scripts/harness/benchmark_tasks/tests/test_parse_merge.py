@@ -28,7 +28,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 PARSER = REPO_ROOT / "scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py"
-ANALYSIS = REPO_ROOT / "scripts/experiments/analysis/evaluation/shared_task_tables"
+ANALYSIS = REPO_ROOT / "scripts/experiments/analysis/evaluation/task_tables"
 
 TASKS = {"node_regression": "node_regression.csv",
          "node_classification": "node_classification.csv",

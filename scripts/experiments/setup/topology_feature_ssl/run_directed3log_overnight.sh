@@ -3,7 +3,7 @@
 # _log arms have state_dict_40000, then runs the frozen-encoder benchmark
 # (regression / classification / static-LP) + capability probes with the correct
 # per-arm flags, mirroring run_matched40k_tucker.sh's sweep(). Results land in
-# scripts/experiments/analysis/evaluation/shared_task_tables/{node_regression,node_classification,static_link_prediction}/data
+# scripts/experiments/analysis/evaluation/task_tables/{node_regression,node_classification,static_link_prediction}/data
 # (model=<arm>_log, alongside the original arms) + capability_probes_directed3log.csv.
 #
 # Encoder groups (different architectures -> different eval flags):
@@ -76,8 +76,8 @@ STRUCTURAL=directed3_log GNN_TYPE=sage_multi NO_BN_ENCODER=1 MODEL_LIST="$DIR/ml
 
 # 5) parse everything (benchmark parser reads all logs; probes parsed over all _log arms)
 say "STAGE parse"
-python3 scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py --log-root "$LOG_ROOT" --out-dir scripts/experiments/analysis/evaluation/shared_task_tables || say "benchmark parse FAILED"
+python3 scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py --log-root "$LOG_ROOT" --out-dir scripts/experiments/analysis/evaluation/task_tables || say "benchmark parse FAILED"
 python3 "$DIR/parse_capability_probes.py" --log-root "$LOG_ROOT" --model-list "$DIR/ml_log_all.txt" \
   --out scripts/experiments/analysis/objectives/topology_vs_features/topology_feature_ssl/data/capability_probes_directed3log.csv || say "probe parse FAILED"
 
-say "D3LOG_EVAL_DONE — results in scripts/experiments/analysis/evaluation/shared_task_tables/{node_regression,node_classification,static_link_prediction}/data (model=*_log) + capability_probes_directed3log.csv"
+say "D3LOG_EVAL_DONE — results in scripts/experiments/analysis/evaluation/task_tables/{node_regression,node_classification,static_link_prediction}/data (model=*_log) + capability_probes_directed3log.csv"

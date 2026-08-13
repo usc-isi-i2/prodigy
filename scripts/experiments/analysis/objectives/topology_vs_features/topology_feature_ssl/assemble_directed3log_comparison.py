@@ -16,7 +16,7 @@ except Exception as e:  # pragma: no cover
     print(f"pandas unavailable: {e}", file=sys.stderr)
     sys.exit(1)
 
-PLOT = "scripts/experiments/analysis/evaluation/shared_task_tables"
+PLOT = "scripts/experiments/analysis/evaluation/task_tables"
 OUT = "scripts/experiments/analysis/objectives/topology_vs_features/topology_feature_ssl/RESULTS_directed3log.md"
 REG = f"{PLOT}/node_regression/data/node_regression.csv"
 CLS = f"{PLOT}/node_classification/data/node_classification.csv"

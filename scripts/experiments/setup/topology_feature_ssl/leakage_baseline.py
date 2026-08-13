@@ -138,7 +138,7 @@ def main() -> int:
 
     if not args.out:
         args.out = (
-            "scripts/experiments/analysis/evaluation/shared_task_tables/node_regression/data/features_only_floor.csv"
+            "scripts/experiments/analysis/evaluation/task_tables/node_regression/data/features_only_floor.csv"
             if args.features == "raw"
             else "scripts/experiments/analysis/objectives/topology_vs_features/topology_feature_ssl/data/leakage_baseline.csv"
         )

@@ -5,7 +5,7 @@ NM matrix, joined with pairwise graph divergence and per-graph attributes.
 
 Inputs (repo-relative):
   - scripts/experiments/analysis/transfer/matrices/prodigy_nm/single_source/nm_single_source_matrix/data/nm_single_source_matrix.csv   (8x8 ROC-AUC; rows=train/source, cols=test/target)
-  - scripts/experiments/analysis/graph_characterization/statistics/graph_divergence/data/graph_divergence_data.json               (pairwise divergence + per-graph stats)
+  - scripts/experiments/analysis/graphs/structure/graph_divergence/data/graph_divergence_data.json               (pairwise divergence + per-graph stats)
 
 Output:
   - scripts/experiments/analysis/transfer/matrices/prodigy_nm/single_source/nm_single_source_matrix/data/transfer_pairs.csv     (64 rows = 8 sources x 8 targets)
@@ -18,7 +18,7 @@ import csv, json, os, statistics as st
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 AUC_CSV = os.path.join(REPO, "scripts/experiments/analysis/transfer/matrices/prodigy_nm/single_source/nm_single_source_matrix/data/nm_single_source_matrix.csv")
-DIV_JSON = os.path.join(REPO, "scripts/experiments/analysis/graph_characterization/statistics/graph_divergence/data/graph_divergence_data.json")
+DIV_JSON = os.path.join(REPO, "scripts/experiments/analysis/graphs/structure/graph_divergence/data/graph_divergence_data.json")
 OUT_CSV = os.path.join(os.path.dirname(__file__), "transfer_pairs.csv")
 
 # ---- transfer matrix (rows=source, cols=target) ----

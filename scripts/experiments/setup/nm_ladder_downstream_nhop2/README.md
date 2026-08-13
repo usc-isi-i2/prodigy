@@ -124,5 +124,5 @@ Phases are `resolve`, `smoke`, `classification`, `static_lp`, and `assemble`. Ru
 `ONLY=<phase>`. Pair-LP workers use `--resume`: a retry preserves validity-clean completed
 models and evaluates only missing or invalid models.
 
-Raw evidence lands under `analysis/transfer/ablations/downstream/two_hop/nm_ladder_downstream_nhop2/data/raw/`; the strict
+Raw evidence lands under `analysis/transfer/ablations/prodigy_nm/downstream/nm_ladder_downstream_nhop2/data/raw/`; the strict
 assembler refuses partial physical matrices by default.
