@@ -7,6 +7,7 @@ and it is the entry point to the analysis tree.
 | doc | covers |
 |---|---|
 | [`PROGRAM_FINDINGS.md`](PROGRAM_FINDINGS.md) | the whole program (~13 experiments), thrusts A–H. Last consolidated 2026-07-20; **LP claims superseded 2026-07-23**, see its banner. |
+| [`../entity_disjoint_eval/FINDINGS.md`](../entity_disjoint_eval/FINDINGS.md) | exact-ID-clean Ukraine/Covid/Midterm off-diagonal specialist diagnostic |
 | [`NM_MERGED_VS_SINGLE_SUMMARY.md`](NM_MERGED_VS_SINGLE_SUMMARY.md) | merged-vs-single NM across two source pairs: `nm_transfer_matrix`, `nm_covid_midterm` |
 | [`NM_CROSS_SOURCE_STUDY.md`](NM_CROSS_SOURCE_STUDY.md) | the cross-source-shortcut study: `nm_cross_source_shortcut`, `sampling_strat_comparison` |
 
@@ -19,6 +20,7 @@ and it is the entry point to the analysis tree.
 | `error_audit/` | prediction-level correct/error cards for NM, classification, repaired regression, and repaired static LP | `README.md` |
 | `final_core/` | two-architecture native-pretext matrix and ladder: complete three-seed PRODIGY component plus current one-seed SAMGPT evidence | `FINDINGS.md` |
 | `graph_divergence/`, `similarity_vs_transfer/` | graph-distance statistics and whether they predict transfer | `FINDINGS.md` |
+| `identity_overlap_audit/` | exact Twitter-ID overlap where comparable plus graph-aligned biography-duplication proxies | `FINDINGS.md` |
 | `mix_slp_ablation/` | eval-time 2×2 (rewire × permute) on MIX's static LP | `FINDINGS.md` — ⚠️ premise voided by the rescore |
 | `multitask_ssl/` | the {NM, CL, FP} objective lattice — singles, pairs, triple | `FINDINGS.md`, `FINDINGS_rescore.md` |
 | `multitask_ssl_corpora/` | the rotation arms replicated on the cov and all8 corpora | `FINDINGS.md` — ⚠️ LP sections superseded |

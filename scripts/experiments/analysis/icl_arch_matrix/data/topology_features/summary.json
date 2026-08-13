@@ -1,0 +1,64 @@
+{
+  "architecture_comparison": {
+    "gilt": {
+      "topology_degree_logistic": {
+        "cells_above_fraction": 0.5,
+        "mean_delta": 0.09175250065939113
+      },
+      "topology_degree_prototype": {
+        "cells_above_fraction": 0.5,
+        "mean_delta": 0.10461022036334806
+      }
+    },
+    "prodigy": {
+      "topology_degree_logistic": {
+        "cells_above_fraction": 0.2661290322580645,
+        "mean_delta": -0.007344043667883323
+      },
+      "topology_degree_prototype": {
+        "cells_above_fraction": 0.4838709677419355,
+        "mean_delta": 0.005513676036073613
+      }
+    },
+    "vision": {
+      "topology_degree_logistic": {
+        "cells_above_fraction": 0.532258064516129,
+        "mean_delta": 0.14768673670049776
+      },
+      "topology_degree_prototype": {
+        "cells_above_fraction": 0.5161290322580645,
+        "mean_delta": 0.16054445640445467
+      }
+    }
+  },
+  "episode_fingerprints": {
+    "covid_political": "db497c203ef6c4249fb91b34083c59d3c400dc84b821c0835e3d5426fbbe2750",
+    "election2020": "4b5288ebc0896afebadb04ad14ebc9ec53fb1a88beeae490bd1d31ace91f14ef",
+    "twibot20": "c52eedbda4ef0539387be507588f0477560fc57987270d62405daeda5fe6d92d",
+    "ukr_rus_suspended": "c4b969d4c4f558104e8052335698b2ea62a3f94fa5af7e021a7bf0d46e2e3347"
+  },
+  "feature_names": [
+    "log1p_in_degree",
+    "log1p_out_degree",
+    "log1p_total_degree"
+  ],
+  "feature_view": "full_graph_directed_log_degree3_zscore",
+  "input_sha256": "687c470d410828afd1e0dd692ae94705b6362cbcd6a2044cd9db21fceb358950",
+  "mean_roc_auc": {
+    "topology_degree_logistic": 0.5913815145139342,
+    "topology_degree_prototype": 0.5785237948099772
+  },
+  "protocol": "fixed_episode_directed_degree_topology_control",
+  "raw_features_used": false,
+  "rows": 8,
+  "seed": 0,
+  "targets": [
+    "covid_political",
+    "election2020",
+    "ukr_rus_suspended",
+    "twibot20"
+  ],
+  "topology_scope": "entire_loaded_target_graph",
+  "topology_used": true,
+  "training_updates": 0
+}

@@ -1,0 +1,66 @@
+{
+  "architecture_comparison": {
+    "gilt": {
+      "supervised_graphsage": {
+        "cells_above_fraction": 0.0,
+        "mean_delta": -0.15102784921333928
+      },
+      "supervised_mlp": {
+        "cells_above_fraction": 0.1693548387096774,
+        "mean_delta": -0.10734271319536319
+      }
+    },
+    "prodigy": {
+      "supervised_graphsage": {
+        "cells_above_fraction": 0.0,
+        "mean_delta": -0.25012439354061367
+      },
+      "supervised_mlp": {
+        "cells_above_fraction": 0.016129032258064516,
+        "mean_delta": -0.20643925752263761
+      }
+    },
+    "vision": {
+      "supervised_graphsage": {
+        "cells_above_fraction": 0.07258064516129033,
+        "mean_delta": -0.09509361317223261
+      },
+      "supervised_mlp": {
+        "cells_above_fraction": 0.41935483870967744,
+        "mean_delta": -0.05140847715425655
+      }
+    }
+  },
+  "episode_fingerprints": {
+    "covid_political": "db497c203ef6c4249fb91b34083c59d3c400dc84b821c0835e3d5426fbbe2750",
+    "election2020": "4b5288ebc0896afebadb04ad14ebc9ec53fb1a88beeae490bd1d31ace91f14ef",
+    "twibot20": "c52eedbda4ef0539387be507588f0477560fc57987270d62405daeda5fe6d92d",
+    "ukr_rus_suspended": "c4b969d4c4f558104e8052335698b2ea62a3f94fa5af7e021a7bf0d46e2e3347"
+  },
+  "input_sha256": {
+    "supervised_graphsage": "77f975912230bf6154cd1df25e885444a1161a82a8dcd53c22d9ae0470134f5d",
+    "supervised_mlp": "1402822440b508277b48b5381e6fe6dbe829b2b9e1eb89fac3c4acf52d64648d"
+  },
+  "lr_grid": [
+    0.001,
+    0.0003
+  ],
+  "mean_roc_auc": {
+    "supervised_graphsage": 0.8341618643866645,
+    "supervised_mlp": 0.7904767283686884
+  },
+  "protocol": "one_seed_target_supervised_fixed_test_episode_reference",
+  "query_labels_used_for_selection": false,
+  "rows": 8,
+  "seed": 0,
+  "targets": [
+    "covid_political",
+    "election2020",
+    "ukr_rus_suspended",
+    "twibot20"
+  ],
+  "test_support_labels_used": false,
+  "training_label_scope": "target_train_split",
+  "training_updates": 100,
+  "validation_selection": "best_of_two_fixed_lrs_at_update100"
+}

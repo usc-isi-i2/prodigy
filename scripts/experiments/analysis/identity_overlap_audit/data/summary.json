@@ -1,0 +1,108 @@
+{
+  "datasets": [
+    "ukraine",
+    "covid",
+    "midterm",
+    "covid-political",
+    "ukraine-suspended",
+    "election2020-political",
+    "twibot20",
+    "hongkong",
+    "facebook-page-reference"
+  ],
+  "exact_id_scope": {
+    "covid": "full_graph_global_twitter_id",
+    "covid-political": "not_measurable_row_indices_only",
+    "election2020-political": "not_measurable_row_indices_only",
+    "facebook-page-reference": "incompatible_platform",
+    "hongkong": "not_measurable_hashed_dataset_namespace",
+    "midterm": "full_graph_global_twitter_id",
+    "twibot20": "not_measurable_dataset_internal_namespace",
+    "ukraine": "full_graph_global_twitter_id",
+    "ukraine-suspended": "partial_global_twitter_id_array"
+  },
+  "graph_nodes": {
+    "covid": 23012850,
+    "covid-political": 78672,
+    "election2020-political": 78932,
+    "facebook-page-reference": 150000,
+    "hongkong": 333800,
+    "midterm": 341908,
+    "twibot20": 162990,
+    "ukraine": 10400775,
+    "ukraine-suspended": 72295
+  },
+  "headline": {
+    "bio_proxy_pairs": 28,
+    "max_exact_id_fraction_smaller": 0.982388377037562,
+    "max_exact_id_intersection": 4294139,
+    "max_unique_long_shared_bios": 1235004,
+    "measurable_id_pairs": 6
+  },
+  "output_sha256": {
+    "dataset_inventory.csv": "727f9ede35a3bde8d6ab5a3f256a91421ee48ed44b1aecd47bb9ab60854b353a",
+    "pairwise_biography_overlap.csv": "5c8c8401bafd604497ad64f0fb630e1b180df43469c80906cc880bbdb700988e",
+    "pairwise_identity_overlap.csv": "f0ac15322d1eb839672f0c101a778e0f1d5e11b2057490c5665c744e855b6b4b"
+  },
+  "packaging": {
+    "normalization": "CSV line endings converted from CRLF to LF; values and row order unchanged",
+    "tucker_summary_sha256": "5be2d12bf76026498178a16016d6a6f5f7db232c39d727b7da58af83cbb6c029",
+    "tucker_output_sha256": {
+      "dataset_inventory.csv": "6eeeac898f931b256685105879107cd219847994f08ba9ade08fa9e93b96064e",
+      "pairwise_biography_overlap.csv": "89f0183df9b2d4dd1673c9bf466384c716e20592ff9628314ebf46a79564232e",
+      "pairwise_identity_overlap.csv": "1723690bef21b47e52e6435244351ccb5e8ea2fcfaae09162fae1821f6564560"
+    }
+  },
+  "protocol": {
+    "biography": "SHA-256 equality after bio-text-v001 normalization",
+    "identity": "exact comparable platform-global Twitter user ID",
+    "privacy": "aggregate counts only; no IDs, handles, or biography text emitted",
+    "strict_biography_proxy": "shared hash, normalized length >=20, unique within each graph"
+  },
+  "provenance": {
+    "covid": {
+      "source_files": 255,
+      "source_manifest_sha256": "f4bcbd0ba3f766bce3d766eb03994bcf720104c2f1ca66f2c007c61444a64a47",
+      "window_end": "2021-02-21T23:59:54",
+      "window_start": "2020-01-23T00:00:02"
+    },
+    "covid-political": {
+      "bio_length_resolved": 78672,
+      "embedding_sha256": "fae6dbf947fbe4094383e8068dea0e41f4dfc405bd6847eeebb63b28b62c4b9d",
+      "profile_source_sha256": "138040153f717be76d800461d4a5803c5a2968833924bc6b5c701e75b8833a1c"
+    },
+    "election2020-political": {
+      "bio_length_resolved": 78932,
+      "embedding_sha256": "6224e83b3e930302002b95d658a25d48ab471ca92664a7cc278a41e7122687a6",
+      "profile_source_sha256": "0cb20c0fc763a298588a82cb4b4c14c3b694f6c070e6696cc6d874f10701304b"
+    },
+    "hongkong": {
+      "event_files": 8,
+      "event_manifest_sha256": "a7606376213b35e593bf209f5e7e083a3e5d7a5cc6c3a027bde9f4cd8f0f92ef",
+      "user_bios_sha256": "883dd20569c317c5f1e73232c5be304feed177387908a922528fcdf0451d3a75",
+      "window_end_ms": 1600041597902,
+      "window_start_ms": 1598227200045
+    },
+    "midterm": {
+      "source_files": 492,
+      "source_manifest_sha256": "0e1417fbeb7ce1d92c82d8a07519523d59cec96d2dc2c3e9b3565fd8776c2dbc",
+      "window_end": "2022-10-23T23:59:54",
+      "window_start": "2022-10-01T20:59:54"
+    },
+    "twibot20": {
+      "edges_sha256": "c135c753634b4b1101b26ada2d4c5575269811802fe0fc7067001e19c2f57c57",
+      "labels_sha256": "7b3ee6db9edf78def0290b44a7a885263fa7a218ff298091a1c974a3330dedf7"
+    },
+    "ukraine": {
+      "source_files": 1498,
+      "source_manifest_sha256": "86f6bd7d08a33d680814faaee310952a0d8a0ec21dac6e0ea3d5b0adadbf6ccf",
+      "window_end": "2022-04-28T23:59:54",
+      "window_start": "2022-02-22T04:23:34"
+    },
+    "ukraine-suspended": {
+      "bio_length_resolved": 60011,
+      "embedding_sha256": "26eed8a7870abf6b6c0a1abac50e28069d991111e587c4e9a07c685d4c32e0d0",
+      "profile_source_sha256": "c827161334a6882c15bd0e141c9e312560e96ffd2a5837990b1757777dbaafa9"
+    }
+  }
+}
