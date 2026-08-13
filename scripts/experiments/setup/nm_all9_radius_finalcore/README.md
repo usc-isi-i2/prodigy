@@ -174,12 +174,12 @@ does not influence checkpoint selection; the frozen selected checkpoint is teste
 four panels.
 
 ```bash
-DRY_RUN=1 GPUS="0 1" \
+DRY_RUN=1 GPUS="0" \
   bash scripts/experiments/setup/nm_all9_radius_finalcore/run_convergence_10k_tucker.sh
 
 tmux new-session -d -s radiusfc10k \
   'export PATH="/home/mhchu/miniconda3/bin:$PATH"; \
-   GPUS="0 1" \
+   GPUS="0" \
    bash scripts/experiments/setup/nm_all9_radius_finalcore/run_convergence_10k_pipeline_tucker.sh'
 ```
 
@@ -187,3 +187,39 @@ If interrupted, restart an individual run with the same resolved configuration a
 `--resume_training_checkpoint .../checkpoint/training_state_<step>.ckpt`. A historical
 `state_dict_<step>.ckpt` remains a weights-only warm start and is deliberately rejected
 by the exact-resume option.
+
+## Within-episode distance-stratified follow-up
+
+`distance_stratified.yaml` changes the intervention from one radius per episode to a
+mixture inside every episode. An anchor is sampled first. The remaining centers are
+drawn from sampled-BFS distance bands and an independent global band outside the sampled
+local region. The global band is source-unaware and may cross source graphs.
+
+Allocation is dynamic rather than tied to 30-way training. Positive weights are
+converted to integer class counts from the configured `n_way`, with every band receiving
+at least one class; the anchor occupies one slot in the first band. Thus radii `2,3` and
+weights `1,1,1` resolve to 10/10/10 at 30-way and 5/5/5 at 15-way. Any number of
+strictly increasing radii is supported, with one additional weight for the global band.
+Because the local region uses bounded fanout sampling, these are sampled-BFS discovery
+bands, not claims of exact all-edge shortest-path shells.
+
+Run the dedicated read-only feasibility gate before training:
+
+```bash
+bash scripts/experiments/setup/nm_all9_radius_finalcore/run_distance_stratified_preflight_tucker.sh
+```
+
+Then dry-run and launch the isolated seed-0 10k pipeline on currently owned GPUs only:
+
+```bash
+DRY_RUN=1 GPUS="0 1" \
+  bash scripts/experiments/setup/nm_all9_radius_finalcore/run_distance_stratified_10k_pipeline_tucker.sh
+
+tmux new-session -d -s radiusfc_strat10k \
+  'export PATH="/home/mhchu/miniconda3/bin:$PATH"; \
+   GPUS="0 1" \
+   bash scripts/experiments/setup/nm_all9_radius_finalcore/run_distance_stratified_10k_pipeline_tucker.sh'
+```
+
+This follow-up has separate state/log roots and does not add a fourth job to the original
+three-arm queues. It reuses the same four evaluation panels and checkpoint schedule.

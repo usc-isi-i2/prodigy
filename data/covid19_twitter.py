@@ -82,6 +82,33 @@ def _parse_center_radius_weights(value, count):
     return weights
 
 
+def _parse_center_distance_weights(value, count):
+    if count is None or value is None or str(value).strip() == "":
+        return None
+    weights = [
+        float(token.strip())
+        for token in str(value).split(",")
+        if token.strip()
+    ]
+    if len(weights) != count:
+        raise ValueError(
+            "neighbor_sampling_center_distance_weights must have one value per "
+            f"finite band plus global: expected {count}, got {len(weights)}."
+        )
+    if any(weight <= 0 for weight in weights):
+        raise ValueError(f"center distance weights must be positive, got {weights}.")
+    return weights
+
+
+def _parse_positive_int_list(value, name):
+    if value is None or str(value).strip() == "":
+        return None
+    values = [int(token.strip()) for token in str(value).split(",") if token.strip()]
+    if not values or any(item <= 0 for item in values):
+        raise ValueError(f"{name} must contain positive integers, got {values}.")
+    return values
+
+
 def _build_covid19_twitter_graph(raw: dict, **kwargs):
     edge_view = _normalize_view_name(kwargs.get("edge_view", kwargs.get("midterm_edge_view", "default")))
     edge_index, resolved_edge_view = _load_named_tensor(
@@ -352,6 +379,21 @@ def get_covid19_twitter_dataloader(
             kwargs.get("neighbor_sampling_center_radius_weights", ""),
             None if center_radii is None else len(center_radii),
         )
+        center_distance_radii = _parse_positive_int_list(
+            kwargs.get("neighbor_sampling_center_distance_radii", ""),
+            "neighbor_sampling_center_distance_radii",
+        )
+        if center_distance_radii is None and str(
+            kwargs.get("neighbor_sampling_center_distance_weights", "") or ""
+        ).strip():
+            raise ValueError(
+                "neighbor_sampling_center_distance_weights requires "
+                "neighbor_sampling_center_distance_radii."
+            )
+        center_distance_weights = _parse_center_distance_weights(
+            kwargs.get("neighbor_sampling_center_distance_weights", ""),
+            None if center_distance_radii is None else len(center_distance_radii) + 1,
+        )
         strata = None
         confine_to_single_stratum = False
         # Two graph_id-based modes (mutually exclusive in practice):
@@ -468,6 +510,8 @@ def get_covid19_twitter_dataloader(
                 batch_source_mode=batch_source_mode,
                 center_radii=center_radii,
                 center_radius_weights=center_radius_weights,
+                center_distance_radii=center_distance_radii,
+                center_distance_weights=center_distance_weights,
                 center_region_fanout=int(
                     kwargs.get("neighbor_sampling_center_region_fanout", 64)
                 ),

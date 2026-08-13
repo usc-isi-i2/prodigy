@@ -13,7 +13,7 @@ import sys
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from radius_plan import ARMS, PANELS  # noqa: E402
+from radius_plan import ARMS, PANELS, get_arm  # noqa: E402
 
 
 def write_csv(path, rows):
@@ -35,6 +35,11 @@ def parse_args():
         default="0,1,2",
         help="Comma-separated completed seeds (default: 0,1,2).",
     )
+    parser.add_argument(
+        "--arms",
+        default="",
+        help="Optional comma-separated arm IDs. Empty uses the original three arms.",
+    )
     return parser.parse_args()
 
 
@@ -45,12 +50,21 @@ def main() -> int:
         raise ValueError(f"invalid seed set: {seeds}")
     if len(set(seeds)) != len(seeds):
         raise ValueError(f"duplicate seeds: {seeds}")
+    if args.arms.strip():
+        arm_ids = tuple(
+            arm_id.strip() for arm_id in args.arms.split(",") if arm_id.strip()
+        )
+        if not arm_ids or len(set(arm_ids)) != len(arm_ids):
+            raise ValueError(f"invalid arm set: {arm_ids}")
+        active_arms = tuple(get_arm(arm_id) for arm_id in arm_ids)
+    else:
+        active_arms = ARMS
     validation_rows = []
     test_rows = []
     selections = []
     expected_checkpoint_steps = None
     expected_validation_panels = None
-    for arm in ARMS:
+    for arm in active_arms:
         for seed in seeds:
             directory = args.results_root / f"seed_{seed}" / arm.arm_id
             selection_path = directory / "selection.json"
@@ -126,12 +140,12 @@ def main() -> int:
                 )
 
     expected_validation = (
-        len(ARMS)
+        len(active_arms)
         * len(seeds)
         * len(expected_checkpoint_steps)
         * len(expected_validation_panels)
     )
-    expected_test = len(ARMS) * len(seeds) * len(PANELS)
+    expected_test = len(active_arms) * len(seeds) * len(PANELS)
     if len(validation_rows) != expected_validation or len(test_rows) != expected_test:
         raise ValueError(
             f"unexpected row counts: validation={len(validation_rows)}/{expected_validation}, "
@@ -139,7 +153,7 @@ def main() -> int:
         )
 
     summary = []
-    for arm in ARMS:
+    for arm in active_arms:
         for panel in PANELS:
             scores = [
                 float(row["score"])
@@ -165,6 +179,7 @@ def main() -> int:
             {
                 "protocol": "nm_all9_radius_finalcore_summary_v1",
                 "seeds": list(seeds),
+                "arms": [arm.arm_id for arm in active_arms],
                 "summary": summary,
             },
             indent=2,

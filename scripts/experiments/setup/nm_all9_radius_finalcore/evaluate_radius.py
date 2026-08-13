@@ -84,6 +84,8 @@ def resolved_params(
         "--log_dir", str(args.evaluation_log_root),
         "--neighbor_sampling_center_radii", radii,
         "--neighbor_sampling_center_radius_weights", weights,
+        "--neighbor_sampling_center_distance_radii", "",
+        "--neighbor_sampling_center_distance_weights", "",
         "--neighbor_sampling_episode_source", "graph_id" if panel.source_confined else "",
         "--neighbor_sampling_episode_source_weighting", "balanced",
         "--neighbor_sampling_strata", "",

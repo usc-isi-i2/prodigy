@@ -9,6 +9,7 @@ FEASIBILITY_REPORT="${FEASIBILITY_REPORT:-${REPO_ROOT}/log/nm_all9_radius_finalc
 GPUS_TEXT="${GPUS:-0 1}"
 RUN_STAMP="${RUN_STAMP:-20260812}"
 DRY_RUN="${DRY_RUN:-0}"
+ARM_IDS_TEXT="${ARM_IDS:-}"
 read -r -a GPU_IDS <<< "$GPUS_TEXT"
 
 [[ "$DRY_RUN" =~ ^(0|1)$ ]] || { echo "DRY_RUN must be 0 or 1" >&2; exit 2; }
@@ -30,11 +31,28 @@ PYTHON="${PYTHON:-${CONDA_PREFIX}/bin/python}"
 mkdir -p "$STATE_ROOT" "$LOG_ROOT/train" "$LOG_ROOT/launch"
 PLAN="$LOG_ROOT/launch/plan.tsv"
 cd "$REPO_ROOT"
-"$PYTHON" "$SCRIPT_DIR/radius_plan.py" > "$PLAN"
-[[ "$(($(wc -l < "$PLAN") - 1))" == 3 ]] || {
-  echo "convergence plan must contain exactly three arms" >&2
-  exit 2
-}
+if [[ -z "$ARM_IDS_TEXT" ]]; then
+  "$PYTHON" "$SCRIPT_DIR/radius_plan.py" > "$PLAN"
+  [[ "$(($(wc -l < "$PLAN") - 1))" == 3 ]] || {
+    echo "default convergence plan must contain exactly three arms" >&2
+    exit 2
+  }
+else
+  "$PYTHON" - "$SCRIPT_DIR" "$ARM_IDS_TEXT" > "$PLAN" <<'PY'
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(sys.argv[1])))
+from radius_plan import get_arm
+print("arm_id\tconfig\tradii")
+seen = set()
+for arm_id in sys.argv[2].split():
+    if arm_id in seen:
+        raise ValueError(f"duplicate arm {arm_id}")
+    seen.add(arm_id)
+    arm = get_arm(arm_id)
+    print(f"{arm.arm_id}\t{arm.config}\t{','.join(arm.radii)}")
+PY
+fi
 
 if [[ "$DRY_RUN" != 1 ]]; then
   [[ -f "$FEASIBILITY_REPORT" ]] || {
@@ -147,6 +165,7 @@ worker() {
   echo "commit=$(git rev-parse HEAD)"
   echo "branch=$(git rev-parse --abbrev-ref HEAD)"
   echo "seed=0"
+  echo "arm_ids=${ARM_IDS_TEXT:-global radius_mix close_only}"
   echo "gpus=$GPUS_TEXT"
   echo "steps=10000"
   echo "checkpoint_steps=2500,5000,7500,10000"

@@ -227,6 +227,7 @@ class NeighborTask(TaskBase):
                  cross_source_prob=0.0, stratum_schedule_steps=None,
                  filter_min_degree=False, batch_source_mode="independent",
                  center_radii=None, center_radius_weights=None,
+                 center_distance_radii=None, center_distance_weights=None,
                  center_region_fanout=64, center_region_node_limit=4096,
                  center_region_candidate_limit=512, center_region_sampler=None,
                  center_max_attempts=200):
@@ -244,24 +245,24 @@ class NeighborTask(TaskBase):
         self._eligible_cache = {}
         self.center_radii = None
         self.center_radius_weights = None
+        self.center_distance_radii = None
+        self.center_distance_weights = None
         self.center_region_fanout = int(center_region_fanout)
         self.center_region_node_limit = int(center_region_node_limit)
         self.center_region_candidate_limit = int(center_region_candidate_limit)
         self.center_max_attempts = int(center_max_attempts)
         self.last_sampled_center_radius = None
+        self.last_sampled_center_distance_groups = None
         self.last_center_sampling_attempts = None
-        if center_radii:
-            parsed_radii = []
-            for value in center_radii:
-                if value is None or str(value).strip().lower() in {"global", "none", "unbounded"}:
-                    parsed_radii.append(None)
-                else:
-                    radius = int(value)
-                    if radius <= 0:
-                        raise ValueError(f"center radii must be positive or global, got {value!r}.")
-                    parsed_radii.append(radius)
-            if not parsed_radii:
-                raise ValueError("center_radii must contain at least one radius.")
+        if center_radii and (center_distance_radii or center_distance_weights):
+            raise ValueError(
+                "per-episode center radii and within-episode distance strata are mutually exclusive"
+            )
+        if bool(center_distance_radii) != bool(center_distance_weights):
+            raise ValueError(
+                "center_distance_radii and center_distance_weights must be configured together"
+            )
+        if center_radii or center_distance_radii:
             if self.sampling_strategy != "strict":
                 raise ValueError(
                     "distance-confined center sampling requires sampling_strategy='strict' "
@@ -275,6 +276,26 @@ class NeighborTask(TaskBase):
                 raise ValueError("center_region_candidate_limit must be positive.")
             if self.center_max_attempts <= 0:
                 raise ValueError("center_max_attempts must be positive.")
+            if strata is not None or confine_to_single_stratum or cross_source_prob != 0.0:
+                raise ValueError(
+                    "distance-confined center sampling is source-unaware and cannot be combined "
+                    "with graph_id strata, per-source episode confinement, or cross-source "
+                    "interpolation. Use a global band to include cross-source centers."
+                )
+            rowptr, _, _ = self.neighbor_sampler.whole_adj.csr()
+            self._center_degrees = (rowptr[1:] - rowptr[:-1]).cpu()
+        if center_radii:
+            parsed_radii = []
+            for value in center_radii:
+                if value is None or str(value).strip().lower() in {"global", "none", "unbounded"}:
+                    parsed_radii.append(None)
+                else:
+                    radius = int(value)
+                    if radius <= 0:
+                        raise ValueError(f"center radii must be positive or global, got {value!r}.")
+                    parsed_radii.append(radius)
+            if not parsed_radii:
+                raise ValueError("center_radii must contain at least one radius.")
             if center_radius_weights is None:
                 parsed_weights = [1.0] * len(parsed_radii)
             else:
@@ -288,16 +309,33 @@ class NeighborTask(TaskBase):
                     raise ValueError(
                         f"center_radius_weights must be positive, got {parsed_weights}."
                     )
-            if strata is not None or confine_to_single_stratum or cross_source_prob != 0.0:
-                raise ValueError(
-                    "distance-confined center sampling is source-unaware and cannot be combined "
-                    "with graph_id strata, per-source episode confinement, or cross-source "
-                    "interpolation. Use a global radius to include cross-source episodes."
-                )
             self.center_radii = parsed_radii
             self.center_radius_weights = parsed_weights
-            rowptr, _, _ = self.neighbor_sampler.whole_adj.csr()
-            self._center_degrees = (rowptr[1:] - rowptr[:-1]).cpu()
+        if center_distance_radii:
+            parsed_distance_radii = [int(radius) for radius in center_distance_radii]
+            parsed_distance_weights = [float(weight) for weight in center_distance_weights]
+            if any(radius <= 0 for radius in parsed_distance_radii):
+                raise ValueError(
+                    f"center_distance_radii must be positive, got {parsed_distance_radii}."
+                )
+            if parsed_distance_radii != sorted(set(parsed_distance_radii)):
+                raise ValueError(
+                    "center_distance_radii must be strictly increasing, got "
+                    f"{parsed_distance_radii}."
+                )
+            if len(parsed_distance_weights) != len(parsed_distance_radii) + 1:
+                raise ValueError(
+                    "center_distance_weights must contain one weight per distance band "
+                    "and one for global: "
+                    f"radii={parsed_distance_radii}, weights={parsed_distance_weights}."
+                )
+            if any(weight <= 0 for weight in parsed_distance_weights):
+                raise ValueError(
+                    "center_distance_weights must be positive, "
+                    f"got {parsed_distance_weights}."
+                )
+            self.center_distance_radii = parsed_distance_radii
+            self.center_distance_weights = parsed_distance_weights
         self.strata = None
         if strata is not None:
             self.strata = [
@@ -453,10 +491,10 @@ class NeighborTask(TaskBase):
     def _eligible_center(self, node, num_member):
         return int(self._center_degrees[int(node)].item()) >= int(num_member)
 
-    def _sample_global_centers(self, num_label, num_member, rng):
+    def _sample_global_centers(self, num_label, num_member, rng, forbidden=None):
         """Draw degree-eligible centers without materializing a whole-graph list."""
         centers = []
-        used = set()
+        used = set() if forbidden is None else set(forbidden)
         max_draws = max(1000, num_label * 1000)
         for _ in range(max_draws):
             center = rng.randrange(self.size)
@@ -467,6 +505,124 @@ class NeighborTask(TaskBase):
             if len(centers) == num_label:
                 return centers
         return None
+
+    def _sample_distance_stratified_centers(
+        self, anchor, num_label, num_member, rng
+    ):
+        """Draw anchor-relative local shells plus an independent global band.
+
+        Finite bands use discovery depth in the same bounded, fanout-sampled BFS as
+        radius episodes. The global band is sampled independently from the complete
+        merge while excluding the sampled local region; it may cross source graphs.
+        """
+        counts = self._distance_band_counts(num_label)
+        if not self._eligible_center(anchor, num_member):
+            return None
+
+        rowptr, col, _ = self.center_region_sampler.whole_adj.csr()
+        visited = {int(anchor)}
+        frontier = [int(anchor)]
+        bands = [[] for _ in self.center_distance_radii]
+        previous_radius = 0
+        band_by_depth = {}
+        for band_index, radius in enumerate(self.center_distance_radii):
+            for depth in range(previous_radius + 1, radius + 1):
+                band_by_depth[depth] = band_index
+            previous_radius = radius
+
+        for depth in range(1, self.center_distance_radii[-1] + 1):
+            next_frontier = []
+            rng.shuffle(frontier)
+            for node in frontier:
+                start = int(rowptr[node].item())
+                end = int(rowptr[node + 1].item())
+                neighbors = col[start:end].tolist()
+                if len(neighbors) > self.center_region_fanout:
+                    neighbors = rng.sample(neighbors, self.center_region_fanout)
+                else:
+                    rng.shuffle(neighbors)
+                for neighbor in neighbors:
+                    neighbor = int(neighbor)
+                    if neighbor in visited:
+                        continue
+                    visited.add(neighbor)
+                    next_frontier.append(neighbor)
+                    if self._eligible_center(neighbor, num_member):
+                        band = bands[band_by_depth[depth]]
+                        if len(band) < self.center_region_candidate_limit:
+                            band.append(neighbor)
+                    if len(visited) >= self.center_region_node_limit:
+                        break
+                if len(visited) >= self.center_region_node_limit:
+                    break
+            frontier = next_frontier
+            if not frontier or len(visited) >= self.center_region_node_limit:
+                break
+
+        selected_groups = []
+        for band_index, (candidates, count) in enumerate(zip(bands, counts[:-1])):
+            needed = count - 1 if band_index == 0 else count
+            if len(candidates) < needed:
+                return None
+            selected = rng.sample(candidates, needed)
+            if band_index == 0:
+                selected = [int(anchor), *selected]
+            selected_groups.append(selected)
+        selected_local = [node for group in selected_groups for node in group]
+        global_centers = self._sample_global_centers(
+            counts[-1],
+            num_member,
+            rng,
+            forbidden=visited.union(selected_local),
+        )
+        if global_centers is None:
+            return None
+        selected_groups.append(global_centers)
+        self.last_sampled_center_distance_groups = [list(group) for group in selected_groups]
+        return [node for group in selected_groups for node in group]
+
+    def _distance_band_counts(self, num_label):
+        """Allocate n_way dynamically across finite bands plus global."""
+        band_count = len(self.center_distance_weights)
+        if int(num_label) < band_count:
+            raise ValueError(
+                "n_way must be at least the number of distance bands so every band "
+                f"is represented: n_way={num_label}, bands={band_count}."
+            )
+        remaining = int(num_label) - band_count
+        total_weight = sum(self.center_distance_weights)
+        raw_extras = [remaining * weight / total_weight for weight in self.center_distance_weights]
+        extras = [int(value) for value in raw_extras]
+        leftovers = remaining - sum(extras)
+        order = sorted(
+            range(band_count),
+            key=lambda index: (raw_extras[index] - extras[index], -index),
+            reverse=True,
+        )
+        for index in order[:leftovers]:
+            extras[index] += 1
+        return [1 + extra for extra in extras]
+
+    def _sample_distance_stratified_episode(self, num_label, num_member, rng):
+        self.last_sampled_center_radius = None
+        self.last_sampled_center_distance_groups = None
+        for attempt in range(1, self.center_max_attempts + 1):
+            anchor = rng.randrange(self.size)
+            chosen = self._sample_distance_stratified_centers(
+                anchor, num_label, num_member, rng
+            )
+            if chosen is None:
+                continue
+            task = self._build_disjoint_task(chosen, num_member)
+            if task is not None:
+                self.last_center_sampling_attempts = attempt
+                return task
+        self.last_center_sampling_attempts = self.center_max_attempts
+        raise RuntimeError(
+            "Could not construct a collision-free within-episode distance-stratified "
+            f"{num_label}-way NM episode after {self.center_max_attempts} attempts. "
+            "Run the distance-stratified feasibility probe or adjust the bands."
+        )
 
     def _sample_region_centers(self, anchor, radius, num_label, num_member, rng):
         """Return candidate centers from a bounded sampled ball around ``anchor``.
@@ -722,6 +878,10 @@ class NeighborTask(TaskBase):
         # Value: list of nodes (list of int), list of nodes is the members of the task
         if self.center_radii is not None:
             return self._sample_radius_episode(num_label, num_member, rng)
+        if self.center_distance_radii is not None:
+            return self._sample_distance_stratified_episode(
+                num_label, num_member, rng
+            )
         if self.confine_to_single_stratum:
             # Partial cross-source: each episode is a naive mixed-source episode with
             # probability cross_source_prob, otherwise confined to one source. The

@@ -371,6 +371,28 @@ def get_params(argv=None):
         ),
     )
     args.add_argument(
+        "--neighbor_sampling_center_distance_radii",
+        default="",
+        type=str,
+        help=(
+            "Optional increasing sampled-BFS radii for within-episode distance strata. "
+            "Used with --neighbor_sampling_center_distance_weights. For radii '2,3', "
+            "the bands are depths 0-2 (including the anchor), depth 3, and independent "
+            "global centers outside the sampled local region."
+        ),
+    )
+    args.add_argument(
+        "--neighbor_sampling_center_distance_weights",
+        default="",
+        type=str,
+        help=(
+            "Comma-separated positive allocation weights for each configured distance "
+            "band and the independent global band. Counts are derived dynamically from "
+            "n_way, with at least one class per band; the anchor occupies one slot in "
+            "the first band. Mutually exclusive with per-episode center radii."
+        ),
+    )
+    args.add_argument(
         "--neighbor_sampling_center_region_fanout",
         default=64,
         type=int,

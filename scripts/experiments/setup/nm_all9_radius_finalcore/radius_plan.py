@@ -33,6 +33,13 @@ ARMS = (
     Arm("close_only", HERE / "close_only.yaml", ("2", "3")),
 )
 
+DISTANCE_STRATIFIED_ARM = Arm(
+    "distance_stratified",
+    HERE / "distance_stratified.yaml",
+    ("within_episode:0-2|3|global",),
+)
+ALL_ARMS = (*ARMS, DISTANCE_STRATIFIED_ARM)
+
 PANELS = (
     Panel("radius2", ("2",)),
     Panel("radius3", ("3",)),
@@ -42,7 +49,7 @@ PANELS = (
 
 
 def get_arm(arm_id: str) -> Arm:
-    matches = [arm for arm in ARMS if arm.arm_id == arm_id]
+    matches = [arm for arm in ALL_ARMS if arm.arm_id == arm_id]
     if len(matches) != 1:
         raise ValueError(f"unknown radius arm {arm_id!r}")
     return matches[0]

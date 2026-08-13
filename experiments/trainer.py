@@ -109,7 +109,9 @@ class TrainerFS():
         "neighbor_matching_walk_hops", "neighbor_sampling_strategy",
         "neighbor_sampling_strata", "neighbor_sampling_episode_source",
         "neighbor_sampling_cross_source_prob", "neighbor_sampling_center_radii",
-        "neighbor_sampling_center_radius_weights", "n_way", "n_shots", "n_query",
+        "neighbor_sampling_center_radius_weights",
+        "neighbor_sampling_center_distance_radii",
+        "neighbor_sampling_center_distance_weights", "n_way", "n_shots", "n_query",
         "batch_size", "learning_rate", "weight_decay", "dataset_len_cap", "epochs",
         "workers",
     )
@@ -572,6 +574,12 @@ class TrainerFS():
         )
         kwargs["neighbor_sampling_center_radius_weights"] = self.parameter.get(
             "neighbor_sampling_center_radius_weights", ""
+        )
+        kwargs["neighbor_sampling_center_distance_radii"] = self.parameter.get(
+            "neighbor_sampling_center_distance_radii", ""
+        )
+        kwargs["neighbor_sampling_center_distance_weights"] = self.parameter.get(
+            "neighbor_sampling_center_distance_weights", ""
         )
         kwargs["neighbor_sampling_center_region_fanout"] = self.parameter.get(
             "neighbor_sampling_center_region_fanout", 64

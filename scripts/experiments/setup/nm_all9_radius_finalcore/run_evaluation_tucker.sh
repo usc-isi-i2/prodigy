@@ -20,6 +20,7 @@ DRY_RUN="${DRY_RUN:-0}"
 VALIDATION_MODE="${VALIDATION_MODE:-shared}"
 EVAL_BATCH_COUNT="${EVAL_BATCH_COUNT:-}"
 EVAL_WORKERS="${EVAL_WORKERS:-}"
+ARM_IDS_TEXT="${ARM_IDS:-}"
 read -r -a GPU_IDS <<< "$GPUS_TEXT"
 read -r -a SEED_IDS <<< "$SEEDS_TEXT"
 read -r -a CHECKPOINT_STEP_IDS <<< "$CHECKPOINT_STEPS_TEXT"
@@ -51,13 +52,28 @@ PYTHON="${PYTHON:-${CONDA_PREFIX}/bin/python}"
 mkdir -p "$EVAL_STATE_ROOT" "$EVAL_LOG_ROOT/queue" "$RESULTS_ROOT" "$SUMMARY_ROOT"
 PLAN="$EVAL_LOG_ROOT/plan.tsv"
 cd "$REPO_ROOT"
-"$PYTHON" "$SCRIPT_DIR/radius_plan.py" > "$PLAN"
 
 jobs=()
-while IFS=$'\t' read -r arm_id _config _radii; do
-  [[ "$arm_id" == arm_id ]] && continue
-  for seed in "${SEED_IDS[@]}"; do jobs+=("${seed}:${arm_id}"); done
-done < "$PLAN"
+if [[ -z "$ARM_IDS_TEXT" ]]; then
+  "$PYTHON" "$SCRIPT_DIR/radius_plan.py" > "$PLAN"
+  while IFS=$'\t' read -r arm_id _config _radii; do
+    [[ "$arm_id" == arm_id ]] && continue
+    for seed in "${SEED_IDS[@]}"; do jobs+=("${seed}:${arm_id}"); done
+  done < "$PLAN"
+else
+  printf 'arm_id\n' > "$PLAN"
+  for arm_id in $ARM_IDS_TEXT; do
+    "$PYTHON" - "$SCRIPT_DIR" "$arm_id" <<'PY'
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(sys.argv[1])))
+from radius_plan import get_arm
+get_arm(sys.argv[2])
+PY
+    printf '%s\n' "$arm_id" >> "$PLAN"
+    for seed in "${SEED_IDS[@]}"; do jobs+=("${seed}:${arm_id}"); done
+  done
+fi
 worker_count=$(( ${#GPU_IDS[@]} * SLOTS_PER_GPU ))
 
 if [[ "$DRY_RUN" != 1 ]]; then
@@ -146,9 +162,13 @@ if [[ "$PHASE" == test || "$PHASE" == all ]]; then
   fi
   run_phase test
   if [[ "$DRY_RUN" != 1 ]]; then
-    "$PYTHON" "$SCRIPT_DIR/aggregate_radius_results.py" \
-      --results-root "$RESULTS_ROOT" --output-root "$SUMMARY_ROOT" \
+    aggregate_cmd=(
+      "$PYTHON" "$SCRIPT_DIR/aggregate_radius_results.py"
+      --results-root "$RESULTS_ROOT" --output-root "$SUMMARY_ROOT"
       --seeds "${SEEDS_TEXT// /,}"
+    )
+    [[ -z "$ARM_IDS_TEXT" ]] || aggregate_cmd+=(--arms "${ARM_IDS_TEXT// /,}")
+    "${aggregate_cmd[@]}"
     date -u +%FT%TZ > "$EVAL_LOG_ROOT/test_complete_utc.txt"
   fi
 fi
