@@ -25,7 +25,7 @@ from experiments.params import get_params  # noqa: E402
 from experiments.run_single_experiment import load_dataset, seed_everything  # noqa: E402
 from experiments.trainer import TrainerFS, _to_float  # noqa: E402
 from radius_plan import (  # noqa: E402
-    ARMS,
+    ALL_ARMS,
     CHECKPOINT_STEPS,
     PANELS,
     get_arm,
@@ -406,7 +406,7 @@ def run_test(args: argparse.Namespace) -> Path:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--phase", required=True, choices=["validation", "test"])
-    parser.add_argument("--arm", required=True, choices=[arm.arm_id for arm in ARMS])
+    parser.add_argument("--arm", required=True, choices=[arm.arm_id for arm in ALL_ARMS])
     parser.add_argument("--seed", required=True, type=int, choices=[0, 1, 2])
     parser.add_argument("--device", default=0, type=int)
     parser.add_argument("--training-state-root", required=True, type=Path)
