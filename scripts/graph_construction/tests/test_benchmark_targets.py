@@ -106,6 +106,30 @@ def test_static_split_reproducible():
     print("ok: static split is reproducible under a fixed seed")
 
 
+def test_three_way_static_split_has_no_undirected_leakage():
+    edges = [(i, i + 1) for i in range(20)] + [(1, 0), (2, 1), (3, 2)]
+    edge_index = torch.tensor(edges, dtype=torch.long).t().contiguous()
+    split = bt.build_static_train_val_test_split(
+        edge_index, validation_frac=0.15, test_frac=0.15, seed=0
+    )
+    views = [
+        set(map(tuple, split.train_edge_index.t().tolist())),
+        set(map(tuple, split.validation_edge_index.t().tolist())),
+        set(map(tuple, split.test_edge_index.t().tolist())),
+    ]
+    assert views[0].isdisjoint(views[1])
+    assert views[0].isdisjoint(views[2])
+    assert views[1].isdisjoint(views[2])
+    for left, right in ((0, 1), (0, 2), (1, 2)):
+        assert not {(min(u, v), max(u, v)) for u, v in views[left]} & {
+            (min(u, v), max(u, v)) for u, v in views[right]
+        }
+    again = bt.build_static_train_val_test_split(edge_index, seed=0)
+    assert torch.equal(split.test_edge_index, again.test_edge_index)
+    assert split.stats["train_pairs"] + split.stats["validation_pairs"] + split.stats["test_pairs"] == 20
+    print("ok: three-way static split is deterministic and leakage-free")
+
+
 def test_attach_creates_views():
     graph_obj: dict = {}
     edge_index = torch.tensor([[0, 1, 2, 3], [1, 2, 3, 0]], dtype=torch.long)
@@ -175,6 +199,7 @@ if __name__ == "__main__":
     test_profile_targets_string_ids()
     test_static_split_no_undirected_leakage()
     test_static_split_reproducible()
+    test_three_way_static_split_has_no_undirected_leakage()
     test_attach_creates_views()
     test_enrich_graph_obj_static_only()
     test_enrich_graph_obj_with_targets()

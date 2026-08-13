@@ -86,7 +86,7 @@ def _apply_config_defaults(parser, config):
         action.default = coerced
 
 
-def get_params():
+def get_params(argv=None):
     args = argparse.ArgumentParser()
 
     args.add_argument("--config", default="", type=str, help="Optional YAML config. CLI args override config values.")
@@ -205,6 +205,15 @@ def get_params():
         help="If True, save ROC curve plot/points for binary evaluation splits.",
     )
     args.add_argument("-eval_only", "--eval_only", default=False, type=str2bool)  # Eval. only mode (no training, only one pass of testing ds at the beginning and then quit)
+    args.add_argument(
+        "--eval_only_split",
+        default="test",
+        choices=["val", "test", "both"],
+        help=(
+            "Split(s) evaluated by --eval_only. 'val' is intended for checkpoint "
+            "selection without test peeking; 'test' preserves the historical default."
+        ),
+    )
     args.add_argument(
         "--eval_test_before_train",
         default=False,
@@ -700,11 +709,11 @@ def get_params():
     args.add_argument("-exptype", "--experiment_type", default="metagraph")
 
 
-    config_args, _ = args.parse_known_args()
+    config_args, _ = args.parse_known_args(argv)
     if config_args.config:
         _apply_config_defaults(args, _load_yaml_config(config_args.config))
 
-    args = args.parse_args()
+    args = args.parse_args(argv)
 
     params = {}
     for k, v in vars(args).items():

@@ -71,6 +71,19 @@ def test_positive_sampler_routes_train_to_background_and_test_to_holdout():
     assert nms.positive_sampler_for_split(dataset, "test", kwargs) is holdout
 
 
+def test_positive_sampler_routes_three_way_validation_and_test_separately():
+    background, validation, test = object(), object(), object()
+    dataset = SimpleNamespace(
+        neighbor_sampler=background,
+        nm_validation_neighbor_sampler=validation,
+        nm_test_neighbor_sampler=test,
+    )
+    kwargs = {"neighbor_matching_edge_split": True}
+    assert nms.positive_sampler_for_split(dataset, "train", kwargs) is background
+    assert nms.positive_sampler_for_split(dataset, "val", kwargs) is validation
+    assert nms.positive_sampler_for_split(dataset, "test", kwargs) is test
+
+
 def test_split_is_opt_in_and_missing_holdout_fails_closed():
     background = object()
     dataset = SimpleNamespace(neighbor_sampler=background)
