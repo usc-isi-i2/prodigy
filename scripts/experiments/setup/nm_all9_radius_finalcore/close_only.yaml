@@ -1,0 +1,48 @@
+# Final-core-matched third arm: every episode uses a close center region.
+dataset: covid19_twitter
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_all9_facebook_final_core_split_seed0.pt
+task_name: neighbor_matching
+
+edge_view: static_train
+target_edge_view: static_test
+neighbor_matching_edge_split: true
+feature_subset: all
+original_features: true
+
+emb_dim: 256
+layers: S,U,M
+gnn_type: sage
+n_layer: 1
+dropout: 0
+n_hop: 2
+neighbor_sampling_hop_sizes: "9,9"
+neighbor_sampling_node_limit: 101
+neighbor_matching_walk_hops: 1
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 4
+learning_rate: 0.002
+weight_decay: 0.001
+dataset_len_cap: 2500
+val_len_cap: 500
+test_len_cap: 500
+
+# No global episodes: all class centers come from a radius-2 or radius-3 region.
+neighbor_sampling_center_radii: "2,3"
+neighbor_sampling_center_radius_weights: "1,1"
+neighbor_sampling_center_region_fanout: 64
+neighbor_sampling_center_region_node_limit: 4096
+neighbor_sampling_center_region_candidate_limit: 512
+
+epochs: 1
+eval_step: 100000
+checkpoint_step: 100000
+checkpoint_steps: "100,300,900,2500"
+print_step: 100
+workers: 2
+device: 0
+seed: 0
+prefix: radius_close_only

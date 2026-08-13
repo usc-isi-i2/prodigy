@@ -29,6 +29,7 @@ and it is the entry point to the analysis tree.
 | `nm_ladder/` | the 8-rung merged-graph interpolation ladder | `RESULTS.md` |
 | `nm_ladder_facebook/` | 9-rung Order D ladder with Facebook inserted at rung 6 | `FINDINGS.md` |
 | `nm_all9_source_complete_batch/` | all-nine source-complete batch 9 versus the historical batch-1 model | `FINDINGS.md` |
+| `nm_all9_radius_finalcore/` | all-nine global versus radius-mixed and all-close center sampling | `FINDINGS.md` |
 | `nm_ladder_fixed_exposure_nhop2/` | fixed 10k/source ladder with fair two-hop sampling (Orders A/C) | `FINDINGS.md` |
 | `nm_ladder_downstream_nhop2/` | classification and repaired static-LP evaluation across the recent fair-two-hop ladders | `FINDINGS.md` |
 | `nm_ladder_nhop2/` | compute-matched two-hop replication of the ladder and order study | — (setup ready) |

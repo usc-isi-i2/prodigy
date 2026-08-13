@@ -350,6 +350,51 @@ def get_params(argv=None):
         ),
     )
     args.add_argument(
+        "--neighbor_sampling_center_radii",
+        default="",
+        type=str,
+        help=(
+            "Optional comma-separated graph-distance radii for NM class-center sampling. "
+            "Positive integers confine all centers in an episode to a sampled ball around "
+            "one node; 'global' uses the complete graph. One radius is drawn independently "
+            "per episode. Empty preserves historical sampling exactly."
+        ),
+    )
+    args.add_argument(
+        "--neighbor_sampling_center_radius_weights",
+        default="",
+        type=str,
+        help=(
+            "Optional comma-separated positive weights aligned with "
+            "--neighbor_sampling_center_radii. Empty gives every configured radius equal "
+            "probability."
+        ),
+    )
+    args.add_argument(
+        "--neighbor_sampling_center_region_fanout",
+        default=64,
+        type=int,
+        help="Maximum neighbors expanded per frontier node while sampling a finite-radius center region.",
+    )
+    args.add_argument(
+        "--neighbor_sampling_center_region_node_limit",
+        default=4096,
+        type=int,
+        help="Maximum visited nodes while constructing one finite-radius center region.",
+    )
+    args.add_argument(
+        "--neighbor_sampling_center_region_candidate_limit",
+        default=512,
+        type=int,
+        help="Stop expanding once this many degree-eligible class centers have been found.",
+    )
+    args.add_argument(
+        "--neighbor_sampling_center_max_attempts",
+        default=200,
+        type=int,
+        help="Maximum complete-region/episode construction attempts before failing loudly.",
+    )
+    args.add_argument(
         "--neighbor_matching_edge_split",
         default=False,
         type=str2bool,
@@ -531,6 +576,16 @@ def get_params(argv=None):
     args.add_argument("-kg_emb", "--kg_emb_model", default="", type=str)   #  "TransE", "ComplEx", etc.
     args.add_argument("-pretrained", "--pretrained_model_run", default="", type=str)
     #  Name of WanDB run to pull the best model from.
+    args.add_argument(
+        "--resume_training_checkpoint",
+        default="",
+        type=str,
+        help=(
+            "Resume an interrupted training run from a versioned full-state checkpoint. "
+            "Unlike --pretrained_model_run, this restores optimizer, completed step, RNG, "
+            "and training BatchSampler state. Exact resume currently requires --workers 0."
+        ),
+    )
 
     args.add_argument("-n_hop", "--n_hop", default=1, type=int)  # number of hops for subgraph extraction
     args.add_argument(
