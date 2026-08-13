@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import random
 import sys
 import os
 import json
@@ -100,6 +101,19 @@ def _save_config_to_wandb_files(parameter):
 
 
 class TrainerFS():
+    _RESUME_CONTRACT_KEYS = (
+        "seed", "dataset", "root", "graph_filename", "task_name",
+        "edge_view", "target_edge_view", "feature_subset", "original_features",
+        "emb_dim", "layers", "gnn_type", "n_layer", "dropout", "n_hop",
+        "neighbor_sampling_hop_sizes", "neighbor_sampling_node_limit",
+        "neighbor_matching_walk_hops", "neighbor_sampling_strategy",
+        "neighbor_sampling_strata", "neighbor_sampling_episode_source",
+        "neighbor_sampling_cross_source_prob", "neighbor_sampling_center_radii",
+        "neighbor_sampling_center_radius_weights", "n_way", "n_shots", "n_query",
+        "batch_size", "learning_rate", "weight_decay", "dataset_len_cap", "epochs",
+        "workers",
+    )
+
     def __init__(self, dataset, parameter):
         wandb.init(project="graph-clip", name=parameter["exp_name"], tags=parameter.get("tags") or None)
         _save_config_to_wandb_files(parameter)
@@ -476,12 +490,23 @@ class TrainerFS():
         if hasattr(self, "lp_header"):
             self.all_saveable_modules["lp_header"] = self.lp_header
         self.pretrained_model_run = self.parameter["pretrained_model_run"]
+        self.resume_training_checkpoint = str(
+            self.parameter.get("resume_training_checkpoint") or ""
+        ).strip()
+        if self.pretrained_model_run and self.resume_training_checkpoint:
+            raise ValueError(
+                "--pretrained_model_run is a weights-only warm start and cannot be "
+                "combined with --resume_training_checkpoint."
+            )
         if self.pretrained_model_run != "":
             _log(f"Reloading state dict from {self.pretrained_model_run}")
             self.load_checkpoint(self.pretrained_model_run)
 
         # Data loader creation.
         self.train_dataloader, self.train_val_dataloader, self.val_dataloader, self.test_dataloader = self._build_dataloaders(dataset, self.dataset_name)
+        self.resume_step = 0
+        if self.resume_training_checkpoint:
+            self.load_training_checkpoint(self.resume_training_checkpoint)
 
     def _score_label(self):
         return "score" if (self.is_regression or self.is_feature_prediction) else "acc"
@@ -877,17 +902,143 @@ class TrainerFS():
                   f"lp={_f(lp)} weighted_total={_f(loss)}", flush=True)
         return loss, -float(loss.detach().cpu().item())
 
+    @staticmethod
+    def _torch_load_checkpoint(path, map_location):
+        # Full-state checkpoints contain Python/NumPy RNG tuples, which are not part
+        # of PyTorch's restricted weights-only allowlist.
+        try:
+            return torch.load(path, map_location=map_location, weights_only=False)
+        except TypeError:  # PyTorch before the weights_only argument.
+            return torch.load(path, map_location=map_location)
+
+    def _training_batch_sampler(self):
+        if self.train_dataloader is None:
+            return None
+        sampler = getattr(self.train_dataloader, "batch_sampler", None)
+        if sampler is None or not hasattr(sampler, "state_dict"):
+            return None
+        return sampler
+
+    def _rng_state_dict(self):
+        state = {
+            "python": random.getstate(),
+            "numpy": np.random.get_state(),
+            "torch_cpu": torch.get_rng_state(),
+        }
+        if torch.cuda.is_available():
+            state["torch_cuda"] = torch.cuda.get_rng_state(self.device)
+        return state
+
+    def _resume_parameter_contract(self):
+        return {
+            key: _config_safe_value(self.parameter.get(key))
+            for key in self._RESUME_CONTRACT_KEYS
+        }
+
+    def _restore_rng_state(self, state):
+        random.setstate(state["python"])
+        np.random.set_state(state["numpy"])
+        torch.set_rng_state(state["torch_cpu"].cpu())
+        if "torch_cuda" in state:
+            if not torch.cuda.is_available():
+                raise RuntimeError(
+                    "Checkpoint contains CUDA RNG state but CUDA is unavailable."
+                )
+            torch.cuda.set_rng_state(state["torch_cuda"].cpu(), self.device)
+
     def save_checkpoint(self, step):
-        state_dict = {key: value.state_dict() for key, value in self.all_saveable_modules.items()}
-        torch.save(state_dict, os.path.join(self.ckpt_dir, 'state_dict_' + str(step) + '.ckpt'))
+        module_state = {
+            key: value.state_dict() for key, value in self.all_saveable_modules.items()
+        }
+        sampler = self._training_batch_sampler()
+        exact_resume_supported = int(self.parameter.get("workers", 0)) == 0
+        training_state = dict(module_state)
+        training_state["_training_checkpoint"] = {
+            "format_version": 1,
+            "completed_steps": int(step),
+            "exact_resume_supported": exact_resume_supported,
+            "parameter_contract": self._resume_parameter_contract(),
+            "optimizer": self.optimizer.state_dict(),
+            "rng": self._rng_state_dict(),
+            "train_batch_sampler": None if sampler is None else sampler.state_dict(),
+        }
+        # Keep the historical weights-only file compact and evaluator-compatible.
+        # Exact-resume state is a versioned sidecar at the same completed step.
+        weights_path = os.path.join(self.ckpt_dir, f"state_dict_{step}.ckpt")
+        training_path = os.path.join(self.ckpt_dir, f"training_state_{step}.ckpt")
+        for payload, path in ((module_state, weights_path), (training_state, training_path)):
+            temporary = path + ".tmp"
+            torch.save(payload, temporary)
+            os.replace(temporary, path)
 
     def load_checkpoint(self, path):
-        state_dict = torch.load(path, map_location=self.device)
+        state_dict = self._torch_load_checkpoint(path, map_location=self.device)
         for key, module in self.all_saveable_modules.items():
             if key not in state_dict:
                 _log(f"Checkpoint {path} has no module '{key}'; leaving it initialized.")
                 continue
             module.load_state_dict(state_dict[key], strict=False)
+
+    def load_training_checkpoint(self, path):
+        """Restore all state required for an exact interrupted-run continuation."""
+        if int(self.parameter.get("workers", 0)) != 0:
+            raise ValueError(
+                "Exact training resume requires --workers 0 because multiprocessing "
+                "DataLoader prefetch advances worker RNG beyond the consumed step."
+            )
+        state_dict = self._torch_load_checkpoint(path, map_location=self.device)
+        training = state_dict.get("_training_checkpoint")
+        if not isinstance(training, dict):
+            raise ValueError(
+                f"{path} is a weights-only checkpoint and cannot exactly resume training."
+            )
+        if int(training.get("format_version", -1)) != 1:
+            raise ValueError(
+                f"Unsupported full-state checkpoint format in {path}: "
+                f"{training.get('format_version')!r}."
+            )
+        if not bool(training.get("exact_resume_supported", False)):
+            raise ValueError(
+                f"{path} was produced with DataLoader workers and is not exact-resumable."
+            )
+        saved_contract = training.get("parameter_contract")
+        current_contract = self._resume_parameter_contract()
+        if saved_contract != current_contract:
+            if not isinstance(saved_contract, dict):
+                mismatches = {"parameter_contract": {"checkpoint": saved_contract}}
+            else:
+                mismatches = {
+                    key: {
+                        "checkpoint": saved_contract.get(key),
+                        "current": current_contract.get(key),
+                    }
+                    for key in self._RESUME_CONTRACT_KEYS
+                    if saved_contract.get(key) != current_contract.get(key)
+                }
+            raise ValueError(
+                "Exact-resume parameter contract mismatch: "
+                + json.dumps(mismatches, sort_keys=True)
+            )
+        self.load_checkpoint(path)
+        self.optimizer.load_state_dict(training["optimizer"])
+        sampler = self._training_batch_sampler()
+        sampler_state = training.get("train_batch_sampler")
+        if sampler is None or sampler_state is None:
+            raise ValueError(f"{path} has no restorable training BatchSampler state.")
+        sampler.load_state_dict(sampler_state)
+        # DataLoader iterator construction itself consumes one Torch RNG draw even
+        # with workers=0. Defer restoration until train() has created that iterator,
+        # otherwise a resumed stream would be shifted by one draw.
+        self._deferred_resume_rng_state = training["rng"]
+        self.resume_step = int(training["completed_steps"])
+        if self.resume_step < 0 or self.resume_step > self.steps:
+            raise ValueError(
+                f"Resume step {self.resume_step} is outside the configured 0..{self.steps} budget."
+            )
+        _log(
+            f"Exactly resumed optimizer, RNG, episode stream, and model at completed "
+            f"step {self.resume_step} from {path}"
+        )
 
     def _maybe_save_roc_curve(self, y_true_matrix, y_pred_matrix, split_name, step=None, global_eval=None):
         if not self.parameter.get("save_roc_curve", False):
@@ -1738,7 +1889,7 @@ class TrainerFS():
 
         # training by step
         t_load, t_one_step = 0, 0
-        steps_run = 0  # optimizer steps actually completed; used for the final checkpoint
+        steps_run = self.resume_step  # optimizer steps actually completed
 
         bad_counts = 0
 
@@ -1796,12 +1947,16 @@ class TrainerFS():
         # `steps_run` counts completed optimizer steps, so it never takes the value 0
         # inside the loop. Step 0 — the random-init anchor a saturation curve is measured
         # against — therefore has to be written here, before any gradient is applied.
-        if 0 in self.checkpoint_steps:
+        if self.resume_step == 0 and 0 in self.checkpoint_steps:
             _log("[step 0] saving pre-training checkpoint...")
             self.save_checkpoint(0)
 
         train_dataloader_itr = iter(self.train_dataloader)
-        pbar = trange(self.steps)
+        deferred_rng = getattr(self, "_deferred_resume_rng_state", None)
+        if deferred_rng is not None:
+            self._restore_rng_state(deferred_rng)
+            self._deferred_resume_rng_state = None
+        pbar = trange(self.resume_step, self.steps)
         for e in pbar:
             steps_run = e + 1
             self.model.train()
@@ -1969,7 +2124,10 @@ class TrainerFS():
         # before the fix, one step of training later in content.
         if steps_run > 0:
             final_ckpt = os.path.join(self.ckpt_dir, f"state_dict_{steps_run}.ckpt")
-            if os.path.exists(final_ckpt):
+            final_training_ckpt = os.path.join(
+                self.ckpt_dir, f"training_state_{steps_run}.ckpt"
+            )
+            if os.path.exists(final_ckpt) and os.path.exists(final_training_ckpt):
                 _log(f"[step {steps_run}] final checkpoint already present, not re-saving")
             else:
                 _log(f"[step {steps_run}] saving final checkpoint...")

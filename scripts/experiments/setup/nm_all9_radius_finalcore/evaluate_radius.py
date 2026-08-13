@@ -55,7 +55,7 @@ def git_commit() -> str:
 
 
 def checkpoint_path(args: argparse.Namespace, step: int) -> Path:
-    run_name = f"radiusfc_{args.arm}_s{args.seed}_{args.training_run_stamp}"
+    run_name = f"{args.training_prefix}_{args.arm}_s{args.seed}_{args.training_run_stamp}"
     return (
         args.training_state_root
         / run_name
@@ -161,6 +161,7 @@ def evaluate_checkpoints_shared(
     dataset,
     base_params: dict[str, Any],
     checkpoints: dict[int, Path],
+    checkpoint_steps: tuple[int, ...],
     split: str,
     panel_id: str,
 ) -> list[dict[str, Any]]:
@@ -171,7 +172,7 @@ def evaluate_checkpoints_shared(
     checkpoint only repeats CPU work.  Keep four tiny checkpoint models on the
     same GPU and forward every sampled batch through each model instead.
     """
-    steps = list(CHECKPOINT_STEPS)
+    steps = list(checkpoint_steps)
     first_step = steps[0]
     params = deepcopy(base_params)
     params["pretrained_model_run"] = str(checkpoints[first_step])
@@ -198,7 +199,9 @@ def evaluate_checkpoints_shared(
 
         for step in steps[1:]:
             model = deepcopy(trainer.model)
-            state_dict = torch.load(checkpoints[step], map_location=trainer.device)
+            state_dict = TrainerFS._torch_load_checkpoint(
+                checkpoints[step], map_location=trainer.device
+            )
             if "model" not in state_dict:
                 raise KeyError(f"checkpoint has no model state: {checkpoints[step]}")
             model.load_state_dict(state_dict["model"], strict=False)
@@ -266,29 +269,37 @@ def run_validation(args: argparse.Namespace) -> Path:
         print(f"SKIP frozen selection {selection_path}")
         return selection_path
 
-    checkpoints = {step: checkpoint_path(args, step) for step in CHECKPOINT_STEPS}
+    checkpoint_steps = args.checkpoint_steps_eval
+    checkpoints = {step: checkpoint_path(args, step) for step in checkpoint_steps}
     missing = [str(path) for path in checkpoints.values() if not path.is_file()]
     if missing:
         raise FileNotFoundError("missing training checkpoints:\n" + "\n".join(missing))
 
     primary_panels = [panel for panel in PANELS if panel.primary]
-    first_panel = primary_panels[0]
-    first_step = CHECKPOINT_STEPS[0]
+    first_panel = PANELS[0]
+    first_step = checkpoint_steps[0]
     first_params = resolved_params(
         args, first_panel.panel_id, "val", checkpoints[first_step]
     )
     dataset = load_dataset(first_params)
     validations = []
-    for panel in primary_panels:
+    # Record trajectories on all four panels. The within-source compatibility
+    # panel remains excluded from checkpoint selection, but is no longer test-only.
+    for panel in PANELS:
         params = resolved_params(args, panel.panel_id, "val", checkpoints[first_step])
         if args.validation_mode == "shared":
             validations.extend(
                 evaluate_checkpoints_shared(
-                    dataset, params, checkpoints, "val", panel.panel_id
+                    dataset,
+                    params,
+                    checkpoints,
+                    checkpoint_steps,
+                    "val",
+                    panel.panel_id,
                 )
             )
         else:
-            for step in CHECKPOINT_STEPS:
+            for step in checkpoint_steps:
                 step_params = resolved_params(
                     args, panel.panel_id, "val", checkpoints[step]
                 )
@@ -303,7 +314,12 @@ def run_validation(args: argparse.Namespace) -> Path:
                     )
                 )
 
-    selection_summary = select_validation_checkpoint(validations)
+    primary_validations = [
+        row for row in validations if get_panel(str(row["panel"])).primary
+    ]
+    selection_summary = select_validation_checkpoint(
+        primary_validations, checkpoint_steps=checkpoint_steps
+    )
     selected_step = int(selection_summary["selected"]["checkpoint_step"])
     payload = {
         "protocol": "radius_panel_macro_validation_then_frozen_test",
@@ -313,7 +329,8 @@ def run_validation(args: argparse.Namespace) -> Path:
         "training_radii": list(get_arm(args.arm).radii),
         "seed": args.seed,
         "training_run_stamp": args.training_run_stamp,
-        "checkpoint_steps": list(CHECKPOINT_STEPS),
+        "checkpoint_steps": list(checkpoint_steps),
+        "validation_panels": [panel.panel_id for panel in PANELS],
         "primary_panels": [panel.panel_id for panel in primary_panels],
         "validation_results": validations,
         "checkpoint_summaries": selection_summary["checkpoint_summaries"],
@@ -392,6 +409,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", default=0, type=int)
     parser.add_argument("--training-state-root", required=True, type=Path)
     parser.add_argument("--training-run-stamp", default="20260807")
+    parser.add_argument("--training-prefix", default="radiusfc")
+    parser.add_argument(
+        "--checkpoint-steps",
+        default=",".join(str(step) for step in CHECKPOINT_STEPS),
+        help="Comma-separated completed-step checkpoints to validate.",
+    )
     parser.add_argument("--evaluation-state-root", required=True, type=Path)
     parser.add_argument("--evaluation-log-root", required=True, type=Path)
     parser.add_argument("--results-root", required=True, type=Path)
@@ -409,7 +432,22 @@ def parse_args() -> argparse.Namespace:
         type=int,
         help="Override dataloader worker count.",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    try:
+        args.checkpoint_steps_eval = tuple(
+            int(part.strip())
+            for part in args.checkpoint_steps.split(",")
+            if part.strip()
+        )
+    except ValueError as exc:
+        parser.error(f"invalid --checkpoint-steps: {exc}")
+    if not args.checkpoint_steps_eval or any(
+        step <= 0 for step in args.checkpoint_steps_eval
+    ):
+        parser.error("--checkpoint-steps must contain positive integers")
+    if tuple(sorted(set(args.checkpoint_steps_eval))) != args.checkpoint_steps_eval:
+        parser.error("--checkpoint-steps must be unique and increasing")
+    return args
 
 
 def main() -> int:

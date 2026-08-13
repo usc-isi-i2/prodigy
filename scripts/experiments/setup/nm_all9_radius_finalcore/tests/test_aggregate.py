@@ -7,7 +7,7 @@ HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 
 import aggregate_radius_results  # noqa: E402
-from radius_plan import ARMS, CHECKPOINT_STEPS, PANELS  # noqa: E402
+from radius_plan import ARMS, PANELS  # noqa: E402
 
 
 def test_one_seed_aggregation(monkeypatch, tmp_path):
@@ -18,7 +18,9 @@ def test_one_seed_aggregation(monkeypatch, tmp_path):
         directory.mkdir(parents=True)
         selection = {
             "created_utc": "selection-time",
-            "selected_checkpoint_step": 300,
+            "selected_checkpoint_step": 10000,
+            "checkpoint_steps": [2500, 5000, 7500, 10000],
+            "validation_panels": [panel.panel_id for panel in PANELS],
             "validation_results": [
                 {
                     "checkpoint_step": step,
@@ -27,13 +29,13 @@ def test_one_seed_aggregation(monkeypatch, tmp_path):
                     "score_std": 0.1,
                     "loss": 1.0,
                 }
-                for step in CHECKPOINT_STEPS
-                for panel in ("radius2", "radius3", "global")
+                for step in (2500, 5000, 7500, 10000)
+                for panel in ("radius2", "radius3", "global", "within_source")
             ],
         }
         result = {
             "selection_created_utc": "selection-time",
-            "selected_checkpoint_step": 300,
+            "selected_checkpoint_step": 10000,
             "test_results": [
                 {
                     "panel": panel.panel_id,

@@ -13,7 +13,7 @@ import sys
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from radius_plan import ARMS, CHECKPOINT_STEPS, PANELS  # noqa: E402
+from radius_plan import ARMS, PANELS  # noqa: E402
 
 
 def write_csv(path, rows):
@@ -48,6 +48,8 @@ def main() -> int:
     validation_rows = []
     test_rows = []
     selections = []
+    expected_checkpoint_steps = None
+    expected_validation_panels = None
     for arm in ARMS:
         for seed in seeds:
             directory = args.results_root / f"seed_{seed}" / arm.arm_id
@@ -59,6 +61,38 @@ def main() -> int:
             result = json.loads(result_path.read_text(encoding="utf-8"))
             if result["selection_created_utc"] != selection["created_utc"]:
                 raise ValueError(f"selection/result mismatch under {directory}")
+            selection_steps = tuple(
+                int(step)
+                for step in selection.get(
+                    "checkpoint_steps",
+                    sorted({row["checkpoint_step"] for row in selection["validation_results"]}),
+                )
+            )
+            selection_panels = tuple(
+                selection.get(
+                    "validation_panels",
+                    dict.fromkeys(row["panel"] for row in selection["validation_results"]),
+                )
+            )
+            observed_cells = {
+                (int(row["checkpoint_step"]), str(row["panel"]))
+                for row in selection["validation_results"]
+            }
+            expected_cells = {
+                (step, panel)
+                for step in selection_steps
+                for panel in selection_panels
+            }
+            if len(selection["validation_results"]) != len(expected_cells) or observed_cells != expected_cells:
+                raise ValueError(f"incomplete validation trajectory under {directory}")
+            if expected_checkpoint_steps is None:
+                expected_checkpoint_steps = selection_steps
+                expected_validation_panels = selection_panels
+            elif (
+                selection_steps != expected_checkpoint_steps
+                or selection_panels != expected_validation_panels
+            ):
+                raise ValueError(f"inconsistent validation schedule under {directory}")
             selections.append(
                 {
                     "arm": arm.arm_id,
@@ -91,7 +125,12 @@ def main() -> int:
                     }
                 )
 
-    expected_validation = len(ARMS) * len(seeds) * len(CHECKPOINT_STEPS) * 3
+    expected_validation = (
+        len(ARMS)
+        * len(seeds)
+        * len(expected_checkpoint_steps)
+        * len(expected_validation_panels)
+    )
     expected_test = len(ARMS) * len(seeds) * len(PANELS)
     if len(validation_rows) != expected_validation or len(test_rows) != expected_test:
         raise ValueError(

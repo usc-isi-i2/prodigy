@@ -9,6 +9,8 @@ EVAL_LOG_ROOT="${EVAL_LOG_ROOT:-${REPO_ROOT}/log/nm_all9_radius_finalcore_eval}"
 RESULTS_ROOT="${RESULTS_ROOT:-${EVAL_LOG_ROOT}/results}"
 SUMMARY_ROOT="${SUMMARY_ROOT:-${EVAL_LOG_ROOT}/summary}"
 TRAINING_RUN_STAMP="${TRAINING_RUN_STAMP:-20260807}"
+TRAINING_PREFIX="${TRAINING_PREFIX:-radiusfc}"
+CHECKPOINT_STEPS_TEXT="${CHECKPOINT_STEPS:-100 300 900 2500}"
 EVALUATION_RUN_STAMP="${EVALUATION_RUN_STAMP:-20260807}"
 GPUS_TEXT="${GPUS:-0 1 2 3}"
 SLOTS_PER_GPU="${SLOTS_PER_GPU:-1}"
@@ -20,6 +22,7 @@ EVAL_BATCH_COUNT="${EVAL_BATCH_COUNT:-}"
 EVAL_WORKERS="${EVAL_WORKERS:-}"
 read -r -a GPU_IDS <<< "$GPUS_TEXT"
 read -r -a SEED_IDS <<< "$SEEDS_TEXT"
+read -r -a CHECKPOINT_STEP_IDS <<< "$CHECKPOINT_STEPS_TEXT"
 
 [[ "$PHASE" =~ ^(validation|test|all)$ ]] || { echo "PHASE must be validation, test, or all" >&2; exit 2; }
 [[ "$VALIDATION_MODE" =~ ^(shared|legacy)$ ]] || { echo "VALIDATION_MODE must be shared or legacy" >&2; exit 2; }
@@ -32,6 +35,10 @@ done
 for seed in "${SEED_IDS[@]}"; do
   [[ "$seed" =~ ^(0|1|2)$ ]] || { echo "seed must be 0, 1, or 2" >&2; exit 2; }
 done
+for step in "${CHECKPOINT_STEP_IDS[@]}"; do
+  [[ "$step" =~ ^[1-9][0-9]*$ ]] || { echo "checkpoint steps must be positive integers" >&2; exit 2; }
+done
+CHECKPOINT_STEPS_CSV="$(IFS=,; echo "${CHECKPOINT_STEP_IDS[*]}")"
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
 source "$(conda info --base)/etc/profile.d/conda.sh"
@@ -71,8 +78,8 @@ if [[ "$DRY_RUN" != 1 && ( "$PHASE" == validation || "$PHASE" == all ) ]]; then
   missing=0
   for item in "${jobs[@]}"; do
     IFS=: read -r seed arm_id <<< "$item"
-    for step in 100 300 900 2500; do
-      checkpoint="$TRAINING_STATE_ROOT/radiusfc_${arm_id}_s${seed}_${TRAINING_RUN_STAMP}/checkpoint/state_dict_${step}.ckpt"
+    for step in "${CHECKPOINT_STEP_IDS[@]}"; do
+      checkpoint="$TRAINING_STATE_ROOT/${TRAINING_PREFIX}_${arm_id}_s${seed}_${TRAINING_RUN_STAMP}/checkpoint/state_dict_${step}.ckpt"
       if [[ ! -f "$checkpoint" ]]; then echo "MISSING $checkpoint" >&2; missing=$((missing + 1)); fi
     done
   done
@@ -91,6 +98,8 @@ run_phase() {
              --phase "$phase" --arm "$arm_id" --seed "$seed" --device 0
              --training-state-root "$TRAINING_STATE_ROOT"
              --training-run-stamp "$TRAINING_RUN_STAMP"
+             --training-prefix "$TRAINING_PREFIX"
+             --checkpoint-steps "$CHECKPOINT_STEPS_CSV"
              --evaluation-state-root "$EVAL_STATE_ROOT"
              --evaluation-log-root "$EVAL_LOG_ROOT/runs"
              --results-root "$RESULTS_ROOT"

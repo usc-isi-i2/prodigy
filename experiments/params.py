@@ -576,6 +576,16 @@ def get_params(argv=None):
     args.add_argument("-kg_emb", "--kg_emb_model", default="", type=str)   #  "TransE", "ComplEx", etc.
     args.add_argument("-pretrained", "--pretrained_model_run", default="", type=str)
     #  Name of WanDB run to pull the best model from.
+    args.add_argument(
+        "--resume_training_checkpoint",
+        default="",
+        type=str,
+        help=(
+            "Resume an interrupted training run from a versioned full-state checkpoint. "
+            "Unlike --pretrained_model_run, this restores optimizer, completed step, RNG, "
+            "and training BatchSampler state. Exact resume currently requires --workers 0."
+        ),
+    )
 
     args.add_argument("-n_hop", "--n_hop", default=1, type=int)  # number of hops for subgraph extraction
     args.add_argument(

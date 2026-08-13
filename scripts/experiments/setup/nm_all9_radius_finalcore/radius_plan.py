@@ -55,12 +55,15 @@ def get_panel(panel_id: str) -> Panel:
     return matches[0]
 
 
-def select_validation_checkpoint(rows: list[dict[str, Any]]) -> dict[str, Any]:
+def select_validation_checkpoint(
+    rows: list[dict[str, Any]],
+    checkpoint_steps: tuple[int, ...] = CHECKPOINT_STEPS,
+) -> dict[str, Any]:
     """Select the best step by the macro mean over the three primary panels."""
     primary_ids = {panel.panel_id for panel in PANELS if panel.primary}
     expected = {
         (step, panel_id)
-        for step in CHECKPOINT_STEPS
+        for step in checkpoint_steps
         for panel_id in primary_ids
     }
     observed = {
@@ -72,7 +75,7 @@ def select_validation_checkpoint(rows: list[dict[str, Any]]) -> dict[str, Any]:
         )
 
     summaries = []
-    for step in CHECKPOINT_STEPS:
+    for step in checkpoint_steps:
         panel_rows = [row for row in rows if int(row["checkpoint_step"]) == step]
         scores = {str(row["panel"]): float(row["score"]) for row in panel_rows}
         summaries.append(

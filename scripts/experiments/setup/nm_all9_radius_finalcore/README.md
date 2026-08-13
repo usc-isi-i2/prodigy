@@ -158,3 +158,32 @@ DRY_RUN=1 PHASE=all SEEDS=0 GPUS="0 1 2" \
 Strict aggregation writes validation trajectories, selected steps, per-seed test rows,
 and a seed-aware summary under `log/nm_all9_radius_finalcore_eval/summary/`. Analysis
 and findings belong in a matching analysis directory only after these results exist.
+
+## Seed-0 convergence follow-up (10k)
+
+The convergence follow-up reruns all three seed-0 arms from random initialization for
+10,000 updates. It writes weights plus an atomic full-state sidecar at 2,500, 5,000,
+7,500, and 10,000 completed updates. The sidecar contains the AdamW state, completed
+step, Python/NumPy/Torch CPU and CUDA RNG state, and the private episode-sampler state.
+Training uses `workers=0` because multiprocessing prefetch can advance worker RNG beyond
+the last consumed optimizer step and would make an interruption checkpoint ambiguous.
+
+Evaluation records complete validation trajectories on four matched panels: radius 2,
+radius 3, global, and balanced within-source. The within-source panel is diagnostic and
+does not influence checkpoint selection; the frozen selected checkpoint is tested on all
+four panels.
+
+```bash
+DRY_RUN=1 GPUS="0 1" \
+  bash scripts/experiments/setup/nm_all9_radius_finalcore/run_convergence_10k_tucker.sh
+
+tmux new-session -d -s radiusfc10k \
+  'export PATH="/home/mhchu/miniconda3/bin:$PATH"; \
+   GPUS="0 1" \
+   bash scripts/experiments/setup/nm_all9_radius_finalcore/run_convergence_10k_pipeline_tucker.sh'
+```
+
+If interrupted, restart an individual run with the same resolved configuration and
+`--resume_training_checkpoint .../checkpoint/training_state_<step>.ckpt`. A historical
+`state_dict_<step>.ckpt` remains a weights-only warm start and is deliberately rejected
+by the exact-resume option.

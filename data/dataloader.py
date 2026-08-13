@@ -847,6 +847,33 @@ class BatchSampler(Sampler):
                 batch.append(example)
         return batch, batch_param
 
+    def state_dict(self):
+        """Return the deterministic episode-stream state.
+
+        The sampler owns a private ``random.Random`` instance, so global Python RNG
+        checkpoints are not enough to resume the same episode stream.  A small number
+        of task wrappers also maintain a cursor alongside that RNG.
+        """
+        task_state = {}
+        for name in ("scheduled_episode", "task_idx_idx"):
+            if hasattr(self.task, name):
+                task_state[name] = int(getattr(self.task, name))
+        return {
+            "rng_state": self.rng.getstate(),
+            "task_state": task_state,
+        }
+
+    def load_state_dict(self, state_dict):
+        """Restore a state produced by :meth:`state_dict`."""
+        self.rng.setstate(state_dict["rng_state"])
+        for name, value in state_dict.get("task_state", {}).items():
+            if not hasattr(self.task, name):
+                raise ValueError(
+                    f"Cannot restore BatchSampler task cursor {name!r}: "
+                    f"{type(self.task).__name__} has no such attribute."
+                )
+            setattr(self.task, name, int(value))
+
 
 def linearize(mask, inputs_idx, output_idx, batch_rand_perm = None):
     if batch_rand_perm is None:

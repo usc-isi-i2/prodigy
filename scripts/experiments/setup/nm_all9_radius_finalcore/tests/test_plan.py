@@ -62,6 +62,17 @@ def test_validation_panels_and_macro_selection_are_predeclared():
     assert selection["selected"]["checkpoint_step"] == 300
 
 
+def test_selector_accepts_the_10k_convergence_schedule():
+    steps = (2500, 5000, 7500, 10000)
+    rows = [
+        {"checkpoint_step": step, "panel": panel, "score": float(step)}
+        for step in steps
+        for panel in ("radius2", "radius3", "global")
+    ]
+    selection = select_validation_checkpoint(rows, checkpoint_steps=steps)
+    assert selection["selected"]["checkpoint_step"] == 10000
+
+
 def test_selector_rejects_missing_panel_cell():
     rows = [
         {"checkpoint_step": step, "panel": panel, "score": 0.5}
