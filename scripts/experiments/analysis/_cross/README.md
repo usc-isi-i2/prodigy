@@ -19,7 +19,7 @@ and it is the entry point to the analysis tree.
 | `bio_embedding_geometry/` | exact bio overlap and GTE-space geometry across the nine social graphs | `FINDINGS.md` |
 | `error_audit/` | prediction-level correct/error cards for NM, classification, repaired regression, and repaired static LP | `README.md` |
 | `final_core/` | two-architecture native-pretext matrix and ladder: complete three-seed PRODIGY component plus current one-seed SAMGPT evidence | `FINDINGS.md` |
-| `graph_divergence/`, `similarity_vs_transfer/` | graph-distance statistics and whether they predict transfer | `FINDINGS.md` |
+| `graph_divergence/`, `similarity_vs_transfer/`, `similarity_vs_transfer_v2/` | graph-distance statistics and the proper-AUC 9×9 predictor leaderboard | `FINDINGS.md` |
 | `identity_overlap_audit/` | exact Twitter-ID overlap where comparable plus graph-aligned biography-duplication proxies | `FINDINGS.md` |
 | `mix_slp_ablation/` | eval-time 2×2 (rewire × permute) on MIX's static LP | `FINDINGS.md` — ⚠️ premise voided by the rescore |
 | `multitask_ssl/` | the {NM, CL, FP} objective lattice — singles, pairs, triple | `FINDINGS.md`, `FINDINGS_rescore.md` |

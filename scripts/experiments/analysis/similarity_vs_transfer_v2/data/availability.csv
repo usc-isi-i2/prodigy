@@ -1,0 +1,20 @@
+predictor,status,coverage,artifact_or_next_step
+9x9 NM ROC-AUC and accuracy,available,9/9,nm_single_source_matrix_9x9_long.csv
+in-degree distribution KS,available,9/9,graph_divergence_data.json
+out-degree distribution KS,available,9/9,graph_divergence_data.json
+raw feature centroid distance,available,9/9,graph_divergence_data.json
+raw feature Frechet distance,available,9/9,graph_divergence_data.json
+raw feature MMD2,available,9/9,graph_divergence_data.json
+raw feature proxy-A distance,available,9/9,graph_divergence_data.json
+node and edge counts,available,9/9,graph_divergence_data.json
+feature homophily,available,9/9,graph_divergence_data.json
+label homophily,partial,5/9,do not impute missing labels
+feature separability (proxy A),available,9/9,graph_divergence_data.json
+user overlap,available partial,Twitter pairs,Facebook pairs are NA; Jaccard is null
+feature skewness,available,9/9,aligned L1 and Wasserstein metrics generated
+neighbor-mean distribution distances,available,9/9,PAD MMD centroid and projected Frechet generated
+center-plus-neighbor distribution distances,available,9/9,PAD MMD centroid and projected Frechet generated
+time distribution,not available,heterogeneous subset,extract comparable event timestamps from raw source files
+message-passing topology distance,available lightweight,9/9,degree-binned one-hop signature; full WL/ego-Laplacian missing
+encoder representation distance,not available,0/9,extract layerwise embeddings from a fixed checkpoint
+language/topic composition,available proxy,9/9,shared 64-cluster embedding-topic JS distance

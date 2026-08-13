@@ -1,0 +1,50 @@
+{
+  "graphs": [
+    "covid19_twitter",
+    "ukr_rus_twitter",
+    "midterm",
+    "cp_hk_twitter",
+    "twibot20",
+    "election2020",
+    "covid_political",
+    "ukr_rus_suspended",
+    "facebook_page_reference"
+  ],
+  "n_graphs": 9,
+  "self_cells_excluded": true,
+  "transfer_metrics": [
+    "roc_auc",
+    "accuracy"
+  ],
+  "permutations": 9999,
+  "permutation_unit": "joint graph identity",
+  "best_pairwise_by_abs_auc_rho": {
+    "predictor": "proxy_a_distance",
+    "kind": "pairwise_distance",
+    "graphs": 9,
+    "mean_target_spearman_auc": -0.7551917106363747,
+    "mean_target_spearman_accuracy": -0.7458927287580205,
+    "auc_graph_permutation_p_two_sided": 0.0007,
+    "targets_expected_direction": 9,
+    "top1_hits": 5,
+    "top1_rate": 0.5555555555555556,
+    "mean_regret": 0.015340120114888896,
+    "mean_selected_rank": 2.3333333333333335
+  },
+  "largest_graph_auc_selection": {
+    "predictor": "n_nodes",
+    "kind": "source",
+    "graphs": 9,
+    "mean_target_spearman_auc": 0.7433862433862435,
+    "auc_graph_permutation_p_two_sided": 0.015,
+    "targets_same_sign_as_mean": 9,
+    "top1_hits": 7,
+    "top1_rate": 0.7777777777777778,
+    "mean_regret": 0.0004928128671111143,
+    "mean_selected_rank": 1.2222222222222223
+  },
+  "notes": [
+    "Source/gap selection direction is chosen from its descriptive mean rho and is exploratory.",
+    "P-values test graph-label exchangeability; nine graphs still imply wide uncertainty and strong corpus confounding."
+  ]
+}

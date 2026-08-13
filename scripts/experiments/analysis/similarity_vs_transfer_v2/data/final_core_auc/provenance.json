@@ -1,0 +1,61 @@
+{
+  "auc_definition": "multiclass one-vs-rest macro ROC-AUC from all episode logits",
+  "batch_count": 16,
+  "batch_size": 32,
+  "canonical_graph_names": [
+    "covid19_twitter",
+    "ukr_rus_twitter",
+    "cp_hk_twitter",
+    "midterm",
+    "twibot20",
+    "election2020",
+    "covid_political",
+    "ukr_rus_suspended",
+    "facebook_page_reference"
+  ],
+  "checkpoint_step": 2500,
+  "diagonal_policy": "preserved in evidence; excluded from transfer-predictor analyses",
+  "episode_count_per_cell": 512,
+  "imported_rows": 243,
+  "metric_contract": "accuracy_f1_macro_roc_auc_ovr_macro_v1",
+  "metrics": [
+    "accuracy",
+    "f1_macro",
+    "roc_auc_ovr_macro"
+  ],
+  "outcomes": [
+    "accuracy",
+    "f1_macro",
+    "roc_auc_ovr_macro"
+  ],
+  "protocol": "fixed_test_512_static_test_on_static_train_v1",
+  "source_summary_root": "/Users/philipp/projects/gfm/prodigy-simtransfer-v2/scripts/experiments/analysis/similarity_vs_transfer_v2/data/final_core_auc/raw",
+  "sources": [
+    "ukr_rus",
+    "covid",
+    "midterm",
+    "covid_political",
+    "election2020",
+    "ukr_rus_suspended",
+    "twibot20",
+    "cp_hk",
+    "facebook_page_reference"
+  ],
+  "specialist_cells": 243,
+  "targets": [
+    "ukr_rus",
+    "covid",
+    "midterm",
+    "covid_political",
+    "election2020",
+    "ukr_rus_suspended",
+    "twibot20",
+    "cp_hk",
+    "facebook_page_reference"
+  ],
+  "training_seeds": [
+    0,
+    1,
+    2
+  ]
+}

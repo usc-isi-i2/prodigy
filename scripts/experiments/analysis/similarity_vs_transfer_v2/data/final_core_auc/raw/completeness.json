@@ -1,0 +1,41 @@
+{
+  "batch_count": 16,
+  "batch_size": 32,
+  "checkpoint_step": 2500,
+  "episode_count_per_cell": 512,
+  "metric_contract": "accuracy_f1_macro_roc_auc_ovr_macro_v1",
+  "metrics": [
+    "accuracy",
+    "f1_macro",
+    "roc_auc_ovr_macro"
+  ],
+  "protocol": "fixed_test_512_static_test_on_static_train_v1",
+  "sources": [
+    "ukr_rus",
+    "covid",
+    "midterm",
+    "covid_political",
+    "election2020",
+    "ukr_rus_suspended",
+    "twibot20",
+    "cp_hk",
+    "facebook_page_reference"
+  ],
+  "specialist_cells": 243,
+  "targets": [
+    "ukr_rus",
+    "covid",
+    "midterm",
+    "covid_political",
+    "election2020",
+    "ukr_rus_suspended",
+    "twibot20",
+    "cp_hk",
+    "facebook_page_reference"
+  ],
+  "training_seeds": [
+    0,
+    1,
+    2
+  ]
+}

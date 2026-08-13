@@ -1,0 +1,46 @@
+{
+  "n_graphs": 9,
+  "foreign_auc_range": [
+    0.544398,
+    0.975288464655
+  ],
+  "one_other_graph_identity_prediction": {
+    "n": 504,
+    "pearson": 0.3803144500906501,
+    "spearman": 0.38383727019652153,
+    "mae": 0.10103748263397223,
+    "rmse": 0.12199016657018358
+  },
+  "mean_of_other_seven_graphs_prediction": {
+    "n": 72,
+    "pearson": 0.555430922823614,
+    "spearman": 0.5339571676635154,
+    "mae": 0.07632688975489287,
+    "rmse": 0.09221589804001458
+  },
+  "target_pair_donor_rank_stability": {
+    "n_target_pairs": 36,
+    "mean_pearson": 0.8388117281029869,
+    "median_pearson": 0.9425481808141402,
+    "min_pearson": 0.5847607703191371,
+    "mean_spearman": 0.8958333333333335,
+    "median_spearman": 0.9285714285714288,
+    "min_spearman": 0.7142857142857144
+  },
+  "self_auc_vs_mean_foreign_auc": {
+    "n_sources": 9,
+    "pearson": 0.39713821100575253,
+    "spearman": 0.2333333333333333,
+    "identity_mae": 0.1803759530323195
+  },
+  "two_way_source_plus_target_leave_one_cell_out": {
+    "n": 72,
+    "pearson": 0.9209737355656906,
+    "spearman": 0.9256543829185158,
+    "mae": 0.03152348179823235,
+    "rmse": 0.0428941611229947,
+    "r2": 0.8467684926373512,
+    "warning": "Not zero-shot: the model observes other source models on the held-out cell's target."
+  },
+  "interpretation": "AUC on another foreign graph is useful for donor ranking but is not an accurate uncalibrated forecast of absolute target AUC."
+}
