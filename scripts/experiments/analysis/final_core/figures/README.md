@@ -11,6 +11,9 @@ These figures are generated from the canonical
 | `order_robustness` | Target-entry effect distributions for orders A, B, and C. |
 | `prodigy_seed_stability` | Completed three-seed robustness evidence for PRODIGY. |
 | `ladder_trajectories` | Complete per-target ladder trajectories for all three orders and both architectures. |
+| `ladder_trajectories_loss` | Native-pretext loss trajectories for both architectures: NM loss for PRODIGY and GraphCL BCE loss for SAMGPT. |
+| `ladder_trajectories_native_accuracy` | Native-pretext evaluation accuracy for both architectures, shown in separate architecture rows. |
+| `samgpt_ladder_probability_diagnostics` | SAMGPT positive/negative pair probabilities and their separation margin over the ladder. |
 | `ladder_trajectories_auc` | PRODIGY per-target ROC-AUC ladder trajectories recovered from the original fixed-test logs. |
 | `prodigy_ladder_seed_bands` | PRODIGY ladder means with observed min–max bands across its three training seeds. |
 | `coverage_status` | Observed and pending experiment blocks, including the two remaining SAMGPT seeds. |

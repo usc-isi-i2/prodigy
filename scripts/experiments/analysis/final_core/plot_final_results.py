@@ -125,10 +125,13 @@ def panel_label(ax: Any, label: str) -> None:
 
 
 def save(fig: Any, stem: str) -> None:
-    OUT.mkdir(parents=True, exist_ok=True)
-    fig.savefig(OUT / f"{stem}.png", dpi=240, bbox_inches="tight")
+    png_out = OUT / "pngs"
+    pdf_out = OUT / "pdfs"
+    png_out.mkdir(parents=True, exist_ok=True)
+    pdf_out.mkdir(parents=True, exist_ok=True)
+    fig.savefig(png_out / f"{stem}.png", dpi=240, bbox_inches="tight")
     fig.savefig(
-        OUT / f"{stem}.pdf",
+        pdf_out / f"{stem}.pdf",
         dpi=240,
         bbox_inches="tight",
         metadata={"CreationDate": None, "ModDate": None},
@@ -457,6 +460,144 @@ def plot_ladder_trajectories(rows: list[dict[str, str]]) -> None:
     save(fig, "ladder_trajectories")
 
 
+def plot_ladder_loss_trajectories(rows: list[dict[str, str]]) -> None:
+    """Plot both architectures' native-pretext losses over the ladder."""
+    metrics = {"PRODIGY": "nm_loss", "SAMGPT": "graphcl_loss"}
+    series = {
+        architecture: ladder_series(rows, architecture, metric)
+        for architecture, metric in metrics.items()
+    }
+    entries = {architecture: entry_rungs(rows, architecture) for architecture in metrics}
+    fig, axes = plt.subplots(2, 3, figsize=(14.0, 8.0), sharex=True)
+    rungs = np.arange(1, 10)
+    for row_index, architecture in enumerate(("PRODIGY", "SAMGPT")):
+        for column_index, order in enumerate(ORDERS):
+            ax = axes[row_index, column_index]
+            for target in GRAPHS:
+                values = series[architecture][(order, target)]
+                ax.plot(rungs, values, color=TARGET_COLORS[target], lw=1.25, alpha=0.78)
+                entry = entries[architecture][(order, target)]
+                ax.scatter(
+                    entry,
+                    values[entry - 1],
+                    s=31,
+                    color=TARGET_COLORS[target],
+                    edgecolor="white",
+                    linewidth=0.55,
+                    zorder=4,
+                )
+            mean_by_rung = [
+                float(np.mean([series[architecture][(order, target)][rung - 1] for target in GRAPHS]))
+                for rung in range(1, 10)
+            ]
+            ax.plot(rungs, mean_by_rung, color=INK, lw=2.3, marker="s", ms=3.8, zorder=5)
+            if architecture == "SAMGPT":
+                ax.set_yscale("log")
+            ax.set_title(f"Order {order}", fontweight="bold")
+            ax.set_xticks(range(1, 10))
+            ax.set_xlabel("cumulative training rung")
+            if column_index == 0:
+                ylabel = "NM loss\n(mean of 3 seeds)" if architecture == "PRODIGY" else "GraphCL BCE loss\n(seed 39; log scale)"
+                ax.set_ylabel(ylabel)
+                panel_label(ax, "A" if architecture == "PRODIGY" else "B")
+            clean_axis(ax)
+        axes[row_index, 0].text(
+            -0.22,
+            0.5,
+            architecture,
+            transform=axes[row_index, 0].transAxes,
+            rotation=90,
+            ha="center",
+            va="center",
+            fontsize=11,
+            fontweight="bold",
+        )
+    handles = [Line2D([0], [0], color=TARGET_COLORS[target], lw=2, label=SHORT[target]) for target in GRAPHS]
+    handles.append(Line2D([0], [0], color=INK, marker="s", lw=2.3, label="mean over targets"))
+    fig.legend(handles=handles, loc="lower center", ncol=5, frameon=False, bbox_to_anchor=(0.5, 0.005))
+    fig.tight_layout(rect=(0.03, 0.10, 1.0, 1.0), h_pad=2.0, w_pad=1.7)
+    save(fig, "ladder_trajectories_loss")
+
+
+def plot_ladder_native_accuracy(rows: list[dict[str, str]]) -> None:
+    """Plot each architecture's native-pretext evaluation accuracy."""
+    metrics = {"PRODIGY": "nm_accuracy", "SAMGPT": "graphcl_accuracy"}
+    series = {
+        architecture: ladder_series(rows, architecture, metric)
+        for architecture, metric in metrics.items()
+    }
+    entries = {architecture: entry_rungs(rows, architecture) for architecture in metrics}
+    fig, axes = plt.subplots(2, 3, figsize=(14.0, 8.0), sharex=True)
+    rungs = np.arange(1, 10)
+    for row_index, architecture in enumerate(("PRODIGY", "SAMGPT")):
+        for column_index, order in enumerate(ORDERS):
+            ax = axes[row_index, column_index]
+            for target in GRAPHS:
+                values = series[architecture][(order, target)]
+                ax.plot(rungs, values, color=TARGET_COLORS[target], lw=1.25, alpha=0.78)
+                entry = entries[architecture][(order, target)]
+                ax.scatter(entry, values[entry - 1], s=31, color=TARGET_COLORS[target], edgecolor="white", linewidth=0.55, zorder=4)
+            mean_by_rung = [
+                float(np.mean([series[architecture][(order, target)][rung - 1] for target in GRAPHS]))
+                for rung in range(1, 10)
+            ]
+            ax.plot(rungs, mean_by_rung, color=INK, lw=2.3, marker="s", ms=3.8, zorder=5)
+            ax.set_title(f"Order {order}", fontweight="bold")
+            ax.set_xticks(range(1, 10))
+            ax.set_xlabel("cumulative training rung")
+            if architecture == "SAMGPT":
+                ax.set_ylim(0.84, 1.005)
+            if column_index == 0:
+                ylabel = "NM accuracy\n(mean of 3 seeds)" if architecture == "PRODIGY" else "GraphCL discrimination accuracy\n(seed 39)"
+                ax.set_ylabel(ylabel)
+                panel_label(ax, "A" if architecture == "PRODIGY" else "B")
+            clean_axis(ax)
+        axes[row_index, 0].text(-0.22, 0.5, architecture, transform=axes[row_index, 0].transAxes, rotation=90, ha="center", va="center", fontsize=11, fontweight="bold")
+    handles = [Line2D([0], [0], color=TARGET_COLORS[target], lw=2, label=SHORT[target]) for target in GRAPHS]
+    handles.append(Line2D([0], [0], color=INK, marker="s", lw=2.3, label="mean over targets"))
+    fig.legend(handles=handles, loc="lower center", ncol=5, frameon=False, bbox_to_anchor=(0.5, 0.005))
+    fig.tight_layout(rect=(0.03, 0.10, 1.0, 1.0), h_pad=2.0, w_pad=1.7)
+    save(fig, "ladder_trajectories_native_accuracy")
+
+
+def plot_samgpt_probability_diagnostics(rows: list[dict[str, str]]) -> None:
+    """Plot SAMGPT GraphCL pair probabilities and their separation margin."""
+    panels = (
+        ("graphcl_positive_probability", "positive-pair probability"),
+        ("graphcl_negative_probability", "negative-pair probability"),
+        ("graphcl_probability_margin", "probability margin (positive − negative)"),
+    )
+    series = {metric: ladder_series(rows, "SAMGPT", metric) for metric, _ in panels}
+    entries = entry_rungs(rows, "SAMGPT")
+    fig, axes = plt.subplots(3, 3, figsize=(14.0, 11.0), sharex=True)
+    rungs = np.arange(1, 10)
+    for row_index, (metric, label) in enumerate(panels):
+        for column_index, order in enumerate(ORDERS):
+            ax = axes[row_index, column_index]
+            for target in GRAPHS:
+                values = series[metric][(order, target)]
+                ax.plot(rungs, values, color=TARGET_COLORS[target], lw=1.2, alpha=0.78)
+                entry = entries[(order, target)]
+                ax.scatter(entry, values[entry - 1], s=29, color=TARGET_COLORS[target], edgecolor="white", linewidth=0.5, zorder=4)
+            mean_by_rung = [
+                float(np.mean([series[metric][(order, target)][rung - 1] for target in GRAPHS]))
+                for rung in range(1, 10)
+            ]
+            ax.plot(rungs, mean_by_rung, color=INK, lw=2.3, marker="s", ms=3.6, zorder=5)
+            ax.set_title(f"Order {order}", fontweight="bold")
+            ax.set_xticks(range(1, 10))
+            ax.set_xlabel("cumulative training rung")
+            if column_index == 0:
+                ax.set_ylabel(label + "\n(seed 39)")
+                panel_label(ax, chr(ord("A") + row_index))
+            clean_axis(ax)
+    handles = [Line2D([0], [0], color=TARGET_COLORS[target], lw=2, label=SHORT[target]) for target in GRAPHS]
+    handles.append(Line2D([0], [0], color=INK, marker="s", lw=2.3, label="mean over targets"))
+    fig.legend(handles=handles, loc="lower center", ncol=5, frameon=False, bbox_to_anchor=(0.5, 0.005))
+    fig.tight_layout(rect=(0.03, 0.075, 1.0, 1.0), h_pad=2.0, w_pad=1.7)
+    save(fig, "samgpt_ladder_probability_diagnostics")
+
+
 def plot_ladder_auc_trajectories(rows: list[dict[str, str]]) -> None:
     """Plot the log-recovered PRODIGY ROC-AUC ladder trajectories."""
     series = ladder_series(rows, "PRODIGY", "nm_roc_auc_ovr_macro")
@@ -665,10 +806,13 @@ def main() -> None:
     plot_order_robustness(events)
     plot_seed_stability(events)
     plot_ladder_trajectories(rows)
+    plot_ladder_loss_trajectories(rows)
+    plot_ladder_native_accuracy(rows)
+    plot_samgpt_probability_diagnostics(rows)
     plot_ladder_auc_trajectories(rows)
     plot_ladder_seed_bands(rows)
     plot_coverage(rows)
-    print(f"FINAL_CORE_FIGURES_OK figures=9 formats=png,pdf output={OUT}")
+    print(f"FINAL_CORE_FIGURES_OK figures=12 formats=png,pdf output={OUT}")
 
 
 if __name__ == "__main__":

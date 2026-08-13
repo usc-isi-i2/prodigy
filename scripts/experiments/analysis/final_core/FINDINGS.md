@@ -73,7 +73,7 @@ observed source path.
 ## Visualizations
 
 The reproducible figure set is under `figures/`, with PNG review copies and PDF
-vector versions. `plot_final_results.py` regenerates all nine figures directly
+vector versions. `plot_final_results.py` regenerates all twelve figures directly
 from `data/results_full_long.tsv`: specialist transfer matrices, target-entry
 effects, before/after comparisons, order robustness, PRODIGY seed stability,
 complete primary-metric ladder trajectories, PRODIGY ROC-AUC ladder
