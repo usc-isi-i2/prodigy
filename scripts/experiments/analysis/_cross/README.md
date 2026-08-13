@@ -15,6 +15,7 @@ and it is the entry point to the analysis tree.
 | folder | experiment | findings |
 |---|---|---|
 | `feature_ablation/` | what NM actually uses (noise/permute ablation) | `FINDINGS.md` |
+| `bio_embedding_geometry/` | exact bio overlap and GTE-space geometry across the nine social graphs | `FINDINGS.md` |
 | `error_audit/` | prediction-level correct/error cards for NM, classification, repaired regression, and repaired static LP | `README.md` |
 | `graph_divergence/`, `similarity_vs_transfer/` | graph-distance statistics and whether they predict transfer | `FINDINGS.md` |
 | `mix_slp_ablation/` | eval-time 2×2 (rewire × permute) on MIX's static LP | `FINDINGS.md` — ⚠️ premise voided by the rescore |
