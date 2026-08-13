@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import math
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -34,6 +35,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--early-input", type=Path, default=DEFAULT_EARLY)
     parser.add_argument("--late-input", type=Path, default=DEFAULT_LATE)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument("--connected", action="store_true")
+    parser.add_argument("--basename", default="merged_validation_trajectories_available")
     return parser.parse_args()
 
 
@@ -57,10 +60,28 @@ def load_segments(early_path: Path, late_path: Path) -> pd.DataFrame:
     return data
 
 
-def plot_metric(ax, data: pd.DataFrame, panel: str, metric: str) -> None:
+def plot_metric(
+    ax, data: pd.DataFrame, panel: str, metric: str, *, connected: bool
+) -> None:
     panel_data = data[data["panel"] == panel]
     for arm in ARMS:
         arm_data = panel_data[panel_data["arm"] == arm]
+        if connected:
+            series = arm_data.sort_values("checkpoint_step")
+            ax.plot(
+                series["checkpoint_step"],
+                series[metric],
+                color=COLORS[arm],
+                linestyle="-",
+                linewidth=2.1,
+                marker="o",
+                markersize=4.5,
+                markerfacecolor=COLORS[arm],
+                markeredgecolor=COLORS[arm],
+                markeredgewidth=1.1,
+                zorder=3,
+            )
+            continue
         for segment, linestyle, marker, fillstyle in (
             ("original_2p5k", "--", "o", "none"),
             ("new_10k", "-", "o", "full"),
@@ -88,7 +109,16 @@ def plot_metric(ax, data: pd.DataFrame, panel: str, metric: str) -> None:
     ax.set_xscale("log")
     steps = (100, 300, 900, 2500, 5000, 7500, 10000)
     ax.set_xticks(steps, ["100", "300", "900", "2.5k", "5k", "7.5k", "10k"])
-    ax.axvspan(900, 2500, color="#7A7A7A", alpha=0.045, linewidth=0)
+    if connected:
+        ax.axvline(
+            math.sqrt(900 * 2500),
+            color="#888888",
+            linewidth=0.8,
+            alpha=0.7,
+            zorder=1,
+        )
+    else:
+        ax.axvspan(900, 2500, color="#7A7A7A", alpha=0.045, linewidth=0)
     ax.grid(axis="y", color="#B8B8B8", linewidth=0.6, alpha=0.35)
     ax.grid(axis="x", visible=False)
     ax.spines[["top", "right"]].set_visible(False)
@@ -115,8 +145,8 @@ def main() -> int:
     fig.subplots_adjust(left=0.065, right=0.99, bottom=0.11, top=0.82, hspace=0.12, wspace=0.05)
 
     for column, panel in enumerate(PANELS):
-        plot_metric(axes[0, column], data, panel, "score")
-        plot_metric(axes[1, column], data, panel, "loss")
+        plot_metric(axes[0, column], data, panel, "score", connected=args.connected)
+        plot_metric(axes[1, column], data, panel, "loss", connected=args.connected)
         axes[0, column].set_title(PANEL_LABELS[panel], pad=9)
         axes[1, column].set_xlabel("Completed optimizer updates")
 
@@ -130,20 +160,30 @@ def main() -> int:
         Line2D([0], [0], color=COLORS[arm], linewidth=2.3, marker="o", markersize=5, label=ARM_LABELS[arm])
         for arm in ARMS
     ]
-    handles.extend(
-        [
-            Line2D([0], [0], color="#666666", linestyle="--", marker="o", markerfacecolor="none", linewidth=1.8, label="Original 2.5k run (100–900)"),
-            Line2D([0], [0], color="#666666", linestyle="-", marker="o", linewidth=1.8, label="New 10k rerun (2.5k–10k)"),
-            Line2D([0], [0], color="#666666", linestyle=":", linewidth=1.0, label="30-way chance"),
-        ]
-    )
-    fig.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, 0.915), ncol=5, frameon=False, fontsize=9.5)
+    if args.connected:
+        handles.extend(
+            [
+                Line2D([0], [0], color="#888888", linewidth=0.8, label="Rerun boundary"),
+                Line2D([0], [0], color="#666666", linestyle=":", linewidth=1.0, label="30-way chance"),
+            ]
+        )
+        subtitle = "Curves connect separate seed-0 runs; the thin gray line marks the restart."
+    else:
+        handles.extend(
+            [
+                Line2D([0], [0], color="#666666", linestyle="--", marker="o", markerfacecolor="none", linewidth=1.8, label="Original 2.5k run (100–900)"),
+                Line2D([0], [0], color="#666666", linestyle="-", marker="o", linewidth=1.8, label="New 10k rerun (2.5k–10k)"),
+                Line2D([0], [0], color="#666666", linestyle=":", linewidth=1.0, label="30-way chance"),
+            ]
+        )
+        subtitle = "The gap marks a restart: early and late points come from separate seed-0 training runs."
+    fig.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, 0.915), ncol=len(handles), frameon=False, fontsize=9.5)
     fig.suptitle("All-nine radius experiment: merged validation trajectories", fontsize=14, fontweight="normal", y=0.985)
-    fig.text(0.5, 0.945, "The gap marks a restart: early and late points come from separate seed-0 training runs.", ha="center", va="top", fontsize=10, color="#555555")
+    fig.text(0.5, 0.945, subtitle, ha="center", va="top", fontsize=10, color="#555555")
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    png_path = args.output_dir / "merged_validation_trajectories_available.png"
-    pdf_path = args.output_dir / "merged_validation_trajectories_available.pdf"
+    png_path = args.output_dir / f"{args.basename}.png"
+    pdf_path = args.output_dir / f"{args.basename}.pdf"
     fig.savefig(png_path, dpi=300, bbox_inches="tight")
     fig.savefig(pdf_path, bbox_inches="tight")
     plt.close(fig)
