@@ -46,6 +46,11 @@ def get_aux_loss(_graph):
     return torch.tensor(0.0)
 
 
+def compute_metrics(y_true, y_pred):
+    del y_true
+    return {"synthetic_metric": y_pred.mean()}
+
+
 def test_shared_checkpoint_eval_restores_graph_and_matches_each_model():
     batches = [
         [FakeGraph(1.0), torch.zeros((2, 2))],
@@ -61,6 +66,7 @@ def test_shared_checkpoint_eval_restores_graph_and_matches_each_model():
         device=torch.device("cpu"),
         get_loss_and_score=get_loss_and_acc,
         get_aux_loss=get_aux_loss,
+        compute_metrics=compute_metrics,
     )
 
     assert list(rows) == list(CHECKPOINT_STEPS)
@@ -70,6 +76,7 @@ def test_shared_checkpoint_eval_restores_graph_and_matches_each_model():
         assert row["loss"] == pytest.approx(expected_loss)
         assert row["score"] == pytest.approx(1.0 / (1.0 + expected_loss))
         assert row["aux_loss"] == 0.0
+        assert row["synthetic_metric"] == pytest.approx(scale * 1.5)
 
     assert [float(batch[0].x.item()) for batch in batches] == [1.0, 2.0]
     assert [float(batch[0].edge_attr.item()) for batch in batches] == [11.0, 12.0]

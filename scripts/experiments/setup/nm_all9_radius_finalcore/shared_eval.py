@@ -24,8 +24,9 @@ def score_models_on_shared_batches(
     device: torch.device,
     get_loss_and_score: Callable,
     get_aux_loss: Callable,
+    compute_metrics: Callable | None = None,
 ) -> dict[int, dict[str, float]]:
-    """Run every model on the same collated stream and aggregate legacy metrics."""
+    """Run every model on the same collated stream and aggregate eval metrics."""
     y_true: dict[int, list[torch.Tensor]] = {step: [] for step in steps}
     y_pred: dict[int, list[torch.Tensor]] = {step: [] for step in steps}
     batch_scores: dict[int, list[float]] = {step: [] for step in steps}
@@ -64,4 +65,11 @@ def score_models_on_shared_batches(
             "loss": to_float(loss),
             "aux_loss": float(np.mean(aux_losses[step])),
         }
+        if compute_metrics is not None:
+            results[step].update(
+                {
+                    key: to_float(value)
+                    for key, value in compute_metrics(yt, yp).items()
+                }
+            )
     return results
