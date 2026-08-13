@@ -21,8 +21,8 @@ HERE = Path(__file__).resolve().parent
 FIG_DIR = HERE / "figures"
 FIG_DIR.mkdir(exist_ok=True)
 
-xfer = pd.read_csv(HERE / "transfer_matrix.csv")
-sim = json.load(open(HERE.parent / "graph_divergence" / "graph_divergence_data.json"))
+xfer = pd.read_csv(HERE / "data" / "transfer_matrix.csv")
+sim = json.load(open(HERE.parent / "graph_divergence" / "data" / "graph_divergence_data.json"))
 
 FULL = {"covid": "covid19_twitter", "ukr": "ukr_rus_twitter", "midterm": "midterm",
         "cp_hk": "cp_hk_twitter", "twibot20": "twibot20"}

@@ -1,9 +1,9 @@
 # Findings: does graph similarity predict single-source NM transfer?
 
-*Pilot result. Companion to [`README.md`](./README.md) (methodology/caveats) and the
-[notebook](../../plotting/similarity_vs_transfer/similarity_vs_transfer.ipynb). Last updated 2026-07-09.*
+*Pilot result. Companion to the
+[notebook](similarity_vs_transfer.ipynb) (methodology/caveats). Last updated 2026-07-09.*
 
-![Similarity vs. transfer summary](../../plotting/similarity_vs_transfer/figures/similarity_transfer_slide.png)
+![Similarity vs. transfer summary](figures/similarity_transfer_slide.png)
 
 ## Takeaway
 
@@ -56,9 +56,9 @@ Underlying transfer signal (NM, 30-way, 3-shot, test; **accuracy** used as DV be
 ROC-AUC is near ceiling): self-transfer is best in every column (covid→covid 0.66,
 ukr→ukr 0.52, twibot20→twibot20 0.48, midterm→midterm 0.42); `cp_hk` is the hardest
 target for all sources (0.12–0.16). Full matrix:
-[`transfer_matrix.csv`](../../plotting/similarity_vs_transfer/transfer_matrix.csv),
+[`transfer_matrix.csv`](data/transfer_matrix.csv),
 joined with similarity in
-[`joined_transfer_similarity.csv`](../../plotting/similarity_vs_transfer/figures/joined_transfer_similarity.csv).
+[`joined_transfer_similarity.csv`](data/joined_transfer_similarity.csv).
 
 ## How we got the data / what it represents
 
@@ -72,7 +72,8 @@ and this experiment's [`README.md`](./README.md)):
   cloud distance: centroid cosine, Fréchet, RBF-MMD², and proxy-A-distance = a logistic
   domain classifier's separability of the two clouds, 0 = indistinguishable → 2 = perfectly
   separable), and **feature–structure coupling** (edge feature-homophily vs. random
-  baseline). Generated 2026-07-03 → `graph_divergence_data.json`.
+  baseline). Generated 2026-07-03 →
+  [`graph_divergence_data.json`](../graph_divergence/data/graph_divergence_data.json).
 - **Transfer** — 4 single-source NM checkpoints (covid, ukr, midterm, twibot20) evaluated
   on 5 targets at one matched regime (30-way / 3-shot / test), pulled from existing
   `metrics_test_step0.json` eval runs.
