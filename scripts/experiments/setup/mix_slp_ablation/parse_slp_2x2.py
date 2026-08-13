@@ -20,7 +20,7 @@ latest timestamp wins.
 Usage:
     python3 scripts/experiments/setup/mix_slp_ablation/parse_slp_2x2.py \
         --log-root log \
-        --out scripts/experiments/analysis/mix_slp_ablation/data/slp_ablation_2x2.csv
+        --out scripts/experiments/analysis/archive/mix_slp_ablation/data/slp_ablation_2x2.csv
 """
 
 from __future__ import annotations

@@ -1,0 +1,64 @@
+{
+  "architecture": "SAMGPT",
+  "native_pretext": "graphcl_discrimination",
+  "training_seed_label": "seed_39",
+  "training_seed_identifier": 39,
+  "training_provenance": {
+    "repository": "samgpt-social",
+    "commit": "b8bc1223ec65af5d9c71578647c56654b6f81016",
+    "matrix_config": {
+      "path": "configs/single_source_nm_matrix/matrix_carc.json",
+      "sha256": "98461691bd50cebbfcebc07244916e0bf0585a1b81856e8ba0be2181b3476df2"
+    },
+    "ladder_config": {
+      "path": "configs/nm_ladder_9x3/ladder_carc.json",
+      "sha256": "ed0ab3eee3c594cffb014e51d78110e11228a37229057350927af6f1831b12dd"
+    }
+  },
+  "matrix": {
+    "cells": 81,
+    "manifest": {
+      "path": "scripts/experiments/analysis/transfer/ladders/prodigy_nm/order_and_graph_set/nm_ladder_order_robustness/data/samgpt_graphcl_specialist_matrix_tucker_h100/manifest.json",
+      "sha256": "c702ce61c13f02a7db5b09441a28e1f681253c625eca32fc2b2fc0967e9b31a3"
+    },
+    "metrics": {
+      "path": "scripts/experiments/analysis/transfer/ladders/prodigy_nm/order_and_graph_set/nm_ladder_order_robustness/data/samgpt_graphcl_specialist_matrix_tucker_h100/metrics_long.csv",
+      "sha256": "56bd61bcdd863439d815cd75c1d572e79c926ccbbf97a7dab6cb224497434e8f"
+    }
+  },
+  "ladder": {
+    "cells": 243,
+    "manifest": {
+      "path": "scripts/experiments/analysis/transfer/ladders/prodigy_nm/order_and_graph_set/nm_ladder_order_robustness/data/samgpt_graphcl_9x3_carc_v100/manifest.json",
+      "sha256": "ba9fe0c2139d5245f128d5fa5ddf2d2c1205c44a60feeb01c8c918d91a642ead"
+    },
+    "metrics": {
+      "path": "scripts/experiments/analysis/transfer/ladders/prodigy_nm/order_and_graph_set/nm_ladder_order_robustness/data/samgpt_graphcl_9x3_carc_v100/metrics_long.csv",
+      "sha256": "47e03fcdccc813f8c2e328c7314621638ed905427d74af16f0f93e2de3e1c934"
+    }
+  },
+  "derived_analysis": {
+    "cells": {
+      "path": "scripts/experiments/analysis/transfer/ladders/samgpt_graphcl/canonical_orders/samgpt_graphcl_ladder/data/cells.csv",
+      "sha256": "6817beb3551834c35b55cf66f932873b36ccda33c2d3bda2e0638a4f8c3c4170"
+    },
+    "manifest": {
+      "path": "scripts/experiments/analysis/transfer/ladders/samgpt_graphcl/canonical_orders/samgpt_graphcl_ladder/data/manifest.json",
+      "sha256": "af67b64f56d05a71da954c09befc40aac0d826e45767102d87305cb7391abbfa"
+    }
+  },
+  "evaluation_view": {
+    "fixed_per_target": true,
+    "eval_seeds": [
+      10039,
+      10040,
+      10041,
+      10042,
+      10043,
+      10044,
+      10045,
+      10046,
+      10047
+    ]
+  }
+}

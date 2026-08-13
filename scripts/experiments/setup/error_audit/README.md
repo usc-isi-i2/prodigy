@@ -63,7 +63,7 @@ the repository `AGENTS.md`.
 Keep these under `/dataMeR1`; they may contain recoverable user identifiers and the
 analysis step adds raw profile bios.  Do not commit them.
 
-See `scripts/experiments/analysis/error_audit/README.md` for enrichment and report
+See `scripts/experiments/analysis/evaluation/error_audit/README.md` for enrichment and report
 generation.
 
 Local protocol gates (use the local `prodigy` environment) are collected in

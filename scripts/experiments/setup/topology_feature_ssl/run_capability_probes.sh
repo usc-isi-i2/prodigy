@@ -49,6 +49,6 @@ python3 "${RUNNER}" \
 
 python3 "${SCRIPT_DIR}/parse_capability_probes.py" \
   --log-root /dataMeR1/phil/gfm/prodigy/log --model-list "${ML}" \
-  --out scripts/experiments/analysis/topology_feature_ssl/data/capability_probes.csv
+  --out scripts/experiments/analysis/objectives/topology_vs_features/topology_feature_ssl/data/capability_probes.csv
 
 echo "TOPOLOGY_FEATURE_SSL_CAPABILITY_PROBES_DONE"

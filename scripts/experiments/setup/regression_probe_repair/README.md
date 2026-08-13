@@ -23,8 +23,8 @@ comparisons are controlled, but the metric has almost no power. It sits at or be
 raw-feature floor on exactly the targets features predict best.
 
 This is the same class of defect as the static-LP evaluator (see
-`analysis/slp_evaluator_repair/`), and it means the ~1100 rows in
-`analysis/node_regression/data/node_regression.csv` are void as a measure of
+`analysis/evaluation/slp_evaluator_repair/`), and it means the ~1100 rows in
+`analysis/evaluation/shared_task_tables/node_regression/data/node_regression.csv` are void as a measure of
 representation quality — not just the ladder's.
 
 ## What replaces it

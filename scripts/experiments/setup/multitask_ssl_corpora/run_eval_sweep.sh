@@ -48,6 +48,6 @@ python3 "${RUNNER}" "${COMMON[@]}" --tasks pl --shots 10 "$@"
 # cd'd to REPO_ROOT above); hardcoding the main tree silently parses the wrong logs
 # when the sweep runs from an isolated worktree (e.g. /dataMeR1/phil/gfm/prodigy-msc).
 python3 scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py \
-  --log-root "${REPO_ROOT}/log" --out-dir scripts/experiments/analysis
+  --log-root "${REPO_ROOT}/log" --out-dir scripts/experiments/analysis/evaluation/shared_task_tables
 
 echo "MULTITASK_SSL_CORPORA_EVAL_SWEEP_DONE"

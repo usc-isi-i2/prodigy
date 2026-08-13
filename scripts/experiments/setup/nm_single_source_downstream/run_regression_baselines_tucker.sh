@@ -4,7 +4,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
-ANALYSIS_DIR="${REPO_ROOT}/scripts/experiments/analysis/nm_single_source_downstream"
+ANALYSIS_DIR="${REPO_ROOT}/scripts/experiments/analysis/transfer/matrices/prodigy_nm/downstream/nm_single_source_downstream"
 CANONICAL_DATA_ROOT="${CANONICAL_DATA_ROOT:-/dataMeR1/phil/data}"
 BASELINE_DATA_ROOT="${BASELINE_DATA_ROOT:-${REPO_ROOT}/state/nmssd_baseline_data}"
 TARGETS="followers_count,statuses_count,account_age_days"

@@ -4,7 +4,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
-ANALYSIS_DIR="${REPO_ROOT}/scripts/experiments/analysis/nm_single_source_downstream"
+ANALYSIS_DIR="${REPO_ROOT}/scripts/experiments/analysis/transfer/matrices/prodigy_nm/downstream/nm_single_source_downstream"
 MODEL_LIST="${MODEL_LIST:-${SCRIPT_DIR}/model_list.txt}"
 [[ -f "${MODEL_LIST}" ]] || { echo "missing model list: ${MODEL_LIST}" >&2; exit 2; }
 

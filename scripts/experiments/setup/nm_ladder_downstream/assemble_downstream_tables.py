@@ -4,9 +4,9 @@
 Reads the three result sources produced by the sweep and expands the 21 distinct
 encoders back into the 24 (order, rung) rows through ``row_map.csv``:
 
-  node regression      analysis/nm_ladder_downstream/data/reg_probe/<dataset>__reg_probe.csv
-  node classification  analysis/node_classification/data/node_classification.csv
-  static link pred     analysis/nm_ladder_downstream/data/pair_lp/<dataset>__pair_lp.csv
+  node regression      analysis/transfer/ablations/downstream/one_hop/nm_ladder_downstream/data/reg_probe/<dataset>__reg_probe.csv
+  node classification  analysis/evaluation/shared_task_tables/node_classification/data/node_classification.csv
+  static link pred     analysis/transfer/ablations/downstream/one_hop/nm_ladder_downstream/data/pair_lp/<dataset>__pair_lp.csv
 
 Regression comes from the frozen-encoder probe, NOT from the shared
 ``node_regression.csv``. Those runner rows are void: the episodic ``task_name=regression``
@@ -17,7 +17,7 @@ step -- the reported number is a fixed random projection of the frozen embedding
 path, for reproducing what the superseded 2026-07-27 figures showed; it is not a default
 anyone should reach for.
 
-Emits into ``analysis/nm_ladder_downstream/data/``:
+Emits into ``analysis/transfer/ablations/downstream/one_hop/nm_ladder_downstream/data/``:
 
   nm_ladder_downstream_long.csv   one row per (order, rung, task, dataset[, target]),
                                   carrying ``in_merge`` and ``rel_to_entry`` so the

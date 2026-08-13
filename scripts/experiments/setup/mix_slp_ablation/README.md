@@ -74,7 +74,7 @@ bash scripts/experiments/setup/mix_slp_ablation/run_2x2_slp.sh --gpus 0
 ```
 
 Results: `run_2x2_slp.sh` ends by writing
-`scripts/experiments/analysis/mix_slp_ablation/data/slp_ablation_2x2.csv`
+`scripts/experiments/analysis/archive/mix_slp_ablation/data/slp_ablation_2x2.csv`
 via `parse_slp_2x2.py` (reads each run's `data/metrics_test.json` directly;
 the shared `parse_benchmark_eval_logs.py` SLP regex does not match `_abl*`
-tags). Findings: `scripts/experiments/analysis/mix_slp_ablation/FINDINGS.md`.
+tags). Findings: `scripts/experiments/analysis/archive/mix_slp_ablation/FINDINGS.md`.

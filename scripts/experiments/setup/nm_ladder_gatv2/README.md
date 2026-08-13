@@ -130,12 +130,12 @@ This is 8 × 8 = 64 NM evaluations. The generated log directories begin with
 ## 5. Assemble and compare
 
 ```bash
-python3 scripts/experiments/analysis/nm_ladder_gatv2/analyze_results.py \
+python3 scripts/experiments/analysis/transfer/ablations/prodigy_encoder/nm_ladder_gatv2/analyze_results.py \
   --log-root /dataMeR1/phil/gfm/prodigy-gatladder/log
 ```
 
 The analyzer refuses incomplete matrices and writes dedicated evidence under
-`scripts/experiments/analysis/nm_ladder_gatv2/data/`. Inspect raw metric JSONs
+`scripts/experiments/analysis/transfer/ablations/prodigy_encoder/nm_ladder_gatv2/data/`. Inspect raw metric JSONs
 before committing generated data or writing `RESULTS.md`.
 
 If a primary transition is null or reversed, do not relabel the seed-0 outcome.

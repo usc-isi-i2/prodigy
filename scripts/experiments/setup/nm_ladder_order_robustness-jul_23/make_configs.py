@@ -36,7 +36,7 @@ KEYS = [s[0] for s in SOURCES]
 SS_RUN = {s[0]: s[3] for s in SOURCES}
 
 # Donor strength = mean off-diagonal transfer as a source, from
-# analysis/nm_single_source_matrix/data/nm_single_source_matrix.csv. Orders B and C are
+# analysis/transfer/matrices/prodigy_nm/single_source/nm_single_source_matrix/data/nm_single_source_matrix.csv. Orders B and C are
 # this ranking descending and ascending; A is the published topical order.
 ORDERS = {
     "A": ["ukr_rus", "covid", "midterm", "covid_political",

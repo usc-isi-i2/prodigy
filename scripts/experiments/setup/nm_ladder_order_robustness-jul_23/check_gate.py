@@ -2,7 +2,7 @@
 """Equivalence gate: does the source-subset shortcut reproduce a known ladder rung?
 
 Order A rung 4 was trained on a purpose-built 4-source merge and published in
-analysis/nm_ladder/data/nm_ladder_full.csv. train_gate_ordA_r4.yaml retrains that same
+analysis/transfer/ladders/prodigy_nm/canonical/nm_ladder/data/nm_ladder_full.csv. train_gate_ordA_r4.yaml retrains that same
 rung on the all8 graph restricted to those 4 sources. If the two agree, the shortcut is
 sound and the other 11 rungs are worth launching; if they do not, every rung built on it
 is invalid.
@@ -26,7 +26,7 @@ CANON = [
 ]
 
 # Published order-A rung 4 (within_balanced, matched-40k), from
-# analysis/nm_ladder/data/nm_ladder_full.csv. Used if the CSV is not readable.
+# analysis/transfer/ladders/prodigy_nm/canonical/nm_ladder/data/nm_ladder_full.csv. Used if the CSV is not readable.
 PUBLISHED_R4 = [0.9344, 0.9753, 0.9093, 0.9113, 0.8297, 0.7768, 0.9234, 0.7235]
 
 GATE_PREFIX = "nm_ladder_gate_ordA_r4"
@@ -91,7 +91,7 @@ def main():
     # parents[2] == scripts/experiments (this file is setup/<exp>/check_gate.py)
     ap.add_argument("--csv", type=Path,
                     default=Path(__file__).resolve().parents[2]
-                    / "analysis/nm_ladder/data/nm_ladder_full.csv")
+                    / "analysis/transfer/ladders/prodigy_nm/canonical/nm_ladder/data/nm_ladder_full.csv")
     ap.add_argument("--tol", type=float, default=0.01,
                     help="max acceptable |delta| per column (default 0.01)")
     ap.add_argument("--shots", default="3")

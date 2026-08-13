@@ -28,7 +28,7 @@ difficulty for free, because the target is held fixed within each column.
 
 ## Data
 
-- **Transfer matrix**: [`scripts/experiments/analysis/similarity_vs_transfer/data/transfer_matrix.csv`](../../plotting/similarity_vs_transfer/transfer_matrix.csv).
+- **Transfer matrix**: [`transfer_matrix.csv`](../../analysis/graph_characterization/similarity_vs_transfer/similarity_vs_transfer/data/transfer_matrix.csv).
   4 single-source NM models (`covid`, `ukr`, `midterm`, `twibot20`) × 5 targets
   (`covid`, `ukr`, `midterm`, `cp_hk`, `twibot20`), all at the **same eval
   regime** — 30-way, 3-shot, test split — pulled from
@@ -43,7 +43,7 @@ difficulty for free, because the target is held fixed within each column.
   - NM `roc_auc` is close to ceiling for the easy pairs; the primary DV here is
     **NM accuracy** (30-way top-1), which spans 0.12–0.66 and is far more
     discriminative.
-- **Similarity**: `scripts/experiments/analysis/graph_divergence/data/graph_divergence_data.json`
+- **Similarity**: `scripts/experiments/analysis/graph_characterization/statistics/graph_divergence/data/graph_divergence_data.json`
   (see that experiment's README) — pairwise `indegree_ks`, `outdegree_ks`,
   `feat_centroid_cosdist`, `feat_frechet`, `feat_mmd2`, `proxy_a_distance`, plus
   per-graph `feature_homophily` (used to build a signed coupling-gap predictor,
@@ -79,4 +79,4 @@ difficulty for free, because the target is held fixed within each column.
 - Only NM is compared here (the only task with a matched source/target grid);
   LP/PL findings from the merged-vs-single analysis are a separate story.
 
-Notebook: [`scripts/experiments/analysis/similarity_vs_transfer/similarity_vs_transfer.ipynb`](../../plotting/similarity_vs_transfer/similarity_vs_transfer.ipynb).
+Notebook: [`similarity_vs_transfer.ipynb`](../../analysis/graph_characterization/similarity_vs_transfer/similarity_vs_transfer/similarity_vs_transfer.ipynb).

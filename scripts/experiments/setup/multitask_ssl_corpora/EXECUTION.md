@@ -45,7 +45,7 @@ The watcher polls every 5 min until every run has
 `checkpoint/state_dict_30000.ckpt` AND its tmux session has exited, then runs
 `make_model_list.sh` (30k ckpts, keyed cov_NM..all8_MIX), `run_eval_sweep.sh
 --gpus 0,1,2,3`, and commits+pushes the refreshed CSVs under
-`scripts/experiments/analysis/*/data/`. Success marker in `/tmp/msc_watcher.log`:
+`scripts/experiments/analysis/evaluation/shared_task_tables/*/data/`. Success marker in `/tmp/msc_watcher.log`:
 `ALL COMPLETE`. Timeout (8h default): `WATCHER TIMEOUT — INCOMPLETE`, no eval.
 
 ## 3. Manual fallback (if the watcher dies)
@@ -87,7 +87,7 @@ ONLY="<corpus>_<ARM>" bash scripts/experiments/setup/multitask_ssl_corpora/launc
   REPLACES the shared CSVs with whatever the current log root contains — from a
   fresh worktree this drops all historical rows. The msc rows were re-merged
   with the HEAD rows before committing; msc-only copies live in
-  `../../analysis/multitask_ssl_corpora/data/`.
+  `../../analysis/objectives/multitask_ssl/multitask_ssl_corpora/data/`.
 - Tucker cannot push to GitHub non-interactively; result commits were fetched
   to the laptop over ssh (`git fetch ssh://tucker/dataMeR1/phil/gfm/prodigy-msc`)
   and pushed from there.

@@ -56,5 +56,5 @@ historical batch-1 model (`-0.0240`). At 40k optimizer steps, after nine times t
 episode exposure, batch 9 reached `0.4195` (`+0.0016`). The large batch therefore did
 not improve sample efficiency and is not recommended as the default.
 
-See `scripts/experiments/analysis/nm_all9_source_complete_batch/FINDINGS.md` for the
+See `scripts/experiments/analysis/transfer/ablations/batch_construction/nm_all9_source_complete_batch/FINDINGS.md` for the
 per-dataset comparison and saved-run paths.

@@ -7,7 +7,7 @@ either bends or does not.
 
 The other twelve points come from
 [`../pretrain_saturation_existing/`](../pretrain_saturation_existing/); both halves feed
-`analysis/pretrain_saturation/`. Arm definitions and the `sat_<arm>_s<step>` key
+`analysis/transfer/ablations/saturation/prodigy_nm/one_hop/pretrain_saturation/`. Arm definitions and the `sat_<arm>_s<step>` key
 convention are imported from that folder's [`arms.py`](../pretrain_saturation_existing/arms.py)
 so the two halves join instead of producing disjoint rows.
 

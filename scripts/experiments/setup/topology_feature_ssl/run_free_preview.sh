@@ -34,10 +34,10 @@ python3 "${RUNNER}" \
 
 # Parse reg logs into the shared plotting CSV (keyed by model = strategy).
 python3 scripts/harness/benchmark_tasks/parse_benchmark_eval_logs.py \
-  --log-root /dataMeR1/phil/gfm/prodigy/log --out-dir scripts/experiments/analysis
+  --log-root /dataMeR1/phil/gfm/prodigy/log --out-dir scripts/experiments/analysis/evaluation/shared_task_tables
 
 # Print the nm-vs-fp Spearman comparison table.
 python3 "${SCRIPT_DIR}/compare_free_preview.py" \
-  --csv scripts/experiments/analysis/node_regression/data/node_regression.csv
+  --csv scripts/experiments/analysis/evaluation/shared_task_tables/node_regression/data/node_regression.csv
 
 echo "TOPOLOGY_FEATURE_SSL_FREE_PREVIEW_DONE"

@@ -78,6 +78,6 @@ done
 # the shared parser's SLP_RE does not match the _ablE/_ablP/_ablPE tags)
 python3 "${SCRIPT_DIR}/parse_slp_2x2.py" \
   --log-root "${REPO_ROOT}/log" \
-  --out scripts/experiments/analysis/mix_slp_ablation/data/slp_ablation_2x2.csv
+  --out scripts/experiments/analysis/archive/mix_slp_ablation/data/slp_ablation_2x2.csv
 
 echo "MIX_SLP_ABLATION_2X2_DONE"

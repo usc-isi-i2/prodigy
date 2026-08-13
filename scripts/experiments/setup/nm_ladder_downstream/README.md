@@ -27,7 +27,7 @@ staircase can be claimed (or not) as a property of the *representation* rather t
 pretraining metric.
 
 Confirmed before writing any of this: no `nm_ladder_*`, `*_wb`, or `nm_ss_*` row exists in
-`analysis/{node_classification,node_regression,static_link_prediction}/data/`. The ladder
+`analysis/evaluation/shared_task_tables/{node_classification,node_regression,static_link_prediction}/data/`. The ladder
 is genuinely NM-only today.
 
 ## The question, stated so it can fail
@@ -86,7 +86,7 @@ the targets features predict best, which was the first sign something was wrong.
 
 **Static LP does not go through the runner.** Its episodic `slp` path is void — center-blind
 scoring, frozen random prototypes, degree-confounded negatives (AGENTS.md;
-`analysis/multitask_ssl/FINDINGS_rescore.md`). `run_pair_lp_sweep.sh` drives
+`analysis/objectives/multitask_ssl/multitask_ssl/FINDINGS_rescore.md`). `run_pair_lp_sweep.sh` drives
 `scripts/eval/pair_link_sweep.py` instead, which loads each graph once and scores all 21
 encoders against **one shared pair set**, with CN / Adamic-Adar / preferential-attachment /
 Jaccard / raw-feature-cosine floors computed on that same set.
@@ -180,7 +180,7 @@ ssh tucker nvidia-smi --query-compute-apps=pid,gpu_uuid,used_memory --format=csv
 
 ## Deliverables
 
-Into `analysis/nm_ladder_downstream/data/`:
+Into `analysis/transfer/ablations/downstream/one_hop/nm_ladder_downstream/data/`:
 
 - `nm_ladder_downstream_long.csv` — one row per (order, rung, task, dataset, target,
   metric), carrying `in_merge` and `rel_to_entry` so the three orders overlay on a common
@@ -197,7 +197,7 @@ Into `analysis/nm_ladder_downstream/data/`:
 - `data/reg_probe/<dataset>__reg_probe.csv` — the raw probe output, including the
   `__features_only__` floor rows and `n_labeled` / `n_pred`.
 
-Analysis and findings go in `analysis/nm_ladder_downstream/`, not here.
+Analysis and findings go in `analysis/transfer/ablations/downstream/one_hop/nm_ladder_downstream/`, not here.
 
 ## Cost
 

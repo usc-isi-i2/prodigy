@@ -13,4 +13,4 @@ The canonical C2–C4 run directories live in the dedicated Tucker worktree
 five-source endpoints. Checkpoints and episode-level outputs remain on Tucker and W&B.
 
 The complete compact result package—summary tables, paired statistics, figure, and analysis
-script—is copied into `analysis/samgpt_weak_to_strong/` in this repository.
+script—is copied into `analysis/transfer/ladders/samgpt_graphcl/weak_to_strong/samgpt_weak_to_strong/` in this repository.

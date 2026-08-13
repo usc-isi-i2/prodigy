@@ -108,7 +108,7 @@ tmux new-session -d -s tfssl_eval 'bash -lc "MODEL_LIST=scripts/experiments/topo
 ```
 
 Results land (keyed by `model` = arm) in
-`scripts/experiments/analysis/{node_regression,static_link_prediction}/data/*.csv`.
+`scripts/experiments/analysis/evaluation/shared_task_tables/{node_regression,static_link_prediction}/data/*.csv`.
 
 ## Step 3 — Diagnostics (PRIMARY evidence; frozen encoders, no training)
 
@@ -132,7 +132,7 @@ MODEL_LIST=$ML bash scripts/experiments/setup/topology_feature_ssl/run_capabilit
 python3 scripts/experiments/setup/topology_feature_ssl/leakage_baseline.py --data-root /dataMeR1/phil/data
 ```
 
-Outputs land in `scripts/experiments/analysis/topology_feature_ssl/`:
+Outputs land in `scripts/experiments/analysis/objectives/topology_vs_features/topology_feature_ssl/`:
 `ablation_2x2.csv` (T2), `capability_probes.csv` (T3), `leakage_baseline.csv`.
 `parse_2x2.py` / `parse_capability_probes.py` also print the T2 / T3 tables.
 
@@ -202,7 +202,7 @@ tmux new-session -d -s tfssl_m40k 'bash -lc "\
 ```
 
 Lands (keyed `model = <arm>_40k`): `B0_40k/B1_40k/E1_40k/E2_40k` rows in
-`scripts/experiments/analysis/{node_regression,static_link_prediction,node_classification}/data/*.csv`;
+`scripts/experiments/analysis/evaluation/shared_task_tables/{node_regression,static_link_prediction,node_classification}/data/*.csv`;
 `ablation_2x2_40k.csv`, `capability_probes_40k.csv`, `trivial_baselines.csv`,
 `leakage_baseline_6panel.csv` in `…/topology_feature_ssl/data/`; and
 `RESULTS_matched40k.md`. Then commit the CSVs on Tucker + pull to the laptop (or scp the

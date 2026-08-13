@@ -5,7 +5,7 @@
 Do the eight matched-40k single-source neighbor-matching (NM) encoders differ in
 their transfer to downstream node classification and node regression?
 
-This complements `analysis/nm_single_source_matrix`, which evaluates the same
+This complements `analysis/transfer/matrices/prodigy_nm/single_source/nm_single_source_matrix`, which evaluates the same
 source models on the NM pretraining task. The outputs here are downstream-task
 matrices:
 
@@ -89,7 +89,7 @@ the repository's historical fixed eval episodes are unchanged.
 
 ## Deliverables
 
-Under `analysis/nm_single_source_downstream/`:
+Under `analysis/transfer/matrices/prodigy_nm/downstream/nm_single_source_downstream/`:
 
 - `data/model_manifest.csv` — exact checkpoint provenance;
 - `data/classification.csv` — 8 × 4 ROC-AUC matrix plus row mean;

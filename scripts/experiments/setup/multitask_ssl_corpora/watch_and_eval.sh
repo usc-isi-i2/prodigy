@@ -59,7 +59,7 @@ say "committing result CSVs"
 cd "${REPO_ROOT}"
 branch="$(git branch --show-current)"
 say "branch=${branch} identity=$(git config user.name)/$(git config user.email)"
-git add scripts/experiments/analysis/*/data/*.csv 2>/dev/null
+git add scripts/experiments/analysis/evaluation/shared_task_tables/*/data/*.csv 2>/dev/null
 if git diff --cached --quiet; then
   say "no CSV changes to commit (parser may have written nothing new)"
 else

@@ -25,7 +25,7 @@ approximately independent of entry position.
 ## The three orders
 
 Ordered by **donor strength** = mean off-diagonal transfer as a source, computed from
-`analysis/nm_single_source_matrix/data/nm_single_source_matrix.csv`:
+`analysis/transfer/matrices/prodigy_nm/single_source/nm_single_source_matrix/data/nm_single_source_matrix.csv`:
 
 | ukraine | covid | twibot20 | midterm | ukraine-susp | hongkong | covid-political | election2020 |
 |--------:|------:|---------:|--------:|-------------:|---------:|----------------:|-------------:|
@@ -146,4 +146,4 @@ regimes, similar positions. Report composition alongside rung index.
 
 - `setup/nm_ladder_fillin/` — the single-order ladder this extends (protocol source of truth).
 - `setup/nm_single_source_matrix/` — donor strengths, and the specialist rows reused as rung 1.
-- `analysis/nm_ladder/RESULTS.md` — the published 8×8 table (order A).
+- `analysis/transfer/ladders/prodigy_nm/canonical/nm_ladder/RESULTS.md` — the published 8×8 table (order A).

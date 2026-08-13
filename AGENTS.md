@@ -101,7 +101,9 @@ tmux new-session -d -s <name> 'export PATH="/home/mhchu/miniconda3/bin:$PATH"; b
 ## Important Paths
 
 - Experiment setup (configs, launch/eval scripts): `scripts/experiments/setup/<name>/`
-- Experiment analysis (notebooks, findings, data, figures): `scripts/experiments/analysis/<name>/`
+- Experiment analysis (notebooks, findings, data, figures):
+  `scripts/experiments/analysis/<area>/.../<name>/`; use
+  `scripts/experiments/analysis/README.md` as the canonical map.
 - COVID/UKR merged experiments: `scripts/experiments/setup/covid_ukr/`
 - Eval runner: `scripts/eval/eval_ckpts_all_graph_tasks_tucker.py`
 - Shared analysis/export harness: `scripts/harness/`
@@ -196,7 +198,7 @@ Learned the hard way in the 2026-07-26 consolidation. Each of these fails *silen
   path in the old runner is invalid (center-blind scoring, frozen random prototypes,
   degree-confounded negatives). Every sLP number produced before 2026-07-23 is void —
   do not cite one without checking it against
-  `analysis/multitask_ssl/FINDINGS_rescore.md`. Findings that still carry void numbers
+  `analysis/objectives/multitask_ssl/multitask_ssl/FINDINGS_rescore.md`. Findings that still carry void numbers
   are banner-marked; temporal LP has the same defect and was never rescored.
 - **Runs before 2026-07-26 are one `checkpoint_step` shorter than their label.**
   The training loop is `trange(self.steps)`, so `e` never reaches `self.steps` and the
@@ -218,7 +220,7 @@ Learned the hard way in the 2026-07-26 consolidation. Each of these fails *silen
   followed directly by the shot count, so every ablated run fails to match and is skipped
   with no warning — the jobs succeed and `metrics_test_step0.json` is written, but nothing
   reaches the CSVs. Read those JSONs directly (see
-  `analysis/pretrain_saturation/data/feature_ablation.csv`). **Do not "just widen the
+  `analysis/transfer/ablations/saturation/prodigy_nm/one_hop/pretrain_saturation/data/feature_ablation.csv`). **Do not "just widen the
   regex":** without also adding the ablation tag to the dedup key, an ablated run and a
   real run share a `(model, dataset, task, shots)` key and the newest-wins rule will
   silently overwrite a genuine result with an ablated one — worse than skipping.
@@ -234,8 +236,9 @@ Learned the hard way in the 2026-07-26 consolidation. Each of these fails *silen
 
 ## Where to Start Reading
 
-- `scripts/experiments/analysis/_cross/README.md` — index of every analysis folder,
-  which findings file is current, and which are superseded.
+- `scripts/experiments/analysis/README.md` — canonical index of every analysis folder.
+- `scripts/experiments/analysis/program/cross_experiment_syntheses/` — findings that
+  synthesize evidence across several experiments.
 - The 23 analyses retired on 2026-07-26 are **not** in the working tree: branch
   `archive/retired-analyses-2026-07` and tag `archive/retired-analyses-2026-07-26`.
   Tag `pre-cleanup-2026-07-26` is the pre-consolidation state. Earlier superseded work
@@ -248,13 +251,16 @@ Learned the hard way in the 2026-07-26 consolidation. Each of these fails *silen
 - Producing runs and interpreting them are kept apart, in two name-aligned trees:
   - `scripts/experiments/setup/<name>/` — configs, launch/eval scripts, and the
     `README.md` describing how to reproduce the run. Nothing downstream.
-  - `scripts/experiments/analysis/<name>/` — notebooks and plotting/table code,
-    findings, plus `data/` and `figures/` subfolders.
+  - `scripts/experiments/analysis/<area>/.../<name>/` — notebooks and
+    plotting/table code, findings, plus `data/` and `figures/` subfolders. Group
+    analyses by research question (`transfer`, `objectives`,
+    `graph_characterization`, or `evaluation`), then by study type/model.
 - The trees are independent: an experiment with no analysis yet, or an analysis
   with no dedicated experiment folder, is normal. Do not create empty shells.
-- Name new folders identically on both sides. One pair is already out of step —
-  `setup/nm_ladder_order_robustness-jul_23/` vs `analysis/nm_ladder_order_robustness/`
-  — so match by prefix when a lookup misses, and do not add more dated suffixes.
+- Keep the leaf analysis folder identical to its setup folder when possible. The
+  trees have different depths, so locate analyses through the root analysis index.
+  One pair is already out of step: `setup/nm_ladder_order_robustness-jul_23/`
+  corresponds to the `nm_ladder_order_robustness/` analysis leaf.
 - Findings files (`RESULTS.md`, `FINDINGS.md`) live with the analysis; the
   `README.md` that explains how to run the experiment stays with the setup.
 - Eval CSVs under `data/` and figures under `figures/` are committed on purpose —

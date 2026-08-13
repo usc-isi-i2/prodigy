@@ -74,8 +74,8 @@ MODEL_LIST=scripts/experiments/setup/feature_ablation/model_list.txt \
   --shots 3 --nm-n-way 30 --gpus 0
 
 # 3. collect the intact-vs-ablated gap table
-python3 scripts/experiments/analysis/feature_ablation/parse_feature_ablation.py \
-  --log-root log --out scripts/experiments/analysis/feature_ablation/data/feature_ablation_results.csv
+python3 scripts/experiments/analysis/objectives/topology_vs_features/feature_ablation/parse_feature_ablation.py \
+  --log-root log --out scripts/experiments/analysis/objectives/topology_vs_features/feature_ablation/data/feature_ablation_results.csv
 ```
 
 The intact (`none`) pass reuses the standard eval path, so if matching intact
@@ -83,15 +83,15 @@ runs already exist in `log/` you can skip `none` via `MODES="zero permute"`.
 
 ## Results & findings
 
-See **[`FINDINGS.md`](FINDINGS.md)** for the full writeup (executive summary,
+See **[`FINDINGS.md`](../../analysis/objectives/topology_vs_features/feature_ablation/FINDINGS.md)** for the full writeup (executive summary,
 per-treatment hypotheses, results tables, and evidence-based takeaways).
 
 Headline: **NM relies on the real feature *content* of a node's neighborhood, not
 topology or mere distinctness** — `noise` collapses NM to chance like `zero`, while
 `permute` is harmless. Raw data:
-[`feature_ablation_results.csv`](feature_ablation_results.csv),
-[`feature_label_probe_results.csv`](feature_label_probe_results.csv),
-[`feature_only_nm_results.csv`](feature_only_nm_results.csv).
+[`feature_ablation_results.csv`](../../analysis/objectives/topology_vs_features/feature_ablation/data/feature_ablation_results.csv),
+[`feature_label_probe_results.csv`](../../analysis/objectives/topology_vs_features/feature_ablation/data/feature_label_probe_results.csv),
+[`feature_only_nm_results.csv`](../../analysis/objectives/topology_vs_features/feature_ablation/data/feature_only_nm_results.csv).
 
 ## Files
 

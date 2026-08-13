@@ -82,7 +82,7 @@ python3 assemble_full_table.py --log-root /dataMeR1/phil/gfm/prodigy/log
 - **Coexistence:** these share GPUs with the `nmss` single-source-matrix run; NM
   episodes are tiny, so no need to wait for or kill it. `nvidia-smi` first anyway.
 - **Existing rungs:** `assemble_full_table.py` reads them from
-  `scripts/experiments/analysis/nm_ladder/data/nmladder_results.csv`. If that CSV isn't on Tucker (it
+  `scripts/experiments/analysis/transfer/ladders/prodigy_nm/canonical/nm_ladder/data/nmladder_results.csv`. If that CSV isn't on Tucker (it
   may be gitignored), the script falls back to the published values baked into it and
   prints a warning — the table is still complete.
 - **Fill-in order** = the table's column order (twitter-like graphs first, the two

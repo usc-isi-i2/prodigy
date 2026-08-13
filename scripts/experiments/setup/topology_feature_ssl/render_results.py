@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Render the topology_feature_ssl result tables into a glance-able RESULTS.md.
 
-Mirrors the notebook (scripts/experiments/analysis/topology_feature_ssl/topology_feature_ssl.ipynb)
+Mirrors the notebook (scripts/experiments/analysis/objectives/topology_vs_features/topology_feature_ssl/topology_feature_ssl.ipynb)
 but writes markdown, so the numbers are viewable without running anything. Robust to
 CSVs that haven't landed — each missing table is marked 'pending'.
 

@@ -34,7 +34,7 @@ def resolve(state_dir: Path, prefix: str, step: int) -> Path | None:
 def main() -> int:
     here = Path(__file__).resolve().parent
     repo = here.parents[3]
-    analysis_data = repo / "scripts/experiments/analysis/nm_single_source_downstream/data"
+    analysis_data = repo / "scripts/experiments/analysis/transfer/matrices/prodigy_nm/downstream/nm_single_source_downstream/data"
     parser = argparse.ArgumentParser()
     parser.add_argument("--reuse-state-dir", default="/dataMeR1/phil/gfm/prodigy/state")
     parser.add_argument("--step", type=int, default=40000)

@@ -10,7 +10,7 @@ passthrough ceiling directly: linear-probe the raw
 regression target, NO encoder. E1/E2 count as "learned structure" only if the
 frozen rep BEATS this baseline (README reading: "E1 - B0, against the baseline").
 
-Output: scripts/experiments/analysis/topology_feature_ssl/data/leakage_baseline.csv
+Output: scripts/experiments/analysis/objectives/topology_vs_features/topology_feature_ssl/data/leakage_baseline.csv
         (dataset, target, spearman, n) — the Δ reference for T1's structure-linked column.
 
 Run on Tucker (prodigy env; needs torch, scikit-learn, scipy, networkx).
@@ -138,9 +138,9 @@ def main() -> int:
 
     if not args.out:
         args.out = (
-            "scripts/experiments/analysis/node_regression/data/features_only_floor.csv"
+            "scripts/experiments/analysis/evaluation/shared_task_tables/node_regression/data/features_only_floor.csv"
             if args.features == "raw"
-            else "scripts/experiments/analysis/topology_feature_ssl/data/leakage_baseline.csv"
+            else "scripts/experiments/analysis/objectives/topology_vs_features/topology_feature_ssl/data/leakage_baseline.csv"
         )
 
     targets = [t.strip() for t in args.targets.split(",") if t.strip()]

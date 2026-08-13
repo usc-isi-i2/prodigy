@@ -1,7 +1,7 @@
 # Archive
 
-Retired analyses and superseded work. Nothing here is current — check
-[`../_cross/README.md`](../_cross/README.md) for the live tree.
+Retired analyses and superseded work. Nothing here is current — check the
+[analysis index](../README.md) for the live tree.
 
 ## In the working tree
 
@@ -10,6 +10,7 @@ Retired analyses and superseded work. Nothing here is current — check
 | `multitask_ssl_superseded/` | the rotation/pairs work voided by the 2026-07-23 static-LP evaluator rescore; see its `README.md` |
 | `outputs_old/` | pre-reorg setup and eval docs from `outputs/old/`, superseded by `AGENTS.md` |
 | `misc/` | loose artifacts that belonged to no experiment folder |
+| `mix_slp_ablation/` | the MIX static-LP interpretation whose motivating result was invalidated by the evaluator repair |
 
 ## Off the working tree — 23 analyses, ~22 MB (removed 2026-07-26)
 

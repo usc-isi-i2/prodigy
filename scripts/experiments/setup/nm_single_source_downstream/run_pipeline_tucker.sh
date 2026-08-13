@@ -4,7 +4,7 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
-ANALYSIS_DIR="${REPO_ROOT}/scripts/experiments/analysis/nm_single_source_downstream"
+ANALYSIS_DIR="${REPO_ROOT}/scripts/experiments/analysis/transfer/matrices/prodigy_nm/downstream/nm_single_source_downstream"
 LOG_DIR="${SCRIPT_DIR}/run_logs"
 mkdir -p "${LOG_DIR}"
 

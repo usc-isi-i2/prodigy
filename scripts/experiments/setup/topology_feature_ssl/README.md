@@ -20,15 +20,15 @@ features** — instead of features only?
   There is no topological solution to NM, so tuning the encoder can't fix it — the
   **objective** has to change (or the feature shortcut has to be corrupted; see B1).
 - **The encoder can't represent counts/degree anyway.** The background GNN
-  hardcodes `aggr="mean"` ([`models/get_model.py:41`](../../../models/get_model.py))
+  hardcodes `aggr="mean"` ([`models/get_model.py:41`](../../../../models/get_model.py))
   and the readout is `global_mean_pool`
-  ([`models/multilayer_gnn.py:56`](../../../models/multilayer_gnn.py)). Mean
+  ([`models/multilayer_gnn.py:56`](../../../../models/multilayer_gnn.py)). Mean
   aggregation is degree-/count-blind, so counts, degree, and per-neighbor
   conjunctions are **not representable** regardless of the loss.
 - **The graph is directed and the aggregation throws it away.** Retweet edges are
   directed (retweeter → retweeted; `n_retweets` weight). In-degree = **influence**,
   out-degree = activity. `preprocess` symmetrizes the sampling adjacency
-  ([`experiments/sampler.py:15`](../../../experiments/sampler.py)) and NM walks
+  ([`experiments/sampler.py:15`](../../../../experiments/sampler.py)) and NM walks
   `direction="inout"`, so in/out are conflated before the model uses them. Note
   direction is *not erased* — it survives in the `edge_attr` sign (+idx forward,
   −1−idx reverse) — so a directed-aware encoder can recover it from `edge_attr`
@@ -180,9 +180,9 @@ packages — within-package attribution is deferred to the A-arms.
 
 Everything is keyed by **arm** (`B0, B1, E1, E2, E3, E4`) so the reading-chain
 deltas are direct table subtractions. Benchmark CSVs land under
-`scripts/experiments/analysis/{node_regression,static_link_prediction,node_classification}/data/`
+`scripts/experiments/analysis/evaluation/shared_task_tables/{node_regression,static_link_prediction,node_classification}/data/`
 (one `model=<arm>` column, as in the pretrain-strategy benchmark); diagnostics land
-in `scripts/experiments/analysis/topology_feature_ssl/` and are joined in that folder's
+in `scripts/experiments/analysis/objectives/topology_vs_features/topology_feature_ssl/` and are joined in that folder's
 notebook. Three tables:
 
 **T1 — Benchmark (confirmatory).** Rows = arms; columns split feature vs topological

@@ -14,7 +14,7 @@ export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 cd "${REPO_ROOT}"
 
 DATA_ROOT="${DATA_ROOT:-/dataMeR1/phil/data}"
-OUT_DIR="${OUT_DIR:-${REPO_ROOT}/scripts/experiments/analysis/pretrain_saturation_nhop2/data/reg_probe}"
+OUT_DIR="${OUT_DIR:-${REPO_ROOT}/scripts/experiments/analysis/transfer/ablations/saturation/prodigy_nm/two_hop/pretrain_saturation_nhop2/data/reg_probe}"
 GPU="${GPU:-0}"
 DATASETS="${DATASETS:-midterm,twibot20,ukr_rus_twitter,covid19_twitter}"
 mkdir -p "${OUT_DIR}"

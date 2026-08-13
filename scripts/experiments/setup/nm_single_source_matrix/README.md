@@ -5,7 +5,7 @@ then evaluate every model on **every graph** — an 8×8 `train × test` NM-AUC 
 The **diagonal** is each graph's in-domain specialist; the **off-diagonal** is
 zero-training-overlap transfer. This is the single-source counterpart to the merged
 NM "interpolation ladder" (`scripts/experiments/setup/covid_ukr`, plotted in
-`scripts/experiments/analysis/nm_ladder/data/nmladder_results.csv`): the ladder trains on a *growing
+`scripts/experiments/analysis/transfer/ladders/prodigy_nm/canonical/nm_ladder/data/nmladder_results.csv`): the ladder trains on a *growing
 merge*, this trains on *one source at a time*, and both are read on the same 8 columns.
 
 ## The 8 graphs

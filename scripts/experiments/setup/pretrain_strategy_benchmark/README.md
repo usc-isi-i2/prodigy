@@ -39,6 +39,6 @@ bash scripts/experiments/setup/pretrain_strategy_benchmark/run_pretrain_strategy
 ```
 
 Results (keyed by `model` = strategy) land in
-`scripts/experiments/analysis/{node_regression,static_link_prediction}/data/*.csv`; the
+`scripts/experiments/analysis/evaluation/shared_task_tables/{node_regression,static_link_prediction}/data/*.csv`; the
 strategy comparison notebook is in
-`scripts/experiments/analysis/pretrain_strategy_benchmark/`.
+`scripts/experiments/analysis/objectives/legacy_strategy_comparisons/pretrain_strategy_benchmark/`.

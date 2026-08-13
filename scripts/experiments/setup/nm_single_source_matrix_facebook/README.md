@@ -38,4 +38,4 @@ GPUs 0-3.
 
 The full pipeline completed on 2026-08-06 with all 17 new cells present and no eval
 failures. The committed matrix, exact metrics, provenance, and interpretation live
-in `scripts/experiments/analysis/nm_single_source_matrix_facebook/`.
+in `scripts/experiments/analysis/transfer/matrices/prodigy_nm/single_source/nm_single_source_matrix_facebook/`.

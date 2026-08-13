@@ -62,6 +62,6 @@ run_condition "random-feat+rewired"  --ablate-features noise --ablate-edges rewi
 # join intact (from the normal sweep) with the ablated runs -> retained fraction
 python3 "${SCRIPT_DIR}/parse_2x2.py" \
   --log-root /dataMeR1/phil/gfm/prodigy/log --model-list "${ML}" \
-  --out scripts/experiments/analysis/topology_feature_ssl/data/ablation_2x2.csv
+  --out scripts/experiments/analysis/objectives/topology_vs_features/topology_feature_ssl/data/ablation_2x2.csv
 
 echo "TOPOLOGY_FEATURE_SSL_2X2_DONE"

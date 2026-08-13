@@ -2,7 +2,7 @@
 
 Companion to `README.md` (design + interpretation matrix). Exact commands as
 run, checkpoints, and seeds. Findings land in
-`scripts/experiments/analysis/mix_slp_ablation/FINDINGS.md`.
+`scripts/experiments/analysis/archive/mix_slp_ablation/FINDINGS.md`.
 
 ## Fixed facts
 
@@ -79,7 +79,7 @@ tail -f /tmp/abl_2x2.log   # ends with MIX_SLP_ABLATION_2X2_DONE
 
 ```bash
 cd /dataMeR1/phil/gfm/prodigy-abl
-git add scripts/experiments/analysis/mix_slp_ablation/data/slp_ablation_2x2.csv
+git add scripts/experiments/analysis/archive/mix_slp_ablation/data/slp_ablation_2x2.csv
 git commit -m "mix_slp_ablation: 2x2 static-LP results from Tucker"
 git push origin exp/mix-slp-ablation
 # laptop: git pull, write FINDINGS.md
@@ -116,4 +116,4 @@ git push origin exp/mix-slp-ablation
   cherry-pick; Tucker's https remote has no credentials), pushed; Tucker
   worktree hard-reset to `origin/exp/mix-slp-ablation` to reconverge.
 - **2026-07-21** FINDINGS written: verdict **topological** (see
-  `scripts/experiments/analysis/mix_slp_ablation/FINDINGS.md`).
+  `scripts/experiments/analysis/archive/mix_slp_ablation/FINDINGS.md`).

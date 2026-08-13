@@ -9,7 +9,7 @@ bio embedding (no encoder, no pretraining), shot-matched to the benchmark:
 If no pretrained arm beats `raw_feat`, then on these graphs SSL pretraining does
 not buy transfer over just using the features — a real (if negative) result.
 
-Output: scripts/experiments/analysis/topology_feature_ssl/data/trivial_baselines.csv
+Output: scripts/experiments/analysis/objectives/topology_vs_features/topology_feature_ssl/data/trivial_baselines.csv
         (model=raw_feat, dataset, task, target, metric, n)
 
 Run on Tucker (needs torch, scikit-learn, scipy).
@@ -93,7 +93,7 @@ def main() -> int:
     ap.add_argument("--shots", type=int, default=10)
     ap.add_argument("--n-query", type=int, default=12)
     ap.add_argument("--episodes", type=int, default=300)
-    ap.add_argument("--out", default="scripts/experiments/analysis/topology_feature_ssl/data/trivial_baselines.csv")
+    ap.add_argument("--out", default="scripts/experiments/analysis/objectives/topology_vs_features/topology_feature_ssl/data/trivial_baselines.csv")
     args = ap.parse_args()
     targets = [t.strip() for t in args.targets.split(",") if t.strip()]
     rows = []

@@ -24,8 +24,8 @@ from sklearn.cluster import MiniBatchKMeans
 from sklearn.decomposition import PCA
 
 ROOT = Path(__file__).resolve().parents[4]
-GD = ROOT / "scripts/experiments/analysis/graph_divergence"
-PFC = ROOT / "scripts/experiments/analysis/path_feature_coupling"
+GD = ROOT / "scripts/experiments/analysis/graph_characterization/statistics/graph_divergence"
+PFC = ROOT / "scripts/experiments/analysis/graph_characterization/structure_feature_coupling/path_feature_coupling"
 sys.path[:0] = [str(GD), str(PFC)]
 
 from compute_graph_divergence import (  # noqa: E402

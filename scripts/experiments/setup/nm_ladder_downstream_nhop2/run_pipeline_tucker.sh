@@ -4,7 +4,7 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
-ANALYSIS_DIR="${REPO_ROOT}/scripts/experiments/analysis/nm_ladder_downstream_nhop2"
+ANALYSIS_DIR="${REPO_ROOT}/scripts/experiments/analysis/transfer/ablations/downstream/two_hop/nm_ladder_downstream_nhop2"
 RAW_ROOT="${RAW_ROOT:-${ANALYSIS_DIR}/data/raw}"
 PAIR_DIR="${RAW_ROOT}/pair_lp"
 RUNNER_OUT="${RAW_ROOT}/runner"

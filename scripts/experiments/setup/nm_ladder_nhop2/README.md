@@ -47,7 +47,7 @@ this is equivalent to building a separate nested merge for every rung.
 - `make_model_list.py` pins evaluation to `state_dict_40000.ckpt`.
 - `eval_ladder_tucker.sh` passes the full `2 / 9,9 / 101 / walk=1` sampler tuple
   to every evaluation process.
-- Results and plots belong in `analysis/nm_ladder_nhop2/`, never here.
+- Results and plots belong in `analysis/transfer/ablations/context_hops/nm_ladder_nhop2/`, never here.
 
 Generated-file integrity check:
 
@@ -173,12 +173,12 @@ after A and robustness would duplicate 64 completed A evaluations.
 Run from the same Tucker worktree that owns the logs:
 
 ```bash
-python3 scripts/experiments/analysis/nm_ladder_nhop2/assemble_results.py \
+python3 scripts/experiments/analysis/transfer/ablations/context_hops/nm_ladder_nhop2/assemble_results.py \
   --log-root /dataMeR1/phil/gfm/prodigy-nmlh2/log
 ```
 
 This writes the new 2-hop tables under
-`scripts/experiments/analysis/nm_ladder_nhop2/data/` and, when the committed
+`scripts/experiments/analysis/transfer/ablations/context_hops/nm_ladder_nhop2/data/` and, when the committed
 1-hop order table is present, a paired 1-hop-vs-2-hop comparison table.
 
 ## Archived Tucker artifacts
