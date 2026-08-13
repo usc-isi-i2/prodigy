@@ -62,6 +62,9 @@ from `global` to `radius_mix` to `close_only` is consistent across all three see
 
 ## Evidence
 
+- [`figures/validation_trajectories.png`](figures/validation_trajectories.png):
+  all seed-level and three-seed-mean validation accuracy/loss trajectories; a PDF
+  version is stored alongside it.
 - [`data/validation_trajectory.csv`](data/validation_trajectory.csv): every
   arm × seed × checkpoint × primary validation-panel cell, including loss.
 - [`data/checkpoint_selections.csv`](data/checkpoint_selections.csv): frozen checkpoint
