@@ -236,6 +236,74 @@ def identity_probe(
     }
 
 
+def proxy_a_distance(
+    rows_a: np.ndarray,
+    rows_b: np.ndarray,
+    seed: int,
+) -> dict[str, Any]:
+    """Held-out binary domain-classifier separability for two feature clouds."""
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.model_selection import train_test_split
+
+    n = min(len(rows_a), len(rows_b))
+    if n < 2:
+        return {"n_per_graph": int(n), "error": "requires at least two rows per graph"}
+    rng = np.random.default_rng(seed)
+    a = rows_a[rng.choice(len(rows_a), size=n, replace=False)]
+    b = rows_b[rng.choice(len(rows_b), size=n, replace=False)]
+    matrix = np.concatenate((a, b), axis=0)
+    labels = np.concatenate((np.zeros(n, dtype=np.int8), np.ones(n, dtype=np.int8)))
+    x_train, x_test, y_train, y_test = train_test_split(
+        matrix,
+        labels,
+        test_size=0.30,
+        random_state=seed,
+        stratify=labels,
+    )
+    model = LogisticRegression(C=1.0, max_iter=1_000, random_state=seed)
+    model.fit(x_train, y_train)
+    accuracy = float(model.score(x_test, y_test))
+    error = 1.0 - accuracy
+    return {
+        "n_per_graph": int(n),
+        "n_train": int(len(x_train)),
+        "n_test": int(len(x_test)),
+        "test_accuracy": accuracy,
+        "test_error": error,
+        "proxy_a_distance": float(2.0 * (1.0 - 2.0 * error)),
+    }
+
+
+def pairwise_proxy_a(
+    samples: dict[str, dict[str, np.ndarray]],
+    graph_names: list[str],
+    seed: int,
+) -> dict[str, Any]:
+    """Compute symmetric pairwise proxy-A results in each feature space."""
+    result: dict[str, Any] = {
+        "definition": "2 * (1 - 2 * heldout_error); 0 = chance, 2 = perfect",
+        "classifier": "binary logistic regression, C=1.0, max_iter=1000",
+        "test_fraction": 0.30,
+        "graphs": graph_names,
+        "spaces": {},
+    }
+    for space_offset, space in enumerate(SPACE_NAMES):
+        details: dict[str, Any] = {}
+        matrix: list[list[float]] = [[0.0] * len(graph_names) for _ in graph_names]
+        for i, left in enumerate(graph_names):
+            for j in range(i + 1, len(graph_names)):
+                right = graph_names[j]
+                pair_seed = seed + space_offset * 10_000 + i * len(graph_names) + j
+                metrics = proxy_a_distance(
+                    samples[left][space], samples[right][space], pair_seed
+                )
+                value = metrics.get("proxy_a_distance")
+                matrix[i][j] = matrix[j][i] = value
+                details[f"{left}__{right}"] = metrics
+        result["spaces"][space] = {"matrix": matrix, "pairs": details}
+    return result
+
+
 def matched_path_metrics(
     x,
     adjacency,
@@ -462,6 +530,7 @@ def main() -> int:
         "per_graph": {},
         "random_pair_distances": {},
         "graph_identity": {},
+        "pairwise_proxy_a": {},
         "projection": {},
     }
     graph_samples: dict[str, dict[str, np.ndarray]] = {}
@@ -551,6 +620,10 @@ def main() -> int:
             )
             for space in SPACE_NAMES
         }
+
+    result["pairwise_proxy_a"] = pairwise_proxy_a(
+        graph_samples, graph_names, args.seed + 45_000
+    )
 
     test_mask, projection_labels, split_metadata = projection_split(
         graph_samples, graph_names, args.seed + 50_000

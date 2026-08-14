@@ -5,6 +5,7 @@ from analyze_neighbor_augmented_features import (
     distance_summary,
     identity_probe,
     lda_projection,
+    pairwise_proxy_a,
     projection_split,
     sampled_neighbor_means,
     spaces,
@@ -64,6 +65,24 @@ def test_identity_probe_supports_two_graph_pilots():
     result = identity_probe(samples, ["left", "right"], "raw_center", seed=0)
     assert result["test_balanced_accuracy"] == 1.0
     assert result["test_macro_ovr_auc"] == 1.0
+
+
+def test_pairwise_proxy_a_reports_each_feature_space():
+    rng = np.random.default_rng(17)
+    left_raw = rng.normal(-3, 0.1, size=(30, 3)).astype(np.float32)
+    right_raw = rng.normal(3, 0.1, size=(30, 3)).astype(np.float32)
+    left_mean = rng.normal(-2, 0.1, size=(30, 3)).astype(np.float32)
+    right_mean = rng.normal(2, 0.1, size=(30, 3)).astype(np.float32)
+    samples = {
+        "left": spaces(left_raw, left_mean),
+        "right": spaces(right_raw, right_mean),
+    }
+    result = pairwise_proxy_a(samples, ["left", "right"], seed=0)
+    assert result["graphs"] == ["left", "right"]
+    for space in ("raw_center", "neighbor_mean", "center_plus_neighbor_mean"):
+        entry = result["spaces"][space]
+        assert entry["matrix"] == [[0.0, 2.0], [2.0, 0.0]]
+        assert entry["pairs"]["left__right"]["test_accuracy"] == 1.0
 
 
 def test_projection_split_is_balanced_and_deterministic():
