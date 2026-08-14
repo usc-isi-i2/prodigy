@@ -46,7 +46,8 @@ The complete outputs are:
 - `data/graph_identity_per_dimension.csv`: one row per scope and feature coordinate.
 - `data/neighbor_augmented_features.json`: matched raw-versus-neighborhood distance
   metrics, graph-identity probes, and pairwise held-out proxy-A-distance matrices for
-  raw centers, sampled-neighbor means, and their concatenation.
+  raw centers, sampled-neighbor means, and their concatenation. For graphs with node
+  labels, it also reports within-graph held-out linear label probes in all three spaces.
 - `data/neighbor_augmented_3d.csv`: held-out 3D PCA and graph-label-supervised LDA
   coordinates for raw centers, sampled-neighbor means, and their concatenation.
 - `figures/neighbor-augmented-feature-space.html`: portable interactive 3D view

@@ -5,9 +5,11 @@ from analyze_neighbor_augmented_features import (
     distance_summary,
     identity_probe,
     lda_projection,
+    node_label_probe,
     pairwise_proxy_a,
     projection_split,
     sampled_neighbor_means,
+    sample_nonmissing_from_candidates,
     spaces,
 )
 
@@ -39,6 +41,15 @@ def test_spaces_concatenate_center_and_neighbor_mean():
     np.testing.assert_allclose(result["center_plus_neighbor_mean"], [[1, 2, 3, 4]])
 
 
+def test_sample_nonmissing_from_candidates_excludes_zero_rows():
+    x = np.array([[1.0, 0.0], [0.0, 0.0], [2.0, 0.0], [3.0, 0.0]], dtype=np.float32)
+    ids, rows = sample_nonmissing_from_candidates(
+        x, np.array([1, 2, 3]), n_target=2, rng=np.random.default_rng(0)
+    )
+    assert set(ids) == {2, 3}
+    assert np.all(np.abs(rows).sum(axis=1) > 0)
+
+
 def test_distance_summary_uses_fixed_pair_indices():
     rows = np.array([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32)
     out = distance_summary(rows, rows, np.array([0]), np.array([1]))
@@ -63,6 +74,17 @@ def test_identity_probe_supports_two_graph_pilots():
         "right": spaces(right, right),
     }
     result = identity_probe(samples, ["left", "right"], "raw_center", seed=0)
+    assert result["test_balanced_accuracy"] == 1.0
+    assert result["test_macro_ovr_auc"] == 1.0
+
+
+def test_node_label_probe_separates_heldout_labels():
+    rng = np.random.default_rng(23)
+    labels = np.repeat([0, 1], 30)
+    matrix = np.vstack(
+        [rng.normal(-3, 0.1, size=(30, 4)), rng.normal(3, 0.1, size=(30, 4))]
+    ).astype(np.float32)
+    result = node_label_probe(matrix, labels, ["negative", "positive"], seed=0)
     assert result["test_balanced_accuracy"] == 1.0
     assert result["test_macro_ovr_auc"] == 1.0
 

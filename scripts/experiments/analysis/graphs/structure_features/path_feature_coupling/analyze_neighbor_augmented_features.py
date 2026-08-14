@@ -94,6 +94,41 @@ def sample_nonmissing_node_ids(
     return ids, rows
 
 
+def sample_nonmissing_from_candidates(
+    x,
+    candidate_ids: np.ndarray,
+    n_target: int,
+    rng: np.random.Generator,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Uniformly sample nonzero-feature nodes from an explicit candidate set."""
+    if not len(candidate_ids):
+        return (
+            np.empty(0, dtype=np.int64),
+            np.empty((0, int(x.shape[1])), dtype=np.float32),
+        )
+    order = rng.permutation(len(candidate_ids))
+    retained_ids: list[np.ndarray] = []
+    retained_rows: list[np.ndarray] = []
+    for start in range(0, len(order), 10_000):
+        selected = candidate_ids[order[start : start + 10_000]].astype(np.int64)
+        rows = feature_rows(x, selected)
+        keep = np.abs(rows).sum(axis=1) > 0
+        if np.any(keep):
+            retained_ids.append(selected[keep])
+            retained_rows.append(rows[keep])
+        if sum(len(part) for part in retained_ids) >= n_target:
+            break
+    if not retained_ids:
+        return (
+            np.empty(0, dtype=np.int64),
+            np.empty((0, int(x.shape[1])), dtype=np.float32),
+        )
+    return (
+        np.concatenate(retained_ids)[:n_target],
+        np.concatenate(retained_rows, axis=0)[:n_target],
+    )
+
+
 def sampled_neighbor_means(
     x,
     adjacency,
@@ -232,6 +267,64 @@ def identity_probe(
         "n_test": int(len(x_test)),
         "chance_balanced_accuracy": float(1.0 / len(graph_names)),
         "test_balanced_accuracy": float(balanced_accuracy_score(y_test, prediction)),
+        "test_macro_ovr_auc": float(macro_auc),
+    }
+
+
+def node_label_probe(
+    matrix: np.ndarray,
+    labels: np.ndarray,
+    label_names: list[str],
+    seed: int,
+) -> dict[str, Any]:
+    """Held-out linear probe for node labels within one graph."""
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.metrics import balanced_accuracy_score, f1_score, roc_auc_score
+    from sklearn.model_selection import train_test_split
+    from sklearn.pipeline import make_pipeline
+    from sklearn.preprocessing import StandardScaler, label_binarize
+
+    classes, counts = np.unique(labels, return_counts=True)
+    if len(classes) < 2 or counts.min() < 2:
+        return {
+            "error": "node-label probing requires at least two classes with two samples each",
+            "class_counts": {str(int(k)): int(v) for k, v in zip(classes, counts)},
+        }
+    x_train, x_test, y_train, y_test = train_test_split(
+        matrix,
+        labels,
+        test_size=0.30,
+        random_state=seed,
+        stratify=labels,
+    )
+    model = make_pipeline(
+        StandardScaler(),
+        LogisticRegression(
+            C=1.0,
+            max_iter=1_000,
+            solver="lbfgs",
+            class_weight="balanced",
+            random_state=seed,
+        ),
+    )
+    model.fit(x_train, y_train)
+    prediction = model.predict(x_test)
+    probability = model.predict_proba(x_test)
+    if len(classes) == 2:
+        macro_auc = roc_auc_score(y_test, probability[:, 1])
+    else:
+        binary = label_binarize(y_test, classes=classes)
+        macro_auc = roc_auc_score(binary, probability, average="macro", multi_class="ovr")
+    return {
+        "label_names": label_names,
+        "classes": [int(value) for value in classes],
+        "class_counts": {str(int(k)): int(v) for k, v in zip(classes, counts)},
+        "n_train": int(len(x_train)),
+        "n_test": int(len(x_test)),
+        "chance_balanced_accuracy": float(1.0 / len(classes)),
+        "test_accuracy": float((prediction == y_test).mean()),
+        "test_balanced_accuracy": float(balanced_accuracy_score(y_test, prediction)),
+        "test_macro_f1": float(f1_score(y_test, prediction, average="macro")),
         "test_macro_ovr_auc": float(macro_auc),
     }
 
@@ -490,6 +583,7 @@ def main() -> int:
     parser.add_argument("--graphs", default=",".join(DEFAULT_DATASET_KEYS))
     parser.add_argument("--graph-path", action="append", default=[], metavar="KEY=RELATIVE_PATH")
     parser.add_argument("--nodes-per-graph", type=int, default=2_000)
+    parser.add_argument("--labeled-nodes-per-graph", type=int, default=2_000)
     parser.add_argument("--path-blocks", type=int, default=3_000)
     parser.add_argument("--fanout", type=int, default=100)
     parser.add_argument("--seed", type=int, default=0)
@@ -530,6 +624,7 @@ def main() -> int:
         "per_graph": {},
         "random_pair_distances": {},
         "graph_identity": {},
+        "node_label_identity": {},
         "pairwise_proxy_a": {},
         "projection": {},
     }
@@ -537,6 +632,9 @@ def main() -> int:
     node_ids: dict[str, np.ndarray] = {}
     degrees: dict[str, np.ndarray] = {}
     sampled_counts: dict[str, np.ndarray] = {}
+    label_samples: dict[str, dict[str, np.ndarray]] = {}
+    sampled_labels: dict[str, np.ndarray] = {}
+    sampled_label_names: dict[str, list[str]] = {}
 
     for name in names:
         path = data_root / paths[name]
@@ -561,6 +659,21 @@ def main() -> int:
         node_ids[name] = ids
         degrees[name] = degree
         sampled_counts[name] = sampled
+        y_obj = obj.get("y")
+        label_names = list(obj.get("label_names") or [])
+        if y_obj is not None and label_names:
+            y = as_numpy(y_obj).reshape(-1).astype(np.int64, copy=False)
+            eligible = np.flatnonzero(y >= 0).astype(np.int64)
+            label_ids, label_raw = sample_nonmissing_from_candidates(
+                x, eligible, args.labeled_nodes_per_graph, rng
+            )
+            if len(label_ids) and len(np.unique(y[label_ids])) >= 2:
+                label_mean, _, _ = sampled_neighbor_means(
+                    x, adjacency, label_ids, args.fanout, rng
+                )
+                label_samples[name] = spaces(label_raw, label_mean)
+                sampled_labels[name] = y[label_ids]
+                sampled_label_names[name] = label_names
         path_metrics = matched_path_metrics(
             x, adjacency, n_nodes, args.path_blocks, args.fanout, rng
         )
@@ -624,6 +737,18 @@ def main() -> int:
     result["pairwise_proxy_a"] = pairwise_proxy_a(
         graph_samples, graph_names, args.seed + 45_000
     )
+    for graph_offset, name in enumerate(graph_names):
+        if name not in label_samples:
+            continue
+        result["node_label_identity"][name] = {
+            space: node_label_probe(
+                label_samples[name][space],
+                sampled_labels[name],
+                sampled_label_names[name],
+                args.seed + 47_000 + graph_offset,
+            )
+            for space in SPACE_NAMES
+        }
 
     test_mask, projection_labels, split_metadata = projection_split(
         graph_samples, graph_names, args.seed + 50_000
