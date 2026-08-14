@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generated_at": "2026-08-12 12:46:59",
+    "generated_at": "2026-08-14 13:04:14",
     "hostname": "tucker",
-    "git_commit": "a6aae69f5ee516a6a98a14856f471400b4e5c381",
+    "git_commit": "58eaa0b11297b1479f4d0d7547522ab04c8769d6",
     "data_root": "/dataMeR1/phil/data",
     "seed": 0,
     "representation": "concat(center feature, mean of sampled undirected neighbor features)",
@@ -21,8 +21,8 @@
       "path_blocks": 3000,
       "fanout": 100,
       "seed": 0,
-      "out": "scripts/experiments/analysis/path_feature_coupling/data/neighbor_augmented_features.json",
-      "projection_out": "scripts/experiments/analysis/path_feature_coupling/data/neighbor_augmented_3d.csv"
+      "out": "scripts/experiments/analysis/graphs/structure_features/path_feature_coupling/data/neighbor_augmented_features.json",
+      "projection_out": "scripts/experiments/analysis/graphs/structure_features/path_feature_coupling/data/neighbor_augmented_3d.csv"
     }
   },
   "graphs": [
@@ -297,7 +297,7 @@
           }
         }
       },
-      "elapsed_seconds": 192.86586022377014
+      "elapsed_seconds": 94.87119507789612
     },
     "ukr_rus_twitter": {
       "graph_path": "/dataMeR1/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.pt",
@@ -560,7 +560,7 @@
           }
         }
       },
-      "elapsed_seconds": 33.14210295677185
+      "elapsed_seconds": 37.333802938461304
     },
     "midterm": {
       "graph_path": "/dataMeR1/phil/data/midterm/graphs/retweet_graph_parquet.pt",
@@ -823,7 +823,7 @@
           }
         }
       },
-      "elapsed_seconds": 2.0791258811950684
+      "elapsed_seconds": 1.7524898052215576
     },
     "cp_hk_twitter": {
       "graph_path": "/dataMeR1/phil/data/cp_hk_twitter/graphs/retweet_graph.pt",
@@ -1086,7 +1086,7 @@
           }
         }
       },
-      "elapsed_seconds": 2.547614097595215
+      "elapsed_seconds": 1.855086088180542
     },
     "twibot20": {
       "graph_path": "/dataMeR1/phil/data/twibot20/graphs/retweet_graph.pt",
@@ -1349,7 +1349,7 @@
           }
         }
       },
-      "elapsed_seconds": 2.2401461601257324
+      "elapsed_seconds": 1.74629545211792
     },
     "election2020": {
       "graph_path": "/dataMeR1/phil/data/election2020/graphs/retweet_graph.pt",
@@ -1612,7 +1612,7 @@
           }
         }
       },
-      "elapsed_seconds": 10.929849624633789
+      "elapsed_seconds": 10.949349403381348
     },
     "covid_political": {
       "graph_path": "/dataMeR1/phil/data/covid_political/graphs/retweet_graph.pt",
@@ -1875,7 +1875,7 @@
           }
         }
       },
-      "elapsed_seconds": 0.9954056739807129
+      "elapsed_seconds": 0.8436932563781738
     },
     "ukr_rus_suspended": {
       "graph_path": "/dataMeR1/phil/data/ukr_rus_suspended/graphs/retweet_graph.pt",
@@ -2138,7 +2138,7 @@
           }
         }
       },
-      "elapsed_seconds": 1.3902652263641357
+      "elapsed_seconds": 1.1618304252624512
     }
   },
   "random_pair_distances": {
@@ -3214,6 +3214,953 @@
         "chance_balanced_accuracy": 0.16666666666666666,
         "test_balanced_accuracy": 0.5880555555555556,
         "test_macro_ovr_auc": 0.8567005092592592
+      }
+    }
+  },
+  "pairwise_proxy_a": {
+    "definition": "2 * (1 - 2 * heldout_error); 0 = chance, 2 = perfect",
+    "classifier": "binary logistic regression, C=1.0, max_iter=1000",
+    "test_fraction": 0.3,
+    "graphs": [
+      "covid19_twitter",
+      "ukr_rus_twitter",
+      "midterm",
+      "cp_hk_twitter",
+      "twibot20",
+      "election2020",
+      "covid_political",
+      "ukr_rus_suspended"
+    ],
+    "spaces": {
+      "raw_center": {
+        "matrix": [
+          [
+            0.0,
+            0.21666666666666679,
+            0.8700000000000001,
+            0.7166666666666668,
+            0.7933333333333334,
+            1.69,
+            1.5966666666666667,
+            1.1
+          ],
+          [
+            0.21666666666666679,
+            0.0,
+            0.7400000000000002,
+            0.75,
+            0.6600000000000001,
+            1.6766666666666667,
+            1.5699999999999998,
+            0.9033333333333333
+          ],
+          [
+            0.8700000000000001,
+            0.7400000000000002,
+            0.0,
+            0.9166666666666665,
+            0.7633333333333332,
+            1.63,
+            1.5733333333333333,
+            0.9333333333333331
+          ],
+          [
+            0.7166666666666668,
+            0.75,
+            0.9166666666666665,
+            0.0,
+            1.1166666666666667,
+            1.7566666666666668,
+            1.6400000000000001,
+            1.1133333333333333
+          ],
+          [
+            0.7933333333333334,
+            0.6600000000000001,
+            0.7633333333333332,
+            1.1166666666666667,
+            0.0,
+            1.6266666666666665,
+            1.5333333333333332,
+            1.0666666666666669
+          ],
+          [
+            1.69,
+            1.6766666666666667,
+            1.63,
+            1.7566666666666668,
+            1.6266666666666665,
+            0.0,
+            0.6499999999999999,
+            1.6366666666666667
+          ],
+          [
+            1.5966666666666667,
+            1.5699999999999998,
+            1.5733333333333333,
+            1.6400000000000001,
+            1.5333333333333332,
+            0.6499999999999999,
+            0.0,
+            1.65
+          ],
+          [
+            1.1,
+            0.9033333333333333,
+            0.9333333333333331,
+            1.1133333333333333,
+            1.0666666666666669,
+            1.6366666666666667,
+            1.65,
+            0.0
+          ]
+        ],
+        "pairs": {
+          "covid19_twitter__ukr_rus_twitter": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.5541666666666667,
+            "test_error": 0.4458333333333333,
+            "proxy_a_distance": 0.21666666666666679
+          },
+          "covid19_twitter__midterm": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.7175,
+            "test_error": 0.2825,
+            "proxy_a_distance": 0.8700000000000001
+          },
+          "covid19_twitter__cp_hk_twitter": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.6791666666666667,
+            "test_error": 0.3208333333333333,
+            "proxy_a_distance": 0.7166666666666668
+          },
+          "covid19_twitter__twibot20": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.6983333333333334,
+            "test_error": 0.30166666666666664,
+            "proxy_a_distance": 0.7933333333333334
+          },
+          "covid19_twitter__election2020": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9225,
+            "test_error": 0.07750000000000001,
+            "proxy_a_distance": 1.69
+          },
+          "covid19_twitter__covid_political": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.8991666666666667,
+            "test_error": 0.10083333333333333,
+            "proxy_a_distance": 1.5966666666666667
+          },
+          "covid19_twitter__ukr_rus_suspended": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.775,
+            "test_error": 0.22499999999999998,
+            "proxy_a_distance": 1.1
+          },
+          "ukr_rus_twitter__midterm": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.685,
+            "test_error": 0.31499999999999995,
+            "proxy_a_distance": 0.7400000000000002
+          },
+          "ukr_rus_twitter__cp_hk_twitter": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.6875,
+            "test_error": 0.3125,
+            "proxy_a_distance": 0.75
+          },
+          "ukr_rus_twitter__twibot20": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.665,
+            "test_error": 0.33499999999999996,
+            "proxy_a_distance": 0.6600000000000001
+          },
+          "ukr_rus_twitter__election2020": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9191666666666667,
+            "test_error": 0.08083333333333331,
+            "proxy_a_distance": 1.6766666666666667
+          },
+          "ukr_rus_twitter__covid_political": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.8925,
+            "test_error": 0.10750000000000004,
+            "proxy_a_distance": 1.5699999999999998
+          },
+          "ukr_rus_twitter__ukr_rus_suspended": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.7258333333333333,
+            "test_error": 0.27416666666666667,
+            "proxy_a_distance": 0.9033333333333333
+          },
+          "midterm__cp_hk_twitter": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.7291666666666666,
+            "test_error": 0.27083333333333337,
+            "proxy_a_distance": 0.9166666666666665
+          },
+          "midterm__twibot20": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.6908333333333333,
+            "test_error": 0.3091666666666667,
+            "proxy_a_distance": 0.7633333333333332
+          },
+          "midterm__election2020": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9075,
+            "test_error": 0.09250000000000003,
+            "proxy_a_distance": 1.63
+          },
+          "midterm__covid_political": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.8933333333333333,
+            "test_error": 0.10666666666666669,
+            "proxy_a_distance": 1.5733333333333333
+          },
+          "midterm__ukr_rus_suspended": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.7333333333333333,
+            "test_error": 0.2666666666666667,
+            "proxy_a_distance": 0.9333333333333331
+          },
+          "cp_hk_twitter__twibot20": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.7791666666666667,
+            "test_error": 0.22083333333333333,
+            "proxy_a_distance": 1.1166666666666667
+          },
+          "cp_hk_twitter__election2020": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9391666666666667,
+            "test_error": 0.060833333333333295,
+            "proxy_a_distance": 1.7566666666666668
+          },
+          "cp_hk_twitter__covid_political": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.91,
+            "test_error": 0.08999999999999997,
+            "proxy_a_distance": 1.6400000000000001
+          },
+          "cp_hk_twitter__ukr_rus_suspended": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.7783333333333333,
+            "test_error": 0.22166666666666668,
+            "proxy_a_distance": 1.1133333333333333
+          },
+          "twibot20__election2020": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9066666666666666,
+            "test_error": 0.09333333333333338,
+            "proxy_a_distance": 1.6266666666666665
+          },
+          "twibot20__covid_political": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.8833333333333333,
+            "test_error": 0.1166666666666667,
+            "proxy_a_distance": 1.5333333333333332
+          },
+          "twibot20__ukr_rus_suspended": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.7666666666666667,
+            "test_error": 0.23333333333333328,
+            "proxy_a_distance": 1.0666666666666669
+          },
+          "election2020__covid_political": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.6625,
+            "test_error": 0.3375,
+            "proxy_a_distance": 0.6499999999999999
+          },
+          "election2020__ukr_rus_suspended": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9091666666666667,
+            "test_error": 0.09083333333333332,
+            "proxy_a_distance": 1.6366666666666667
+          },
+          "covid_political__ukr_rus_suspended": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9125,
+            "test_error": 0.08750000000000002,
+            "proxy_a_distance": 1.65
+          }
+        }
+      },
+      "neighbor_mean": {
+        "matrix": [
+          [
+            0.0,
+            0.8433333333333333,
+            1.1866666666666665,
+            1.65,
+            0.9733333333333332,
+            1.9333333333333331,
+            1.7966666666666669,
+            1.6033333333333335
+          ],
+          [
+            0.8433333333333333,
+            0.0,
+            1.1933333333333334,
+            1.6066666666666665,
+            1.0633333333333335,
+            1.9166666666666665,
+            1.8199999999999998,
+            1.44
+          ],
+          [
+            1.1866666666666665,
+            1.1933333333333334,
+            0.0,
+            1.7433333333333332,
+            1.2533333333333334,
+            1.8900000000000001,
+            1.83,
+            1.5699999999999998
+          ],
+          [
+            1.65,
+            1.6066666666666665,
+            1.7433333333333332,
+            0.0,
+            1.7633333333333332,
+            1.9566666666666666,
+            1.6466666666666665,
+            1.6
+          ],
+          [
+            0.9733333333333332,
+            1.0633333333333335,
+            1.2533333333333334,
+            1.7633333333333332,
+            0.0,
+            1.9466666666666668,
+            1.8666666666666667,
+            1.6400000000000001
+          ],
+          [
+            1.9333333333333331,
+            1.9166666666666665,
+            1.8900000000000001,
+            1.9566666666666666,
+            1.9466666666666668,
+            0.0,
+            1.67,
+            1.9433333333333334
+          ],
+          [
+            1.7966666666666669,
+            1.8199999999999998,
+            1.83,
+            1.6466666666666665,
+            1.8666666666666667,
+            1.67,
+            0.0,
+            1.3666666666666667
+          ],
+          [
+            1.6033333333333335,
+            1.44,
+            1.5699999999999998,
+            1.6,
+            1.6400000000000001,
+            1.9433333333333334,
+            1.3666666666666667,
+            0.0
+          ]
+        ],
+        "pairs": {
+          "covid19_twitter__ukr_rus_twitter": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.7108333333333333,
+            "test_error": 0.2891666666666667,
+            "proxy_a_distance": 0.8433333333333333
+          },
+          "covid19_twitter__midterm": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.7966666666666666,
+            "test_error": 0.20333333333333337,
+            "proxy_a_distance": 1.1866666666666665
+          },
+          "covid19_twitter__cp_hk_twitter": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9125,
+            "test_error": 0.08750000000000002,
+            "proxy_a_distance": 1.65
+          },
+          "covid19_twitter__twibot20": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.7433333333333333,
+            "test_error": 0.2566666666666667,
+            "proxy_a_distance": 0.9733333333333332
+          },
+          "covid19_twitter__election2020": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9833333333333333,
+            "test_error": 0.01666666666666672,
+            "proxy_a_distance": 1.9333333333333331
+          },
+          "covid19_twitter__covid_political": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9491666666666667,
+            "test_error": 0.050833333333333286,
+            "proxy_a_distance": 1.7966666666666669
+          },
+          "covid19_twitter__ukr_rus_suspended": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9008333333333334,
+            "test_error": 0.09916666666666663,
+            "proxy_a_distance": 1.6033333333333335
+          },
+          "ukr_rus_twitter__midterm": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.7983333333333333,
+            "test_error": 0.20166666666666666,
+            "proxy_a_distance": 1.1933333333333334
+          },
+          "ukr_rus_twitter__cp_hk_twitter": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9016666666666666,
+            "test_error": 0.09833333333333338,
+            "proxy_a_distance": 1.6066666666666665
+          },
+          "ukr_rus_twitter__twibot20": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.7658333333333334,
+            "test_error": 0.23416666666666663,
+            "proxy_a_distance": 1.0633333333333335
+          },
+          "ukr_rus_twitter__election2020": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9791666666666666,
+            "test_error": 0.02083333333333337,
+            "proxy_a_distance": 1.9166666666666665
+          },
+          "ukr_rus_twitter__covid_political": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.955,
+            "test_error": 0.04500000000000004,
+            "proxy_a_distance": 1.8199999999999998
+          },
+          "ukr_rus_twitter__ukr_rus_suspended": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.86,
+            "test_error": 0.14,
+            "proxy_a_distance": 1.44
+          },
+          "midterm__cp_hk_twitter": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9358333333333333,
+            "test_error": 0.0641666666666667,
+            "proxy_a_distance": 1.7433333333333332
+          },
+          "midterm__twibot20": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.8133333333333334,
+            "test_error": 0.18666666666666665,
+            "proxy_a_distance": 1.2533333333333334
+          },
+          "midterm__election2020": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9725,
+            "test_error": 0.02749999999999997,
+            "proxy_a_distance": 1.8900000000000001
+          },
+          "midterm__covid_political": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9575,
+            "test_error": 0.04249999999999998,
+            "proxy_a_distance": 1.83
+          },
+          "midterm__ukr_rus_suspended": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.8925,
+            "test_error": 0.10750000000000004,
+            "proxy_a_distance": 1.5699999999999998
+          },
+          "cp_hk_twitter__twibot20": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9408333333333333,
+            "test_error": 0.0591666666666667,
+            "proxy_a_distance": 1.7633333333333332
+          },
+          "cp_hk_twitter__election2020": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9891666666666666,
+            "test_error": 0.010833333333333361,
+            "proxy_a_distance": 1.9566666666666666
+          },
+          "cp_hk_twitter__covid_political": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9116666666666666,
+            "test_error": 0.08833333333333337,
+            "proxy_a_distance": 1.6466666666666665
+          },
+          "cp_hk_twitter__ukr_rus_suspended": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9,
+            "test_error": 0.09999999999999998,
+            "proxy_a_distance": 1.6
+          },
+          "twibot20__election2020": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9866666666666667,
+            "test_error": 0.013333333333333308,
+            "proxy_a_distance": 1.9466666666666668
+          },
+          "twibot20__covid_political": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9666666666666667,
+            "test_error": 0.033333333333333326,
+            "proxy_a_distance": 1.8666666666666667
+          },
+          "twibot20__ukr_rus_suspended": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.91,
+            "test_error": 0.08999999999999997,
+            "proxy_a_distance": 1.6400000000000001
+          },
+          "election2020__covid_political": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9175,
+            "test_error": 0.08250000000000002,
+            "proxy_a_distance": 1.67
+          },
+          "election2020__ukr_rus_suspended": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9858333333333333,
+            "test_error": 0.01416666666666666,
+            "proxy_a_distance": 1.9433333333333334
+          },
+          "covid_political__ukr_rus_suspended": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.8416666666666667,
+            "test_error": 0.15833333333333333,
+            "proxy_a_distance": 1.3666666666666667
+          }
+        }
+      },
+      "center_plus_neighbor_mean": {
+        "matrix": [
+          [
+            0.0,
+            0.8300000000000001,
+            1.2233333333333332,
+            1.6033333333333335,
+            1.1166666666666667,
+            1.9466666666666668,
+            1.8766666666666665,
+            1.5833333333333335
+          ],
+          [
+            0.8300000000000001,
+            0.0,
+            1.2333333333333334,
+            1.6400000000000001,
+            1.1333333333333333,
+            1.9233333333333333,
+            1.87,
+            1.3633333333333333
+          ],
+          [
+            1.2233333333333332,
+            1.2333333333333334,
+            0.0,
+            1.6866666666666665,
+            1.2000000000000002,
+            1.9500000000000002,
+            1.8566666666666665,
+            1.5633333333333335
+          ],
+          [
+            1.6033333333333335,
+            1.6400000000000001,
+            1.6866666666666665,
+            0.0,
+            1.71,
+            1.9700000000000002,
+            1.83,
+            1.6133333333333333
+          ],
+          [
+            1.1166666666666667,
+            1.1333333333333333,
+            1.2000000000000002,
+            1.71,
+            0.0,
+            1.9300000000000002,
+            1.8633333333333333,
+            1.63
+          ],
+          [
+            1.9466666666666668,
+            1.9233333333333333,
+            1.9500000000000002,
+            1.9700000000000002,
+            1.9300000000000002,
+            0.0,
+            1.6666666666666665,
+            1.9266666666666667
+          ],
+          [
+            1.8766666666666665,
+            1.87,
+            1.8566666666666665,
+            1.83,
+            1.8633333333333333,
+            1.6666666666666665,
+            0.0,
+            1.8633333333333333
+          ],
+          [
+            1.5833333333333335,
+            1.3633333333333333,
+            1.5633333333333335,
+            1.6133333333333333,
+            1.63,
+            1.9266666666666667,
+            1.8633333333333333,
+            0.0
+          ]
+        ],
+        "pairs": {
+          "covid19_twitter__ukr_rus_twitter": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.7075,
+            "test_error": 0.2925,
+            "proxy_a_distance": 0.8300000000000001
+          },
+          "covid19_twitter__midterm": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.8058333333333333,
+            "test_error": 0.1941666666666667,
+            "proxy_a_distance": 1.2233333333333332
+          },
+          "covid19_twitter__cp_hk_twitter": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9008333333333334,
+            "test_error": 0.09916666666666663,
+            "proxy_a_distance": 1.6033333333333335
+          },
+          "covid19_twitter__twibot20": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.7791666666666667,
+            "test_error": 0.22083333333333333,
+            "proxy_a_distance": 1.1166666666666667
+          },
+          "covid19_twitter__election2020": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9866666666666667,
+            "test_error": 0.013333333333333308,
+            "proxy_a_distance": 1.9466666666666668
+          },
+          "covid19_twitter__covid_political": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9691666666666666,
+            "test_error": 0.03083333333333338,
+            "proxy_a_distance": 1.8766666666666665
+          },
+          "covid19_twitter__ukr_rus_suspended": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.8958333333333334,
+            "test_error": 0.10416666666666663,
+            "proxy_a_distance": 1.5833333333333335
+          },
+          "ukr_rus_twitter__midterm": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.8083333333333333,
+            "test_error": 0.19166666666666665,
+            "proxy_a_distance": 1.2333333333333334
+          },
+          "ukr_rus_twitter__cp_hk_twitter": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.91,
+            "test_error": 0.08999999999999997,
+            "proxy_a_distance": 1.6400000000000001
+          },
+          "ukr_rus_twitter__twibot20": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.7833333333333333,
+            "test_error": 0.21666666666666667,
+            "proxy_a_distance": 1.1333333333333333
+          },
+          "ukr_rus_twitter__election2020": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9808333333333333,
+            "test_error": 0.019166666666666665,
+            "proxy_a_distance": 1.9233333333333333
+          },
+          "ukr_rus_twitter__covid_political": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9675,
+            "test_error": 0.03249999999999997,
+            "proxy_a_distance": 1.87
+          },
+          "ukr_rus_twitter__ukr_rus_suspended": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.8408333333333333,
+            "test_error": 0.15916666666666668,
+            "proxy_a_distance": 1.3633333333333333
+          },
+          "midterm__cp_hk_twitter": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9216666666666666,
+            "test_error": 0.07833333333333337,
+            "proxy_a_distance": 1.6866666666666665
+          },
+          "midterm__twibot20": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.8,
+            "test_error": 0.19999999999999996,
+            "proxy_a_distance": 1.2000000000000002
+          },
+          "midterm__election2020": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9875,
+            "test_error": 0.012499999999999956,
+            "proxy_a_distance": 1.9500000000000002
+          },
+          "midterm__covid_political": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9641666666666666,
+            "test_error": 0.035833333333333384,
+            "proxy_a_distance": 1.8566666666666665
+          },
+          "midterm__ukr_rus_suspended": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.8908333333333334,
+            "test_error": 0.10916666666666663,
+            "proxy_a_distance": 1.5633333333333335
+          },
+          "cp_hk_twitter__twibot20": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9275,
+            "test_error": 0.07250000000000001,
+            "proxy_a_distance": 1.71
+          },
+          "cp_hk_twitter__election2020": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9925,
+            "test_error": 0.007499999999999951,
+            "proxy_a_distance": 1.9700000000000002
+          },
+          "cp_hk_twitter__covid_political": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9575,
+            "test_error": 0.04249999999999998,
+            "proxy_a_distance": 1.83
+          },
+          "cp_hk_twitter__ukr_rus_suspended": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9033333333333333,
+            "test_error": 0.09666666666666668,
+            "proxy_a_distance": 1.6133333333333333
+          },
+          "twibot20__election2020": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9825,
+            "test_error": 0.01749999999999996,
+            "proxy_a_distance": 1.9300000000000002
+          },
+          "twibot20__covid_political": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9658333333333333,
+            "test_error": 0.03416666666666668,
+            "proxy_a_distance": 1.8633333333333333
+          },
+          "twibot20__ukr_rus_suspended": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9075,
+            "test_error": 0.09250000000000003,
+            "proxy_a_distance": 1.63
+          },
+          "election2020__covid_political": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9166666666666666,
+            "test_error": 0.08333333333333337,
+            "proxy_a_distance": 1.6666666666666665
+          },
+          "election2020__ukr_rus_suspended": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9816666666666667,
+            "test_error": 0.018333333333333313,
+            "proxy_a_distance": 1.9266666666666667
+          },
+          "covid_political__ukr_rus_suspended": {
+            "n_per_graph": 2000,
+            "n_train": 2800,
+            "n_test": 1200,
+            "test_accuracy": 0.9658333333333333,
+            "test_error": 0.03416666666666668,
+            "proxy_a_distance": 1.8633333333333333
+          }
+        }
       }
     }
   },
