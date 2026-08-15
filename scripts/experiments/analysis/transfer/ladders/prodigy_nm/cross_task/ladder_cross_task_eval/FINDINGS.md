@@ -17,8 +17,9 @@ not independent replicates.
 
 ## “Mix is max” is horizon-dependent
 
-At 100 steps, the all-nine model is below the best earlier rung in five of the six
-task/order panels. The final-minus-best accuracy gaps are:
+At 100 steps, the all-nine model is below the best earlier rung in all six task/order
+panels, with a gap larger than one percentage point in four. The final-minus-best
+accuracy gaps are:
 
 | Task | Order A | Order B | Order C |
 |---|---:|---:|---:|
