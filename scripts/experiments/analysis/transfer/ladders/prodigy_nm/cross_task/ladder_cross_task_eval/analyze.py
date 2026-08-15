@@ -36,6 +36,11 @@ NM2500_LOGGED_METRICS = (
     / "scripts/experiments/analysis/transfer/matrices/cross_model/final_core/data"
     / "prodigy_final_core/log_recovered_metrics/physical_metrics.tsv"
 )
+NM40000_HISTORICAL = (
+    REPO_ROOT
+    / "scripts/experiments/analysis/transfer/ladders/prodigy_nm/robustness"
+    / "nm_ladder_order_robustness/data/nm_ladder_order_robustness_long.csv"
+)
 DOWNSTREAM100 = (
     REPO_ROOT
     / "scripts/experiments/analysis/transfer/matrices/cross_architecture/icl_arch_matrix"
@@ -47,6 +52,7 @@ MUTED = "#716f69"
 GRID = "#deddd7"
 STEP100 = "#d36b3f"
 STEP2500 = "#2878b8"
+STEP40000 = "#43835c"
 CHANCE = "#8c8982"
 ORDER_LABELS = {
     "A": "UKR/RUS → … → Facebook pages",
@@ -318,6 +324,105 @@ def plot(summary: pd.DataFrame, output: Path, metric: str) -> None:
     plt.close(fig)
 
 
+def historical_nm_budget_summary(cells: pd.DataFrame) -> pd.DataFrame:
+    shared = cells[
+        (cells["task"] == "neighbor_matching")
+        & (cells["target"] != "facebook_page_reference")
+    ]
+    by_seed = (
+        shared.groupby(["step", "training_seed", "order", "rung"], as_index=False)
+        .agg(roc_auc=("roc_auc", "mean"), n_targets=("target", "nunique"))
+    )
+    current = (
+        by_seed.groupby(["step", "order", "rung"], as_index=False)
+        .agg(
+            mean_roc_auc=("roc_auc", "mean"),
+            sd_roc_auc=("roc_auc", "std"),
+            n_training_seeds=("training_seed", "nunique"),
+            n_targets=("n_targets", "first"),
+        )
+    )
+    current["eval_protocol"] = "fixed512_static_test_on_static_train"
+    current["source_order"] = "current_nine_source_order"
+    current["source_set_aligned_to_current"] = True
+
+    historical = pd.read_csv(NM40000_HISTORICAL)
+    if historical.groupby("order").size().to_dict() != {"A": 64, "B": 64, "C": 64}:
+        raise ValueError("expected the complete historical three-order 8x8 NM ladder")
+    legacy = (
+        historical.groupby(["order", "rung"], as_index=False)
+        .agg(mean_roc_auc=("auc", "mean"), n_targets=("test_graph", "nunique"))
+    )
+    legacy["step"] = 40000
+    legacy["sd_roc_auc"] = np.nan
+    legacy["n_training_seeds"] = 1
+    legacy["eval_protocol"] = "legacy_shared_harness"
+    legacy["source_order"] = "historical_eight_source_order"
+    legacy["source_set_aligned_to_current"] = legacy["order"] == "A"
+    columns = [
+        "step", "order", "rung", "mean_roc_auc", "sd_roc_auc",
+        "n_training_seeds", "n_targets", "eval_protocol", "source_order",
+        "source_set_aligned_to_current",
+    ]
+    combined = pd.concat([current[columns], legacy[columns]], ignore_index=True)
+    return combined.sort_values(["order", "step", "rung"]).reset_index(drop=True)
+
+
+def plot_historical_nm_budgets(summary: pd.DataFrame, output: Path) -> None:
+    _style()
+    fig, axes = plt.subplots(1, 3, figsize=(13.2, 4.45), sharex=True, sharey=True)
+    styles = {
+        100: (STEP100, "-", "100 steps · fixed512 · seed 0"),
+        2500: (STEP2500, "-", "2,500 steps · fixed512 · 3-seed mean ± SD"),
+        40000: (STEP40000, (0, (5, 2)), "40k · legacy harness · seed 0"),
+    }
+    for column_index, order in enumerate(ORDERS):
+        ax = axes[column_index]
+        ax.axhline(0.5, color=CHANCE, linewidth=1.0, linestyle=(0, (3, 3)), zorder=0)
+        for step, (color, linestyle, _) in styles.items():
+            group = summary[(summary["step"] == step) & (summary["order"] == order)].sort_values("rung")
+            x = group["rung"].to_numpy(dtype=float)
+            y = group["mean_roc_auc"].to_numpy(dtype=float)
+            ax.plot(
+                x, y, color=color, linestyle=linestyle, linewidth=2.2,
+                marker="o", markersize=4.5, zorder=3,
+            )
+            if step == 2500:
+                sd = group["sd_roc_auc"].fillna(0).to_numpy(dtype=float)
+                ax.fill_between(x, y - sd, y + sd, color=color, alpha=0.13, linewidth=0, zorder=1)
+        qualifier = "source-aligned" if order == "A" else "40k uses a different source order"
+        ax.set_title(f"Order {order} · {qualifier}\n{ORDER_LABELS[order]}", loc="left", fontweight="bold")
+        ax.set_xticks(range(1, 10))
+        ax.grid(axis="y", color=GRID, linewidth=0.7)
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.set_axisbelow(True)
+        ax.set_xlabel("Number of source graphs (ladder rung)")
+    axes[0].set_ylabel("Native neighbor matching\nmean ROC-AUC across the shared 8 targets")
+    axes[0].set_ylim(0.49, 0.96)
+    legend = [
+        Line2D([0], [0], color=color, linestyle=linestyle, marker="o", linewidth=2.2, label=label)
+        for color, linestyle, label in styles.values()
+    ] + [
+        Line2D([0], [0], color=CHANCE, linestyle=(0, (3, 3)), linewidth=1.0, label="Chance"),
+    ]
+    fig.legend(handles=legend, loc="upper center", bbox_to_anchor=(0.5, 0.89), ncol=4, frameon=False)
+    fig.suptitle(
+        "PRODIGY native-NM AUC across training budgets",
+        x=0.055, ha="left", y=0.995, fontsize=15, fontweight="bold",
+    )
+    fig.text(
+        0.055, 0.94,
+        "All means use the same eight targets. The 40k curve ends at rung 8 and uses the legacy evaluator; "
+        "only Order A matches source sets rung-by-rung.",
+        color=MUTED, fontsize=9,
+    )
+    fig.tight_layout(rect=(0.04, 0.03, 1, 0.82), w_pad=1.4)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output, dpi=260, bbox_inches="tight")
+    fig.savefig(output.with_suffix(".pdf"), bbox_inches="tight")
+    plt.close(fig)
+
+
 def main() -> int:
     cells = load_cells()
     by_seed, summary = summarize(cells)
@@ -325,14 +430,20 @@ def main() -> int:
     auc_mix = mix_is_max(summary, "roc_auc")
     accuracy_correlations = budget_correlations(summary, "accuracy")
     auc_correlations = budget_correlations(summary, "roc_auc")
+    historical_nm = historical_nm_budget_summary(cells)
     by_seed.to_csv(DATA / "curve_by_seed.csv", index=False)
     summary.to_csv(DATA / "curve_summary.csv", index=False)
     accuracy_mix.to_csv(DATA / "mix_is_max.csv", index=False)
     auc_mix.to_csv(DATA / "mix_is_max_auc.csv", index=False)
     accuracy_correlations.to_csv(DATA / "budget_rank_correlations.csv", index=False)
     auc_correlations.to_csv(DATA / "budget_rank_correlations_auc.csv", index=False)
+    historical_nm.to_csv(DATA / "nm_auc_budget_100_2500_40000.csv", index=False)
     plot(summary, FIGURES / "budget_task_ladders.png", "accuracy")
     plot(summary, FIGURES / "budget_task_ladders_auc.png", "roc_auc")
+    plot_historical_nm_budgets(
+        historical_nm,
+        FIGURES / "nm_auc_budget_100_2500_40000.png",
+    )
     print(auc_mix.to_string(index=False))
     return 0
 

@@ -29,5 +29,12 @@ Step-2,500 native-NM AUC comes from the complete four-decimal metric recovery in
 original fixed-test worker logs; all other plotted cells use full-precision evaluator
 outputs.
 
+`figures/nm_auc_budget_100_2500_40000.png` is an explicitly exploratory native-NM
+overlay. It restricts all means to the eight targets shared with the historical 40k
+ladder. The 40k curve ends at rung 8 and uses the legacy evaluator. Only Order A has the
+same source set at each rung; the historical Order B/C source sequences differ from the
+current sequences and are plotted only as context. Its machine-readable inputs are in
+`data/nm_auc_budget_100_2500_40000.csv`.
+
 The source experiment and launcher live under
 `scripts/experiments/setup/ladder_cross_task_eval/`.
