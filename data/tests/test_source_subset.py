@@ -11,6 +11,7 @@ Run: python -m pytest data/tests/test_source_subset.py
 """
 import numpy as np
 import pytest
+import random
 
 from data.covid19_twitter import resolve_source_subset
 from data.dataloader import NeighborTask
@@ -92,6 +93,7 @@ def test_balanced_weighting_is_uniform_over_the_subset_not_all_sources():
         strata=strata, confine_to_single_stratum=True, stratum_weighting="balanced",
     )
     assert task.stratum_weights == pytest.approx([1 / 3, 1 / 3, 1 / 3])
+    assert task.uniform_candidates is None
 
 
 def test_proportional_weighting_follows_subset_node_counts():
@@ -107,3 +109,27 @@ def test_proportional_weighting_follows_subset_node_counts():
     # 10 and 30 nodes -> 0.25 / 0.75 within the subset; the dropped 60-node source
     # must not appear in the denominator.
     assert task.stratum_weights == pytest.approx([0.25, 0.75])
+
+
+def test_pure_cross_source_sampling_is_global_only_within_active_subset():
+    """p=1 must not leak centers from inactive backing-artifact sources."""
+    task = NeighborTask(
+        neighbor_sampler=None,
+        size=12,
+        direction="inout",
+        strata=[[0, 1, 2], [7, 8, 9]],
+        confine_to_single_stratum=True,
+        stratum_weighting="proportional",
+        cross_source_prob=1.0,
+    )
+    task._sample_center_members = lambda center, num_member, rng: [
+        center * 10 + offset for offset in range(num_member)
+    ]
+    seen = set()
+    rng = random.Random(0)
+    for _ in range(100):
+        episode = task.sample(2, 2, 1, 1, rng)
+        seen.update(episode)
+    assert seen <= {0, 1, 2, 7, 8, 9}
+    assert seen & {0, 1, 2}
+    assert seen & {7, 8, 9}

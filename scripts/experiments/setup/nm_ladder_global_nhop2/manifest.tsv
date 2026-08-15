@@ -1,8 +1,9 @@
-rung	prefix	newcomer_dataset	newcomer_graph_id	graph_filename
-2	nm_ladder_global_h2m_r2	covid19_twitter	covid	ukr_rus_covid_retweet_graph.pt
-3	nm_ladder_global_h2m_r3	midterm	midterm	ukr_rus_covid_midterm_retweet_graph.pt
-4	nm_ladder_global_h2m_r4	covid_political	covid_political	ukr_rus_covid_midterm_4src_retweet_graph.pt
-5	nm_ladder_global_h2m_r5	election2020	election2020	ukr_rus_covid_midterm_5src_retweet_graph.pt
-6	nm_ladder_global_h2m_r6	ukr_rus_suspended	ukr_rus_suspended	ukr_rus_covid_midterm_6src_retweet_graph.pt
-7	nm_ladder_global_h2m_r7	twibot20	twibot20	ukr_rus_covid_midterm_7src_retweet_graph.pt
-8	nm_ladder_global_h2m_r8	cp_hk_twitter	cp_hk	ukr_rus_covid_midterm_all8_retweet_graph.pt
+rung	model_id	job_index	newcomer	sources	config
+2	ordA_r2	27	covid	ukr_rus,covid	configs/train_r2.yaml
+3	ordA_r3	30	midterm	ukr_rus,covid,midterm	configs/train_r3.yaml
+4	ordA_r4	33	covid_political	ukr_rus,covid,midterm,covid_political	configs/train_r4.yaml
+5	ordA_r5	36	election2020	ukr_rus,covid,midterm,covid_political,election2020	configs/train_r5.yaml
+6	ordA_r6	39	ukr_rus_suspended	ukr_rus,covid,midterm,covid_political,election2020,ukr_rus_suspended	configs/train_r6.yaml
+7	ordA_r7	42	twibot20	ukr_rus,covid,midterm,covid_political,election2020,ukr_rus_suspended,twibot20	configs/train_r7.yaml
+8	ordA_r8	45	cp_hk	ukr_rus,covid,midterm,covid_political,election2020,ukr_rus_suspended,twibot20,cp_hk	configs/train_r8.yaml
+9	all9	48	facebook_page_reference	ukr_rus,covid,midterm,covid_political,election2020,ukr_rus_suspended,twibot20,cp_hk,facebook_page_reference	configs/train_r9.yaml

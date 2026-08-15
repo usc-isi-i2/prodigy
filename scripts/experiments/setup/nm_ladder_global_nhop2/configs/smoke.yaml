@@ -1,13 +1,14 @@
-# Naive-global 2-hop NM ladder -- canonical Order A, rung 2/8.
-# Adds covid; the entire disjoint 2-source merge is sampled as one graph.
-# Intentionally omit every graph_id/source-balancing option. Mixed-source episodes and
-# node-mass weighting are the intervention; all other settings match nm_ladder_nhop2.
+# Final-core source-unaware Order-A ladder, rung 2/9.
+# Active source union: ukr_rus,covid.
+# p=1 makes every episode node-uniform over this union and permits mixed-source labels.
 dataset: covid19_twitter
 root: /dataMeR1/phil/data/merged/graphs
-graph_filename: ukr_rus_covid_retweet_graph.pt
+graph_filename: ukr_rus_covid_midterm_all9_facebook_final_core_split_seed0.pt
 task_name: neighbor_matching
 
-edge_view: default
+edge_view: static_train
+target_edge_view: static_test
+neighbor_matching_edge_split: true
 feature_subset: all
 original_features: true
 
@@ -24,16 +25,28 @@ neighbor_matching_walk_hops: 1
 n_way: 30
 n_shots: 3
 n_query: 4
-batch_size: 1
-dataset_len_cap: 20
-val_len_cap: 20
-test_len_cap: 20
+batch_size: 4
+learning_rate: 0.002
+weight_decay: 0.001
+dataset_len_cap: 5
+val_len_cap: 500
+test_len_cap: 500
+
+# Resolve the active rung on the immutable all-nine artifact, then take the p=1
+# node-uniform mixed-source branch instead of the interleaved within-source branch.
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: proportional
+neighbor_sampling_source_subset: ukr_rus,covid
+neighbor_sampling_batch_source_mode: independent
+neighbor_sampling_cross_source_prob: 1.0
 
 epochs: 1
 eval_step: 100000
-checkpoint_step: 20
-checkpoint_steps: "0,20"
-workers: 1
+checkpoint_step: 100000
+checkpoint_steps: "5"
+print_step: 100
+workers: 0
 device: 0
 seed: 0
-prefix: nm_ladder_global_h2m_smoke
+tags: [final_core, global_merge_ladder, order_A, seed0, rung_2]
+prefix: finalcore_global_smoke_r2
