@@ -74,7 +74,10 @@ def test_aggregate_accepts_complete_physical_grids_and_expands_shared_rungs(tmp_
 def test_checkpoint_layouts_are_explicit(tmp_path):
     # Keep this lightweight: the path contract is what connects the evaluator to
     # the two archived training inventories on Tucker.
-    from scripts.experiments.setup.icl_arch_matrix.evaluate_prodigy import checkpoint_path
+    from scripts.experiments.setup.icl_arch_matrix.evaluate_prodigy import (
+        checkpoint_path,
+        evaluation_prefix,
+    )
 
     arch = SimpleNamespace(
         checkpoint_layout="architecture-matrix",
@@ -93,4 +96,10 @@ def test_checkpoint_layouts_are_explicit(tmp_path):
     )
     assert str(checkpoint_path(final, 2, "ordA_r2")).endswith(
         "finalcore_ordA_r2_s2_final/checkpoint/state_dict_2500.ckpt"
+    )
+    assert evaluation_prefix("ordA_r2", "covid_political", 2, 2500) == (
+        "archmatrix_prodigy_eval_ordA_r2_s2_step2500_covid_political"
+    )
+    assert evaluation_prefix("ordA_r2", "covid_political", 0, 100) != (
+        evaluation_prefix("ordA_r2", "covid_political", 2, 2500)
     )

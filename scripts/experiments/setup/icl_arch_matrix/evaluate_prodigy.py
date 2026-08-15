@@ -176,7 +176,28 @@ def parse_args():
     return parser.parse_args()
 
 
-def resolved_params(args, dataset_name, target, graph_path, checkpoint, model_id):
+def evaluation_prefix(
+    model_id: str,
+    dataset_name: str,
+    training_seed: int,
+    checkpoint_step: int,
+) -> str:
+    return (
+        f"archmatrix_prodigy_eval_{model_id}_s{training_seed}_"
+        f"step{checkpoint_step}_{dataset_name}"
+    )
+
+
+def resolved_params(
+    args,
+    dataset_name,
+    target,
+    graph_path,
+    checkpoint,
+    model_id,
+    training_seed,
+    checkpoint_step,
+):
     eval_state_root = args.eval_state_root or str(Path(args.state_root) / "eval")
     argv = [
         "--config", args.config,
@@ -206,7 +227,9 @@ def resolved_params(args, dataset_name, target, graph_path, checkpoint, model_id
         "--ignore_label_embeddings", "False",
         "--linear_probe", "False",
         "--device", str(args.device),
-        "--prefix", f"archmatrix_prodigy_eval_{model_id}_{dataset_name}",
+        "--prefix", evaluation_prefix(
+            model_id, dataset_name, training_seed, checkpoint_step
+        ),
         "--timestamp", args.run_stamp,
         "--state_dir", eval_state_root,
         "--log_dir", args.log_root,
@@ -314,7 +337,14 @@ def main() -> int:
                     if not checkpoint.is_file():
                         raise FileNotFoundError(checkpoint)
                 params = resolved_params(
-                    args, dataset_name, target, graph_path, checkpoint, plan_model.model_id
+                    args,
+                    dataset_name,
+                    target,
+                    graph_path,
+                    checkpoint,
+                    plan_model.model_id,
+                    training_seed,
+                    checkpoint_step,
                 )
                 torch.manual_seed(0)
                 torch.cuda.manual_seed_all(0)
