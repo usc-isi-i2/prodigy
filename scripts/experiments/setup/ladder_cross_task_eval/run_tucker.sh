@@ -45,29 +45,34 @@ if (( available_gib < MIN_HOST_AVAILABLE_GIB )); then
   exit 2
 fi
 
-echo "START nm100 run_id=$RUN_ID host_available_gib=$available_gib"
-pids=()
-for worker in 0 1; do
-  CUDA_VISIBLE_DEVICES="$worker" "$PYTHON" -u -m \
-    scripts.experiments.setup.ladder_cross_task_eval.evaluate_nm100 \
-    --worker-index "$worker" --worker-count 2 --expected-workers 2 \
-    --targets "ukr_rus,covid,midterm,covid_political,election2020,ukr_rus_suspended,twibot20,cp_hk,facebook_page_reference" \
-    --batch-size 32 --episode-count 512 \
-    --config scripts/experiments/setup/final_core/training.yaml \
-    --training-state-root "$ARCH100_STATE" --training-run-stamp 20260810 \
-    --evaluation-state-root "$STATE_ROOT/nm100/worker${worker}" \
-    --evaluation-log-root "$LOG_ROOT/nm100/internal/worker${worker}" \
-    --results-root "$LOG_ROOT/nm100/results" \
-    --evaluation-run-stamp "${RUN_ID}_nm100_w${worker}" \
-    --ready-dir "$READY_DIR" --min-host-reserve-gib 400 \
-    --reference-fingerprints "$NM_REFERENCE" \
-    > "$LOG_ROOT/nm100_worker${worker}.log" 2>&1 &
-  pids+=("$!")
-done
-status=0
-for pid in "${pids[@]}"; do wait "$pid" || status=1; done
-(( status == 0 )) || { echo "NM100_FAILED" >&2; exit 1; }
-echo "DONE nm100"
+nm_cell_count="$(find "$LOG_ROOT/nm100/results" -name '*.json' -type f | wc -l | tr -d ' ')"
+if (( nm_cell_count == 225 )); then
+  echo "SKIP nm100 complete_cells=$nm_cell_count"
+else
+  echo "START nm100 run_id=$RUN_ID host_available_gib=$available_gib existing_cells=$nm_cell_count"
+  pids=()
+  for worker in 0 1; do
+    CUDA_VISIBLE_DEVICES="$worker" "$PYTHON" -u -m \
+      scripts.experiments.setup.ladder_cross_task_eval.evaluate_nm100 \
+      --worker-index "$worker" --worker-count 2 --expected-workers 2 \
+      --targets "ukr_rus,covid,midterm,covid_political,election2020,ukr_rus_suspended,twibot20,cp_hk,facebook_page_reference" \
+      --batch-size 32 --episode-count 512 \
+      --config scripts/experiments/setup/final_core/training.yaml \
+      --training-state-root "$ARCH100_STATE" --training-run-stamp 20260810 \
+      --evaluation-state-root "$STATE_ROOT/nm100/worker${worker}" \
+      --evaluation-log-root "$LOG_ROOT/nm100/internal/worker${worker}" \
+      --results-root "$LOG_ROOT/nm100/results" \
+      --evaluation-run-stamp "${RUN_ID}_nm100_w${worker}" \
+      --ready-dir "$READY_DIR" --min-host-reserve-gib 400 \
+      --reference-fingerprints "$NM_REFERENCE" \
+      > "$LOG_ROOT/nm100_worker${worker}.log" 2>&1 &
+    pids+=("$!")
+  done
+  status=0
+  for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+  (( status == 0 )) || { echo "NM100_FAILED" >&2; exit 1; }
+  echo "DONE nm100"
+fi
 
 echo "START downstream2500"
 pids=()
