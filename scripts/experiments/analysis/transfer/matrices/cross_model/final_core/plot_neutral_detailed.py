@@ -299,19 +299,20 @@ def main() -> None:
         )
         records.append({"section": "matrix", "architecture": "PRODIGY", "training_seed": str(seed_slot), "order": "", "metric": "neighbor_matching_accuracy", "source_rows": "81", "png": png, "pdf": pdf})
 
-    samgpt_matrix = observed(rows, architecture="SAMGPT", component="matrix", seed_slot=0)
     samgpt_matrix_range = global_range(rows, "SAMGPT", "matrix")
-    png, pdf = plot_matrix(
-        samgpt_matrix,
-        architecture="SAMGPT",
-        seed_label="39",
-        relative_stem="matrix/samgpt_seed_39_matrix",
-        norm=LogNorm(*samgpt_matrix_range),
-        cmap_name="viridis",
-        metric_label="GraphCL BCE loss (log color scale)",
-        value_format=".1e",
-    )
-    records.append({"section": "matrix", "architecture": "SAMGPT", "training_seed": "39", "order": "", "metric": "graphcl_bce_loss", "source_rows": "81", "png": png, "pdf": pdf})
+    for seed_slot, seed in enumerate((39, 40, 41)):
+        samgpt_matrix = observed(rows, architecture="SAMGPT", component="matrix", seed_slot=seed_slot)
+        png, pdf = plot_matrix(
+            samgpt_matrix,
+            architecture="SAMGPT",
+            seed_label=str(seed),
+            relative_stem=f"matrix/samgpt_seed_{seed}_matrix",
+            norm=LogNorm(*samgpt_matrix_range),
+            cmap_name="viridis",
+            metric_label="GraphCL BCE loss (log color scale)",
+            value_format=".1e",
+        )
+        records.append({"section": "matrix", "architecture": "SAMGPT", "training_seed": str(seed), "order": "", "metric": "graphcl_bce_loss", "source_rows": "81", "png": png, "pdf": pdf})
 
     prodigy_ladder_range = global_range(rows, "PRODIGY", "ladder")
     for seed_slot in (0, 1, 2):
@@ -331,23 +332,24 @@ def main() -> None:
             records.append({"section": "ladder", "architecture": "PRODIGY", "training_seed": str(seed_slot), "order": order, "metric": "neighbor_matching_accuracy", "source_rows": "81", "png": png, "pdf": pdf})
 
     samgpt_ladder_range = global_range(rows, "SAMGPT", "ladder")
-    for order in ORDERS:
-        selected = observed(rows, architecture="SAMGPT", component="ladder", seed_slot=0, order=order)
-        stem = f"ladder/samgpt_seed_39_order_{order}"
-        png, pdf = plot_ladder(
-            selected,
-            architecture="SAMGPT",
-            seed_label="39",
-            order=order,
-            relative_stem=stem,
-            metric_label="GraphCL BCE loss",
-            y_limits=samgpt_ladder_range,
-            log_scale=True,
-        )
-        records.append({"section": "ladder", "architecture": "SAMGPT", "training_seed": "39", "order": order, "metric": "graphcl_bce_loss", "source_rows": "81", "png": png, "pdf": pdf})
+    for seed_slot, seed in enumerate((39, 40, 41)):
+        for order in ORDERS:
+            selected = observed(rows, architecture="SAMGPT", component="ladder", seed_slot=seed_slot, order=order)
+            stem = f"ladder/samgpt_seed_{seed}_order_{order}"
+            png, pdf = plot_ladder(
+                selected,
+                architecture="SAMGPT",
+                seed_label=str(seed),
+                order=order,
+                relative_stem=stem,
+                metric_label="GraphCL BCE loss",
+                y_limits=samgpt_ladder_range,
+                log_scale=True,
+            )
+            records.append({"section": "ladder", "architecture": "SAMGPT", "training_seed": str(seed), "order": order, "metric": "graphcl_bce_loss", "source_rows": "81", "png": png, "pdf": pdf})
 
-    if len(records) != 16:
-        raise ValueError(f"expected 16 neutral figure specifications, found {len(records)}")
+    if len(records) != 24:
+        raise ValueError(f"expected 24 neutral figure specifications, found {len(records)}")
     write_index(records)
     print(f"FINAL_CORE_NEUTRAL_FIGURES_OK figures={len(records)} formats=png,pdf output={OUT}")
 

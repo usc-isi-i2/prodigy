@@ -1,22 +1,20 @@
-# SAMGPT component registry
+# SAMGPT evidence registry
 
-The currently observed SAMGPT training seed is already archived in the
-name-aligned `samgpt_graphcl_ladder` analysis and its source exports. This
-directory registers those canonical files without duplicating them. Their
-paths and SHA-256 hashes are pinned in `observed_seed.json`.
+`three_seed/` is the canonical SAMGPT evidence for the final-core experiment.
+It contains the complete native-GraphCL matrix and ladder for training seeds
+39, 40, and 41 at checkpoints 20, 60, 180, and 500. The final consolidated
+tables use checkpoint 500.
 
-Current coverage is one complete native-GraphCL seed:
+`three_seed/registry.json` pins the source repository and branch, evidence,
+training, and evaluation commits, imported-file hashes, row counts, protocol,
+seeds, checkpoints, and run-date provenance. The source export contains 3,348
+physical checkpoint–target cells. At the terminal checkpoint this is 837
+physical cells, which expand to 243 matrix and 729 ladder logical cells.
 
-- specialist matrix: 9 sources × 9 targets = 81 cells;
-- ladder: 3 orders × 9 rungs × 9 targets = 243 cells.
+`observed_seed.json` is retained only as the provenance record for the earlier
+single-seed export. It is superseded by `three_seed/` and is not read by the
+canonical table builder or verifier.
 
-Two additional training seeds remain planned. They should be added as
-architecture-native GraphCL evaluations with the same nine targets and fixed
-unseen evaluation views. Their role is to measure seed variance and confirm
-the stability of the current conclusions, not to change the pretext or force
-raw metric comparability with PRODIGY.
-
-The result exports themselves do not encode the training seed, but their pinned
-training configs at commit `b8bc1223ec65af5d9c71578647c56654b6f81016`
-identify it exactly as seed 39. The `eval_seed` column identifies each target's
-fixed evaluation view and must not be interpreted as a training seed.
+Training seeds and evaluation-view seeds are distinct. `training_seed` is
+39/40/41; `eval_seed` is target-specific under the fixed evaluation-view rule
+and must not be interpreted as a training seed.

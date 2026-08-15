@@ -147,7 +147,7 @@ def matrix_values(rows: list[dict[str, str]], architecture: str) -> np.ndarray:
         if len(train_graphs) != 1:
             raise ValueError(f"matrix row has {len(train_graphs)} training graphs")
         buckets[(train_graphs[0], row["test_graph"])].append(float(row[metric]))
-    expected_replicates = 3 if architecture == "PRODIGY" else 1
+    expected_replicates = 3
     result = np.zeros((len(GRAPHS), len(GRAPHS)))
     for i, source in enumerate(GRAPHS):
         for j, target in enumerate(GRAPHS):
@@ -166,7 +166,7 @@ def plot_specialist_matrices(rows: list[dict[str, str]]) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(13.2, 6.0), constrained_layout=True)
     panels = (
         (axes[0], prodigy, "PRODIGY · neighbor matching", "ROC-AUC (mean of 3 seeds)", "YlGnBu", "A"),
-        (axes[1], samgpt_score, "SAMGPT · GraphCL", "−log₁₀(BCE loss), seed 39", "YlOrRd", "B"),
+        (axes[1], samgpt_score, "SAMGPT · GraphCL", "−log₁₀(BCE loss), mean of 3 seeds", "YlOrRd", "B"),
     )
     for ax, values, title, colorbar_label, cmap, label in panels:
         image = ax.imshow(values, cmap=cmap, aspect="equal")
@@ -226,7 +226,7 @@ def entry_events(rows: list[dict[str, str]]) -> list[dict[str, Any]]:
         )
     counts = {architecture: sum(event["architecture"] == architecture for event in events) for architecture in ("PRODIGY", "SAMGPT")}
     positives = {architecture: sum(event["architecture"] == architecture and event["effect"] > 0 for event in events) for architecture in counts}
-    if counts != {"PRODIGY": 72, "SAMGPT": 24} or positives != {"PRODIGY": 72, "SAMGPT": 21}:
+    if counts != {"PRODIGY": 72, "SAMGPT": 72} or positives != {"PRODIGY": 72, "SAMGPT": 49}:
         raise ValueError(f"entry-event contract changed: counts={counts}, positives={positives}")
     return events
 
@@ -241,7 +241,7 @@ def plot_entry_effects(events: list[dict[str, Any]]) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(12.2, 5.7), constrained_layout=True)
     configs = (
         ("PRODIGY", axes[0], "accuracy gain (after − before)", "72/72 improve", "A"),
-        ("SAMGPT", axes[1], "BCE reduction (before − after)", "21/24 improve", "B"),
+        ("SAMGPT", axes[1], "BCE reduction (before − after)", "49/72 improve", "B"),
     )
     for architecture, ax, xlabel, count_label, label in configs:
         subset = [event for event in events if event["architecture"] == architecture]
@@ -400,7 +400,7 @@ def ladder_series(
     buckets: dict[tuple[str, str, int], list[float]] = defaultdict(list)
     for row in observed(rows, architecture, "ladder"):
         buckets[(row["order"], row["test_graph"], int(row["rung"]))].append(float(row[metric]))
-    expected_replicates = 3 if architecture == "PRODIGY" else 1
+    expected_replicates = 3
     result = {}
     for order in ORDERS:
         for target in GRAPHS:
@@ -447,7 +447,7 @@ def plot_ladder_trajectories(rows: list[dict[str, str]]) -> None:
             ax.set_xticks(range(1, 10))
             ax.set_xlabel("cumulative training rung")
             if column_index == 0:
-                ylabel = "NM accuracy\n(mean of 3 seeds)" if architecture == "PRODIGY" else "GraphCL BCE loss\n(seed 39; log scale)"
+                ylabel = "NM accuracy\n(mean of 3 seeds)" if architecture == "PRODIGY" else "GraphCL BCE loss\n(mean of 3 seeds; log scale)"
                 ax.set_ylabel(ylabel)
             clean_axis(ax)
             if column_index == 0:
@@ -497,7 +497,7 @@ def plot_ladder_loss_trajectories(rows: list[dict[str, str]]) -> None:
             ax.set_xticks(range(1, 10))
             ax.set_xlabel("cumulative training rung")
             if column_index == 0:
-                ylabel = "NM loss\n(mean of 3 seeds)" if architecture == "PRODIGY" else "GraphCL BCE loss\n(seed 39; log scale)"
+                ylabel = "NM loss\n(mean of 3 seeds)" if architecture == "PRODIGY" else "GraphCL BCE loss\n(mean of 3 seeds; log scale)"
                 ax.set_ylabel(ylabel)
                 panel_label(ax, "A" if architecture == "PRODIGY" else "B")
             clean_axis(ax)
@@ -548,7 +548,7 @@ def plot_ladder_native_accuracy(rows: list[dict[str, str]]) -> None:
             if architecture == "SAMGPT":
                 ax.set_ylim(0.84, 1.005)
             if column_index == 0:
-                ylabel = "NM accuracy\n(mean of 3 seeds)" if architecture == "PRODIGY" else "GraphCL discrimination accuracy\n(seed 39)"
+                ylabel = "NM accuracy\n(mean of 3 seeds)" if architecture == "PRODIGY" else "GraphCL discrimination accuracy\n(mean of 3 seeds)"
                 ax.set_ylabel(ylabel)
                 panel_label(ax, "A" if architecture == "PRODIGY" else "B")
             clean_axis(ax)
@@ -588,7 +588,7 @@ def plot_samgpt_probability_diagnostics(rows: list[dict[str, str]]) -> None:
             ax.set_xticks(range(1, 10))
             ax.set_xlabel("cumulative training rung")
             if column_index == 0:
-                ax.set_ylabel(label + "\n(seed 39)")
+                ax.set_ylabel(label + "\n(mean of 3 seeds)")
                 panel_label(ax, chr(ord("A") + row_index))
             clean_axis(ax)
     handles = [Line2D([0], [0], color=TARGET_COLORS[target], lw=2, label=SHORT[target]) for target in GRAPHS]

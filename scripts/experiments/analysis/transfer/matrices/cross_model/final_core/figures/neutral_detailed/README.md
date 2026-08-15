@@ -16,7 +16,7 @@ The suite follows four rules:
 
 - `matrix/`: one exact 9 × 9 source/target heatmap per observed training seed;
 - `ladder/`: one nine-panel target breakdown per architecture, seed, and order;
-- `index.md`: filters, metric, source-row count, and PNG/PDF paths for all 16
+- `index.md`: filters, metric, source-row count, and PNG/PDF paths for all 24
   figures.
 
 All comparable PRODIGY panels use fixed shared scales. SAMGPT BCE figures use

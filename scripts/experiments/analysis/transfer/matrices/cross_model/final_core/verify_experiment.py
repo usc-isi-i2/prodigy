@@ -4,9 +4,7 @@
 from __future__ import annotations
 
 import csv
-import hashlib
 import json
-import math
 from pathlib import Path
 import sys
 from typing import Any
@@ -29,79 +27,53 @@ def load_json(path: Path) -> dict[str, Any]:
     return value
 
 
-def sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def verify_registered_file(record: dict[str, Any]) -> Path:
-    path = REPO / record["path"]
-    if not path.is_file():
-        raise FileNotFoundError(path)
-    observed = sha256(path)
-    if observed != record["sha256"]:
-        raise ValueError(f"{path}: SHA-256 mismatch")
-    return path
-
-
-def read_csv(path: Path) -> list[dict[str, str]]:
-    with path.open(encoding="utf-8", newline="") as handle:
-        return list(csv.DictReader(handle))
-
-
 def read_tsv(path: Path) -> tuple[list[str], list[dict[str, str]]]:
     with path.open(encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle, delimiter="\t")
         return list(reader.fieldnames or ()), list(reader)
 
 
-def verify_samgpt() -> tuple[int, int, int]:
-    registry = load_json(HERE / "data/samgpt/observed_seed.json")
-    for section in ("matrix", "ladder"):
-        verify_registered_file(registry[section]["manifest"])
-    matrix_path = verify_registered_file(registry["matrix"]["metrics"])
-    ladder_path = verify_registered_file(registry["ladder"]["metrics"])
-    verify_registered_file(registry["derived_analysis"]["cells"])
-    verify_registered_file(registry["derived_analysis"]["manifest"])
-
-    matrix = read_csv(matrix_path)
-    ladder = read_csv(ladder_path)
-    matrix_keys = {(row["train_source"], row["target"]) for row in matrix}
-    ladder_keys = {(row["order"], int(row["rung"]), row["target"]) for row in ladder}
-    if len(matrix) != 81 or len(matrix_keys) != 81:
-        raise ValueError("SAMGPT matrix is not an exact 9 x 9 grid")
-    if len(ladder) != 243 or len(ladder_keys) != 243:
-        raise ValueError("SAMGPT ladder is not an exact 3 x 9 x 9 grid")
-    if len({row["train_source"] for row in matrix}) != 9:
-        raise ValueError("SAMGPT matrix does not contain nine training sources")
-    if len({row["target"] for row in matrix}) != 9:
-        raise ValueError("SAMGPT matrix does not contain nine targets")
-    if {row["order"] for row in ladder} != {"A", "B", "C"}:
-        raise ValueError("SAMGPT ladder does not contain orders A, B, and C")
-    for label, rows in (("matrix", matrix), ("ladder", ladder)):
-        for row in rows:
-            for field in ("loss", "accuracy", "probability_margin"):
-                value = float(row[field])
-                if not math.isfinite(value):
-                    raise ValueError(f"SAMGPT {label}: non-finite {field}")
+def verify_samgpt() -> tuple[int, int, int, int]:
+    rows = full_results.build_samgpt_rows()
+    matrix = [row for row in rows if row["component"] == "matrix"]
+    ladder = [row for row in rows if row["component"] == "ladder"]
+    if len(matrix) != 243 or len(ladder) != 729:
+        raise ValueError("SAMGPT is not the exact three-seed matrix-and-ladder design")
 
     loss = {
-        (row["order"], int(row["rung"]), row["target"]): float(row["loss"])
+        (
+            int(row["training_seed_slot"]),
+            row["order"],
+            int(row["rung"]),
+            row["test_graph"],
+        ): float(row["graphcl_loss"])
         for row in ladder
     }
-    improvements = 0
-    for order in ("A", "B", "C"):
-        added_by_rung = {
-            int(row["rung"]): row["added"]
-            for row in ladder
-            if row["order"] == order
-        }
-        for rung in range(2, 10):
-            target = added_by_rung[rung]
-            if loss[(order, rung, target)] < loss[(order, rung - 1, target)]:
-                improvements += 1
-    if improvements != 21:
-        raise ValueError(f"SAMGPT target-entry finding changed: {improvements}/24")
-    return len(matrix), len(ladder), improvements
+    seeded_effects: dict[tuple[str, str], list[float]] = {}
+    seeded_improvements = 0
+    for seed_slot in (0, 1, 2):
+        for order, sources in ORDERS.items():
+            for rung, target in enumerate(sources, 1):
+                if rung == 1:
+                    continue
+                effect = (
+                    loss[(seed_slot, order, rung - 1, target)]
+                    - loss[(seed_slot, order, rung, target)]
+                )
+                seeded_effects.setdefault((order, target), []).append(effect)
+                seeded_improvements += effect > 0
+    transition_mean_improvements = sum(
+        sum(effects) / len(effects) > 0
+        for effects in seeded_effects.values()
+    )
+    if seeded_improvements != 49:
+        raise ValueError(f"SAMGPT seeded target-entry finding changed: {seeded_improvements}/72")
+    if transition_mean_improvements != 17:
+        raise ValueError(
+            "SAMGPT three-seed-mean target-entry finding changed: "
+            f"{transition_mean_improvements}/24"
+        )
+    return len(matrix), len(ladder), seeded_improvements, transition_mean_improvements
 
 
 def verify_prodigy_entry_effect() -> int:
@@ -135,8 +107,8 @@ def verify_coverage(matrix_cells: int, ladder_cells: int) -> dict[str, Any]:
         raise ValueError("ladder design is not 2 x 3 x 3 x 9 x 9")
     if coverage["observed_total_cells"] != 243 + 729 + matrix_cells + ladder_cells:
         raise ValueError("coverage total disagrees with the registered evidence")
-    if coverage["pending_samgpt_cells"] != 648:
-        raise ValueError("pending SAMGPT count is not two matrix-and-ladder seeds")
+    if coverage["pending_samgpt_cells"] != 0:
+        raise ValueError("coverage ledger still reports pending SAMGPT cells")
     return coverage
 
 
@@ -192,10 +164,10 @@ def verify_full_result_tables() -> tuple[int, int, int]:
         ("PRODIGY", "matrix", "pending"): 0,
         ("PRODIGY", "ladder", "observed"): 729,
         ("PRODIGY", "ladder", "pending"): 0,
-        ("SAMGPT", "matrix", "observed"): 81,
-        ("SAMGPT", "matrix", "pending"): 162,
-        ("SAMGPT", "ladder", "observed"): 243,
-        ("SAMGPT", "ladder", "pending"): 486,
+        ("SAMGPT", "matrix", "observed"): 243,
+        ("SAMGPT", "matrix", "pending"): 0,
+        ("SAMGPT", "ladder", "observed"): 729,
+        ("SAMGPT", "ladder", "pending"): 0,
     }
     if counts != wanted_counts:
         raise ValueError(f"full result table coverage is incorrect: {counts}")
@@ -216,7 +188,7 @@ def main() -> int:
     expected_manifest, _ = prodigy.validate()
     prodigy.validate_manifest(expected_manifest)
     prodigy_entry = verify_prodigy_entry_effect()
-    matrix_cells, ladder_cells, samgpt_entry = verify_samgpt()
+    matrix_cells, ladder_cells, samgpt_entry, samgpt_transition_means = verify_samgpt()
     coverage = verify_coverage(matrix_cells, ladder_cells)
     result_cells, observed_cells, pending_cells = verify_full_result_tables()
     if observed_cells != coverage["observed_total_cells"]:
@@ -227,7 +199,8 @@ def main() -> int:
         "FINAL_EXPERIMENT_EVIDENCE_OK "
         f"observed={observed_cells}/{result_cells} "
         f"prodigy_entry={prodigy_entry}/72 "
-        f"samgpt_entry={samgpt_entry}/24 "
+        f"samgpt_entry={samgpt_entry}/72 "
+        f"samgpt_transition_means={samgpt_transition_means}/24 "
         f"samgpt_pending={coverage['pending_samgpt_cells']}"
     )
     return 0
