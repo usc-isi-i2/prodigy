@@ -36,5 +36,12 @@ same source set at each rung; the historical Order B/C source sequences differ f
 current sequences and are plotted only as context. Its machine-readable inputs are in
 `data/nm_auc_budget_100_2500_40000.csv`.
 
+Two synthesis views combine this evidence with the existing saturation study:
+
+- `figures/budget_phase_transition_auc.png` and
+  `data/budget_phase_transition_auc.csv` show endpoint performance versus budget;
+- `figures/mix_regret_auc.png` and `data/mix_regret_auc.csv` show the AUC cost of using
+  the all-source endpoint rather than the best earlier rung.
+
 The source experiment and launcher live under
 `scripts/experiments/setup/ladder_cross_task_eval/`.

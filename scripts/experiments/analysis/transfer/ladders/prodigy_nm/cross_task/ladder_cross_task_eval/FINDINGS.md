@@ -89,6 +89,22 @@ downstream classification, however; it does not provide a native-NM trajectory. 
 its saved 100/500/1,000/... checkpoints on the fixed native-NM streams would test whether
 the same early transition governs the pretext task.
 
+## Synthesis figures
+
+`figures/budget_phase_transition_auc.png` places the source-aligned native-NM endpoint
+beside the two downstream saturation replications. It makes the evidence hierarchy
+visible: native NM has fixed-protocol observations at 100 and 2,500 plus a contextual
+legacy 40k endpoint, whereas downstream classification has dense legacy trajectories
+showing that the principal rise occurs from 100 to 500 steps. The new all-nine 100/2,500
+points land on the same downstream transition and plateau.
+
+`figures/mix_regret_auc.png` expresses every ladder as regret of the all-source endpoint
+relative to the best earlier rung. At 100 steps, regret spans 4.0–6.9 AUC points for
+native NM and 1.7–13.8 points downstream. At 2,500 steps, every regret is below 0.8
+points. The historical 40k native-NM ladders have zero regret in all three sampled
+orders. This is the most compact statement of the composition result: the strong
+all-source penalty is observed only in the undertrained regime.
+
 ## Interpretation and limitation
 
 This turns the apparent inconsistency into the central result. Early source-addition

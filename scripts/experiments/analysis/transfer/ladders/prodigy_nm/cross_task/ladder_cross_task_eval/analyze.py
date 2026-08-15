@@ -41,6 +41,16 @@ NM40000_HISTORICAL = (
     / "scripts/experiments/analysis/transfer/ladders/prodigy_nm/robustness"
     / "nm_ladder_order_robustness/data/nm_ladder_order_robustness_long.csv"
 )
+SATURATION_H1 = (
+    REPO_ROOT
+    / "scripts/experiments/analysis/transfer/ablations/prodigy_nm/saturation"
+    / "pretrain_saturation/data/pretrain_saturation_long.csv"
+)
+SATURATION_H2 = (
+    REPO_ROOT
+    / "scripts/experiments/analysis/transfer/ablations/prodigy_nm/saturation"
+    / "pretrain_saturation_nhop2/data/pretrain_saturation_nhop2_long.csv"
+)
 DOWNSTREAM100 = (
     REPO_ROOT
     / "scripts/experiments/analysis/transfer/matrices/cross_architecture/icl_arch_matrix"
@@ -423,6 +433,196 @@ def plot_historical_nm_budgets(summary: pd.DataFrame, output: Path) -> None:
     plt.close(fig)
 
 
+def budget_phase_summary(cells: pd.DataFrame, historical_nm: pd.DataFrame) -> pd.DataFrame:
+    rows: list[dict[str, object]] = []
+    nm = historical_nm[
+        (historical_nm["order"] == "A")
+        & (historical_nm["rung"] == 8)
+    ]
+    for row in nm.itertuples(index=False):
+        rows.append({
+            "task": "neighbor_matching",
+            "series": "Order A rung 8 · shared 8 targets",
+            "step": row.step,
+            "mean_roc_auc": row.mean_roc_auc,
+            "protocol": "legacy" if row.step == 40000 else "fixed512",
+            "n_sources": 8,
+            "n_targets": 8,
+        })
+
+    downstream = cells[(cells["task"] == "classification") & (cells["rung"] == 9)]
+    downstream = (
+        downstream.groupby(["step", "training_seed"], as_index=False)
+        .agg(roc_auc=("roc_auc", "mean"), n_targets=("target", "nunique"))
+        .groupby("step", as_index=False)
+        .agg(mean_roc_auc=("roc_auc", "mean"), n_targets=("n_targets", "first"))
+    )
+    for row in downstream.itertuples(index=False):
+        rows.append({
+            "task": "classification",
+            "series": "New all9 · fixed512",
+            "step": row.step,
+            "mean_roc_auc": row.mean_roc_auc,
+            "protocol": "fixed512",
+            "n_sources": 9,
+            "n_targets": row.n_targets,
+        })
+
+    for path, label in ((SATURATION_H1, "Saturation all8 · one hop"), (SATURATION_H2, "Saturation all8 · two hop")):
+        saturation = pd.read_csv(path)
+        saturation = saturation[
+            (saturation["arm"] == "all8")
+            & (saturation["task"] == "classification")
+            & (saturation["metric"] == "roc_auc")
+            & (saturation["step"] >= 100)
+        ]
+        saturation = saturation.groupby("step", as_index=False).agg(
+            mean_roc_auc=("value", "mean"),
+            n_targets=("dataset", "nunique"),
+        )
+        for row in saturation.itertuples(index=False):
+            rows.append({
+                "task": "classification",
+                "series": label,
+                "step": row.step,
+                "mean_roc_auc": row.mean_roc_auc,
+                "protocol": "legacy_downstream",
+                "n_sources": 8,
+                "n_targets": row.n_targets,
+            })
+    return pd.DataFrame(rows).sort_values(["task", "series", "step"]).reset_index(drop=True)
+
+
+def mix_regret_summary(auc_mix: pd.DataFrame) -> pd.DataFrame:
+    current = auc_mix.copy()
+    current["regret_auc_points"] = -100 * current["final_minus_best"]
+    current["protocol"] = "fixed512"
+    current["final_rung"] = 9
+
+    historical = pd.read_csv(NM40000_HISTORICAL)
+    means = historical.groupby(["order", "rung"], as_index=False).agg(mean_auc=("auc", "mean"))
+    rows = []
+    for order, group in means.groupby("order"):
+        final = float(group.loc[group["rung"] == 8, "mean_auc"].iloc[0])
+        rows.append({
+            "task": "neighbor_matching",
+            "step": 40000,
+            "order": order,
+            "best_rung": int(group.loc[group["mean_auc"].idxmax(), "rung"]),
+            "regret_auc_points": 100 * (float(group["mean_auc"].max()) - final),
+            "protocol": "legacy",
+            "final_rung": 8,
+        })
+    columns = ["task", "step", "order", "best_rung", "regret_auc_points", "protocol", "final_rung"]
+    return pd.concat([current[columns], pd.DataFrame(rows)[columns]], ignore_index=True).sort_values(
+        ["task", "step", "order"]
+    ).reset_index(drop=True)
+
+
+def plot_budget_phase(summary: pd.DataFrame, output: Path) -> None:
+    _style()
+    fig, axes = plt.subplots(1, 2, figsize=(11.8, 4.65), sharey=True)
+    colors = {
+        "Order A rung 8 · shared 8 targets": STEP2500,
+        "New all9 · fixed512": STEP2500,
+        "Saturation all8 · one hop": STEP100,
+        "Saturation all8 · two hop": STEP40000,
+    }
+    task_specs = [
+        ("neighbor_matching", "Native neighbor matching"),
+        ("classification", "Downstream classification"),
+    ]
+    for ax, (task, title) in zip(axes, task_specs):
+        task_data = summary[summary["task"] == task]
+        ax.axhline(0.5, color=CHANCE, linewidth=1.0, linestyle=(0, (3, 3)), zorder=0)
+        ax.axvspan(100, 500, color=GRID, alpha=0.32, linewidth=0, zorder=0)
+        for series, group in task_data.groupby("series"):
+            group = group.sort_values("step")
+            ax.plot(
+                group["step"], group["mean_roc_auc"],
+                color=colors[series], linewidth=2.2, marker="o", markersize=5,
+                label=series, zorder=3,
+            )
+            legacy = group[group["protocol"].str.startswith("legacy")]
+            if not legacy.empty:
+                ax.scatter(
+                    legacy["step"], legacy["mean_roc_auc"], s=54,
+                    facecolor="white", edgecolor=colors[series], linewidth=1.8, zorder=4,
+                )
+        ax.set_xscale("log")
+        ax.set_title(title, loc="left", fontweight="bold")
+        ax.set_xlabel("Pretraining steps (log scale)")
+        ax.grid(axis="y", color=GRID, linewidth=0.7)
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.set_axisbelow(True)
+        ax.legend(frameon=False, loc="lower right", fontsize=8.5)
+    axes[0].set_ylabel("Mean ROC-AUC")
+    axes[0].set_ylim(0.49, 0.95)
+    fig.suptitle(
+        "Most measurable transfer is acquired before the mature-budget regime",
+        x=0.065, ha="left", y=0.995, fontsize=15, fontweight="bold",
+    )
+    fig.text(
+        0.065, 0.905,
+        "Shaded interval marks 100–500 steps. Open markers use a legacy evaluation campaign; lines connect contextual, not causal, comparisons.",
+        color=MUTED, fontsize=9,
+    )
+    fig.tight_layout(rect=(0.04, 0.03, 1, 0.82), w_pad=2.0)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output, dpi=260, bbox_inches="tight")
+    fig.savefig(output.with_suffix(".pdf"), bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_mix_regret(summary: pd.DataFrame, output: Path) -> None:
+    _style()
+    fig, axes = plt.subplots(1, 2, figsize=(11.8, 4.45), sharey=True)
+    order_colors = {"A": STEP100, "B": STEP2500, "C": STEP40000}
+    task_specs = [
+        ("neighbor_matching", "Native neighbor matching"),
+        ("classification", "Downstream classification"),
+    ]
+    for ax, (task, title) in zip(axes, task_specs):
+        task_data = summary[summary["task"] == task]
+        for order in ORDERS:
+            group = task_data[task_data["order"] == order].sort_values("step")
+            ax.plot(
+                group["step"], group["regret_auc_points"],
+                color=order_colors[order], linewidth=2.0, marker="o", markersize=5,
+                label=f"Order {order}", zorder=3,
+            )
+            legacy = group[group["protocol"] == "legacy"]
+            if not legacy.empty:
+                ax.scatter(
+                    legacy["step"], legacy["regret_auc_points"], s=54,
+                    facecolor="white", edgecolor=order_colors[order], linewidth=1.8, zorder=4,
+                )
+        ax.axhline(0, color=CHANCE, linewidth=1.0, zorder=0)
+        ax.set_xscale("log")
+        ax.set_title(title, loc="left", fontweight="bold")
+        ax.set_xlabel("Pretraining steps (log scale)")
+        ax.grid(axis="y", color=GRID, linewidth=0.7)
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.set_axisbelow(True)
+        ax.legend(frameon=False, loc="upper right")
+    axes[0].set_ylabel("Best earlier rung − all-source rung (AUC points)")
+    axes[0].set_ylim(-0.5, 15.0)
+    fig.suptitle(
+        "The apparent all-source penalty is an early-training phenomenon",
+        x=0.065, ha="left", y=0.995, fontsize=15, fontweight="bold",
+    )
+    fig.text(
+        0.065, 0.905,
+        "Zero means the largest mixture is best. The open 40k markers are historical eight-rung ladders under the legacy evaluator.",
+        color=MUTED, fontsize=9,
+    )
+    fig.tight_layout(rect=(0.04, 0.03, 1, 0.82), w_pad=2.0)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output, dpi=260, bbox_inches="tight")
+    fig.savefig(output.with_suffix(".pdf"), bbox_inches="tight")
+    plt.close(fig)
+
+
 def main() -> int:
     cells = load_cells()
     by_seed, summary = summarize(cells)
@@ -431,6 +631,8 @@ def main() -> int:
     accuracy_correlations = budget_correlations(summary, "accuracy")
     auc_correlations = budget_correlations(summary, "roc_auc")
     historical_nm = historical_nm_budget_summary(cells)
+    budget_phase = budget_phase_summary(cells, historical_nm)
+    mix_regret = mix_regret_summary(auc_mix)
     by_seed.to_csv(DATA / "curve_by_seed.csv", index=False)
     summary.to_csv(DATA / "curve_summary.csv", index=False)
     accuracy_mix.to_csv(DATA / "mix_is_max.csv", index=False)
@@ -438,12 +640,16 @@ def main() -> int:
     accuracy_correlations.to_csv(DATA / "budget_rank_correlations.csv", index=False)
     auc_correlations.to_csv(DATA / "budget_rank_correlations_auc.csv", index=False)
     historical_nm.to_csv(DATA / "nm_auc_budget_100_2500_40000.csv", index=False)
+    budget_phase.to_csv(DATA / "budget_phase_transition_auc.csv", index=False)
+    mix_regret.to_csv(DATA / "mix_regret_auc.csv", index=False)
     plot(summary, FIGURES / "budget_task_ladders.png", "accuracy")
     plot(summary, FIGURES / "budget_task_ladders_auc.png", "roc_auc")
     plot_historical_nm_budgets(
         historical_nm,
         FIGURES / "nm_auc_budget_100_2500_40000.png",
     )
+    plot_budget_phase(budget_phase, FIGURES / "budget_phase_transition_auc.png")
+    plot_mix_regret(mix_regret, FIGURES / "mix_regret_auc.png")
     print(auc_mix.to_string(index=False))
     return 0
 
