@@ -21,9 +21,13 @@ Run locally with Homebrew Python 3.11:
   scripts.experiments.analysis.transfer.ladders.prodigy_nm.cross_task.ladder_cross_task_eval.analyze
 ```
 
-The primary figure is `figures/budget_task_ladders.png`. Open markers show the best
-rung at each budget; the blue band is the sample standard deviation across the three
+The two primary figures are `figures/budget_task_ladders.png` (accuracy) and
+`figures/budget_task_ladders_auc.png` (ROC-AUC). Open markers show the best rung at
+each budget; the blue band is the sample standard deviation across the three
 2,500-step training seeds. Step 100 has one training seed and therefore no seed band.
+Step-2,500 native-NM AUC comes from the complete four-decimal metric recovery in the
+original fixed-test worker logs; all other plotted cells use full-precision evaluator
+outputs.
 
 The source experiment and launcher live under
 `scripts/experiments/setup/ladder_cross_task_eval/`.

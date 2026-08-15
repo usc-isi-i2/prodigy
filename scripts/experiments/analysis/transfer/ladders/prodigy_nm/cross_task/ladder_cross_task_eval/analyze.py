@@ -31,6 +31,11 @@ NM2500_FINGERPRINTS = (
     / "scripts/experiments/analysis/transfer/matrices/cross_model/final_core/data"
     / "prodigy_final_core/fixed_test/summary/episode_fingerprints.tsv"
 )
+NM2500_LOGGED_METRICS = (
+    REPO_ROOT
+    / "scripts/experiments/analysis/transfer/matrices/cross_model/final_core/data"
+    / "prodigy_final_core/log_recovered_metrics/physical_metrics.tsv"
+)
 DOWNSTREAM100 = (
     REPO_ROOT
     / "scripts/experiments/analysis/transfer/matrices/cross_architecture/icl_arch_matrix"
@@ -101,6 +106,17 @@ def load_cells() -> pd.DataFrame:
     nm100 = pd.read_csv(DATA / "nm_step100_ladder.csv")
     downstream2500 = pd.read_csv(DATA / "downstream_step2500_ladder.csv")
     nm2500 = pd.read_csv(NM2500, sep="\t")
+    nm2500_metrics = pd.read_csv(NM2500_LOGGED_METRICS, sep="\t")
+    if len(nm2500_metrics) != 837 or set(nm2500_metrics["printed_decimal_places"]) != {4}:
+        raise ValueError("expected the complete four-decimal final-core metric recovery")
+    nm2500 = nm2500.merge(
+        nm2500_metrics[["seed", "model_id", "target", "roc_auc_ovr_macro_logged"]],
+        on=["seed", "model_id", "target"],
+        how="left",
+        validate="many_to_one",
+    )
+    if nm2500["roc_auc_ovr_macro_logged"].isna().any():
+        raise ValueError("missing log-recovered AUC for a step-2,500 NM ladder cell")
     downstream100 = pd.DataFrame(
         json.loads(line) for line in DOWNSTREAM100.read_text(encoding="utf-8").splitlines()
         if line.strip()
@@ -119,13 +135,13 @@ def load_cells() -> pd.DataFrame:
         rows.append({
             "task": "neighbor_matching", "step": 100, "training_seed": 0,
             "order": row.order, "rung": row.rung, "target": row.target,
-            "accuracy": row.accuracy,
+            "accuracy": row.accuracy, "roc_auc": row.roc_auc,
         })
     for row in nm2500.itertuples(index=False):
         rows.append({
             "task": "neighbor_matching", "step": 2500, "training_seed": row.seed,
             "order": row.order, "rung": row.rung, "target": row.target,
-            "accuracy": row.score,
+            "accuracy": row.score, "roc_auc": row.roc_auc_ovr_macro_logged,
         })
 
     aliases: dict[str, list[tuple[str, int]]] = {}
@@ -140,13 +156,14 @@ def load_cells() -> pd.DataFrame:
             rows.append({
                 "task": "classification", "step": 100, "training_seed": 0,
                 "order": order, "rung": rung, "target": row.dataset,
-                "accuracy": row.accuracy,
+                "accuracy": row.accuracy, "roc_auc": row.roc_auc,
             })
     for row in downstream2500.itertuples(index=False):
         rows.append({
             "task": "classification", "step": 2500,
             "training_seed": row.training_seed, "order": row.order,
             "rung": row.rung, "target": row.target, "accuracy": row.accuracy,
+            "roc_auc": row.roc_auc,
         })
 
     cells = pd.DataFrame(rows)
@@ -162,44 +179,54 @@ def load_cells() -> pd.DataFrame:
     return cells
 
 
-def summarize(cells: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def summarize(cells: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     by_seed = (
         cells.groupby(["task", "step", "training_seed", "order", "rung"], as_index=False)
-        .agg(accuracy=("accuracy", "mean"), n_targets=("target", "nunique"))
+        .agg(
+            accuracy=("accuracy", "mean"),
+            roc_auc=("roc_auc", "mean"),
+            n_targets=("target", "nunique"),
+        )
     )
     summary = (
         by_seed.groupby(["task", "step", "order", "rung"], as_index=False)
         .agg(
             mean_accuracy=("accuracy", "mean"),
             sd_accuracy=("accuracy", "std"),
+            mean_roc_auc=("roc_auc", "mean"),
+            sd_roc_auc=("roc_auc", "std"),
             n_training_seeds=("training_seed", "nunique"),
         )
     )
+    return by_seed, summary
+
+
+def mix_is_max(summary: pd.DataFrame, metric: str) -> pd.DataFrame:
+    mean_column = f"mean_{metric}"
     mix_rows = []
     for (task, step, order), group in summary.groupby(["task", "step", "order"]):
         group = group.sort_values("rung")
-        best = group.loc[group["mean_accuracy"].idxmax()]
+        best = group.loc[group[mean_column].idxmax()]
         final = group[group["rung"] == 9].iloc[0]
-        gap = float(final["mean_accuracy"] - best["mean_accuracy"])
+        gap = float(final[mean_column] - best[mean_column])
         mix_rows.append({
             "task": task,
             "step": step,
             "order": order,
             "best_rung": int(best["rung"]),
-            "best_accuracy": float(best["mean_accuracy"]),
-            "final_accuracy": float(final["mean_accuracy"]),
+            f"best_{metric}": float(best[mean_column]),
+            f"final_{metric}": float(final[mean_column]),
             "final_minus_best": gap,
             "mix_is_exact_max": bool(np.isclose(gap, 0.0, atol=1e-12)),
             "mix_within_1pp_of_max": bool(gap >= -0.01),
         })
-    mix = pd.DataFrame(mix_rows)
-    return by_seed, summary, mix
+    return pd.DataFrame(mix_rows)
 
 
-def budget_correlations(summary: pd.DataFrame) -> pd.DataFrame:
+def budget_correlations(summary: pd.DataFrame, metric: str) -> pd.DataFrame:
     rows = []
     for task, group in summary.groupby("task"):
-        wide = group.pivot(index=["order", "rung"], columns="step", values="mean_accuracy")
+        wide = group.pivot(index=["order", "rung"], columns="step", values=f"mean_{metric}")
         rows.append({
             "task": task,
             "n_logical_points": len(wide),
@@ -209,13 +236,25 @@ def budget_correlations(summary: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def plot(summary: pd.DataFrame, output: Path) -> None:
+def plot(summary: pd.DataFrame, output: Path, metric: str) -> None:
     _style()
     fig, axes = plt.subplots(2, 3, figsize=(13.2, 7.7), sharex=True, sharey="row")
-    task_rows = [
-        ("neighbor_matching", "Native neighbor matching", 1 / 30),
-        ("classification", "Downstream classification", 0.5),
-    ]
+    if metric == "accuracy":
+        task_rows = [
+            ("neighbor_matching", "Native neighbor matching", 1 / 30),
+            ("classification", "Downstream classification", 0.5),
+        ]
+        metric_label = "mean accuracy across targets"
+    elif metric == "roc_auc":
+        task_rows = [
+            ("neighbor_matching", "Native neighbor matching", 0.5),
+            ("classification", "Downstream classification", 0.5),
+        ]
+        metric_label = "mean ROC-AUC across targets"
+    else:
+        raise ValueError(f"unsupported metric: {metric}")
+    mean_column = f"mean_{metric}"
+    sd_column = f"sd_{metric}"
     for row_index, (task, task_label, chance) in enumerate(task_rows):
         task_data = summary[summary["task"] == task]
         for column_index, order in enumerate(ORDERS):
@@ -224,13 +263,13 @@ def plot(summary: pd.DataFrame, output: Path) -> None:
             for step, color in ((100, STEP100), (2500, STEP2500)):
                 group = task_data[(task_data["step"] == step) & (task_data["order"] == order)].sort_values("rung")
                 x = group["rung"].to_numpy(dtype=float)
-                y = group["mean_accuracy"].to_numpy(dtype=float)
+                y = group[mean_column].to_numpy(dtype=float)
                 ax.plot(x, y, color=color, linewidth=2.1, marker="o", markersize=4.2, zorder=3)
                 if step == 2500:
-                    sd = group["sd_accuracy"].fillna(0).to_numpy(dtype=float)
+                    sd = group[sd_column].fillna(0).to_numpy(dtype=float)
                     ax.fill_between(x, y - sd, y + sd, color=color, alpha=0.13, linewidth=0, zorder=1)
-                best = int(group.loc[group["mean_accuracy"].idxmax(), "rung"])
-                best_y = float(group.loc[group["rung"] == best, "mean_accuracy"].iloc[0])
+                best = int(group.loc[group[mean_column].idxmax(), "rung"])
+                best_y = float(group.loc[group["rung"] == best, mean_column].iloc[0])
                 ax.scatter(best, best_y, s=48, facecolor="white", edgecolor=color, linewidth=1.6, zorder=4)
 
             ax.set_title(
@@ -243,12 +282,16 @@ def plot(summary: pd.DataFrame, output: Path) -> None:
             ax.spines[["top", "right"]].set_visible(False)
             ax.set_axisbelow(True)
             if column_index == 0:
-                ax.set_ylabel(f"{task_label}\nmean accuracy across targets")
+                ax.set_ylabel(f"{task_label}\n{metric_label}")
             if row_index == 1:
                 ax.set_xlabel("Number of source graphs (ladder rung)")
 
-    axes[0, 0].set_ylim(0.025, 0.315)
-    axes[1, 0].set_ylim(0.485, 0.77)
+    if metric == "accuracy":
+        axes[0, 0].set_ylim(0.025, 0.315)
+        axes[1, 0].set_ylim(0.485, 0.77)
+    else:
+        axes[0, 0].set_ylim(0.49, 0.96)
+        axes[1, 0].set_ylim(0.49, 0.84)
     legend = [
         Line2D([0], [0], color=STEP100, marker="o", linewidth=2.1, label="100 steps · seed 0"),
         Line2D([0], [0], color=STEP2500, marker="o", linewidth=2.1, label="2,500 steps · 3-seed mean ± SD"),
@@ -258,7 +301,8 @@ def plot(summary: pd.DataFrame, output: Path) -> None:
     ]
     fig.legend(handles=legend, loc="upper center", bbox_to_anchor=(0.5, 0.925), ncol=4, frameon=False)
     fig.suptitle(
-        "Training budget changes the source-composition ladder",
+        f"Training budget changes the source-composition ladder · "
+        f"{'accuracy' if metric == 'accuracy' else 'ROC-AUC'}",
         x=0.055, ha="left", y=0.995, fontsize=15, fontweight="bold",
     )
     fig.text(
@@ -276,14 +320,20 @@ def plot(summary: pd.DataFrame, output: Path) -> None:
 
 def main() -> int:
     cells = load_cells()
-    by_seed, summary, mix = summarize(cells)
-    correlations = budget_correlations(summary)
+    by_seed, summary = summarize(cells)
+    accuracy_mix = mix_is_max(summary, "accuracy")
+    auc_mix = mix_is_max(summary, "roc_auc")
+    accuracy_correlations = budget_correlations(summary, "accuracy")
+    auc_correlations = budget_correlations(summary, "roc_auc")
     by_seed.to_csv(DATA / "curve_by_seed.csv", index=False)
     summary.to_csv(DATA / "curve_summary.csv", index=False)
-    mix.to_csv(DATA / "mix_is_max.csv", index=False)
-    correlations.to_csv(DATA / "budget_rank_correlations.csv", index=False)
-    plot(summary, FIGURES / "budget_task_ladders.png")
-    print(mix.to_string(index=False))
+    accuracy_mix.to_csv(DATA / "mix_is_max.csv", index=False)
+    auc_mix.to_csv(DATA / "mix_is_max_auc.csv", index=False)
+    accuracy_correlations.to_csv(DATA / "budget_rank_correlations.csv", index=False)
+    auc_correlations.to_csv(DATA / "budget_rank_correlations_auc.csv", index=False)
+    plot(summary, FIGURES / "budget_task_ladders.png", "accuracy")
+    plot(summary, FIGURES / "budget_task_ladders_auc.png", "roc_auc")
+    print(auc_mix.to_string(index=False))
     return 0
 
 

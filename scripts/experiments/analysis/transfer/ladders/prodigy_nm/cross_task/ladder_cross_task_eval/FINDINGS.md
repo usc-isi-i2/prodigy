@@ -39,6 +39,25 @@ false. The defensible result is sharper: **with adequate training, the all-sourc
 becomes competitive with the best subset across tasks and orders; at 100 steps, source
 composition is strongly entangled with optimization horizon.**
 
+## ROC-AUC confirms and sharpens the result
+
+The same comparison using ROC-AUC is in `figures/budget_task_ladders_auc.png`. The
+all-nine model rises from 0.638 to 0.872 mean native-NM AUC and from 0.561 to 0.756
+mean downstream AUC between 100 and 2,500 steps. At 100 steps, rung 9 trails the best
+earlier rung in every panel by 4.00–6.95 AUC points for native NM and 1.66–13.82 points
+for downstream classification. At 2,500 steps, every rung-9 gap is below one AUC
+point; the largest is 0.71 points for downstream order A.
+
+The AUC ladder ranks also change with budget: step-100 versus step-2,500 Spearman
+correlation is -0.436 for native NM and -0.076 for downstream classification across
+the 27 logical order/rung points. As for accuracy, these are descriptive correlations
+over aliased, non-independent points.
+
+Step-2,500 native-NM AUC is recovered from the original fixed-test worker logs at four
+decimal places. The recovery covers all physical ladder cells, and the logged values
+agree with the available full-precision specialist replay to the expected rounding
+tolerance. The other three task/budget cells use full-precision evaluator outputs.
+
 ## Interpretation and limitation
 
 This turns the apparent inconsistency into the central result. Early source-addition
