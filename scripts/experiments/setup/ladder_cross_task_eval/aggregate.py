@@ -67,6 +67,14 @@ def load_nm(root: Path) -> dict[tuple[str, str], dict]:
     expected = {(model_id, target) for model_id in ladder_models() for target in SOURCES}
     if set(rows) != expected:
         raise ValueError(f"NM grid mismatch: missing={sorted(expected-set(rows))[:5]} extra={sorted(set(rows)-expected)[:5]}")
+    for field in ("episode_plan_fingerprint", "observed_episode_fingerprint"):
+        drift = {
+            target: {row[field] for (model_id, row_target), row in rows.items() if row_target == target}
+            for target in SOURCES
+        }
+        drift = {target: values for target, values in drift.items() if len(values) != 1}
+        if drift:
+            raise ValueError(f"NM {field} drift: {drift}")
     return rows
 
 
@@ -153,9 +161,32 @@ def main() -> int:
     manifest = {
         "nm_physical_cells": len(nm),
         "nm_logical_ladder_cells": 3 * 9 * 9,
+        "nm_episode_fingerprints": {
+            target: {
+                "episode_plan_fingerprint": next(iter({
+                    row["episode_plan_fingerprint"]
+                    for (model_id, row_target), row in nm.items()
+                    if row_target == target
+                })),
+                "observed_episode_fingerprint": next(iter({
+                    row["observed_episode_fingerprint"]
+                    for (model_id, row_target), row in nm.items()
+                    if row_target == target
+                })),
+            }
+            for target in SOURCES
+        },
         "downstream_physical_cells": len(downstream),
         "downstream_logical_ladder_cells": 3 * 3 * 9 * 4,
         "downstream_targets": list(DOWNSTREAM_TARGETS),
+        "downstream_episode_fingerprints": {
+            target: next(iter({
+                row["episode_fingerprint"]
+                for (seed, model_id, row_target), row in downstream.items()
+                if row_target == target
+            }))
+            for target in DOWNSTREAM_TARGETS
+        },
         "source_files": {
             str(path): fingerprint(path) for path in args.downstream_worker_results
         },

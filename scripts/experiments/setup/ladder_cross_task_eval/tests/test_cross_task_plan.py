@@ -32,6 +32,8 @@ def test_aggregate_accepts_complete_physical_grids_and_expands_shared_rungs(tmp_
                 "seed": 0,
                 "model_id": model_id,
                 "target": target,
+                "episode_plan_fingerprint": f"plan-{target}",
+                "observed_episode_fingerprint": f"observed-{target}",
                 "accuracy": 0.5,
                 "f1_macro": 0.5,
                 "roc_auc_ovr_macro": 0.5,
