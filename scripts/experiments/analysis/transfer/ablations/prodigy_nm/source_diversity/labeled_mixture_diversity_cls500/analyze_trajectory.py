@@ -318,45 +318,52 @@ def main() -> None:
     fig.savefig(figures / "mixture_diversity_trajectory.png", dpi=180)
     plt.close(fig)
 
-    # Raw 1k-cell view for mixtures containing TwiBot20. TwiBot20 itself cannot be
-    # a target in this view because held-out targets are absent from their mixtures.
-    twibot_targets = [target for target in TARGETS if target != "twibot20"]
-    fig, axes = plt.subplots(2, 2, figsize=(11, 8), sharex=True, sharey=True)
-    for axis, target in zip(axes.flat, twibot_targets):
-        target_rows = [
-            row for row in rows
-            if row["target"] == target
-            and endpoint(row) == "heldout"
-            and int(row["training_steps"]) == 1000
-            and "twibot20" in row["donors"]
-        ]
-        model_jitter = {}
-        for k in range(1, 5):
-            model_ids = sorted({
-                row["model_id"] for row in target_rows
-                if int(row["mixture_size"]) == k
-            })
-            jitters = np.linspace(-0.12, 0.12, len(model_ids)) if len(model_ids) > 1 else [0.0]
-            model_jitter.update(dict(zip(model_ids, jitters)))
-        xs = [
-            int(row["mixture_size"]) + model_jitter[row["model_id"]]
-            for row in target_rows
-        ]
-        axis.scatter(
-            xs, [float(row["roc_auc"]) for row in target_rows],
-            s=28, alpha=0.85, color="C2", label="1,000 steps", zorder=2,
+    # Five raw 1k-cell views, each filtered to mixtures containing one graph. The
+    # filter graph cannot also be a target because held-out targets are absent from
+    # their training mixtures.
+    for included_donor in TARGETS:
+        donor_targets = [target for target in TARGETS if target != included_donor]
+        fig, axes = plt.subplots(2, 2, figsize=(11, 8), sharex=True, sharey=True)
+        for axis, target in zip(axes.flat, donor_targets):
+            target_rows = [
+                row for row in rows
+                if row["target"] == target
+                and endpoint(row) == "heldout"
+                and int(row["training_steps"]) == 1000
+                and included_donor in row["donors"]
+            ]
+            model_jitter = {}
+            for k in range(1, 5):
+                model_ids = sorted({
+                    row["model_id"] for row in target_rows
+                    if int(row["mixture_size"]) == k
+                })
+                jitters = np.linspace(-0.12, 0.12, len(model_ids)) if len(model_ids) > 1 else [0.0]
+                model_jitter.update(dict(zip(model_ids, jitters)))
+            xs = [
+                int(row["mixture_size"]) + model_jitter[row["model_id"]]
+                for row in target_rows
+            ]
+            axis.scatter(
+                xs, [float(row["roc_auc"]) for row in target_rows],
+                s=28, alpha=0.85, color="C2", label="1,000 steps", zorder=2,
+            )
+            axis.set_title(target.replace("_", " "))
+            axis.set_xticks(ks)
+            axis.grid(alpha=0.2)
+        for axis in axes[-1]:
+            axis.set_xlabel("Number of held-in pretraining graphs")
+        for axis in axes[:, 0]:
+            axis.set_ylabel("Held-out ROC-AUC")
+        fig.suptitle(
+            f"1,000-step mixtures containing {included_donor.replace('_', ' ')}"
         )
-        axis.set_title(target.replace("_", " "))
-        axis.set_xticks(ks)
-        axis.grid(alpha=0.2)
-    for axis in axes[-1]:
-        axis.set_xlabel("Number of held-in pretraining graphs")
-    for axis in axes[:, 0]:
-        axis.set_ylabel("Held-out ROC-AUC")
-    fig.suptitle("1,000-step mixtures containing TwiBot20")
-    fig.tight_layout(rect=(0, 0, 1, 0.96))
-    fig.savefig(figures / "mixture_diversity_trajectory_raw.png", dpi=180)
-    plt.close(fig)
+        fig.tight_layout(rect=(0, 0, 1, 0.96))
+        fig.savefig(
+            figures / f"mixture_diversity_trajectory_contains_{included_donor}.png",
+            dpi=180,
+        )
+        plt.close(fig)
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.5))
     for field, label in (
