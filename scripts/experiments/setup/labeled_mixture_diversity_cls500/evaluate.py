@@ -45,7 +45,7 @@ def params_for(args, target_name, target, graph_path, checkpoint, prefix):
         "--eval_test_before_train", "False", "--eval_val_before_train", "False",
         "--ignore_label_embeddings", "False", "--linear_probe", "False",
         "--pretrained_model_run", str(checkpoint), "--device", str(args.device),
-        "--prefix", f"labmix500_eval_{prefix}_to_{target_name}",
+        "--prefix", f"labmixtraj_eval_{prefix}_step{args.training_steps}_to_{target_name}",
         "--timestamp", args.run_stamp, "--state_dir", str(args.eval_state_root),
         "--log_dir", str(args.log_root), "--override_log", "True",
         "--eval_random_query", str(target["eval_random_query"]),
@@ -64,6 +64,12 @@ def main() -> int:
     parser.add_argument("--run-stamp", default="seed0")
     parser.add_argument("--data-root", default="/dataMeR1/phil/data")
     parser.add_argument("--mode", choices=("heldout", "controls"), default="heldout")
+    parser.add_argument("--checkpoint-step", type=int, default=500)
+    parser.add_argument("--training-steps", type=int, default=500)
+    parser.add_argument(
+        "--checkpoint-prefix", default="labmix500",
+        help="prefix used by checkpoints; continuation runs use labmixcont",
+    )
     args = parser.parse_args()
     if args.device not in {0, 1}:
         parser.error("only Tucker GPUs 0 and 1 are owned")
@@ -75,7 +81,7 @@ def main() -> int:
     if shard_result.is_file():
         for line in shard_result.read_text().splitlines():
             row = json.loads(line)
-            completed.add((row["target"], row["model_id"]))
+            completed.add((row["target"], row["model_id"], row.get("training_steps", 500)))
 
     with shard_result.open("a", encoding="utf-8") as handle:
         for target_name in target_names:
@@ -86,11 +92,12 @@ def main() -> int:
             all_rows = control_evaluation_rows() if args.mode == "controls" else evaluation_rows()
             plan = [row for row in all_rows if row["target"] == target_name]
             for index, row in enumerate(plan, 1):
-                key = (target_name, str(row["prefix"]))
+                key = (target_name, str(row["prefix"]), args.training_steps)
                 if key in completed:
                     print(f"SKIP {key}", flush=True)
                     continue
-                checkpoint = complete(args.state_root, str(row["prefix"]))
+                checkpoint_prefix = str(row["prefix"]).replace("labmix500", args.checkpoint_prefix, 1)
+                checkpoint = complete(args.state_root, checkpoint_prefix, args.checkpoint_step)
                 if checkpoint is None:
                     raise FileNotFoundError(f"missing checkpoint for {row['prefix']}")
                 print(f"[{target_name} {index}/{len(plan)}] {row['prefix']}", flush=True)
@@ -106,10 +113,10 @@ def main() -> int:
                     trainer.model.eval()
                     reset_episode_rng()
                     with torch.no_grad():
-                        trainer.do_eval(audited, split_name="test", step=500)
+                        trainer.do_eval(audited, split_name="test", step=args.training_steps)
                     if audited.episodes != EPISODES:
                         raise RuntimeError(f"expected {EPISODES} episodes, got {audited.episodes}")
-                    metrics_path = Path(trainer.logging_dir) / "metrics_test_step500.json"
+                    metrics_path = Path(trainer.logging_dir) / f"metrics_test_step{args.training_steps}.json"
                     metrics = json.loads(metrics_path.read_text())
                     metrics = {key.removeprefix("test_"): value for key, value in metrics.items()}
                     payload = {
@@ -117,7 +124,7 @@ def main() -> int:
                         "mixture_size": row["mixture_size"], "donors": list(row["donors"]),
                         "endpoint": row.get("endpoint", "heldout"),
                         "target_in_training": target_name in row["donors"],
-                        "training_steps": 500, "training_seed": 0,
+                        "training_steps": args.training_steps, "training_seed": 0,
                         "eval_episodes": audited.episodes,
                         "episode_fingerprint": audited.fingerprint,
                         "checkpoint": str(checkpoint), **metrics,

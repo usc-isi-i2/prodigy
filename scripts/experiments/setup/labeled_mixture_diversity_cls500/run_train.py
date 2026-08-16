@@ -21,9 +21,17 @@ from experiments.trainer import TrainerFS  # noqa: E402
 from make_plan import all_five_row, rows, validate  # noqa: E402
 
 
-def complete(state_root: Path, prefix: str) -> Path | None:
+def complete(state_root: Path, prefix: str, step: int = 500) -> Path | None:
     for run_dir in sorted(state_root.glob(f"{prefix}_*"), key=lambda p: p.stat().st_mtime, reverse=True):
-        checkpoint = run_dir / "checkpoint" / "state_dict_500.ckpt"
+        checkpoint = run_dir / "checkpoint" / f"state_dict_{step}.ckpt"
+        if checkpoint.is_file():
+            return checkpoint
+    return None
+
+
+def training_state(state_root: Path, prefix: str, step: int = 500) -> Path | None:
+    for run_dir in sorted(state_root.glob(f"{prefix}_*"), key=lambda p: p.stat().st_mtime, reverse=True):
+        checkpoint = run_dir / "checkpoint" / f"training_state_{step}.ckpt"
         if checkpoint.is_file():
             return checkpoint
     return None

@@ -39,3 +39,24 @@ train one fixed-compute all-five checkpoint, and evaluate both endpoints on each
 ```bash
 bash scripts/experiments/setup/labeled_mixture_diversity_cls500/run_controls_tucker.sh
 ```
+
+## Post-500 convergence trajectory
+
+`continue_train.py` restores the step-500 model and AdamW state for all 31 physical
+models, then trains 500 additional steps with a common fresh episode stream (seed
+500). Resetting the stream uniformly is intentional: multiprocessing prefetch makes
+the exact next episode unknowable for 21 of the original two-worker runs. The fixed
+500-step result remains the primary fixed-compute estimand; this continuation asks
+whether held-out CLS changes with further optimization.
+
+The continuation saves local steps 250 and 500, corresponding to global training
+steps 750 and 1,000. `run_trajectory_eval_tucker.sh` evaluates both checkpoints on
+all 75 held-out cells and all 10 endpoint-control cells.
+
+On Tucker, the original checkpoints remain in the completed experiment worktree:
+
+```bash
+SOURCE_STATE_ROOT=/dataMeR1/phil/gfm/prodigy-mixdiv2k/state \
+  bash scripts/experiments/setup/labeled_mixture_diversity_cls500/run_continue_tucker.sh
+bash scripts/experiments/setup/labeled_mixture_diversity_cls500/run_trajectory_eval_tucker.sh
+```
