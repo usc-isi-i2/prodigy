@@ -354,6 +354,45 @@ def main() -> None:
     fig.savefig(figures / "marginal_donor_effect_boxplot_1000.png", dpi=180)
     plt.close(fig)
 
+    final_marginal_means = [
+        row for row in marginal_rows if row["training_steps"] == 1000
+    ]
+    effect_matrix = np.full((len(TARGETS), len(TARGETS)), np.nan)
+    target_index = {target: index for index, target in enumerate(TARGETS)}
+    for row in final_marginal_means:
+        effect_matrix[
+            target_index[row["target"]], target_index[row["added_donor"]]
+        ] = row["mean_auc_delta"]
+    max_abs = float(np.nanmax(np.abs(effect_matrix)))
+    cmap = plt.get_cmap("RdBu").copy()
+    cmap.set_bad("0.9")
+    norm = matplotlib.colors.TwoSlopeNorm(vmin=-max_abs, vcenter=0, vmax=max_abs)
+    fig, axis = plt.subplots(figsize=(9, 7))
+    image = axis.imshow(effect_matrix, cmap=cmap, norm=norm)
+    labels = [target.replace("_", "\n") for target in TARGETS]
+    axis.set_xticks(range(len(TARGETS)), labels=labels)
+    axis.set_yticks(range(len(TARGETS)), labels=labels)
+    axis.set_xlabel("Graph added to the training mixture")
+    axis.set_ylabel("Held-out evaluation graph")
+    axis.set_title("Mean marginal effect of adding each graph at 1,000 steps")
+    for row_index in range(len(TARGETS)):
+        for column_index in range(len(TARGETS)):
+            value = effect_matrix[row_index, column_index]
+            if np.isnan(value):
+                annotation, color = "—", "0.35"
+            else:
+                annotation = f"{value:+.4f}"
+                color = "white" if abs(value) > 0.55 * max_abs else "black"
+            axis.text(
+                column_index, row_index, annotation,
+                ha="center", va="center", color=color, fontsize=9,
+            )
+    colorbar = fig.colorbar(image, ax=axis, shrink=0.82)
+    colorbar.set_label("Mean change in held-out ROC-AUC")
+    fig.tight_layout()
+    fig.savefig(figures / "marginal_donor_effect_heatmap_1000.png", dpi=180)
+    plt.close(fig)
+
     panels = [("Macro mean", None), *[(target.replace("_", " "), target) for target in TARGETS]]
     fig, axes = plt.subplots(2, 3, figsize=(13, 8), sharex=True, sharey=True)
     for axis, (title, target) in zip(axes.flat, panels):
