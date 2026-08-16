@@ -74,6 +74,11 @@ def parse_args():
     parser.add_argument("--device", default="0")
     parser.add_argument("--model-ids", default="")
     parser.add_argument("--datasets", default="")
+    parser.add_argument(
+        "--include-facebook",
+        action="store_true",
+        help="Add facebook_page_reference to the original four-target panel.",
+    )
     parser.add_argument("--checkpoint-step", type=int, choices=(20, 60, 100), default=TRAIN_STEPS)
     parser.add_argument("--eval-episode-seed-offset", type=int, default=0)
     parser.add_argument(
@@ -147,7 +152,7 @@ def main() -> int:
     result_path.parent.mkdir(parents=True, exist_ok=True)
     Path(args.log_root).mkdir(parents=True, exist_ok=True)
     expected_fingerprints = {}
-    targets = classification_targets(args.catalog)
+    targets = classification_targets(args.catalog, include_facebook=args.include_facebook)
     selected_datasets = set(filter(None, args.datasets.split(",")))
     if selected_datasets:
         missing = selected_datasets - targets.keys()

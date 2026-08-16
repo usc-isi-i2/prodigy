@@ -10,11 +10,22 @@ from scripts.experiments.setup.icl_arch_matrix.common_protocol import (
     N_QUERY,
     N_SHOT,
     N_WAY,
+    classification_targets,
     iter_episodes,
     new_fingerprint,
     reset_episode_rng,
     update_episode_fingerprint,
 )
+
+
+def test_facebook_target_is_opt_in():
+    catalog = "docs/graph_catalog.json"
+    original = classification_targets(catalog)
+    extended = classification_targets(catalog, include_facebook=True)
+
+    assert "facebook_page_reference" not in original
+    assert set(extended) == {*original, "facebook_page_reference"}
+    assert extended["facebook_page_reference"]["n_query"] == 4
 
 
 def _synthetic_batch():

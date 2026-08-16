@@ -248,8 +248,12 @@ def _validate_episode(
             raise ValueError(f"label {label} has the wrong query count")
 
 
-def classification_targets(catalog_path: str | Path) -> dict[str, dict]:
-    """Return the fixed four-graph classification panel from the graph catalog."""
+def classification_targets(
+    catalog_path: str | Path,
+    *,
+    include_facebook: bool = False,
+) -> dict[str, dict]:
+    """Return the fixed classification panel from the graph catalog."""
     import json
 
     selected = {
@@ -258,6 +262,8 @@ def classification_targets(catalog_path: str | Path) -> dict[str, dict]:
         "ukr_rus_suspended",
         "twibot20",
     }
+    if include_facebook:
+        selected.add("facebook_page_reference")
     with open(catalog_path, encoding="utf-8") as handle:
         catalog = json.load(handle)
     targets = {}
@@ -288,6 +294,11 @@ def build_classification_dataset(
         from data.covid_political import (
             get_covid_political_dataloader as get_dataloader,
             get_covid_political_dataset as get_dataset,
+        )
+    elif dataset_name == "facebook_page_reference":
+        from data.facebook_page_reference import (
+            get_facebook_page_reference_dataloader as get_dataloader,
+            get_facebook_page_reference_dataset as get_dataset,
         )
     else:
         from data import social_llm_dataset
