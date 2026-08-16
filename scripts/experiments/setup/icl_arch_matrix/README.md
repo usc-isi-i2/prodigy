@@ -24,6 +24,11 @@ This is a lightweight, descriptive comparison—not a final paper-number run.
   one optimizer step. This preserves the registered effective batch of four while avoiding
   retention of four large architecture graphs in GPU memory.
 
+`run_checkpoint_trajectory_tucker.sh` evaluates the four labeled single-source models on
+all four classification targets at checkpoints 20 and 60 by default. Together with the
+registered update-100 results, this yields both 12 self-graph trajectories and checkpointed
+off-diagonal transfer cells. `CHECKPOINT_STEPS` can select any subset of `20 60 100`.
+
 Use `MODEL_IDS=ss_ukr_rus` with the Tucker launchers for a one-cell pilot. A full launch
 uses all 31 source sets. Only Tucker GPUs 0 and 1 are accepted by the training launcher.
 `run_matrix_tucker.sh` waits for both owned GPUs, runs and hash-validates that pilot, and

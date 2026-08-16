@@ -41,6 +41,7 @@ def parse_args():
     parser.add_argument("--workers", type=int, default=0)
     parser.add_argument("--model-ids", default="")
     parser.add_argument("--datasets", default="")
+    parser.add_argument("--checkpoint-step", type=int, choices=(20, 60, 100), default=TRAIN_STEPS)
     parser.add_argument(
         "--random-init",
         action="store_true",
@@ -105,6 +106,8 @@ def main() -> int:
     device = torch.device(f"cuda:{args.device}" if torch.cuda.is_available() else "cpu")
     selected = set(filter(None, args.model_ids.split(",")))
     if args.random_init:
+        if args.checkpoint_step != TRAIN_STEPS:
+            raise ValueError("--checkpoint-step cannot be combined with --random-init")
         if selected:
             raise ValueError("--model-ids cannot be combined with --random-init")
         models = [SimpleNamespace(model_id="random_init", sources=())]
@@ -141,14 +144,14 @@ def main() -> int:
                 torch.cuda.manual_seed_all(0)
                 model = build_adapter(args.architecture, args.upstream_root)
                 checkpoint = None
-                checkpoint_step = 0 if args.random_init else TRAIN_STEPS
+                checkpoint_step = 0 if args.random_init else args.checkpoint_step
                 if not args.random_init:
                     checkpoint_path = (
                         Path(args.state_root)
                         / args.architecture
                         / plan_model.model_id
                         / "checkpoint"
-                        / f"state_dict_{TRAIN_STEPS}.pt"
+                        / f"state_dict_{checkpoint_step}.pt"
                     )
                     checkpoint = torch.load(checkpoint_path, map_location="cpu")
                     model.load_state_dict(checkpoint["model_state"], strict=True)

@@ -74,6 +74,7 @@ def parse_args():
     parser.add_argument("--device", default="0")
     parser.add_argument("--model-ids", default="")
     parser.add_argument("--datasets", default="")
+    parser.add_argument("--checkpoint-step", type=int, choices=(20, 60, 100), default=TRAIN_STEPS)
     parser.add_argument(
         "--random-init",
         action="store_true",
@@ -82,7 +83,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def resolved_params(args, dataset_name, target, graph_path, checkpoint, model_id):
+def resolved_params(args, dataset_name, target, graph_path, checkpoint, model_id, checkpoint_step):
     eval_state_root = args.eval_state_root or str(Path(args.state_root) / "eval")
     argv = [
         "--config", args.config,
@@ -112,7 +113,7 @@ def resolved_params(args, dataset_name, target, graph_path, checkpoint, model_id
         "--ignore_label_embeddings", "False",
         "--linear_probe", "False",
         "--device", str(args.device),
-        "--prefix", f"archmatrix_prodigy_eval_{model_id}_{dataset_name}",
+        "--prefix", f"archmatrix_prodigy_eval_{model_id}_{dataset_name}_step{checkpoint_step}",
         "--timestamp", args.run_stamp,
         "--state_dir", eval_state_root,
         "--log_dir", args.log_root,
@@ -130,6 +131,8 @@ def main() -> int:
     torch.set_num_threads(16)
     selected = set(filter(None, args.model_ids.split(",")))
     if args.random_init:
+        if args.checkpoint_step != TRAIN_STEPS:
+            raise ValueError("--checkpoint-step cannot be combined with --random-init")
         if selected:
             raise ValueError("--model-ids cannot be combined with --random-init")
         models = [SimpleNamespace(model_id="random_init", sources=())]
@@ -158,19 +161,20 @@ def main() -> int:
             )
             for plan_model in models:
                 checkpoint = None
-                checkpoint_step = 0 if args.random_init else TRAIN_STEPS
+                checkpoint_step = 0 if args.random_init else args.checkpoint_step
                 if not args.random_init:
                     checkpoint = (
                         Path(args.state_root)
                         / "prodigy"
                         / f"archmatrix_prodigy_{plan_model.model_id}_s0_{args.run_stamp}"
                         / "checkpoint"
-                        / f"state_dict_{TRAIN_STEPS}.ckpt"
+                        / f"state_dict_{checkpoint_step}.ckpt"
                     )
                     if not checkpoint.is_file():
                         raise FileNotFoundError(checkpoint)
                 params = resolved_params(
-                    args, dataset_name, target, graph_path, checkpoint, plan_model.model_id
+                    args, dataset_name, target, graph_path, checkpoint, plan_model.model_id,
+                    checkpoint_step,
                 )
                 torch.manual_seed(0)
                 torch.cuda.manual_seed_all(0)
