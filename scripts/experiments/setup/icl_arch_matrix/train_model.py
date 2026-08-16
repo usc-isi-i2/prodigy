@@ -39,6 +39,12 @@ def parse_args():
     parser.add_argument("--state-root", required=True)
     parser.add_argument("--device", default="0")
     parser.add_argument("--steps", type=int, default=TRAIN_STEPS)
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--run-name", default="")
+    parser.add_argument(
+        "--checkpoint-steps",
+        default=",".join(str(step) for step in CHECKPOINT_STEPS),
+    )
     parser.add_argument("--workers", type=int, default=0)
     return parser.parse_args()
 
@@ -50,7 +56,7 @@ def save_checkpoint(path: Path, model, optimizer, scheduler, args, step: int):
             "architecture": args.architecture,
             "model_id": args.model_id,
             "sources": args.sources,
-            "seed": 0,
+            "seed": args.seed,
             "step": step,
             "upstream": PINS[args.architecture],
             "model_state": model.state_dict(),
@@ -63,12 +69,17 @@ def save_checkpoint(path: Path, model, optimizer, scheduler, args, step: int):
 
 def main() -> int:
     args = parse_args()
-    if args.steps != TRAIN_STEPS:
-        raise ValueError(f"registered comparison budget is exactly {TRAIN_STEPS} updates")
-    random.seed(0)
-    np.random.seed(0)
-    torch.manual_seed(0)
-    torch.cuda.manual_seed_all(0)
+    checkpoint_steps = {
+        int(value.strip()) for value in args.checkpoint_steps.split(",") if value.strip()
+    }
+    if not checkpoint_steps or min(checkpoint_steps) < 1 or max(checkpoint_steps) > args.steps:
+        raise ValueError(
+            f"checkpoint steps must fall within 1..{args.steps}: {sorted(checkpoint_steps)}"
+        )
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    torch.cuda.manual_seed_all(args.seed)
     device = torch.device(f"cuda:{args.device}" if torch.cuda.is_available() else "cpu")
 
     config = load_config(args.config)
@@ -88,7 +99,7 @@ def main() -> int:
         optimizer, T_max=args.steps, eta_min=model.learning_rate * 0.05
     )
 
-    run_dir = Path(args.state_root) / args.architecture / args.model_id
+    run_dir = Path(args.state_root) / args.architecture / (args.run_name or args.model_id)
     metrics_path = run_dir / "train_metrics.jsonl"
     if run_dir.exists():
         raise FileExistsError(f"refusing ambiguous resume into existing run: {run_dir}")
@@ -131,7 +142,7 @@ def main() -> int:
             metrics.flush()
             if step == 1 or step % 20 == 0:
                 print(json.dumps(row, sort_keys=True), flush=True)
-            if step in CHECKPOINT_STEPS:
+            if step in checkpoint_steps:
                 save_checkpoint(
                     run_dir / "checkpoint" / f"state_dict_{step}.pt",
                     model,
@@ -140,7 +151,7 @@ def main() -> int:
                     args,
                     step,
                 )
-    terminal = run_dir / "checkpoint" / f"state_dict_{TRAIN_STEPS}.pt"
+    terminal = run_dir / "checkpoint" / f"state_dict_{args.steps}.pt"
     if not terminal.is_file():
         raise RuntimeError(f"terminal checkpoint was not written: {terminal}")
     return 0
