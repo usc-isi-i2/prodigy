@@ -318,14 +318,17 @@ def main() -> None:
     fig.savefig(figures / "mixture_diversity_trajectory.png", dpi=180)
     plt.close(fig)
 
-    # Raw 1k-cell view: preserve every exact donor subset instead of averaging by k.
-    fig, axes = plt.subplots(2, 3, figsize=(13, 8), sharex=True, sharey=True)
-    for axis, target in zip(axes.flat[:5], TARGETS):
+    # Raw 1k-cell view for mixtures containing TwiBot20. TwiBot20 itself cannot be
+    # a target in this view because held-out targets are absent from their mixtures.
+    twibot_targets = [target for target in TARGETS if target != "twibot20"]
+    fig, axes = plt.subplots(2, 2, figsize=(11, 8), sharex=True, sharey=True)
+    for axis, target in zip(axes.flat, twibot_targets):
         target_rows = [
             row for row in rows
             if row["target"] == target
             and endpoint(row) == "heldout"
             and int(row["training_steps"]) == 1000
+            and "twibot20" in row["donors"]
         ]
         model_jitter = {}
         for k in range(1, 5):
@@ -346,18 +349,12 @@ def main() -> None:
         axis.set_title(target.replace("_", " "))
         axis.set_xticks(ks)
         axis.grid(alpha=0.2)
-    axes.flat[5].axis("off")
-    handles, labels = axes.flat[0].get_legend_handles_labels()
-    axes.flat[5].legend(handles, labels, loc="center", fontsize=10, frameon=False)
-    axes.flat[5].text(
-        0.5, 0.33, "Each point is one exact donor subset.",
-        ha="center", va="center", transform=axes.flat[5].transAxes,
-    )
-    for axis in axes[-1, :2]:
+    for axis in axes[-1]:
         axis.set_xlabel("Number of held-in pretraining graphs")
     for axis in axes[:, 0]:
         axis.set_ylabel("Held-out ROC-AUC")
-    fig.tight_layout()
+    fig.suptitle("1,000-step mixtures containing TwiBot20")
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
     fig.savefig(figures / "mixture_diversity_trajectory_raw.png", dpi=180)
     plt.close(fig)
 

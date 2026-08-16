@@ -15,8 +15,9 @@ all checkpoints, summarizes the diversity trajectories, and identifies models wh
 
 Committed evidence includes the original four JSONL shards, continuation shards under
 `data/trajectory/`, consolidated trajectory CSVs, and figures under `figures/`.
-`mixture_diversity_trajectory_raw.png` shows every 1,000-step donor subset without averaging;
-gray lines connect the same trained model across checkpoints.
+`mixture_diversity_trajectory_raw.png` shows every 1,000-step donor subset containing
+TwiBot20 without averaging. TwiBot20 is absent as an evaluation panel because a held-out
+target cannot also occur in its training mixture.
 
 ```bash
 /opt/homebrew/bin/python3.11 analyze.py \
