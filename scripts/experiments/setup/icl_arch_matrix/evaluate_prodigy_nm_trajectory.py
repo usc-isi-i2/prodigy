@@ -22,7 +22,7 @@ def parse_steps(text: str) -> list[int]:
     steps = [int(part.strip()) for part in text.split(",") if part.strip()]
     if not steps or len(steps) != len(set(steps)):
         raise ValueError(f"checkpoint steps must be a non-empty unique list, got {text!r}")
-    unsupported = sorted(set(steps) - {0, 20, 60, 100})
+    unsupported = sorted(set(steps) - {0, 20, 60, 100, 300, 900, 2000, 2500})
     if unsupported:
         raise ValueError(f"unsupported checkpoint steps: {unsupported}")
     return sorted(steps)
@@ -41,6 +41,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--checkpoint-steps", default="0,20,60,100")
     parser.add_argument("--device", default="0")
     parser.add_argument("--eval-episode-seed-offset", type=int, default=0)
+    parser.add_argument("--training-seed", type=int, default=0)
+    parser.add_argument(
+        "--checkpoint-layout",
+        choices=("architecture-matrix", "saturation"),
+        default="architecture-matrix",
+    )
     return parser.parse_args()
 
 
@@ -54,10 +60,15 @@ def specialist(model_id: str):
 def checkpoint_path(args: argparse.Namespace, model_id: str, step: int) -> Path | None:
     if step == 0:
         return None
+    run_name = (
+        f"archmatrix_prodigy_{model_id}_s0_{args.run_stamp}"
+        if args.checkpoint_layout == "architecture-matrix"
+        else f"archsat_prodigy_{model_id}_s{args.training_seed}_{args.run_stamp}"
+    )
     return (
         args.state_root
         / "prodigy"
-        / f"archmatrix_prodigy_{model_id}_s0_{args.run_stamp}"
+        / run_name
         / "checkpoint"
         / f"state_dict_{step}.ckpt"
     )
@@ -74,7 +85,7 @@ def resolved_params(
     argv = [
         "--config", str(args.config),
         "--device", str(args.device),
-        "--seed", "0",
+        "--seed", str(args.training_seed),
         "--eval_episode_seed_offset", str(args.eval_episode_seed_offset),
         "--prefix", f"archmatrix_prodigy_nm_{model_id}_step{step}",
         "--timestamp", args.eval_run_stamp,
@@ -144,7 +155,8 @@ def main() -> int:
                     "architecture": "prodigy",
                     "model_id": model.model_id,
                     "sources": list(model.sources),
-                    "seed": 0,
+                    "seed": args.training_seed,
+                    "training_seed": args.training_seed,
                     "eval_episode_seed_offset": args.eval_episode_seed_offset,
                     "checkpoint_step": step,
                     "checkpoint": str(checkpoint) if checkpoint is not None else None,

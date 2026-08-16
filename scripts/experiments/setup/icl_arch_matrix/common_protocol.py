@@ -111,6 +111,7 @@ def build_loader(
     batch_count: int,
     batch_size: int,
     workers: int = 0,
+    eval_episode_seed_offset: int = 0,
 ):
     from data.covid19_twitter import get_covid19_twitter_dataloader
 
@@ -141,6 +142,7 @@ def build_loader(
         neighbor_matching_edge_split=True,
         epochs=1,
         seed=0,
+        eval_episode_seed_offset=eval_episode_seed_offset,
     )
 
 

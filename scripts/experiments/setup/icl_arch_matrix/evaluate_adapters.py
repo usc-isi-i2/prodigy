@@ -41,7 +41,10 @@ def parse_args():
     parser.add_argument("--workers", type=int, default=0)
     parser.add_argument("--model-ids", default="")
     parser.add_argument("--datasets", default="")
-    parser.add_argument("--checkpoint-step", type=int, choices=(20, 60, 100), default=TRAIN_STEPS)
+    parser.add_argument("--include-facebook", action="store_true")
+    parser.add_argument("--checkpoint-step", type=int, default=TRAIN_STEPS)
+    parser.add_argument("--training-seed", type=int, default=0)
+    parser.add_argument("--run-name", default="")
     parser.add_argument("--eval-episode-seed-offset", type=int, default=0)
     parser.add_argument(
         "--random-init",
@@ -102,8 +105,8 @@ def evaluate_model(model, loader, device, *, n_query: int, equal_query_counts: b
 def main() -> int:
     args = parse_args()
     torch.set_num_threads(16)
-    torch.manual_seed(0)
-    torch.cuda.manual_seed_all(0)
+    torch.manual_seed(args.training_seed)
+    torch.cuda.manual_seed_all(args.training_seed)
     device = torch.device(f"cuda:{args.device}" if torch.cuda.is_available() else "cpu")
     selected = set(filter(None, args.model_ids.split(",")))
     if args.random_init:
@@ -124,7 +127,7 @@ def main() -> int:
     if result_path.exists():
         raise FileExistsError(f"refusing to overwrite results: {result_path}")
     result_path.parent.mkdir(parents=True, exist_ok=True)
-    targets = classification_targets(args.catalog)
+    targets = classification_targets(args.catalog, include_facebook=args.include_facebook)
     selected_datasets = set(filter(None, args.datasets.split(",")))
     if selected_datasets:
         missing = selected_datasets - targets.keys()
@@ -141,8 +144,8 @@ def main() -> int:
                 target=target,
             )
             for plan_model in models:
-                torch.manual_seed(0)
-                torch.cuda.manual_seed_all(0)
+                torch.manual_seed(args.training_seed)
+                torch.cuda.manual_seed_all(args.training_seed)
                 model = build_adapter(args.architecture, args.upstream_root)
                 checkpoint = None
                 checkpoint_step = 0 if args.random_init else args.checkpoint_step
@@ -150,7 +153,14 @@ def main() -> int:
                     checkpoint_path = (
                         Path(args.state_root)
                         / args.architecture
-                        / plan_model.model_id
+                        / (
+                            args.run_name
+                            or (
+                                plan_model.model_id
+                                if args.training_seed == 0
+                                else f"{plan_model.model_id}_s{args.training_seed}"
+                            )
+                        )
                         / "checkpoint"
                         / f"state_dict_{checkpoint_step}.pt"
                     )
@@ -185,7 +195,8 @@ def main() -> int:
                     "architecture": args.architecture,
                     "model_id": plan_model.model_id,
                     "sources": list(plan_model.sources),
-                    "seed": 0,
+                    "seed": args.training_seed,
+                    "training_seed": args.training_seed,
                     "eval_episode_seed_offset": args.eval_episode_seed_offset,
                     "checkpoint_step": checkpoint_step,
                     "baseline": "random_init" if args.random_init else "pretrained",

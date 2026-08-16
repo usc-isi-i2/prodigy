@@ -82,7 +82,7 @@ def parse_args():
     parser.add_argument("--checkpoint-step", type=int, default=TRAIN_STEPS)
     parser.add_argument(
         "--checkpoint-layout",
-        choices=("architecture-matrix", "final-core"),
+        choices=("architecture-matrix", "final-core", "saturation"),
         default="architecture-matrix",
     )
     parser.add_argument("--training-seed", type=int, default=0)
@@ -104,9 +104,17 @@ def checkpoint_path(args, model_id: str, checkpoint_step: int) -> Path:
             / "checkpoint"
             / f"state_dict_{checkpoint_step}.ckpt"
         )
+    if args.checkpoint_layout == "final-core":
+        return (
+            Path(args.state_root)
+            / f"finalcore_{model_id}_s{args.training_seed}_{args.run_stamp}"
+            / "checkpoint"
+            / f"state_dict_{checkpoint_step}.ckpt"
+        )
     return (
         Path(args.state_root)
-        / f"finalcore_{model_id}_s{args.training_seed}_{args.run_stamp}"
+        / "prodigy"
+        / f"archsat_prodigy_{model_id}_s{args.training_seed}_{args.run_stamp}"
         / "checkpoint"
         / f"state_dict_{checkpoint_step}.ckpt"
     )
@@ -133,7 +141,7 @@ def resolved_params(args, dataset_name, target, graph_path, checkpoint, model_id
         "--val_len_cap", str(EVAL_EPISODES // EVAL_BATCH_SIZE),
         "--test_len_cap", str(EVAL_EPISODES // EVAL_BATCH_SIZE),
         "--workers", "0",
-        "--seed", "0",
+        "--seed", str(args.training_seed),
         "--eval_episode_seed_offset", str(args.eval_episode_seed_offset),
         "--eval_only", "True",
         "--eval_only_split", "test",
