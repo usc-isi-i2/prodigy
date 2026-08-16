@@ -86,11 +86,22 @@ Use a dedicated worktree and check `tmux ls` before changing it. The default use
 GPU 0 and loads the large merge once. Use `GPUS="0 1"` only after confirming host RAM
 can hold two copies; GPUs other than 0 and 1 are currently off limits.
 
+If an owned GPU is busy, `wait_and_train_tucker.sh` waits for it to remain below
+1,000 MiB and 10% utilization for four consecutive 30-second polls before launching.
+This avoids stealing a brief gap between jobs in another experiment's queue.
+
 ```bash
 tmux new-session -d -s mixdiv2k \
   'export PATH="/home/mhchu/miniconda3/bin:$PATH"; \
    GPUS="0" bash scripts/experiments/setup/nm_mixture_diversity_heldout_cls_2k/run_train_tucker.sh \
    > scripts/experiments/setup/nm_mixture_diversity_heldout_cls_2k/run_logs/orchestrator.log 2>&1'
+```
+
+Or leave a persistent waiter when GPU 0 is occupied:
+
+```bash
+tmux new-session -d -s mixdiv2k-wait \
+  'GPU=0 bash scripts/experiments/setup/nm_mixture_diversity_heldout_cls_2k/wait_and_train_tucker.sh'
 ```
 
 Completed step-2000 checkpoints are skipped on restart. Filters are available for a
