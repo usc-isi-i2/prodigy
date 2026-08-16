@@ -57,6 +57,15 @@ def _concat_global_eval_parts(parts):
     return merged
 
 
+def _global_eval_matches_local_class_space(global_eval, local_predictions):
+    """Use global labels only when they describe the same fixed class space."""
+    return (
+        global_eval is not None
+        and local_predictions.ndim == 2
+        and int(global_eval["probs"].shape[1]) == int(local_predictions.shape[1])
+    )
+
+
 def _config_safe_value(value):
     if isinstance(value, torch.device):
         return str(value)
@@ -1567,7 +1576,7 @@ class TrainerFS():
                 return metrics
 
             # Multi-logit classification case.
-            if global_eval is not None:
+            if _global_eval_matches_local_class_space(global_eval, yp):
                 y_true = global_eval["y_true"].numpy().astype(int)
                 y_pred = global_eval["y_pred"].numpy().astype(int)
                 probs = global_eval["probs"].numpy()
