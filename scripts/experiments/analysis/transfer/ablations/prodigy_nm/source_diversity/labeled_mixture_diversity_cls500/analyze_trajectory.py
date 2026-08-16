@@ -318,6 +318,67 @@ def main() -> None:
     fig.savefig(figures / "mixture_diversity_trajectory.png", dpi=180)
     plt.close(fig)
 
+    # Explicit 1k-only averaged view, retained alongside the all-checkpoint trajectory.
+    fig, axes = plt.subplots(2, 3, figsize=(13, 8), sharex=True, sharey=True)
+    for axis, (title, target) in zip(axes.flat, panels):
+        curve = macro_curves[1000] if target is None else [
+            target_means[(1000, target, k)] for k in range(1, 5)
+        ]
+        axis.plot(ks, curve, marker="o", color="C2")
+        axis.set_title(title)
+        axis.set_xticks(ks)
+        axis.grid(alpha=0.2)
+    for axis in axes[-1]:
+        axis.set_xlabel("Number of held-in pretraining graphs")
+    for axis in axes[:, 0]:
+        axis.set_ylabel("Held-out ROC-AUC")
+    fig.suptitle("1,000-step mixture-diversity averages")
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
+    fig.savefig(figures / "mixture_diversity_trajectory_averaged_1000.png", dpi=180)
+    plt.close(fig)
+
+    # Explicit 1k-only raw view containing all 75 held-out mixture cells.
+    fig, axes = plt.subplots(2, 3, figsize=(13, 8), sharex=True, sharey=True)
+    for axis, target in zip(axes.flat[:5], TARGETS):
+        target_rows = [
+            row for row in rows
+            if row["target"] == target
+            and endpoint(row) == "heldout"
+            and int(row["training_steps"]) == 1000
+        ]
+        model_jitter = {}
+        for k in range(1, 5):
+            model_ids = sorted({
+                row["model_id"] for row in target_rows
+                if int(row["mixture_size"]) == k
+            })
+            jitters = np.linspace(-0.12, 0.12, len(model_ids)) if len(model_ids) > 1 else [0.0]
+            model_jitter.update(dict(zip(model_ids, jitters)))
+        xs = [
+            int(row["mixture_size"]) + model_jitter[row["model_id"]]
+            for row in target_rows
+        ]
+        axis.scatter(
+            xs, [float(row["roc_auc"]) for row in target_rows],
+            s=28, alpha=0.85, color="C2", zorder=2,
+        )
+        axis.set_title(target.replace("_", " "))
+        axis.set_xticks(ks)
+        axis.grid(alpha=0.2)
+    axes.flat[5].axis("off")
+    axes.flat[5].text(
+        0.5, 0.5, "Each point is one exact donor subset.",
+        ha="center", va="center", transform=axes.flat[5].transAxes,
+    )
+    for axis in axes[-1, :2]:
+        axis.set_xlabel("Number of held-in pretraining graphs")
+    for axis in axes[:, 0]:
+        axis.set_ylabel("Held-out ROC-AUC")
+    fig.suptitle("All 1,000-step held-out mixtures")
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
+    fig.savefig(figures / "mixture_diversity_trajectory_all_points.png", dpi=180)
+    plt.close(fig)
+
     # Five raw 1k-cell views, each filtered to mixtures containing one graph. The
     # filter graph cannot also be a target because held-out targets are absent from
     # their training mixtures.

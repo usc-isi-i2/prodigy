@@ -18,6 +18,9 @@ Committed evidence includes the original four JSONL shards, continuation shards 
 The five `mixture_diversity_trajectory_contains_<graph>.png` figures show every 1,000-step
 donor subset containing the named graph, without averaging. The filter graph is absent
 as an evaluation panel because a held-out target cannot also occur in its training mixture.
+`mixture_diversity_trajectory_all_points.png` retains all 75 exact 1,000-step held-out
+mixtures, while `mixture_diversity_trajectory_averaged_1000.png` averages those cells by
+mixture size in macro and per-target panels.
 
 ```bash
 /opt/homebrew/bin/python3.11 analyze.py \
