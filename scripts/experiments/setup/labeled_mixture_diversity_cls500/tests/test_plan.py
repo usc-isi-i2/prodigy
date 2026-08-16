@@ -18,3 +18,12 @@ def test_manifests():
     here = Path(__file__).resolve().parents[1]
     assert (here / "manifest.tsv").read_text() == render_train()
     assert (here / "evaluation_manifest.tsv").read_text() == render_eval()
+
+
+def test_training_uses_isolated_worker_processes():
+    here = Path(__file__).resolve().parents[1]
+    config = (here / "train.yaml").read_text()
+    launcher = (here / "run_train_tucker.sh").read_text()
+    assert "workers: 2\n" in config
+    assert '--model-prefix "${prefix}"' in launcher
+    assert "timeout --signal=TERM" in launcher

@@ -11,8 +11,10 @@ CLS cells (15 per target). Every model gets exactly 500 optimizer steps; evaluat
 uses 500 deterministic 10-shot episodes per target.
 
 The protocol matches final-core (`static_train`, real static split, 2-hop `9,9`,
-101-node cap, batch size 4, learning rate 0.002). Training uses zero loader workers to
-avoid the cross-model worker deadlock found in the superseded 2k sweep.
+101-node cap, batch size 4, learning rate 0.002). Training uses two loader workers and
+launches every model in a fresh Python process. This matches the process isolation of
+earlier successful sweeps and prevents worker state from crossing model boundaries.
+Each model also has a 30-minute timeout, so a loader failure cannot hang the sweep.
 
 ```bash
 python3 scripts/experiments/setup/labeled_mixture_diversity_cls500/make_plan.py --check

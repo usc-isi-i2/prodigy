@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Train one plan shard while loading the all-nine graph only once."""
+"""Train one plan shard, or one exact model selected by prefix."""
 
 from __future__ import annotations
 
@@ -41,8 +41,12 @@ def resolved(row, args, stamp):
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--device", type=int, required=True)
-    parser.add_argument("--shard-index", type=int, required=True)
-    parser.add_argument("--num-shards", type=int, required=True)
+    parser.add_argument("--shard-index", type=int, default=0)
+    parser.add_argument("--num-shards", type=int, default=1)
+    parser.add_argument(
+        "--model-prefix", default="",
+        help="train exactly one plan row; used to isolate DataLoader workers per model",
+    )
     parser.add_argument("--state-root", type=Path, default=REPO_ROOT / "state")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
@@ -51,7 +55,15 @@ def main() -> int:
     if not 0 <= args.shard_index < args.num_shards:
         parser.error("bad shard")
     validate()
-    selected = [row for index, row in enumerate(rows()) if index % args.num_shards == args.shard_index]
+    if args.model_prefix:
+        selected = [row for row in rows() if row["prefix"] == args.model_prefix]
+        if not selected:
+            parser.error(f"unknown model prefix: {args.model_prefix}")
+    else:
+        selected = [
+            row for index, row in enumerate(rows())
+            if index % args.num_shards == args.shard_index
+        ]
     pending = [row for row in selected if complete(args.state_root, str(row["prefix"])) is None]
     print(f"selected={len(selected)} pending={len(pending)} device={args.device}", flush=True)
     for row in selected:

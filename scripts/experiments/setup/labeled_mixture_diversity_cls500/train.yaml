@@ -40,8 +40,9 @@ eval_step: 100000
 checkpoint_step: 500
 checkpoint_steps: "500"
 print_step: 100
-# Zero workers avoids the cross-model worker deadlock observed in the first sweep.
-workers: 0
+# Each model runs in a fresh Python process, so DataLoader worker state cannot leak
+# across models. Two workers gave ~9.6 steps/s in the original 2k pilot.
+workers: 2
 device: 0
 seed: 0
 prefix: labmix500_placeholder
