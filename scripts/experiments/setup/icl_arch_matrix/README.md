@@ -31,6 +31,9 @@ off-diagonal transfer cells. `CHECKPOINT_STEPS` can select any subset of `20 60 
 `evaluate_prodigy.py --include-facebook --datasets facebook_page_reference` extends a
 PRODIGY evaluation with the Facebook page-reference graph's primary 30-way page-category
 labels without changing the frozen four-target matrix protocol.
+`run_prodigy_facebook_trajectory_tucker.sh` runs that extension over checkpoints
+20, 60, and 100; use `GPU`, `MODEL_IDS`, and `DO_RANDOM_INIT` to split it safely across
+the two owned Tucker GPUs.
 
 Use `MODEL_IDS=ss_ukr_rus` with the Tucker launchers for a one-cell pilot. A full launch
 uses all 31 source sets. Only Tucker GPUs 0 and 1 are accepted by the training launcher.
