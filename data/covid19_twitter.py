@@ -339,7 +339,9 @@ def get_covid19_twitter_dataloader(
         **kwargs
 ) -> DataLoader:
     del root
-    seed = sum(ord(c) for c in split)
+    seed = sum(ord(c) for c in split) + int(
+        kwargs.get("eval_episode_seed_offset", 0) or 0
+    )
     graph = dataset.graph
     task_name = kwargs.get("task_name", "neighbor_matching")
     aug_by_task = None  # set only by the nm_fp_cl rotation branch (per-episode aug map)
