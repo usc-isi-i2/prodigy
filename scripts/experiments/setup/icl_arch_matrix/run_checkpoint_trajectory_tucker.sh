@@ -11,6 +11,8 @@ RUN_STAMP="${RUN_STAMP:-20260810}"
 CHECKPOINT_STEPS_TEXT="${CHECKPOINT_STEPS:-20 60}"
 MODEL_IDS_TEXT="${MODEL_IDS:-ss_covid_political ss_election2020 ss_ukr_rus_suspended ss_twibot20}"
 DRY_RUN="${DRY_RUN:-0}"
+WAIT_FOR_GPUS="${WAIT_FOR_GPUS:-1}"
+GPU_FREE_MIB="${GPU_FREE_MIB:-2000}"
 read -r -a CHECKPOINT_STEPS_ARRAY <<< "$CHECKPOINT_STEPS_TEXT"
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
@@ -24,6 +26,23 @@ mkdir -p "$LOG_ROOT/results" "$LOG_ROOT/queue" "$LOG_ROOT/prodigy_state"
 cd "$REPO_ROOT"
 
 model_ids_csv="${MODEL_IDS_TEXT// /,}"
+
+wait_for_owned_gpus() {
+  [[ "$WAIT_FOR_GPUS" == 1 ]] || return 0
+  while true; do
+    mapfile -t used_mib < <(
+      nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i 0,1
+    )
+    if (( ${#used_mib[@]} == 2 )) \
+      && (( used_mib[0] < GPU_FREE_MIB )) \
+      && (( used_mib[1] < GPU_FREE_MIB )); then
+      return 0
+    fi
+    echo "waiting for Tucker GPUs 0 and 1 utc=$(date -u +%FT%TZ) used_mib=${used_mib[*]:-unknown}"
+    sleep 60
+  done
+}
+
 for step in "${CHECKPOINT_STEPS_ARRAY[@]}"; do
   [[ "$step" == 20 || "$step" == 60 || "$step" == 100 ]] || {
     echo "unsupported checkpoint step: $step" >&2
@@ -48,6 +67,7 @@ for step in "${CHECKPOINT_STEPS_ARRAY[@]}"; do
     continue
   fi
 
+  wait_for_owned_gpus
   CUDA_VISIBLE_DEVICES=0 "${prodigy_cmd[@]}" > "$LOG_ROOT/queue/prodigy_step${step}.log" 2>&1 & p0=$!
   CUDA_VISIBLE_DEVICES=1 "${vision_cmd[@]}" > "$LOG_ROOT/queue/vision_step${step}.log" 2>&1 & p1=$!
   status=0
