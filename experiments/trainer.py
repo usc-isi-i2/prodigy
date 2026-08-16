@@ -39,6 +39,24 @@ def _log(msg):
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
+def _concat_global_eval_parts(parts):
+    """Concatenate classification diagnostics with ragged class coverage."""
+    if not parts:
+        return None
+    max_classes = max(int(part["probs"].shape[1]) for part in parts)
+    merged = {}
+    for key in parts[0]:
+        tensors = []
+        for part in parts:
+            tensor = part[key]
+            if key == "probs" and int(tensor.shape[1]) < max_classes:
+                padding = tensor.new_zeros((tensor.shape[0], max_classes - tensor.shape[1]))
+                tensor = torch.cat((tensor, padding), dim=1)
+            tensors.append(tensor)
+        merged[key] = torch.cat(tensors, dim=0)
+    return merged
+
+
 def _config_safe_value(value):
     if isinstance(value, torch.device):
         return str(value)
@@ -2282,12 +2300,7 @@ class TrainerFS():
             acc_global = float(np.mean(acc_all))
         else:
             loss_global, acc_global = self.get_loss_and_acc(ytrueall, ypredall)
-        global_eval = None
-        if global_eval_parts:
-            global_eval = {
-                key: torch.cat([part[key] for part in global_eval_parts], dim=0)
-                for key in global_eval_parts[0].keys()
-            }
+        global_eval = _concat_global_eval_parts(global_eval_parts)
         eval_metrics = self._compute_eval_metrics(ytrueall, ypredall, global_eval=global_eval)
         self._maybe_log_eval_diagnostics(ytrueall, ypredall, split_name=split_name, step=step)
         self._maybe_save_roc_curve(
