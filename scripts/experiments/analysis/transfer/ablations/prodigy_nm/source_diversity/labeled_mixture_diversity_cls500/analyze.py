@@ -10,6 +10,8 @@ from collections import defaultdict
 from pathlib import Path
 import statistics
 
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -116,6 +118,31 @@ def main():
         })
     write_csv(out / "data" / "endpoint_controls.csv", endpoint_rows, list(endpoint_rows[0]))
 
+    # Every target has a complete subset lattice over its four eligible donors.
+    # Compare each subset with the otherwise-identical subset after adding one donor.
+    by_subset = {
+        (row["target"], frozenset(row["donors"])): float(row["roc_auc"])
+        for row in heldout
+    }
+    marginal_rows = []
+    for target in TARGETS:
+        donors = sorted(set().union(*(
+            set(row["donors"]) for row in heldout if row["target"] == target
+        )))
+        for donor in donors:
+            deltas = []
+            for (row_target, subset), value in by_subset.items():
+                expanded = frozenset(set(subset) | {donor})
+                if row_target == target and donor not in subset and (target, expanded) in by_subset:
+                    deltas.append(by_subset[(target, expanded)] - value)
+            assert len(deltas) == 7
+            marginal_rows.append({
+                "target": target, "added_donor": donor, "n_subset_edges": len(deltas),
+                "mean_auc_delta": statistics.mean(deltas), "min_auc_delta": min(deltas),
+                "max_auc_delta": max(deltas),
+            })
+    write_csv(out / "data" / "marginal_donor_effects.csv", marginal_rows, list(marginal_rows[0]))
+
     ks = np.array([1, 2, 3, 4], dtype=float)
     slopes = {
         target: float(np.polyfit(ks, [target_means[target][k] for k in range(1, 5)], 1)[0])
@@ -126,6 +153,11 @@ def main():
         for k in range(1, 5)
     ]
     macro_slope = float(np.polyfit(ks, macro, 1)[0])
+    endpoint_means = {
+        key: statistics.mean(float(row[key]) for row in endpoint_rows)
+        for key in ("heldout_k4_auc", "target_only_auc", "all_five_auc",
+                    "all_five_minus_k4", "target_only_minus_k4")
+    }
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.6))
     for target in TARGETS:
@@ -147,15 +179,33 @@ def main():
     plt.close(fig)
 
     lines = [
-        "# Results", "",
+        "# Results", "", "## Answer", "",
+        "**At a fixed 500-step budget, broader labeled mixtures improve held-out "
+        "classification on average, but the effect is target- and donor-dependent rather "
+        "than universal.**", "",
         f"Across targets, mean held-out ROC-AUC rises from {macro[0]:.4f} at one source "
         f"to {macro[-1]:.4f} at four sources (difference {macro[-1]-macro[0]:+.4f}; "
         f"linear slope {macro_slope:+.4f} per added source).", "",
         "Target-specific slopes: " + ", ".join(f"`{t}` {s:+.4f}" for t, s in slopes.items()) + ".", "",
-        "Endpoint controls are reported in `data/endpoint_controls.csv`; all evaluations use "
-        "the same 500 paired episodes within each target.", "",
-        "This is a seed-0 fixed-total-compute result. It estimates the practical effect of "
-        "diversity under a 500-step budget, not a fixed-per-source-exposure causal effect.",
+        "The positive macro curve is driven by Covid Political and TwiBot. Election 2020 is "
+        "already near ceiling, Facebook is flat on average, and Ukraine Suspended remains "
+        "near chance.", "", "## Endpoint controls", "",
+        f"The four-source held-out mean is {endpoint_means['heldout_k4_auc']:.4f}, versus "
+        f"{endpoint_means['target_only_auc']:.4f} for target-only pretraining and "
+        f"{endpoint_means['all_five_auc']:.4f} for all-five pretraining. Adding the target "
+        f"to the mixture therefore changes mean AUC by {endpoint_means['all_five_minus_k4']:+.4f}; "
+        "it does not produce a general in-domain jump under fixed total compute.", "",
+        "The endpoint response is also heterogeneous: all-five helps Facebook strongly, is "
+        "neutral on Election, and is worse than the held-out four-source model on Covid "
+        "Political, Ukraine Suspended, and TwiBot.", "", "## What drives the curve", "",
+        "Subset-lattice contrasts in `data/marginal_donor_effects.csv` show donor compatibility, "
+        "not source count alone. TwiBot benefits most from adding Covid Political and Election; "
+        "Facebook benefits from TwiBot but is hurt by Ukraine Suspended; Covid Political "
+        "benefits most from Ukraine Suspended and TwiBot.", "", "## Scope", "",
+        "All models use seed 0, 500 optimizer steps, and 500 paired evaluation episodes per "
+        "target. Paired fingerprints remove evaluation-set variation across arms, but there is "
+        "no training-seed uncertainty yet. The experiment estimates the practical effect of "
+        "diversity under fixed total compute; it does not hold per-source exposure constant.",
     ]
     (out / "RESULTS.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"validated {len(heldout)} held-out and {len(controls)} control cells")
