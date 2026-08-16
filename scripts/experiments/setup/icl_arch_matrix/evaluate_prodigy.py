@@ -79,7 +79,13 @@ def parse_args():
         action="store_true",
         help="Add facebook_page_reference to the original four-target panel.",
     )
-    parser.add_argument("--checkpoint-step", type=int, choices=(20, 60, 100), default=TRAIN_STEPS)
+    parser.add_argument("--checkpoint-step", type=int, default=TRAIN_STEPS)
+    parser.add_argument(
+        "--checkpoint-layout",
+        choices=("architecture-matrix", "final-core"),
+        default="architecture-matrix",
+    )
+    parser.add_argument("--training-seed", type=int, default=0)
     parser.add_argument("--eval-episode-seed-offset", type=int, default=0)
     parser.add_argument(
         "--random-init",
@@ -87,6 +93,23 @@ def parse_args():
         help="Evaluate one deterministically initialized, untrained PRODIGY model.",
     )
     return parser.parse_args()
+
+
+def checkpoint_path(args, model_id: str, checkpoint_step: int) -> Path:
+    if args.checkpoint_layout == "architecture-matrix":
+        return (
+            Path(args.state_root)
+            / "prodigy"
+            / f"archmatrix_prodigy_{model_id}_s0_{args.run_stamp}"
+            / "checkpoint"
+            / f"state_dict_{checkpoint_step}.ckpt"
+        )
+    return (
+        Path(args.state_root)
+        / f"finalcore_{model_id}_s{args.training_seed}_{args.run_stamp}"
+        / "checkpoint"
+        / f"state_dict_{checkpoint_step}.ckpt"
+    )
 
 
 def resolved_params(args, dataset_name, target, graph_path, checkpoint, model_id, checkpoint_step):
@@ -119,7 +142,8 @@ def resolved_params(args, dataset_name, target, graph_path, checkpoint, model_id
         "--ignore_label_embeddings", "False",
         "--linear_probe", "False",
         "--device", str(args.device),
-        "--prefix", f"archmatrix_prodigy_eval_{model_id}_{dataset_name}_step{checkpoint_step}",
+        "--prefix",
+        f"archmatrix_prodigy_eval_{model_id}_s{args.training_seed}_step{checkpoint_step}_{dataset_name}",
         "--timestamp", args.run_stamp,
         "--state_dir", eval_state_root,
         "--log_dir", args.log_root,
@@ -146,6 +170,8 @@ def main() -> int:
         models = [model for model in build_models() if not selected or model.model_id in selected]
         if selected and selected != {model.model_id for model in models}:
             raise ValueError(f"unknown model ids: {sorted(selected - {m.model_id for m in models})}")
+        if args.checkpoint_layout == "architecture-matrix" and args.training_seed != 0:
+            raise ValueError("architecture-matrix checkpoints exist only for training seed 0")
     result_path = Path(args.results)
     if result_path.exists():
         raise FileExistsError(f"refusing to overwrite results: {result_path}")
@@ -169,13 +195,7 @@ def main() -> int:
                 checkpoint = None
                 checkpoint_step = 0 if args.random_init else args.checkpoint_step
                 if not args.random_init:
-                    checkpoint = (
-                        Path(args.state_root)
-                        / "prodigy"
-                        / f"archmatrix_prodigy_{plan_model.model_id}_s0_{args.run_stamp}"
-                        / "checkpoint"
-                        / f"state_dict_{checkpoint_step}.ckpt"
-                    )
+                    checkpoint = checkpoint_path(args, plan_model.model_id, checkpoint_step)
                     if not checkpoint.is_file():
                         raise FileNotFoundError(checkpoint)
                 params = resolved_params(
@@ -212,6 +232,8 @@ def main() -> int:
                         "model_id": plan_model.model_id,
                         "sources": list(plan_model.sources),
                         "seed": 0,
+                        "training_seed": args.training_seed,
+                        "evaluation_seed": 0,
                         "eval_episode_seed_offset": args.eval_episode_seed_offset,
                         "checkpoint_step": checkpoint_step,
                         "baseline": "random_init" if args.random_init else "pretrained",
