@@ -2,24 +2,25 @@
 
 ## Answer
 
-**At a fixed 500-step budget, broader labeled mixtures improve held-out classification on average, but the effect is target- and donor-dependent rather than universal.**
+**Mixture diversity improves held-out CLS performance under fixed compute, and the positive macro relationship remains after continuing every model to 1,000 steps. The size of the effect is target- and donor-dependent.**
 
-Across targets, mean held-out ROC-AUC rises from 0.7101 at one source to 0.7464 at four sources (difference +0.0363; linear slope +0.0118 per added source).
+- At 500 steps, macro held-out ROC-AUC moves from 0.7101 for one source to 0.7464 for four sources (+0.0363; slope +0.0118 per added source).
+- At 750 steps, macro held-out ROC-AUC moves from 0.7067 for one source to 0.7421 for four sources (+0.0355; slope +0.0115 per added source).
+- At 1000 steps, macro held-out ROC-AUC moves from 0.7061 for one source to 0.7475 for four sources (+0.0414; slope +0.0133 per added source).
 
-Target-specific slopes: `covid_political` +0.0260, `election2020` -0.0004, `facebook_page_reference` +0.0013, `ukr_rus_suspended` -0.0042, `twibot20` +0.0361.
+At 1,000 steps, target-specific diversity slopes are: `covid_political` +0.0309, `election2020` +0.0002, `facebook_page_reference` +0.0053, `ukr_rus_suspended` +0.0035, `twibot20` +0.0263.
 
-The positive macro curve is driven by Covid Political and TwiBot. Election 2020 is already near ceiling, Facebook is flat on average, and Ukraine Suspended remains near chance.
+## Convergence check
+
+From 750 to 1,000 steps, the 75 held-out cells change by -0.0038 ROC-AUC on average; median absolute change is 0.0075, mean absolute change is 0.0156, and 29/75 cells move by more than 0.01.
+A strict model-level rule that continues any model with at least one evaluation cell moving by more than 0.01 selects 20/31 models; they are listed in `data/trajectory_model_convergence.csv`.
+
+This is a checkpoint-stability diagnostic, not proof of asymptotic convergence. The fixed-compute diversity result is stable across checkpoints, but a fully convergence-controlled comparison requires continuing the selected models.
 
 ## Endpoint controls
 
-The four-source held-out mean is 0.7464, versus 0.7395 for target-only pretraining and 0.7419 for all-five pretraining. Adding the target to the mixture therefore changes mean AUC by -0.0045; it does not produce a general in-domain jump under fixed total compute.
-
-The endpoint response is also heterogeneous: all-five helps Facebook strongly, is neutral on Election, and is worse than the held-out four-source model on Covid Political, Ukraine Suspended, and TwiBot.
-
-## What drives the curve
-
-Subset-lattice contrasts in `data/marginal_donor_effects.csv` show donor compatibility, not source count alone. TwiBot benefits most from adding Covid Political and Election; Facebook benefits from TwiBot but is hurt by Ukraine Suspended; Covid Political benefits most from Ukraine Suspended and TwiBot.
+At 1,000 steps, macro ROC-AUC is 0.7475 for the four-source held-out model, 0.7466 for target-only training, and 0.7543 for all-five training. Adding the target to the four-source mixture changes the macro mean by +0.0067.
 
 ## Scope
 
-All models use seed 0, 500 optimizer steps, and 500 paired evaluation episodes per target. Paired fingerprints remove evaluation-set variation across arms, but there is no training-seed uncertainty yet. The experiment estimates the practical effect of diversity under fixed total compute; it does not hold per-source exposure constant.
+All arms use training seed 0 and 500 paired 10-shot CLS evaluation episodes. Fingerprints are identical within each target across all arms and checkpoints. The experiment holds total optimizer steps fixed within each checkpoint; it does not hold per-source exposure fixed and does not estimate training-seed uncertainty.
