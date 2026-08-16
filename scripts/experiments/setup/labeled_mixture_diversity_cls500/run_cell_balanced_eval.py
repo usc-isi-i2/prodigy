@@ -95,7 +95,7 @@ def jobs_for(training_steps: list[int], modes: list[str]) -> list[Job]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--gpus", default="0 1 0 1 0")
+    parser.add_argument("--gpus", nargs="+", default=["0", "1", "0", "1", "0"])
     parser.add_argument(
         "--state-root", type=Path,
         default=Path("/dataMeR1/phil/gfm/prodigy-mixconv/state_labmix500_continuation"),
@@ -113,7 +113,7 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    gpus = args.gpus.split()
+    gpus = args.gpus
     if not gpus or any(gpu not in {"0", "1"} for gpu in gpus):
         parser.error("--gpus must contain only owned Tucker GPUs 0 and 1")
     if args.threads_per_process < 0 or args.dataloader_workers < 0:
