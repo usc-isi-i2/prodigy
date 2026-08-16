@@ -42,6 +42,7 @@ def parse_args():
     parser.add_argument("--model-ids", default="")
     parser.add_argument("--datasets", default="")
     parser.add_argument("--checkpoint-step", type=int, choices=(20, 60, 100), default=TRAIN_STEPS)
+    parser.add_argument("--eval-episode-seed-offset", type=int, default=0)
     parser.add_argument(
         "--random-init",
         action="store_true",
@@ -164,6 +165,7 @@ def main() -> int:
                     get_dataloader=get_dataloader,
                     graph_path=graph_path,
                     workers=args.workers,
+                    eval_episode_seed_offset=args.eval_episode_seed_offset,
                 )
                 metrics = evaluate_model(
                     model,
@@ -184,6 +186,7 @@ def main() -> int:
                     "model_id": plan_model.model_id,
                     "sources": list(plan_model.sources),
                     "seed": 0,
+                    "eval_episode_seed_offset": args.eval_episode_seed_offset,
                     "checkpoint_step": checkpoint_step,
                     "baseline": "random_init" if args.random_init else "pretrained",
                     "task": "classification",

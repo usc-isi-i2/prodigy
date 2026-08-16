@@ -75,6 +75,7 @@ def parse_args():
     parser.add_argument("--model-ids", default="")
     parser.add_argument("--datasets", default="")
     parser.add_argument("--checkpoint-step", type=int, choices=(20, 60, 100), default=TRAIN_STEPS)
+    parser.add_argument("--eval-episode-seed-offset", type=int, default=0)
     parser.add_argument(
         "--random-init",
         action="store_true",
@@ -105,7 +106,7 @@ def resolved_params(args, dataset_name, target, graph_path, checkpoint, model_id
         "--test_len_cap", str(EVAL_EPISODES // EVAL_BATCH_SIZE),
         "--workers", "0",
         "--seed", "0",
-        "--eval_episode_seed_offset", "0",
+        "--eval_episode_seed_offset", str(args.eval_episode_seed_offset),
         "--eval_only", "True",
         "--eval_only_split", "test",
         "--eval_test_before_train", "False",
@@ -206,6 +207,7 @@ def main() -> int:
                         "model_id": plan_model.model_id,
                         "sources": list(plan_model.sources),
                         "seed": 0,
+                        "eval_episode_seed_offset": args.eval_episode_seed_offset,
                         "checkpoint_step": checkpoint_step,
                         "baseline": "random_init" if args.random_init else "pretrained",
                         "task": "classification",

@@ -318,6 +318,7 @@ def build_classification_loader(
     get_dataloader=None,
     graph_path=None,
     workers: int = 0,
+    eval_episode_seed_offset: int = 0,
 ):
     """Build the exact deterministic test episodes shared by all architectures."""
     if dataset is None:
@@ -343,7 +344,7 @@ def build_classification_loader(
         linear_probe=False,
         task_name="classification",
         eval_random_query=target["eval_random_query"],
-        eval_episode_seed_offset=0,
+        eval_episode_seed_offset=eval_episode_seed_offset,
         seed=0,
     )
 
