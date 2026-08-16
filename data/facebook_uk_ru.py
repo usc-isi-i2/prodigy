@@ -782,7 +782,9 @@ def get_facebook_uk_ru_dataloader(
 ) -> DataLoader:
     del node_split, root
     task_name = kwargs.get("task_name", "classification")
-    seed = sum(ord(c) for c in split)
+    seed = sum(ord(c) for c in split) + int(
+        kwargs.get("eval_episode_seed_offset", 0) or 0
+    )
 
     graph = dataset.graph
     labels = graph.y.numpy()
