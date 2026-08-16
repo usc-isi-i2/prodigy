@@ -8,6 +8,7 @@ LOG_ROOT="${LOG_ROOT:-${REPO_ROOT}/log/icl_arch_matrix/prodigy_facebook_trajecto
 RUN_STAMP="${RUN_STAMP:-20260810}"
 CHECKPOINT_STEPS_TEXT="${CHECKPOINT_STEPS:-20 60 100}"
 MODEL_IDS_TEXT="${MODEL_IDS:-ss_covid_political ss_election2020 ss_ukr_rus_suspended ss_twibot20}"
+DATASETS_TEXT="${DATASETS:-facebook_page_reference}"
 GPU="${GPU:-0}"
 DO_RANDOM_INIT="${DO_RANDOM_INIT:-0}"
 read -r -a CHECKPOINT_STEPS_ARRAY <<< "$CHECKPOINT_STEPS_TEXT"
@@ -39,7 +40,7 @@ for step in "${CHECKPOINT_STEPS_ARRAY[@]}"; do
     --state-root "$STATE_ROOT" \
     --checkpoint-step "$step" \
     --model-ids "$model_ids_csv" \
-    --datasets facebook_page_reference \
+    --datasets "$DATASETS_TEXT" \
     --include-facebook \
     --log-root "$LOG_ROOT/runs/gpu${GPU}_step${step}" \
     --eval-state-root "$LOG_ROOT/eval_state" \
