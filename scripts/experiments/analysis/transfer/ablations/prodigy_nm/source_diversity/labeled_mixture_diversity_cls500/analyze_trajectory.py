@@ -318,15 +318,14 @@ def main() -> None:
     fig.savefig(figures / "mixture_diversity_trajectory.png", dpi=180)
     plt.close(fig)
 
-    # Raw-cell view: preserve every exact donor subset instead of averaging by k.
-    # A gray line connects the same trained model across checkpoints.
+    # Raw 1k-cell view: preserve every exact donor subset instead of averaging by k.
     fig, axes = plt.subplots(2, 3, figsize=(13, 8), sharex=True, sharey=True)
-    step_offsets = {500: -0.14, 750: 0.0, 1000: 0.14}
-    colors = {500: "C0", 750: "C1", 1000: "C2"}
     for axis, target in zip(axes.flat[:5], TARGETS):
         target_rows = [
             row for row in rows
-            if row["target"] == target and endpoint(row) == "heldout"
+            if row["target"] == target
+            and endpoint(row) == "heldout"
+            and int(row["training_steps"]) == 1000
         ]
         model_jitter = {}
         for k in range(1, 5):
@@ -334,32 +333,16 @@ def main() -> None:
                 row["model_id"] for row in target_rows
                 if int(row["mixture_size"]) == k
             })
-            jitters = np.linspace(-0.045, 0.045, len(model_ids)) if len(model_ids) > 1 else [0.0]
+            jitters = np.linspace(-0.12, 0.12, len(model_ids)) if len(model_ids) > 1 else [0.0]
             model_jitter.update(dict(zip(model_ids, jitters)))
-        for model_id in sorted({row["model_id"] for row in target_rows}):
-            model_rows = sorted(
-                [row for row in target_rows if row["model_id"] == model_id],
-                key=lambda row: int(row["training_steps"]),
-            )
-            k = int(model_rows[0]["mixture_size"])
-            xs = [
-                k + step_offsets[int(row["training_steps"])] + model_jitter[model_id]
-                for row in model_rows
-            ]
-            ys = [float(row["roc_auc"]) for row in model_rows]
-            axis.plot(xs, ys, color="0.65", linewidth=0.8, alpha=0.65, zorder=1)
-        for step in STEPS:
-            step_target_rows = [
-                row for row in target_rows if int(row["training_steps"]) == step
-            ]
-            xs = [
-                int(row["mixture_size"]) + step_offsets[step] + model_jitter[row["model_id"]]
-                for row in step_target_rows
-            ]
-            axis.scatter(
-                xs, [float(row["roc_auc"]) for row in step_target_rows],
-                s=24, alpha=0.85, color=colors[step], label=f"{step} steps", zorder=2,
-            )
+        xs = [
+            int(row["mixture_size"]) + model_jitter[row["model_id"]]
+            for row in target_rows
+        ]
+        axis.scatter(
+            xs, [float(row["roc_auc"]) for row in target_rows],
+            s=28, alpha=0.85, color="C2", label="1,000 steps", zorder=2,
+        )
         axis.set_title(target.replace("_", " "))
         axis.set_xticks(ks)
         axis.grid(alpha=0.2)
@@ -367,7 +350,7 @@ def main() -> None:
     handles, labels = axes.flat[0].get_legend_handles_labels()
     axes.flat[5].legend(handles, labels, loc="center", fontsize=10, frameon=False)
     axes.flat[5].text(
-        0.5, 0.33, "Each gray line is one exact donor subset.",
+        0.5, 0.33, "Each point is one exact donor subset.",
         ha="center", va="center", transform=axes.flat[5].transAxes,
     )
     for axis in axes[-1, :2]:
