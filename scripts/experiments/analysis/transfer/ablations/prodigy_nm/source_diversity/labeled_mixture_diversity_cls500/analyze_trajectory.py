@@ -361,7 +361,7 @@ def main() -> None:
     target_index = {target: index for index, target in enumerate(TARGETS)}
     for row in final_marginal_means:
         effect_matrix[
-            target_index[row["target"]], target_index[row["added_donor"]]
+            target_index[row["added_donor"]], target_index[row["target"]]
         ] = row["mean_auc_delta"]
     max_abs = float(np.nanmax(np.abs(effect_matrix)))
     cmap = plt.get_cmap("RdBu").copy()
@@ -372,8 +372,8 @@ def main() -> None:
     labels = [target.replace("_", "\n") for target in TARGETS]
     axis.set_xticks(range(len(TARGETS)), labels=labels)
     axis.set_yticks(range(len(TARGETS)), labels=labels)
-    axis.set_xlabel("Graph added to the training mixture")
-    axis.set_ylabel("Held-out evaluation graph")
+    axis.set_xlabel("Held-out evaluation graph")
+    axis.set_ylabel("Graph added to the training mixture")
     axis.set_title("Mean marginal effect of adding each graph at 1,000 steps")
     for row_index in range(len(TARGETS)):
         for column_index in range(len(TARGETS)):

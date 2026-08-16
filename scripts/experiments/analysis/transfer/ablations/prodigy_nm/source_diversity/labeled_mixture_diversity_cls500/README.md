@@ -23,7 +23,7 @@ mixtures, while `mixture_diversity_trajectory_averaged_1000.png` averages those 
 mixture size in macro and per-target panels.
 `marginal_donor_effect_boxplot_1000.png` shows the 28 matched ROC-AUC changes from adding
 each graph to otherwise identical nonempty donor subsets across the four other targets.
-`marginal_donor_effect_heatmap_1000.png` gives the corresponding target-by-added-graph
+`marginal_donor_effect_heatmap_1000.png` gives the corresponding added-graph-by-target
 matrix of mean matched effects, with seven subset additions averaged in each cell.
 
 ```bash
