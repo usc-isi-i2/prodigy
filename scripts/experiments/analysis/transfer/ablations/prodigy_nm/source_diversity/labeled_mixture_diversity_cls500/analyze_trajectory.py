@@ -269,6 +269,7 @@ def main() -> None:
     write_csv(DATA / "trajectory_step_summary.csv", step_rows, list(step_rows[0]))
 
     marginal_rows = []
+    marginal_edge_rows = []
     for step in STEPS:
         heldout = [
             row for row in rows
@@ -287,7 +288,16 @@ def main() -> None:
                 for (row_target, subset), value in by_subset.items():
                     expanded = frozenset(set(subset) | {donor})
                     if row_target == target and donor not in subset and (target, expanded) in by_subset:
-                        deltas.append(by_subset[(target, expanded)] - value)
+                        delta = by_subset[(target, expanded)] - value
+                        deltas.append(delta)
+                        marginal_edge_rows.append({
+                            "training_steps": step,
+                            "target": target,
+                            "added_donor": donor,
+                            "base_donors": ",".join(sorted(subset)),
+                            "expanded_donors": ",".join(sorted(expanded)),
+                            "roc_auc_delta": delta,
+                        })
                 assert len(deltas) == 7
                 marginal_rows.append({
                     "training_steps": step, "target": target, "added_donor": donor,
@@ -295,9 +305,55 @@ def main() -> None:
                     "min_auc_delta": min(deltas), "max_auc_delta": max(deltas),
                 })
     write_csv(DATA / "trajectory_marginal_donor_effects.csv", marginal_rows, list(marginal_rows[0]))
+    write_csv(
+        DATA / "trajectory_marginal_donor_edge_effects.csv",
+        marginal_edge_rows,
+        list(marginal_edge_rows[0]),
+    )
 
     figures = HERE / "figures"
     figures.mkdir(parents=True, exist_ok=True)
+
+    final_marginal_edges = [
+        row for row in marginal_edge_rows if row["training_steps"] == 1000
+    ]
+    donor_effects = [
+        [
+            row["roc_auc_delta"] for row in final_marginal_edges
+            if row["added_donor"] == donor
+        ]
+        for donor in TARGETS
+    ]
+    assert all(len(values) == 28 for values in donor_effects)
+    fig, axis = plt.subplots(figsize=(11, 5.5))
+    boxes = axis.boxplot(
+        donor_effects,
+        tick_labels=[target.replace("_", "\n") for target in TARGETS],
+        showmeans=True,
+        patch_artist=True,
+        meanprops={"marker": "D", "markerfacecolor": "C3", "markeredgecolor": "C3"},
+    )
+    for box in boxes["boxes"]:
+        box.set(facecolor="C2", alpha=0.25)
+    rng = np.random.default_rng(0)
+    for position, values in enumerate(donor_effects, start=1):
+        axis.scatter(
+            position + rng.uniform(-0.09, 0.09, len(values)),
+            values,
+            s=16,
+            color="C2",
+            alpha=0.55,
+            zorder=2,
+        )
+    axis.axhline(0, color="black", linewidth=1)
+    axis.set_xlabel("Graph added to the training mixture")
+    axis.set_ylabel("Change in held-out ROC-AUC")
+    axis.set_title("Marginal effect of adding each graph at 1,000 steps (n=28 per graph)")
+    axis.grid(axis="y", alpha=0.2)
+    fig.tight_layout()
+    fig.savefig(figures / "marginal_donor_effect_boxplot_1000.png", dpi=180)
+    plt.close(fig)
+
     panels = [("Macro mean", None), *[(target.replace("_", " "), target) for target in TARGETS]]
     fig, axes = plt.subplots(2, 3, figsize=(13, 8), sharex=True, sharey=True)
     for axis, (title, target) in zip(axes.flat, panels):

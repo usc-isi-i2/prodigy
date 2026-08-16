@@ -21,6 +21,8 @@ as an evaluation panel because a held-out target cannot also occur in its traini
 `mixture_diversity_trajectory_all_points.png` retains all 75 exact 1,000-step held-out
 mixtures, while `mixture_diversity_trajectory_averaged_1000.png` averages those cells by
 mixture size in macro and per-target panels.
+`marginal_donor_effect_boxplot_1000.png` shows the 28 matched ROC-AUC changes from adding
+each graph to otherwise identical nonempty donor subsets across the four other targets.
 
 ```bash
 /opt/homebrew/bin/python3.11 analyze.py \
