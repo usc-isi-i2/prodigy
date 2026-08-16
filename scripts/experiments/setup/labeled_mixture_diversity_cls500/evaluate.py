@@ -41,7 +41,7 @@ def params_for(args, target_name, target, graph_path, checkpoint, prefix):
         "--batch_size", str(BATCH_SIZE), "--dataset_len_cap", str(EPISODES // BATCH_SIZE),
         "--val_len_cap", str(EPISODES // BATCH_SIZE),
         "--test_len_cap", str(EPISODES // BATCH_SIZE),
-        "--workers", "0", "--eval_only", "True", "--eval_only_split", "test",
+        "--workers", str(args.workers), "--eval_only", "True", "--eval_only_split", "test",
         "--eval_test_before_train", "False", "--eval_val_before_train", "False",
         "--ignore_label_embeddings", "False", "--linear_probe", "False",
         "--pretrained_model_run", str(checkpoint), "--device", str(args.device),
@@ -66,6 +66,10 @@ def main() -> int:
     parser.add_argument("--mode", choices=("heldout", "controls"), default="heldout")
     parser.add_argument("--checkpoint-step", type=int, default=500)
     parser.add_argument("--training-steps", type=int, default=500)
+    parser.add_argument("--workers", type=int, default=0)
+    parser.add_argument("--target-only", choices=TARGETS, default=None)
+    parser.add_argument("--model-prefix-only", default="")
+    parser.add_argument("--result-shard-label", default="")
     parser.add_argument(
         "--checkpoint-prefix", default="labmix500",
         help="prefix used by checkpoints; continuation runs use labmixcont",
@@ -74,9 +78,14 @@ def main() -> int:
     if args.device not in {0, 1}:
         parser.error("only Tucker GPUs 0 and 1 are owned")
     targets = classification_targets(REPO_ROOT / "docs/graph_catalog.json", include_facebook=True)
-    target_names = [target for i, target in enumerate(TARGETS) if i % args.num_shards == args.shard_index]
+    target_names = (
+        [args.target_only]
+        if args.target_only
+        else [target for i, target in enumerate(TARGETS) if i % args.num_shards == args.shard_index]
+    )
     args.results.parent.mkdir(parents=True, exist_ok=True)
-    shard_result = args.results.with_name(f"{args.results.stem}_shard{args.shard_index}.jsonl")
+    shard_label = args.result_shard_label or str(args.shard_index)
+    shard_result = args.results.with_name(f"{args.results.stem}_shard{shard_label}.jsonl")
     completed = set()
     if shard_result.is_file():
         for line in shard_result.read_text().splitlines():
@@ -91,6 +100,13 @@ def main() -> int:
             )
             all_rows = control_evaluation_rows() if args.mode == "controls" else evaluation_rows()
             plan = [row for row in all_rows if row["target"] == target_name]
+            if args.model_prefix_only:
+                plan = [row for row in plan if row["prefix"] == args.model_prefix_only]
+                if not plan:
+                    raise ValueError(
+                        f"no {args.mode} cell for target={target_name!r} "
+                        f"model={args.model_prefix_only!r}"
+                    )
             for index, row in enumerate(plan, 1):
                 key = (target_name, str(row["prefix"]), args.training_steps)
                 if key in completed:
