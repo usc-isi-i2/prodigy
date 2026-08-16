@@ -19,6 +19,7 @@ SOURCES = (
     ("bot", "twibot20"),
 )
 TARGETS = tuple(source for _, source in SOURCES)
+ALL_FIVE_PREFIX = "labmix500_k5_all"
 
 
 def rows() -> list[dict[str, object]]:
@@ -44,6 +45,27 @@ def evaluation_rows(plan=None):
         for row in (plan or rows())
         for target in row["heldout_targets"]
     ]
+
+
+def all_five_row() -> dict[str, object]:
+    return {
+        "mixture_size": 5,
+        "donor_codes": tuple(code for code, _ in SOURCES),
+        "donors": TARGETS,
+        "heldout_targets": (),
+        "prefix": ALL_FIVE_PREFIX,
+    }
+
+
+def control_evaluation_rows(plan=None):
+    plan = plan or rows()
+    controls = []
+    full = all_five_row()
+    for target in TARGETS:
+        singleton = next(row for row in plan if row["donors"] == (target,))
+        controls.append({**singleton, "target": target, "endpoint": "target_only"})
+        controls.append({**full, "target": target, "endpoint": "all_five"})
+    return controls
 
 
 def render_train(plan=None) -> str:
@@ -84,6 +106,9 @@ def validate(plan=None) -> None:
             1: 4, 2: 6, 3: 4, 4: 1,
         }
         assert all(target not in row["donors"] for row in target_rows)
+    controls = control_evaluation_rows(plan)
+    assert len(controls) == 10
+    assert all(row["target"] in row["donors"] for row in controls)
 
 
 def main() -> int:

@@ -32,3 +32,10 @@ GPUS="0 1" bash scripts/experiments/setup/labeled_mixture_diversity_cls500/run_p
 
 This first pass estimates diversity at fixed compute. Fixed per-source exposure and
 long single-source compute controls remain follow-ups if the seed-0 curve is material.
+
+Endpoint controls reuse the five singleton checkpoints as target-only references,
+train one fixed-compute all-five checkpoint, and evaluate both endpoints on each target:
+
+```bash
+bash scripts/experiments/setup/labeled_mixture_diversity_cls500/run_controls_tucker.sh
+```

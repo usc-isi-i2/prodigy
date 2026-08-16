@@ -18,7 +18,7 @@ sys.path[:0] = [str(REPO_ROOT), str(HERE)]
 from experiments.params import get_params  # noqa: E402
 from experiments.run_single_experiment import load_dataset, seed_everything  # noqa: E402
 from experiments.trainer import TrainerFS  # noqa: E402
-from make_plan import rows, validate  # noqa: E402
+from make_plan import all_five_row, rows, validate  # noqa: E402
 
 
 def complete(state_root: Path, prefix: str) -> Path | None:
@@ -56,7 +56,10 @@ def main() -> int:
         parser.error("bad shard")
     validate()
     if args.model_prefix:
-        selected = [row for row in rows() if row["prefix"] == args.model_prefix]
+        selected = [
+            row for row in [*rows(), all_five_row()]
+            if row["prefix"] == args.model_prefix
+        ]
         if not selected:
             parser.error(f"unknown model prefix: {args.model_prefix}")
     else:

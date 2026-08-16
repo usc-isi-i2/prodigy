@@ -2,7 +2,8 @@ from math import comb
 from pathlib import Path
 
 from scripts.experiments.setup.labeled_mixture_diversity_cls500.make_plan import (
-    TARGETS, evaluation_rows, render_eval, render_train, rows, validate,
+    ALL_FIVE_PREFIX, TARGETS, all_five_row, control_evaluation_rows,
+    evaluation_rows, render_eval, render_train, rows, validate,
 )
 
 
@@ -27,3 +28,11 @@ def test_training_uses_isolated_worker_processes():
     assert "workers: 2\n" in config
     assert '--model-prefix "${prefix}"' in launcher
     assert "timeout --signal=TERM" in launcher
+
+
+def test_endpoint_controls():
+    controls = control_evaluation_rows()
+    assert len(controls) == 10
+    assert {row["endpoint"] for row in controls} == {"target_only", "all_five"}
+    assert all(row["target"] in row["donors"] for row in controls)
+    assert all_five_row()["prefix"] == ALL_FIVE_PREFIX

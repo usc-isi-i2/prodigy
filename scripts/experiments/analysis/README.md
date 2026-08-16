@@ -29,6 +29,7 @@ Setup and launch files remain in `../setup/<name>/`.
 
 - Context hops: [`nm_ladder_nhop2`](transfer/ablations/prodigy_nm/context_depth/nm_ladder_nhop2/)
 - Per-source exposure: [`nm_ladder_fixed_exposure_nhop2`](transfer/ablations/prodigy_nm/source_exposure/nm_ladder_fixed_exposure_nhop2/)
+- Labeled-source diversity: [`labeled_mixture_diversity_cls500`](transfer/ablations/prodigy_nm/source_diversity/labeled_mixture_diversity_cls500/)
 - Interleaved versus sequential sampling: [`nm_ladder_sequential_nhop2`](transfer/ablations/prodigy_nm/source_schedule/nm_ladder_sequential_nhop2/)
 - Train/test edge separation: [`nm_ladder_train_test_nhop2`](transfer/ablations/prodigy_nm/split_integrity/nm_ladder_train_test_nhop2/)
 - Episode sampling and cross-source shortcuts: [`nm_cross_source_shortcut`](transfer/ablations/prodigy_nm/episode_sampling/nm_cross_source_shortcut/), [`sampling_strat_comparison`](transfer/ablations/prodigy_nm/episode_sampling/sampling_strat_comparison/)

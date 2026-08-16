@@ -18,7 +18,7 @@ sys.path[:0] = [str(REPO_ROOT), str(HERE)]
 
 from experiments.params import get_params  # noqa: E402
 from experiments.trainer import TrainerFS  # noqa: E402
-from make_plan import TARGETS, evaluation_rows  # noqa: E402
+from make_plan import TARGETS, control_evaluation_rows, evaluation_rows  # noqa: E402
 from run_train import complete  # noqa: E402
 from scripts.experiments.setup.icl_arch_matrix.common_protocol import (  # noqa: E402
     build_classification_dataset, classification_targets, reset_episode_rng,
@@ -63,6 +63,7 @@ def main() -> int:
     parser.add_argument("--results", type=Path, default=HERE / "results_seed0.jsonl")
     parser.add_argument("--run-stamp", default="seed0")
     parser.add_argument("--data-root", default="/dataMeR1/phil/data")
+    parser.add_argument("--mode", choices=("heldout", "controls"), default="heldout")
     args = parser.parse_args()
     if args.device not in {0, 1}:
         parser.error("only Tucker GPUs 0 and 1 are owned")
@@ -82,7 +83,8 @@ def main() -> int:
             dataset, _, graph_path = build_classification_dataset(
                 dataset_name=target_name, data_root=args.data_root, target=target
             )
-            plan = [row for row in evaluation_rows() if row["target"] == target_name]
+            all_rows = control_evaluation_rows() if args.mode == "controls" else evaluation_rows()
+            plan = [row for row in all_rows if row["target"] == target_name]
             for index, row in enumerate(plan, 1):
                 key = (target_name, str(row["prefix"]))
                 if key in completed:
@@ -113,6 +115,8 @@ def main() -> int:
                     payload = {
                         "target": target_name, "model_id": row["prefix"],
                         "mixture_size": row["mixture_size"], "donors": list(row["donors"]),
+                        "endpoint": row.get("endpoint", "heldout"),
+                        "target_in_training": target_name in row["donors"],
                         "training_steps": 500, "training_seed": 0,
                         "eval_episodes": audited.episodes,
                         "episode_fingerprint": audited.fingerprint,
