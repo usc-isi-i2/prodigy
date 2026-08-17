@@ -21,6 +21,12 @@ This is a checkpoint-stability diagnostic, not proof of asymptotic convergence. 
 
 At 1,000 steps, macro ROC-AUC is 0.7475 for the four-source held-out model, 0.7466 for target-only training, and 0.7543 for all-five training. Adding the target to the four-source mixture changes the macro mean by +0.0067.
 
+## Comparison with historical single-source transfer
+
+After restricting the historical 9×9 single-source NM transfer matrix to these five graphs, standalone transfer strength is not a reliable predictor of marginal value in a mixture. Across the 20 directed off-diagonal cells, Pearson `r=0.27` and Spearman `rho=-0.02`. These are descriptive coefficients because cells share donors and targets. The mean within-target donor-rank correlation is `0.04`, and the best standalone donor is also the best marginal donor for 3/5 targets. TwiBot20 is strong under both views; Facebook is a mid-tier standalone donor but slightly harmful on average when added to an existing mixture.
+
+This is a pattern comparison, not a controlled numerical contrast: the historical matrix uses 40k-step NM with 30-way/3-shot evaluation, whereas the marginal matrix uses 1k-step labeled CLS with 10-shot evaluation.
+
 ## Scope
 
 All arms use training seed 0 and 500 paired 10-shot CLS evaluation episodes. Fingerprints are identical within each target across all arms and checkpoints. The experiment holds total optimizer steps fixed within each checkpoint; it does not hold per-source exposure fixed and does not estimate training-seed uncertainty.

@@ -25,6 +25,9 @@ mixture size in macro and per-target panels.
 each graph to otherwise identical nonempty donor subsets across the four other targets.
 `marginal_donor_effect_heatmap_1000.png` gives the corresponding added-graph-by-target
 matrix of mean matched effects, with seven subset additions averaged in each cell.
+`marginal_vs_single_source_transfer_1000.png` compares that matrix with the same five
+graphs from the historical 9×9 single-source transfer matrix; its caption records the
+different training and evaluation protocols, so the comparison is pattern-level only.
 
 ```bash
 /opt/homebrew/bin/python3.11 analyze.py \
