@@ -21,6 +21,10 @@ This is a checkpoint-stability diagnostic, not proof of asymptotic convergence. 
 
 At 1,000 steps, macro ROC-AUC is 0.7475 for the four-source held-out model, 0.7466 for target-only training, and 0.7543 for all-five training. Adding the target to the four-source mixture changes the macro mean by +0.0067.
 
+## Single-source transfer matrix at 1k
+
+The five k=1 models, evaluated on all five targets, form a complete 5x5 single-source transfer matrix at 1,000 steps. Its 20 off-diagonal cells are held-out transfer evaluations and its five diagonal cells are the target-only controls. The wide and long tables are saved as `data/single_source_transfer_matrix_1000.csv` and `data/single_source_transfer_matrix_1000_long.csv`; the annotated heatmap is `figures/single_source_transfer_matrix_1000.png`.
+
 ## Comparison with final-core 2.5k single-source transfer
 
 After restricting the final-core 2.5k three-seed single-source transfer matrix to these five graphs, standalone transfer strength is not a reliable predictor of marginal value in a mixture. Across the 20 directed off-diagonal cells, Pearson `r=0.28` and Spearman `rho=0.20`. These are descriptive coefficients because cells share donors and targets. The mean within-target donor-rank correlation is `0.00`, and the best standalone donor is also the best marginal donor for 3/5 targets. TwiBot20 is strong under both views; Facebook transfers well as a singleton here but is slightly harmful on average when added to an existing mixture.

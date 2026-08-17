@@ -25,6 +25,10 @@ mixture size in macro and per-target panels.
 each graph to otherwise identical nonempty donor subsets across the four other targets.
 `marginal_donor_effect_heatmap_1000.png` gives the corresponding added-graph-by-target
 matrix of mean matched effects, with seven subset additions averaged in each cell.
+`single_source_transfer_matrix_1000.png` is the exact 5x5 single-source transfer matrix
+formed by the 1,000-step k=1 arms and target-only controls. Its wide and long source
+tables are `data/single_source_transfer_matrix_1000.csv` and
+`data/single_source_transfer_matrix_1000_long.csv`.
 `marginal_vs_single_source_transfer_1000.png` compares that matrix with the same five
 graphs from the historical 9×9 single-source transfer matrix; its caption records the
 different training and evaluation protocols, so the comparison is pattern-level only.

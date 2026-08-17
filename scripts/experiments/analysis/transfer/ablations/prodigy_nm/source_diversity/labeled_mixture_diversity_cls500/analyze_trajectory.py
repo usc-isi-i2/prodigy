@@ -321,6 +321,85 @@ def main() -> None:
     figures = HERE / "figures"
     figures.mkdir(parents=True, exist_ok=True)
 
+    # The k=1 held-out arms plus the target-only controls form an exact 5x5
+    # single-source transfer matrix under the 1k mixture-study protocol.
+    single_source_rows = [
+        row for row in rows
+        if int(row["training_steps"]) == 1000
+        and int(row["mixture_size"]) == 1
+        and endpoint(row) in {"heldout", "target_only"}
+    ]
+    assert len(single_source_rows) == len(TARGETS) ** 2
+    single_source_by_cell = {
+        (row["donors"][0], row["target"]): row
+        for row in single_source_rows
+    }
+    assert len(single_source_by_cell) == len(TARGETS) ** 2
+    single_source_long_rows = []
+    single_source_wide_rows = []
+    single_source_matrix = np.empty((len(TARGETS), len(TARGETS)))
+    for source_index, source in enumerate(TARGETS):
+        wide_row = {"training_graph": source}
+        for target_index_value, target in enumerate(TARGETS):
+            row = single_source_by_cell[(source, target)]
+            value = float(row["roc_auc"])
+            single_source_matrix[source_index, target_index_value] = value
+            wide_row[target] = value
+            single_source_long_rows.append({
+                "training_graph": source,
+                "evaluation_graph": target,
+                "endpoint": endpoint(row),
+                "training_steps": 1000,
+                "training_seed": int(row["training_seed"]),
+                "eval_episodes": int(row["eval_episodes"]),
+                "roc_auc": value,
+                "accuracy": float(row["accuracy"]),
+                "f1": float(row["f1"]),
+            })
+        single_source_wide_rows.append(wide_row)
+    write_csv(
+        DATA / "single_source_transfer_matrix_1000_long.csv",
+        single_source_long_rows,
+        list(single_source_long_rows[0]),
+    )
+    write_csv(
+        DATA / "single_source_transfer_matrix_1000.csv",
+        single_source_wide_rows,
+        ["training_graph", *TARGETS],
+    )
+
+    labels = [target.replace("_", "\n") for target in TARGETS]
+    fig, axis = plt.subplots(figsize=(9, 7))
+    single_source_image = axis.imshow(
+        single_source_matrix, cmap="viridis", vmin=0.45, vmax=1.0
+    )
+    axis.set_xticks(range(len(TARGETS)), labels=labels)
+    axis.set_yticks(range(len(TARGETS)), labels=labels)
+    axis.set_xlabel("Evaluation graph")
+    axis.set_ylabel("Single training graph")
+    axis.set_title("Single-source transfer at 1,000 steps")
+    for source_index in range(len(TARGETS)):
+        for target_index_value in range(len(TARGETS)):
+            value = single_source_matrix[source_index, target_index_value]
+            axis.text(
+                target_index_value, source_index, f"{value:.3f}",
+                ha="center", va="center",
+                color="white" if value < 0.72 else "black",
+                fontsize=9,
+                fontweight="bold" if source_index == target_index_value else "normal",
+            )
+    colorbar = fig.colorbar(single_source_image, ax=axis, shrink=0.82)
+    colorbar.set_label("ROC-AUC")
+    fig.text(
+        0.5, 0.01,
+        "Diagonal: target-only training. Off-diagonal: held-out transfer. "
+        "Seed 0; 500 paired 10-shot CLS episodes.",
+        ha="center", fontsize=9,
+    )
+    fig.tight_layout(rect=(0, 0.04, 1, 1))
+    fig.savefig(figures / "single_source_transfer_matrix_1000.png", dpi=180)
+    plt.close(fig)
+
     final_marginal_edges = [
         row for row in marginal_edge_rows if row["training_steps"] == 1000
     ]
@@ -376,7 +455,6 @@ def main() -> None:
     norm = matplotlib.colors.TwoSlopeNorm(vmin=-max_abs, vcenter=0, vmax=max_abs)
     fig, axis = plt.subplots(figsize=(9, 7))
     image = axis.imshow(effect_matrix, cmap=cmap, norm=norm)
-    labels = [target.replace("_", "\n") for target in TARGETS]
     axis.set_xticks(range(len(TARGETS)), labels=labels)
     axis.set_yticks(range(len(TARGETS)), labels=labels)
     axis.set_xlabel("Held-out evaluation graph")
@@ -737,6 +815,14 @@ def main() -> None:
         f"training, and {s[1000]['mean_all_five_auc']:.4f} for all-five training. Adding the "
         f"target to the four-source mixture changes the macro mean by "
         f"{s[1000]['mean_all_five_minus_k4']:+.4f}.",
+        "", "## Single-source transfer matrix at 1k", "",
+        "The five k=1 models, evaluated on all five targets, form a complete 5x5 "
+        "single-source transfer matrix at 1,000 steps. Its 20 off-diagonal cells are "
+        "held-out transfer evaluations and its five diagonal cells are the target-only "
+        "controls. The wide and long tables are saved as "
+        "`data/single_source_transfer_matrix_1000.csv` and "
+        "`data/single_source_transfer_matrix_1000_long.csv`; the annotated heatmap is "
+        "`figures/single_source_transfer_matrix_1000.png`.",
         "", "## Comparison with final-core 2.5k single-source transfer", "",
         "After restricting the final-core 2.5k three-seed single-source transfer matrix to "
         "these five graphs, standalone transfer strength is not a reliable predictor of marginal "
