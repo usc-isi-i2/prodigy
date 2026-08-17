@@ -21,11 +21,11 @@ This is a checkpoint-stability diagnostic, not proof of asymptotic convergence. 
 
 At 1,000 steps, macro ROC-AUC is 0.7475 for the four-source held-out model, 0.7466 for target-only training, and 0.7543 for all-five training. Adding the target to the four-source mixture changes the macro mean by +0.0067.
 
-## Comparison with historical single-source transfer
+## Comparison with final-core 2.5k single-source transfer
 
-After restricting the historical 9×9 single-source NM transfer matrix to these five graphs, standalone transfer strength is not a reliable predictor of marginal value in a mixture. Across the 20 directed off-diagonal cells, Pearson `r=0.27` and Spearman `rho=-0.02`. These are descriptive coefficients because cells share donors and targets. The mean within-target donor-rank correlation is `0.04`, and the best standalone donor is also the best marginal donor for 3/5 targets. TwiBot20 is strong under both views; Facebook is a mid-tier standalone donor but slightly harmful on average when added to an existing mixture.
+After restricting the final-core 2.5k three-seed single-source transfer matrix to these five graphs, standalone transfer strength is not a reliable predictor of marginal value in a mixture. Across the 20 directed off-diagonal cells, Pearson `r=0.28` and Spearman `rho=0.20`. These are descriptive coefficients because cells share donors and targets. The mean within-target donor-rank correlation is `0.00`, and the best standalone donor is also the best marginal donor for 3/5 targets. TwiBot20 is strong under both views; Facebook transfers well as a singleton here but is slightly harmful on average when added to an existing mixture.
 
-This is a pattern comparison, not a controlled numerical contrast: the historical matrix uses 40k-step NM with 30-way/3-shot evaluation, whereas the marginal matrix uses 1k-step labeled CLS with 10-shot evaluation.
+This is still a pattern comparison rather than a controlled numerical contrast: the final-core matrix is a three-seed mean at 2.5k steps with 30-way/3-shot evaluation, whereas the marginal matrix uses seed 0 at 1k steps with 10-shot evaluation.
 
 ## Scope
 

@@ -28,6 +28,9 @@ matrix of mean matched effects, with seven subset additions averaged in each cel
 `marginal_vs_single_source_transfer_1000.png` compares that matrix with the same five
 graphs from the historical 9×9 single-source transfer matrix; its caption records the
 different training and evaluation protocols, so the comparison is pattern-level only.
+`marginal_vs_final_core_2500_transfer_1000.png` is the preferred comparison against the
+current 2.5k, three-seed final-core single-source matrix, again restricted to these five
+graphs. The historical 40k comparison remains preserved separately.
 
 ```bash
 /opt/homebrew/bin/python3.11 analyze.py \

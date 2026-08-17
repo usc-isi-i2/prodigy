@@ -17,10 +17,11 @@ from scipy.stats import pearsonr, spearmanr
 
 HERE = Path(__file__).resolve().parent
 DATA = HERE / "data"
-HISTORICAL_TRANSFER = (
+FINAL_CORE_TRANSFER = (
     HERE.parents[7]
-    / "scripts/experiments/analysis/transfer/matrices/prodigy_nm/single_source"
-    / "nm_single_source_matrix_facebook/data/nm_single_source_matrix_9x9_long.csv"
+    / "scripts/experiments/analysis/transfer/matrices/cross_model/final_core/data"
+    / "prodigy_final_core/auc/summary"
+    / "single_source_roc_auc_ovr_macro_three_seed_mean.csv"
 )
 TARGETS = (
     "covid_political", "election2020", "facebook_page_reference",
@@ -399,11 +400,11 @@ def main() -> None:
     fig.savefig(figures / "marginal_donor_effect_heatmap_1000.png", dpi=180)
     plt.close(fig)
 
-    with HISTORICAL_TRANSFER.open(newline="", encoding="utf-8") as handle:
-        historical_auc = {
-            (row["train"], row["test"]): float(row["value"])
+    with FINAL_CORE_TRANSFER.open(newline="", encoding="utf-8") as handle:
+        final_core_auc = {
+            (row["model_source"], target): float(row[target])
             for row in csv.DictReader(handle)
-            if row["metric"] == "roc_auc"
+            for target in TARGETS
         }
     comparison_rows = []
     for added_donor in TARGETS:
@@ -413,52 +414,55 @@ def main() -> None:
             comparison_rows.append({
                 "added_donor": added_donor,
                 "target": target,
-                "historical_single_source_auc": historical_auc[(added_donor, target)],
+                "final_core_2500_single_source_auc": final_core_auc[(added_donor, target)],
                 "mean_marginal_auc_delta_1000": effect_matrix[
                     target_index[added_donor], target_index[target]
                 ],
             })
     assert len(comparison_rows) == 20
     write_csv(
-        DATA / "marginal_vs_single_source_transfer_1000.csv",
+        DATA / "marginal_vs_final_core_2500_transfer_1000.csv",
         comparison_rows,
         list(comparison_rows[0]),
     )
 
-    historical_matrix = np.full((len(TARGETS), len(TARGETS)), np.nan)
+    final_core_matrix = np.full((len(TARGETS), len(TARGETS)), np.nan)
     for row in comparison_rows:
-        historical_matrix[
+        final_core_matrix[
             target_index[row["added_donor"]], target_index[row["target"]]
-        ] = row["historical_single_source_auc"]
-    historical_values = np.array([
-        row["historical_single_source_auc"] for row in comparison_rows
+        ] = row["final_core_2500_single_source_auc"]
+    final_core_values = np.array([
+        row["final_core_2500_single_source_auc"] for row in comparison_rows
     ])
     marginal_values = np.array([
         row["mean_marginal_auc_delta_1000"] for row in comparison_rows
     ])
-    pearson = pearsonr(historical_values, marginal_values)
-    spearman = spearmanr(historical_values, marginal_values)
+    pearson = pearsonr(final_core_values, marginal_values)
+    spearman = spearmanr(final_core_values, marginal_values)
     within_target_rhos = []
     best_donor_matches = 0
     for target in TARGETS:
         target_rows = [row for row in comparison_rows if row["target"] == target]
         within_target_rhos.append(spearmanr(
-            [row["historical_single_source_auc"] for row in target_rows],
+            [row["final_core_2500_single_source_auc"] for row in target_rows],
             [row["mean_marginal_auc_delta_1000"] for row in target_rows],
         ).statistic)
-        best_historical = max(
-            target_rows, key=lambda row: row["historical_single_source_auc"]
+        best_single_source = max(
+            target_rows, key=lambda row: row["final_core_2500_single_source_auc"]
         )["added_donor"]
         best_marginal = max(
             target_rows, key=lambda row: row["mean_marginal_auc_delta_1000"]
         )["added_donor"]
-        best_donor_matches += best_historical == best_marginal
+        best_donor_matches += best_single_source == best_marginal
+    mean_within_target_rho = statistics.mean(within_target_rhos)
+    if abs(mean_within_target_rho) < 0.005:
+        mean_within_target_rho = 0.0
 
     fig, axes = plt.subplots(1, 3, figsize=(19, 6.5))
-    historical_cmap = plt.get_cmap("viridis").copy()
-    historical_cmap.set_bad("0.9")
-    historical_image = axes[0].imshow(
-        historical_matrix, cmap=historical_cmap, vmin=0.5, vmax=1.0
+    final_core_cmap = plt.get_cmap("viridis").copy()
+    final_core_cmap.set_bad("0.9")
+    final_core_image = axes[0].imshow(
+        final_core_matrix, cmap=final_core_cmap, vmin=0.5, vmax=1.0
     )
     marginal_image = axes[1].imshow(effect_matrix, cmap=cmap, norm=norm)
     for axis in axes[:2]:
@@ -467,13 +471,13 @@ def main() -> None:
         axis.set_xlabel("Held-out evaluation graph")
     axes[0].set_ylabel("Single training graph")
     axes[1].set_ylabel("Graph added to the mixture")
-    axes[0].set_title("Historical single-source transfer AUC")
+    axes[0].set_title("Final-core single-source transfer AUC (2.5k, 3-seed mean)")
     axes[1].set_title("Mean marginal addition effect at 1k")
     for row_index in range(len(TARGETS)):
         for column_index in range(len(TARGETS)):
-            historical_value = historical_matrix[row_index, column_index]
+            final_core_value = final_core_matrix[row_index, column_index]
             marginal_value = effect_matrix[row_index, column_index]
-            if np.isnan(historical_value):
+            if np.isnan(final_core_value):
                 axes[0].text(
                     column_index, row_index, "—",
                     ha="center", va="center", color="0.35",
@@ -484,9 +488,9 @@ def main() -> None:
                 )
             else:
                 axes[0].text(
-                    column_index, row_index, f"{historical_value:.3f}",
+                    column_index, row_index, f"{final_core_value:.3f}",
                     ha="center", va="center",
-                    color="white" if historical_value < 0.72 else "black",
+                    color="white" if final_core_value < 0.72 else "black",
                     fontsize=8,
                 )
                 axes[1].text(
@@ -495,7 +499,7 @@ def main() -> None:
                     color="white" if abs(marginal_value) > 0.55 * max_abs else "black",
                     fontsize=8,
                 )
-    fig.colorbar(historical_image, ax=axes[0], shrink=0.75, label="ROC-AUC")
+    fig.colorbar(final_core_image, ax=axes[0], shrink=0.75, label="ROC-AUC")
     fig.colorbar(
         marginal_image, ax=axes[1], shrink=0.75,
         label="Mean change in ROC-AUC",
@@ -505,18 +509,18 @@ def main() -> None:
     for donor in TARGETS:
         donor_rows = [row for row in comparison_rows if row["added_donor"] == donor]
         axes[2].scatter(
-            [row["historical_single_source_auc"] for row in donor_rows],
+            [row["final_core_2500_single_source_auc"] for row in donor_rows],
             [row["mean_marginal_auc_delta_1000"] for row in donor_rows],
             label=donor.replace("_", " "),
             color=donor_colors[donor],
             s=42,
             alpha=0.85,
         )
-    fit = np.polyfit(historical_values, marginal_values, 1)
-    fit_x = np.linspace(historical_values.min(), historical_values.max(), 100)
+    fit = np.polyfit(final_core_values, marginal_values, 1)
+    fit_x = np.linspace(final_core_values.min(), final_core_values.max(), 100)
     axes[2].plot(fit_x, np.polyval(fit, fit_x), color="0.25", linewidth=1)
     axes[2].axhline(0, color="black", linewidth=0.8)
-    axes[2].set_xlabel("Historical single-source transfer ROC-AUC")
+    axes[2].set_xlabel("Final-core 2.5k single-source transfer ROC-AUC")
     axes[2].set_ylabel("Mean marginal addition effect")
     axes[2].set_title("Off-diagonal cells")
     axes[2].grid(alpha=0.2)
@@ -525,7 +529,7 @@ def main() -> None:
         0.03, 0.97,
         f"Pearson r={pearson.statistic:.2f}\n"
         f"Spearman ρ={spearman.statistic:.2f}\n"
-        f"Mean within-target ρ={statistics.mean(within_target_rhos):.2f}\n"
+        f"Mean within-target ρ={mean_within_target_rho:.2f}\n"
         f"Best-donor match={best_donor_matches}/5",
         transform=axes[2].transAxes,
         ha="left", va="top", fontsize=9,
@@ -533,12 +537,13 @@ def main() -> None:
     fig.suptitle("Standalone transfer versus marginal value in a diverse mixture")
     fig.text(
         0.5, 0.01,
-        "Historical matrix: 40k-step NM, 30-way/3-shot. Marginal matrix: "
-        "1k-step labeled CLS, 10-shot. Compare patterns, not raw scales.",
+        "Final-core matrix: 2.5k steps, three-seed mean, 30-way/3-shot. "
+        "Marginal matrix: 1k-step labeled CLS, seed 0, 10-shot. "
+        "Compare patterns, not raw scales.",
         ha="center", fontsize=9,
     )
     fig.tight_layout(rect=(0, 0.05, 1, 0.94))
-    fig.savefig(figures / "marginal_vs_single_source_transfer_1000.png", dpi=180)
+    fig.savefig(figures / "marginal_vs_final_core_2500_transfer_1000.png", dpi=180)
     plt.close(fig)
 
     panels = [("Macro mean", None), *[(target.replace("_", " "), target) for target in TARGETS]]
@@ -732,19 +737,19 @@ def main() -> None:
         f"training, and {s[1000]['mean_all_five_auc']:.4f} for all-five training. Adding the "
         f"target to the four-source mixture changes the macro mean by "
         f"{s[1000]['mean_all_five_minus_k4']:+.4f}.",
-        "", "## Comparison with historical single-source transfer", "",
-        "After restricting the historical 9×9 single-source NM transfer matrix to these "
-        "five graphs, standalone transfer strength is not a reliable predictor of marginal "
+        "", "## Comparison with final-core 2.5k single-source transfer", "",
+        "After restricting the final-core 2.5k three-seed single-source transfer matrix to "
+        "these five graphs, standalone transfer strength is not a reliable predictor of marginal "
         "value in a mixture. Across the 20 directed off-diagonal cells, Pearson "
         f"`r={pearson.statistic:.2f}` and Spearman `rho={spearman.statistic:.2f}`. These are "
         "descriptive coefficients because cells share donors and targets. The mean within-target "
-        f"donor-rank correlation is `{statistics.mean(within_target_rhos):.2f}`, and the best "
+        f"donor-rank correlation is `{mean_within_target_rho:.2f}`, and the best "
         f"standalone donor is also the best marginal donor for {best_donor_matches}/5 targets. "
-        "TwiBot20 is strong under both views; Facebook is a mid-tier standalone donor but "
-        "slightly harmful on average when added to an existing mixture.",
-        "", "This is a pattern comparison, not a controlled numerical contrast: the historical "
-        "matrix uses 40k-step NM with 30-way/3-shot evaluation, whereas the marginal matrix "
-        "uses 1k-step labeled CLS with 10-shot evaluation.",
+        "TwiBot20 is strong under both views; Facebook transfers well as a singleton here but "
+        "is slightly harmful on average when added to an existing mixture.",
+        "", "This is still a pattern comparison rather than a controlled numerical contrast: "
+        "the final-core matrix is a three-seed mean at 2.5k steps with 30-way/3-shot evaluation, "
+        "whereas the marginal matrix uses seed 0 at 1k steps with 10-shot evaluation.",
         "", "## Scope", "",
         "All arms use training seed 0 and 500 paired 10-shot CLS evaluation episodes. "
         "Fingerprints are identical within each target across all arms and checkpoints. "
