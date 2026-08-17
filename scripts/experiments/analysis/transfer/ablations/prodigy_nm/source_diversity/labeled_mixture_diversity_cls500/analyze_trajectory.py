@@ -478,6 +478,157 @@ def main() -> None:
     fig.savefig(figures / "marginal_donor_effect_heatmap_1000.png", dpi=180)
     plt.close(fig)
 
+    # Same-protocol comparison: both standalone transfer and marginal mixture
+    # value come from the 1k, seed-0, paired 10-shot experiment above.
+    same_protocol_rows = []
+    for added_donor in TARGETS:
+        for target in TARGETS:
+            if added_donor == target:
+                continue
+            same_protocol_rows.append({
+                "added_donor": added_donor,
+                "target": target,
+                "single_source_auc_1000": single_source_matrix[
+                    target_index[added_donor], target_index[target]
+                ],
+                "mean_marginal_auc_delta_1000": effect_matrix[
+                    target_index[added_donor], target_index[target]
+                ],
+            })
+    assert len(same_protocol_rows) == 20
+    write_csv(
+        DATA / "marginal_vs_single_source_1000_same_protocol.csv",
+        same_protocol_rows,
+        list(same_protocol_rows[0]),
+    )
+
+    same_protocol_transfer_values = np.array([
+        row["single_source_auc_1000"] for row in same_protocol_rows
+    ])
+    same_protocol_marginal_values = np.array([
+        row["mean_marginal_auc_delta_1000"] for row in same_protocol_rows
+    ])
+    same_protocol_pearson = pearsonr(
+        same_protocol_transfer_values, same_protocol_marginal_values
+    )
+    same_protocol_spearman = spearmanr(
+        same_protocol_transfer_values, same_protocol_marginal_values
+    )
+    same_protocol_within_target_rhos = []
+    same_protocol_best_donor_matches = 0
+    for target in TARGETS:
+        target_rows = [row for row in same_protocol_rows if row["target"] == target]
+        same_protocol_within_target_rhos.append(spearmanr(
+            [row["single_source_auc_1000"] for row in target_rows],
+            [row["mean_marginal_auc_delta_1000"] for row in target_rows],
+        ).statistic)
+        best_single_source = max(
+            target_rows, key=lambda row: row["single_source_auc_1000"]
+        )["added_donor"]
+        best_marginal = max(
+            target_rows, key=lambda row: row["mean_marginal_auc_delta_1000"]
+        )["added_donor"]
+        same_protocol_best_donor_matches += best_single_source == best_marginal
+    same_protocol_mean_within_target_rho = statistics.mean(
+        same_protocol_within_target_rhos
+    )
+
+    single_source_off_diagonal = single_source_matrix.copy()
+    np.fill_diagonal(single_source_off_diagonal, np.nan)
+    fig, axes = plt.subplots(1, 3, figsize=(19, 6.5))
+    transfer_cmap = plt.get_cmap("viridis").copy()
+    transfer_cmap.set_bad("0.9")
+    transfer_image = axes[0].imshow(
+        single_source_off_diagonal, cmap=transfer_cmap, vmin=0.45, vmax=1.0
+    )
+    marginal_image = axes[1].imshow(effect_matrix, cmap=cmap, norm=norm)
+    for axis in axes[:2]:
+        axis.set_xticks(range(len(TARGETS)), labels=labels)
+        axis.set_yticks(range(len(TARGETS)), labels=labels)
+        axis.set_xlabel("Held-out evaluation graph")
+    axes[0].set_ylabel("Single training graph")
+    axes[1].set_ylabel("Graph added to the mixture")
+    axes[0].set_title("Single-source transfer AUC at 1k")
+    axes[1].set_title("Mean marginal addition effect at 1k")
+    for row_index in range(len(TARGETS)):
+        for column_index in range(len(TARGETS)):
+            transfer_value = single_source_off_diagonal[row_index, column_index]
+            marginal_value = effect_matrix[row_index, column_index]
+            if np.isnan(transfer_value):
+                axes[0].text(
+                    column_index, row_index, "—",
+                    ha="center", va="center", color="0.35",
+                )
+                axes[1].text(
+                    column_index, row_index, "—",
+                    ha="center", va="center", color="0.35",
+                )
+            else:
+                axes[0].text(
+                    column_index, row_index, f"{transfer_value:.3f}",
+                    ha="center", va="center",
+                    color="white" if transfer_value < 0.72 else "black",
+                    fontsize=8,
+                )
+                axes[1].text(
+                    column_index, row_index, f"{marginal_value:+.3f}",
+                    ha="center", va="center",
+                    color="white" if abs(marginal_value) > 0.55 * max_abs else "black",
+                    fontsize=8,
+                )
+    fig.colorbar(transfer_image, ax=axes[0], shrink=0.75, label="ROC-AUC")
+    fig.colorbar(
+        marginal_image, ax=axes[1], shrink=0.75,
+        label="Mean change in ROC-AUC",
+    )
+
+    same_protocol_donor_colors = dict(zip(TARGETS, plt.get_cmap("tab10").colors))
+    for donor in TARGETS:
+        donor_rows = [
+            row for row in same_protocol_rows if row["added_donor"] == donor
+        ]
+        axes[2].scatter(
+            [row["single_source_auc_1000"] for row in donor_rows],
+            [row["mean_marginal_auc_delta_1000"] for row in donor_rows],
+            label=donor.replace("_", " "),
+            color=same_protocol_donor_colors[donor],
+            s=42,
+            alpha=0.85,
+        )
+    fit = np.polyfit(
+        same_protocol_transfer_values, same_protocol_marginal_values, 1
+    )
+    fit_x = np.linspace(
+        same_protocol_transfer_values.min(), same_protocol_transfer_values.max(), 100
+    )
+    axes[2].plot(fit_x, np.polyval(fit, fit_x), color="0.25", linewidth=1)
+    axes[2].axhline(0, color="black", linewidth=0.8)
+    axes[2].set_xlabel("1k single-source transfer ROC-AUC")
+    axes[2].set_ylabel("Mean marginal addition effect")
+    axes[2].set_title("Off-diagonal cells")
+    axes[2].grid(alpha=0.2)
+    axes[2].legend(fontsize=7, frameon=False)
+    axes[2].text(
+        0.03, 0.97,
+        f"Pearson r={same_protocol_pearson.statistic:.2f}\n"
+        f"Spearman ρ={same_protocol_spearman.statistic:.2f}\n"
+        f"Mean within-target ρ={same_protocol_mean_within_target_rho:.2f}\n"
+        f"Best-donor match={same_protocol_best_donor_matches}/5",
+        transform=axes[2].transAxes,
+        ha="left", va="top", fontsize=9,
+    )
+    fig.suptitle("Standalone transfer versus marginal value in a diverse mixture")
+    fig.text(
+        0.5, 0.01,
+        "Both matrices: 1k training steps, seed 0, 500 paired 10-shot CLS episodes.",
+        ha="center", fontsize=9,
+    )
+    fig.tight_layout(rect=(0, 0.05, 1, 0.94))
+    fig.savefig(
+        figures / "marginal_vs_single_source_1000_same_protocol.png", dpi=180
+    )
+    plt.close(fig)
+
     with FINAL_CORE_TRANSFER.open(newline="", encoding="utf-8") as handle:
         final_core_auc = {
             (row["model_source"], target): float(row[target])
@@ -823,6 +974,15 @@ def main() -> None:
         "`data/single_source_transfer_matrix_1000.csv` and "
         "`data/single_source_transfer_matrix_1000_long.csv`; the annotated heatmap is "
         "`figures/single_source_transfer_matrix_1000.png`.",
+        "", "## Same-protocol standalone transfer versus marginal value", "",
+        "With both quantities measured at 1k under the same seed and evaluation protocol, "
+        f"the 20 off-diagonal cells have Pearson `r={same_protocol_pearson.statistic:.2f}` "
+        f"and overall Spearman `rho={same_protocol_spearman.statistic:.2f}`. The mean "
+        f"within-target donor-rank correlation is `{same_protocol_mean_within_target_rho:.2f}`, "
+        "showing that standalone strength is substantially more informative for choosing "
+        "among donors once target difficulty is controlled. However, the top standalone "
+        f"donor is also the top marginal donor for only {same_protocol_best_donor_matches}/5 "
+        "targets, so marginal mixture value is still not a max rule.",
         "", "## Comparison with final-core 2.5k single-source transfer", "",
         "After restricting the final-core 2.5k three-seed single-source transfer matrix to "
         "these five graphs, standalone transfer strength is not a reliable predictor of marginal "

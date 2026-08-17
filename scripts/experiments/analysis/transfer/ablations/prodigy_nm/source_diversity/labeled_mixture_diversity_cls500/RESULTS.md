@@ -25,6 +25,10 @@ At 1,000 steps, macro ROC-AUC is 0.7475 for the four-source held-out model, 0.74
 
 The five k=1 models, evaluated on all five targets, form a complete 5x5 single-source transfer matrix at 1,000 steps. Its 20 off-diagonal cells are held-out transfer evaluations and its five diagonal cells are the target-only controls. The wide and long tables are saved as `data/single_source_transfer_matrix_1000.csv` and `data/single_source_transfer_matrix_1000_long.csv`; the annotated heatmap is `figures/single_source_transfer_matrix_1000.png`.
 
+## Same-protocol standalone transfer versus marginal value
+
+With both quantities measured at 1k under the same seed and evaluation protocol, the 20 off-diagonal cells have Pearson `r=0.30` and overall Spearman `rho=0.11`. The mean within-target donor-rank correlation is `0.64`, showing that standalone strength is substantially more informative for choosing among donors once target difficulty is controlled. However, the top standalone donor is also the top marginal donor for only 2/5 targets, so marginal mixture value is still not a max rule.
+
 ## Comparison with final-core 2.5k single-source transfer
 
 After restricting the final-core 2.5k three-seed single-source transfer matrix to these five graphs, standalone transfer strength is not a reliable predictor of marginal value in a mixture. Across the 20 directed off-diagonal cells, Pearson `r=0.28` and Spearman `rho=0.20`. These are descriptive coefficients because cells share donors and targets. The mean within-target donor-rank correlation is `0.00`, and the best standalone donor is also the best marginal donor for 3/5 targets. TwiBot20 is strong under both views; Facebook transfers well as a singleton here but is slightly harmful on average when added to an existing mixture.

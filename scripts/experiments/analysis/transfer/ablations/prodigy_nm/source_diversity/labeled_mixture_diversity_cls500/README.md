@@ -29,9 +29,14 @@ matrix of mean matched effects, with seven subset additions averaged in each cel
 formed by the 1,000-step k=1 arms and target-only controls. Its wide and long source
 tables are `data/single_source_transfer_matrix_1000.csv` and
 `data/single_source_transfer_matrix_1000_long.csv`.
-`marginal_vs_single_source_transfer_1000.png` compares that matrix with the same five
-graphs from the historical 9×9 single-source transfer matrix; its caption records the
-different training and evaluation protocols, so the comparison is pattern-level only.
+`marginal_vs_single_source_1000_same_protocol.png` compares the 20 off-diagonal
+single-source cells directly with the matched 1,000-step marginal-addition matrix;
+both sides use seed 0 and the same 500 paired 10-shot CLS episodes. Its joined source
+table is `data/marginal_vs_single_source_1000_same_protocol.csv`.
+`marginal_vs_single_source_transfer_1000.png` compares the marginal-addition matrix
+with the same five graphs from the historical 9×9 single-source transfer matrix; its
+caption records the different training and evaluation protocols, so the comparison is
+pattern-level only.
 `marginal_vs_final_core_2500_transfer_1000.png` is the preferred comparison against the
 current 2.5k, three-seed final-core single-source matrix, again restricted to these five
 graphs. The historical 40k comparison remains preserved separately.
