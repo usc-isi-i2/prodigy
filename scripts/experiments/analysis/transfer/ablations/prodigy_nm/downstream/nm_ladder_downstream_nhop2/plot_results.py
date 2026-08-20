@@ -977,14 +977,16 @@ def _plot_mean_endpoints(ax: plt.Axes, panel: pd.DataFrame, label: str) -> None:
     """Plot the graph-averaged first and last rung as a single two-point line."""
     means = panel.groupby("rung")["value"].mean().sort_index()
     first_rung, last_rung = int(means.index.min()), int(means.index.max())
-    values = np.array([means.loc[first_rung], means.loc[last_rung]], dtype=float)
+    change = float(means.loc[last_rung] - means.loc[first_rung])
+    values = np.array([0.0, change], dtype=float)
     ax.plot(
         [0, 1], values, color=BLUE, linewidth=2.4, marker="o", markersize=6.5,
         markeredgecolor="white", markeredgewidth=0.8, zorder=3,
     )
-    ax.set_title(f"{label}\nmean change {values[1] - values[0]:+.3f}", loc="left", fontweight="bold", fontsize=9.6)
+    ax.set_title(f"{label}\nmean change {change:+.3f}", loc="left", fontweight="bold", fontsize=9.6)
     ax.set_xticks([0, 1], [f"First (r{first_rung})", f"Last (r{last_rung})"])
     ax.set_xlim(-0.18, 1.18)
+    ax.axhline(0, color=INK, linewidth=0.9, zorder=1)
     ax.grid(axis="y", color=GRID, linewidth=0.65)
     ax.spines[["top", "right"]].set_visible(False)
     ax.set_axisbelow(True)
@@ -1045,8 +1047,12 @@ def plot_mean_endpoint_trajectories(long: pd.DataFrame, output_dir: Path) -> Non
             ax.set_xticks([])
             ax.spines[["top", "right", "bottom", "left"]].set_visible(False)
 
-    for row, ylabel in enumerate(("Node classification ROC-AUC", "Static link prediction ROC-AUC", "Neighbor matching ROC-AUC")):
-        axes[row, 0].set_ylabel(ylabel)
+    for row, ylabel in enumerate(("Node classification", "Static link prediction", "Neighbor matching")):
+        axes[row, 0].set_ylabel(f"{ylabel}\nΔ ROC-AUC from first rung")
+        populated = [ax for ax in axes[row] if ax.lines]
+        limit = max(abs(bound) for ax in populated for bound in ax.get_ylim())
+        limit = max(limit, 0.01)
+        axes[row, 0].set_ylim(-limit, limit)
         for divider_col in (4, 6):
             axes[row, divider_col].spines["right"].set_visible(True)
             axes[row, divider_col].spines["right"].set_color(GRID)
@@ -1058,7 +1064,7 @@ def plot_mean_endpoint_trajectories(long: pd.DataFrame, output_dir: Path) -> Non
     )
     fig.text(
         0.055, 0.952,
-        "One line per panel · endpoints are averaged over the evaluation graphs shown in classification; 2.5k panels also average three seeds.",
+        "First-rung mixture performance is centered at 0; last = mean(last − first). Graphs are averaged within panels; 2.5k panels also average three seeds.",
         color=MUTED, fontsize=9,
     )
     fig.tight_layout(rect=(0.035, 0.02, 1, 0.90), h_pad=3.2, w_pad=1.25)
