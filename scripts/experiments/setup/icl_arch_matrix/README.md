@@ -102,3 +102,20 @@ fitting or selection. These models have much more target supervision than the
 label-budget competitors. The launcher uses only Tucker GPUs 0 and 1 and refuses
 to start on an occupied device. Set both `GPU_MLP` and `GPU_GNN` to the same owned
 GPU to run the models serially when only one device is available.
+
+## Source-confined native-task replication
+
+`train_native_source_model.py` separates the common-NM architecture control from a
+model-family replication:
+
+- VISION uses its native label-free feature-similarity pseudo-episode generator on
+  nodes from one source graph, with the official CE + supervised-contrastive loss.
+- GILT uses its native PFN node-classification objective on 2-way episodes sampled
+  only from that source graph's stratified training split. LP and graph classification
+  are omitted because they are not uniformly available across the five sources.
+
+`run_native_source_training_tucker.sh` trains seed 0 through updates 20, 60, 100,
+300, and 900. `run_native_source_cls_evaluation_tucker.sh` evaluates those checkpoints
+tuning-free on the same five held-out classification panels used by the common-NM
+control. This is source-confined native-task training; for GILT it is intentionally a
+single-task variant, not the upstream repository's default multi-dataset multitask run.
