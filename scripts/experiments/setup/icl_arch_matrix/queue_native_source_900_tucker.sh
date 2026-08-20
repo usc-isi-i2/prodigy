@@ -5,18 +5,6 @@ export PATH="/home/mhchu/miniconda3/bin:$PATH"
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate prodigy
 
-while true; do
-  mapfile -t used < <(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i 2,3)
-  mapfile -t util < <(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i 2,3)
-  if (( ${#used[@]} == 2 && ${#util[@]} == 2 \
-        && used[0] < 2000 && used[1] < 2000 \
-        && util[0] < 10 && util[1] < 10 )); then
-    break
-  fi
-  echo "waiting for GPUs 2,3 utc=$(date -u +%FT%TZ) used_mib=${used[*]:-unknown} util_pct=${util[*]:-unknown}"
-  sleep 60
-done
-
 cd /dataMeR1/phil/gfm/prodigy-archnative
 STATE_ROOT="$PWD/state/icl_arch_native_source_900_seed0" \
 LOG_ROOT="$PWD/log/icl_arch_native_source_900_seed0" \

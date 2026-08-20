@@ -39,8 +39,20 @@ for architecture in "${ARCHITECTURES[@]}"; do
   done
 done
 
+wait_for_gpu() {
+  local gpu="$1" used util
+  while true; do
+    used="$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i "$gpu")"
+    util="$(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i "$gpu")"
+    if (( used < 2000 && util < 10 )); then return; fi
+    echo "[gpu $gpu] waiting utc=$(date -u +%FT%TZ) used_mib=$used util_pct=$util"
+    sleep 60
+  done
+}
+
 worker() {
   local worker_index="$1" gpu="$2" index=0 job kind architecture model_id step result upstream
+  wait_for_gpu "$gpu"
   for job in "${jobs[@]}"; do
     if (( index % ${#GPUS[@]} == worker_index )); then
       IFS=: read -r kind architecture model_id step <<< "$job"
