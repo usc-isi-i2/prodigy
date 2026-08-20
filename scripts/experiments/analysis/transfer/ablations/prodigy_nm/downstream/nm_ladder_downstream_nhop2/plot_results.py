@@ -1209,6 +1209,60 @@ def plot_final_core_rung1_to_final_means(output_dir: Path) -> None:
     _save(fig, output_dir / "final_core_rung1_to_final_means")
 
 
+def plot_final_core_rung1_to_final_bars(output_dir: Path) -> None:
+    """Grouped-bar version of the final-core first-to-final comparison."""
+    final_nm, final_cls, _ = load_final_core_2500()
+    final_targets = final_cls["dataset"].unique()
+    order_colors = {"A": BLUE, "B": CORAL, "C": GREEN}
+    orders = list(FINAL_CORE_ORDERS)
+    x = np.arange(len(orders), dtype=float)
+    width = 0.34
+    fig, axes = plt.subplots(2, 1, figsize=(9.6, 8.8), sharex=True)
+    for ax, (panel, ylabel) in zip(
+        axes,
+        (
+            (final_cls, "Mean node-classification ROC-AUC"),
+            (final_nm[final_nm["dataset"].isin(final_targets)], "Mean neighbor-matching ROC-AUC"),
+        ),
+        strict=True,
+    ):
+        first_values, final_values = [], []
+        for order_name in orders:
+            order_panel = panel[panel["order"] == order_name]
+            first_rung, final_rung = int(order_panel["rung"].min()), int(order_panel["rung"].max())
+            first_values.append(float(order_panel.loc[order_panel["rung"] == first_rung, "value"].mean()))
+            final_values.append(float(order_panel.loc[order_panel["rung"] == final_rung, "value"].mean()))
+        colors = [order_colors[order] for order in orders]
+        first_bars = ax.bar(x - width / 2, first_values, width, color=colors, alpha=0.48,
+                            edgecolor=colors, linewidth=1.2, label="Rung 1")
+        final_bars = ax.bar(x + width / 2, final_values, width, color=colors, alpha=0.95,
+                            edgecolor="white", linewidth=0.7, label="Final rung")
+        for bars in (first_bars, final_bars):
+            ax.bar_label(bars, fmt="%.3f", padding=3, fontsize=8.5)
+        lower = min(first_values + final_values)
+        upper = max(first_values + final_values)
+        padding = max(0.012, (upper - lower) * 0.22)
+        ax.set_ylim(lower - padding, upper + padding)
+        ax.set_ylabel(ylabel)
+        ax.grid(axis="y", color=GRID, linewidth=0.7)
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.set_axisbelow(True)
+    axes[-1].set_xticks(x, [f"Order {FINAL_CORE_DISPLAY_ORDER[order]}" for order in orders])
+    endpoint_handles = [
+        plt.Rectangle((0, 0), 1, 1, facecolor=GRAY, alpha=0.48, label="Rung 1"),
+        plt.Rectangle((0, 0), 1, 1, facecolor=GRAY, alpha=0.95, label="Final rung"),
+    ]
+    fig.legend(handles=endpoint_handles, loc="upper center", bbox_to_anchor=(0.5, 0.925),
+               ncol=2, frameon=False)
+    fig.suptitle("Final-core 2.5k ladders: first versus final rung", x=0.08, ha="left",
+                 fontsize=15, fontweight="bold")
+    fig.text(0.08, 0.94,
+             "Three-seed means · order color identifies the ladder · lighter bar = rung 1 · darker bar = shared all9 final rung",
+             color=MUTED, fontsize=9)
+    fig.tight_layout(rect=(0.04, 0.03, 0.98, 0.88), h_pad=2.2)
+    _save(fig, output_dir / "final_core_rung1_to_final_bars")
+
+
 def _jitter(group: pd.DataFrame) -> np.ndarray:
     # Stable, symmetric placement without implying random sampling.
     keys = group["rung"].astype(str) + "|" + group["dataset"].astype(str)
@@ -1311,8 +1365,9 @@ def main() -> None:
     plot_mean_endpoint_trajectories(long, args.output_dir)
     plot_rung1_to_final_means(long, args.output_dir)
     plot_final_core_rung1_to_final_means(args.output_dir)
+    plot_final_core_rung1_to_final_bars(args.output_dir)
     plot_controlled_deltas(paired, args.output_dir)
-    print(f"wrote 9 core plus 15 classification-ladder PNG/PDF figure pairs to {args.output_dir}")
+    print(f"wrote 10 core plus 15 classification-ladder PNG/PDF figure pairs to {args.output_dir}")
 
 
 if __name__ == "__main__":
