@@ -37,6 +37,9 @@ def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--results-root", required=True, type=Path)
     parser.add_argument("--output-root", required=True, type=Path)
+    parser.add_argument("--steps", default="0,20,60,100,300,900,2000")
+    parser.add_argument("--training-seeds", default="0,1,2")
+    parser.add_argument("--eval-offsets", default="0,1,2")
     return parser.parse_args()
 
 
@@ -141,7 +144,10 @@ def plot(summary: list[dict], output_root: Path) -> None:
         pad = max(0.02, (hi - lo) * 0.1)
         axis.set_ylim(max(0, lo - pad), min(1, hi + pad))
     axes[0].legend(frameon=False, loc="best")
-    fig.suptitle("Matched 2,000-step trajectories: five sources × three training seeds × three eval samples")
+    fig.suptitle(
+        f"Matched {max(STEPS):,}-step trajectories: five sources × "
+        f"{len(TRAINING_SEEDS)} training seed(s) × {len(EVAL_OFFSETS)} eval sample(s)"
+    )
     output_root.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_root / "mean_nm_cls_trajectory.png", dpi=180)
     fig.savefig(output_root / "mean_nm_cls_trajectory.pdf")
@@ -149,7 +155,11 @@ def plot(summary: list[dict], output_root: Path) -> None:
 
 
 def main() -> int:
+    global STEPS, TRAINING_SEEDS, EVAL_OFFSETS
     args = parse_args()
+    STEPS = tuple(int(value) for value in args.steps.split(","))
+    TRAINING_SEEDS = tuple(int(value) for value in args.training_seeds.split(","))
+    EVAL_OFFSETS = tuple(int(value) for value in args.eval_offsets.split(","))
     rows = load_rows(args.results_root)
     validate(rows)
     summary = aggregate(rows)
