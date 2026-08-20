@@ -21,6 +21,7 @@ Setup and launch files remain in `../setup/<name>/`.
 - **PRODIGY / neighbor matching**
   - Canonical ladder: [`nm_ladder`](transfer/ladders/prodigy_nm/baseline/nm_ladder/)
   - Order and graph-set extensions: [`nm_ladder_order_robustness`](transfer/ladders/prodigy_nm/robustness/nm_ladder_order_robustness/), [`nm_ladder_facebook`](transfer/ladders/prodigy_nm/robustness/nm_ladder_facebook/)
+  - Cross-task budget grid: [`ladder_cross_task_eval`](transfer/ladders/prodigy_nm/cross_task/ladder_cross_task_eval/)
 - **SAMGPT / GraphCL**
   - Native-objective orders: [`samgpt_graphcl_ladder`](transfer/ladders/samgpt_graphcl/baseline/samgpt_graphcl_ladder/)
   - Weak-to-strong order: [`samgpt_weak_to_strong`](transfer/ladders/samgpt_graphcl/weak_to_strong/samgpt_weak_to_strong/)
