@@ -1163,6 +1163,52 @@ def plot_rung1_to_final_means(long: pd.DataFrame, output_dir: Path) -> None:
     _save(fig, output_dir / "rung1_to_final_means")
 
 
+def plot_final_core_rung1_to_final_means(output_dir: Path) -> None:
+    """Plot first-to-final means for only the three final-core 2.5k ladders."""
+    final_nm, final_cls, _ = load_final_core_2500()
+    final_targets = final_cls["dataset"].unique()
+    order_colors = {"A": BLUE, "B": CORAL, "C": GREEN}
+    fig, axes = plt.subplots(2, 1, figsize=(9.6, 8.8), sharex=True)
+    for ax, (task, panel, ylabel) in zip(
+        axes,
+        (
+            ("classification", final_cls, "Mean node-classification ROC-AUC"),
+            ("nm", final_nm[final_nm["dataset"].isin(final_targets)], "Mean neighbor-matching ROC-AUC"),
+        ),
+        strict=True,
+    ):
+        for order_name in FINAL_CORE_ORDERS:
+            order_panel = panel[panel["order"] == order_name]
+            first_rung, final_rung = int(order_panel["rung"].min()), int(order_panel["rung"].max())
+            values = [
+                float(order_panel.loc[order_panel["rung"] == first_rung, "value"].mean()),
+                float(order_panel.loc[order_panel["rung"] == final_rung, "value"].mean()),
+            ]
+            display_order = FINAL_CORE_DISPLAY_ORDER[order_name]
+            ax.plot(
+                (0, 1), values, color=order_colors[order_name], linewidth=2.8,
+                marker="o", markersize=7, markeredgecolor="white", markeredgewidth=0.8,
+                label=f"Order {display_order}",
+            )
+            ax.text(1.015, values[1], f"{values[1]:.3f}", color=order_colors[order_name],
+                    va="center", fontsize=8.5)
+        ax.set_ylabel(ylabel)
+        ax.grid(axis="y", color=GRID, linewidth=0.7)
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.set_xlim(-0.06, 1.09)
+        ax.set_axisbelow(True)
+    axes[-1].set_xticks((0, 1), ("Rung 1", "Final rung"))
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, 0.925), ncol=3, frameon=False)
+    fig.suptitle("Final-core 2.5k ladders: first to final rung", x=0.08, ha="left",
+                 fontsize=15, fontweight="bold")
+    fig.text(0.08, 0.94,
+             "Three-seed means · NM restricted to the five classification targets · stored final-core B is displayed as Order D",
+             color=MUTED, fontsize=9)
+    fig.tight_layout(rect=(0.04, 0.03, 0.96, 0.88), h_pad=2.2)
+    _save(fig, output_dir / "final_core_rung1_to_final_means")
+
+
 def _jitter(group: pd.DataFrame) -> np.ndarray:
     # Stable, symmetric placement without implying random sampling.
     keys = group["rung"].astype(str) + "|" + group["dataset"].astype(str)
@@ -1264,8 +1310,9 @@ def main() -> None:
     )
     plot_mean_endpoint_trajectories(long, args.output_dir)
     plot_rung1_to_final_means(long, args.output_dir)
+    plot_final_core_rung1_to_final_means(args.output_dir)
     plot_controlled_deltas(paired, args.output_dir)
-    print(f"wrote 8 core plus 15 classification-ladder PNG/PDF figure pairs to {args.output_dir}")
+    print(f"wrote 9 core plus 15 classification-ladder PNG/PDF figure pairs to {args.output_dir}")
 
 
 if __name__ == "__main__":
