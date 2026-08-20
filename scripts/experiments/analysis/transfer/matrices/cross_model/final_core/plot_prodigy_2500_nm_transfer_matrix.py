@@ -35,6 +35,9 @@ LABELS = {
     "cp_hk": "CP/HK",
     "facebook_page_reference": "Facebook pages",
     "all9_mixture": "All-nine mixture",
+    "specialist_mean": "Specialist mean",
+    "specialist_median": "Specialist median",
+    "specialist_max": "Specialist max",
 }
 
 
@@ -49,7 +52,12 @@ def build_matrix() -> pd.DataFrame:
     )
     if mixture.isna().any() or specialists.isna().any().any():
         raise ValueError("incomplete 2.5k NM matrix or all9 mixture row")
-    matrix = pd.concat([specialists, mixture.to_frame().T.rename(index={"roc_auc_ovr_macro_logged": "all9_mixture"})])
+    mixture_frame = mixture.to_frame().T.rename(index={"roc_auc_ovr_macro_logged": "all9_mixture"})
+    summaries = pd.DataFrame(
+        [specialists.mean(), specialists.median(), specialists.max()],
+        index=["specialist_mean", "specialist_median", "specialist_max"],
+    )
+    matrix = pd.concat([specialists, mixture_frame, summaries])
     matrix["min"] = matrix[TARGETS].min(axis=1)
     matrix["mean"] = matrix[TARGETS].mean(axis=1)
     matrix["max"] = matrix[TARGETS].max(axis=1)
@@ -58,7 +66,7 @@ def build_matrix() -> pd.DataFrame:
 
 def plot(matrix: pd.DataFrame) -> None:
     values = matrix.to_numpy(dtype=float)
-    fig, ax = plt.subplots(figsize=(17.2, 10.2))
+    fig, ax = plt.subplots(figsize=(17.2, 12.3))
     image = ax.imshow(values, cmap="viridis", vmin=0.5, vmax=1.0, aspect="auto")
 
     for row in range(values.shape[0]):
@@ -72,13 +80,14 @@ def plot(matrix: pd.DataFrame) -> None:
     ax.tick_params(axis="x", rotation=38, labelsize=9)
     ax.tick_params(axis="y", labelsize=9)
     ax.set_xlabel("NM evaluation graph")
-    ax.set_ylabel("Pretraining source or mixture")
+    ax.set_ylabel("Pretraining source, mixture, or specialist summary")
     ax.axhline(len(TARGETS) - 0.5, color="white", linewidth=3.0)
+    ax.axhline(len(TARGETS) + 0.5, color="white", linewidth=3.0)
     ax.axvline(len(TARGETS) - 0.5, color="white", linewidth=3.0)
     ax.set_title("PRODIGY 2.5k NM transfer matrix", loc="left", fontsize=15, fontweight="bold", pad=42)
     ax.text(
         0, 1.025,
-        "Three-seed mean ROC-AUC · final row is the all-nine mixture · summary columns span the nine evaluation graphs",
+        "Three-seed mean ROC-AUC · bottom rows summarize the nine specialists · summary columns span the nine evaluation graphs",
         transform=ax.transAxes, color="#77746e", fontsize=9,
     )
     colorbar = fig.colorbar(image, ax=ax, fraction=0.026, pad=0.018)
