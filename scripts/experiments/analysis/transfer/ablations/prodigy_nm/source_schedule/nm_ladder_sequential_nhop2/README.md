@@ -13,6 +13,11 @@ Registered outputs:
   heatmaps with absolute AUCs and the newest graph outlined at each rung;
 - `figures/nm_ladder_sequential_trajectory.{png,pdf}`: canonical per-graph ladder
   trajectory with held-out segments dashed and training-prefix segments solid;
+- `figures/nm_ladder_sequential_relative_to_specialist.{png,pdf}`: the same NM
+  trajectory normalized per target graph as `AUC(mixture, A) / AUC(A, A)`;
+- `figures/downstream_cls_sequential_relative_to_specialist.{png,pdf}`: the
+  sequential ladder's downstream classification ROC-AUC normalized by the matching
+  same-source classifier for each of the four labeled evaluation graphs;
 - `figures/sequential_minus_interleaved.png`: secondary paired-delta heatmap.
 
 The primary analysis uses only each run's terminal `state_dict_40000.ckpt`. Source-boundary
