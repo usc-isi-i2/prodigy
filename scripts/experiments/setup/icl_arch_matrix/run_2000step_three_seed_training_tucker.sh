@@ -9,8 +9,9 @@ LOG_ROOT="${LOG_ROOT:-${REPO_ROOT}/log/icl_arch_saturation_2000}"
 VISION_ROOT="${VISION_ROOT:-/dataMeR1/phil/gfm/upstream/VISION}"
 GILT_ROOT="${GILT_ROOT:-/dataMeR1/phil/gfm/upstream/inductnode}"
 RUN_STAMP="${RUN_STAMP:-20260815}"
-STEPS=2000
-CHECKPOINTS="20,60,100,300,900,2000"
+STEPS="${STEPS:-2000}"
+CHECKPOINTS="${CHECKPOINTS:-20,60,100,300,900,2000}"
+SEEDS_TEXT="${SEEDS_TEXT:-0 1 2}"
 MODELS=(
   "ss_covid_political:covid_political"
   "ss_election2020:election2020"
@@ -18,7 +19,7 @@ MODELS=(
   "ss_twibot20:twibot20"
   "ss_facebook_page_reference:facebook_page_reference"
 )
-SEEDS=(0 1 2)
+read -r -a SEEDS <<< "$SEEDS_TEXT"
 ARCHITECTURES=(vision prodigy gilt)
 GPUS=(0 1)
 
