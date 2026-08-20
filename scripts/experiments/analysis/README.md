@@ -33,7 +33,7 @@ Setup and launch files remain in `../setup/<name>/`.
 - Labeled-source diversity: [`labeled_mixture_diversity_cls500`](transfer/ablations/prodigy_nm/source_diversity/labeled_mixture_diversity_cls500/)
 - Interleaved versus sequential sampling: [`nm_ladder_sequential_nhop2`](transfer/ablations/prodigy_nm/source_schedule/nm_ladder_sequential_nhop2/)
 - Train/test edge separation: [`nm_ladder_train_test_nhop2`](transfer/ablations/prodigy_nm/split_integrity/nm_ladder_train_test_nhop2/)
-- Episode sampling and cross-source shortcuts: [`nm_cross_source_shortcut`](transfer/ablations/prodigy_nm/episode_sampling/nm_cross_source_shortcut/), [`sampling_strat_comparison`](transfer/ablations/prodigy_nm/episode_sampling/sampling_strat_comparison/)
+- Episode sampling and cross-source shortcuts: [`nm_cross_source_shortcut`](transfer/ablations/prodigy_nm/episode_sampling/nm_cross_source_shortcut/), [`sampling_strat_comparison`](transfer/ablations/prodigy_nm/episode_sampling/sampling_strat_comparison/), [`nm_ladder_global_nhop2`](transfer/ablations/prodigy_nm/episode_sampling/nm_ladder_global_nhop2/)
 - PRODIGY encoder: [`nm_ladder_gatv2`](transfer/ablations/prodigy_nm/encoder_architecture/nm_ladder_gatv2/)
 - Batch construction: [`nm_all9_source_complete_batch`](transfer/ablations/prodigy_nm/batch_construction/nm_all9_source_complete_batch/)
 - Center sampling: [`nm_all9_radius_finalcore`](transfer/ablations/prodigy_nm/center_sampling/nm_all9_radius_finalcore/)

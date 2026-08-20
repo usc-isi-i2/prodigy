@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="790" viewBox="0 0 1200 790">
+  <rect width="1200" height="790" fill="#ffffff"/>
+  <style>
+    text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#17202a} .title{font-size:25px;font-weight:650}.sub{font-size:14px;fill:#566573}.panel{font-size:18px;font-weight:600}.tick{font-size:12px;fill:#64748b}.axis{stroke:#9aa5b1;stroke-width:1}.grid{stroke:#e5e9ee;stroke-width:1}.label{font-size:13px;fill:#34495e}.legend{font-size:14px}.p{fill:#2563eb;stroke:#fff;stroke-width:2}.v{fill:#e67e22;stroke:#fff;stroke-width:2}.g{fill:#16a085;stroke:#fff;stroke-width:2}.diamond{fill:#2563eb;stroke:#fff;stroke-width:2}
+  </style>
+  <text class="title" x="55" y="42">Self-graph classification AUC vs. training steps</text>
+  <circle class="p" cx="58" cy="72" r="6"/><text class="legend" x="70" y="77">PRODIGY</text>
+  <circle class="v" cx="170" cy="72" r="6"/><text class="legend" x="182" y="77">VISION</text>
+  <circle class="g" cx="270" cy="72" r="6"/><text class="legend" x="282" y="77">GILT</text>
+  <path class="diamond" d="M358 64 L366 72 L358 80 L350 72 Z"/><text class="legend" x="372" y="77">historical PRODIGY 40k</text>
+  <text class="sub" x="55" y="101">Circles are controlled 100-update runs; diamonds are separate historical runs and are not connected as trajectories.</text>
+
+  <!-- Panel frames and shared grid -->
+  <g>
+    <text class="panel" x="75" y="138">COVID-political</text>
+    <rect x="75" y="150" width="500" height="245" fill="#fbfcfd" stroke="#ccd3da"/>
+    <path class="grid" d="M75 150H575 M75 232H575 M75 313H575 M75 395H575"/>
+    <text class="tick" x="43" y="155">1.0</text><text class="tick" x="43" y="237">0.8</text><text class="tick" x="43" y="318">0.6</text><text class="tick" x="43" y="399">0.4</text>
+    <text class="tick" x="82" y="414">100</text><text class="tick" x="500" y="414">40k</text>
+    <text class="label" x="270" y="437">training steps (log scale)</text>
+    <text class="label" transform="translate(18 330) rotate(-90)">classification ROC-AUC</text>
+    <circle class="p" cx="94" cy="205" r="7"/><circle class="v" cx="94" cy="178" r="7"/><circle class="g" cx="94" cy="191" r="7"/>
+    <path class="diamond" d="M530 174 L539 183 L530 192 L521 183 Z"/>
+  </g>
+  <g>
+    <text class="panel" x="655" y="138">Election 2020</text>
+    <rect x="655" y="150" width="500" height="245" fill="#fbfcfd" stroke="#ccd3da"/>
+    <path class="grid" d="M655 150H1155 M655 232H1155 M655 313H1155 M655 395H1155"/>
+    <text class="tick" x="623" y="155">1.0</text><text class="tick" x="623" y="237">0.8</text><text class="tick" x="623" y="318">0.6</text><text class="tick" x="623" y="399">0.4</text>
+    <text class="tick" x="662" y="414">100</text><text class="tick" x="1080" y="414">40k</text>
+    <text class="label" x="850" y="437">training steps (log scale)</text>
+    <circle class="p" cx="674" cy="351" r="7"/><circle class="v" cx="674" cy="153" r="7"/><circle class="g" cx="674" cy="156" r="7"/>
+    <path class="diamond" d="M1110 147 L1119 156 L1110 165 L1101 156 Z"/>
+  </g>
+  <g>
+    <text class="panel" x="75" y="485">UKR/RUS suspended</text>
+    <rect x="75" y="497" width="500" height="245" fill="#fbfcfd" stroke="#ccd3da"/>
+    <path class="grid" d="M75 497H575 M75 579H575 M75 660H575 M75 742H575"/>
+    <text class="tick" x="43" y="502">1.0</text><text class="tick" x="43" y="584">0.8</text><text class="tick" x="43" y="665">0.6</text><text class="tick" x="43" y="746">0.4</text>
+    <text class="tick" x="82" y="761">100</text><text class="tick" x="500" y="761">40k</text>
+    <circle class="p" cx="94" cy="697" r="7"/><circle class="v" cx="94" cy="724" r="7"/><circle class="g" cx="94" cy="701" r="7"/>
+    <path class="diamond" d="M530 706 L539 715 L530 724 L521 715 Z"/>
+  </g>
+  <g>
+    <text class="panel" x="655" y="485">TwiBot-20</text>
+    <rect x="655" y="497" width="500" height="245" fill="#fbfcfd" stroke="#ccd3da"/>
+    <path class="grid" d="M655 497H1155 M655 579H1155 M655 660H1155 M655 742H1155"/>
+    <text class="tick" x="623" y="502">1.0</text><text class="tick" x="623" y="584">0.8</text><text class="tick" x="623" y="665">0.6</text><text class="tick" x="623" y="746">0.4</text>
+    <text class="tick" x="662" y="761">100</text><text class="tick" x="1080" y="761">40k</text>
+    <circle class="p" cx="674" cy="623" r="7"/><circle class="v" cx="674" cy="669" r="7"/><circle class="g" cx="674" cy="694" r="7"/>
+    <path class="diamond" d="M1110 640 L1119 649 L1110 658 L1101 649 Z"/>
+  </g>
+</svg>
