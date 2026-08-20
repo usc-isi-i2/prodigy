@@ -159,6 +159,25 @@ Strict aggregation writes validation trajectories, selected steps, per-seed test
 and a seed-aware summary under `log/nm_all9_radius_finalcore_eval/summary/`. Analysis
 and findings belong in a matching analysis directory only after these results exist.
 
+### Downstream classification trajectories
+
+Evaluate the radius checkpoints on the standard five fixed downstream classification
+streams (2-way, 10-shot, 128 episodes per target). This records ROC-AUC, accuracy, and
+F1 for every arm, training seed, and checkpoint at steps 100, 300, 900, and 2,500:
+
+```bash
+DRY_RUN=1 bash scripts/experiments/setup/nm_all9_radius_finalcore/run_classification_trajectories_tucker.sh
+
+tmux new-session -d -s radiusfc-cls \
+  'export PATH="/home/mhchu/miniconda3/bin:$PATH"; \
+   bash scripts/experiments/setup/nm_all9_radius_finalcore/run_classification_trajectories_tucker.sh'
+```
+
+Result shards are written under `log/nm_all9_radius_finalcore_cls/results/`. The
+launcher defaults to GPUs 0 and 1; set `GPUS=0` to run sequentially on GPU 0 only. It
+refuses to overwrite existing shards and fixes the evaluation episode stream across
+arms and checkpoints.
+
 ## Seed-0 convergence follow-up (10k)
 
 The convergence follow-up reruns all three seed-0 arms from random initialization for

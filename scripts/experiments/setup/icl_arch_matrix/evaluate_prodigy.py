@@ -82,7 +82,7 @@ def parse_args():
     parser.add_argument("--checkpoint-step", type=int, default=TRAIN_STEPS)
     parser.add_argument(
         "--checkpoint-layout",
-        choices=("architecture-matrix", "final-core", "saturation"),
+        choices=("architecture-matrix", "final-core", "saturation", "radius-finalcore"),
         default="architecture-matrix",
     )
     parser.add_argument("--training-seed", type=int, default=0)
@@ -108,6 +108,13 @@ def checkpoint_path(args, model_id: str, checkpoint_step: int) -> Path:
         return (
             Path(args.state_root)
             / f"finalcore_{model_id}_s{args.training_seed}_{args.run_stamp}"
+            / "checkpoint"
+            / f"state_dict_{checkpoint_step}.ckpt"
+        )
+    if args.checkpoint_layout == "radius-finalcore":
+        return (
+            Path(args.state_root)
+            / f"radiusfc_{model_id}_s{args.training_seed}_{args.run_stamp}"
             / "checkpoint"
             / f"state_dict_{checkpoint_step}.ckpt"
         )
@@ -175,8 +182,17 @@ def main() -> int:
             raise ValueError("--model-ids cannot be combined with --random-init")
         models = [SimpleNamespace(model_id="random_init", sources=())]
     else:
-        models = [model for model in build_models() if not selected or model.model_id in selected]
-        if selected and selected != {model.model_id for model in models}:
+        if args.checkpoint_layout == "radius-finalcore":
+            if not selected:
+                raise ValueError("--model-ids is required for radius-finalcore checkpoints")
+            models = [SimpleNamespace(model_id=model_id, sources=()) for model_id in sorted(selected)]
+        else:
+            models = [model for model in build_models() if not selected or model.model_id in selected]
+        if (
+            args.checkpoint_layout != "radius-finalcore"
+            and selected
+            and selected != {model.model_id for model in models}
+        ):
             raise ValueError(f"unknown model ids: {sorted(selected - {m.model_id for m in models})}")
         if args.checkpoint_layout == "architecture-matrix" and args.training_seed != 0:
             raise ValueError("architecture-matrix checkpoints exist only for training seed 0")
