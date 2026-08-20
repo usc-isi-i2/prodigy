@@ -15,6 +15,19 @@ from matplotlib.patches import Rectangle
 
 
 HERE = Path(__file__).resolve().parent
+TRANSFER_ROOT = HERE.parents[3]
+SPECIALIST_NM = (
+    TRANSFER_ROOT / "matrices" / "prodigy_nm" / "single_source"
+    / "nm_single_source_matrix" / "data" / "nm_single_source_matrix.csv"
+)
+SPECIALIST_CLS = (
+    TRANSFER_ROOT / "matrices" / "prodigy_nm" / "downstream"
+    / "nm_single_source_downstream" / "data" / "classification.csv"
+)
+DOWNSTREAM = (
+    HERE.parents[1] / "downstream" / "nm_ladder_downstream_nhop2"
+    / "data" / "downstream_long.csv"
+)
 DATASETS = [
     "ukr_rus_twitter", "covid19_twitter", "midterm", "covid_political",
     "election2020", "ukr_rus_suspended", "twibot20", "cp_hk_twitter",
@@ -41,6 +54,10 @@ GRAPH_LABELS = [
     "Election '20", "Ukr-Rus susp.", "TwiBot-20", "CP-HK",
 ]
 GRAY = "#8f8d87"
+CLS_DATASETS = [
+    "covid_political", "election2020", "ukr_rus_suspended", "twibot20",
+]
+CLS_LABELS = ["COVID-pol.", "Election '20", "Ukr-Rus susp.", "TwiBot-20"]
 
 
 def load_matrices(path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -54,6 +71,47 @@ def load_matrices(path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     if np.isnan(interleaved).any() or np.isnan(sequential).any():
         raise ValueError("expected a complete 8x8 schedule comparison")
     return interleaved, sequential, sequential - interleaved
+
+
+def load_specialist_diagonal(path: Path) -> np.ndarray:
+    values = {}
+    with path.open(newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            graph = row["train_graph"]
+            if graph in DATASETS:
+                values[graph] = float(row[graph])
+    if set(values) != set(DATASETS):
+        raise ValueError(f"specialist matrix is missing graphs: {set(DATASETS) - set(values)}")
+    return np.array([values[graph] for graph in DATASETS])
+
+
+def load_downstream_sequential(path: Path) -> np.ndarray:
+    matrix = np.full((8, len(CLS_DATASETS)), np.nan)
+    with path.open(newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            if (
+                row["variant"] == "sequential"
+                and row["order"] == "A"
+                and row["task"] == "classification"
+                and row["metric"] == "roc_auc"
+                and row["dataset"] in CLS_DATASETS
+            ):
+                matrix[int(row["rung"]) - 1, CLS_DATASETS.index(row["dataset"])] = float(row["value"])
+    if np.isnan(matrix).any():
+        raise ValueError("expected a complete 8x4 sequential classification matrix")
+    return matrix
+
+
+def load_downstream_specialists(path: Path) -> np.ndarray:
+    values = {}
+    with path.open(newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            source = row["source"]
+            if source in CLS_DATASETS:
+                values[source] = float(row[source])
+    if set(values) != set(CLS_DATASETS):
+        raise ValueError(f"classification specialists missing: {set(CLS_DATASETS) - set(values)}")
+    return np.array([values[graph] for graph in CLS_DATASETS])
 
 
 def draw_ladder(ax, matrix: np.ndarray, title: str, *, vmin: float, vmax: float) -> None:
@@ -256,6 +314,113 @@ def plot_trajectory(matrix: np.ndarray, output: Path) -> None:
     plt.close(fig)
 
 
+def plot_relative_trajectory(
+    ratios: np.ndarray,
+    labels: list[str],
+    entry_indices: list[int],
+    output: Path,
+    *,
+    title: str,
+    ylabel: str,
+    subtitle: str,
+) -> None:
+    """Plot mixture performance divided by the matching single-source specialist."""
+    x = np.arange(8)
+    margin = max(0.025, float(np.nanmax(np.abs(ratios - 1.0))) * 0.12)
+    lower = float(np.nanmin(ratios)) - margin
+    upper = float(np.nanmax(ratios)) + margin
+    fig, ax = plt.subplots(figsize=(10.6, 5.9), dpi=200)
+    label_items = []
+
+    for graph_index, (label, entry_index) in enumerate(zip(labels, entry_indices, strict=True)):
+        values = ratios[:, graph_index]
+        for rung in range(7):
+            in_training = rung + 1 >= entry_index
+            ax.plot(
+                x[rung : rung + 2], values[rung : rung + 2],
+                color=BLUE if in_training else GRAY,
+                linewidth=1.9 if in_training else 1.5,
+                linestyle="-" if in_training else (0, (4, 2)),
+                zorder=3, solid_capstyle="round",
+            )
+        for rung in range(8):
+            in_training = rung >= entry_index
+            is_entry = rung == entry_index and entry_index > 0
+            ax.scatter(
+                x[rung], values[rung], s=95 if is_entry else 24,
+                facecolor=BLUE if in_training else "white",
+                edgecolor="white" if is_entry else (BLUE if in_training else GRAY),
+                linewidth=1.6 if is_entry else 1.4, zorder=6 if is_entry else 5,
+            )
+        label_items.append({"value": values[-1], "text": label})
+
+    mean = ratios.mean(axis=1)
+    ax.plot(
+        x, mean, color=INK, linewidth=2.8, zorder=8, marker="s", markersize=6,
+        markerfacecolor=INK, markeredgecolor="white", markeredgewidth=1.2,
+    )
+    ax.annotate(
+        f"mean (all {ratios.shape[1]})", (x[0] - 0.06, mean[0]),
+        ha="right", va="center", fontsize=9, color=INK, fontweight="bold",
+    )
+    ax.axhline(1.0, color=CORAL, linewidth=1.5, linestyle=(0, (5, 3)), zorder=1)
+    ax.text(
+        x[0] + 0.05, 1.0, "specialist parity", color=CORAL,
+        fontsize=8.7, va="bottom", ha="left",
+    )
+
+    gap = max(0.018, (upper - lower) * 0.055)
+    for item in declutter_labels(label_items, gap, lower + margin * 0.25, upper - margin * 0.25):
+        ax.plot(
+            [x[-1] + 0.06, x[-1] + 0.28], [item["value"], item["label_y"]],
+            color=MUTED, linewidth=0.6, zorder=2,
+        )
+        ax.annotate(
+            item["text"], (x[-1] + 0.34, item["label_y"]),
+            ha="left", va="center", fontsize=9.3, color=BLUE, fontweight="bold",
+        )
+
+    ax.set_xlim(-0.62, 8.75)
+    ax.set_ylim(lower, upper)
+    ax.set_xticks(x, RUNG_TICKS, fontsize=9.2)
+    ax.set_xlabel(
+        "SSL pre-training graph  (one source added per rung, merge grows to the right)",
+        fontsize=10.5, color=INK,
+    )
+    ax.set_ylabel(ylabel, fontsize=10.5, color=INK)
+    ax.tick_params(colors=MUTED, labelsize=9)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.spines[["left", "bottom"]].set_color("#c3c2b7")
+    ax.grid(axis="y", color=GRID, linewidth=0.8, zorder=0)
+    ax.set_axisbelow(True)
+    ax.set_title(title, fontsize=12.5, color=INK, fontweight="bold", loc="left", pad=26)
+    ax.text(
+        0.0, 1.02, subtitle, transform=ax.transAxes,
+        ha="left", va="bottom", fontsize=9, color=MUTED,
+    )
+    ax.legend(
+        handles=[
+            Line2D([0], [0], color=BLUE, linewidth=1.9, marker="o",
+                   markerfacecolor=BLUE, markeredgecolor="white", markersize=7,
+                   label="in training prefix"),
+            Line2D([0], [0], color=GRAY, linewidth=1.5, linestyle=(0, (4, 2)),
+                   marker="o", markerfacecolor="white", markeredgecolor=GRAY,
+                   markersize=7, label="held out"),
+            Line2D([0], [0], color=INK, linewidth=2.8, marker="s",
+                   markerfacecolor=INK, markeredgecolor="white", markersize=7,
+                   label=f"mean (all {ratios.shape[1]} graphs)"),
+        ],
+        loc="best", frameon=False, fontsize=9, handlelength=2.4,
+    )
+    fig.tight_layout()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output, dpi=220, bbox_inches="tight")
+    fig.savefig(output.with_suffix(".pdf"), bbox_inches="tight")
+    print(f"wrote {output}")
+    print(f"wrote {output.with_suffix('.pdf')}")
+    plt.close(fig)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -273,6 +438,14 @@ def main() -> int:
     parser.add_argument(
         "--trajectory-output", type=Path,
         default=HERE / "figures" / "nm_ladder_sequential_trajectory.png",
+    )
+    parser.add_argument(
+        "--relative-trajectory-output", type=Path,
+        default=HERE / "figures" / "nm_ladder_sequential_relative_to_specialist.png",
+    )
+    parser.add_argument(
+        "--downstream-relative-output", type=Path,
+        default=HERE / "figures" / "downstream_cls_sequential_relative_to_specialist.png",
     )
     args = parser.parse_args()
 
@@ -294,6 +467,24 @@ def main() -> int:
     plt.close(fig)
     plot_ladders(interleaved, sequential, args.ladder_output)
     plot_trajectory(sequential, args.trajectory_output)
+    nm_specialists = load_specialist_diagonal(SPECIALIST_NM)
+    plot_relative_trajectory(
+        sequential / nm_specialists[np.newaxis, :], GRAPH_LABELS, list(range(8)),
+        args.relative_trajectory_output,
+        title="Blocked sequential ladder: mixture NM AUC relative to each specialist",
+        ylabel="Mixture NM AUC / specialist NM AUC",
+        subtitle="NM  3-shot / 30-way  ·  matched step 40k  ·  1.0 = AUC(mixture, A) / AUC(A, A)",
+    )
+    downstream = load_downstream_sequential(DOWNSTREAM)
+    cls_specialists = load_downstream_specialists(SPECIALIST_CLS)
+    plot_relative_trajectory(
+        downstream / cls_specialists[np.newaxis, :], CLS_LABELS,
+        [DATASETS.index(graph) for graph in CLS_DATASETS],
+        args.downstream_relative_output,
+        title="Downstream classification AUC relative to each specialist",
+        ylabel="Mixture CLS AUC / specialist CLS AUC",
+        subtitle="10-shot node classification  ·  matched step 40k  ·  1.0 = same-source specialist parity",
+    )
     return 0
 
 
