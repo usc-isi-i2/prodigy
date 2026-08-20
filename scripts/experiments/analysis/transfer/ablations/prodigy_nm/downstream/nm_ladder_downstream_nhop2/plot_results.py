@@ -973,6 +973,98 @@ def plot_trajectories(
     _save(fig, output_dir / output_stem)
 
 
+def _plot_mean_endpoints(ax: plt.Axes, panel: pd.DataFrame, label: str) -> None:
+    """Plot the graph-averaged first and last rung as a single two-point line."""
+    means = panel.groupby("rung")["value"].mean().sort_index()
+    first_rung, last_rung = int(means.index.min()), int(means.index.max())
+    values = np.array([means.loc[first_rung], means.loc[last_rung]], dtype=float)
+    ax.plot(
+        [0, 1], values, color=BLUE, linewidth=2.4, marker="o", markersize=6.5,
+        markeredgecolor="white", markeredgewidth=0.8, zorder=3,
+    )
+    ax.set_title(f"{label}\nmean change {values[1] - values[0]:+.3f}", loc="left", fontweight="bold", fontsize=9.6)
+    ax.set_xticks([0, 1], [f"First (r{first_rung})", f"Last (r{last_rung})"])
+    ax.set_xlim(-0.18, 1.18)
+    ax.grid(axis="y", color=GRID, linewidth=0.65)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.set_axisbelow(True)
+
+
+def plot_mean_endpoint_trajectories(long: pd.DataFrame, output_dir: Path) -> None:
+    """Plot one graph-averaged first-to-last line for every order/protocol/task panel."""
+    primary = long[long["primary"].astype(bool)].copy()
+    nm = load_nm_trajectories()
+    final_nm, final_cls, _ = load_final_core_2500()
+    historical_nm, historical_cls = load_historical_1h_matched40k()
+    classification_targets = list(
+        primary[primary["task"] == "classification"]["dataset"].drop_duplicates()
+    )
+    final_targets = list(final_cls["dataset"].drop_duplicates())
+
+    columns = [
+        ("legacy", "matched40k", "A", "Matched 40k · A"),
+        ("legacy", "sequential", "A", "Sequential · A"),
+        ("legacy", "split", "A", "Split-aware · A"),
+        ("legacy", "fixed10k", "A", "Fixed 10k/source · A"),
+        ("final", "matched2500", "A", "Matched 2.5k · A"),
+        ("historical", "matched40k", "B", "Matched 40k · B · 1-hop"),
+        ("final", "matched2500", "B", "Matched 2.5k · B"),
+        ("historical", "matched40k", "C", "Matched 40k · C · 1-hop"),
+        ("final", "matched2500", "C", "Matched 2.5k · C"),
+        ("legacy", "fixed10k", "C", "Fixed 10k/source · C"),
+    ]
+    fig, axes = plt.subplots(3, len(columns), figsize=(36.0, 10.2), sharey="row")
+
+    for col, (family, variant, order_name, label) in enumerate(columns):
+        if family == "legacy":
+            task_panels = {
+                0: primary[(primary["task"] == "classification") & (primary["variant"] == variant) & (primary["order"] == order_name)],
+                1: primary[(primary["task"] == "static_lp") & (primary["variant"] == variant) & (primary["order"] == order_name)],
+                2: nm[(nm["variant"] == variant) & (nm["order"] == order_name) & nm["dataset"].isin(classification_targets)],
+            }
+            missing_static = None
+        elif family == "final":
+            task_panels = {
+                0: final_cls[final_cls["order"] == order_name],
+                2: final_nm[(final_nm["order"] == order_name) & final_nm["dataset"].isin(final_targets)],
+            }
+            missing_static = "No repaired static-LP results"
+        else:
+            task_panels = {
+                0: historical_cls[historical_cls["order"] == order_name],
+                2: historical_nm[(historical_nm["order"] == order_name) & historical_nm["dataset"].isin(classification_targets)],
+            }
+            missing_static = "Legacy static-LP scores are void"
+
+        for row, panel in task_panels.items():
+            _plot_mean_endpoints(axes[row, col], panel, label)
+        if missing_static:
+            ax = axes[1, col]
+            ax.set_title(label, loc="left", fontweight="bold", fontsize=9.6)
+            ax.text(0.5, 0.5, missing_static, transform=ax.transAxes, ha="center", va="center", color=MUTED, fontsize=9)
+            ax.set_xticks([])
+            ax.spines[["top", "right", "bottom", "left"]].set_visible(False)
+
+    for row, ylabel in enumerate(("Node classification ROC-AUC", "Static link prediction ROC-AUC", "Neighbor matching ROC-AUC")):
+        axes[row, 0].set_ylabel(ylabel)
+        for divider_col in (4, 6):
+            axes[row, divider_col].spines["right"].set_visible(True)
+            axes[row, divider_col].spines["right"].set_color(GRID)
+            axes[row, divider_col].spines["right"].set_linewidth(1.4)
+
+    fig.suptitle(
+        "Mean performance at the first and last ladder rungs",
+        x=0.055, ha="left", y=0.995, fontsize=15, fontweight="bold",
+    )
+    fig.text(
+        0.055, 0.952,
+        "One line per panel · endpoints are averaged over the evaluation graphs shown in classification; 2.5k panels also average three seeds.",
+        color=MUTED, fontsize=9,
+    )
+    fig.tight_layout(rect=(0.035, 0.02, 1, 0.90), h_pad=3.2, w_pad=1.25)
+    _save(fig, output_dir / "rung_endpoints_mean_by_order")
+
+
 def _jitter(group: pd.DataFrame) -> np.ndarray:
     # Stable, symmetric placement without implying random sampling.
     keys = group["rung"].astype(str) + "|" + group["dataset"].astype(str)
@@ -1072,8 +1164,9 @@ def main() -> None:
         order_columns=True,
         output_stem="rung_trajectories_matched_graphs_by_order",
     )
+    plot_mean_endpoint_trajectories(long, args.output_dir)
     plot_controlled_deltas(paired, args.output_dir)
-    print(f"wrote 6 core plus 15 classification-ladder PNG/PDF figure pairs to {args.output_dir}")
+    print(f"wrote 7 core plus 15 classification-ladder PNG/PDF figure pairs to {args.output_dir}")
 
 
 if __name__ == "__main__":
