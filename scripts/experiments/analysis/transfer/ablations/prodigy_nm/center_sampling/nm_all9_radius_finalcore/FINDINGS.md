@@ -76,3 +76,33 @@ from `global` to `radius_mix` to `close_only` is consistent across all three see
 The producing setup and launch/evaluation documentation live in
 `scripts/experiments/setup/nm_all9_radius_finalcore/`. Raw state and logs remain on
 Tucker under `/dataMeR1/phil/gfm/prodigy-radiusfc/`.
+
+## Seed-0 10k ROC-AUC follow-up
+
+A later convergence follow-up trained seed 0 of the original three arms through
+10,000 updates and added a fourth `distance_stratified` arm. The stratified arm puts
+close, medium-distance, and globally sampled centers in the same episode. This
+follow-up reports macro one-vs-rest ROC-AUC over the 30 episode-local classes on the
+same four deterministic validation panels. It is validation evidence from one
+training seed, not a replacement for the three-seed frozen-test accuracy result above.
+
+At 10,000 updates, the primary-panel AUCs were nearly tied: `radius_mix` 0.8582,
+`global` 0.8581, `distance_stratified` 0.8570, and `close_only` 0.8523. The
+stratified arm had the highest radius-2 AUC (0.8100), but remained lower on radius 3
+(0.7877) and global episodes (0.9734) than the best arm on each panel. Thus,
+within-episode distance stratification fixed the pronounced optimization slowdown of
+the earlier radius arms, but did not produce a clear aggregate transfer improvement.
+
+- [`figures/validation_auc_seed0_10k.png`](figures/validation_auc_seed0_10k.png):
+  the four-arm AUC trajectories through 10,000 updates, with independent y-axis
+  ranges per panel.
+- [`data/validation_auc_seed0_10k.csv`](data/validation_auc_seed0_10k.csv): all
+  64 arm × checkpoint × validation-panel AUC cells.
+- [`plot_auc_trajectories.py`](plot_auc_trajectories.py): validates the complete
+  grid, derives the primary-panel macro, and regenerates the figure.
+
+The AUC rescore used evaluator commit `fd5918e` from branch
+`codex/nm-all9-distance-stratified`. Raw baseline results were written under
+`/dataMeR1/phil/gfm/prodigy-radiusauc-eval/log/nm_all9_radius_auc/`; stratified
+checkpoints remain under
+`/dataMeR1/phil/gfm/prodigy-radiusstrat/state/nm_all9_distance_stratified_10k/`.
