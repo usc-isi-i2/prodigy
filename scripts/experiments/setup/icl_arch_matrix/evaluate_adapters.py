@@ -78,15 +78,13 @@ def evaluate_model(model, loader, device, *, n_query: int, equal_query_counts: b
                 logits = output[0] if isinstance(output, tuple) else output
                 target_local = episode.labels[episode.query_mask]
                 probability_local = torch.softmax(logits, dim=1)
-                target_global = episode.label_map[target_local]
-                global_class1_local_index = torch.where(episode.label_map == 1)[0]
-                if global_class1_local_index.numel() != 1:
-                    raise ValueError(f"expected one global class 1: {episode.label_map.tolist()}")
-                probability_global1 = probability_local[:, global_class1_local_index.item()]
-                prediction_global = episode.label_map[logits.argmax(1)]
-                labels.extend(target_global.detach().cpu().tolist())
-                scores.extend(probability_global1.detach().cpu().tolist())
-                predictions.extend(prediction_global.detach().cpu().tolist())
+                # Metrics are defined in the episode-local 2-way class space.  This
+                # matters for multiclass datasets such as Facebook, where each episode
+                # can sample an arbitrary pair of global classes (for example [8, 7]).
+                # It also matches PRODIGY's evaluation path.
+                labels.extend(target_local.detach().cpu().tolist())
+                scores.extend(probability_local[:, 1].detach().cpu().tolist())
+                predictions.extend(logits.argmax(1).detach().cpu().tolist())
                 update_episode_fingerprint(fingerprint, episode)
                 episode_count += 1
     y_true = np.asarray(labels, dtype=np.int64)
