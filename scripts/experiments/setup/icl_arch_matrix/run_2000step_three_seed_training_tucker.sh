@@ -12,6 +12,7 @@ RUN_STAMP="${RUN_STAMP:-20260815}"
 STEPS="${STEPS:-2000}"
 CHECKPOINTS="${CHECKPOINTS:-20,60,100,300,900,2000}"
 SEEDS_TEXT="${SEEDS_TEXT:-0 1 2}"
+GPUS_TEXT="${GPUS_TEXT:-0 1}"
 MODELS=(
   "ss_covid_political:covid_political"
   "ss_election2020:election2020"
@@ -21,7 +22,7 @@ MODELS=(
 )
 read -r -a SEEDS <<< "$SEEDS_TEXT"
 ARCHITECTURES=(vision prodigy gilt)
-GPUS=(0 1)
+read -r -a GPUS <<< "$GPUS_TEXT"
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
 source "$(conda info --base)/etc/profile.d/conda.sh"
