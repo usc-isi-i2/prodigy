@@ -978,7 +978,7 @@ def _plot_mean_endpoints(ax: plt.Axes, panel: pd.DataFrame, label: str) -> None:
     means = panel.groupby("rung")["value"].mean().sort_index()
     first_rung, last_rung = int(means.index.min()), int(means.index.max())
     change = float(means.loc[last_rung] - means.loc[first_rung])
-    values = np.array([0.0, change], dtype=float)
+    values = np.array([-change, 0.0], dtype=float)
     ax.plot(
         [0, 1], values, color=BLUE, linewidth=2.4, marker="o", markersize=6.5,
         markeredgecolor="white", markeredgewidth=0.8, zorder=3,
@@ -993,7 +993,7 @@ def _plot_mean_endpoints(ax: plt.Axes, panel: pd.DataFrame, label: str) -> None:
 
 
 def plot_mean_endpoint_trajectories(long: pd.DataFrame, output_dir: Path) -> None:
-    """Plot one graph-averaged first-to-last line for every order/protocol/task panel."""
+    """Plot absolute-AUC floating bars from each single-source to full-mixture rung."""
     primary = long[long["primary"].astype(bool)].copy()
     nm = load_nm_trajectories()
     final_nm, final_cls, _ = load_final_core_2500()
@@ -1015,59 +1015,69 @@ def plot_mean_endpoint_trajectories(long: pd.DataFrame, output_dir: Path) -> Non
         ("final", "matched2500", "C", "Matched 2.5k · C"),
         ("legacy", "fixed10k", "C", "Fixed 10k/source · C"),
     ]
-    fig, axes = plt.subplots(3, len(columns), figsize=(36.0, 10.2), sharey="row")
-
-    for col, (family, variant, order_name, label) in enumerate(columns):
+    task_panels: dict[int, list[pd.DataFrame | None]] = {0: [], 1: [], 2: []}
+    for family, variant, order_name, _ in columns:
         if family == "legacy":
-            task_panels = {
+            panels = {
                 0: primary[(primary["task"] == "classification") & (primary["variant"] == variant) & (primary["order"] == order_name)],
                 1: primary[(primary["task"] == "static_lp") & (primary["variant"] == variant) & (primary["order"] == order_name)],
                 2: nm[(nm["variant"] == variant) & (nm["order"] == order_name) & nm["dataset"].isin(classification_targets)],
             }
-            missing_static = None
         elif family == "final":
-            task_panels = {
+            panels = {
                 0: final_cls[final_cls["order"] == order_name],
                 2: final_nm[(final_nm["order"] == order_name) & final_nm["dataset"].isin(final_targets)],
             }
-            missing_static = "No repaired static-LP results"
         else:
-            task_panels = {
+            panels = {
                 0: historical_cls[historical_cls["order"] == order_name],
                 2: historical_nm[(historical_nm["order"] == order_name) & historical_nm["dataset"].isin(classification_targets)],
             }
-            missing_static = "Legacy static-LP scores are void"
+        for row in range(3):
+            task_panels[row].append(panels.get(row))
 
-        for row, panel in task_panels.items():
-            _plot_mean_endpoints(axes[row, col], panel, label)
-        if missing_static:
-            ax = axes[1, col]
-            ax.set_title(label, loc="left", fontweight="bold", fontsize=9.6)
-            ax.text(0.5, 0.5, missing_static, transform=ax.transAxes, ha="center", va="center", color=MUTED, fontsize=9)
-            ax.set_xticks([])
-            ax.spines[["top", "right", "bottom", "left"]].set_visible(False)
+    fig, axes = plt.subplots(3, 1, figsize=(16.8, 12.2), sharex=True)
+    x = np.arange(len(columns))
+    labels = [label.replace(" · ", "\n") for _, _, _, label in columns]
+    task_labels = ("Node classification ROC-AUC", "Static link prediction ROC-AUC", "Neighbor matching ROC-AUC")
+    for row, ax in enumerate(axes):
+        for col, panel in enumerate(task_panels[row]):
+            if panel is None or panel.empty:
+                continue
+            means = panel.groupby("rung")["value"].mean().sort_index()
+            first, final = float(means.iloc[0]), float(means.iloc[-1])
+            change = final - first
+            color = GREEN if change >= 0 else CORAL
+            ax.bar(col, change, bottom=first, width=0.58, color=color, alpha=0.78, zorder=2)
+            ax.scatter([col, col], [first, final], s=24, color=[INK, color], edgecolor="white", linewidth=0.6, zorder=3)
+            ax.text(col, max(first, final) + 0.008, f"{change:+.3f}", ha="center", va="bottom",
+                    fontsize=8.2, fontweight="bold", color=color)
+            ax.text(col + 0.18, first, f"{first:.3f}", ha="left", va="center", fontsize=6.8, color=MUTED)
+            ax.text(col + 0.18, final, f"{final:.3f}", ha="left", va="center", fontsize=6.8, color=MUTED)
+        ax.set_ylabel(task_labels[row])
+        ax.grid(axis="y", color=GRID, linewidth=0.7, zorder=0)
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.set_axisbelow(True)
+        if row == 1:
+            missing = [i for i, panel in enumerate(task_panels[row]) if panel is None or panel.empty]
+            for col in missing:
+                ax.text(col, 0.51, "N/A", ha="center", va="center", color=MUTED, fontsize=8)
+        for boundary in (4.5, 6.5):
+            ax.axvline(boundary, color=GRID, linewidth=1.2)
 
-    for row, ylabel in enumerate(("Node classification", "Static link prediction", "Neighbor matching")):
-        axes[row, 0].set_ylabel(f"{ylabel}\nΔ ROC-AUC from first rung")
-        populated = [ax for ax in axes[row] if ax.lines]
-        limit = max(abs(bound) for ax in populated for bound in ax.get_ylim())
-        limit = max(limit, 0.01)
-        axes[row, 0].set_ylim(-limit, limit)
-        for divider_col in (4, 6):
-            axes[row, divider_col].spines["right"].set_visible(True)
-            axes[row, divider_col].spines["right"].set_color(GRID)
-            axes[row, divider_col].spines["right"].set_linewidth(1.4)
+    axes[-1].set_xticks(x, labels, rotation=0, ha="center")
+    axes[-1].set_xlim(-0.65, len(columns) - 0.35)
 
     fig.suptitle(
-        "Mean performance at the first and last ladder rungs",
+        "Absolute AUC change from single-source to full-mixture training",
         x=0.055, ha="left", y=0.995, fontsize=15, fontweight="bold",
     )
     fig.text(
         0.055, 0.952,
-        "First-rung mixture performance is centered at 0; last = mean(last − first). Graphs are averaged within panels; 2.5k panels also average three seeds.",
+        "Floating bars begin at mean rung-1 AUC and end at mean final-rung AUC · green = gain, coral = loss · labels show endpoint AUCs and change.",
         color=MUTED, fontsize=9,
     )
-    fig.tight_layout(rect=(0.035, 0.02, 1, 0.90), h_pad=3.2, w_pad=1.25)
+    fig.tight_layout(rect=(0.035, 0.045, 1, 0.90), h_pad=2.2)
     _save(fig, output_dir / "rung_endpoints_mean_by_order")
 
 
