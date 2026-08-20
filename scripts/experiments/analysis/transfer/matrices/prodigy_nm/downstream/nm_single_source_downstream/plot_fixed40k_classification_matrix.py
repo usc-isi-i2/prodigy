@@ -40,7 +40,8 @@ LABELS = {
     "ukr_rus_suspended": "UKR/RUS suspended",
     "twibot20": "TwiBot-20",
     "cp_hk_twitter": "CP/HK",
-    "full_mixture": "Full eight-graph mixture",
+    "full_mixture": "Full mixture · matched total (40k)",
+    "matched_exposure_mixture": "Full mixture · matched exposure (80k)",
     "specialist_mean": "Specialist mean",
     "specialist_median": "Specialist median",
     "specialist_max": "Specialist max",
@@ -58,11 +59,19 @@ def build_matrix() -> pd.DataFrame:
     if len(mixture_rows) != 1:
         raise ValueError(f"expected one matched-40k full-mixture row, found {len(mixture_rows)}")
     mixture = mixture_rows.set_index(pd.Index(["full_mixture"]))[TARGETS]
+    exposure_rows = ladder[
+        (ladder["variant"] == "fixed10k")
+        & (ladder["order"] == "A")
+        & (ladder["rung"] == 8)
+    ]
+    if len(exposure_rows) != 1:
+        raise ValueError(f"expected one fixed-exposure full-mixture row, found {len(exposure_rows)}")
+    exposure_mixture = exposure_rows.set_index(pd.Index(["matched_exposure_mixture"]))[TARGETS]
     summaries = pd.DataFrame(
         [singles.mean(), singles.median(), singles.max()],
         index=["specialist_mean", "specialist_median", "specialist_max"],
     )
-    matrix = pd.concat([singles, mixture, summaries])
+    matrix = pd.concat([singles, mixture, exposure_mixture, summaries])
     matrix["min"] = matrix[TARGETS].min(axis=1)
     matrix["mean"] = matrix[TARGETS].mean(axis=1)
     matrix["max"] = matrix[TARGETS].max(axis=1)
@@ -71,7 +80,7 @@ def build_matrix() -> pd.DataFrame:
 
 def plot(matrix: pd.DataFrame) -> None:
     values = matrix.to_numpy(dtype=float)
-    fig, ax = plt.subplots(figsize=(13.8, 10.5))
+    fig, ax = plt.subplots(figsize=(13.8, 11.2))
     image = ax.imshow(values, cmap="viridis", vmin=0.45, vmax=1.0, aspect="auto")
 
     for row in range(values.shape[0]):
@@ -85,15 +94,15 @@ def plot(matrix: pd.DataFrame) -> None:
     ax.tick_params(axis="x", rotation=38, labelsize=9)
     ax.tick_params(axis="y", labelsize=9)
     ax.set_xlabel("Downstream classification target")
-    ax.set_ylabel("Matched-40k pretraining source, mixture, or specialist summary")
+    ax.set_ylabel("Pretraining source, mixture, or specialist summary")
     ax.axhline(len(SOURCE_ORDER) - 0.5, color="white", linewidth=3.0)
-    ax.axhline(len(SOURCE_ORDER) + 0.5, color="white", linewidth=3.0)
+    ax.axhline(len(SOURCE_ORDER) + 1.5, color="white", linewidth=3.0)
     ax.axvline(len(TARGETS) - 0.5, color="white", linewidth=3.0)
-    ax.set_title("PRODIGY matched-40k classification transfer", loc="left", fontsize=15, fontweight="bold", pad=42)
+    ax.set_title("PRODIGY classification transfer: fixed compute and exposure", loc="left", fontsize=15, fontweight="bold", pad=42)
     ax.text(
         0,
         1.025,
-        "Single training seed · fixed paired 10-shot episodes · every encoder receives 40k total pretraining steps",
+        "Single training seed · fixed paired 10-shot episodes · specialists and matched-total mixture: 40k; matched exposure: 10k/source = 80k",
         transform=ax.transAxes,
         color="#77746e",
         fontsize=9,
