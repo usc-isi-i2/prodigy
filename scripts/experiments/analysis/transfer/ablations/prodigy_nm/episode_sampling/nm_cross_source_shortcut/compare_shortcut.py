@@ -2,9 +2,10 @@
 """Compare NM test AUC across training regimes to test the cross-source-shortcut.
 
 Pulls `test_roc_auc` from the eval log dirs (eval_<model>_to_<dataset>_nm_0shot_*)
-for four models and prints a covid/ukr table plus the key verdict:
+for the study models and prints a covid/ukr/midterm table plus the key verdict:
 
   single-source        (nm_matrix_ukr / nm_matrix_covid)   -- reference ceiling
+  midterm specialist   (nm_cm_midterm)                     -- external held-out ceiling
   merged proportional  (nm_matrix_merged)                  -- baseline (shortcut on)
   merged within-source (nm_xsrc_within_source)             -- shortcut removed
 
@@ -28,10 +29,14 @@ from pathlib import Path
 MODELS = {
     "nm_matrix_ukr": "single ukr",
     "nm_matrix_covid": "single covid",
+    "nm_cm_midterm": "single midterm",
     "nm_matrix_merged_match": "merged proportional @match",
     "nm_matrix_merged_full": "merged proportional @full",
     "nm_xsrc_within_source_match": "merged within-source @match",
     "nm_xsrc_within_source_full": "merged within-source @full",
+    # Cross-corpus reference: trained on covid+midterm, not the ukr+covid merge.
+    "nm_cm_within_balanced_match": "merged within-balanced (covid+midterm) @match",
+    "nm_cm_within_balanced_full": "merged within-balanced (covid+midterm) @full",
     # fallbacks (single-checkpoint runs)
     "nm_matrix_merged": "merged proportional",
     "nm_xsrc_within_source": "merged within-source",

@@ -19,15 +19,18 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-# (csv-regime base, display label, colour). single in-domain is filled per test domain.
+# (csv-regime base, display label, colour). Single-source checkpoints are fixed
+# references and therefore repeat across the @match and @full panels.
 SERIES = [
-    ("single", "single (in-domain)", "#898781"),
+    ("single ukr", "single-ukr", "#777570"),
+    ("single covid", "single-covid", "#a09e98"),
+    ("single midterm", "single-midterm", "#c2c0ba"),
     ("merged proportional", "merged-naive", "#2a78d6"),
     ("merged within-source", "merged-within", "#1baf7a"),
+    ("merged within-balanced (covid+midterm)", "merged-within-balanced\n(covid+midterm)", "#006d2c"),
 ]
 TESTS = [("test:ukr", "test: ukr"), ("test:covid", "test: covid"),
-         ("test:midterm*", "test: midterm (held-out)")]
-SINGLE_BY_TEST = {"test:ukr": "single ukr", "test:covid": "single covid"}
+         ("test:midterm*", "test: midterm\n(held-out; specialist ref.)")]
 
 
 def load(csv_path: Path) -> dict:
@@ -39,9 +42,8 @@ def load(csv_path: Path) -> dict:
 
 
 def value(cells, metric, base, suffix, test):
-    if base == "single":
-        single = SINGLE_BY_TEST.get(test)  # no in-domain single for the held-out column
-        return cells.get((metric, single, test)) if single else None
+    if base.startswith("single "):
+        return cells.get((metric, base, test))
     return cells.get((metric, f"{base} {suffix}", test))
 
 
@@ -53,10 +55,12 @@ def plot_panel(ax, cells, metric, suffix, title):
         vals = [v if v is not None else 0.0 for v in raw]
         bars = ax.bar(x + (i - (n - 1) / 2) * width, vals, width, label=label, color=colour)
         for b, v in zip(bars, raw):
-            if v is not None:  # skip held-out cells with no in-domain single
-                ax.text(b.get_x() + b.get_width() / 2, v + 0.008, f"{v:.3f}", ha="center", va="bottom", fontsize=7)
+            if v is not None:
+                label_offset = 0.008 + (0.018 if i % 2 else 0.0)
+                ax.text(b.get_x() + b.get_width() / 2, v + label_offset, f"{v:.3f}",
+                        ha="center", va="bottom", fontsize=6.5)
     ax.set_xticks(x); ax.set_xticklabels([lbl for _, lbl in TESTS], fontsize=9)
-    ax.set_ylim(0, 0.75 if metric != "roc_auc" else 1.0)
+    ax.set_ylim(0, 0.75 if metric != "roc_auc" else 1.06)
     ax.set_ylabel(metric, fontsize=10); ax.set_title(title, fontsize=11)
     ax.grid(axis="y", color="#e1e0d9", linewidth=0.8); ax.set_axisbelow(True)
 
@@ -74,13 +78,13 @@ def main() -> int:
         csv_path = here / csv_path
     cells = load(csv_path)
 
-    fig, axes = plt.subplots(1, 2, figsize=(10, 4.2), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4.8), sharey=True)
     plot_panel(axes[0], cells, args.metric, "@match", f"{args.metric} @match (matched compute)")
     plot_panel(axes[1], cells, args.metric, "@full", f"{args.metric} @full (per-domain exposure)")
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="lower center", ncol=3, fontsize=9, frameon=False)
     fig.suptitle(f"ukr/cov NM transfer — {args.metric} (3-shot, 30-way)", fontsize=12)
-    fig.tight_layout(rect=(0, 0.06, 1, 0.96))
+    fig.tight_layout(rect=(0, 0.18, 1, 0.96))
     out = Path(args.out) if args.out else here / f"results_{args.metric}.png"
     fig.savefig(out, dpi=150); print(f"wrote {out}")
     return 0

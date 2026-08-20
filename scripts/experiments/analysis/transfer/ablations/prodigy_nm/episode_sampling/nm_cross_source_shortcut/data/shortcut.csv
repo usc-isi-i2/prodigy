@@ -2,6 +2,9 @@ metric,regime,test,value
 roc_auc,single covid,test:covid,0.981535
 roc_auc,single covid,test:midterm*,0.883688
 roc_auc,single covid,test:ukr,0.924541
+roc_auc,single midterm,test:midterm*,0.926022
+roc_auc,single midterm,test:covid,0.879190
+roc_auc,single midterm,test:ukr,0.793506
 roc_auc,merged proportional @full,test:covid,0.980744
 roc_auc,merged proportional @full,test:midterm*,0.875521
 roc_auc,merged proportional @full,test:ukr,0.943330
@@ -17,9 +20,18 @@ roc_auc,merged within-source @full,test:ukr,0.947232
 roc_auc,merged within-source @match,test:covid,0.981050
 roc_auc,merged within-source @match,test:midterm*,0.883528
 roc_auc,merged within-source @match,test:ukr,0.944748
+roc_auc,merged within-balanced (covid+midterm) @match,test:midterm*,0.923078
+roc_auc,merged within-balanced (covid+midterm) @match,test:covid,0.977954
+roc_auc,merged within-balanced (covid+midterm) @match,test:ukr,0.921625
+roc_auc,merged within-balanced (covid+midterm) @full,test:midterm*,0.929106
+roc_auc,merged within-balanced (covid+midterm) @full,test:covid,0.979639
+roc_auc,merged within-balanced (covid+midterm) @full,test:ukr,0.921211
 accuracy,single covid,test:covid,0.664133
 accuracy,single covid,test:midterm*,0.312600
 accuracy,single covid,test:ukr,0.458922
+accuracy,single midterm,test:midterm*,0.417100
+accuracy,single midterm,test:covid,0.318256
+accuracy,single midterm,test:ukr,0.225594
 accuracy,merged proportional @full,test:covid,0.657444
 accuracy,merged proportional @full,test:midterm*,0.304817
 accuracy,merged proportional @full,test:ukr,0.495450
@@ -35,9 +47,18 @@ accuracy,merged within-source @full,test:ukr,0.508989
 accuracy,merged within-source @match,test:covid,0.659228
 accuracy,merged within-source @match,test:midterm*,0.306894
 accuracy,merged within-source @match,test:ukr,0.499806
+accuracy,merged within-balanced (covid+midterm) @match,test:midterm*,0.404817
+accuracy,merged within-balanced (covid+midterm) @match,test:covid,0.637728
+accuracy,merged within-balanced (covid+midterm) @match,test:ukr,0.447956
+accuracy,merged within-balanced (covid+midterm) @full,test:midterm*,0.426944
+accuracy,merged within-balanced (covid+midterm) @full,test:covid,0.651094
+accuracy,merged within-balanced (covid+midterm) @full,test:ukr,0.447606
 f1,single covid,test:covid,0.664091
 f1,single covid,test:midterm*,0.314335
 f1,single covid,test:ukr,0.459050
+f1,single midterm,test:midterm*,0.417082
+f1,single midterm,test:covid,0.318266
+f1,single midterm,test:ukr,0.225557
 f1,merged proportional @full,test:covid,0.657415
 f1,merged proportional @full,test:midterm*,0.305230
 f1,merged proportional @full,test:ukr,0.495424
@@ -53,6 +74,12 @@ f1,merged within-source @full,test:ukr,0.508973
 f1,merged within-source @match,test:covid,0.659232
 f1,merged within-source @match,test:midterm*,0.307170
 f1,merged within-source @match,test:ukr,0.499819
+f1,merged within-balanced (covid+midterm) @match,test:midterm*,0.404781
+f1,merged within-balanced (covid+midterm) @match,test:covid,0.637714
+f1,merged within-balanced (covid+midterm) @match,test:ukr,0.447987
+f1,merged within-balanced (covid+midterm) @full,test:midterm*,0.426927
+f1,merged within-balanced (covid+midterm) @full,test:covid,0.651056
+f1,merged within-balanced (covid+midterm) @full,test:ukr,0.447572
 roc_auc,merged proportional,test:covid,0.980086
 roc_auc,merged proportional,test:ukr,0.941108
 roc_auc,merged within-source,test:covid,0.981850
