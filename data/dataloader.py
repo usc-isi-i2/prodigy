@@ -299,6 +299,7 @@ class NeighborTask(TaskBase):
             rowptr, _, _ = self.neighbor_sampler.whole_adj.csr()
             self._center_degrees = (rowptr[1:] - rowptr[:-1]).cpu()
         self.strata = None
+        self.uniform_candidates = None
         if strata is not None:
             self.strata = [
                 [int(node_idx) for node_idx in stratum]
@@ -343,6 +344,14 @@ class NeighborTask(TaskBase):
                 "cross_source_prob>0 requires confine_to_single_stratum=True "
                 "(set neighbor_sampling_episode_source=graph_id); it interpolates "
                 "between within-source and naive sampling."
+            )
+        if self.cross_source_prob > 0.0:
+            # The mixed-source branch is naive global sampling over the ACTIVE
+            # source subset, not every node in the backing all-source artifact.
+            # Defer this union until it is needed so ordinary p=0 final-core runs do
+            # not allocate another full-graph candidate array.
+            self.uniform_candidates = np.concatenate(
+                [np.asarray(stratum, dtype=np.int64) for stratum in self.strata]
             )
         if batch_source_mode not in {"independent", "complete"}:
             raise ValueError(
@@ -582,9 +591,14 @@ class NeighborTask(TaskBase):
             )
 
     def _sample_uniform(self, num_label, num_member, rng):
-        candidates = self._eligible_candidates(None, num_member, "all")
+        candidates = self._eligible_candidates(
+            self.uniform_candidates,
+            num_member,
+            "active_union" if self.uniform_candidates is not None else "all",
+        )
         if self.filter_min_degree:
-            self._require_candidates(candidates, num_label, "the graph")
+            scope = "the active source union" if self.uniform_candidates is not None else "the graph"
+            self._require_candidates(candidates, num_label, scope)
         task = {}
         attempts = 0
         max_attempts = max(1000, num_label * 1000)
@@ -596,7 +610,10 @@ class NeighborTask(TaskBase):
                     f"after {max_attempts} attempts. The positive view's stored degree may "
                     "include duplicate edges; inspect its unique-neighbor distribution."
                 )
-            center = int(rng.choice(candidates)) if self.filter_min_degree else rng.randrange(self.size)
+            if self.uniform_candidates is not None or self.filter_min_degree:
+                center = int(rng.choice(candidates))
+            else:
+                center = rng.randrange(self.size)
             if center in task:
                 continue
             members = self._sample_center_members(center, num_member, rng)

@@ -1,5 +1,5 @@
-# Final-core source-unaware Order-A ladder, rung 2/9.
-# Active source union: ukr_rus,covid.
+# Final-core source-unaware Order-A ladder, rung 9/9.
+# Active source union: ukr_rus,covid,midterm,covid_political,election2020,ukr_rus_suspended,twibot20,cp_hk,facebook_page_reference.
 # p=1 makes every episode node-uniform over this union and permits mixed-source labels.
 dataset: covid19_twitter
 root: /dataMeR1/phil/data/merged/graphs
@@ -36,7 +36,7 @@ test_len_cap: 500
 # node-uniform mixed-source branch instead of the interleaved within-source branch.
 neighbor_sampling_episode_source: graph_id
 neighbor_sampling_episode_source_weighting: proportional
-neighbor_sampling_source_subset: ukr_rus,covid
+neighbor_sampling_source_subset: ukr_rus,covid,midterm,covid_political,election2020,ukr_rus_suspended,twibot20,cp_hk,facebook_page_reference
 neighbor_sampling_batch_source_mode: independent
 neighbor_sampling_cross_source_prob: 1.0
 
@@ -48,5 +48,5 @@ print_step: 100
 workers: 2
 device: 0
 seed: 0
-tags: [final_core, global_merge_ladder, order_A, seed0, rung_2]
-prefix: finalcore_global_ordA_r2
+tags: [final_core, global_merge_ladder, order_A, seed0, rung_9]
+prefix: finalcore_global_ordA_r9
