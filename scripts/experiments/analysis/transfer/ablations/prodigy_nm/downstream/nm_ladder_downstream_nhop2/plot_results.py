@@ -39,6 +39,7 @@ FINAL_CORE_ROOT = HERE.parents[3] / "matrices/cross_model/final_core/data"
 FINAL_CORE_NM = FINAL_CORE_ROOT / "prodigy_final_core/log_recovered_metrics/physical_metrics.tsv"
 FINAL_CORE_CLS = FINAL_CORE_ROOT / "classification_ladder/classification_long.tsv"
 FINAL_CORE_ORDERS = ("A", "B", "C")
+FINAL_CORE_DISPLAY_ORDER = {"A": "A", "B": "D", "C": "C"}
 FINAL_CORE_RUNG1 = {"A": "ss_ukr_rus", "B": "ss_ukr_rus_suspended", "C": "ss_twibot20"}
 HISTORICAL_1H_NM = (
     HERE.parents[3]
@@ -725,24 +726,27 @@ def _final_core_entry_stats(panel: pd.DataFrame, source_map: dict[str, str]) -> 
     return float(values.mean()), int((values > 0).sum()), len(values)
 
 
-def load_historical_1h_matched40k() -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Load the historical one-hop matched-40k B/C NM and classification ladders."""
+def load_historical_1h_matched40k() -> dict[str, pd.DataFrame]:
+    """Load the historical one-hop matched-40k A/B/C downstream ladders."""
     nm = pd.read_csv(HISTORICAL_1H_NM).rename(columns={"test_graph": "dataset", "auc": "value"})
-    nm = nm[nm["order"].isin(("B", "C"))][
+    nm = nm[nm["order"].isin(("A", "B", "C"))][
         ["order", "rung", "added", "dataset", "entry_rung", "value"]
     ]
     downstream = pd.read_csv(HISTORICAL_1H_DOWNSTREAM)
-    classification = downstream[
-        (downstream["order"].isin(("B", "C")))
-        & (downstream["task"] == "pl")
-        & (downstream["metric"] == "roc_auc")
-        & downstream["primary"].astype(bool)
-    ][["order", "rung", "added", "dataset", "entry_rung", "value"]].copy()
-    for name, frame, targets in (("NM", nm, 8), ("classification", classification, 4)):
-        expected = 2 * 8 * targets
+    frames = {"nm": nm}
+    for task, old_task, metric in (("classification", "pl", "roc_auc"), ("static_lp", "slp", "auc")):
+        frames[task] = downstream[
+            (downstream["order"].isin(("A", "B", "C")))
+            & (downstream["task"] == old_task)
+            & (downstream["metric"] == metric)
+            & downstream["primary"].astype(bool)
+        ][["order", "rung", "added", "dataset", "entry_rung", "value"]].copy()
+    for name, frame, targets in (("NM", frames["nm"], 8), ("classification", frames["classification"], 4),
+                                 ("static LP", frames["static_lp"], 5)):
+        expected = 3 * 8 * targets
         if len(frame) != expected:
             raise ValueError(f"expected {expected} historical one-hop {name} cells, found {len(frame)}")
-    return nm, classification
+    return frames
 
 
 def plot_trajectories(
@@ -759,21 +763,22 @@ def plot_trajectories(
     nm = load_nm_trajectories()
     nm_summary = nm_entry_summary(nm)
     final_nm, final_cls, final_sources = load_final_core_2500()
-    historical_nm, historical_cls = load_historical_1h_matched40k()
-    ncols = 10 if order_columns else 8
-    fig, axes = plt.subplots(3, ncols, figsize=(36.0 if order_columns else 29.2, 12.2), sharex=False, sharey="row")
+    historical = load_historical_1h_matched40k()
+    ncols = 11 if order_columns else 8
+    fig, axes = plt.subplots(3, ncols, figsize=(39.0 if order_columns else 29.2, 12.2), sharex=False, sharey="row")
     if order_columns:
         column_for = {
             ("legacy", "matched40k", "A"): 0,
             ("legacy", "sequential", "A"): 1,
             ("legacy", "split", "A"): 2,
             ("legacy", "fixed10k", "A"): 3,
-            ("final", "matched2500", "A"): 4,
-            ("historical", "matched40k", "B"): 5,
-            ("final", "matched2500", "B"): 6,
+            ("legacy", "fixed10k", "C"): 4,
+            ("historical", "matched40k", "A"): 5,
+            ("historical", "matched40k", "B"): 6,
             ("historical", "matched40k", "C"): 7,
-            ("final", "matched2500", "C"): 8,
-            ("legacy", "fixed10k", "C"): 9,
+            ("final", "matched2500", "A"): 8,
+            ("final", "matched2500", "B"): 9,
+            ("final", "matched2500", "C"): 10,
         }
     else:
         column_for = {
@@ -867,7 +872,7 @@ def plot_trajectories(
         final_added[order_name] = additions
     for order_name in FINAL_CORE_ORDERS:
         offset = column_for[("final", "matched2500", order_name)]
-        label = f"Matched 2.5k · {order_name}"
+        label = f"Matched 2.5k · {FINAL_CORE_DISPLAY_ORDER[order_name]}"
         for row, (task_name, panel) in enumerate((("classification", final_cls), ("nm", final_nm))):
             target_row = 0 if task_name == "classification" else 2
             ax = axes[target_row, offset]
@@ -909,12 +914,16 @@ def plot_trajectories(
         classification_targets = list(
             primary[primary["task"] == "classification"]["dataset"].drop_duplicates()
         )
-        for order_name in ("B", "C"):
+        for order_name in ("A", "B", "C"):
             col = column_for[("historical", "matched40k", order_name)]
             label = f"Matched 40k · {order_name} · 1-hop"
-            for target_row, panel in ((0, historical_cls), (2, historical_nm)):
+            for target_row, panel in ((0, historical["classification"]),
+                                      (1, historical["static_lp"]),
+                                      (2, historical["nm"])):
                 ax = axes[target_row, col]
-                order_panel = panel[(panel["order"] == order_name) & panel["dataset"].isin(classification_targets)]
+                order_panel = panel[panel["order"] == order_name]
+                if target_row in (0, 2):
+                    order_panel = order_panel[order_panel["dataset"].isin(classification_targets)]
                 deltas = []
                 for dataset, group in order_panel.groupby("dataset", sort=False):
                     _plot_trajectory_series(ax, group, DATASET_COLORS[dataset])
@@ -935,15 +944,8 @@ def plot_trajectories(
                 ax.set_axisbelow(True)
                 if target_row == 2:
                     ax.set_xlabel("Source added at rung")
-            ax = axes[1, col]
-            ax.set_title(f"{label}\nlegacy static LP invalid", loc="left", fontweight="bold", fontsize=9.6)
-            ax.text(0.5, 0.5, "Old episodic static-LP scores are void", transform=ax.transAxes,
-                    ha="center", va="center", color=MUTED, fontsize=9)
-            ax.set_xticks([])
-            ax.grid(False)
-            ax.spines[["top", "right", "bottom", "left"]].set_visible(False)
 
-    divider_columns = (4, 6) if order_columns else (4,)
+    divider_columns = (4, 7) if order_columns else (4,)
     for row in range(3):
         for divider_col in divider_columns:
             axes[row, divider_col].spines["right"].set_visible(True)
@@ -962,15 +964,96 @@ def plot_trajectories(
         0.055,
         0.952,
         (
-            "Columns grouped by source order (A, then B, then C) · NM uses the same evaluation graphs as classification in each column."
+            "Columns grouped by protocol; final-core data key B is displayed as Order D because its source sequence differs from original Order B. NM uses classification-matched graphs."
             if order_columns
             else "Left: fair-two-hop eight-source ladders (one seed). Right: matched 2.5k nine-source ladders (three-seed means; bands show seed ranges)."
         ),
         color=MUTED,
         fontsize=9,
     )
+    if order_columns:
+        fig.text(0.25, 0.925, "FAIR TWO-HOP", ha="center", color=MUTED, fontsize=9, fontweight="bold")
+        fig.text(0.61, 0.925, "ORIGINAL ONE-HOP · 40K", ha="center", color=MUTED, fontsize=9, fontweight="bold")
+        fig.text(0.87, 0.925, "FINAL-CORE · 2.5K", ha="center", color=MUTED, fontsize=9, fontweight="bold")
     fig.tight_layout(rect=(0.035, 0.02, 1, 0.89), h_pad=5.0, w_pad=1.25)
     _save(fig, output_dir / output_stem)
+
+
+def plot_rung1_to_final_means(long: pd.DataFrame, output_dir: Path) -> None:
+    """Summarize each ladder by its mean performance at the first and final rung."""
+    primary = long[long["primary"].astype(bool)].copy()
+    nm = load_nm_trajectories()
+    historical = load_historical_1h_matched40k()
+    final_nm, final_cls, _ = load_final_core_2500()
+    classification_targets = list(
+        primary[primary["task"] == "classification"]["dataset"].drop_duplicates()
+    )
+
+    series: list[tuple[str, str, str, pd.DataFrame]] = []
+    for variant, order_name, label in TRAJECTORIES:
+        for task in ("classification", "static_lp"):
+            panel = primary[
+                (primary["task"] == task)
+                & (primary["variant"] == variant)
+                & (primary["order"] == order_name)
+            ]
+            series.append((label, task, "fair", panel))
+        panel = nm[(nm["variant"] == variant) & (nm["order"] == order_name)]
+        series.append((label, "nm", "fair", panel[panel["dataset"].isin(classification_targets)]))
+
+    for order_name in ("A", "B", "C"):
+        label = f"Original 40k · {order_name} · 1-hop"
+        for task in ("classification", "static_lp", "nm"):
+            panel = historical[task][historical[task]["order"] == order_name]
+            if task == "nm":
+                panel = panel[panel["dataset"].isin(classification_targets)]
+            series.append((label, task, "original", panel))
+
+    for order_name in FINAL_CORE_ORDERS:
+        label = f"Final-core 2.5k · {FINAL_CORE_DISPLAY_ORDER[order_name]}"
+        cls_panel = final_cls[final_cls["order"] == order_name]
+        nm_panel = final_nm[
+            (final_nm["order"] == order_name)
+            & final_nm["dataset"].isin(final_cls["dataset"].unique())
+        ]
+        series.extend(((label, "classification", "final", cls_panel), (label, "nm", "final", nm_panel)))
+
+    labels = list(dict.fromkeys(label for label, _, _, _ in series))
+    palette = plt.get_cmap("tab20")
+    colors = {label: palette(index / max(1, len(labels) - 1)) for index, label in enumerate(labels)}
+    fig, axes = plt.subplots(3, 1, figsize=(12.8, 13.2), sharex=True)
+    task_specs = (
+        ("classification", "Mean node-classification ROC-AUC"),
+        ("static_lp", "Mean repaired static-LP ROC-AUC"),
+        ("nm", "Mean neighbor-matching ROC-AUC"),
+    )
+    for ax, (task, ylabel) in zip(axes, task_specs, strict=True):
+        for label, series_task, _, panel in series:
+            if series_task != task or panel.empty:
+                continue
+            first_rung, final_rung = int(panel["rung"].min()), int(panel["rung"].max())
+            values = [
+                float(panel.loc[panel["rung"] == first_rung, "value"].mean()),
+                float(panel.loc[panel["rung"] == final_rung, "value"].mean()),
+            ]
+            ax.plot((0, 1), values, color=colors[label], linewidth=2.2, marker="o", markersize=5.5,
+                    markeredgecolor="white", markeredgewidth=0.6, label=label)
+        ax.set_ylabel(ylabel)
+        ax.grid(axis="y", color=GRID, linewidth=0.7)
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.set_xlim(-0.06, 1.06)
+        ax.set_axisbelow(True)
+    axes[-1].set_xticks((0, 1), ("Rung 1", "Final rung"))
+    handles = [Line2D([0], [0], color=colors[label], linewidth=2.4, marker="o", markersize=5, label=label)
+               for label in labels]
+    fig.legend(handles=handles, loc="center left", bbox_to_anchor=(1.005, 0.5), frameon=False, fontsize=8.7)
+    fig.suptitle("Mean performance from the first to final ladder rung", x=0.07, ha="left",
+                 fontsize=15, fontweight="bold")
+    fig.text(0.07, 0.958,
+             "Each line is one ladder. Means use classification-matched targets for NM; 2.5k ladders have no repaired static-LP row.",
+             color=MUTED, fontsize=9)
+    fig.tight_layout(rect=(0.04, 0.02, 0.79, 0.94), h_pad=2.2)
+    _save(fig, output_dir / "rung1_to_final_means")
 
 
 def _jitter(group: pd.DataFrame) -> np.ndarray:
@@ -1063,17 +1146,18 @@ def main() -> None:
     plot_classification_mean_change(entry, args.output_dir)
     plot_fixed_exposure_mean_f1_ladder(long, args.output_dir)
     plot_classification_mean_ladders(long, args.output_dir)
-    plot_trajectories(long, entry, args.output_dir)
+    plot_trajectories(long, entry, args.output_dir, output_stem="rung_trajectories_by_protocol")
     plot_trajectories(
         long,
         entry,
         args.output_dir,
         match_nm_to_classification=True,
         order_columns=True,
-        output_stem="rung_trajectories_matched_graphs_by_order",
+        output_stem="rung_trajectories",
     )
+    plot_rung1_to_final_means(long, args.output_dir)
     plot_controlled_deltas(paired, args.output_dir)
-    print(f"wrote 6 core plus 15 classification-ladder PNG/PDF figure pairs to {args.output_dir}")
+    print(f"wrote 7 core plus 15 classification-ladder PNG/PDF figure pairs to {args.output_dir}")
 
 
 if __name__ == "__main__":
