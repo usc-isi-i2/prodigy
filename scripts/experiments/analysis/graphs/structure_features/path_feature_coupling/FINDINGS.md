@@ -118,6 +118,71 @@ graphs it increases from **0.358** to **0.588** (chance 0.167). Neighbor mean al
 is even stronger at 0.676 and 0.643 respectively. Sampled topology therefore adds
 substantial graph-domain information beyond the center bio.
 
+Pairwise proxy-A-distance gives the clearest quantitative version of that result.
+For every unordered graph pair, a binary logistic domain classifier was fit on 70%
+of 2,000 non-missing centers per graph and evaluated on the held-out 30%. With
+held-out error $\epsilon$, proxy-A-distance is $2(1-2\epsilon)$ (0 = chance, 2 =
+perfect separation). Averaged across the 28 graph pairs:
+
+| space | held-out pairwise accuracy | proxy-A-distance |
+|---|---:|---:|
+| raw center | 0.794 | 1.175 |
+| neighbor mean only | 0.899 | 1.597 |
+| center + neighbor mean | **0.907** | **1.629** |
+
+Neighbor means beat raw centers on 27/28 pairs, and the concatenation beats raw
+centers on 28/28. Even the unusually similar COVID/Ukraine pair moves from proxy-A
+0.217 in raw-center space to 0.843 for neighbor means and 0.830 for the
+concatenation. Source identity is therefore strongly linearly recoverable from the
+center and sampled-neighborhood information available to the first SAGE layer.
+
+This statement is about *available information*, not a literal 1,536-dimensional
+model input. PRODIGY separately projects the 768-dimensional center and neighbor
+channels: it mean-aggregates projected neighbor messages, applies the neighbor MLP,
+adds a separately projected center, then applies normalization/ReLU. The raw
+$[x_v\,\|\,\overline{x}_{N(v)}]$ concatenation is an information-level diagnostic of
+those two inputs, not the trained hidden state and not an unrestricted MLP input.
+
+### Within-graph node-label separability
+
+The analogous label probe is heterogeneous rather than universally strong. For
+each graph with usable node labels, 2,000 labeled non-missing centers were sampled;
+the same stratified 70/30 split was used in all three spaces. A standardized,
+class-balanced logistic regression reports balanced accuracy, macro-F1, and ROC-AUC.
+Node+neighbor results are:
+
+| graph / label | balanced accuracy | macro-F1 | ROC-AUC |
+|---|---:|---:|---:|
+| election2020-political / ideology | **0.978** | 0.978 | **0.982** |
+| covid-political / ideology | **0.826** | 0.806 | **0.892** |
+| twibot20 / bot vs. human | **0.652** | 0.652 | **0.700** |
+| ukraine-suspended / suspension | **0.538** | 0.537 | **0.554** |
+
+Neighborhood context explains most of the political-label gain: balanced accuracy
+moves raw→neighbor→concatenated from 0.802→0.963→0.978 for Election and
+0.733→0.832→0.826 for COVID Political. TwiBot improves more modestly
+(0.608→0.631→0.652), while Ukraine Suspended stays at chance
+(0.535→0.528→0.538). This tracks label mixing. Newman label assortativity is 0.899
+for Election and 0.866 for COVID Political, but only 0.047 for TwiBot and 0.004 for
+Ukraine Suspended. For the latter, observed same-label edge fraction 0.554 is almost
+exactly its class-frequency expectation 0.552.
+
+These full-data linear probes are not directly comparable to PRODIGY's episodic
+few-shot evaluations. Historical in-domain PL-pretrained runs reached ROC-AUC 0.973
+on COVID Political, 0.992 on Election, and 0.498 on Ukraine Suspended. They reinforce
+the qualitative pattern, but used older 384-dimensional `emb_only` features and old
+`/scratch1` graph artifacts. Their source table is retained only in git at
+`pre-cleanup-2026-07-26:scripts/experiments/analysis/archive/runs_cleaned_may20.csv`.
+A later TwiBot PL checkpoint remains on Tucker, but no matching retained evaluation
+was found.
+
+### Data-format note
+
+Tucker has event/source Parquets for Ukraine, Midterm, COVID-19 Twitter, Hong Kong,
+and Facebook Page Reference. TwiBot-20 has converted user and derived retweet-edge
+Parquets. Ukraine Suspended, COVID Political, and Election 2020 use the older
+CSV/NetworkX-pickle pipeline and have no Parquet files in their dataset directories.
+
 For exact local path length, the answer is more nuanced. The 1→2→3 cosine-distance
 correlation remains weak: raw-center Spearman rho is 0.011–0.141 and concatenated
 rho is 0.034–0.169. But the adjacent-versus-far/disconnected standardized effect
