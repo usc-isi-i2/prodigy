@@ -16,6 +16,7 @@ These figures are generated from the canonical
 | `samgpt_ladder_probability_diagnostics` | SAMGPT positive/negative pair probabilities and their separation margin over the ladder. |
 | `ladder_trajectories_auc` | PRODIGY per-target ROC-AUC ladder trajectories recovered from the original fixed-test logs. |
 | `prodigy_ladder_seed_bands` | PRODIGY ladder means with observed min–max bands across its three training seeds. |
+| `prodigy_nm_vs_cls_auc_ladders` | Five held-out targets comparing mean NM and downstream classification AUC across the three final-core mixture orders at 2,500 steps. |
 | `coverage_status` | Completion status for every architecture, component, and training seed. |
 
 PNG files are convenient for review and Markdown. PDFs are vector versions for
