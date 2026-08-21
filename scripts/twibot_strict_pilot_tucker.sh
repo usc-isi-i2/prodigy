@@ -42,6 +42,10 @@ status=0
 for pid in "$p0" "$p1" "$p2" "$p3"; do wait "$pid" || status=1; done
 (( status == 0 )) || { echo "pretraining failed" >&2; exit 1; }
 
+"${PYTHON_BIN}" -m mixture_scaling.audit_strict_pretrain \
+  --manifest "${ROOT}/manifests/twibot_strict_pretrain.tsv" \
+  --pretrain-root "${PRETRAIN}" >"${LOGS}/pretrain_audit.json"
+
 probe() {
   local name="$1" checkpoint="$2" gpu="$3"
   local output="${RESULTS}/probe_${name}.json"

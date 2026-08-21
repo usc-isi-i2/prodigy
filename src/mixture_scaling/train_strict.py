@@ -23,6 +23,30 @@ def seed_everything(seed: int) -> None:
     torch.cuda.manual_seed_all(seed)
 
 
+def update_selection(
+    value: float,
+    step: int,
+    best_loss: float,
+    best_step: int,
+    patience_reference: float,
+    patience: int,
+    min_improvement: float,
+) -> tuple[float, int, float, int, bool]:
+    """Track the absolute best checkpoint separately from patience resets."""
+    save_best = value < best_loss
+    if save_best:
+        best_loss, best_step = value, step
+    relative = (
+        (patience_reference - value) / patience_reference
+        if np.isfinite(patience_reference) else float("inf")
+    )
+    if relative >= min_improvement:
+        patience_reference, patience = value, 0
+    else:
+        patience += 1
+    return best_loss, best_step, patience_reference, patience, save_best
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True)
@@ -82,7 +106,7 @@ def main() -> int:
     max_steps = int(args.max_steps or protocol["max_steps"])
     interval = int(protocol["validation_interval"])
     iterators: list[Iterator | None] = [None] * len(train_loaders)
-    best_loss, best_step, patience = float("inf"), 0, 0
+    best_loss, best_step, patience_reference, patience = float("inf"), 0, float("inf"), 0
     start = time.monotonic()
     model.train()
     for step in range(1, max_steps + 1):
@@ -110,12 +134,12 @@ def main() -> int:
         }
         with (run_dir / "validation.jsonl").open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(row) + "\n")
-        relative = (best_loss - value) / best_loss if np.isfinite(best_loss) else float("inf")
-        if relative >= float(protocol["min_relative_improvement"]):
-            best_loss, best_step, patience = value, step, 0
+        best_loss, best_step, patience_reference, patience, save_best = update_selection(
+            value, step, best_loss, best_step, patience_reference, patience,
+            float(protocol["min_relative_improvement"]),
+        )
+        if save_best:
             save_checkpoint(run_dir / "best.pt", model, optimizer, step, metadata)
-        else:
-            patience += 1
         print(json.dumps(row), flush=True)
         if step >= int(protocol["minimum_steps"]) and patience >= int(protocol["patience_evaluations"]):
             break
