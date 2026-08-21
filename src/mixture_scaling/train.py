@@ -9,6 +9,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+import torch_geometric.typing
 from torch_geometric.loader import LinkNeighborLoader
 
 from .config import load_config
@@ -21,6 +22,18 @@ def seed_everything(seed: int) -> None:
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
+
+
+def configure_sampling_backend(protocol: dict) -> None:
+    backend = protocol.get("sampling_backend", "auto")
+    if backend == "torch_sparse":
+        if not torch_geometric.typing.WITH_TORCH_SPARSE:
+            raise RuntimeError("sampling_backend=torch_sparse but torch-sparse is unavailable")
+        # Tucker's PyG 2.3.1 and newer pyg-lib expose incompatible
+        # neighbor_sample signatures. torch-sparse matches this PyG release.
+        torch_geometric.typing.WITH_PYG_LIB = False
+    elif backend != "auto":
+        raise ValueError(f"unknown sampling backend: {backend}")
 
 
 def make_loader(graph: GraphArtifact, protocol: dict, *, validation: bool) -> LinkNeighborLoader:
@@ -114,6 +127,7 @@ def main() -> int:
 
     config = load_config(args.config)
     protocol = dict(config["protocol"])
+    configure_sampling_backend(protocol)
     seed = int(protocol["seed"] if args.seed is None else args.seed)
     max_steps = int(args.max_steps or protocol["max_steps"])
     sources = [item for item in args.sources.split(",") if item]
@@ -196,4 +210,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
