@@ -50,6 +50,13 @@ results/       derived tables and figures (not raw checkpoints)
 
 Large graph artifacts, checkpoints, and logs stay on Tucker under `/dataMeR1`.
 
+Verified aggregate tables and the current RQ1 interpretation live in
+`results/RESULTS.md`. Rebuild all derived tables from the four aggregate inputs with:
+
+```bash
+PYTHONPATH=src python -m mixture_scaling.analyze --root .
+```
+
 ## Primary overnight study
 
 Seven seed-0 single-source specialists and seven leave-one-target-out six-source
