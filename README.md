@@ -55,6 +55,7 @@ Verified aggregate tables and the current RQ1 interpretation live in
 
 ```bash
 PYTHONPATH=src python -m mixture_scaling.analyze --root .
+PYTHONPATH=src python -m mixture_scaling.plot_results --root .
 ```
 
 ## Primary overnight study

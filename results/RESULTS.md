@@ -66,6 +66,16 @@ heterogeneous across targets. Leave-one-out wins all three seeds for Election 20
 all metrics, and for Facebook AUC/accuracy and TwiBot-20 AUC. The target specialist
 wins all three seeds for Cora, COVID political, and Ukraine/Russia on all metrics.
 
+## Figures
+
+1. [Adaptation efficiency by mixture size](figures/adaptation-efficiency-by-mixture-size.png)
+2. [Checkpoint trajectories by mixture size](figures/checkpoint-trajectories-by-mixture-size.png)
+3. [Target-by-mixture-size heatmap](figures/target-by-mixture-size-heatmap.png)
+4. [Full transfer matrix at step 2,500](figures/full-transfer-matrix-step2500.png)
+5. [Three-seed leave-one-out versus specialist comparison](figures/three-seed-loo-vs-specialist.png)
+
+Each figure is available as both PNG and vector PDF under `results/figures/`.
+
 ## Evidence inventory
 
 - `primary_s0/primary_results.csv`: 56 rows (14 models × one target × four checkpoints).
