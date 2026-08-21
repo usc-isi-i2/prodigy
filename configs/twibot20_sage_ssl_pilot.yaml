@@ -1,0 +1,40 @@
+experiment: twibot20_sage_rw_ssl_convergence
+seed: 0
+
+data:
+  dataset: twibot20
+  graph_path: /dataMeR1/phil/data/twibot20/graphs/retweet_graph.pt
+  source_confined: true
+  validation_fraction: 0.15
+  split_seed: 0
+
+model:
+  family: sage_rw_ssl
+  input_dim: 768
+  hidden_dim: 256
+  output_dim: 256
+  layers: 1
+  dropout: 0.0
+
+ssl:
+  objective: random_walk_negative_sampling
+  walk_length: 1
+  context_size: 1
+  negatives_per_positive: 5
+  batch_size: 1024
+
+optimization:
+  optimizer: adamw
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  max_steps: 10000
+  checkpoint_steps: [100, 300, 600, 900, 1500, 2500, 5000, 10000]
+
+convergence:
+  metric: validation_loss
+  evaluation_interval: 250
+  minimum_steps: 2500
+  validation_batches: 20
+  min_relative_improvement: 0.002
+  patience_evaluations: 5
+  restore_best: true
