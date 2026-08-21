@@ -61,3 +61,12 @@ matrix and additional seeds follow only after this primary gate is complete.
 On Tucker, `scripts/pipeline_tucker.sh` waits for GPUs 2–3, builds missing citation
 artifacts non-destructively, runs tests and a two-step smoke, then executes the primary
 training/evaluation/aggregation sequence. Every stage stops the pipeline on failure.
+
+## Follow-up sweeps
+
+After the primary gate, `scripts/pipeline_followups_tucker.sh` runs three declared
+extensions on GPUs 2–3: the complete 14-model by 7-target seed-0 transfer matrix;
+the held-out mixture ladder at sizes 2–5; and full primary replications at seeds 1
+and 2. The ladder order is the graph order in `configs/graphs.yaml` with the held-out
+target removed. Its size-1 and size-6 endpoints reuse the primary specialist and
+leave-one-out models, so only 18 distinct intermediate mixtures require new training.
