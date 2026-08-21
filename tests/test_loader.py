@@ -6,12 +6,14 @@ from torch_geometric.data import Data
 from torch_geometric import typing
 
 from mixture_scaling.data import GraphArtifact
-from mixture_scaling.train import make_loader
+from mixture_scaling.train import configure_sampling_backend, make_loader
 
 
 def test_link_neighbor_loader_returns_local_labeled_pairs() -> None:
     if not (typing.WITH_PYG_LIB or typing.WITH_TORCH_SPARSE):
         pytest.skip("local PyG build has no neighbor-sampling backend; Tucker smoke is authoritative")
+    if typing.WITH_TORCH_SPARSE:
+        configure_sampling_backend({"sampling_backend": "torch_sparse"})
     features = torch.randn(20, 768)
     positive = torch.tensor([list(range(19)), list(range(1, 20))])
     background = torch.cat((positive, positive.flip(0)), dim=1)
