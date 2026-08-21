@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PYTHON_BIN="${PYTHON_BIN:-/home/mhchu/miniconda3/envs/prodigy/bin/python3}"
 EVAL_WORKERS_PER_GPU="${EVAL_WORKERS_PER_GPU:-${WORKERS_PER_GPU:-4}}"
-TRAIN_WORKERS_PER_GPU="${TRAIN_WORKERS_PER_GPU:-2}"
+TRAIN_WORKERS_PER_GPU="${TRAIN_WORKERS_PER_GPU:-3}"
 PIPELINE_LOG_ROOT="${PIPELINE_LOG_ROOT:-${ROOT}/log/pipeline_followups}"
 mkdir -p "${PIPELINE_LOG_ROOT}"
 [[ -f "${ROOT}/results/primary_s0/primary_results.csv" ]] || {
