@@ -73,6 +73,10 @@ wins all three seeds for Cora, COVID political, and Ukraine/Russia on all metric
 3. [Target-by-mixture-size heatmap](figures/target-by-mixture-size-heatmap.png)
 4. [Full transfer matrix at step 2,500](figures/full-transfer-matrix-step2500.png)
 5. [Three-seed leave-one-out versus specialist comparison](figures/three-seed-loo-vs-specialist.png)
+6. [Seed-0 specialist versus leave-one-out SSL loss](figures/ssl-loss-primary-seed0.png)
+7. [Intermediate-mixture SSL loss](figures/ssl-loss-intermediate-mixtures.png)
+8. [Three-seed primary SSL loss](figures/ssl-loss-primary-three-seeds.png)
+9. [Per-source validation loss for seed-0 leave-one-out mixtures](figures/ssl-loss-per-source-seed0-loo.png)
 
 Each figure is available as both PNG and vector PDF under `results/figures/`.
 
@@ -87,6 +91,8 @@ Each figure is available as both PNG and vector PDF under `results/figures/`.
 - `analysis/primary_summary.csv` and `analysis/primary_contrasts.csv`: three-seed endpoint summaries.
 - `analysis/matrix_step2500.csv`: the complete 14 × 7 transfer matrix at step 2,500.
 - `analysis/audit.json`: input hashes, row counts, and analysis invariants.
+- `loss_curves/loss_history.csv`: 880 overall train/validation-loss observations.
+- `loss_curves/per_source_validation_loss.csv`: 3,364 per-source validation-loss observations.
 
 Raw evaluation shards, logs, and checkpoints remain preserved on Tucker under
 `/dataMeR1/phil/gfm/mixture-scaling`; interrupted runs were retained separately and
