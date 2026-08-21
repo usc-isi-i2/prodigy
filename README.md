@@ -57,3 +57,7 @@ mixtures are trained with uniform source rotation. For each labeled target, the
 target specialist and its target-held-out mixture are evaluated at steps 100, 300,
 900, and 2,500 with the same ten labeled nodes per class. The full cross-source
 matrix and additional seeds follow only after this primary gate is complete.
+
+On Tucker, `scripts/pipeline_tucker.sh` waits for GPUs 2–3, builds missing citation
+artifacts non-destructively, runs tests and a two-step smoke, then executes the primary
+training/evaluation/aggregation sequence. Every stage stops the pipeline on failure.
