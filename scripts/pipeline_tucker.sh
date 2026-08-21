@@ -56,5 +56,9 @@ PYTHONPATH="${ROOT}/src" python3 -m mixture_scaling.aggregate \
   --output "${ROOT}/results/primary_s0/primary_results.csv" --expected 56 \
   >"${PIPELINE_LOG_ROOT}/aggregate.log" 2>&1
 
-echo "complete $(date -u +%FT%TZ)" | tee "${PIPELINE_LOG_ROOT}/status.txt"
+echo "primary complete; starting follow-ups" | tee "${PIPELINE_LOG_ROOT}/status.txt"
+PIPELINE_LOG_ROOT="${ROOT}/log/pipeline_followups" \
+  bash "${ROOT}/scripts/pipeline_followups_tucker.sh" \
+  >"${PIPELINE_LOG_ROOT}/followups.log" 2>&1
 
+echo "all experiments complete $(date -u +%FT%TZ)" | tee "${PIPELINE_LOG_ROOT}/status.txt"
