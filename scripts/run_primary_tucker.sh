@@ -6,6 +6,7 @@ MANIFEST="${MANIFEST:-${ROOT}/manifests/primary.tsv}"
 STATE_ROOT="${STATE_ROOT:-/dataMeR1/phil/gfm/mixture-scaling/state/primary_s0}"
 LOG_ROOT="${LOG_ROOT:-/dataMeR1/phil/gfm/mixture-scaling/log/primary_s0}"
 GPUS_TEXT="${GPUS:-2 3}"
+WORKERS_PER_GPU="${WORKERS_PER_GPU:-1}"
 mkdir -p "${STATE_ROOT}" "${LOG_ROOT}"
 read -r -a GPU_IDS <<< "${GPUS_TEXT}"
 [[ " ${GPUS_TEXT} " == *" 2 "* || " ${GPUS_TEXT} " == *" 3 "* ]] || {
@@ -16,10 +17,11 @@ for gpu in "${GPU_IDS[@]}"; do
 done
 
 mapfile -t ROWS < <(tail -n +2 "${MANIFEST}")
+TOTAL_WORKERS=$(( ${#GPU_IDS[@]} * WORKERS_PER_GPU ))
 worker() {
   local worker_index="$1" gpu="$2" index=0 row run_id kind target sources seed summary
   for row in "${ROWS[@]}"; do
-    if (( index % ${#GPU_IDS[@]} == worker_index )); then
+    if (( index % TOTAL_WORKERS == worker_index )); then
       IFS=$'\t' read -r run_id kind target sources seed <<< "${row}"
       summary="${STATE_ROOT}/${run_id}/summary.json"
       if [[ -f "${summary}" ]]; then
@@ -38,10 +40,13 @@ worker() {
 }
 
 pids=()
-for index in "${!GPU_IDS[@]}"; do
-  worker "${index}" "${GPU_IDS[$index]}" & pids+=("$!")
+worker_index=0
+for gpu in "${GPU_IDS[@]}"; do
+  for (( slot=0; slot<WORKERS_PER_GPU; slot++ )); do
+    worker "${worker_index}" "${gpu}" & pids+=("$!")
+    ((worker_index+=1))
+  done
 done
 status=0
 for pid in "${pids[@]}"; do wait "${pid}" || status=1; done
 exit "${status}"
-

@@ -50,9 +50,9 @@ PYTHONPATH="${ROOT}/src" python3 -u -m mixture_scaling.train \
   --output-root "${ROOT}/state/smoke" >"${PIPELINE_LOG_ROOT}/smoke.log" 2>&1
 grep -q '"status": "complete"' "${ROOT}/state/smoke/${smoke_id}/summary.json"
 
-GPUS="2 3" bash "${ROOT}/scripts/run_primary_tucker.sh" \
+GPUS="2 3" WORKERS_PER_GPU=2 bash "${ROOT}/scripts/run_primary_tucker.sh" \
   >"${PIPELINE_LOG_ROOT}/training.log" 2>&1
-GPUS="2 3" bash "${ROOT}/scripts/eval_primary_tucker.sh" \
+GPUS="2 3" WORKERS_PER_GPU=2 bash "${ROOT}/scripts/eval_primary_tucker.sh" \
   >"${PIPELINE_LOG_ROOT}/evaluation.log" 2>&1
 PYTHONPATH="${ROOT}/src" python3 -m mixture_scaling.aggregate \
   --raw-root "${ROOT}/results/primary_s0/raw" \

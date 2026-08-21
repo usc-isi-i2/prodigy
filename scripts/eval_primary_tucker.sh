@@ -7,6 +7,7 @@ STATE_ROOT="${STATE_ROOT:-/dataMeR1/phil/gfm/mixture-scaling/state/primary_s0}"
 RESULT_ROOT="${RESULT_ROOT:-/dataMeR1/phil/gfm/mixture-scaling/results/primary_s0/raw}"
 LOG_ROOT="${LOG_ROOT:-/dataMeR1/phil/gfm/mixture-scaling/log/primary_s0_eval}"
 GPUS_TEXT="${GPUS:-2 3}"
+WORKERS_PER_GPU="${WORKERS_PER_GPU:-1}"
 STEPS_TEXT="${STEPS:-100 300 900 2500}"
 mkdir -p "${RESULT_ROOT}" "${LOG_ROOT}"
 read -r -a GPU_IDS <<< "${GPUS_TEXT}"
@@ -20,11 +21,12 @@ while IFS=$'\t' read -r run_id kind target sources seed; do
   [[ "${run_id}" == run_id ]] && continue
   for step in "${STEPS[@]}"; do jobs+=("${run_id}"$'\t'"${target}"$'\t'"${step}"); done
 done < "${MANIFEST}"
+TOTAL_WORKERS=$(( ${#GPU_IDS[@]} * WORKERS_PER_GPU ))
 
 worker() {
   local worker_index="$1" gpu="$2" index=0 job run_id target step checkpoint output
   for job in "${jobs[@]}"; do
-    if (( index % ${#GPU_IDS[@]} == worker_index )); then
+    if (( index % TOTAL_WORKERS == worker_index )); then
       IFS=$'\t' read -r run_id target step <<< "${job}"
       checkpoint="${STATE_ROOT}/${run_id}/checkpoints/step_${step}.pt"
       output="${RESULT_ROOT}/${run_id}__${target}__step${step}.json"
@@ -44,8 +46,13 @@ worker() {
 }
 
 pids=()
-for index in "${!GPU_IDS[@]}"; do worker "${index}" "${GPU_IDS[$index]}" & pids+=("$!"); done
+worker_index=0
+for gpu in "${GPU_IDS[@]}"; do
+  for (( slot=0; slot<WORKERS_PER_GPU; slot++ )); do
+    worker "${worker_index}" "${gpu}" & pids+=("$!")
+    ((worker_index+=1))
+  done
+done
 status=0
 for pid in "${pids[@]}"; do wait "${pid}" || status=1; done
 exit "${status}"
-
