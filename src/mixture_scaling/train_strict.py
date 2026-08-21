@@ -32,6 +32,7 @@ def main() -> int:
     parser.add_argument("--device", type=int, required=True)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--output-root", required=True)
+    parser.add_argument("--max-steps", type=int)
     args = parser.parse_args()
     if args.device not in (2, 3):
         raise ValueError("strict pilot may use only GPUs 2 and 3")
@@ -78,7 +79,7 @@ def main() -> int:
     }
     (run_dir / "metadata.json").write_text(json.dumps(metadata, indent=2) + "\n")
     checkpoints = set(map(int, protocol["checkpoint_steps"]))
-    max_steps = int(protocol["max_steps"])
+    max_steps = int(args.max_steps or protocol["max_steps"])
     interval = int(protocol["validation_interval"])
     iterators: list[Iterator | None] = [None] * len(train_loaders)
     best_loss, best_step, patience = float("inf"), 0, 0
