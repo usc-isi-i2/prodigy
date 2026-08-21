@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PYTHON_BIN="${PYTHON_BIN:-/home/mhchu/miniconda3/envs/prodigy/bin/python3}"
 MANIFEST="${MANIFEST:?set MANIFEST to an evaluation TSV}"
 STATE_ROOT="${STATE_ROOT:?set STATE_ROOT containing the checkpoints}"
 RESULT_ROOT="${RESULT_ROOT:?set RESULT_ROOT to a new result directory}"
@@ -32,7 +33,7 @@ worker() {
       output="${RESULT_ROOT}/${run_id}__${target}__step${step}.json"
       [[ -f "${checkpoint}" ]] || { echo "missing ${checkpoint}" >&2; return 1; }
       if [[ ! -f "${output}" ]]; then
-        PYTHONPATH="${ROOT}/src" python3 -u -m mixture_scaling.evaluate \
+        PYTHONPATH="${ROOT}/src" "${PYTHON_BIN}" -u -m mixture_scaling.evaluate \
           --config "${ROOT}/configs/graphs.yaml" --checkpoint "${checkpoint}" \
           --target "${target}" --device "${gpu}" --output "${output}" \
           >"${LOG_ROOT}/${run_id}__${target}__step${step}.log" 2>&1

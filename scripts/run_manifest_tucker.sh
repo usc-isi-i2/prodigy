@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PYTHON_BIN="${PYTHON_BIN:-/home/mhchu/miniconda3/envs/prodigy/bin/python3}"
 MANIFEST="${MANIFEST:?set MANIFEST to a training TSV}"
 STATE_ROOT="${STATE_ROOT:?set STATE_ROOT to a new output directory}"
 LOG_ROOT="${LOG_ROOT:?set LOG_ROOT to a new log directory}"
@@ -25,7 +26,7 @@ worker() {
         echo "[gpu ${gpu}] SKIP ${run_id}"
       else
         echo "[gpu ${gpu}] START ${run_id} sources=${sources}"
-        PYTHONPATH="${ROOT}/src" python3 -u -m mixture_scaling.train \
+        PYTHONPATH="${ROOT}/src" "${PYTHON_BIN}" -u -m mixture_scaling.train \
           --config "${ROOT}/configs/graphs.yaml" --sources "${sources}" \
           --run-id "${run_id}" --seed "${seed}" --device "${gpu}" \
           --output-root "${STATE_ROOT}" >"${LOG_ROOT}/${run_id}.log" 2>&1

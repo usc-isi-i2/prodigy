@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PYTHON_BIN="${PYTHON_BIN:-/home/mhchu/miniconda3/envs/prodigy/bin/python3}"
 MANIFEST="${MANIFEST:-${ROOT}/manifests/primary.tsv}"
 STATE_ROOT="${STATE_ROOT:-/dataMeR1/phil/gfm/mixture-scaling/state/primary_s0}"
 RESULT_ROOT="${RESULT_ROOT:-/dataMeR1/phil/gfm/mixture-scaling/results/primary_s0/raw}"
@@ -35,7 +36,7 @@ worker() {
         echo "[gpu ${gpu}] SKIP ${run_id} ${target} step=${step}"
       else
         echo "[gpu ${gpu}] EVAL ${run_id} ${target} step=${step}"
-        PYTHONPATH="${ROOT}/src" python3 -u -m mixture_scaling.evaluate \
+        PYTHONPATH="${ROOT}/src" "${PYTHON_BIN}" -u -m mixture_scaling.evaluate \
           --config "${ROOT}/configs/graphs.yaml" --checkpoint "${checkpoint}" \
           --target "${target}" --device "${gpu}" --output "${output}" \
           >"${LOG_ROOT}/${run_id}__${target}__step${step}.log" 2>&1

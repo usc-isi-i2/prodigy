@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PYTHON_BIN="${PYTHON_BIN:-/home/mhchu/miniconda3/envs/prodigy/bin/python3}"
 PIPELINE_LOG_ROOT="${PIPELINE_LOG_ROOT:-${ROOT}/log/pipeline_followups}"
 mkdir -p "${PIPELINE_LOG_ROOT}"
 [[ -f "${ROOT}/results/primary_s0/primary_results.csv" ]] || {
@@ -20,7 +21,7 @@ STATE_ROOT="${ROOT}/state/primary_s0" \
 RESULT_ROOT="${ROOT}/results/matrix_s0/raw" \
 LOG_ROOT="${ROOT}/log/matrix_s0_eval" GPUS="2 3" WORKERS_PER_GPU=2 \
   bash "${ROOT}/scripts/eval_manifest_tucker.sh" >"${PIPELINE_LOG_ROOT}/matrix.log" 2>&1
-PYTHONPATH="${ROOT}/src" python3 -m mixture_scaling.aggregate \
+PYTHONPATH="${ROOT}/src" "${PYTHON_BIN}" -m mixture_scaling.aggregate \
   --raw-root "${ROOT}/results/matrix_s0/raw" \
   --output "${ROOT}/results/matrix_s0/matrix_results.csv" --expected 392
 
@@ -33,7 +34,7 @@ STATE_ROOT="${ROOT}/state/ladder_s0" \
 RESULT_ROOT="${ROOT}/results/ladder_s0/raw" \
 LOG_ROOT="${ROOT}/log/ladder_s0_eval" GPUS="2 3" WORKERS_PER_GPU=2 \
   bash "${ROOT}/scripts/eval_manifest_tucker.sh" >"${PIPELINE_LOG_ROOT}/ladder_eval.log" 2>&1
-PYTHONPATH="${ROOT}/src" python3 -m mixture_scaling.aggregate \
+PYTHONPATH="${ROOT}/src" "${PYTHON_BIN}" -m mixture_scaling.aggregate \
   --raw-root "${ROOT}/results/ladder_s0/raw" \
   --output "${ROOT}/results/ladder_s0/ladder_results.csv" --expected 112
 
@@ -46,7 +47,7 @@ STATE_ROOT="${ROOT}/state/primary_s1_s2" \
 RESULT_ROOT="${ROOT}/results/primary_s1_s2/raw" \
 LOG_ROOT="${ROOT}/log/primary_s1_s2_eval" GPUS="2 3" WORKERS_PER_GPU=2 \
   bash "${ROOT}/scripts/eval_manifest_tucker.sh" >"${PIPELINE_LOG_ROOT}/seeds_eval.log" 2>&1
-PYTHONPATH="${ROOT}/src" python3 -m mixture_scaling.aggregate \
+PYTHONPATH="${ROOT}/src" "${PYTHON_BIN}" -m mixture_scaling.aggregate \
   --raw-root "${ROOT}/results/primary_s1_s2/raw" \
   --output "${ROOT}/results/primary_s1_s2/primary_results.csv" --expected 112
 

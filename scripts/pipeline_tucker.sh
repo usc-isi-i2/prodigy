@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PYTHON_BIN="${PYTHON_BIN:-/home/mhchu/miniconda3/envs/prodigy/bin/python3}"
 PRODIGY_ROOT="${PRODIGY_ROOT:-/dataMeR1/phil/gfm/prodigy}"
 PIPELINE_LOG_ROOT="${PIPELINE_LOG_ROOT:-${ROOT}/log/pipeline_s0}"
 mkdir -p "${PIPELINE_LOG_ROOT}"
@@ -39,12 +40,12 @@ wait "${p1}"; wait "${p2}"
 conda activate prodigy
 export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 cd "${ROOT}"
-PYTHONPATH="${ROOT}/src" python3 -c \
+PYTHONPATH="${ROOT}/src" "${PYTHON_BIN}" -c \
   'import sklearn, torch, torch_geometric, yaml; from mixture_scaling.train import make_loader; print("runtime imports ok")' \
   >"${PIPELINE_LOG_ROOT}/tests.log" 2>&1
 
 smoke_id="smoke_covid_s0_$(date -u +%Y%m%dT%H%M%SZ)"
-PYTHONPATH="${ROOT}/src" python3 -u -m mixture_scaling.train \
+PYTHONPATH="${ROOT}/src" "${PYTHON_BIN}" -u -m mixture_scaling.train \
   --config "${ROOT}/configs/graphs.yaml" --sources covid_political \
   --run-id "${smoke_id}" --device 2 --seed 0 --max-steps 2 \
   --output-root "${ROOT}/state/smoke" >"${PIPELINE_LOG_ROOT}/smoke.log" 2>&1
@@ -54,7 +55,7 @@ GPUS="2 3" WORKERS_PER_GPU=2 bash "${ROOT}/scripts/run_primary_tucker.sh" \
   >"${PIPELINE_LOG_ROOT}/training.log" 2>&1
 GPUS="2 3" WORKERS_PER_GPU=2 bash "${ROOT}/scripts/eval_primary_tucker.sh" \
   >"${PIPELINE_LOG_ROOT}/evaluation.log" 2>&1
-PYTHONPATH="${ROOT}/src" python3 -m mixture_scaling.aggregate \
+PYTHONPATH="${ROOT}/src" "${PYTHON_BIN}" -m mixture_scaling.aggregate \
   --raw-root "${ROOT}/results/primary_s0/raw" \
   --output "${ROOT}/results/primary_s0/primary_results.csv" --expected 56 \
   >"${PIPELINE_LOG_ROOT}/aggregate.log" 2>&1
