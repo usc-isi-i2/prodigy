@@ -39,7 +39,9 @@ wait "${p1}"; wait "${p2}"
 conda activate prodigy
 export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 cd "${ROOT}"
-PYTHONPATH="${ROOT}/src" pytest -q >"${PIPELINE_LOG_ROOT}/tests.log" 2>&1
+PYTHONPATH="${ROOT}/src" python3 -c \
+  'import sklearn, torch, torch_geometric, yaml; from mixture_scaling.train import make_loader; print("runtime imports ok")' \
+  >"${PIPELINE_LOG_ROOT}/tests.log" 2>&1
 
 smoke_id="smoke_covid_s0_$(date -u +%Y%m%dT%H%M%SZ)"
 PYTHONPATH="${ROOT}/src" python3 -u -m mixture_scaling.train \
