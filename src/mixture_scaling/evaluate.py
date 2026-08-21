@@ -67,7 +67,12 @@ def main() -> int:
     args = parser.parse_args()
     config = load_config(args.config)
     protocol = config["protocol"]
-    target = load_graph(args.target, config["graphs"][args.target]["path"], seed=int(protocol["seed"]))
+    # SSL validation edges are held out only for model selection. Downstream
+    # evaluation embeds the complete observed target topology.
+    target = load_graph(
+        args.target, config["graphs"][args.target]["path"],
+        seed=int(protocol["seed"]), use_full_edges=True,
+    )
     labeled_index, y = labeled_nodes(target.data)
     model = GraphSAGE(
         int(protocol["input_dim"]), int(protocol["hidden_dim"]), int(protocol["output_dim"]),
@@ -92,4 +97,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

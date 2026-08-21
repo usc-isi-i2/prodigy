@@ -46,6 +46,7 @@ def load_graph(
     *,
     validation_fraction: float = 0.15,
     seed: int = 0,
+    use_full_edges: bool = False,
 ) -> GraphArtifact:
     path = Path(path)
     if not path.is_file():
@@ -59,6 +60,9 @@ def load_graph(
     if x.ndim != 2 or x.shape[1] != 768:
         raise ValueError(f"{name}: expected [N,768] features, got {tuple(x.shape)}")
     background, train, validation = split_edges(edge_index, validation_fraction, seed)
+    if use_full_edges:
+        full_pairs = _undirected_pairs(edge_index).T.contiguous()
+        background = torch.cat((full_pairs, full_pairs.flip(0)), dim=1)
     data = Data(x=x.float(), edge_index=background, y=None if y is None else y.long())
     return GraphArtifact(name, path, data, train, validation)
 
@@ -69,4 +73,3 @@ def labeled_nodes(data: Data) -> tuple[torch.Tensor, torch.Tensor]:
     y = data.y.reshape(-1)
     mask = torch.isfinite(y.float()) & (y >= 0)
     return mask.nonzero(as_tuple=False).reshape(-1), y[mask]
-
