@@ -1,32 +1,17 @@
 # Mixture Scaling
 
-Controlled experiments comparing PRODIGY with plain GraphSAGE as the scale and
-diversity of a graph pretraining mixture change.
+Controlled GraphSAGE experiments measuring how the scale and diversity of a graph
+pretraining mixture affect downstream node classification.
 
 ## Research questions
 
-1. How does downstream adaptation efficiency change with pretraining-mixture
-   breadth and diversity?
+1. How does downstream performance change with pretraining-mixture scale and diversity?
 2. How do those relationships change with model scale?
 3. Can the resulting scaling relationships select a compute-efficient mixture
    that beats naive choices?
 
-## RQ1 comparison
-
-The initial table has three model families:
-
-| Family | Pretraining | Comparable downstream evaluation |
-|---|---|---|
-| `sage_scratch` | none | frozen/random probe and fine-tuning |
-| `sage_rw_ssl` | random-walk positives with negative sampling | linear probe and fine-tuning |
-| `prodigy_nm` | neighbor matching | linear probe and fine-tuning |
-
-PRODIGY's native in-context evaluation is reported separately because it is not
-equivalent to fitting a linear head or fine-tuning GraphSAGE.
-
-All primary rows use the same GraphSAGE depth and width, source mixtures, held-out
-targets, label subsets, and seed. Pretrained rows train to validation convergence;
-checkpoint trajectories are retained for matched-compute comparisons.
+PRODIGY is out of scope. Every experimental row uses the same plain GraphSAGE
+architecture and native edge negative-sampling SSL objective.
 
 ## First pilot
 
@@ -78,3 +63,19 @@ the held-out mixture ladder at sizes 2–5; and full primary replications at see
 and 2. The ladder order is the graph order in `configs/graphs.yaml` with the held-out
 target removed. Its size-1 and size-6 endpoints reuse the primary specialist and
 leave-one-out models, so only 18 distinct intermediate mixtures require new training.
+
+## Strict TwiBot pilot
+
+`configs/twibot_strict_pilot.yaml` defines the replacement protocol. Every graph has
+a permanent stratified 70/15/15 node split. SSL gradients use induced training
+subgraphs, SSL convergence uses induced validation subgraphs, and test subgraphs are
+untouched until one final downstream evaluation. The six-source mixture rotates
+uniformly across sources and confines every positive, negative, and minibatch to one
+source graph.
+
+The pilot compares scratch, a TwiBot specialist, UKR/RUS, Cora, and Facebook
+single-source initializations, and an all-non-target mixture. Each initialization is
+evaluated as a frozen linear probe and after supervised TwiBot fine-tuning. Both head
+selection and fine-tuning early stopping use TwiBot validation nodes; test nodes are
+scored once after selection. Run it on Tucker with
+`scripts/twibot_strict_pilot_tucker.sh`.
