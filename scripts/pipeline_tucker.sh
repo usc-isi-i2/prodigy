@@ -19,7 +19,8 @@ export PATH="/home/mhchu/miniconda3/bin:${PATH}"
 source "$(conda info --base)/etc/profile.d/conda.sh"
 
 build_citation_graph() {
-  local dataset="$1" gpu="$2" artifact="/dataMeR1/phil/data/${dataset}/graphs/citation_graph.pt"
+  local dataset="$1" gpu="$2" artifact
+  artifact="/dataMeR1/phil/data/${dataset}/graphs/citation_graph.pt"
   if [[ -f "${artifact}" ]]; then
     echo "citation artifact exists: ${artifact}"
     return 0
