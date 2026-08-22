@@ -69,6 +69,7 @@ def main() -> int:
     parser.add_argument("--config", required=True)
     parser.add_argument("--split-root", required=True)
     parser.add_argument("--target", default="twibot20")
+    parser.add_argument("--sources", help="comma-separated SSL sources; defaults to target")
     parser.add_argument("--device", type=int, required=True)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--output-dir", required=True)
@@ -82,15 +83,29 @@ def main() -> int:
     config = load_config(args.config)
     protocol = dict(config["protocol"])
     configure_sampling_backend(protocol)
-    raw = load_raw(config["graphs"][args.target]["path"])
-    split = load_split(Path(args.split_root) / f"{args.target}.pt", args.target, int(raw["x"].shape[0]))
-    train_graph = induced_partition(args.target, config["graphs"][args.target]["path"], split, "train")
-    validation_graph = induced_partition(
-        args.target, config["graphs"][args.target]["path"], split, "validation"
-    )
-    feature_names, structural_mean, structural_std = augment(train_graph)
-    augment(validation_graph, structural_mean, structural_std)
-    input_dim = int(train_graph.data.x.shape[1])
+    sources = args.sources.split(",") if args.sources else [args.target]
+    if not sources or len(sources) != len(set(sources)):
+        raise ValueError("SSL sources must be nonempty and unique")
+    train_graphs, validation_graphs, split_hashes, normalization = [], [], {}, {}
+    feature_names = None
+    for source in sources:
+        source_raw = load_raw(config["graphs"][source]["path"])
+        source_split = load_split(
+            Path(args.split_root) / f"{source}.pt", source, int(source_raw["x"].shape[0])
+        )
+        train_graph = induced_partition(source, config["graphs"][source]["path"], source_split, "train")
+        validation_graph = induced_partition(
+            source, config["graphs"][source]["path"], source_split, "validation"
+        )
+        names, source_mean, source_std = augment(train_graph)
+        augment(validation_graph, source_mean, source_std)
+        feature_names = names if feature_names is None else feature_names
+        train_graphs.append(train_graph); validation_graphs.append(validation_graph)
+        split_hashes[source] = split_hash(source_split)
+        normalization[source] = {"mean": source_mean.tolist(), "std": source_std.tolist()}
+    input_dim = int(train_graphs[0].data.x.shape[1])
+    if any(int(graph.data.x.shape[1]) != input_dim for graph in train_graphs + validation_graphs):
+        raise ValueError("all augmented source graphs must share input dimensionality")
     device = torch.device(f"cuda:{args.device}")
 
     seed_everything(args.seed)
@@ -101,24 +116,25 @@ def main() -> int:
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=float(protocol["learning_rate"]), weight_decay=float(protocol["weight_decay"])
     )
-    train_loader = make_loader(train_graph, protocol, validation=False)
-    validation_loader = make_loader(validation_graph, protocol, validation=True)
+    train_loaders = [make_loader(graph, protocol, validation=False) for graph in train_graphs]
+    validation_loaders = [make_loader(graph, protocol, validation=True) for graph in validation_graphs]
     metadata = {
-        "run_id": f"{args.target}_target_structural_plus_existing_s{args.seed}", "sources": [args.target],
-        "seed": args.seed, "protocol": protocol, "split_hashes": {args.target: split_hash(split)},
+        "run_id": f"{args.target}_structural_ssl_s{args.seed}", "sources": sources,
+        "seed": args.seed, "protocol": protocol, "split_hashes": split_hashes,
         "ssl_train_partition": "train", "ssl_validation_partition": "validation",
         "source_confined": True, "feature_mode": "structural_plus_existing",
         "input_dim": input_dim, "structural_feature_names": feature_names,
-        "structural_normalization": "train_partition_zscore",
-        "structural_mean": structural_mean.tolist(), "structural_std": structural_std.tolist(),
+        "structural_normalization": "per_source_train_partition_zscore",
+        "source_structural_statistics": normalization,
     }
     (output_dir / "metadata.json").write_text(json.dumps(metadata, indent=2) + "\n")
-    iterator = None
+    iterators = [None] * len(train_loaders)
     best_loss, best_step, patience_reference, patience = float("inf"), 0, float("inf"), 0
     checkpoints = set(map(int, protocol["checkpoint_steps"]))
     start = time.monotonic()
     for step in range(1, int(protocol["max_steps"]) + 1):
-        batch, iterator = next_batch(train_loader, iterator)
+        source_index = (step - 1) % len(train_loaders)
+        batch, iterators[source_index] = next_batch(train_loaders[source_index], iterators[source_index])
         optimizer.zero_grad(set_to_none=True)
         loss = batch_loss(model, batch, device)
         loss.backward()
@@ -128,11 +144,11 @@ def main() -> int:
         if step % int(protocol["validation_interval"]):
             continue
         value, per_source = validation_loss(
-            model, [validation_loader], device, int(protocol["validation_batches"]), args.seed
+            model, validation_loaders, device, int(protocol["validation_batches"]), args.seed
         )
         row = {
             "step": step, "train_loss": float(loss), "validation_loss": value,
-            "per_source_validation_loss": {args.target: next(iter(per_source.values()))},
+            "per_source_validation_loss": dict(zip(sources, per_source.values())),
             "elapsed_seconds": time.monotonic() - start,
         }
         with (output_dir / "validation.jsonl").open("a", encoding="utf-8") as handle:
@@ -166,23 +182,37 @@ def main() -> int:
         input_dim, int(protocol["hidden_dim"]), int(protocol["output_dim"]),
         int(protocol["layers"]), float(protocol["dropout"]),
     ).to(device)
+
+    # The downstream target is loaded only after SSL checkpoint selection.
+    target_raw = load_raw(config["graphs"][args.target]["path"])
+    target_split = load_split(
+        Path(args.split_root) / f"{args.target}.pt", args.target, int(target_raw["x"].shape[0])
+    )
+    target_train_graph = induced_partition(
+        args.target, config["graphs"][args.target]["path"], target_split, "train"
+    )
+    target_validation_graph = induced_partition(
+        args.target, config["graphs"][args.target]["path"], target_split, "validation"
+    )
+    _, target_mean, target_std = augment(target_train_graph)
+    augment(target_validation_graph, target_mean, target_std)
     pretrained_selection = select_probe(
-        pretrained, train_graph, validation_graph, device, protocol["probe_c_values"], args.seed
+        pretrained, target_train_graph, target_validation_graph, device, protocol["probe_c_values"], args.seed
     )
     scratch_selection = select_probe(
-        scratch, train_graph, validation_graph, device, protocol["probe_c_values"], args.seed
+        scratch, target_train_graph, target_validation_graph, device, protocol["probe_c_values"], args.seed
     )
 
     # Construct the test graph and read its labels only after both heads are selected.
-    test_graph = induced_partition(args.target, config["graphs"][args.target]["path"], split, "test")
-    augment(test_graph, structural_mean, structural_std)
+    test_graph = induced_partition(args.target, config["graphs"][args.target]["path"], target_split, "test")
+    augment(test_graph, target_mean, target_std)
     for name, encoder, selection, checkpoint_step in (
         ("pretrained", pretrained, pretrained_selection, best_step),
         ("scratch", scratch, scratch_selection, 0),
     ):
         result = {
             "status": "complete", "evaluation": "frozen_linear_probe",
-            "target": args.target, "target_split_hash": split_hash(split),
+            "target": args.target, "target_split_hash": split_hash(target_split), "sources": sources,
             "feature_mode": "structural_plus_existing", "input_dim": input_dim,
             "encoder": name, "seed": args.seed, "checkpoint_step": checkpoint_step,
             **score_probe(selection, encoder, test_graph, device, args.seed),
