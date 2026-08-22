@@ -271,6 +271,13 @@ width 64. TwiBot switches from a positive k=6 effect at width 64 to a negative o
 at width 512. These sign changes rule out a single global capacity correction to
 mixture scale.
 
+The COVID interaction was then replicated at seeds 1 and 2. The k=6-minus-k=1
+effects at width 64 are -0.0643, -0.0611, and -0.0774 across seeds; at width 512
+they are -0.0021, -0.0082, and -0.0205. Mean mixture interference is therefore
+-0.0676 +/- 0.0086 AUC at width 64 versus -0.0103 +/- 0.0094 at width 512. Every
+seed shows the same capacity mitigation, averaging +0.0573 AUC. This confirms that
+the COVID small-model collapse is not a seed-0 anomaly.
+
 ## Current conclusions
 
 1. Pretraining source matters, but effects are small and target-dependent with the
@@ -289,7 +296,6 @@ mixture scale.
 
 ## Recommended next experiments
 
-- Complete seeds 1 and 2 for the width-dependent COVID interference contrast.
 - Repeat any other large, sign-changing model-scale contrasts identified above.
 - Validate the cheap feature-mode rule leave-one-target-out or on additional graphs.
 - Model source compatibility from graph metadata and test selection against random,
