@@ -39,13 +39,15 @@ worker() {
       if [[ -f "${output}" ]]; then
         echo "[gpu ${gpu}] SKIP ${run_id}"
       else
-        echo "[gpu ${gpu}] TRAIN ${run_id}"
-        PYTHONPATH="${ROOT}/src" "${PYTHON_BIN}" -u -m mixture_scaling.train_strict \
-          --config "${ROOT}/configs/twibot_strict_pilot.yaml" \
-          --split-root "${SPLIT_ROOT}" --sources "${sources}" --run-id "${run_id}" \
-          --device "${gpu}" --seed 0 --output-root "${STATE_ROOT}" \
-          --hidden-dim "${width}" --output-dim "${width}" \
-          >"${LOG_ROOT}/${run_id}.log" 2>&1
+        if [[ ! -f "${STATE_ROOT}/${run_id}/summary.json" ]]; then
+          echo "[gpu ${gpu}] TRAIN ${run_id}"
+          PYTHONPATH="${ROOT}/src" "${PYTHON_BIN}" -u -m mixture_scaling.train_strict \
+            --config "${ROOT}/configs/twibot_strict_pilot.yaml" \
+            --split-root "${SPLIT_ROOT}" --sources "${sources}" --run-id "${run_id}" \
+            --device "${gpu}" --seed 0 --output-root "${STATE_ROOT}" \
+            --hidden-dim "${width}" --output-dim "${width}" \
+            >"${LOG_ROOT}/${run_id}.log" 2>&1
+        fi
         echo "[gpu ${gpu}] PROBE ${run_id}"
         PYTHONPATH="${ROOT}/src" "${PYTHON_BIN}" -u -m mixture_scaling.probe_strict \
           --config "${ROOT}/configs/twibot_strict_pilot.yaml" \
