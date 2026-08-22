@@ -66,4 +66,4 @@ for pid in "${pids[@]}"; do wait "${pid}" || status=1; done
 (( status == 0 )) || exit "${status}"
 
 PYTHONPATH="${ROOT}/src" "${PYTHON_BIN}" -m mixture_scaling.aggregate_corrected_matrix \
-  --raw-root "${RESULT_ROOT}/raw" --output "${RESULT_ROOT}/matrix.csv"
+  --raw-root "${RESULT_ROOT}/raw" --output "${RESULT_ROOT}/matrix.csv" --expected-seed 0

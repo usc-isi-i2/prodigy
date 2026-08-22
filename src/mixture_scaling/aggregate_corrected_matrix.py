@@ -21,6 +21,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--raw-root", required=True)
     parser.add_argument("--output", required=True)
+    parser.add_argument("--expected-seed", type=int, required=True)
     args = parser.parse_args()
     rows = []
     for source in GRAPHS:
@@ -33,6 +34,10 @@ def main() -> int:
                 raise ValueError(f"incomplete result: {path}")
             if data.get("target") != target or data.get("sources") != [source]:
                 raise ValueError(f"identity audit failed: {path}")
+            if int(data.get("pretrain_seed", -1)) != args.expected_seed:
+                raise ValueError(f"pretrain seed audit failed: {path}")
+            if int(data.get("probe_seed", -1)) != args.expected_seed:
+                raise ValueError(f"probe seed audit failed: {path}")
             rows.append({
                 "source": source,
                 "target": target,
@@ -58,7 +63,8 @@ def main() -> int:
         "expected_cells": 49,
         "sources": list(GRAPHS),
         "targets": list(GRAPHS),
-        "protocol": "heldout_training_edges_width256_existing_features_seed0",
+        "seed": args.expected_seed,
+        "protocol": f"heldout_training_edges_width256_existing_features_seed{args.expected_seed}",
     }
     (output.parent / "audit.json").write_text(json.dumps(audit, indent=2) + "\n")
     print(json.dumps(audit, indent=2))
