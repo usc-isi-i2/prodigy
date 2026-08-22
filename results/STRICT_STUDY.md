@@ -278,6 +278,14 @@ they are -0.0021, -0.0082, and -0.0205. Mean mixture interference is therefore
 seed shows the same capacity mitigation, averaging +0.0573 AUC. This confirms that
 the COVID small-model collapse is not a seed-0 anomaly.
 
+The TwiBot sign change was also replicated at seeds 1 and 2. Its k=6-minus-k=1
+effects are +0.0084, +0.0025, and +0.0071 at width 64, but -0.0098, -0.0035, and
+-0.0076 at width 512. The three-seed means are +0.0060 +/- 0.0031 and
+-0.0070 +/- 0.0032, respectively. Unlike COVID, increasing capacity makes the
+mixture effect more negative; every seed shows the same directional change. Taken
+together, COVID and TwiBot establish that capacity can either suppress or induce
+mixture interference depending on the target.
+
 ## Current conclusions
 
 1. Pretraining source matters, but effects are small and target-dependent with the
@@ -296,7 +304,6 @@ the COVID small-model collapse is not a seed-0 anomaly.
 
 ## Recommended next experiments
 
-- Repeat any other large, sign-changing model-scale contrasts identified above.
 - Validate the cheap feature-mode rule leave-one-target-out or on additional graphs.
 - Model source compatibility from graph metadata and test selection against random,
   largest-first, and all-source mixtures at matched compute.
