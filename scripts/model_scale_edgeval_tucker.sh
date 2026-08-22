@@ -34,6 +34,7 @@ worker() {
   for row in "${ROWS[@]}"; do
     if (( index % TOTAL_WORKERS == worker_index )); then
       IFS=$'\t' read -r run_id target sources width <<< "${row}"
+      sources="${sources//|/,}"
       output="${RESULT_ROOT}/${run_id}.json"
       if [[ -f "${output}" ]]; then
         echo "[gpu ${gpu}] SKIP ${run_id}"
