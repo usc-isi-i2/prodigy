@@ -43,8 +43,12 @@ Each graph has one permanent, stratified node split made with split seed 1729:
 for each partition, so no SSL edge, sampled neighborhood, or structural statistic
 crosses partition boundaries.
 
-SSL uses only train induced graphs for gradient updates. SSL checkpoint selection
-uses only validation induced graphs. Target labels are not read during pretraining.
+SSL uses only train induced graphs. Within every source training graph, a fixed,
+deterministic 10% of positive edges is removed from message passing and gradient
+updates and used only for SSL checkpoint selection. The remaining 90% supplies SSL
+training positives. Thus training and validation edges are disjoint while both come
+from the same node-induced graph; node validation and test partitions remain
+entirely untouched by SSL. Target labels are not read during pretraining.
 Downstream hyperparameters are selected using labeled train and validation nodes;
 the selected classifier is refit on their union and scored once on labeled test
 nodes. Test labels never select a checkpoint or classifier.
@@ -80,15 +84,13 @@ The initial seed is 0. The main TwiBot existing-feature comparison was subsequen
 repeated at seeds 1 and 2 for the target specialist, Election 2020 source, and
 six-source mixture.
 
-### Validation caveat
+### Superseded validation pilot
 
-The induced 15% validation graph is much smaller and can have a materially different
-edge-density distribution from the 70% training graph. This is particularly visible
-for Election 2020, whose validation loss rises while its training loss falls. Mixture
-validation is consequently noisy and sometimes dominated by one source. Results
-below are valid under the declared selection protocol, but a definitive scaling
-study should select SSL convergence using held-out edges within each training graph
-rather than a separately induced validation-node graph.
+The earliest strict runs selected SSL checkpoints on the separately induced 15%
+validation-node graph, introducing a graph-density shift most visibly on Election
+2020. Reportable scaling runs now use held-out training edges. A matched TwiBot
+six-source rerun reproduced the endpoint conclusion: existing-feature AUC changed
+from 0.7073 to 0.7058 and structural-feature AUC from 0.7558 to 0.7560.
 
 ## Downstream evaluation
 
@@ -190,31 +192,79 @@ Adding structural features raises mixture AUC to 0.6106, an improvement of **2.8
 percentage points**. This is the cleanest current evidence that the mixture benefits
 from structural inputs, although it is only one seed and one target.
 
+## Complete seven-target seed-0 benchmark
+
+The requested seven-target by eight-method table is complete, with one final test
+evaluation per fitted model. The compact table below omits structural-only logistic
+regression; its AUCs are 0.6993, 0.5358, 0.5099, 0.9373, 0.5251, 0.4923, and 0.5199
+in table order.
+
+| Target | Existing LR | Combined LR | Scratch SAGE | Target SSL | Mixture existing | Mixture structural | Supervised SAGE |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| TwiBot-20 | 0.7046 | 0.7540 | 0.7117 | 0.7457 | 0.7073 | **0.7558** | 0.7463 |
+| UKR/RUS | 0.6048 | **0.6162** | 0.6106 | 0.6068 | 0.5823 | 0.6106 | 0.6128 |
+| COVID political | **0.9127** | 0.9088 | 0.8446 | 0.8634 | 0.8870 | 0.8628 | 0.9026 |
+| Election 2020 | 0.9536 | 0.9723 | **0.9816** | 0.9725 | 0.9776 | 0.9803 | 0.9815 |
+| Facebook reference | **0.9097** | 0.9096 | 0.8912 | 0.8949 | 0.8934 | 0.8918 | 0.9053 |
+| Cora | **0.9787** | 0.9783 | 0.9615 | 0.9626 | 0.9568 | 0.9577 | 0.9580 |
+| PubMed | 0.9873 | **0.9874** | 0.9791 | 0.9795 | 0.9812 | 0.9790 | 0.9857 |
+
+## Corrected mixture scale and diversity experiment
+
+The held-out-edge ladder contains 112 seed-0 evaluations: every target, mixture
+sizes 1 through 6, three deterministic source subsets at sizes 1--5, and the unique
+six-source mixture. Feature mode was fixed per target before this sweep from the
+three-seed endpoint evidence (structural for TwiBot, UKR/RUS, and Election; existing
+for the other four).
+
+| Target | k=1 | k=2 | k=3 | k=4 | k=5 | k=6 | Best k |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| TwiBot-20 | 0.7305 | 0.7465 | 0.7514 | 0.7519 | 0.7533 | **0.7560** | 6 |
+| UKR/RUS | 0.6085 | 0.6089 | 0.6068 | **0.6102** | 0.6087 | 0.6061 | 4 |
+| COVID political | 0.9015 | 0.8749 | 0.8899 | **0.9019** | 0.8643 | 0.8983 | 4 |
+| Election 2020 | **0.9813** | 0.9790 | 0.9810 | 0.9774 | 0.9758 | 0.9788 | 1 |
+| Facebook reference | 0.8938 | **0.8940** | 0.8924 | 0.8909 | 0.8935 | 0.8932 | 2 |
+| Cora | **0.9619** | 0.9582 | 0.9600 | 0.9589 | 0.9578 | 0.9593 | 1 |
+| PubMed | 0.9806 | 0.9790 | 0.9797 | 0.9802 | 0.9803 | **0.9811** | 6 |
+
+The target-centered pooled slope against log mixture size is 0.00057 AUC
+(p=0.733): there is no general monotone scaling law. Only TwiBot shows a clear
+positive relationship (+2.55 points from k=1 to k=6). Source-subset standard
+deviation averages roughly 0.3--0.6 points and commonly exceeds the mean effect of
+adding sources. A coarse same-domain versus mixed-domain contrast is also null
+(mean +0.18 points, p=0.472). Source identity and target compatibility dominate
+naive mixture size.
+
+Across three seeds, a cheap target-only diagnostic predicts whether structural
+mixture inputs help: combined-minus-existing logistic-regression gain correlates
+with structural-minus-existing mixture gain (Pearson r=0.915, p=0.0039). The rule
+“use structural inputs iff the cheap logistic gain is positive” selects the better
+mean mixture mode on six of seven targets and averages 0.8630 AUC, versus 0.8523
+for always-existing, 0.8605 for always-structural, and 0.8640 for an oracle. This is
+preliminary RQ3 evidence and requires held-out validation across more graphs.
+
 ## Current conclusions
 
 1. Pretraining source matters, but effects are small and target-dependent with the
    existing features; on TwiBot-20 the observed range is roughly 4.5 AUC points and
    the mixture is not the best encoder.
-2. More mixture sources are not monotonically better in the earlier seven-target
-   ladder. Source identity remains confounded with size under a single addition order.
+2. More mixture sources are not generally better in the corrected multi-subset
+   seven-target ladder. Source identity and target compatibility dominate scale.
 3. Structural features materially improve held-out mixture transfer on UKR/RUS and
    target SSL on TwiBot-20.
 4. Strong feature-only logistic baselines are essential. They currently match or
    beat GraphSAGE on both structural targets.
-5. The present evidence does not yet establish a general scaling law or answer the
-   model-scale and compute-efficient-design questions.
+5. A cheap target diagnostic nearly recovers oracle feature-mode selection, providing
+   a concrete compute-efficient-design hypothesis. Model-scale interactions remain
+   under active evaluation.
 
 ## Recommended next experiments
 
-- Replace induced-validation-node SSL selection with held-out training-edge
-  validation and repeat the matched structural/no-structural comparisons.
-- Repeat UKR/RUS structural mixture, target specialist, scratch, and logistic
-  baselines for at least two additional seeds.
-- Run structural and existing-feature comparisons across all seven held-out targets.
-- At each mixture size, sample multiple source subsets/orders so mixture scale can
-  be separated from source identity and graph size.
-- Only after the RQ1 protocol is stable, repeat the ladder at several GraphSAGE
-  widths/depths for RQ2 and fit held-out predictive mixture-selection tests for RQ3.
+- Complete the paired width-64/256/512 GraphSAGE study at mixture sizes 1, 3, and 6.
+- Repeat the most informative model-scale contrasts at seeds 1 and 2.
+- Validate the cheap feature-mode rule leave-one-target-out or on additional graphs.
+- Model source compatibility from graph metadata and test selection against random,
+  largest-first, and all-source mixtures at matched compute.
 
 ## Artifact locations
 

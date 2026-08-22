@@ -71,8 +71,10 @@ leave-one-out models, so only 18 distinct intermediate mixtures require new trai
 
 `configs/twibot_strict_pilot.yaml` defines the replacement protocol. Every graph has
 a permanent stratified 70/15/15 node split. SSL gradients use induced training
-subgraphs, SSL convergence uses induced validation subgraphs, and test subgraphs are
-untouched until one final downstream evaluation. The six-source mixture rotates
+subgraphs, and convergence is selected on a fixed 10% of training-graph edges removed
+from message passing and gradient updates. Validation-node and test-node subgraphs
+remain untouched by SSL; test is used only for one final downstream evaluation. The
+six-source mixture rotates
 uniformly across sources and confines every positive, negative, and minibatch to one
 source graph.
 
