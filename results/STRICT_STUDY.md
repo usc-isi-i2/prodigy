@@ -243,6 +243,34 @@ mean mixture mode on six of seven targets and averages 0.8630 AUC, versus 0.8523
 for always-existing, 0.8605 for always-structural, and 0.8640 for an oracle. This is
 preliminary RQ3 evidence and requires held-out validation across more graphs.
 
+## Model scale interaction
+
+RQ2 fixes the input representation to the original 768 node features and varies the
+one-layer GraphSAGE output width over 64, 256, and 512. For every target and width,
+it evaluates the exact same three source subsets at k=1 and k=3 and the unique k=6
+mixture. The complete audit contains 147 cells, including paired width-256 rows
+reused from the corrected ladder where applicable.
+
+| Target | k=6 minus k=1, width 64 | width 256 | width 512 |
+|---|---:|---:|---:|
+| TwiBot-20 | +0.0084 | -0.0029 | -0.0098 |
+| UKR/RUS | -0.0037 | -0.0024 | -0.0075 |
+| COVID political | **-0.0643** | -0.0032 | -0.0021 |
+| Election 2020 | +0.0098 | +0.0050 | +0.0031 |
+| Facebook reference | +0.0089 | -0.0006 | -0.0001 |
+| Cora | +0.0019 | -0.0026 | -0.0000 |
+| PubMed | -0.0054 | +0.0005 | +0.0002 |
+
+Increasing width improves absolute AUC on every target, but does not induce a
+universal mixture-scaling law. The pooled log-width by log-mixture-size interaction
+is 0.00102 AUC (p=0.590). Instead, width changes target-specific transfer and
+interference. The clearest example is COVID: the six-source mixture loses 6.43 AUC
+points relative to k=1 at width 64, but only 0.21--0.32 points at widths 256--512.
+Election shows the opposite pattern: extra sources help at every width, most at
+width 64. TwiBot switches from a positive k=6 effect at width 64 to a negative one
+at width 512. These sign changes rule out a single global capacity correction to
+mixture scale.
+
 ## Current conclusions
 
 1. Pretraining source matters, but effects are small and target-dependent with the
@@ -254,14 +282,15 @@ preliminary RQ3 evidence and requires held-out validation across more graphs.
    target SSL on TwiBot-20.
 4. Strong feature-only logistic baselines are essential. They currently match or
    beat GraphSAGE on both structural targets.
-5. A cheap target diagnostic nearly recovers oracle feature-mode selection, providing
-   a concrete compute-efficient-design hypothesis. Model-scale interactions remain
-   under active evaluation.
+5. Model width improves absolute performance, but its interaction with mixture size
+   changes sign by target; a single global joint scaling law is rejected.
+6. A cheap target diagnostic nearly recovers oracle feature-mode selection, providing
+   a concrete compute-efficient-design hypothesis.
 
 ## Recommended next experiments
 
-- Complete the paired width-64/256/512 GraphSAGE study at mixture sizes 1, 3, and 6.
-- Repeat the most informative model-scale contrasts at seeds 1 and 2.
+- Complete seeds 1 and 2 for the width-dependent COVID interference contrast.
+- Repeat any other large, sign-changing model-scale contrasts identified above.
 - Validate the cheap feature-mode rule leave-one-target-out or on additional graphs.
 - Model source compatibility from graph metadata and test selection against random,
   largest-first, and all-source mixtures at matched compute.
