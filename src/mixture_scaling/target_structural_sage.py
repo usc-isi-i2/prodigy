@@ -11,7 +11,7 @@ import torch
 from .config import load_config
 from .model import GraphSAGE
 from .probe_strict import choose_trial, classifier, embed
-from .strict_data import induced_partition, load_raw, load_split, split_hash
+from .strict_data import induced_partition, load_raw, load_split, split_hash, ssl_train_edge_partition
 from .strict_metrics import classification_metrics
 from .structural_logistic_baseline import structural_features
 from .train import batch_loss, configure_sampling_backend, make_loader, next_batch, save_checkpoint, validation_loss
@@ -86,25 +86,25 @@ def main() -> int:
     sources = args.sources.split(",") if args.sources else [args.target]
     if not sources or len(sources) != len(set(sources)):
         raise ValueError("SSL sources must be nonempty and unique")
-    train_graphs, validation_graphs, split_hashes, normalization = [], [], {}, {}
+    ssl_graphs, split_hashes, normalization = [], {}, {}
     feature_names = None
     for source in sources:
         source_raw = load_raw(config["graphs"][source]["path"])
         source_split = load_split(
             Path(args.split_root) / f"{source}.pt", source, int(source_raw["x"].shape[0])
         )
-        train_graph = induced_partition(source, config["graphs"][source]["path"], source_split, "train")
-        validation_graph = induced_partition(
-            source, config["graphs"][source]["path"], source_split, "validation"
+        ssl_graph = ssl_train_edge_partition(
+            source, config["graphs"][source]["path"], source_split,
+            validation_fraction=float(protocol["ssl_edge_validation_fraction"]),
+            seed=int(protocol["ssl_edge_split_seed"]),
         )
-        names, source_mean, source_std = augment(train_graph)
-        augment(validation_graph, source_mean, source_std)
+        names, source_mean, source_std = augment(ssl_graph)
         feature_names = names if feature_names is None else feature_names
-        train_graphs.append(train_graph); validation_graphs.append(validation_graph)
+        ssl_graphs.append(ssl_graph)
         split_hashes[source] = split_hash(source_split)
         normalization[source] = {"mean": source_mean.tolist(), "std": source_std.tolist()}
-    input_dim = int(train_graphs[0].data.x.shape[1])
-    if any(int(graph.data.x.shape[1]) != input_dim for graph in train_graphs + validation_graphs):
+    input_dim = int(ssl_graphs[0].data.x.shape[1])
+    if any(int(graph.data.x.shape[1]) != input_dim for graph in ssl_graphs):
         raise ValueError("all augmented source graphs must share input dimensionality")
     device = torch.device(f"cuda:{args.device}")
 
@@ -116,12 +116,15 @@ def main() -> int:
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=float(protocol["learning_rate"]), weight_decay=float(protocol["weight_decay"])
     )
-    train_loaders = [make_loader(graph, protocol, validation=False) for graph in train_graphs]
-    validation_loaders = [make_loader(graph, protocol, validation=True) for graph in validation_graphs]
+    train_loaders = [make_loader(graph, protocol, validation=False) for graph in ssl_graphs]
+    validation_loaders = [make_loader(graph, protocol, validation=True) for graph in ssl_graphs]
     metadata = {
         "run_id": f"{args.target}_structural_ssl_s{args.seed}", "sources": sources,
         "seed": args.seed, "protocol": protocol, "split_hashes": split_hashes,
-        "ssl_train_partition": "train", "ssl_validation_partition": "validation",
+        "ssl_train_partition": "train_nodes/train_edges",
+        "ssl_validation_partition": "train_nodes/heldout_edges",
+        "ssl_edge_validation_fraction": float(protocol["ssl_edge_validation_fraction"]),
+        "ssl_edge_split_seed": int(protocol["ssl_edge_split_seed"]),
         "source_confined": True, "feature_mode": "structural_plus_existing",
         "input_dim": input_dim, "structural_feature_names": feature_names,
         "structural_normalization": "per_source_train_partition_zscore",

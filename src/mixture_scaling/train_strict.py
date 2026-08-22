@@ -12,7 +12,7 @@ import torch
 
 from .config import load_config
 from .model import GraphSAGE
-from .strict_data import induced_partition, load_raw, load_split, split_hash
+from .strict_data import load_raw, load_split, split_hash, ssl_train_edge_partition
 from .train import batch_loss, configure_sampling_backend, make_loader, next_batch, save_checkpoint, validation_loss
 
 
@@ -68,17 +68,20 @@ def main() -> int:
         raise ValueError("sources must be nonempty and unique")
     seed_everything(args.seed)
 
-    train_graphs, validation_graphs, split_hashes = [], [], {}
+    ssl_graphs, split_hashes = [], {}
     for source in sources:
         graph_config = config["graphs"][source]
         raw = load_raw(graph_config["path"])
         split = load_split(Path(args.split_root) / f"{source}.pt", source, int(raw["x"].shape[0]))
-        train_graphs.append(induced_partition(source, graph_config["path"], split, "train"))
-        validation_graphs.append(induced_partition(source, graph_config["path"], split, "validation"))
+        ssl_graphs.append(ssl_train_edge_partition(
+            source, graph_config["path"], split,
+            validation_fraction=float(protocol["ssl_edge_validation_fraction"]),
+            seed=int(protocol["ssl_edge_split_seed"]),
+        ))
         split_hashes[source] = split_hash(split)
 
-    train_loaders = [make_loader(graph, protocol, validation=False) for graph in train_graphs]
-    validation_loaders = [make_loader(graph, protocol, validation=True) for graph in validation_graphs]
+    train_loaders = [make_loader(graph, protocol, validation=False) for graph in ssl_graphs]
+    validation_loaders = [make_loader(graph, protocol, validation=True) for graph in ssl_graphs]
     device = torch.device(f"cuda:{args.device}")
     model = GraphSAGE(
         int(protocol["input_dim"]), int(protocol["hidden_dim"]), int(protocol["output_dim"]),
@@ -97,8 +100,10 @@ def main() -> int:
         "seed": args.seed,
         "protocol": protocol,
         "split_hashes": split_hashes,
-        "ssl_train_partition": "train",
-        "ssl_validation_partition": "validation",
+        "ssl_train_partition": "train_nodes/train_edges",
+        "ssl_validation_partition": "train_nodes/heldout_edges",
+        "ssl_edge_validation_fraction": float(protocol["ssl_edge_validation_fraction"]),
+        "ssl_edge_split_seed": int(protocol["ssl_edge_split_seed"]),
         "source_confined": True,
     }
     (run_dir / "metadata.json").write_text(json.dumps(metadata, indent=2) + "\n")

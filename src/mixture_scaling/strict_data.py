@@ -148,6 +148,39 @@ def induced_partition(
     return GraphArtifact(f"{name}:{partition}", Path(path), data, pairs, pairs)
 
 
+def ssl_train_edge_partition(
+    name: str,
+    path: str | Path,
+    split: NodeSplit,
+    *,
+    validation_fraction: float,
+    seed: int,
+) -> GraphArtifact:
+    """Use train nodes only, holding out positive edges for SSL validation."""
+    if not 0.0 < validation_fraction < 1.0:
+        raise ValueError("SSL validation fraction must be between zero and one")
+    raw = load_raw(path)
+    x, edge_index, y = raw.get("x"), raw.get("edge_index"), raw.get("y")
+    nodes = split.train
+    induced_edges, _ = subgraph(nodes, edge_index.long(), relabel_nodes=True, num_nodes=x.shape[0])
+    pairs = _undirected_pairs(induced_edges).T.contiguous()
+    if pairs.shape[1] < 2:
+        raise ValueError(f"{name}/train: need at least two edges for SSL edge validation")
+    generator = torch.Generator().manual_seed(seed)
+    order = torch.randperm(pairs.shape[1], generator=generator)
+    validation_count = max(1, min(pairs.shape[1] - 1, int(round(pairs.shape[1] * validation_fraction))))
+    validation_edges = pairs[:, order[:validation_count]].contiguous()
+    train_edges = pairs[:, order[validation_count:]].contiguous()
+    background = torch.cat((train_edges, train_edges.flip(0)), dim=1)
+    data = Data(
+        x=x[nodes].float(),
+        edge_index=background,
+        y=None if y is None else y.reshape(-1)[nodes].long(),
+        original_node_id=nodes,
+    )
+    return GraphArtifact(f"{name}:train_ssl_edges", Path(path), data, train_edges, validation_edges)
+
+
 def split_summary(graph_name: str, split: NodeSplit, y: torch.Tensor | None) -> dict:
     result = {"graph": graph_name, "seed": split.seed, "sha256": split_hash(split), "partitions": {}}
     for partition in PARTITIONS:

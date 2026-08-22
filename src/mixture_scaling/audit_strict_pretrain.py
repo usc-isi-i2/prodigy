@@ -20,6 +20,11 @@ def audit_run(run_dir: Path, expected_sources: list[str], expected_seed: int) ->
         "sources": summary.get("sources") == expected_sources,
         "seed": summary.get("seed") == expected_seed,
         "source_confined": summary.get("source_confined") is True,
+        "heldout_train_edges": (
+            summary.get("ssl_train_partition") == "train_nodes/train_edges"
+            and summary.get("ssl_validation_partition") == "train_nodes/heldout_edges"
+            and 0.0 < float(summary.get("ssl_edge_validation_fraction", 0.0)) < 1.0
+        ),
         "split_hashes": set(summary.get("split_hashes", {})) == set(expected_sources),
         "best_step": summary.get("best_step") == absolute_best["step"] == checkpoint.get("step"),
         "best_loss": abs(summary.get("best_validation_loss", float("inf")) - absolute_best["validation_loss"]) < 1e-12,
