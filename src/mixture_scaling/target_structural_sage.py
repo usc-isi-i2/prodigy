@@ -73,6 +73,8 @@ def main() -> int:
     parser.add_argument("--device", type=int, required=True)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--output-dir", required=True)
+    parser.add_argument("--hidden-dim", type=int)
+    parser.add_argument("--output-dim", type=int)
     args = parser.parse_args()
     if args.device not in (2, 3):
         raise ValueError("structural GraphSAGE pilot may use only GPUs 2 and 3")
@@ -82,6 +84,10 @@ def main() -> int:
     (output_dir / "checkpoints").mkdir(parents=True)
     config = load_config(args.config)
     protocol = dict(config["protocol"])
+    if args.hidden_dim is not None:
+        protocol["hidden_dim"] = args.hidden_dim
+    if args.output_dim is not None:
+        protocol["output_dim"] = args.output_dim
     configure_sampling_backend(protocol)
     sources = args.sources.split(",") if args.sources else [args.target]
     if not sources or len(sources) != len(set(sources)):

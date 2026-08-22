@@ -57,7 +57,7 @@ def main() -> int:
     if output.exists():
         raise FileExistsError(f"refusing to overwrite evaluation: {output}")
     config = load_config(args.config)
-    protocol = config["protocol"]
+    protocol = dict(config["protocol"])
     raw = load_raw(config["graphs"][args.target]["path"])
     split = load_split(Path(args.split_root) / f"{args.target}.pt", args.target, int(raw["x"].shape[0]))
     graphs = {
@@ -65,18 +65,20 @@ def main() -> int:
         for partition in ("train", "validation")
     }
     torch.manual_seed(args.seed)
-    model = GraphSAGE(
-        int(protocol["input_dim"]), int(protocol["hidden_dim"]), int(protocol["output_dim"]),
-        int(protocol["layers"]), float(protocol["dropout"]),
-    )
     if args.checkpoint == "scratch":
         checkpoint_step, sources, pretrain_seed = 0, [], args.seed
     else:
         checkpoint = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
-        model.load_state_dict(checkpoint["model"])
+        protocol.update(checkpoint["metadata"].get("protocol", {}))
         checkpoint_step = int(checkpoint["step"])
         sources = checkpoint["metadata"]["sources"]
         pretrain_seed = int(checkpoint["metadata"]["seed"])
+    model = GraphSAGE(
+        int(protocol["input_dim"]), int(protocol["hidden_dim"]), int(protocol["output_dim"]),
+        int(protocol["layers"]), float(protocol["dropout"]),
+    )
+    if args.checkpoint != "scratch":
+        model.load_state_dict(checkpoint["model"])
     device = torch.device(f"cuda:{args.device}")
     model.to(device)
     embedded = {partition: embed(model, graph, device) for partition, graph in graphs.items()}

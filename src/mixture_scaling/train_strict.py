@@ -57,11 +57,17 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--output-root", required=True)
     parser.add_argument("--max-steps", type=int)
+    parser.add_argument("--hidden-dim", type=int)
+    parser.add_argument("--output-dim", type=int)
     args = parser.parse_args()
     if args.device not in (2, 3):
         raise ValueError("strict pilot may use only GPUs 2 and 3")
     config = load_config(args.config)
     protocol = dict(config["protocol"])
+    if args.hidden_dim is not None:
+        protocol["hidden_dim"] = args.hidden_dim
+    if args.output_dim is not None:
+        protocol["output_dim"] = args.output_dim
     configure_sampling_backend(protocol)
     sources = [source for source in args.sources.split(",") if source]
     if not sources or len(sources) != len(set(sources)):
