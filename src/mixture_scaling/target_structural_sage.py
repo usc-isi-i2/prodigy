@@ -104,7 +104,7 @@ def main() -> int:
     train_loader = make_loader(train_graph, protocol, validation=False)
     validation_loader = make_loader(validation_graph, protocol, validation=True)
     metadata = {
-        "run_id": "twibot_target_structural_plus_existing_s0", "sources": [args.target],
+        "run_id": f"{args.target}_target_structural_plus_existing_s{args.seed}", "sources": [args.target],
         "seed": args.seed, "protocol": protocol, "split_hashes": {args.target: split_hash(split)},
         "ssl_train_partition": "train", "ssl_validation_partition": "validation",
         "source_confined": True, "feature_mode": "structural_plus_existing",

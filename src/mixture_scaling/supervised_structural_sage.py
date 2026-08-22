@@ -62,7 +62,7 @@ def main() -> int:
         weight_decay=float(protocol["finetune_weight_decay"]),
     )
     metadata = {
-        "run_id": "twibot_supervised_structural_plus_existing_s0", "target": args.target,
+        "run_id": f"{args.target}_supervised_structural_plus_existing_s{args.seed}", "target": args.target,
         "target_split_hash": split_hash(split), "seed": args.seed,
         "feature_mode": "structural_plus_existing", "input_dim": input_dim,
         "structural_feature_names": feature_names, "selection_metric": "validation_roc_auc_ovr_macro",
