@@ -36,7 +36,10 @@ results/       derived tables and figures (not raw checkpoints)
 Large graph artifacts, checkpoints, and logs stay on Tucker under `/dataMeR1`.
 
 Verified aggregate tables and the current RQ1 interpretation live in
-`results/RESULTS.md`. Rebuild all derived tables from the four aggregate inputs with:
+`results/RESULTS.md`. The later strict 70/15/15 study, including frozen probes,
+supervised and logistic baselines, structural features, and the TwiBot-20 and
+UKR/RUS findings, is documented in `results/STRICT_STUDY.md`. Rebuild the original
+ladder-derived tables from the four aggregate inputs with:
 
 ```bash
 PYTHONPATH=src python -m mixture_scaling.analyze --root .
