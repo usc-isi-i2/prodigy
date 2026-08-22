@@ -32,6 +32,14 @@ def classifier(c_value: float, seed: int):
     )
 
 
+def choose_trial(trials: list[dict], metric: str) -> dict:
+    if metric == "auc":
+        return max(trials, key=lambda row: (row["roc_auc_ovr_macro"], row["f1_macro"], -row["c"]))
+    if metric == "f1":
+        return max(trials, key=lambda row: (row["f1_macro"], row["roc_auc_ovr_macro"], -row["c"]))
+    raise ValueError(f"unknown selection metric: {metric}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True)
@@ -40,6 +48,7 @@ def main() -> int:
     parser.add_argument("--target", default="twibot20")
     parser.add_argument("--device", type=int, required=True)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--selection-metric", choices=("auc", "f1"), default="f1")
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
     if args.device not in (2, 3):
@@ -81,7 +90,7 @@ def main() -> int:
         probability = head.predict_proba(validation_x)
         metrics = classification_metrics(validation_y, prediction, probability, head.classes_)
         trials.append({"c": c_value, **metrics})
-    chosen = max(trials, key=lambda row: (row["f1_macro"], row["roc_auc_ovr_macro"], -row["c"]))
+    chosen = choose_trial(trials, args.selection_metric)
     final_head = classifier(float(chosen["c"]), args.seed)
     final_head.fit(np.concatenate((train_x, validation_x)), np.concatenate((train_y, validation_y)))
     # The test partition is constructed, embedded, and scored only after all
@@ -102,7 +111,7 @@ def main() -> int:
         "pretrain_seed": pretrain_seed,
         "probe_seed": args.seed,
         "selected_c": chosen["c"],
-        "selection_metric": "validation_f1_macro",
+        "selection_metric": f"validation_{'roc_auc_ovr_macro' if args.selection_metric == 'auc' else 'f1_macro'}",
         "validation_trials": trials,
         "train_nodes": int(len(train_y)),
         "validation_nodes": int(len(validation_y)),

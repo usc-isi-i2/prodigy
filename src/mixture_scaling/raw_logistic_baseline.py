@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 
 from .config import load_config
-from .probe_strict import classifier
+from .probe_strict import choose_trial, classifier
 from .strict_data import induced_partition, load_raw, load_split, split_hash
 from .strict_metrics import classification_metrics
 
@@ -25,6 +25,7 @@ def main() -> int:
     parser.add_argument("--split-root", required=True)
     parser.add_argument("--target", default="twibot20")
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--selection-metric", choices=("auc", "f1"), default="f1")
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
     output = Path(args.output)
@@ -48,7 +49,7 @@ def main() -> int:
             validation_y, head.predict(validation_x), head.predict_proba(validation_x), head.classes_
         )
         trials.append({"c": c_value, **metrics})
-    chosen = max(trials, key=lambda row: (row["f1_macro"], row["roc_auc_ovr_macro"], -row["c"]))
+    chosen = choose_trial(trials, args.selection_metric)
     final_head = classifier(float(chosen["c"]), args.seed)
     final_head.fit(np.concatenate((train_x, validation_x)), np.concatenate((train_y, validation_y)))
 
@@ -62,7 +63,7 @@ def main() -> int:
         "target_split_hash": split_hash(split),
         "seed": args.seed,
         "selected_c": chosen["c"],
-        "selection_metric": "validation_f1_macro",
+        "selection_metric": f"validation_{'roc_auc_ovr_macro' if args.selection_metric == 'auc' else 'f1_macro'}",
         "validation_trials": trials,
         "train_nodes": int(len(train_y)),
         "validation_nodes": int(len(validation_y)),
