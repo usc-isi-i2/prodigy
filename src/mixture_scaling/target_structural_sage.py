@@ -18,10 +18,19 @@ from .train import batch_loss, configure_sampling_backend, make_loader, next_bat
 from .train_strict import seed_everything, update_selection
 
 
-def augment(graph) -> list[str]:
+def augment(
+    graph,
+    mean: np.ndarray | None = None,
+    std: np.ndarray | None = None,
+) -> tuple[list[str], np.ndarray, np.ndarray]:
     structure, names = structural_features(graph.data.edge_index, int(graph.data.num_nodes))
-    graph.data.x = torch.cat((graph.data.x, torch.from_numpy(structure)), dim=1)
-    return names
+    if mean is None or std is None:
+        mean = structure.mean(axis=0, dtype=np.float64)
+        std = structure.std(axis=0, dtype=np.float64)
+        std[std < 1e-8] = 1.0
+    normalized = ((structure - mean) / std).astype(np.float32)
+    graph.data.x = torch.cat((graph.data.x, torch.from_numpy(normalized)), dim=1)
+    return names, mean, std
 
 
 def select_probe(model, train_graph, validation_graph, device, c_values, seed):
@@ -79,8 +88,8 @@ def main() -> int:
     validation_graph = induced_partition(
         args.target, config["graphs"][args.target]["path"], split, "validation"
     )
-    feature_names = augment(train_graph)
-    augment(validation_graph)
+    feature_names, structural_mean, structural_std = augment(train_graph)
+    augment(validation_graph, structural_mean, structural_std)
     input_dim = int(train_graph.data.x.shape[1])
     device = torch.device(f"cuda:{args.device}")
 
@@ -100,6 +109,8 @@ def main() -> int:
         "ssl_train_partition": "train", "ssl_validation_partition": "validation",
         "source_confined": True, "feature_mode": "structural_plus_existing",
         "input_dim": input_dim, "structural_feature_names": feature_names,
+        "structural_normalization": "train_partition_zscore",
+        "structural_mean": structural_mean.tolist(), "structural_std": structural_std.tolist(),
     }
     (output_dir / "metadata.json").write_text(json.dumps(metadata, indent=2) + "\n")
     iterator = None
@@ -164,7 +175,7 @@ def main() -> int:
 
     # Construct the test graph and read its labels only after both heads are selected.
     test_graph = induced_partition(args.target, config["graphs"][args.target]["path"], split, "test")
-    augment(test_graph)
+    augment(test_graph, structural_mean, structural_std)
     for name, encoder, selection, checkpoint_step in (
         ("pretrained", pretrained, pretrained_selection, best_step),
         ("scratch", scratch, scratch_selection, 0),

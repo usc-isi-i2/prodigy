@@ -45,8 +45,8 @@ def main() -> int:
     validation_graph = induced_partition(
         args.target, config["graphs"][args.target]["path"], split, "validation"
     )
-    feature_names = augment(train_graph)
-    augment(validation_graph)
+    feature_names, structural_mean, structural_std = augment(train_graph)
+    augment(validation_graph, structural_mean, structural_std)
     classes, mapping = label_mapping(raw["y"].reshape(-1).long())
     input_dim = int(train_graph.data.x.shape[1])
     seed_everything(args.seed)
@@ -66,6 +66,8 @@ def main() -> int:
         "target_split_hash": split_hash(split), "seed": args.seed,
         "feature_mode": "structural_plus_existing", "input_dim": input_dim,
         "structural_feature_names": feature_names, "selection_metric": "validation_roc_auc_ovr_macro",
+        "structural_normalization": "train_partition_zscore",
+        "structural_mean": structural_mean.tolist(), "structural_std": structural_std.tolist(),
         "classes": classes, "test_evaluations": 0,
     }
     (run_dir / "metadata.json").write_text(json.dumps(metadata, indent=2) + "\n")
@@ -107,7 +109,7 @@ def main() -> int:
 
     # Construct and score test only after validation-AUC model selection.
     test_graph = induced_partition(args.target, config["graphs"][args.target]["path"], split, "test")
-    augment(test_graph)
+    augment(test_graph, structural_mean, structural_std)
     encoder.eval(); head.eval()
     with torch.no_grad():
         test_logits, test_y = forward_labeled(encoder, head, test_graph, mapping, device)
