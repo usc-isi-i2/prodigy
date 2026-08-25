@@ -142,7 +142,7 @@ def main() -> int:
     figure.tight_layout()
     save_figure(figure, figure_dir, "graphsage_matched_saturation_endpoint")
 
-    figure, axes = plt.subplots(2, 2, figsize=(10.5, 7.5), sharex=True, sharey=True)
+    figure, axes = plt.subplots(2, 2, figsize=(10.5, 8.2), sharex=True, sharey=True)
     colors = dict(zip(UPDATES, plt.get_cmap("viridis")(np.linspace(0.15, 0.9, len(UPDATES)))))
     for axis, budget in zip(axes.flat, BUDGETS):
         panel = curve[curve.label_budget_per_class == budget]
@@ -161,9 +161,12 @@ def main() -> int:
     axes[1, 0].set_xlabel("native pretraining updates")
     axes[1, 1].set_xlabel("native pretraining updates")
     handles, labels = axes[1, 1].get_legend_handles_labels()
-    figure.legend(handles, labels, loc="upper center", ncol=4, frameon=False)
-    figure.suptitle("GraphSAGE fixed-head learning curves across the SSL trajectory", y=1.01)
-    figure.tight_layout()
+    figure.legend(
+        handles, labels, loc="upper center", bbox_to_anchor=(0.5, 0.99),
+        ncol=4, frameon=False,
+    )
+    figure.suptitle("GraphSAGE fixed-head learning curves across the SSL trajectory", y=0.93)
+    figure.tight_layout(rect=(0, 0, 1, 0.87))
     save_figure(figure, figure_dir, "graphsage_matched_saturation_full_grid")
 
     target_endpoint = (
@@ -189,7 +192,9 @@ def main() -> int:
     axis.set_xlabel("native link-prediction updates")
     axis.set_ylabel("test ROC-AUC")
     axis.grid(alpha=0.25)
-    axis.legend(frameon=False, ncol=2)
+    axis.legend(
+        frameon=False, ncol=2, loc="lower center", bbox_to_anchor=(0.5, 1.02)
+    )
     save_figure(figure, figure_dir, "graphsage_matched_saturation_by_target")
 
     manifest = {

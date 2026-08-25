@@ -21,9 +21,18 @@ without duplicating artifacts.
 - GraphSAGE narrow TwiBot full-label trajectory:
   [`graphsage_pilot_v1_twibot_cls_saturation.png`](figures/graphsage_pilot_v1_twibot_cls_saturation.png)
   and [`graphsage_pilot_v1_twibot_cls_saturation.pdf`](figures/graphsage_pilot_v1_twibot_cls_saturation.pdf)
+- GraphSAGE matched four-target trajectory:
+  [`graphsage_matched_saturation_endpoint.png`](figures/graphsage_matched_saturation_endpoint.png),
+  [`graphsage_matched_saturation_full_grid.png`](figures/graphsage_matched_saturation_full_grid.png),
+  and [`graphsage_matched_saturation_by_target.png`](figures/graphsage_matched_saturation_by_target.png)
 
 ## Cross-SSL and family-native source matrices
 
+- VISION native feature-similarity cross-SSL:
+  [`vision_native_cross_ssl_matrix.png`](figures/vision_native_cross_ssl_matrix.png),
+  [`vision_native_cross_ssl_matrix.pdf`](figures/vision_native_cross_ssl_matrix.pdf),
+  [`vision_native_cross_ssl_trajectory.png`](figures/vision_native_cross_ssl_trajectory.png),
+  and [`vision_native_cross_ssl_trajectory.pdf`](figures/vision_native_cross_ssl_trajectory.pdf)
 - PRODIGY objective lattice: [`perf_by_model_classification.png`](../../../objectives/multitask/multitask_ssl/figures/perf_by_model_classification.png)
 - SAMGPT native GraphCL: [`samgpt_native_graphcl_matrix_numbered.png`](../../../transfer/matrices/cross_model/final_core/figures/samgpt_native_graphcl_matrix_numbered.png)
 - Native single-source classification audit: [`native_objective_cls_mean_900_seed0.png`](../../../transfer/matrices/cross_architecture/icl_arch_matrix/figures/native_objective_cls_mean_900_seed0.png)
@@ -45,7 +54,12 @@ transparency; its GILT values are not credited as native-SSL evidence.
 
 ## Adaptation efficiency
 
-The registered analysis will create full learning curves, label-efficiency AUC,
-and updates-to-95% figures under
-`analysis/evaluation/adaptation_efficiency/figures/` once Tucker results are
-available. No best-checkpoint-only placeholder is emitted.
+- Full optimization curves:
+  [`optimization_learning_curves.png`](../../../evaluation/adaptation_efficiency/figures/optimization_learning_curves.png)
+- Label efficiency:
+  [`label_efficiency.png`](../../../evaluation/adaptation_efficiency/figures/label_efficiency.png)
+- Updates to 95% of final performance:
+  [`updates_to_95pct.png`](../../../evaluation/adaptation_efficiency/figures/updates_to_95pct.png)
+
+The raw and summarized tables preserve all cells; these are not
+best-checkpoint-only figures.

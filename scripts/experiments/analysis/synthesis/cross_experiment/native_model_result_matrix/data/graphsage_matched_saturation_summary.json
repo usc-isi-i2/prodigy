@@ -1,0 +1,39 @@
+{
+  "source": "scripts/experiments/analysis/synthesis/cross_experiment/native_model_result_matrix/data/graphsage_matched_saturation_raw/graphsage_saturation_cells.csv",
+  "rows": 2184,
+  "test_rows": 1092,
+  "pretraining_steps": [
+    0,
+    20,
+    60,
+    100,
+    300,
+    900,
+    2000
+  ],
+  "targets": [
+    "covid_political",
+    "election2020",
+    "ukr_rus_suspended",
+    "twibot20"
+  ],
+  "label_seeds": [
+    0,
+    1,
+    2
+  ],
+  "label_budgets": [
+    0,
+    1,
+    10,
+    100
+  ],
+  "head_updates": [
+    0,
+    1,
+    10,
+    100
+  ],
+  "training_seeds": 1,
+  "protocol": "frozen encoder; shared linear head and sampled nodes"
+}

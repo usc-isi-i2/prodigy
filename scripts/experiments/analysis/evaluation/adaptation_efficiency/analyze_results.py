@@ -148,7 +148,7 @@ def main() -> int:
     )
     curve.to_csv(data_dir / "learning_curves.csv", index=False)
     budgets = [0, 1, 10, 100]
-    fig, axes = plt.subplots(1, 4, figsize=(15, 3.6), sharey=True)
+    fig, axes = plt.subplots(1, 4, figsize=(15, 4.2), sharey=True)
     for axis, budget in zip(axes, budgets):
         panel = curve[curve.label_budget_per_class == budget]
         for name in ORDER:
@@ -164,8 +164,12 @@ def main() -> int:
         axis.grid(alpha=0.25)
     axes[0].set_ylabel("Test ROC-AUC")
     handles, labels = axes[-1].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", ncol=6, frameon=False)
-    fig.suptitle("Frozen-encoder optimization efficiency", y=1.08)
+    fig.legend(
+        handles, labels, loc="upper center", bbox_to_anchor=(0.5, 0.99),
+        ncol=6, frameon=False,
+    )
+    fig.suptitle("Frozen-encoder optimization efficiency", y=0.90)
+    fig.subplots_adjust(top=0.76)
     save_figure(fig, figure_dir, "optimization_learning_curves")
 
     endpoint = test[

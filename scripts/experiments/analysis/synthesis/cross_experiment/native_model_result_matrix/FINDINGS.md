@@ -6,20 +6,20 @@ Last updated: 2026-08-25.
 
 | model/version | SSL→CLS saturation | cross-SSL matrix | downstream CLS matrix | mixture diversity→CLS | adaptation efficiency |
 |---|---|---|---|---|---|
-| PRODIGY final-core 2.5k | complete | complete | complete | complete | runner ready; results pending |
-| VISION native feature similarity | complete | missing | complete | missing | runner ready; results pending |
+| PRODIGY final-core 2.5k | complete | complete | complete | complete | complete |
+| VISION native feature similarity | complete | complete | complete | running | complete |
 | GILT native SSL | missing | missing | missing | missing | missing |
-| SAMGPT native GraphCL | complete | complete | complete | partial | runner ready; results pending |
-| GraphSAGE pilot-v1 | partial: TwiBot only | missing | narrow TwiBot probe only | missing | runner ready; results pending |
-| MLP | N/A | N/A | supervised reference complete | N/A | matched-budget results pending |
-| raw logistic regression | N/A | N/A | raw-feature reference complete | N/A | matched-budget results pending |
+| SAMGPT native GraphCL | complete | complete | complete | partial | complete |
+| GraphSAGE pilot-v1 | complete | missing | narrow TwiBot probe only | missing | complete |
+| MLP | N/A | N/A | supervised reference complete | N/A | complete |
+| raw logistic regression | N/A | N/A | raw-feature reference complete | N/A | complete |
 
 This table distinguishes a complete registered design from a broad but
 unregistered pile of files. In particular, SAMGPT downstream CLS is now complete
 for its registered final-core design: 31 physical source-mixture models by nine
-targets by three training seeds. VISION has valid native single-source and
-all-nine evidence, but not yet a registered native cross-SSL or mixture-diversity
-design.
+targets by three training seeds. VISION now has valid native single-source,
+all-nine, and cross-SSL evidence; the registered mixture-diversity run is the
+only active VISION gap.
 
 ## Evidence recovered before launching new work
 
@@ -51,8 +51,7 @@ design.
   reproduced every registered checkpoint tensor exactly (`max_abs_diff=0`,
   state SHA-256
   `cbca0b2ab6bf9eb0707f90ef2bf4073caf89da14460e7466cf326068f672f72f`).
-  The prefix is therefore ready for matched downstream CLS evaluation, but the
-  broad saturation cell remains incomplete until matched evaluation is executed.
+  The prefix is therefore exact enough for matched downstream CLS evaluation.
   A narrow official-split TwiBot full-label probe across the exact prefix is now
   registered: ROC-AUC is 0.7617 at initialization and 0.7600 at 2,000 updates
   (−0.0017), while accuracy changes from 0.6974 to 0.7143. The nearly flat AUC
@@ -80,19 +79,23 @@ at 2,500. The terminal-minus-100 change is target-dependent: COVID Political
 and Ukraine Suspended +0.0367. More fixed compute changes which targets benefit;
 it does not improve the registered panel mean.
 
-A native VISION mixture-diversity runner is also ready locally. It uses the
+A native VISION mixture-diversity run is active on Tucker GPUs 2 and 3. It uses the
 three final-core source orders at rungs 1/3/5/7/9, deduplicating to 13 source
 sets and reusing the existing all-nine seed-0 checkpoint. The 12 genuinely
 missing models retain checkpoints 100/300/900/2,500 and the identical five CLS
-episode streams. No mixture cell is credited until those runs reach Tucker and
-their 260 physical model/checkpoint/target cells validate.
+episode streams. No mixture cell is credited until all 260 physical
+model/checkpoint/target cells validate.
 
-The missing VISION cross-SSL evaluator is now defined separately from CLS. It
-replays 128 deterministic label-free feature-similarity pseudo-episodes for
-five existing specialists × five target graphs × checkpoints
-20/60/100/300/900 (125 cells), recording pseudo-task accuracy and native SSL
-loss with a fixed fingerprint per target. This reuses every checkpoint and
-does not inspect downstream labels. Coverage remains missing until execution.
+The VISION cross-SSL replay is complete and remains separate from CLS. It uses
+128 deterministic label-free feature-similarity pseudo-episodes for five
+existing specialists × five target graphs × checkpoints 20/60/100/300/900
+(125/125 cells), recording pseudo-task accuracy and native SSL loss with one
+fixed fingerprint per target. Mean pseudo-task accuracy across all 25
+source→target pairs rises monotonically from 0.2005 at 20 updates to 0.2794 at
+900, while mean native SSL loss falls from 5.1474 to 4.5283. At step 900, every
+same-graph diagonal is strongest or close to strongest for its target; the
+diagonal accuracies range from 0.2724 (Election) to 0.5270 (Facebook). This
+reuses every checkpoint and never inspects downstream labels.
 
 SAMGPT's all-nine native GraphCL trajectory is also complete: 108/108 logical
 cells (3 seeds × 4 checkpoints × 9 targets), again with one fixed episode
@@ -103,7 +106,7 @@ improves +0.0180 and Ukraine Suspended +0.0138. Thus the terminal 500-update
 checkpoint is the fixed-compute comparison endpoint, but it is not the
 downstream-optimal checkpoint. The full curves must accompany terminal results.
 
-The unified adaptation implementation is committed locally. It freezes each
+The unified adaptation result is complete. It freezes each
 encoder and evaluates budgets 0/1/10/100 examples per class at updates
 0/1/10/100 with label seeds 0/1/2, the same deterministic stratified split,
 nested labeled samples, a matched 768-to-class linear-head tensor across learned
@@ -111,11 +114,31 @@ encoders and raw logistic regression, and ROC-AUC/accuracy/macro-F1 on unchanged
 validation and test nodes. Smaller learned representations are zero-padded, so
 the full raw 768-dimensional baseline is retained. Zero labels has only update 0
 and never constructs or steps an optimizer.
-The same grid includes raw logistic regression and an MLP. A pre-launch Tucker
-smoke check also established that `static_train` is not a common view across the
+The same grid includes raw logistic regression and an MLP. The validated export
+has 3,744/3,744 validation/test rows, 48/48 complete model-target grids, and
+retains every training seed, target, label seed, budget, and update cell. A
+pre-launch Tucker smoke check also established that `static_train` is not a common view across the
 four targets, so all topology-using extractors are registered against each
 artifact's canonical `graph.edge_index`; no result was produced with mismatched
 or silently missing edge views.
+
+At 100 labels/class and 100 head updates, mean test ROC-AUC across the four
+targets and label/training seeds is 0.7836 for PRODIGY, 0.7647 for SAMGPT,
+0.7119 for VISION, 0.7112 for raw logistic regression, 0.7011 for raw MLP, and
+0.6299 for GraphSAGE. Normalized AUC over log10(labels + 1) is respectively
+0.7338, 0.6756, 0.6576, 0.6552, 0.6381, and 0.5729. These are matched-head
+results, not each family selecting a different best checkpoint. The complete
+optimization curves are preserved; median updates to reach 95% of update-100
+ROC-AUC are usually 0–1, except SAMGPT at 100 labels/class (10).
+
+GraphSAGE now also has a complete matched saturation trajectory: 2,184/2,184
+validation/test rows over seven exact native link-prediction checkpoints, four
+targets, three label seeds, and the full budget/update schedule. At 100
+labels/class and 100 head updates, mean ROC-AUC is non-monotonic—0.6252 at
+initialization, 0.6087 at step 100, and 0.6299 at step 2,000. The terminal gain
+over initialization is only +0.0047, and the target-specific curves differ, so
+the result does not support a general monotonic benefit from more pilot-v1
+pretraining. This trajectory uses one native training seed.
 
 ## Compute-regime boundary
 

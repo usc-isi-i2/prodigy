@@ -48,12 +48,20 @@ pairwise link-prediction implementation, not the invalid PRODIGY evaluator.
 - `data/graphsage_pilot_v1_twibot_cls_trajectory_raw/` and
   `analyze_graphsage_saturation.py` preserve the qualifying but narrow
   official-split TwiBot full-label CLS trajectory and its figure.
+- `data/graphsage_matched_saturation_raw/` and
+  `analyze_graphsage_matched_saturation.py` preserve all 2,184 matched-head
+  validation/test rows across the exact seven-checkpoint trajectory and produce
+  endpoint, full-grid, and target-specific figures.
+- [`../../../evaluation/adaptation_efficiency/`](../../../evaluation/adaptation_efficiency/)
+  retains the complete 3,744-row shared frozen-head grid, label-efficiency AUC,
+  updates-to-95% summaries, and all learning-curve figures.
 - `analyze_vision_mixture.py` validates the planned 13-source-set, three-order
   native VISION design and will produce both full checkpoint and terminal
   target figures after the pending Tucker output is collected.
-- `analyze_vision_cross_ssl.py` validates the separate 5×5 native
-  feature-similarity pseudo-task matrix and will produce terminal-matrix and
-  full-trajectory figures after its pending 125-cell replay is collected.
+- `data/vision_native_cross_ssl_raw/` and `analyze_vision_cross_ssl.py` retain
+  and validate the separate 5×5 native feature-similarity pseudo-task matrix,
+  including all five checkpoints and the terminal-matrix/full-trajectory
+  figures. These 125 cells contain no downstream labels.
 - `FINDINGS.md` is the human-readable audit and execution log.
 - `RUN_LOG.md` records worktrees, commits, checks, sessions, and launch
   provenance.

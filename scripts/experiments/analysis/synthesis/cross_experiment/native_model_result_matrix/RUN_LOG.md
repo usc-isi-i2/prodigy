@@ -54,6 +54,36 @@
 
 ## New execution
 
+- Pushed the complete queue implementation to
+  `codex/final-core-three-seed-sync` at `9577507`, then created isolated Tucker
+  worktree `/dataMeR1/phil/gfm/prodigy-native-matrix` on branch
+  `codex/native-matrix-overnight-runtime`.
+- Launched the priority queue at `2026-08-25T14:33:28Z`. Raw, three-seed VISION,
+  three-seed SAMGPT, and three-seed PRODIGY representation caches completed on
+  GPUs 2/3. The GraphSAGE extractor initially stopped because importing
+  `benchmark_run._node_batch` pulled in an unused `pyarrow` dependency.
+- Replaced that import with the exact non-counterfactual pilot-v1 tensor adapter,
+  updated both terminal and trajectory extractors, passed the focused tests,
+  and pushed `ad122e7`. After the active cross-SSL job finished, the idle Tucker
+  worktree fast-forwarded to that commit. The resumed GraphSAGE terminal replay
+  completed all four target caches in six seconds; completed caches were not
+  rerun.
+- Used otherwise-idle GPU 3 during PRODIGY extraction to replay VISION cross-SSL
+  part B and then part A behind an exact 50-row gate. The collected result has
+  75 + 50 = 125 cells and one episode fingerprint per target. GPUs outside 2/3
+  were never selected.
+- The main adaptation export completed at 3,744 rows. Historical pilot-v1
+  trajectory replay then exposed an older three-argument `LinkPredictor`
+  constructor; commit `a2c17f0` restores the exact old signature. The resumed
+  replay produced 28/28 caches and 2,184/2,184 matched-head saturation rows.
+- The master transition over the already-complete cross-SSL results exposed a
+  Bash `set -u` same-declaration initialization bug. Commit `1ba4221` split the
+  local declarations; the focused Tucker test passed and the transition then
+  registered 125 cells without replaying them.
+- Adaptation and GraphSAGE saturation outputs were collected locally, validated
+  against exact row/model/target/seed/fingerprint contracts, analyzed, and all
+  figures visually checked. VISION mixture training is now the active final
+  queue stage on physical GPUs 2 and 3.
 - Tucker worktree: `/dataMeR1/phil/gfm/prodigy-vision-all9`.
 - Tucker branch/commit: `codex/vision-all9-finalcore` at
   `16112313acb27652bec70f232fdf1fa80303669f`.

@@ -52,6 +52,17 @@ def main() -> int:
         raise ValueError("GILT upstream-native GraphCL registry marker missing")
     if any(gilt[column] != "missing" for column in status_columns):
         raise ValueError("GILT cannot be credited without a native social checkpoint")
+    vision = next(row for row in coverage if row["model"] == "VISION")
+    if vision["cross_ssl_matrix"] != "complete":
+        raise ValueError("completed VISION native cross-SSL replay is not credited")
+    graphsage = next(row for row in coverage if row["model"] == "GraphSAGE")
+    if graphsage["ssl_to_cls_saturation"] != "complete":
+        raise ValueError("completed matched GraphSAGE trajectory is not credited")
+    adaptation_expected = EXPECTED_MODELS - {"GILT"}
+    if {
+        row["model"] for row in coverage if row["adaptation_efficiency"] == "complete"
+    } != adaptation_expected:
+        raise ValueError("completed adaptation family registry mismatch")
 
     graphsage_trajectory = pd.read_csv(
         ROOT / "data" / "graphsage_pilot_v1_trajectory_manifest.csv"
@@ -121,8 +132,28 @@ def main() -> int:
         "coverage.pdf",
         "graphsage_pilot_v1_twibot_cls_saturation.png",
         "graphsage_pilot_v1_twibot_cls_saturation.pdf",
+        "vision_native_cross_ssl_matrix.png",
+        "vision_native_cross_ssl_matrix.pdf",
+        "vision_native_cross_ssl_trajectory.png",
+        "vision_native_cross_ssl_trajectory.pdf",
+        "graphsage_matched_saturation_endpoint.png",
+        "graphsage_matched_saturation_endpoint.pdf",
+        "graphsage_matched_saturation_full_grid.png",
+        "graphsage_matched_saturation_full_grid.pdf",
+        "graphsage_matched_saturation_by_target.png",
+        "graphsage_matched_saturation_by_target.pdf",
     ):
         if not (ROOT / "figures" / name).is_file():
+            raise FileNotFoundError(name)
+    for name in (
+        "optimization_learning_curves.png",
+        "optimization_learning_curves.pdf",
+        "label_efficiency.png",
+        "label_efficiency.pdf",
+        "updates_to_95pct.png",
+        "updates_to_95pct.pdf",
+    ):
+        if not (ANALYSIS / "evaluation/adaptation_efficiency/figures" / name).is_file():
             raise FileNotFoundError(name)
 
     graphsage_cls = json.loads(
@@ -150,11 +181,33 @@ def main() -> int:
 
         samgpt_saturation_cells = len(load_cells(raw_samgpt))
 
+    from analyze_vision_cross_ssl import load_cells as load_vision_cross_ssl
+
+    vision_cross_ssl_cells = len(
+        load_vision_cross_ssl(ROOT / "data" / "vision_native_cross_ssl_raw")
+    )
+
+    from analyze_graphsage_matched_saturation import validate_cells as validate_graphsage_cells
+    from scripts.experiments.analysis.evaluation.adaptation_efficiency.analyze_results import (
+        validate_shared_protocol,
+    )
+
+    graphsage_matched = pd.read_csv(
+        ROOT / "data" / "graphsage_matched_saturation_raw" / "graphsage_saturation_cells.csv"
+    )
+    validate_graphsage_cells(graphsage_matched)
+    adaptation = pd.read_csv(
+        ANALYSIS / "evaluation/adaptation_efficiency/data/adaptation_cells_full.csv"
+    )
+    validate_shared_protocol(adaptation)
+
     print(
         "NATIVE_MODEL_MATRIX_OK "
         f"coverage_models={len(coverage)} final_core={len(final_core)} "
         f"samgpt_downstream={len(downstream)} native_source={len(native)} "
-        f"vision_trajectory={vision_cells} samgpt_trajectory={samgpt_saturation_cells}"
+        f"vision_trajectory={vision_cells} samgpt_trajectory={samgpt_saturation_cells} "
+        f"vision_cross_ssl={vision_cross_ssl_cells} adaptation={len(adaptation)} "
+        f"graphsage_matched={len(graphsage_matched)}"
     )
     return 0
 
