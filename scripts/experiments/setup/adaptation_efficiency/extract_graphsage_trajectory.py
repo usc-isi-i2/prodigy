@@ -86,8 +86,10 @@ def main() -> int:
         for step, record in sorted(loaded.items()):
             checkpoint = record["checkpoint"]
             config = checkpoint["config"]
+            # The exact pilot-v1 source predates the optional platform-adapter
+            # constructor argument present in the current social-gfm checkout.
             model = LinkPredictor(
-                int(config["hidden_dim"]), int(config["history_length"]), False, False
+                int(config["hidden_dim"]), int(config["history_length"]), False
             ).to(device)
             model.load_state_dict(checkpoint["model_state"], strict=True)
             model.eval()
