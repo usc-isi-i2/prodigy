@@ -58,6 +58,7 @@ Setup and launch files remain in `../setup/<name>/`.
 
 ## Evaluation infrastructure
 
+- Frozen-encoder label and optimization efficiency: [`adaptation_efficiency`](evaluation/adaptation_efficiency/)
 - Prediction-level diagnostics: [`error_audit`](evaluation/error_audit/)
 - Static-link evaluator repair: [`static_link_prediction_repair`](evaluation/static_link_prediction_repair/)
 - Shared append-only task tables: [`node_classification`](evaluation/task_tables/node_classification/), [`node_regression`](evaluation/task_tables/node_regression/), [`static_link_prediction`](evaluation/task_tables/static_link_prediction/)
@@ -65,4 +66,5 @@ Setup and launch files remain in `../setup/<name>/`.
 ## Synthesis and archive
 
 - Cross-experiment syntheses: [`synthesis/cross_experiment`](synthesis/cross_experiment/)
+- Native-pretext result-matrix coverage: [`native_model_result_matrix`](synthesis/cross_experiment/native_model_result_matrix/)
 - Retired and superseded analyses: [`archive`](archive/)

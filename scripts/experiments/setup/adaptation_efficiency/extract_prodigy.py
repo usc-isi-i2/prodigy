@@ -13,7 +13,6 @@ import torch
 
 from scripts.eval.pair_link_ckpt import (
     ENCODER_DEFAULTS,
-    build_subgraph_dataset,
     load_frozen_encoder,
     load_graph_blob,
 )
@@ -31,6 +30,22 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def classification_subgraph_dataset(graph, n_hop: int, hops: list[int], node_limit: int):
+    """Build neighborhoods from the target artifact's canonical full edge index."""
+    from torch_geometric.data import Data
+
+    from data.dataset import SubgraphDataset
+    from experiments.sampler import NeighborSampler
+
+    scoped = Data(
+        x=graph.x,
+        edge_index=graph.edge_index.long().cpu(),
+        num_nodes=int(graph.num_nodes),
+    )
+    sampler = NeighborSampler(scoped, num_hops=n_hop, hop_sizes=hops, limit=node_limit)
+    return SubgraphDataset(scoped, sampler, bidirectional=False)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--checkpoint", type=Path, required=True)
@@ -39,7 +54,6 @@ def main() -> int:
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--targets", default="covid_political,election2020,ukr_rus_suspended,twibot20")
     parser.add_argument("--device", default="cuda:0")
-    parser.add_argument("--background-view", default="static_train")
     parser.add_argument("--n-hop", type=int, default=2)
     parser.add_argument("--hop-sizes", default="9,9")
     parser.add_argument("--node-limit", type=int, default=101)
@@ -60,14 +74,7 @@ def main() -> int:
         blob, graph = load_graph_blob(str(target.graph))
         labels = load_labels(blob, target.label_key)
         nodes = labeled_nodes(labels)
-        dataset = build_subgraph_dataset(
-            blob,
-            graph,
-            args.n_hop,
-            args.background_view,
-            hop_sizes=hops,
-            node_limit=args.node_limit,
-        )
+        dataset = classification_subgraph_dataset(graph, args.n_hop, hops, args.node_limit)
         embedded = embeddings_by_node(
             model,
             dataset,
@@ -93,7 +100,7 @@ def main() -> int:
                     "checkpoint_step": 2500,
                     "training_seed": args.training_seed,
                     "representation": "pooled_subgraph_embedding_before_metagraph",
-                    "background_view": args.background_view,
+                    "edge_view": "graph.edge_index",
                     "n_hop": args.n_hop,
                     "hop_sizes": hops,
                     "node_limit": args.node_limit,

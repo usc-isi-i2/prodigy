@@ -26,6 +26,10 @@ matching.
   same data splits, label samples, update milestones, optimizer, and seeds. Their
   input dimensions differ from learned encoders, so initialization is matched by
   seed and PyTorch scheme rather than by an identical weight tensor.
+- Graph encoders use each target artifact's canonical `graph.edge_index` for
+  downstream classification. This is the same edge tensor used by the SAMGPT
+  extractor and avoids depending on optional task-specific link-prediction views
+  such as `static_train`, which are absent from several classification graphs.
 
 `protocol.py` owns the contract. `run_head_grid.py` consumes checksumable feature
 caches generated from each frozen encoder. The final analysis must preserve all
@@ -37,10 +41,11 @@ performance.
 
 PRODIGY uses its pooled subgraph embedding before metagraph label propagation;
 SAMGPT uses its frozen base-GCN embedding; GraphSAGE uses the frozen pilot-v1
-node-history encoder. VISION does not expose a support-independent whole-graph
+node-history encoder. PRODIGY, SAMGPT, and GraphSAGE receive the same canonical
+target edge tensor; architecture-native direction handling is retained. VISION
+does not expose a support-independent whole-graph
 embedding because its dual-view blocks globally attend to support nodes. The
 registered label-free VISION probe therefore uses the checkpoint's learned
 `feature_encoder` output. This is a conservative, explicitly topology-free view
 of the learned VISION checkpoint and must not be described as the full
 label-injected VISION predictor.
-

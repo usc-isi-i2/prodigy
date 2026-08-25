@@ -12,7 +12,7 @@ from types import SimpleNamespace
 import numpy as np
 import torch
 
-from scripts.eval.pair_link_ckpt import _view_edge_index, load_graph_blob
+from scripts.eval.pair_link_ckpt import load_graph_blob
 
 from .protocol import FeatureCache, save_feature_cache
 from .targets import labeled_nodes, load_labels, selected_targets
@@ -77,7 +77,6 @@ def main() -> int:
     parser.add_argument("--model-id", default="graphsage_pilot_v1")
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--targets", default="covid_political,election2020,ukr_rus_suspended,twibot20")
-    parser.add_argument("--edge-view", default="static_train")
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--batch-size", type=int, default=4096)
     args = parser.parse_args()
@@ -102,12 +101,7 @@ def main() -> int:
         blob, graph = load_graph_blob(str(target.graph))
         labels = load_labels(blob, target.label_key)
         nodes = labeled_nodes(labels)
-        try:
-            edge_index = torch.as_tensor(_view_edge_index(blob, args.edge_view)).long()
-            actual_view = args.edge_view
-        except KeyError:
-            edge_index = torch.as_tensor(getattr(graph, "edge_index")).long()
-            actual_view = "edge_index_fallback"
+        edge_index = torch.as_tensor(graph.edge_index).long()
         arrays = static_graph_arrays(edge_index, int(graph.num_nodes), int(config["history_length"]))
         structural_graph = SimpleNamespace(
             record={"platform": "twitter", "key": target.name}, arrays=arrays
@@ -134,7 +128,7 @@ def main() -> int:
                     "training_seed": int(checkpoint.get("seed", -1)),
                     "training_steps": int(config["train_steps"]),
                     "representation": "frozen_node_history_encoder",
-                    "edge_view": actual_view,
+                    "edge_view": "graph.edge_index",
                     "relation_mapping": "all target edges -> reshare",
                     "node_type_mapping": "all target nodes -> actor",
                     "history_length": int(config["history_length"]),
@@ -151,4 +145,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
