@@ -45,6 +45,12 @@
   `/dataMeR1/phil/social-gfm/experiments/pilot-v1-trajectory`. The rerun
   2,000-update state is tensor-identical to the registered checkpoint, with
   `max_abs_diff=0` and matching state SHA-256. No other GPU was selected.
+- Evaluated all seven GraphSAGE prefix states with the existing official-split
+  TwiBot frozen-encoder probe on GPU 2. The probe used 8,278/2,365/1,183
+  train/validation/test nodes and script SHA-256
+  `c59f9cad4f253a512a5be45c588950e13542b2491a4e03932789ce048d6a1be7`.
+  The raw JSON/CSV is registered locally; it is explicitly a narrow full-label
+  CLS trajectory, not the matched adaptation protocol.
 
 ## New execution
 

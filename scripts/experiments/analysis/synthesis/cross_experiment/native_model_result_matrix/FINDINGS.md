@@ -10,7 +10,7 @@ Last updated: 2026-08-25.
 | VISION native feature similarity | complete | missing | complete | missing | runner ready; results pending |
 | GILT native SSL | missing | missing | missing | missing | missing |
 | SAMGPT native GraphCL | complete | complete | complete | partial | runner ready; results pending |
-| GraphSAGE pilot-v1 | missing | missing | narrow TwiBot probe only | missing | runner ready; results pending |
+| GraphSAGE pilot-v1 | partial: TwiBot only | missing | narrow TwiBot probe only | missing | runner ready; results pending |
 | MLP | N/A | N/A | supervised reference complete | N/A | matched-budget results pending |
 | raw logistic regression | N/A | N/A | raw-feature reference complete | N/A | matched-budget results pending |
 
@@ -52,7 +52,13 @@ design.
   state SHA-256
   `cbca0b2ab6bf9eb0707f90ef2bf4073caf89da14460e7466cf326068f672f72f`).
   The prefix is therefore ready for matched downstream CLS evaluation, but the
-  saturation cell remains missing until that evaluation is executed.
+  broad saturation cell remains incomplete until matched evaluation is executed.
+  A narrow official-split TwiBot full-label probe across the exact prefix is now
+  registered: ROC-AUC is 0.7617 at initialization and 0.7600 at 2,000 updates
+  (−0.0017), while accuracy changes from 0.6974 to 0.7143. The nearly flat AUC
+  means this native link-prediction run does not demonstrate improved bot-label
+  ranking on the single available target. This is one training seed and uses all
+  official training labels, so it is not adaptation-efficiency evidence.
 - Existing raw-feature logistic and target-supervised MLP references are useful
   floors, but their earlier label budgets and optimization schedules are not the
   matched adaptation protocol.

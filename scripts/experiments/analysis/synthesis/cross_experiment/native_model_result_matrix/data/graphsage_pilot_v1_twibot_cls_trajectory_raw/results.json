@@ -1,0 +1,134 @@
+{
+  "cache": {
+    "edge_files": 3,
+    "labeled_node_incidences": 6215613,
+    "labels": {
+      "bot": 6589,
+      "human": 5237
+    },
+    "official_labels": 11826,
+    "splits": {
+      "test": 1183,
+      "train": 8278,
+      "val": 2365
+    }
+  },
+  "input_policy": "frozen structural embeddings; official labels used only by linear probe",
+  "models": [
+    {
+      "display_name": "Degree baseline",
+      "feature_dim": 16,
+      "run": "degree-logistic",
+      "test_accuracy": 0.7016060862214708,
+      "test_average_precision": 0.7433962323516227,
+      "test_balanced_accuracy": 0.6838858195211787,
+      "test_examples": 1183,
+      "test_f1": 0.7654485049833887,
+      "test_roc_auc": 0.761065550184162,
+      "train_examples": 8278,
+      "validation_examples": 2365,
+      "validation_threshold": 0.35000000000000003
+    },
+    {
+      "display_name": "step-0",
+      "feature_dim": 64,
+      "run": "step-0",
+      "test_accuracy": 0.6973795435333897,
+      "test_average_precision": 0.7444461820182349,
+      "test_balanced_accuracy": 0.6784444060773481,
+      "test_examples": 1183,
+      "test_f1": 0.7647831800262812,
+      "test_roc_auc": 0.7616525667587477,
+      "train_examples": 8278,
+      "validation_examples": 2365,
+      "validation_threshold": 0.33
+    },
+    {
+      "display_name": "step-100",
+      "feature_dim": 64,
+      "run": "step-100",
+      "test_accuracy": 0.702451394759087,
+      "test_average_precision": 0.7450391364253786,
+      "test_balanced_accuracy": 0.6862022329650093,
+      "test_examples": 1183,
+      "test_f1": 0.7628032345013477,
+      "test_roc_auc": 0.7613950276243093,
+      "train_examples": 8278,
+      "validation_examples": 2365,
+      "validation_threshold": 0.36000000000000004
+    },
+    {
+      "display_name": "step-20",
+      "feature_dim": 64,
+      "run": "step-20",
+      "test_accuracy": 0.6999154691462384,
+      "test_average_precision": 0.7436077029670818,
+      "test_balanced_accuracy": 0.6826024401473296,
+      "test_examples": 1183,
+      "test_f1": 0.7631754503002002,
+      "test_roc_auc": 0.7607029811233885,
+      "train_examples": 8278,
+      "validation_examples": 2365,
+      "validation_threshold": 0.35000000000000003
+    },
+    {
+      "display_name": "step-2000",
+      "feature_dim": 64,
+      "run": "step-2000",
+      "test_accuracy": 0.7142857142857143,
+      "test_average_precision": 0.7417254078468604,
+      "test_balanced_accuracy": 0.6996518186003684,
+      "test_examples": 1183,
+      "test_f1": 0.7688098495212038,
+      "test_roc_auc": 0.7599720879373849,
+      "train_examples": 8278,
+      "validation_examples": 2365,
+      "validation_threshold": 0.38
+    },
+    {
+      "display_name": "step-300",
+      "feature_dim": 64,
+      "run": "step-300",
+      "test_accuracy": 0.7125950972104819,
+      "test_average_precision": 0.7420405955076366,
+      "test_balanced_accuracy": 0.6973915170349908,
+      "test_examples": 1183,
+      "test_f1": 0.7687074829931972,
+      "test_roc_auc": 0.7591404811233886,
+      "train_examples": 8278,
+      "validation_examples": 2365,
+      "validation_threshold": 0.39
+    },
+    {
+      "display_name": "step-60",
+      "feature_dim": 64,
+      "run": "step-60",
+      "test_accuracy": 0.7185122569737954,
+      "test_average_precision": 0.7435374054453365,
+      "test_balanced_accuracy": 0.7049536717311233,
+      "test_examples": 1183,
+      "test_f1": 0.7698686938493434,
+      "test_roc_auc": 0.7609504488950277,
+      "train_examples": 8278,
+      "validation_examples": 2365,
+      "validation_threshold": 0.39
+    },
+    {
+      "display_name": "step-900",
+      "feature_dim": 64,
+      "run": "step-900",
+      "test_accuracy": 0.7092138630600169,
+      "test_average_precision": 0.7404658359117202,
+      "test_balanced_accuracy": 0.6937082757826888,
+      "test_examples": 1183,
+      "test_f1": 0.7666214382632293,
+      "test_roc_auc": 0.7599102209944751,
+      "train_examples": 8278,
+      "validation_examples": 2365,
+      "validation_threshold": 0.39
+    }
+  ],
+  "schema_version": "socialgfm.node_probe.v1",
+  "seed": 20260817,
+  "task": "twibot20_bot_classification"
+}

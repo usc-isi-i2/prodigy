@@ -18,6 +18,9 @@ without duplicating artifacts.
   [`samgpt_all9_saturation.pdf`](figures/samgpt_all9_saturation.pdf)
 - VISION: [`vision_all9_saturation.png`](figures/vision_all9_saturation.png) and
   [`vision_all9_saturation.pdf`](figures/vision_all9_saturation.pdf)
+- GraphSAGE narrow TwiBot full-label trajectory:
+  [`graphsage_pilot_v1_twibot_cls_saturation.png`](figures/graphsage_pilot_v1_twibot_cls_saturation.png)
+  and [`graphsage_pilot_v1_twibot_cls_saturation.pdf`](figures/graphsage_pilot_v1_twibot_cls_saturation.pdf)
 
 ## Cross-SSL and family-native source matrices
 

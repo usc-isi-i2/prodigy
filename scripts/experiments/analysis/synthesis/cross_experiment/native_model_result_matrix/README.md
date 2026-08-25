@@ -45,6 +45,9 @@ pairwise link-prediction implementation, not the invalid PRODIGY evaluator.
 - `data/graphsage_pilot_v1_trajectory_manifest.csv` registers the exact
   reconstructed native link-prediction prefix. It is provenance, not a credited
   SSL→CLS result, until the matched downstream heads are evaluated.
+- `data/graphsage_pilot_v1_twibot_cls_trajectory_raw/` and
+  `analyze_graphsage_saturation.py` preserve the qualifying but narrow
+  official-split TwiBot full-label CLS trajectory and its figure.
 - `analyze_vision_mixture.py` validates the planned 13-source-set, three-order
   native VISION design and will produce both full checkpoint and terminal
   target figures after the pending Tucker output is collected.

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import sys
 from pathlib import Path
 
@@ -109,9 +110,25 @@ def main() -> int:
     if "gilt_native_source_classification_episodes" not in trainer:
         raise ValueError("GILT supervised exclusion marker missing")
 
-    for name in ("coverage.png", "coverage.pdf"):
+    for name in (
+        "coverage.png",
+        "coverage.pdf",
+        "graphsage_pilot_v1_twibot_cls_saturation.png",
+        "graphsage_pilot_v1_twibot_cls_saturation.pdf",
+    ):
         if not (ROOT / "figures" / name).is_file():
             raise FileNotFoundError(name)
+
+    graphsage_cls = json.loads(
+        (
+            ROOT
+            / "data"
+            / "graphsage_pilot_v1_twibot_cls_trajectory_raw"
+            / "results.json"
+        ).read_text(encoding="utf-8")
+    )
+    if len(graphsage_cls["models"]) != 8 or graphsage_cls["task"] != "twibot20_bot_classification":
+        raise ValueError("GraphSAGE narrow CLS trajectory changed")
 
     raw_vision = ROOT / "data" / "vision_all9_saturation_raw"
     vision_cells = 0
