@@ -1,0 +1,32 @@
+{
+  "coverage": {
+    "fixed_compute_classification": 96,
+    "fixed_compute_nm": 96,
+    "fixed_exposure_classification": 56,
+    "fixed_exposure_nm": 56
+  },
+  "best_models_by_mae": {
+    "fixed_compute_classification": {
+      "model": "max_plus_size",
+      "mae": 0.014440080877457934
+    },
+    "fixed_compute_nm": {
+      "model": "max_plus_size_rest",
+      "mae": 0.00859401048660594
+    },
+    "fixed_exposure_classification": {
+      "model": "softmax",
+      "mae": 0.012650233685033386
+    },
+    "fixed_exposure_nm": {
+      "model": "max_plus_rest",
+      "mae": 0.012883812314396089
+    }
+  },
+  "analysis_notes": [
+    "Prediction comparisons use leave-one-target-out folds over four targets.",
+    "Paired uncertainty resamples target-by-order trajectories, not adjacent cells.",
+    "Fixed-exposure and classification constituent scores are matrix-reference diagnostics, not same-budget causal estimates.",
+    "Total updates and mixture size are collinear within fixed exposure; schedule effects use paired matched-40k controls instead."
+  ]
+}
