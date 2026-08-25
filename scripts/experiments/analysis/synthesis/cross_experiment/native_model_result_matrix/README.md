@@ -55,9 +55,10 @@ pairwise link-prediction implementation, not the invalid PRODIGY evaluator.
 - [`../../../evaluation/adaptation_efficiency/`](../../../evaluation/adaptation_efficiency/)
   retains the complete 3,744-row shared frozen-head grid, label-efficiency AUC,
   updates-to-95% summaries, and all learning-curve figures.
-- `analyze_vision_mixture.py` validates the planned 13-source-set, three-order
-  native VISION design and will produce both full checkpoint and terminal
-  target figures after the pending Tucker output is collected.
+- `data/vision_native_mixture_raw/` and `analyze_vision_mixture.py` retain and
+  validate the completed 13-source-set, three-order native VISION design:
+  260 physical model/checkpoint/target cells at seed 0, expanded to 300 ladder
+  cells, with both full-checkpoint and terminal-target figures.
 - `data/vision_native_cross_ssl_raw/` and `analyze_vision_cross_ssl.py` retain
   and validate the separate 5×5 native feature-similarity pseudo-task matrix,
   including all five checkpoints and the terminal-matrix/full-trajectory

@@ -7,7 +7,7 @@ Last updated: 2026-08-25.
 | model/version | SSL→CLS saturation | cross-SSL matrix | downstream CLS matrix | mixture diversity→CLS | adaptation efficiency |
 |---|---|---|---|---|---|
 | PRODIGY final-core 2.5k | complete | complete | complete | complete | complete |
-| VISION native feature similarity | complete | complete | complete | running | complete |
+| VISION native feature similarity | complete | complete | complete | complete | complete |
 | GILT native SSL | missing | missing | missing | missing | missing |
 | SAMGPT native GraphCL | complete | complete | complete | partial | complete |
 | GraphSAGE pilot-v1 | complete | missing | narrow TwiBot probe only | missing | complete |
@@ -18,8 +18,7 @@ This table distinguishes a complete registered design from a broad but
 unregistered pile of files. In particular, SAMGPT downstream CLS is now complete
 for its registered final-core design: 31 physical source-mixture models by nine
 targets by three training seeds. VISION now has valid native single-source,
-all-nine, and cross-SSL evidence; the registered mixture-diversity run is the
-only active VISION gap.
+all-nine, cross-SSL, and mixture-diversity evidence for its registered design.
 
 ## Evidence recovered before launching new work
 
@@ -79,12 +78,18 @@ at 2,500. The terminal-minus-100 change is target-dependent: COVID Political
 and Ukraine Suspended +0.0367. More fixed compute changes which targets benefit;
 it does not improve the registered panel mean.
 
-A native VISION mixture-diversity run is active on Tucker GPUs 2 and 3. It uses the
-three final-core source orders at rungs 1/3/5/7/9, deduplicating to 13 source
-sets and reusing the existing all-nine seed-0 checkpoint. The 12 genuinely
-missing models retain checkpoints 100/300/900/2,500 and the identical five CLS
-episode streams. No mixture cell is credited until all 260 physical
-model/checkpoint/target cells validate.
+The native VISION mixture-diversity study is complete. It uses the three
+final-core source orders at rungs 1/3/5/7/9, deduplicating to 13 source sets and
+reusing the existing all-nine seed-0 checkpoint. The 12 newly trained models
+retain checkpoints 100/300/900/2,500 and the identical five CLS episode streams.
+All 260 physical model/checkpoint/target cells validate and expand to 300
+order-specific ladder cells. At the fixed 2,500-update endpoint, the best panel
+mean is order C with three sources (ROC-AUC 0.7743), 0.0161 above all-nine
+(0.7581). Diversity is not monotonic: the endpoint mean across orders is 0.7650,
+0.7678, 0.7607, 0.7615, and 0.7581 at 1/3/5/7/9 sources. The best observed
+checkpoint is order B with five sources at 100 updates (0.7810), 0.0130 above
+that model's 2,500-update value. These are one-training-seed fixed-compute
+trajectories, so the full curves—not only the best checkpoint—are the evidence.
 
 The VISION cross-SSL replay is complete and remains separate from CLS. It uses
 128 deterministic label-free feature-similarity pseudo-episodes for five

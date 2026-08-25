@@ -48,6 +48,12 @@ transparency; its GILT values are not credited as native-SSL evidence.
 
 ## Mixture diversity→CLS
 
+- VISION full fixed-compute trajectories:
+  [`vision_mixture_diversity_trajectory.png`](figures/vision_mixture_diversity_trajectory.png)
+  and [`vision_mixture_diversity_trajectory.pdf`](figures/vision_mixture_diversity_trajectory.pdf)
+- VISION 2,500-update target panels:
+  [`vision_mixture_diversity_terminal_targets.png`](figures/vision_mixture_diversity_terminal_targets.png)
+  and [`vision_mixture_diversity_terminal_targets.pdf`](figures/vision_mixture_diversity_terminal_targets.pdf)
 - Cross-family mixture explanation: [`mixture_explanation_model_comparison.png`](../../../transfer/matrices/cross_model/final_core/figures/pngs/mixture_explanation_model_comparison.png)
 - SAMGPT weak-to-strong order: [`mixture_weak_to_strong.png`](../../../transfer/ladders/samgpt_graphcl/weak_to_strong/samgpt_weak_to_strong/figures/mixture_weak_to_strong.png)
 - PRODIGY downstream ladders: [`classification_mean_entry_change.png`](../../../transfer/ablations/prodigy_nm/downstream/nm_ladder_downstream_nhop2/figures/classification_mean_entry_change.png)

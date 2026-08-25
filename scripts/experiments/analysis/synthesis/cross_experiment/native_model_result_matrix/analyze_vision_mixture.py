@@ -5,10 +5,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
+
+ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT.parents[5]))
 
 from scripts.experiments.setup.vision_native_mixture_finalcore.mixture_plan import (
     RUNGS,
@@ -16,7 +20,6 @@ from scripts.experiments.setup.vision_native_mixture_finalcore.mixture_plan impo
 )
 
 
-ROOT = Path(__file__).resolve().parent
 CHECKPOINTS = (100, 300, 900, 2500)
 TARGETS = (
     "covid_political",

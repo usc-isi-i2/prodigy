@@ -55,6 +55,8 @@ def main() -> int:
     vision = next(row for row in coverage if row["model"] == "VISION")
     if vision["cross_ssl_matrix"] != "complete":
         raise ValueError("completed VISION native cross-SSL replay is not credited")
+    if vision["mixture_diversity_to_cls"] != "complete":
+        raise ValueError("completed VISION native mixture study is not credited")
     graphsage = next(row for row in coverage if row["model"] == "GraphSAGE")
     if graphsage["ssl_to_cls_saturation"] != "complete":
         raise ValueError("completed matched GraphSAGE trajectory is not credited")
@@ -136,6 +138,10 @@ def main() -> int:
         "vision_native_cross_ssl_matrix.pdf",
         "vision_native_cross_ssl_trajectory.png",
         "vision_native_cross_ssl_trajectory.pdf",
+        "vision_mixture_diversity_trajectory.png",
+        "vision_mixture_diversity_trajectory.pdf",
+        "vision_mixture_diversity_terminal_targets.png",
+        "vision_mixture_diversity_terminal_targets.pdf",
         "graphsage_matched_saturation_endpoint.png",
         "graphsage_matched_saturation_endpoint.pdf",
         "graphsage_matched_saturation_full_grid.png",
@@ -187,6 +193,18 @@ def main() -> int:
         load_vision_cross_ssl(ROOT / "data" / "vision_native_cross_ssl_raw")
     )
 
+    from analyze_vision_mixture import expand_orders as expand_vision_mixture_orders
+    from analyze_vision_mixture import load_cells as load_vision_mixture
+
+    vision_mixture_raw = ROOT / "data" / "vision_native_mixture_raw"
+    if len(list(vision_mixture_raw.glob("*.jsonl"))) != 48:
+        raise ValueError("VISION native mixture raw file count changed")
+    vision_mixture_cells = load_vision_mixture(
+        vision_mixture_raw,
+        ROOT / "data" / "vision_all9_saturation_raw",
+    )
+    vision_mixture_expanded = expand_vision_mixture_orders(vision_mixture_cells)
+
     from analyze_graphsage_matched_saturation import validate_cells as validate_graphsage_cells
     from scripts.experiments.analysis.evaluation.adaptation_efficiency.analyze_results import (
         validate_shared_protocol,
@@ -206,7 +224,9 @@ def main() -> int:
         f"coverage_models={len(coverage)} final_core={len(final_core)} "
         f"samgpt_downstream={len(downstream)} native_source={len(native)} "
         f"vision_trajectory={vision_cells} samgpt_trajectory={samgpt_saturation_cells} "
-        f"vision_cross_ssl={vision_cross_ssl_cells} adaptation={len(adaptation)} "
+        f"vision_cross_ssl={vision_cross_ssl_cells} "
+        f"vision_mixture={len(vision_mixture_cells)}/{len(vision_mixture_expanded)} "
+        f"adaptation={len(adaptation)} "
         f"graphsage_matched={len(graphsage_matched)}"
     )
     return 0

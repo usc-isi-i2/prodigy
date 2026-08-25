@@ -9,9 +9,9 @@
 - Audited 217 pre-existing unstaged artifacts, validated the qualifying analysis
   products, and committed them in scoped groups. The loose `output/` export tree
   remains intentionally untracked.
-- Later audit/protocol commits remain local because the remote-write approval
-  gate rejected the push after the user had stepped away. Source files were not
-  hand-copied to Tucker as a workaround.
+- After explicit user approval, the audit/protocol/result commits were pushed
+  through `43f013e`. Source moved to Tucker only through git; it was not
+  hand-copied between the laptop and cluster.
 
 ## Evidence audit
 
@@ -82,8 +82,14 @@
   registered 125 cells without replaying them.
 - Adaptation and GraphSAGE saturation outputs were collected locally, validated
   against exact row/model/target/seed/fingerprint contracts, analyzed, and all
-  figures visually checked. VISION mixture training is now the active final
-  queue stage on physical GPUs 2 and 3.
+  figures visually checked.
+- VISION mixture training ran in the same isolated worktree on physical GPUs 2
+  and 3 only. It completed at `2026-08-25T17:51:53Z`: 12/12 new terminal
+  checkpoints and 48/48 JSONL files, each with exactly five target rows
+  (240 new cells). Adding the reused all-nine seed-0 model yields 260/260
+  physical cells and 300/300 order-expanded ladder cells. The master tmux
+  session exited cleanly after writing its completion marker. Both mixture
+  figures were generated and visually checked.
 - Tucker worktree: `/dataMeR1/phil/gfm/prodigy-vision-all9`.
 - Tucker branch/commit: `codex/vision-all9-finalcore` at
   `16112313acb27652bec70f232fdf1fa80303669f`.
@@ -115,12 +121,13 @@
   updates-to-95%.
 - Added the native VISION three-order mixture plan and launcher. It schedules 12
   missing fixed-compute models on GPUs 2/3, reuses the existing all-nine model,
-  and preserves all four downstream CLS checkpoints. Execution remains pending
-  the same disclosed git-sync gate as adaptation.
+  and preserves all four downstream CLS checkpoints. Execution completed with
+  every registered cell present and fingerprint-consistent.
 - Added a distinct VISION native cross-SSL evaluator for the existing five
   specialists and five saved checkpoints. It fixes 128 label-free pseudo-task
   episodes per target and rejects fingerprint drift across 125 cells; it does
-  not reuse or relabel downstream CLS output. Execution is pending git sync.
+  not reuse or relabel downstream CLS output. Execution completed at 125/125
+  cells without using downstream labels.
 - Unit tests pass (`3 passed`), all Python files compile, shell syntax checks
   pass, and `git diff --check` is clean.
 - A Tucker pre-launch artifact smoke check found that `static_train` is absent
@@ -128,4 +135,7 @@
   result was produced to use the same canonical `graph.edge_index` across all
   topology-using encoders.
 
-The adaptation run location will be added when those outputs exist.
+The matched adaptation export is retained under
+`scripts/experiments/analysis/evaluation/adaptation_efficiency/data/`; the
+VISION mixture export is retained under this analysis folder's
+`data/vision_native_mixture_raw/`.
