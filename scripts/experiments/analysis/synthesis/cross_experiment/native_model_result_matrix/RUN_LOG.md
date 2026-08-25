@@ -87,6 +87,10 @@
   missing fixed-compute models on GPUs 2/3, reuses the existing all-nine model,
   and preserves all four downstream CLS checkpoints. Execution remains pending
   the same disclosed git-sync gate as adaptation.
+- Added a distinct VISION native cross-SSL evaluator for the existing five
+  specialists and five saved checkpoints. It fixes 128 label-free pseudo-task
+  episodes per target and rejects fingerprint drift across 125 cells; it does
+  not reuse or relabel downstream CLS output. Execution is pending git sync.
 - Unit tests pass (`3 passed`), all Python files compile, shell syntax checks
   pass, and `git diff --check` is clean.
 - A Tucker pre-launch artifact smoke check found that `static_train` is absent

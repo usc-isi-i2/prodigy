@@ -51,6 +51,9 @@ pairwise link-prediction implementation, not the invalid PRODIGY evaluator.
 - `analyze_vision_mixture.py` validates the planned 13-source-set, three-order
   native VISION design and will produce both full checkpoint and terminal
   target figures after the pending Tucker output is collected.
+- `analyze_vision_cross_ssl.py` validates the separate 5×5 native
+  feature-similarity pseudo-task matrix and will produce terminal-matrix and
+  full-trajectory figures after its pending 125-cell replay is collected.
 - `FINDINGS.md` is the human-readable audit and execution log.
 - `RUN_LOG.md` records worktrees, commits, checks, sessions, and launch
   provenance.

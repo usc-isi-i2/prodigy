@@ -87,6 +87,13 @@ missing models retain checkpoints 100/300/900/2,500 and the identical five CLS
 episode streams. No mixture cell is credited until those runs reach Tucker and
 their 260 physical model/checkpoint/target cells validate.
 
+The missing VISION cross-SSL evaluator is now defined separately from CLS. It
+replays 128 deterministic label-free feature-similarity pseudo-episodes for
+five existing specialists × five target graphs × checkpoints
+20/60/100/300/900 (125 cells), recording pseudo-task accuracy and native SSL
+loss with a fixed fingerprint per target. This reuses every checkpoint and
+does not inspect downstream labels. Coverage remains missing until execution.
+
 SAMGPT's all-nine native GraphCL trajectory is also complete: 108/108 logical
 cells (3 seeds × 4 checkpoints × 9 targets), again with one fixed episode
 fingerprint per target. The nine-target mean ROC-AUC is 0.7428 at 20 updates,

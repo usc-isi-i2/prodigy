@@ -67,6 +67,12 @@ def main() -> int:
     vision_mixture = build_mixture_models()
     if len(vision_mixture) != 13 or sum(model.model_id == "all9" for model in vision_mixture) != 1:
         raise ValueError("VISION native mixture plan changed")
+    for relative in (
+        "../../../../setup/vision_native_cross_ssl/evaluate.py",
+        "analyze_vision_cross_ssl.py",
+    ):
+        if not (ROOT / relative).resolve().is_file():
+            raise FileNotFoundError(relative)
 
     final_core = pd.read_csv(
         ANALYSIS / "transfer/matrices/cross_model/final_core/data/results_full_long.tsv",
