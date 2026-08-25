@@ -1,0 +1,44 @@
+# Exhaustive held-out-target mixture-diversity experiment.
+# run_sweep.py supplies neighbor_sampling_source_subset and prefix per manifest row.
+dataset: covid19_twitter
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_all8_retweet_graph.pt
+task_name: neighbor_matching
+
+edge_view: default
+feature_subset: all
+original_features: true
+
+# Match the established fair two-hop NM protocol.
+emb_dim: 256
+layers: S,U,M
+gnn_type: sage
+n_layer: 1
+dropout: 0
+n_hop: 2
+neighbor_sampling_hop_sizes: "9,9"
+neighbor_sampling_node_limit: 101
+neighbor_matching_walk_hops: 1
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 1
+dataset_len_cap: 2000
+val_len_cap: 100
+test_len_cap: 100
+
+# One episode stays inside one donor component; donors are sampled uniformly.
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+neighbor_sampling_cross_source_prob: 0
+
+# Fixed total compute: exactly 2,000 optimizer steps for every donor set.
+epochs: 1
+eval_step: 100000
+checkpoint_step: 2000
+workers: 2
+device: 2
+seed: 0
+prefix: mixdiv2k_placeholder
+tags: [nm_mixture_diversity_heldout_cls_2k, neighbor_matching, heldout_target, fixed_2k]
