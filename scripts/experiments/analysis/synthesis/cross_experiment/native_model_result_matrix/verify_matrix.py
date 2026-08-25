@@ -4,12 +4,14 @@
 from __future__ import annotations
 
 import csv
+import sys
 from pathlib import Path
 
 import pandas as pd
 
 
 ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT.parents[5]))
 ANALYSIS = ROOT.parents[2]
 EXPERIMENTS = ANALYSIS.parent
 EXPECTED_MODELS = {
@@ -25,6 +27,10 @@ VALID_STATUS = {"complete", "partial", "pending", "missing", "N/A"}
 
 
 def main() -> int:
+    from scripts.experiments.setup.vision_native_mixture_finalcore.mixture_plan import (
+        build_mixture_models,
+    )
+
     with (ROOT / "data" / "coverage.csv").open(newline="", encoding="utf-8") as handle:
         coverage = list(csv.DictReader(handle))
     if {row["model"] for row in coverage} != EXPECTED_MODELS:
@@ -56,6 +62,10 @@ def main() -> int:
     ].item()
     if terminal_state != "cbca0b2ab6bf9eb0707f90ef2bf4073caf89da14460e7466cf326068f672f72f":
         raise ValueError("GraphSAGE reconstructed terminal state hash changed")
+
+    vision_mixture = build_mixture_models()
+    if len(vision_mixture) != 13 or sum(model.model_id == "all9" for model in vision_mixture) != 1:
+        raise ValueError("VISION native mixture plan changed")
 
     final_core = pd.read_csv(
         ANALYSIS / "transfer/matrices/cross_model/final_core/data/results_full_long.tsv",

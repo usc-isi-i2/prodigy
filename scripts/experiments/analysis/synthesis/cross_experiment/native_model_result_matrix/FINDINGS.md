@@ -74,6 +74,13 @@ at 2,500. The terminal-minus-100 change is target-dependent: COVID Political
 and Ukraine Suspended +0.0367. More fixed compute changes which targets benefit;
 it does not improve the registered panel mean.
 
+A native VISION mixture-diversity runner is also ready locally. It uses the
+three final-core source orders at rungs 1/3/5/7/9, deduplicating to 13 source
+sets and reusing the existing all-nine seed-0 checkpoint. The 12 genuinely
+missing models retain checkpoints 100/300/900/2,500 and the identical five CLS
+episode streams. No mixture cell is credited until those runs reach Tucker and
+their 260 physical model/checkpoint/target cells validate.
+
 SAMGPT's all-nine native GraphCL trajectory is also complete: 108/108 logical
 cells (3 seeds × 4 checkpoints × 9 targets), again with one fixed episode
 fingerprint per target. The nine-target mean ROC-AUC is 0.7428 at 20 updates,

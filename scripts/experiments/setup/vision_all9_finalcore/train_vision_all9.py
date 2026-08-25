@@ -41,6 +41,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--upstream-root", required=True)
     parser.add_argument("--state-root", required=True, type=Path)
     parser.add_argument("--run-name", default="all9_s0")
+    parser.add_argument("--model-id", default="all9")
+    parser.add_argument("--sources", default=",".join(SOURCES))
     parser.add_argument("--steps", type=int, default=2500)
     parser.add_argument("--checkpoint-steps", default="100,300,900,2500")
     parser.add_argument("--seed", type=int, default=0)
@@ -48,20 +50,28 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def source_node_sets(graph) -> tuple[list[str], list[torch.Tensor]]:
+def source_node_sets(
+    graph, selected_sources: tuple[str, ...] = SOURCES
+) -> tuple[list[str], list[torch.Tensor]]:
     names = list(graph.source_graph_names)
     if len(names) != len(SOURCES) or set(names) != set(SOURCES):
         raise ValueError(f"all-nine source registry mismatch: {names} != {list(SOURCES)}")
+    if not selected_sources or len(set(selected_sources)) != len(selected_sources):
+        raise ValueError(f"sources must be nonempty and unique: {selected_sources}")
+    unknown = set(selected_sources) - set(SOURCES)
+    if unknown:
+        raise ValueError(f"unknown source names: {sorted(unknown)}")
     graph_id = graph.graph_id.detach().cpu().long()
     observed = set(int(value) for value in torch.unique(graph_id).tolist())
     expected = set(range(len(SOURCES)))
     if observed != expected:
         raise ValueError(f"graph ids mismatch: {sorted(observed)} != {sorted(expected)}")
-    nodes = [torch.where(graph_id == graph_index)[0] for graph_index in range(len(SOURCES))]
+    graph_index = {name: index for index, name in enumerate(names)}
+    nodes = [torch.where(graph_id == graph_index[name])[0] for name in selected_sources]
     minimum = VISION_N_WAY * (VISION_N_SHOT + VISION_N_QUERY) + VISION_N_WAY
     if any(part.numel() < minimum for part in nodes):
         raise ValueError(f"source too small for VISION pseudo-tasks: {[part.numel() for part in nodes]}")
-    return names, nodes
+    return list(selected_sources), nodes
 
 
 def sampled_source_nodes(source_nodes: torch.Tensor, count: int) -> torch.Tensor:
@@ -151,8 +161,8 @@ def save_checkpoint(path: Path, model, optimizer, scheduler, args, step: int) ->
     torch.save(
         {
             "architecture": "vision",
-            "model_id": "all9",
-            "sources": list(SOURCES),
+            "model_id": args.model_id,
+            "sources": list(args.selected_sources),
             "seed": args.seed,
             "step": step,
             "upstream": PINS["vision"],
@@ -170,6 +180,7 @@ def save_checkpoint(path: Path, model, optimizer, scheduler, args, step: int) ->
 
 def main() -> int:
     args = parse_args()
+    args.selected_sources = tuple(value for value in args.sources.split(",") if value)
     checkpoints = {int(value) for value in args.checkpoint_steps.split(",") if value}
     if checkpoints != {100, 300, 900, 2500} or args.steps != 2500:
         raise ValueError("final-core match requires 2,500 updates and checkpoints 100,300,900,2500")
@@ -188,7 +199,7 @@ def main() -> int:
     config = load_config(args.config)
     dataset = build_dataset(config)
     graph = dataset.graph
-    names, node_sets = source_node_sets(graph)
+    names, node_sets = source_node_sets(graph, args.selected_sources)
     print(json.dumps({"source_counts": dict(zip(names, [int(x.numel()) for x in node_sets]))}), flush=True)
 
     print("Precomputing VISION adaptive task features on CPU...", flush=True)
@@ -206,7 +217,7 @@ def main() -> int:
     labels = torch.arange(VISION_N_WAY, device=device).repeat_interleave(VISION_N_QUERY)
     support_labels = torch.arange(VISION_N_WAY, device=device).repeat_interleave(VISION_N_SHOT)
     started = time.time()
-    source_episode_counts = [0] * len(SOURCES)
+    source_episode_counts = [0] * len(names)
 
     with metrics_path.open("w", encoding="utf-8") as metrics:
         for step in range(1, args.steps + 1):
@@ -214,7 +225,7 @@ def main() -> int:
             optimizer.zero_grad(set_to_none=True)
             losses, accuracies = [], []
             for _ in range(TRAIN_BATCH_SIZE):
-                source_index = random.randrange(len(SOURCES))
+                source_index = random.randrange(len(names))
                 source_episode_counts[source_index] += 1
                 support, query = vision_pseudo_task_for_source(
                     task_features, node_sets[source_index], device

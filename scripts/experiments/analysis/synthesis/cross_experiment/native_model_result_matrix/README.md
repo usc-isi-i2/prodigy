@@ -45,6 +45,9 @@ pairwise link-prediction implementation, not the invalid PRODIGY evaluator.
 - `data/graphsage_pilot_v1_trajectory_manifest.csv` registers the exact
   reconstructed native link-prediction prefix. It is provenance, not a credited
   SSL→CLS result, until the matched downstream heads are evaluated.
+- `analyze_vision_mixture.py` validates the planned 13-source-set, three-order
+  native VISION design and will produce both full checkpoint and terminal
+  target figures after the pending Tucker output is collected.
 - `FINDINGS.md` is the human-readable audit and execution log.
 - `RUN_LOG.md` records worktrees, commits, checks, sessions, and launch
   provenance.

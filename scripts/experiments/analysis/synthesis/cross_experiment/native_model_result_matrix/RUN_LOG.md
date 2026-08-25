@@ -77,6 +77,10 @@
   regression, and a raw-feature MLP.
 - Added full-grid analysis for learning curves, label-efficiency AUC, and
   updates-to-95%.
+- Added the native VISION three-order mixture plan and launcher. It schedules 12
+  missing fixed-compute models on GPUs 2/3, reuses the existing all-nine model,
+  and preserves all four downstream CLS checkpoints. Execution remains pending
+  the same disclosed git-sync gate as adaptation.
 - Unit tests pass (`3 passed`), all Python files compile, shell syntax checks
   pass, and `git diff --check` is clean.
 - A Tucker pre-launch artifact smoke check found that `static_train` is absent

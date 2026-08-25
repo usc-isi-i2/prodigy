@@ -5,8 +5,21 @@ import torch
 from scripts.experiments.setup.vision_all9_finalcore.train_vision_all9 import (
     first_neighbors,
     sampled_source_nodes,
+    source_node_sets,
     vision_subgraph_from_csr,
 )
+
+
+class ToyGraph:
+    source_graph_names = ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "twibot20", "cp_hk", "facebook_page_reference"]
+    graph_id = torch.arange(9).repeat_interleave(300)
+
+
+def test_source_node_sets_select_requested_mixture_order():
+    names, nodes = source_node_sets(ToyGraph(), ("twibot20", "covid"))
+    assert names == ["twibot20", "covid"]
+    assert set(nodes[0].tolist()) == set(range(6 * 300, 7 * 300))
+    assert set(nodes[1].tolist()) == set(range(300, 600))
 
 
 def test_sampled_source_nodes_are_unique_and_confined():

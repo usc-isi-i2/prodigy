@@ -47,7 +47,9 @@ if [[ ! -f "$checkpoint" ]]; then
   CUDA_VISIBLE_DEVICES="$GPU" "$PYTHON" -u -m \
     scripts.experiments.setup.vision_all9_finalcore.train_vision_all9 \
     --config "$CONFIG" --upstream-root "$VISION_ROOT" --state-root "$STATE_ROOT" \
-    --run-name "$RUN_NAME" --steps 2500 --checkpoint-steps 100,300,900,2500 \
+    --run-name "$RUN_NAME" --model-id all9 --sources \
+    ukr_rus,covid,midterm,covid_political,election2020,ukr_rus_suspended,twibot20,cp_hk,facebook_page_reference \
+    --steps 2500 --checkpoint-steps 100,300,900,2500 \
     --seed "$SEED" --device 0 > "$LOG_ROOT/train/${RUN_NAME}.log" 2>&1
 fi
 [[ -f "$checkpoint" ]] || { echo "missing terminal checkpoint $checkpoint" >&2; exit 1; }
