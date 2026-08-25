@@ -260,10 +260,9 @@ def summarize(h2: pd.DataFrame) -> pd.DataFrame:
 def make_figure(h1: pd.DataFrame, h2: pd.DataFrame, out: Path) -> None:
     panels = [
         ("classification", "", "ROC-AUC", "Classification · mean over 4 graphs"),
-        ("regression", "followers_count", "Spearman", "Regression · followers_count"),
-        ("regression", "account_age_days", "Spearman", "Regression · account_age_days"),
     ]
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4.5))
+    fig, ax = plt.subplots(figsize=(8, 4.8))
+    axes = (ax,)
     for ax, (task, target, ylabel, title) in zip(axes, panels):
         for radius, frame, style in ((1, h1, "--"), (2, h2, "-")):
             selected = frame[(frame.task == task) & (frame.target.fillna("") == target)]
@@ -279,7 +278,10 @@ def make_figure(h1: pd.DataFrame, h2: pd.DataFrame, out: Path) -> None:
                     markersize=4.5,
                     label=f"{arm} · h{radius}",
                 )
-        ax.set_xscale("symlog", linthresh=100, linscale=0.7)
+        ax.set_xscale("linear")
+        ax.set_xlim(0, max(STEPS))
+        ax.set_xticks((0, 10_000, 20_000, 30_000, 40_000))
+        ax.set_xticklabels(("0", "10k", "20k", "30k", "40k"))
         ax.set_title(title, loc="left", fontsize=10)
         ax.set_xlabel("pretraining steps")
         ax.set_ylabel(ylabel)
@@ -290,14 +292,14 @@ def make_figure(h1: pd.DataFrame, h2: pd.DataFrame, out: Path) -> None:
         handles,
         labels,
         frameon=False,
-        ncol=6,
+        ncol=3,
         loc="upper center",
-        bbox_to_anchor=(0.5, 0.955),
+        bbox_to_anchor=(0.5, 0.91),
         fontsize=8,
     )
-    fig.suptitle("Pretrain saturation: compute-matched two-hop context vs one hop",
+    fig.suptitle("Classification saturation: compute-matched two-hop context vs one hop",
                  y=0.995, fontsize=13)
-    fig.tight_layout(rect=[0, 0, 1, 0.88])
+    fig.tight_layout(rect=[0, 0, 1, 0.78])
     out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, dpi=200, bbox_inches="tight", facecolor="white")
 
