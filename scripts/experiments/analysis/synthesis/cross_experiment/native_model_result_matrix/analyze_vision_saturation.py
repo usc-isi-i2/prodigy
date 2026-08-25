@@ -32,7 +32,16 @@ LABELS = {
 
 
 def load_rows(path: Path) -> pd.DataFrame:
-    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
+    paths = sorted(path.glob("*.jsonl")) if path.is_dir() else [path]
+    if not paths:
+        raise FileNotFoundError(f"no trajectory JSONL files under {path}")
+    rows = []
+    for source in paths:
+        rows.extend(
+            json.loads(line)
+            for line in source.read_text(encoding="utf-8").splitlines()
+            if line
+        )
     frame = pd.DataFrame(rows)
     expected = {
         (seed, step, target) for seed in SEEDS for step in STEPS for target in TARGETS
@@ -118,7 +127,12 @@ def plot(summary: pd.DataFrame, output: Path) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", type=Path, default=ROOT / "data" / "vision_all9_saturation.jsonl")
+    parser.add_argument(
+        "--input",
+        type=Path,
+        default=ROOT / "data" / "vision_all9_saturation_raw",
+        help="One combined JSONL or a directory of per-checkpoint JSONL files.",
+    )
     args = parser.parse_args()
     frame = load_rows(args.input)
     summary = summarize(frame)

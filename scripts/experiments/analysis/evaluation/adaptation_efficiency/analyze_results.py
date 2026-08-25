@@ -39,6 +39,31 @@ def save_figure(fig, root: Path, name: str) -> None:
     plt.close(fig)
 
 
+def validate_shared_protocol(cells: pd.DataFrame) -> None:
+    """Reject results that violate the promised shared sampling/head contract."""
+    test = cells[cells.split == "test"].copy()
+    split_counts = test.groupby("target")["split_fingerprint"].nunique()
+    if not split_counts.eq(1).all():
+        raise ValueError(f"split fingerprints differ across models: {split_counts.to_dict()}")
+    sample_counts = test.groupby(
+        ["target", "label_seed", "label_budget_per_class"]
+    )["selected_nodes_fingerprint"].nunique()
+    if not sample_counts.eq(1).all():
+        raise ValueError("labeled-node samples differ across model families")
+    learned = test[~test.model_id.isin(["raw_logistic", "raw_mlp"])]
+    initialization_counts = learned.groupby(
+        ["target", "label_seed"]
+    )["head_initialization_fingerprint"].nunique()
+    if not initialization_counts.eq(1).all():
+        raise ValueError("learned encoders do not share identical initialized linear heads")
+    positive = test[test.label_budget_per_class > 0]
+    if set(positive.optimizer) != {"AdamW"} or set(positive.learning_rate) != {0.01}:
+        raise ValueError("positive-label cells do not share the registered optimizer")
+    zero = test[test.label_budget_per_class == 0]
+    if set(zero.head_updates) != {0} or set(zero.optimizer) != {"none"}:
+        raise ValueError("zero-label cells contain optimizer updates")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cells", type=Path, required=True)
@@ -50,6 +75,7 @@ def main() -> int:
     data_dir.mkdir(parents=True, exist_ok=True)
     cells = pd.read_csv(args.cells)
     cells["family"] = cells.model_id.map(family)
+    validate_shared_protocol(cells)
     test = cells[cells.split == "test"].copy()
 
     coverage = (

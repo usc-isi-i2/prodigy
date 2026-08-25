@@ -84,6 +84,17 @@ def fingerprint_indices(*arrays: np.ndarray) -> str:
     return digest.hexdigest()
 
 
+def fingerprint_model(model: nn.Module) -> str:
+    """Hash an initialized head so cross-model initialization equality is auditable."""
+    digest = hashlib.sha256()
+    for name, value in model.state_dict().items():
+        digest.update(name.encode("utf-8"))
+        array = value.detach().cpu().contiguous().numpy()
+        digest.update(np.asarray(array.shape, dtype=np.int64).tobytes())
+        digest.update(array.tobytes())
+    return digest.hexdigest()
+
+
 def standardize_and_pad(
     features: np.ndarray, train_rows: np.ndarray, *, output_dim: int = COMMON_DIM
 ) -> np.ndarray:
@@ -167,6 +178,7 @@ def run_curve(
     x = torch.from_numpy(np.asarray(features, dtype=np.float32))
     classes = len(set(int(value) for value in labels if int(value) >= 0))
     head = new_head(head_kind, x.shape[1], classes, label_seed)
+    head_initialization_fingerprint = fingerprint_model(head)
     selected = sampled_labels(labels, splits["train"], budget=budget, seed=label_seed)
     selected_fingerprint = fingerprint_indices(selected)
     split_fingerprint = fingerprint_indices(splits["train"], splits["val"], splits["test"])
@@ -203,6 +215,10 @@ def run_curve(
                     "labeled_examples": int(selected.size),
                     "selected_nodes_fingerprint": selected_fingerprint,
                     "split_fingerprint": split_fingerprint,
+                    "head_initialization_fingerprint": head_initialization_fingerprint,
+                    "optimizer": "none" if optimizer is None else "AdamW",
+                    "learning_rate": 0.0 if optimizer is None else learning_rate,
+                    "weight_decay": 0.0,
                     **metrics,
                 }
             )

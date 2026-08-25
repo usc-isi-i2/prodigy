@@ -12,7 +12,9 @@ without duplicating artifacts.
 
 - PRODIGY: [`pretrain_saturation.png`](../../../transfer/ablations/prodigy_nm/saturation/pretrain_saturation/figures/pretrain_saturation.png)
 - PRODIGY final-core: [`classification_auc_trajectories.png`](../../../transfer/ablations/prodigy_nm/center_sampling/nm_all9_radius_finalcore/figures/classification_auc_trajectories.png)
-- SAMGPT downstream checkpoint summary: [`samgpt_downstream_saturation.png`](../figures/samgpt_downstream_saturation.png)
+- SAMGPT earlier one-seed checkpoint summary: [`samgpt_downstream_saturation.png`](../figures/samgpt_downstream_saturation.png)
+- SAMGPT final-core all-nine: `figures/samgpt_all9_saturation.{png,pdf}`
+  will be generated from the new three-seed 20/60/180/500 evaluation.
 - VISION: `figures/vision_all9_saturation.{png,pdf}` will be generated from the
   new three-seed 100/300/900/2,500 trajectory export.
 

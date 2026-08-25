@@ -19,6 +19,9 @@ matching.
   and mapped deterministically to 256 dimensions by truncation or zero padding.
   This makes the initialized 256-to-class linear head bit-identical across
   learned models for a target and label seed.
+- Every result row records hashes of the split, sampled labeled nodes, and
+  initialized head. The analysis rejects a cross-model mismatch rather than
+  merely assuming those controls are shared.
 - Metrics are recorded on the unchanged validation and test node sets at every
   requested update: ROC-AUC (macro one-vs-rest for multiclass) is primary, plus
   accuracy and macro-F1.
