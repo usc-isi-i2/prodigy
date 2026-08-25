@@ -54,7 +54,7 @@ def main() -> int:
         labels = cache.labels[cache.node_ids]
         kind = "mlp" if cache.model_id == "raw_mlp" else "linear"
         features = cache.features
-        if kind == "linear" and cache.model_id not in {"raw_logistic"}:
+        if kind == "linear":
             features = standardize_and_pad(features, splits["train"])
         else:
             features = standardize_and_pad(features, splits["train"], output_dim=features.shape[1])

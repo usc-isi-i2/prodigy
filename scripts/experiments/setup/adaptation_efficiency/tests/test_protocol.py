@@ -2,6 +2,7 @@ import numpy as np
 
 from scripts.experiments.setup.adaptation_efficiency.protocol import (
     LABEL_BUDGETS,
+    COMMON_DIM,
     UPDATE_STEPS,
     fingerprint_model,
     new_head,
@@ -56,8 +57,8 @@ def test_complete_valid_grid_and_reproducible_initialization():
         for split in ("val", "test")
     }
     assert cells == expected
-    left = new_head("linear", 256, 2, 1)
-    right = new_head("linear", 256, 2, 1)
+    left = new_head("linear", COMMON_DIM, 2, 1)
+    right = new_head("linear", COMMON_DIM, 2, 1)
     for a, b in zip(left.parameters(), right.parameters()):
         assert np.array_equal(a.detach().numpy(), b.detach().numpy())
     assert fingerprint_model(left) == fingerprint_model(right)

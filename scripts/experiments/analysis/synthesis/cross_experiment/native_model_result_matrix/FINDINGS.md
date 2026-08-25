@@ -46,6 +46,13 @@ design.
   link-prediction updates. The existing TwiBot full-train node probe is retained
   as a narrow downstream reference, not treated as the requested adaptation
   grid.
+- The missing GraphSAGE prefix was reconstructed at its recorded source commit
+  and seed for 0/20/60/100/300/900/2,000 updates. Repeating the 2,000-update run
+  reproduced every registered checkpoint tensor exactly (`max_abs_diff=0`,
+  state SHA-256
+  `cbca0b2ab6bf9eb0707f90ef2bf4073caf89da14460e7466cf326068f672f72f`).
+  The prefix is therefore ready for matched downstream CLS evaluation, but the
+  saturation cell remains missing until that evaluation is executed.
 - Existing raw-feature logistic and target-supervised MLP references are useful
   floors, but their earlier label budgets and optimization schedules are not the
   matched adaptation protocol.
@@ -79,9 +86,11 @@ downstream-optimal checkpoint. The full curves must accompany terminal results.
 The unified adaptation implementation is committed locally. It freezes each
 encoder and evaluates budgets 0/1/10/100 examples per class at updates
 0/1/10/100 with label seeds 0/1/2, the same deterministic stratified split,
-nested labeled samples, matched 256-dimensional head initialization across
-learned encoders, and ROC-AUC/accuracy/macro-F1 on unchanged validation and test
-nodes. Zero labels has only update 0 and never constructs or steps an optimizer.
+nested labeled samples, a matched 768-to-class linear-head tensor across learned
+encoders and raw logistic regression, and ROC-AUC/accuracy/macro-F1 on unchanged
+validation and test nodes. Smaller learned representations are zero-padded, so
+the full raw 768-dimensional baseline is retained. Zero labels has only update 0
+and never constructs or steps an optimizer.
 The same grid includes raw logistic regression and an MLP. A pre-launch Tucker
 smoke check also established that `static_train` is not a common view across the
 four targets, so all topology-using extractors are registered against each

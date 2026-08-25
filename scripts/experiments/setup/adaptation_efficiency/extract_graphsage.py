@@ -125,7 +125,7 @@ def main() -> int:
                     "native_pretext": "pilot_v1_link_prediction",
                     "checkpoint": str(args.checkpoint),
                     "checkpoint_sha256": checkpoint_hash,
-                    "training_seed": int(checkpoint.get("seed", -1)),
+                    "training_seed": int(checkpoint.get("seed", config.get("seed", -1))),
                     "training_steps": int(config["train_steps"]),
                     "representation": "frozen_node_history_encoder",
                     "edge_view": "graph.edge_index",

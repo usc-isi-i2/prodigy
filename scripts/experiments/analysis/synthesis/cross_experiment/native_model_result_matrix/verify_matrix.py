@@ -46,6 +46,17 @@ def main() -> int:
     if any(gilt[column] != "missing" for column in status_columns):
         raise ValueError("GILT cannot be credited without a native social checkpoint")
 
+    graphsage_trajectory = pd.read_csv(
+        ROOT / "data" / "graphsage_pilot_v1_trajectory_manifest.csv"
+    )
+    if graphsage_trajectory.step.tolist() != [0, 20, 60, 100, 300, 900, 2000]:
+        raise ValueError("GraphSAGE reconstructed trajectory steps changed")
+    terminal_state = graphsage_trajectory.loc[
+        graphsage_trajectory.step == 2000, "state_sha256"
+    ].item()
+    if terminal_state != "cbca0b2ab6bf9eb0707f90ef2bf4073caf89da14460e7466cf326068f672f72f":
+        raise ValueError("GraphSAGE reconstructed terminal state hash changed")
+
     final_core = pd.read_csv(
         ANALYSIS / "transfer/matrices/cross_model/final_core/data/results_full_long.tsv",
         sep="\t",

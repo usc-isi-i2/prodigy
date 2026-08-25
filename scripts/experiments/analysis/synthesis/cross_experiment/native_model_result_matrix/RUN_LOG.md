@@ -38,6 +38,13 @@
 - Verified the GraphSAGE pilot-v1 checkpoint and its 2,000-update native
   link-prediction provenance. Its existing downstream evidence is a narrow
   full-train TwiBot probe.
+- Created isolated Tucker worktree
+  `/dataMeR1/phil/social-gfm/code-pilot-v1` at the pilot's recorded commit
+  `c6fd912fba1c12b12b8a6e9b0d112b63b0c563a3`. On GPUs 2 and 3, reconstructed
+  fixed-budget GraphSAGE states at 0/20/60/100/300/900/2,000 updates under
+  `/dataMeR1/phil/social-gfm/experiments/pilot-v1-trajectory`. The rerun
+  2,000-update state is tensor-identical to the registered checkpoint, with
+  `max_abs_diff=0` and matching state SHA-256. No other GPU was selected.
 
 ## New execution
 

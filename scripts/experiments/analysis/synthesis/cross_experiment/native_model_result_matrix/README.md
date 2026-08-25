@@ -42,6 +42,9 @@ pairwise link-prediction implementation, not the invalid PRODIGY evaluator.
 - `data/samgpt_all9_saturation_raw/` retains the three-seed all-nine
   20/60/180/500 GraphCL checkpoint evaluations;
   `analyze_samgpt_saturation.py` validates and plots all nine downstream targets.
+- `data/graphsage_pilot_v1_trajectory_manifest.csv` registers the exact
+  reconstructed native link-prediction prefix. It is provenance, not a credited
+  SSL→CLS result, until the matched downstream heads are evaluated.
 - `FINDINGS.md` is the human-readable audit and execution log.
 - `RUN_LOG.md` records worktrees, commits, checks, sessions, and launch
   provenance.

@@ -140,9 +140,52 @@ if [[ ! -f "$RESULTS" ]]; then
     "${cache_args[@]}" --output "$RESULTS" --split-seed 0 --label-seeds 0,1,2
 fi
 
+# The reconstructed GraphSAGE trajectory is evaluated separately from the
+# terminal-checkpoint adaptation matrix. Its independently rerun 2,000-step
+# state was verified tensor-for-tensor against the registered pilot-v1 state.
+GRAPH_SAGE_TRAJECTORY_ROOT="/dataMeR1/phil/social-gfm/experiments/pilot-v1-trajectory"
+GRAPH_SAGE_SATURATION_CACHES="$OUTPUT_ROOT/graphsage_saturation_caches"
+GRAPH_SAGE_SATURATION_RESULTS="$LOG_ROOT/graphsage_saturation_cells.csv"
+trajectory_complete=true
+for step in 0 20 60 100 300 900 2000; do
+  IFS=',' read -r -a target_array <<< "$TARGETS"
+  for target in "${target_array[@]}"; do
+    [[ -f "$GRAPH_SAGE_SATURATION_CACHES/graphsage_pilot_v1_step${step}/${target}.npz" ]] \
+      || trajectory_complete=false
+  done
+done
+if [[ "$trajectory_complete" != true ]]; then
+  wait_for_gpu "${GPUS[0]}"
+  checkpoint_args=()
+  for step in 0 20 60 100 300 900 2000; do
+    checkpoint_args+=(
+      --checkpoint
+      "$step=$GRAPH_SAGE_TRAJECTORY_ROOT/step-$step/checkpoint.pt"
+    )
+  done
+  CUDA_VISIBLE_DEVICES="${GPUS[0]}" "$PYTHON" -m \
+    scripts.experiments.setup.adaptation_efficiency.extract_graphsage_trajectory \
+    --repository "/dataMeR1/phil/social-gfm/code-pilot-v1" \
+    "${checkpoint_args[@]}" --output-root "$GRAPH_SAGE_SATURATION_CACHES" \
+    --targets "$TARGETS" --device cuda:0 \
+    > "$LOG_ROOT/extract/graphsage_saturation.log" 2>&1
+fi
+if [[ ! -f "$GRAPH_SAGE_SATURATION_RESULTS" ]]; then
+  saturation_cache_args=()
+  while IFS= read -r cache; do saturation_cache_args+=(--cache "$cache"); done < <(
+    find "$GRAPH_SAGE_SATURATION_CACHES" -mindepth 2 -maxdepth 2 \
+      -type f -name '*.npz' | sort
+  )
+  "$PYTHON" -m scripts.experiments.setup.adaptation_efficiency.run_head_grid \
+    "${saturation_cache_args[@]}" --output "$GRAPH_SAGE_SATURATION_RESULTS" \
+    --split-seed 0 --label-seeds 0,1,2
+fi
+
 {
   echo "completed_utc=$(date -u +%FT%TZ)"
   echo "results=$RESULTS"
   echo "result_rows=$(($(wc -l < "$RESULTS") - 1))"
+  echo "graphsage_saturation_results=$GRAPH_SAGE_SATURATION_RESULTS"
+  echo "graphsage_saturation_rows=$(($(wc -l < "$GRAPH_SAGE_SATURATION_RESULTS") - 1))"
 } > "$LOG_ROOT/COMPLETE"
 cat "$LOG_ROOT/COMPLETE"

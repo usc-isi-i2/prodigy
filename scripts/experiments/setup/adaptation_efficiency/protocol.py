@@ -17,7 +17,9 @@ from torch import nn
 LABEL_BUDGETS = (0, 1, 10, 100)
 UPDATE_STEPS = (0, 1, 10, 100)
 LABEL_SEEDS = (0, 1, 2)
-COMMON_DIM = 256
+# Preserve the full raw 768-D feature baseline while giving every linear probe
+# the exact same parameter shape. Smaller learned representations are zero-padded.
+COMMON_DIM = 768
 HEAD_LR = 1e-2
 
 
