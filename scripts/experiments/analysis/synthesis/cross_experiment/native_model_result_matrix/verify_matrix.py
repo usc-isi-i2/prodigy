@@ -94,11 +94,18 @@ def main() -> int:
 
         vision_cells = len(load_rows(raw_vision))
 
+    raw_samgpt = ROOT / "data" / "samgpt_all9_saturation_raw"
+    samgpt_saturation_cells = 0
+    if raw_samgpt.is_dir():
+        from analyze_samgpt_saturation import load_cells
+
+        samgpt_saturation_cells = len(load_cells(raw_samgpt))
+
     print(
         "NATIVE_MODEL_MATRIX_OK "
         f"coverage_models={len(coverage)} final_core={len(final_core)} "
         f"samgpt_downstream={len(downstream)} native_source={len(native)} "
-        f"vision_trajectory={vision_cells}"
+        f"vision_trajectory={vision_cells} samgpt_trajectory={samgpt_saturation_cells}"
     )
     return 0
 

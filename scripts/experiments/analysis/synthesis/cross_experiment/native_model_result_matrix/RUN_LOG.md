@@ -43,6 +43,18 @@
 - Both runs use nine balanced sources, 2,500 optimizer updates, 10,000 total
   pseudo-episodes, and checkpoints 100/300/900/2,500. Start time was
   `2026-08-25T09:11:41Z`.
+- Seed 1 completed at `2026-08-25T09:38:53Z`; seed 2 completed at
+  `2026-08-25T09:39:30Z`. Both terminal result files contain exactly five
+  downstream CLS rows.
+- Replayed checkpoints 100/300/900/2,500 for seeds 0/1/2 in tmux sessions
+  `vision-traj-g2` and `vision-traj-g3`. The result has 12 files and 60/60
+  logical cells, with one episode fingerprint per target across all cells.
+- Reused SAMGPT all-nine GraphCL checkpoints 20/60/180/500 for seeds 39/40/41
+  and evaluated all nine registered downstream targets in tmux sessions
+  `samgpt-sat-g2` and `samgpt-sat-g3`. GPU 3 completed at
+  `2026-08-25T09:43:10Z`; GPU 2 completed at `2026-08-25T09:43:51Z`.
+  The result has 12 files and 108/108 logical cells with one episode fingerprint
+  per target.
 - GPUs 0, 1, and 4–7 were never selected by a launched command.
 
 ## Adaptation implementation and checks
