@@ -29,6 +29,12 @@
 - Read the native trainers, not just filenames. This established that VISION is
   label-free feature-similarity SSL while GILT uses target-label episodic
   classification and therefore cannot count as native SSL.
+- Audited upstream GILT read-only at
+  `/dataMeR1/phil/gfm/upstream/inductnode`, commit
+  `ba46cf4ebd1931712854708c221eaba646641785`. Its native
+  `src/engine_graphcl.py` implements augmented-view GraphCL with NT-Xent, but
+  the clean checkout has no `.pt`, `.pth`, or `.ckpt` artifact. Thus the native
+  objective is now registered while all GILT result cells remain missing.
 - Verified the GraphSAGE pilot-v1 checkpoint and its 2,000-update native
   link-prediction provenance. Its existing downstream evidence is a narrow
   full-train TwiBot probe.
@@ -71,5 +77,4 @@
   result was produced to use the same canonical `graph.edge_index` across all
   topology-using encoders.
 
-This log will be extended with the VISION trajectory result counts and the
-adaptation run location when those outputs exist.
+The adaptation run location will be added when those outputs exist.

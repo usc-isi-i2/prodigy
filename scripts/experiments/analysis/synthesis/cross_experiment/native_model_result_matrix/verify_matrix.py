@@ -40,6 +40,11 @@ def main() -> int:
         for column in status_columns:
             if row[column] not in VALID_STATUS:
                 raise ValueError(f"invalid status {row[column]!r} for {row['model']}/{column}")
+    gilt = next(row for row in coverage if row["model"] == "GILT")
+    if gilt["native_pretext"] != "GraphCL (social-graph port/checkpoint absent)":
+        raise ValueError("GILT upstream-native GraphCL registry marker missing")
+    if any(gilt[column] != "missing" for column in status_columns):
+        raise ValueError("GILT cannot be credited without a native social checkpoint")
 
     final_core = pd.read_csv(
         ANALYSIS / "transfer/matrices/cross_model/final_core/data/results_full_long.tsv",

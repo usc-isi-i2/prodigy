@@ -35,6 +35,13 @@ design.
   checkpoint design at seed 0 (125 learned-checkpoint rows, plus five random-init
   controls). Its valid trainer uses label-free feature similarity. The 260-row
   physical export count includes both VISION and the excluded GILT sweep.
+- Upstream GILT does have a genuine GraphCL implementation at commit
+  `ba46cf4ebd1931712854708c221eaba646641785`: two augmented graph views are
+  trained with NT-Xent/InfoNCE. The upstream checkout contains no saved model
+  artifact, and the existing social-graph wrapper instead uses target-label
+  episodic classification. GILT therefore remains missing rather than
+  “native SSL undefined”; producing it requires a new social-graph port and
+  native GraphCL training run.
 - GraphSAGE pilot-v1 has a valid all-graph checkpoint after 2,000 native
   link-prediction updates. The existing TwiBot full-train node probe is retained
   as a narrow downstream reference, not treated as the requested adaptation

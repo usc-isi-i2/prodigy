@@ -12,15 +12,19 @@ Each learned family is admitted only under its registered native pretext:
 |---|---|
 | PRODIGY | neighbor matching |
 | VISION | label-free feature similarity |
-| GILT | native label-free SSL still undefined |
+| GILT | upstream GraphCL (no registered social-graph checkpoint) |
 | SAMGPT | GraphCL |
 | GraphSAGE | pilot-v1 link prediction |
 
 The common-neighbor-matching VISION/GILT experiment is an architecture control,
 not evidence in this matrix. The existing so-called native GILT source sweep is
 also excluded: inspection of its trainer shows target-label episodic
-classification rather than self-supervision. No GILT cell is credited until a
-genuine native SSL objective is specified and registered.
+classification rather than self-supervision. A read-only audit of upstream GILT
+at commit `ba46cf4ebd1931712854708c221eaba646641785` found its genuine native
+GraphCL engine (`src/engine_graphcl.py`): it uses two augmented graph views and
+an NT-Xent/InfoNCE objective. Tucker contains no `.pt`, `.pth`, or `.ckpt`
+artifact in that checkout, however, and no compatible social-graph GraphCL run
+is registered. No GILT cell is therefore credited.
 
 Legacy episodic static- and temporal-link-prediction scores are excluded. The
 GraphSAGE pilot checkpoint remains eligible because it was trained with its own
