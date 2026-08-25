@@ -38,7 +38,8 @@ wait_for_gpu() {
 }
 
 run_part() {
-  local gpu="$1" name="$2" datasets="$3" result="$LOG_ROOT/results/${name}.jsonl"
+  local gpu="$1" name="$2" datasets="$3"
+  local result="$LOG_ROOT/results/${name}.jsonl"
   [[ -f "$result" ]] && return 0
   wait_for_gpu "$gpu"
   CUDA_VISIBLE_DEVICES="$gpu" "$PYTHON" -u -m \
