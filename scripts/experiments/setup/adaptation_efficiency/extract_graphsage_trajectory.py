@@ -14,7 +14,7 @@ import torch
 
 from scripts.eval.pair_link_ckpt import load_graph_blob
 
-from .extract_graphsage import sha256_file, static_graph_arrays
+from .extract_graphsage import node_batch, sha256_file, static_graph_arrays
 from .protocol import FeatureCache, save_feature_cache
 from .targets import labeled_nodes, load_labels, selected_targets
 
@@ -53,7 +53,6 @@ def main() -> int:
 
     sys.path.insert(0, str(args.repository.resolve()))
     from socialgfm.benchmark_models import LinkPredictor  # noqa: PLC0415
-    from socialgfm.benchmark_run import _node_batch  # noqa: PLC0415
 
     loaded = {}
     for step, path in sorted(checkpoints.items()):
@@ -97,7 +96,7 @@ def main() -> int:
                 for start in range(0, nodes.size, args.batch_size):
                     ids = nodes[start : start + args.batch_size]
                     outputs.append(
-                        model.encoder(_node_batch(structural_graph, ids, device)).cpu()
+                        model.encoder(node_batch(structural_graph, ids, device)).cpu()
                     )
             features = torch.cat(outputs).numpy()
             model_id = f"graphsage_pilot_v1_step{step}"

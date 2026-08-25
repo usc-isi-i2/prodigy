@@ -20,6 +20,11 @@ from .targets import labeled_nodes, load_labels, selected_targets
 
 EDGE_FAMILIES = 8
 RESHARE_RELATION = 1
+PLATFORM_ORDER = (
+    "twitter", "reddit", "facebook", "telegram", "tiktok", "youtube", "instagram",
+    "bitchute", "citation", "unknown",
+)
+PLATFORM_INDEX = {name: index for index, name in enumerate(PLATFORM_ORDER)}
 
 
 def sha256_file(path: Path) -> str:
@@ -70,6 +75,48 @@ def static_graph_arrays(edge_index: torch.Tensor, num_nodes: int, history_length
     }
 
 
+def node_batch(graph, node_ids: np.ndarray, device: torch.device) -> dict[str, torch.Tensor]:
+    """Build the pilot encoder batch without importing benchmark_data/pyarrow.
+
+    This is the non-counterfactual branch of socialgfm.benchmark_run._node_batch
+    at the registered pilot-v1 source. Keeping the small tensor adapter here
+    avoids importing the unrelated parquet data loader during checkpoint replay.
+    """
+    arrays = graph.arrays
+    return {
+        "node_type": torch.as_tensor(
+            arrays["node_type"][node_ids], device=device, dtype=torch.long
+        ),
+        "neighbor_type": torch.as_tensor(
+            arrays["neighbor_type"][node_ids], device=device, dtype=torch.long
+        ),
+        "history_relation": torch.as_tensor(
+            arrays["history_relation"][node_ids], device=device, dtype=torch.long
+        ),
+        "history_direction": torch.as_tensor(
+            arrays["history_direction"][node_ids], device=device, dtype=torch.long
+        ),
+        "history_age": torch.as_tensor(
+            arrays["history_age"][node_ids], device=device, dtype=torch.float32
+        ),
+        "history_time_observed": torch.as_tensor(
+            arrays["history_time_observed"][node_ids], device=device, dtype=torch.float32
+        ),
+        "history_mask": torch.as_tensor(
+            arrays["history_mask"][node_ids], device=device, dtype=torch.float32
+        ),
+        "degree": torch.as_tensor(
+            arrays["degree"][node_ids], device=device, dtype=torch.float32
+        ),
+        "platform": torch.full(
+            (len(node_ids),),
+            PLATFORM_INDEX.get(graph.record["platform"], PLATFORM_INDEX["unknown"]),
+            device=device,
+            dtype=torch.long,
+        ),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repository", type=Path, required=True)
@@ -83,7 +130,6 @@ def main() -> int:
 
     sys.path.insert(0, str(args.repository.resolve()))
     from socialgfm.benchmark_models import LinkPredictor  # noqa: PLC0415
-    from socialgfm.benchmark_run import _node_batch  # noqa: PLC0415
 
     checkpoint = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
     if checkpoint.get("model") != "graphsage":
@@ -110,7 +156,7 @@ def main() -> int:
         with torch.no_grad():
             for start in range(0, nodes.size, args.batch_size):
                 ids = nodes[start : start + args.batch_size]
-                outputs.append(model.encoder(_node_batch(structural_graph, ids, device)).cpu())
+                outputs.append(model.encoder(node_batch(structural_graph, ids, device)).cpu())
         features = torch.cat(outputs).numpy()
         save_feature_cache(
             args.output_root / args.model_id / f"{target.name}.npz",
