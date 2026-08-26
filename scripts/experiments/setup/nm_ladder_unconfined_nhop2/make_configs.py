@@ -19,10 +19,11 @@ GRAPHS = {
 
 
 def render(rung: int, root: str, graph: str) -> str:
+    dataset = "ukr_rus_twitter" if rung == 1 else "covid19_twitter"
     return f"""# Compute-matched 2-hop UNCONFINED NM ladder, canonical order, rung {rung}/8.
 # Episodes are sampled naively from the merged component union: there is deliberately
 # no graph_id confinement, source balancing, subset, or source sequence.
-dataset: covid19_twitter
+dataset: {dataset}
 root: {root}
 graph_filename: {graph}
 task_name: neighbor_matching
