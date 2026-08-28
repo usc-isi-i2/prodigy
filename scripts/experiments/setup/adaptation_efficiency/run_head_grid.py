@@ -28,6 +28,7 @@ def main() -> int:
     parser.add_argument("--label-seeds", default=",".join(map(str, LABEL_SEEDS)))
     parser.add_argument("--label-budgets", default=",".join(map(str, LABEL_BUDGETS)))
     parser.add_argument("--update-steps", default=",".join(map(str, UPDATE_STEPS)))
+    parser.add_argument("--device", default="cpu")
     args = parser.parse_args()
 
     if args.output.exists():
@@ -74,6 +75,7 @@ def main() -> int:
                         budget=budget,
                         head_kind=kind,
                         update_steps=update_steps,
+                        device=args.device,
                     )
                 )
 

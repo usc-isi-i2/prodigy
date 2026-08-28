@@ -146,8 +146,9 @@ def classification_metrics(
     model: nn.Module, features: torch.Tensor, labels: np.ndarray, rows: np.ndarray
 ) -> dict[str, float]:
     model.eval()
+    row_index = torch.as_tensor(rows, dtype=torch.long, device=features.device)
     with torch.no_grad():
-        logits = model(features[rows])
+        logits = model(features[row_index])
         probability = torch.softmax(logits, dim=1).cpu().numpy()
         prediction = probability.argmax(axis=1)
     truth = labels[rows]
@@ -176,9 +177,12 @@ def training_diagnostics(
         }
     model.eval()
     truth = labels[rows]
+    row_index = torch.as_tensor(rows, dtype=torch.long, device=features.device)
     with torch.no_grad():
-        logits = model(features[rows])
-        loss = F.cross_entropy(logits, torch.from_numpy(truth))
+        logits = model(features[row_index])
+        loss = F.cross_entropy(
+            logits, torch.as_tensor(truth, dtype=torch.long, device=features.device)
+        )
     metrics = classification_metrics(model, features, labels, rows)
     return {
         "training_loss": float(loss.item()),
@@ -200,14 +204,19 @@ def run_curve(
     head_kind: str = "linear",
     learning_rate: float = HEAD_LR,
     update_steps: tuple[int, ...] = UPDATE_STEPS,
+    device: str | torch.device = "cpu",
 ) -> list[dict[str, object]]:
     """Evaluate registered milestones along one shared full-batch head trajectory."""
     labels = np.asarray(labels, dtype=np.int64)
-    x = torch.from_numpy(np.asarray(features, dtype=np.float32))
+    device = torch.device(device)
+    x = torch.from_numpy(np.asarray(features, dtype=np.float32)).to(device)
     classes = len(set(int(value) for value in labels if int(value) >= 0))
     head = new_head(head_kind, x.shape[1], classes, label_seed)
     head_initialization_fingerprint = fingerprint_model(head)
+    head = head.to(device)
     selected = sampled_labels(labels, splits["train"], budget=budget, seed=label_seed)
+    selected_index = torch.as_tensor(selected, dtype=torch.long, device=device)
+    selected_labels = torch.as_tensor(labels[selected], dtype=torch.long, device=device)
     selected_fingerprint = fingerprint_indices(selected)
     split_fingerprint = fingerprint_indices(splits["train"], splits["val"], splits["test"])
     optimizer = (
@@ -227,8 +236,8 @@ def run_curve(
             assert optimizer is not None
             head.train()
             optimizer.zero_grad(set_to_none=True)
-            logits = head(x[selected])
-            loss = F.cross_entropy(logits, torch.from_numpy(labels[selected]))
+            logits = head(x[selected_index])
+            loss = F.cross_entropy(logits, selected_labels)
             loss.backward()
             optimizer.step()
             update += 1
