@@ -152,6 +152,44 @@ def plot_by_target() -> None:
     summary.to_csv(DATA / "label_efficiency_by_target.csv", index=False)
 
 
+def plot_combined_extended() -> None:
+    """Aggregate the extended leakage-safe result across the four target graphs."""
+    cells = extended_cross_target_selected()
+    summary = (
+        cells.groupby(["family", "label_budget_per_class"], as_index=False)
+        .agg(test_roc_auc_mean=("roc_auc", "mean"))
+    )
+    budgets = np.asarray(sorted(summary.label_budget_per_class.unique()))
+    x = np.arange(len(budgets))
+    fig, axis = plt.subplots(figsize=(7.4, 5.0))
+    for family in ORDER:
+        rows = summary[summary.family == family].set_index("label_budget_per_class")
+        axis.plot(
+            x,
+            [rows.loc[budget, "test_roc_auc_mean"] for budget in budgets],
+            color=COLORS[family],
+            marker=MARKERS[family],
+            linewidth=2.2,
+            markersize=7,
+            label=family,
+        )
+    axis.set_xticks(x, [str(value) for value in budgets])
+    axis.set_xlabel("Labeled examples per class")
+    axis.set_ylabel("Mean test ROC-AUC across target graphs")
+    axis.set_title("Frozen-encoder label efficiency across unseen target graphs")
+    axis.grid(alpha=0.22)
+    axis.legend(frameon=False, ncol=2)
+    fig.tight_layout()
+    for extension in ("png", "pdf"):
+        fig.savefig(
+            FIGURES / f"label_efficiency_combined_extended.{extension}",
+            dpi=220 if extension == "png" else None,
+            bbox_inches="tight",
+        )
+    plt.close(fig)
+    summary.to_csv(DATA / "label_efficiency_combined_extended.csv", index=False)
+
+
 def main() -> int:
     primary = pd.read_csv(DATA / "cross_target_selected_summary.csv")
     fixed = pd.read_csv(DATA / "fixed_update_100_label_efficiency.csv")
@@ -231,6 +269,7 @@ def main() -> int:
     plt.close(fig)
     joined.to_csv(DATA / "selection_protocol_comparison.csv", index=False)
     plot_by_target()
+    plot_combined_extended()
     return 0
 
 
