@@ -20,6 +20,71 @@ ORDER = ["PRODIGY", "VISION", "SAMGPT", "GraphSAGE", "Raw logistic", "Raw MLP"]
 COLORS = dict(zip(ORDER, plt.get_cmap("tab10").colors[: len(ORDER)]))
 MARKERS = dict(zip(ORDER, ("o", "s", "^", "D", "P", "X")))
 BUDGETS = np.asarray([1, 10, 100])
+TARGET_ORDER = ["covid_political", "election2020", "ukr_rus_suspended", "twibot20"]
+TARGET_LABELS = {
+    "covid_political": "COVID political",
+    "election2020": "Election 2020",
+    "ukr_rus_suspended": "Ukraine suspended",
+    "twibot20": "TwiBot-20",
+}
+
+
+def plot_by_target() -> None:
+    """Facet the primary leakage-safe result so graph heterogeneity stays visible."""
+    cells = pd.read_csv(DATA / "cross_target_selected_test.csv")
+    cells = cells[cells.label_budget_per_class > 0]
+    summary = (
+        cells.groupby(["target", "family", "label_budget_per_class"], as_index=False)
+        .agg(test_roc_auc_mean=("roc_auc", "mean"))
+    )
+
+    fig, axes = plt.subplots(2, 2, figsize=(10.8, 7.8), sharex=True, sharey=True)
+    x = np.arange(len(BUDGETS))
+    for panel, (axis, target) in enumerate(zip(axes.flat, TARGET_ORDER)):
+        target_rows = summary[summary.target == target]
+        for family in ORDER:
+            rows = target_rows[target_rows.family == family].set_index(
+                "label_budget_per_class"
+            )
+            values = [rows.loc[budget, "test_roc_auc_mean"] for budget in BUDGETS]
+            axis.plot(
+                x,
+                values,
+                color=COLORS[family],
+                marker=MARKERS[family],
+                linewidth=2,
+                markersize=6,
+                label=family,
+            )
+        axis.set_title(f"{chr(ord('a') + panel)}  {TARGET_LABELS[target]}", loc="left")
+        axis.set_xticks(x, [str(value) for value in BUDGETS])
+        axis.grid(alpha=0.22)
+    for axis in axes[-1]:
+        axis.set_xlabel("Labeled examples per class")
+    for axis in axes[:, 0]:
+        axis.set_ylabel("Test ROC-AUC")
+    handles, labels = axes[0, 0].get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc="upper center",
+        ncol=6,
+        frameon=False,
+        bbox_to_anchor=(0.5, 1.01),
+    )
+    fig.suptitle(
+        "Frozen-encoder label efficiency by unseen target graph",
+        y=1.07,
+    )
+    fig.tight_layout()
+    for extension in ("png", "pdf"):
+        fig.savefig(
+            FIGURES / f"label_efficiency_by_target.{extension}",
+            dpi=220 if extension == "png" else None,
+            bbox_inches="tight",
+        )
+    plt.close(fig)
+    summary.to_csv(DATA / "label_efficiency_by_target.csv", index=False)
 
 
 def main() -> int:
@@ -100,6 +165,7 @@ def main() -> int:
         )
     plt.close(fig)
     joined.to_csv(DATA / "selection_protocol_comparison.csv", index=False)
+    plot_by_target()
     return 0
 
 
