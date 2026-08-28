@@ -7,7 +7,9 @@ matching.
 ## Registered protocol
 
 - Label budgets: 0, 1, 10, and 100 labeled train-split nodes per class.
-- Head updates: 0, 1, 10, and 100 full-batch AdamW updates at learning rate 0.01.
+- Head updates: 0, 1, 3, 10, 30, and 100 cumulative full-batch AdamW updates at
+  learning rate 0.01. Each milestone records labeled-train cross-entropy and training
+  metrics in addition to validation/test metrics.
 - The zero-label cell is evaluated only at update 0; no optimizer is constructed
   from or stepped on labels for that cell.
 - Label-sampling seeds: 0, 1, and 2. Samples are balanced and nested within a
@@ -39,8 +41,10 @@ matching.
 `protocol.py` owns the contract. `run_head_grid.py` consumes checksumable feature
 caches generated from each frozen encoder. The final analysis must preserve all
 cells, compute label-efficiency area under ROC-AUC versus log10(label budget),
-and report the first update reaching 95% of each budget-specific update-100
-performance.
+report the first update reaching 95% of each budget-specific update-100 performance,
+and report test performance at the update selected by validation ROC-AUC (earliest
+update wins a tie). The fixed update-100 summary is retained for continuity, but it
+must not be treated as an early-stopped result when a curve declines late.
 
 The runner also evaluates the exact reconstructed GraphSAGE pilot-v1 prefix at
 0/20/60/100/300/900/2,000 native link-prediction updates into a separate

@@ -62,3 +62,16 @@ def test_complete_valid_grid_and_reproducible_initialization():
     for a, b in zip(left.parameters(), right.parameters()):
         assert np.array_equal(a.detach().numpy(), b.detach().numpy())
     assert fingerprint_model(left) == fingerprint_model(right)
+
+
+def test_training_diagnostics_follow_the_shared_head_trajectory():
+    features, labels, splits = synthetic()
+    rows = run_curve(
+        features, labels, splits, model_id="encoder", target="toy", label_seed=0, budget=10
+    )
+    test_rows = sorted(
+        (row for row in rows if row["split"] == "test"), key=lambda row: row["head_updates"]
+    )
+    assert [row["head_updates"] for row in test_rows] == list(UPDATE_STEPS)
+    assert test_rows[-1]["training_loss"] < test_rows[0]["training_loss"]
+    assert all(0.0 <= row["training_roc_auc"] <= 1.0 for row in test_rows)

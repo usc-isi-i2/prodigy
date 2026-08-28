@@ -15,7 +15,7 @@ from torch import nn
 
 
 LABEL_BUDGETS = (0, 1, 10, 100)
-UPDATE_STEPS = (0, 1, 10, 100)
+UPDATE_STEPS = (0, 1, 3, 10, 30, 100)
 LABEL_SEEDS = (0, 1, 2)
 # Preserve the full raw 768-D feature baseline while giving every linear probe
 # the exact same parameter shape. Smaller learned representations are zero-padded.
@@ -163,6 +163,31 @@ def classification_metrics(
     }
 
 
+def training_diagnostics(
+    model: nn.Module, features: torch.Tensor, labels: np.ndarray, rows: np.ndarray
+) -> dict[str, float]:
+    """Measure fit on the labeled nodes without changing the head state."""
+    if rows.size == 0:
+        return {
+            "training_loss": float("nan"),
+            "training_roc_auc": float("nan"),
+            "training_accuracy": float("nan"),
+            "training_macro_f1": float("nan"),
+        }
+    model.eval()
+    truth = labels[rows]
+    with torch.no_grad():
+        logits = model(features[rows])
+        loss = F.cross_entropy(logits, torch.from_numpy(truth))
+    metrics = classification_metrics(model, features, labels, rows)
+    return {
+        "training_loss": float(loss.item()),
+        "training_roc_auc": metrics["roc_auc"],
+        "training_accuracy": metrics["accuracy"],
+        "training_macro_f1": metrics["macro_f1"],
+    }
+
+
 def run_curve(
     features: np.ndarray,
     labels: np.ndarray,
@@ -175,7 +200,7 @@ def run_curve(
     head_kind: str = "linear",
     learning_rate: float = HEAD_LR,
 ) -> list[dict[str, object]]:
-    """Evaluate update 0 then advance one shared full-batch head to 1, 10, and 100."""
+    """Evaluate registered milestones along one shared full-batch head trajectory."""
     labels = np.asarray(labels, dtype=np.int64)
     x = torch.from_numpy(np.asarray(features, dtype=np.float32))
     classes = len(set(int(value) for value in labels if int(value) >= 0))
@@ -202,6 +227,7 @@ def run_curve(
             loss.backward()
             optimizer.step()
             update += 1
+        diagnostics = training_diagnostics(head, x, labels, selected)
         for split_name in ("val", "test"):
             metrics = classification_metrics(head, x, labels, splits[split_name])
             rows.append(
@@ -221,6 +247,7 @@ def run_curve(
                     "optimizer": "none" if optimizer is None else "AdamW",
                     "learning_rate": 0.0 if optimizer is None else learning_rate,
                     "weight_decay": 0.0,
+                    **diagnostics,
                     **metrics,
                 }
             )
