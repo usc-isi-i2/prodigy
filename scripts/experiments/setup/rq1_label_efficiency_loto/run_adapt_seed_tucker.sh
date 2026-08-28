@@ -12,6 +12,7 @@ RUN_STAMP="${RUN_STAMP:-20260828}"
 GPUS_TEXT="${GPUS_TEXT:-2 3}"
 SLOTS_PER_GPU="${SLOTS_PER_GPU:-4}"
 DRY_RUN="${DRY_RUN:-0}"
+ADAPT_PROTOCOL="${ADAPT_PROTOCOL:-canonical}"
 read -r -a GPUS <<< "$GPUS_TEXT"
 [[ "$SEED" =~ ^[012]$ ]] || { echo "SEED must be 0, 1, or 2" >&2; exit 2; }
 for gpu in "${GPUS[@]}"; do
@@ -65,6 +66,13 @@ worker() {
       cmd=("$PYTHON" -u -m scripts.experiments.setup.rq1_label_efficiency_loto.adapt
         --target "$target" --arm "$arm" --budget "$budget" --seed "$SEED"
         --output "$out" --device cuda:0 --patience 4)
+      if [[ "$ADAPT_PROTOCOL" == revised ]]; then
+        cmd+=(--first-eval-update 100 --eval-every 200 --patience 3
+          --min-updates 500 --min-delta 0.001 --separate-selection-and-stopping
+          --protocol-version revised-eval100-then200-patience3-delta001-v1)
+      elif [[ "$ADAPT_PROTOCOL" != canonical ]]; then
+        echo "unknown ADAPT_PROTOCOL=$ADAPT_PROTOCOL" >&2; return 2
+      fi
       [[ "$SEED" != 0 ]] && cmd+=(--subgraph-cache "$CACHE_ROOT/${target}_seed${SEED}.pt")
       [[ "$arm" == pretrained ]] && cmd+=(--pretrained-checkpoint "$checkpoint")
       printf '[gpu %s] cmd=' "$gpu"; printf '%q ' "${cmd[@]}"; printf '\n'

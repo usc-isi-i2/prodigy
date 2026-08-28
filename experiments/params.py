@@ -118,6 +118,13 @@ def get_params(argv=None):
     args.add_argument("-force_cache", "--force_cache", default=False, type=str2bool)  # will use preprocessed cache
     args.add_argument("-cl_only", "--classification_only", default=False, type=str2bool) # only set this to true when using the very basic arxiv dataset!!! (this is basic node classification where labels are the same in train and test)
     args.add_argument("-esp", "--early_stopping_patience", default=20, type=int) # early stopping patience (in validation epochs, so with default eval_epoch argument 20 * 10 = 200 epochs)
+    args.add_argument("--early_stopping_min_delta", default=0.0, type=float)
+    args.add_argument("--early_stopping_min_steps", default=0, type=int)
+    args.add_argument("--separate_selection_and_stopping", default=False, type=str2bool)
+    args.add_argument("--eval_val_before_train", default=False, type=str2bool)
+    args.add_argument("--test_during_training", default=True, type=str2bool)
+    args.add_argument("--test_only_at_best_after_train", default=False, type=str2bool)
+    args.add_argument("--eval_by_completed_steps", default=False, type=str2bool)
     args.add_argument("--reset_after_layer", default=None, nargs='+', type=int)
     args.add_argument("-original_features", "--original_features", default=False, type=str2bool)
     args.add_argument("-override_log", "--override_log", default=False, type=str2bool)

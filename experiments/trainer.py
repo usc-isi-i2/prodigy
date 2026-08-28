@@ -1914,6 +1914,16 @@ class TrainerFS():
         best_test_acc = float("-inf")
         other_metrics_on_best = {}
         bad_counts = 0
+        progress_best = float("-inf")
+        min_delta = float(self.parameter.get("early_stopping_min_delta", 0.0))
+        min_steps = int(self.parameter.get("early_stopping_min_steps", 0))
+        separate_selection = bool(
+            self.parameter.get("separate_selection_and_stopping", False)
+        )
+        test_during_training = bool(self.parameter.get("test_during_training", True))
+        test_only_at_best = bool(
+            self.parameter.get("test_only_at_best_after_train", False)
+        )
 
         # training by step
         t_load, t_one_step = 0, 0
@@ -1966,6 +1976,9 @@ class TrainerFS():
                     for key in ranks:
                         start_log_dict["start_val_" + key] = ranks[key]
                 wandb.log(start_log_dict, step=0)
+                best_val = val_acc
+                progress_best = val_acc
+                best_step = 0
 
         if eval_only:
             _log("Evaluation only — done.")
@@ -2063,28 +2076,53 @@ class TrainerFS():
                 pbar.write(f"[{time.strftime('%H:%M:%S')}] [step {steps_run}] saving checkpoint...")
                 self.save_checkpoint(steps_run)
 
-            if e % self.eval_step == 0 and e != 0:
+            if bool(self.parameter.get("eval_by_completed_steps", False)):
+                due_for_eval = steps_run % self.eval_step == 0
+                eval_label = steps_run
+            else:
+                due_for_eval = e % self.eval_step == 0 and e != 0
+                eval_label = e
+            if due_for_eval:
                 should_stop = False
                 # pbar.write("Evaluating on validation set!")
                 with torch.no_grad():
                     self.model.eval()
-                    val_loss, val_acc, val_acc_std, val_aux_loss, ranks = self.do_eval(self.val_dataloader, split_name="val", step=e)
+                    val_loss, val_acc, val_acc_std, val_aux_loss, ranks = self.do_eval(self.val_dataloader, split_name="val", step=eval_label)
 
-                if val_acc >= best_val:
+                raw_improved = _to_float(val_acc) > _to_float(best_val)
+                if separate_selection and raw_improved:
                     best_val = val_acc
-                    best_step = e
+                    best_step = eval_label
+                    self.save_checkpoint(best_step)  # save every raw validation best
+                if separate_selection:
+                    meaningful_improved = (
+                        _to_float(val_acc) > _to_float(progress_best) + min_delta
+                    )
+                else:
+                    # Preserve the historical protocol exactly for canonical runs:
+                    # ties reset patience and selection/stopping use one criterion.
+                    meaningful_improved = _to_float(val_acc) >= _to_float(best_val)
+                    if meaningful_improved:
+                        best_val = val_acc
+                        best_step = eval_label
+                        self.save_checkpoint(best_step)
+                if meaningful_improved:
+                    progress_best = val_acc
                     bad_counts = 0
-                    self.save_checkpoint(best_step)  # save the best checkpoint
                 else:
                     bad_counts += 1
                     pbar.write(
-                        f"[{time.strftime('%H:%M:%S')}] [step {e}] val {self._score_label()} "
-                        f"did not improve ({bad_counts} checks without improvement)"
+                        f"[{time.strftime('%H:%M:%S')}] [step {eval_label}] val {self._score_label()} "
+                        f"did not improve by {min_delta:g} "
+                        f"({bad_counts} checks without meaningful improvement)"
                     )
-                    should_stop = bad_counts >= self.early_stopping_patience
+                    should_stop = (
+                        eval_label >= min_steps
+                        and bad_counts >= self.early_stopping_patience
+                    )
 
                 pbar.write(
-                    f"[{time.strftime('%H:%M:%S')}] [step {e}] val  "
+                    f"[{time.strftime('%H:%M:%S')}] [step {eval_label}] val  "
                     f"{self._score_label()}={_to_float(val_acc):.4f} ± {_to_float(val_acc_std):.4f}  "
                     f"loss={_to_float(val_loss):.4f}  aux={_to_float(val_aux_loss):.4f}"
                 )
@@ -2094,50 +2132,50 @@ class TrainerFS():
                         self._score_key("valid"): _to_float(val_acc),
                         "valid_aux_loss": _to_float(val_aux_loss),
                     },
-                    step=e,
+                    step=eval_label,
                 )
 
                 if self.train_val_dataloader is not None:
                     with torch.no_grad():
                         self.model.eval()
-                        tval_loss, tval_acc, tval_acc_std, tval_aux_loss, ranks = self.do_eval(self.train_val_dataloader, split_name="train_val", step=e)
+                        tval_loss, tval_acc, tval_acc_std, tval_aux_loss, ranks = self.do_eval(self.train_val_dataloader, split_name="train_val", step=eval_label)
                         wandb.log(
                             {
                                 "train_val_loss": _to_float(tval_loss),
                                 self._score_key("train_val"): _to_float(tval_acc),
                                 "train_val_aux_loss": _to_float(tval_aux_loss),
                             },
-                            step=e,
+                            step=eval_label,
                         )
 
-                # Also evaluate on test set
-                with torch.no_grad():
-                    self.model.eval()
-                    test_loss, test_acc, test_acc_std, test_aux_loss, ranks = self.do_eval(self.test_dataloader, split_name="test", step=e)
-                    log_dict = {
-                        self._score_key("test"): _to_float(test_acc),
-                        "test_loss": _to_float(test_loss),
-                        "test_aux_loss": _to_float(test_aux_loss),
-                        f"test_{self._score_label()}_std": _to_float(test_acc_std),
-                    }
-                    #print("Logging", log_dict)
-                    #wandb.log(log_dict, step=e)
-                    if ranks is not None:
-                        ranks_dict = prefix_dict(ranks, "test_")
-                        log_dict.update(ranks_dict)
-                    wandb.log(log_dict, step=e)
-                    pbar.write(
-                        f"[{time.strftime('%H:%M:%S')}] [step {e}] test "
-                        f"{self._score_label()}={_to_float(test_acc):.4f} ± {_to_float(test_acc_std):.4f}  "
-                        f"loss={_to_float(test_loss):.4f}"
-                    )
-                    best_test_acc = max(best_test_acc, test_acc)
-                    if e == best_step:
-                        test_acc_on_best_val = test_acc
+                # Historical behavior evaluates test at every validation checkpoint.
+                # Revised protocols disable this and evaluate test once at best val.
+                if test_during_training:
+                    with torch.no_grad():
+                        self.model.eval()
+                        test_loss, test_acc, test_acc_std, test_aux_loss, ranks = self.do_eval(self.test_dataloader, split_name="test", step=eval_label)
+                        log_dict = {
+                            self._score_key("test"): _to_float(test_acc),
+                            "test_loss": _to_float(test_loss),
+                            "test_aux_loss": _to_float(test_aux_loss),
+                            f"test_{self._score_label()}_std": _to_float(test_acc_std),
+                        }
                         if ranks is not None:
-                            other_metrics_on_best = ranks
+                            ranks_dict = prefix_dict(ranks, "test_")
+                            log_dict.update(ranks_dict)
+                        wandb.log(log_dict, step=eval_label)
+                        pbar.write(
+                            f"[{time.strftime('%H:%M:%S')}] [step {eval_label}] test "
+                            f"{self._score_label()}={_to_float(test_acc):.4f} ± {_to_float(test_acc_std):.4f}  "
+                            f"loss={_to_float(test_loss):.4f}"
+                        )
+                        best_test_acc = max(best_test_acc, test_acc)
+                        if eval_label == best_step:
+                            test_acc_on_best_val = test_acc
+                            if ranks is not None:
+                                other_metrics_on_best = ranks
                 if should_stop:
-                    pbar.write(f"[{time.strftime('%H:%M:%S')}] Early stopping at step {e}")
+                    pbar.write(f"[{time.strftime('%H:%M:%S')}] Early stopping at step {eval_label}")
                     break
 
         # Historically the periodic save tested `e % checkpoint_step == 0` on the
@@ -2161,7 +2199,24 @@ class TrainerFS():
                 _log(f"[step {steps_run}] saving final checkpoint...")
                 self.save_checkpoint(steps_run)
 
-        if bool(self.parameter.get("eval_after_train", False)):
+        if test_only_at_best:
+            best_path = os.path.join(self.ckpt_dir, f"state_dict_{best_step}.ckpt")
+            self.load_checkpoint(best_path)
+            with torch.no_grad():
+                self.model.eval()
+                test_loss, test_acc, test_acc_std, test_aux_loss, ranks = self.do_eval(
+                    self.test_dataloader, split_name="test", step=best_step
+                )
+            test_acc_on_best_val = test_acc
+            best_test_acc = test_acc
+            if ranks is not None:
+                other_metrics_on_best = ranks
+            _log(
+                f"[best val step {best_step}] test {self._score_label()}="
+                f"{_to_float(test_acc):.4f} ± {_to_float(test_acc_std):.4f} "
+                f"loss={_to_float(test_loss):.4f}"
+            )
+        elif bool(self.parameter.get("eval_after_train", False)):
             # steps actually completed, not the budget — an early-stopped run must not
             # log its final eval at a step it never reached.
             final_step = steps_run

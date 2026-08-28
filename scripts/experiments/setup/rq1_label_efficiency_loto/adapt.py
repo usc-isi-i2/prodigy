@@ -77,9 +77,12 @@ def parse_args():
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--max-updates", type=int, default=5000)
     parser.add_argument("--eval-every", type=int, default=100)
+    parser.add_argument("--first-eval-update", type=int)
     parser.add_argument("--patience", type=int, default=4)
     parser.add_argument("--min-updates", type=int, default=300)
     parser.add_argument("--min-delta", type=float, default=1e-4)
+    parser.add_argument("--separate-selection-and-stopping", action="store_true")
+    parser.add_argument("--protocol-version", default="cached-neighborhoods-patience4-v2")
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--eval-batch-size", type=int, default=256)
     parser.add_argument("--subgraph-cache", type=Path)
@@ -210,13 +213,14 @@ def evaluate(model, head, dataset, labels, nodes, *, device, batch_size, samplin
     }
 
 
-def checkpoint_payload(model, head, optimizer, update, best_auc, bad_checks, metadata):
+def checkpoint_payload(model, head, optimizer, update, best_auc, progress_best_auc, bad_checks, metadata):
     return {
         "model": model.state_dict(),
         "head": head.state_dict(),
         "optimizer": optimizer.state_dict(),
         "update": int(update),
         "best_val_roc_auc": float(best_auc),
+        "progress_best_val_roc_auc": float(progress_best_auc),
         "bad_checks": int(bad_checks),
         "metadata": metadata,
     }
@@ -291,12 +295,14 @@ def main() -> int:
         "weight_decay": args.weight_decay,
         "max_updates": args.max_updates,
         "eval_every": args.eval_every,
+        "first_eval_update": args.first_eval_update,
         "patience": args.patience,
         "min_delta": args.min_delta,
+        "separate_selection_and_stopping": args.separate_selection_and_stopping,
         "validation_nodes": int(len(val_nodes)),
         "test_nodes": int(len(test_nodes)),
         "sampled_neighborhood_cache": "first_sample_per_center_node_in_memory",
-        "protocol_version": "cached-neighborhoods-patience4-v2",
+        "protocol_version": args.protocol_version,
         "shared_compact_subgraph_cache": str(args.subgraph_cache or ""),
     }
     atomic_json(metadata, args.output / "metadata.json")
@@ -304,6 +310,7 @@ def main() -> int:
     best_path = args.output / "best.pt"
     update = 0
     best_auc = float("-inf")
+    progress_best_auc = float("-inf")
     bad_checks = 0
     if latest_path.is_file():
         state = torch.load(latest_path, map_location=device, weights_only=False)
@@ -314,6 +321,7 @@ def main() -> int:
         optimizer.load_state_dict(state["optimizer"])
         update = int(state["update"])
         best_auc = float(state["best_val_roc_auc"])
+        progress_best_auc = float(state.get("progress_best_val_roc_auc", best_auc))
         bad_checks = int(state["bad_checks"])
         print(f"RESUME update={update} best_val={best_auc:.6f}", flush=True)
     trajectory_path = args.output / "trajectory.jsonl"
@@ -333,7 +341,13 @@ def main() -> int:
         loss = F.cross_entropy(head(embeddings), targets)
         loss.backward()
         optimizer.step()
-        if update % args.eval_every != 0 and update != args.max_updates:
+        if args.first_eval_update is None:
+            eval_due = update % args.eval_every == 0
+        else:
+            eval_due = update >= args.first_eval_update and (
+                update - args.first_eval_update
+            ) % args.eval_every == 0
+        if not eval_due and update != args.max_updates:
             continue
         val = evaluate(
             model,
@@ -345,23 +359,31 @@ def main() -> int:
             batch_size=args.eval_batch_size,
             sampling_seed=3000000 + args.seed,
         )
-        improved = val["roc_auc"] > best_auc + args.min_delta
-        if improved:
+        raw_improved = val["roc_auc"] > best_auc
+        if args.separate_selection_and_stopping:
+            meaningful_improved = val["roc_auc"] > progress_best_auc + args.min_delta
+        else:
+            meaningful_improved = val["roc_auc"] > best_auc + args.min_delta
+            raw_improved = meaningful_improved
+        if raw_improved:
             best_auc = val["roc_auc"]
+        if meaningful_improved:
+            progress_best_auc = val["roc_auc"]
             bad_checks = 0
         else:
             bad_checks += 1
         payload = checkpoint_payload(
-            model, head, optimizer, update, best_auc, bad_checks, metadata
+            model, head, optimizer, update, best_auc, progress_best_auc, bad_checks, metadata
         )
         atomic_torch_save(payload, latest_path)
-        if improved:
+        if raw_improved:
             atomic_torch_save(payload, best_path)
         row = {
             "update": update,
             "training_loss": float(loss.detach().cpu()),
             "val": val,
-            "improved": improved,
+            "improved": raw_improved,
+            "meaningful_improved": meaningful_improved,
             "best_val_roc_auc": best_auc,
             "bad_checks": bad_checks,
             "elapsed_seconds": time.time() - started,
