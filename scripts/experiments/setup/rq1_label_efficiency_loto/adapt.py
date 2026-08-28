@@ -32,6 +32,7 @@ from scripts.experiments.setup.adaptation_efficiency.protocol import (
     stratified_node_splits,
 )
 from scripts.experiments.setup.adaptation_efficiency.targets import TARGETS, load_labels
+from scripts.experiments.setup.rq1_label_efficiency_loto.subgraph_cache import CompactCachedSubgraphDataset
 
 
 class MemoizedSubgraphDataset:
@@ -81,6 +82,7 @@ def parse_args():
     parser.add_argument("--min-delta", type=float, default=1e-4)
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--eval-batch-size", type=int, default=256)
+    parser.add_argument("--subgraph-cache", type=Path)
     parser.add_argument("--val-per-class", type=int, default=1000)
     parser.add_argument("--encoder-lr", type=float, default=1e-4)
     parser.add_argument("--head-lr", type=float, default=1e-3)
@@ -252,9 +254,11 @@ def main() -> int:
         args.min_updates = 1
         args.batch_size = min(args.batch_size, 8)
         args.eval_batch_size = min(args.eval_batch_size, 8)
-    subgraphs = MemoizedSubgraphDataset(
-        classification_subgraph_dataset(graph, 2, [9, 9], 101)
-    )
+    raw_subgraphs = classification_subgraph_dataset(graph, 2, [9, 9], 101)
+    if args.subgraph_cache:
+        subgraphs = CompactCachedSubgraphDataset(raw_subgraphs, args.subgraph_cache)
+    else:
+        subgraphs = MemoizedSubgraphDataset(raw_subgraphs)
     params = dict(ENCODER_DEFAULTS)
     if args.arm == "pretrained":
         model = load_frozen_encoder(str(args.pretrained_checkpoint), params, device=str(device))
@@ -293,6 +297,7 @@ def main() -> int:
         "test_nodes": int(len(test_nodes)),
         "sampled_neighborhood_cache": "first_sample_per_center_node_in_memory",
         "protocol_version": "cached-neighborhoods-patience4-v2",
+        "shared_compact_subgraph_cache": str(args.subgraph_cache or ""),
     }
     atomic_json(metadata, args.output / "metadata.json")
     latest_path = args.output / "latest.pt"
