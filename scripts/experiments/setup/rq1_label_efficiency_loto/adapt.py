@@ -34,6 +34,37 @@ from scripts.experiments.setup.adaptation_efficiency.protocol import (
 from scripts.experiments.setup.adaptation_efficiency.targets import TARGETS, load_labels
 
 
+class MemoizedSubgraphDataset:
+    """Reuse a node's first sampled neighborhood within one adaptation cell.
+
+    Validation already resets the sampler RNG to the same seed on every pass, so
+    memoization is exactly equivalent there. Training intentionally changes from
+    repeated stochastic sampling to a fixed sampled neighborhood per center node;
+    this is recorded in every cell's metadata.
+    """
+
+    def __init__(self, dataset):
+        self.dataset = dataset
+        self.cache = {}
+        self.enabled = True
+        self.hits = 0
+        self.misses = 0
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, index):
+        index = int(index)
+        if not self.enabled:
+            return self.dataset[index]
+        if index not in self.cache:
+            self.cache[index] = self.dataset[index]
+            self.misses += 1
+        else:
+            self.hits += 1
+        return self.cache[index]
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--target", choices=sorted(TARGETS), required=True)
@@ -45,7 +76,7 @@ def parse_args():
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--max-updates", type=int, default=5000)
     parser.add_argument("--eval-every", type=int, default=100)
-    parser.add_argument("--patience", type=int, default=8)
+    parser.add_argument("--patience", type=int, default=4)
     parser.add_argument("--min-updates", type=int, default=300)
     parser.add_argument("--min-delta", type=float, default=1e-4)
     parser.add_argument("--batch-size", type=int, default=128)
@@ -221,7 +252,9 @@ def main() -> int:
         args.min_updates = 1
         args.batch_size = min(args.batch_size, 8)
         args.eval_batch_size = min(args.eval_batch_size, 8)
-    subgraphs = classification_subgraph_dataset(graph, 2, [9, 9], 101)
+    subgraphs = MemoizedSubgraphDataset(
+        classification_subgraph_dataset(graph, 2, [9, 9], 101)
+    )
     params = dict(ENCODER_DEFAULTS)
     if args.arm == "pretrained":
         model = load_frozen_encoder(str(args.pretrained_checkpoint), params, device=str(device))
@@ -258,6 +291,8 @@ def main() -> int:
         "min_delta": args.min_delta,
         "validation_nodes": int(len(val_nodes)),
         "test_nodes": int(len(test_nodes)),
+        "sampled_neighborhood_cache": "first_sample_per_center_node_in_memory",
+        "protocol_version": "cached-neighborhoods-patience4-v2",
     }
     atomic_json(metadata, args.output / "metadata.json")
     latest_path = args.output / "latest.pt"
@@ -336,6 +371,9 @@ def main() -> int:
     best = torch.load(best_path, map_location=device, weights_only=False)
     model.load_state_dict(best["model"])
     head.load_state_dict(best["head"])
+    # The test set is evaluated once, so retaining every test neighborhood only
+    # increases host RAM without enabling reuse.
+    subgraphs.enabled = False
     test = evaluate(
         model,
         head,
@@ -354,6 +392,8 @@ def main() -> int:
         "stop_reason": stop_reason,
         "test": test,
         "elapsed_seconds": time.time() - started,
+        "sample_cache_hits": int(subgraphs.hits),
+        "sample_cache_misses": int(subgraphs.misses),
     }
     atomic_json(result, result_path)
     print(json.dumps(result, sort_keys=True), flush=True)

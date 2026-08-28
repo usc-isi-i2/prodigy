@@ -4,12 +4,12 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 PRETRAIN_STATE_ROOT="${PRETRAIN_STATE_ROOT:-${REPO_ROOT}/state/rq1_label_efficiency_loto/pretrain}"
-OUTPUT_ROOT="${OUTPUT_ROOT:-${REPO_ROOT}/state/rq1_label_efficiency_loto/adapt}"
-LOG_ROOT="${LOG_ROOT:-${REPO_ROOT}/log/rq1_label_efficiency_loto/adapt}"
+OUTPUT_ROOT="${OUTPUT_ROOT:-${REPO_ROOT}/state/rq1_label_efficiency_loto/adapt_cached_v2}"
+LOG_ROOT="${LOG_ROOT:-${REPO_ROOT}/log/rq1_label_efficiency_loto/adapt_cached_v2}"
 SEED="${SEED:?set SEED to 0, 1, or 2}"
 RUN_STAMP="${RUN_STAMP:-20260828}"
 GPUS_TEXT="${GPUS_TEXT:-2 3}"
-SLOTS_PER_GPU="${SLOTS_PER_GPU:-2}"
+SLOTS_PER_GPU="${SLOTS_PER_GPU:-4}"
 DRY_RUN="${DRY_RUN:-0}"
 read -r -a GPUS <<< "$GPUS_TEXT"
 [[ "$SEED" =~ ^[012]$ ]] || { echo "SEED must be 0, 1, or 2" >&2; exit 2; }
@@ -53,7 +53,7 @@ worker() {
       fi
       cmd=("$PYTHON" -u -m scripts.experiments.setup.rq1_label_efficiency_loto.adapt
         --target "$target" --arm "$arm" --budget "$budget" --seed "$SEED"
-        --output "$out" --device cuda:0)
+        --output "$out" --device cuda:0 --patience 4)
       [[ "$arm" == pretrained ]] && cmd+=(--pretrained-checkpoint "$checkpoint")
       printf '[gpu %s] cmd=' "$gpu"; printf '%q ' "${cmd[@]}"; printf '\n'
       [[ "$DRY_RUN" == 1 ]] || CUDA_VISIBLE_DEVICES="$gpu" "${cmd[@]}" > "$log" 2>&1
