@@ -42,9 +42,11 @@ matching.
 caches generated from each frozen encoder. The final analysis must preserve all
 cells, compute label-efficiency area under ROC-AUC versus log10(label budget),
 report the first update reaching 95% of each budget-specific update-100 performance,
-and report test performance at the update selected by validation ROC-AUC (earliest
-update wins a tie). The fixed update-100 summary is retained for continuity, but it
-must not be treated as an early-stopped result when a curve declines late.
+report the primary leave-one-target-graph-out development-selected result (one update
+count shared across model families), and retain target-validation-selected performance
+as an oracle diagnostic (earliest update wins a tie). The fixed update-100 summary is
+retained for continuity, but it must not be treated as an early-stopped result when a
+curve declines late.
 
 The runner also evaluates the exact reconstructed GraphSAGE pilot-v1 prefix at
 0/20/60/100/300/900/2,000 native link-prediction updates into a separate

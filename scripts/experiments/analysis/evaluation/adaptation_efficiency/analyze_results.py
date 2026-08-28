@@ -248,6 +248,92 @@ def main() -> int:
     )
     selected_summary.to_csv(data_dir / "validation_selected_summary.csv", index=False)
 
+    # Primary few-shot selection: choose one update count per budget from the other
+    # target graphs, shared by every model family. This prevents the held-out target's
+    # fully labeled validation split from silently expanding the advertised label budget.
+    family_target_validation = (
+        cells[(cells.split == "val") & (cells.label_budget_per_class > 0)]
+        .groupby(
+            ["family", "target", "label_budget_per_class", "head_updates"],
+            as_index=False,
+        )
+        .agg(validation_roc_auc=("roc_auc", "mean"))
+    )
+    cross_target_choices = []
+    for held_out_target in sorted(EXPECTED_TARGETS):
+        development = family_target_validation[
+            family_target_validation.target != held_out_target
+        ]
+        for budget in (1, 10, 100):
+            candidates = (
+                development[development.label_budget_per_class == budget]
+                .groupby("head_updates", as_index=False)
+                .agg(development_validation_roc_auc=("validation_roc_auc", "mean"))
+                .sort_values(
+                    ["development_validation_roc_auc", "head_updates"],
+                    ascending=[False, True],
+                )
+            )
+            winner = candidates.iloc[0]
+            cross_target_choices.append(
+                {
+                    "target": held_out_target,
+                    "label_budget_per_class": budget,
+                    "selected_head_updates": int(winner.head_updates),
+                    "development_validation_roc_auc": float(
+                        winner.development_validation_roc_auc
+                    ),
+                    "development_targets": ",".join(
+                        sorted(EXPECTED_TARGETS - {held_out_target})
+                    ),
+                }
+            )
+    cross_target_choices = pd.DataFrame(cross_target_choices)
+    cross_target_choices.to_csv(data_dir / "cross_target_selection_schedule.csv", index=False)
+    cross_target_selected = test[test.label_budget_per_class > 0].merge(
+        cross_target_choices,
+        left_on=["target", "label_budget_per_class", "head_updates"],
+        right_on=["target", "label_budget_per_class", "selected_head_updates"],
+        how="inner",
+        validate="many_to_one",
+    )
+    expected_selected_rows = len(EXPECTED_MODELS) * len(EXPECTED_TARGETS) * 3 * 3
+    if len(cross_target_selected) != expected_selected_rows:
+        raise ValueError("cross-target-selected test grid is incomplete")
+    cross_target_selected.to_csv(data_dir / "cross_target_selected_test.csv", index=False)
+    cross_target_summary = (
+        cross_target_selected.groupby(["family", "label_budget_per_class"], as_index=False)
+        .agg(
+            test_roc_auc_mean=("roc_auc", "mean"),
+            test_roc_auc_std=("roc_auc", "std"),
+            cells=("roc_auc", "size"),
+        )
+    )
+    cross_target_summary.to_csv(data_dir / "cross_target_selected_summary.csv", index=False)
+
+    locked_schedule = {}
+    for budget in (1, 10, 100):
+        candidates = (
+            family_target_validation[
+                family_target_validation.label_budget_per_class == budget
+            ]
+            .groupby("head_updates", as_index=False)
+            .agg(validation_roc_auc=("validation_roc_auc", "mean"))
+            .sort_values(["validation_roc_auc", "head_updates"], ascending=[False, True])
+        )
+        locked_schedule[str(budget)] = int(candidates.iloc[0].head_updates)
+    (data_dir / "locked_future_target_schedule.json").write_text(
+        json.dumps(
+            {
+                "selection_source": "family-balanced validation mean over the four development targets",
+                "shared_across_model_families": True,
+                "updates_by_labels_per_class": locked_schedule,
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+
     late = (
         test[(test.label_budget_per_class > 0) & test.head_updates.isin([10, 100])]
         .groupby(["family", "label_budget_per_class", "head_updates"], as_index=False)
@@ -278,10 +364,26 @@ def main() -> int:
     )
     late_change.to_csv(data_dir / "late_training_diagnostics.csv", index=False)
 
-    endpoint = test[
+    fixed_endpoint = test[
         ((test.label_budget_per_class == 0) & (test.head_updates == 0))
         | ((test.label_budget_per_class > 0) & (test.head_updates == 100))
     ]
+    fixed_curve = (
+        fixed_endpoint.groupby(["family", "label_budget_per_class"], as_index=False)
+        .agg(roc_auc_mean=("roc_auc", "mean"), roc_auc_std=("roc_auc", "std"))
+    )
+    fixed_curve.to_csv(data_dir / "fixed_update_100_label_efficiency.csv", index=False)
+
+    # Primary comparison: the update is selected on the other target graphs and
+    # shared across families; the held-out target's validation labels stay unused.
+    endpoint = pd.concat(
+        [
+            test[(test.label_budget_per_class == 0) & (test.head_updates == 0)],
+            cross_target_selected,
+        ],
+        ignore_index=True,
+        sort=False,
+    )
     label_curve = (
         endpoint.groupby(["family", "label_budget_per_class"], as_index=False)
         .agg(roc_auc_mean=("roc_auc", "mean"), roc_auc_std=("roc_auc", "std"))
@@ -302,7 +404,7 @@ def main() -> int:
         )
     axis.set_xticks(np.log10(np.asarray(budgets) + 1), budgets)
     axis.set_xlabel("Labeled examples per class (log scale)")
-    axis.set_ylabel("Test ROC-AUC at final scheduled update")
+    axis.set_ylabel("Test ROC-AUC at cross-target-selected update")
     axis.grid(alpha=0.25)
     axis.legend(ncol=2, frameon=False)
     save_figure(fig, figure_dir, "label_efficiency")
@@ -389,7 +491,11 @@ def main() -> int:
         f"and {test.target.nunique()} targets. Complete model-target grids: "
         f"{int(coverage.complete.sum())}/{len(coverage)}.",
         "",
-        "## Label-efficiency summary",
+        "## Primary cross-target-selected label-efficiency summary",
+        "",
+        "The zero-label baseline plus the leave-one-target-graph-out selected positive-label "
+        "points define this label-efficiency summary. The fixed-update-100 curve is retained "
+        "separately as a legacy diagnostic.",
         "",
         "| Family | mean normalized AUC over log10(labels + 1) | SD | curves |",
         "|---|---:|---:|---:|",
@@ -402,6 +508,34 @@ def main() -> int:
     falling_loss = int((late_change.training_loss_delta_100_minus_10 < 0).sum())
     falling_test = int((late_change.test_roc_auc_delta_100_minus_10 < 0).sum())
     lines += [
+        "",
+        "## Primary selection protocol",
+        "",
+        "The primary few-shot result uses leave-one-target-graph-out development "
+        "selection: for each target and label budget, one update count is selected from "
+        "family-balanced validation performance on the other three targets and then shared "
+        "by every model family. The target's own validation labels and all test labels are "
+        "excluded from selection. Target-validation selection is retained only as an oracle "
+        "diagnostic.",
+        "",
+        "| Family | 1 label/class | 10 labels/class | 100 labels/class |",
+        "|---|---:|---:|---:|",
+    ]
+    for name in ORDER:
+        rows = cross_target_summary[cross_target_summary.family == name].set_index(
+            "label_budget_per_class"
+        )
+        lines.append(
+            f"| {name} | {rows.loc[1, 'test_roc_auc_mean']:.4f} | "
+            f"{rows.loc[10, 'test_roc_auc_mean']:.4f} | "
+            f"{rows.loc[100, 'test_roc_auc_mean']:.4f} |"
+        )
+    lines += [
+        "",
+        f"For future unseen targets, the locked shared schedule is "
+        f"1 label/class → {locked_schedule['1']} updates, "
+        f"10 labels/class → {locked_schedule['10']} updates, and "
+        f"100 labels/class → {locked_schedule['100']} updates.",
         "",
         "## Late-training diagnostic",
         "",

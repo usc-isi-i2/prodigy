@@ -78,7 +78,11 @@ def test_complete_grid_generates_full_and_efficiency_outputs(tmp_path, monkeypat
     assert (output / "data" / "training_curves.csv").is_file()
     assert (output / "data" / "validation_selected_test.csv").is_file()
     assert (output / "data" / "late_training_diagnostics.csv").is_file()
+    assert (output / "data" / "cross_target_selected_test.csv").is_file()
+    assert (output / "data" / "cross_target_selection_schedule.csv").is_file()
+    assert (output / "data" / "locked_future_target_schedule.json").is_file()
     findings = (output / "FINDINGS.md").read_text()
-    assert "Label-efficiency summary" in findings
+    assert "Primary cross-target-selected label-efficiency summary" in findings
     assert "Optimization-efficiency summary" in findings
     assert "Late-training diagnostic" in findings
+    assert "Primary selection protocol" in findings

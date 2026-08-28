@@ -2,16 +2,33 @@
 
 Observed 5,472 validation/test rows across 12 model checkpoints and 4 targets. Complete model-target grids: 48/48.
 
-## Label-efficiency summary
+## Primary cross-target-selected label-efficiency summary
+
+The zero-label baseline plus the leave-one-target-graph-out selected positive-label points define this label-efficiency summary. The fixed-update-100 curve is retained separately as a legacy diagnostic.
 
 | Family | mean normalized AUC over log10(labels + 1) | SD | curves |
 |---|---:|---:|---:|
-| PRODIGY | 0.7338 | 0.1709 | 36 |
-| SAMGPT | 0.6756 | 0.1324 | 36 |
-| VISION | 0.6576 | 0.1289 | 36 |
-| Raw logistic | 0.6552 | 0.1387 | 12 |
-| Raw MLP | 0.6381 | 0.1193 | 12 |
-| GraphSAGE | 0.5729 | 0.0594 | 12 |
+| PRODIGY | 0.7475 | 0.1749 | 36 |
+| VISION | 0.6658 | 0.1326 | 36 |
+| SAMGPT | 0.6610 | 0.1271 | 36 |
+| Raw MLP | 0.6609 | 0.1419 | 12 |
+| Raw logistic | 0.6540 | 0.1378 | 12 |
+| GraphSAGE | 0.5704 | 0.0502 | 12 |
+
+## Primary selection protocol
+
+The primary few-shot result uses leave-one-target-graph-out development selection: for each target and label budget, one update count is selected from family-balanced validation performance on the other three targets and then shared by every model family. The target's own validation labels and all test labels are excluded from selection. Target-validation selection is retained only as an oracle diagnostic.
+
+| Family | 1 label/class | 10 labels/class | 100 labels/class |
+|---|---:|---:|---:|
+| PRODIGY | 0.7210 | 0.7741 | 0.8050 |
+| VISION | 0.6306 | 0.6830 | 0.7336 |
+| SAMGPT | 0.5582 | 0.6808 | 0.7701 |
+| GraphSAGE | 0.5432 | 0.5733 | 0.6106 |
+| Raw logistic | 0.6204 | 0.6749 | 0.7139 |
+| Raw MLP | 0.6316 | 0.6713 | 0.7120 |
+
+For future unseen targets, the locked shared schedule is 1 label/class → 3 updates, 10 labels/class → 10 updates, and 100 labels/class → 10 updates.
 
 ## Late-training diagnostic
 
