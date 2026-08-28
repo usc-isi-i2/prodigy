@@ -12,6 +12,7 @@ import numpy as np
 from .protocol import (
     LABEL_BUDGETS,
     LABEL_SEEDS,
+    UPDATE_STEPS,
     load_feature_cache,
     run_curve,
     standardize_and_pad,
@@ -26,14 +27,16 @@ def main() -> int:
     parser.add_argument("--split-seed", type=int, default=0)
     parser.add_argument("--label-seeds", default=",".join(map(str, LABEL_SEEDS)))
     parser.add_argument("--label-budgets", default=",".join(map(str, LABEL_BUDGETS)))
+    parser.add_argument("--update-steps", default=",".join(map(str, UPDATE_STEPS)))
     args = parser.parse_args()
 
     if args.output.exists():
         raise FileExistsError(f"refusing to overwrite {args.output}")
     seeds = tuple(int(value) for value in args.label_seeds.split(",") if value)
     budgets = tuple(int(value) for value in args.label_budgets.split(",") if value)
-    if set(budgets) - set(LABEL_BUDGETS):
-        raise ValueError(f"budgets must be drawn from {LABEL_BUDGETS}")
+    update_steps = tuple(int(value) for value in args.update_steps.split(",") if value)
+    if any(budget < 0 for budget in budgets):
+        raise ValueError("label budgets must be non-negative")
 
     output_rows: list[dict[str, object]] = []
     for path in args.cache:
@@ -70,6 +73,7 @@ def main() -> int:
                         label_seed=seed,
                         budget=budget,
                         head_kind=kind,
+                        update_steps=update_steps,
                     )
                 )
 

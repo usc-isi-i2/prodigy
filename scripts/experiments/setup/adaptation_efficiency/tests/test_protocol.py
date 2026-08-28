@@ -75,3 +75,19 @@ def test_training_diagnostics_follow_the_shared_head_trajectory():
     assert [row["head_updates"] for row in test_rows] == list(UPDATE_STEPS)
     assert test_rows[-1]["training_loss"] < test_rows[0]["training_loss"]
     assert all(0.0 <= row["training_roc_auc"] <= 1.0 for row in test_rows)
+
+
+def test_run_curve_accepts_an_extended_update_schedule():
+    features, labels, splits = synthetic()
+    rows = run_curve(
+        features,
+        labels,
+        splits,
+        model_id="encoder",
+        target="toy",
+        label_seed=0,
+        budget=1,
+        update_steps=(0, 2, 5),
+    )
+    test_rows = [row for row in rows if row["split"] == "test"]
+    assert [row["head_updates"] for row in test_rows] == [0, 2, 5]

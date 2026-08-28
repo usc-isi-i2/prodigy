@@ -55,6 +55,14 @@ checkpoint adaptation matrix. The reconstructed 2,000-update state is
 tensor-identical to the registered pilot checkpoint (`max_abs_diff=0`), which
 validates the shorter deterministic prefixes.
 
+## Extended convergence grid
+
+The original registered grid remains unchanged. For follow-up convergence studies,
+`run_head_grid.py` accepts explicit `--label-budgets` and `--update-steps`. The
+current extension uses label budgets `0,1,10,100,1000` per class and milestones
+`0,1,3,10,30,100,300,1000,3000`. It must write to a new CSV; the runner refuses to
+overwrite the registered result.
+
 ## Representation boundary
 
 PRODIGY uses its pooled subgraph embedding before metagraph label propagation;

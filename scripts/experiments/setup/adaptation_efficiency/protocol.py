@@ -199,6 +199,7 @@ def run_curve(
     budget: int,
     head_kind: str = "linear",
     learning_rate: float = HEAD_LR,
+    update_steps: tuple[int, ...] = UPDATE_STEPS,
 ) -> list[dict[str, object]]:
     """Evaluate registered milestones along one shared full-batch head trajectory."""
     labels = np.asarray(labels, dtype=np.int64)
@@ -215,7 +216,11 @@ def run_curve(
         else torch.optim.AdamW(head.parameters(), lr=learning_rate, weight_decay=0.0)
     )
     rows: list[dict[str, object]] = []
-    valid_updates = (0,) if budget == 0 else UPDATE_STEPS
+    if not update_steps or update_steps[0] != 0 or any(
+        right <= left for left, right in zip(update_steps, update_steps[1:])
+    ):
+        raise ValueError("update_steps must be strictly increasing and start at zero")
+    valid_updates = (0,) if budget == 0 else update_steps
     update = 0
     for milestone in valid_updates:
         while update < milestone:
