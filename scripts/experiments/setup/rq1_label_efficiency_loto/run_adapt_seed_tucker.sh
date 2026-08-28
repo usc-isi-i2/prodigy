@@ -9,6 +9,7 @@ LOG_ROOT="${LOG_ROOT:-${REPO_ROOT}/log/rq1_label_efficiency_loto/adapt}"
 SEED="${SEED:?set SEED to 0, 1, or 2}"
 RUN_STAMP="${RUN_STAMP:-20260828}"
 GPUS_TEXT="${GPUS_TEXT:-2 3}"
+SLOTS_PER_GPU="${SLOTS_PER_GPU:-2}"
 DRY_RUN="${DRY_RUN:-0}"
 read -r -a GPUS <<< "$GPUS_TEXT"
 [[ "$SEED" =~ ^[012]$ ]] || { echo "SEED must be 0, 1, or 2" >&2; exit 2; }
@@ -37,10 +38,12 @@ for row in "${target_rows[@]}"; do
   done
 done
 
+worker_count=$(( ${#GPUS[@]} * SLOTS_PER_GPU ))
+
 worker() {
   local worker_index="$1" gpu="$2" item target arm budget checkpoint out log cmd index=0
   for item in "${jobs[@]}"; do
-    if (( index % ${#GPUS[@]} == worker_index )); then
+    if (( index % worker_count == worker_index )); then
       IFS=: read -r target arm budget checkpoint <<< "$item"
       out="$OUTPUT_ROOT/seed_${SEED}/${target}/${budget}/${arm}"
       log="$LOG_ROOT/seed_${SEED}_${target}_${budget}_${arm}.log"
@@ -60,7 +63,12 @@ worker() {
 }
 
 pids=()
-for index in "${!GPUS[@]}"; do worker "$index" "${GPUS[$index]}" & pids+=("$!"); done
+for gpu_index in "${!GPUS[@]}"; do
+  for ((slot=0; slot<SLOTS_PER_GPU; slot++)); do
+    worker_index=$((gpu_index * SLOTS_PER_GPU + slot))
+    worker "$worker_index" "${GPUS[$gpu_index]}" & pids+=("$!")
+  done
+done
 status=0
 for pid in "${pids[@]}"; do wait "$pid" || status=1; done
 exit "$status"

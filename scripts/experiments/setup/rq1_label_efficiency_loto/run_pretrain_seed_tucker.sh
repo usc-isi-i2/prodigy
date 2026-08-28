@@ -9,6 +9,7 @@ LOG_ROOT="${LOG_ROOT:-${REPO_ROOT}/log/rq1_label_efficiency_loto/pretrain}"
 SEED="${SEED:?set SEED to 0, 1, or 2}"
 RUN_STAMP="${RUN_STAMP:-20260828}"
 GPUS_TEXT="${GPUS_TEXT:-2 3}"
+SLOTS_PER_GPU="${SLOTS_PER_GPU:-2}"
 DRY_RUN="${DRY_RUN:-0}"
 read -r -a GPUS <<< "$GPUS_TEXT"
 [[ "$SEED" =~ ^[012]$ ]] || { echo "SEED must be 0, 1, or 2" >&2; exit 2; }
@@ -29,10 +30,12 @@ cd "$REPO_ROOT"
 
 mapfile -t jobs < <("$PYTHON" "$SCRIPT_DIR/plan.py" | tail -n +2)
 
+worker_count=$(( ${#GPUS[@]} * SLOTS_PER_GPU ))
+
 run_target() {
   local worker="$1" gpu="$2" row target excluded sources prefix run_name run_dir best latest resume_arg
   for index in "${!jobs[@]}"; do
-    (( index % 2 == worker )) || continue
+    (( index % worker_count == worker )) || continue
     row="${jobs[$index]}"
     IFS=$'\t' read -r target excluded sources <<< "$row"
     prefix="rq1_loto_${target}_pretrain_s${SEED}"
@@ -61,9 +64,13 @@ run_target() {
   done
 }
 
-run_target 0 "${GPUS[0]}" & left=$!
-run_target 1 "${GPUS[1]}" & right=$!
+pids=()
+for gpu_index in "${!GPUS[@]}"; do
+  for ((slot=0; slot<SLOTS_PER_GPU; slot++)); do
+    worker_index=$((gpu_index * SLOTS_PER_GPU + slot))
+    run_target "$worker_index" "${GPUS[$gpu_index]}" & pids+=("$!")
+  done
+done
 status=0
-wait "$left" || status=1
-wait "$right" || status=1
+for pid in "${pids[@]}"; do wait "$pid" || status=1; done
 exit "$status"
