@@ -29,24 +29,89 @@ TARGET_LABELS = {
 }
 
 
+def extended_cross_target_selected() -> pd.DataFrame:
+    """Apply the registered leave-one-target-out update selection to the extended grid."""
+    cells = pd.read_csv(DATA / "adaptation_cells_extended.csv")
+    cells["family"] = cells.model_id.map(
+        lambda model: next(
+            family
+            for prefix, family in (
+                ("prodigy_", "PRODIGY"),
+                ("vision_", "VISION"),
+                ("samgpt_", "SAMGPT"),
+                ("graphsage_", "GraphSAGE"),
+                ("raw_logistic", "Raw logistic"),
+                ("raw_mlp", "Raw MLP"),
+            )
+            if str(model).startswith(prefix)
+        )
+    )
+    positive_budgets = sorted(
+        int(value) for value in cells.label_budget_per_class.unique() if value > 0
+    )
+    validation = (
+        cells[(cells.split == "val") & (cells.label_budget_per_class > 0)]
+        .groupby(
+            ["family", "target", "label_budget_per_class", "head_updates"],
+            as_index=False,
+        )
+        .agg(validation_roc_auc=("roc_auc", "mean"))
+    )
+    choices = []
+    for target in TARGET_ORDER:
+        development = validation[validation.target != target]
+        for budget in positive_budgets:
+            winner = (
+                development[development.label_budget_per_class == budget]
+                .groupby("head_updates", as_index=False)
+                .agg(development_validation_roc_auc=("validation_roc_auc", "mean"))
+                .sort_values(
+                    ["development_validation_roc_auc", "head_updates"],
+                    ascending=[False, True],
+                )
+                .iloc[0]
+            )
+            choices.append(
+                {
+                    "target": target,
+                    "label_budget_per_class": budget,
+                    "selected_head_updates": int(winner.head_updates),
+                }
+            )
+    choices = pd.DataFrame(choices)
+    test = cells[(cells.split == "test") & (cells.label_budget_per_class > 0)]
+    selected = test.merge(
+        choices,
+        left_on=["target", "label_budget_per_class", "head_updates"],
+        right_on=["target", "label_budget_per_class", "selected_head_updates"],
+        validate="many_to_one",
+    )
+    expected = cells.model_id.nunique() * len(TARGET_ORDER) * cells.label_seed.nunique() * len(
+        positive_budgets
+    )
+    if len(selected) != expected:
+        raise ValueError(f"extended selected grid has {len(selected)} rows, expected {expected}")
+    return selected
+
+
 def plot_by_target() -> None:
     """Facet the primary leakage-safe result so graph heterogeneity stays visible."""
-    cells = pd.read_csv(DATA / "cross_target_selected_test.csv")
-    cells = cells[cells.label_budget_per_class > 0]
+    cells = extended_cross_target_selected()
+    budgets = np.asarray(sorted(cells.label_budget_per_class.unique()))
     summary = (
         cells.groupby(["target", "family", "label_budget_per_class"], as_index=False)
         .agg(test_roc_auc_mean=("roc_auc", "mean"))
     )
 
     fig, axes = plt.subplots(2, 2, figsize=(10.8, 7.8), sharex=True, sharey=True)
-    x = np.arange(len(BUDGETS))
+    x = np.arange(len(budgets))
     for panel, (axis, target) in enumerate(zip(axes.flat, TARGET_ORDER)):
         target_rows = summary[summary.target == target]
         for family in ORDER:
             rows = target_rows[target_rows.family == family].set_index(
                 "label_budget_per_class"
             )
-            values = [rows.loc[budget, "test_roc_auc_mean"] for budget in BUDGETS]
+            values = [rows.loc[budget, "test_roc_auc_mean"] for budget in budgets]
             axis.plot(
                 x,
                 values,
@@ -57,7 +122,7 @@ def plot_by_target() -> None:
                 label=family,
             )
         axis.set_title(f"{chr(ord('a') + panel)}  {TARGET_LABELS[target]}", loc="left")
-        axis.set_xticks(x, [str(value) for value in BUDGETS])
+        axis.set_xticks(x, [str(value) for value in budgets])
         axis.grid(alpha=0.22)
     for axis in axes[-1]:
         axis.set_xlabel("Labeled examples per class")
