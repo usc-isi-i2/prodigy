@@ -14,6 +14,10 @@ budget-by-update learning curves and produce:
 - coverage checks for every valid budget-by-update-by-seed cell;
 - PNG and PDF figures plus machine-readable CSV/JSON summaries.
 
+`plot_selection_protocol.py` produces the paper-facing two-panel comparison of the
+primary cross-target-selected result and its change relative to the legacy fixed-100
+endpoint (`figures/selection_protocol_comparison.{png,pdf}`).
+
 The analyzer requires exactly 5,472 validation/test rows: 12 registered model
 IDs × four targets × three label seeds × 19 valid budget/update cells × two
 splits. It fails on missing or duplicate cells and copies the full unaggregated
