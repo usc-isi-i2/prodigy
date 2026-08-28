@@ -77,6 +77,8 @@ def test_complete_grid_generates_full_and_efficiency_outputs(tmp_path, monkeypat
     assert (output / "data" / "updates_to_95pct_summary.csv").is_file()
     assert (output / "data" / "training_curves.csv").is_file()
     assert (output / "data" / "validation_selected_test.csv").is_file()
+    assert (output / "data" / "late_training_diagnostics.csv").is_file()
     findings = (output / "FINDINGS.md").read_text()
     assert "Label-efficiency summary" in findings
     assert "Optimization-efficiency summary" in findings
+    assert "Late-training diagnostic" in findings

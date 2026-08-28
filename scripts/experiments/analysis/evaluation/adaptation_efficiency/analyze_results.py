@@ -248,6 +248,36 @@ def main() -> int:
     )
     selected_summary.to_csv(data_dir / "validation_selected_summary.csv", index=False)
 
+    late = (
+        test[(test.label_budget_per_class > 0) & test.head_updates.isin([10, 100])]
+        .groupby(["family", "label_budget_per_class", "head_updates"], as_index=False)
+        .agg(training_loss=("training_loss", "mean"), test_roc_auc=("roc_auc", "mean"))
+    )
+    late_10 = late[late.head_updates == 10].drop(columns="head_updates").rename(
+        columns={"training_loss": "training_loss_10", "test_roc_auc": "test_roc_auc_10"}
+    )
+    late_100 = late[late.head_updates == 100].drop(columns="head_updates").rename(
+        columns={"training_loss": "training_loss_100", "test_roc_auc": "test_roc_auc_100"}
+    )
+    late_change = late_10.merge(
+        late_100, on=["family", "label_budget_per_class"], validate="one_to_one"
+    )
+    late_change["training_loss_delta_100_minus_10"] = (
+        late_change.training_loss_100 - late_change.training_loss_10
+    )
+    late_change["test_roc_auc_delta_100_minus_10"] = (
+        late_change.test_roc_auc_100 - late_change.test_roc_auc_10
+    )
+    late_change = late_change.merge(
+        selected_summary[["family", "label_budget_per_class", "test_roc_auc_mean"]],
+        on=["family", "label_budget_per_class"],
+        validate="one_to_one",
+    ).rename(columns={"test_roc_auc_mean": "validation_selected_test_roc_auc"})
+    late_change["validation_selection_gain_over_update_100"] = (
+        late_change.validation_selected_test_roc_auc - late_change.test_roc_auc_100
+    )
+    late_change.to_csv(data_dir / "late_training_diagnostics.csv", index=False)
+
     endpoint = test[
         ((test.label_budget_per_class == 0) & (test.head_updates == 0))
         | ((test.label_budget_per_class > 0) & (test.head_updates == 100))
@@ -368,6 +398,28 @@ def main() -> int:
         lines.append(
             f"| {row.family} | {row.label_efficiency_auc_mean:.4f} | "
             f"{row.label_efficiency_auc_std:.4f} | {row.cells} |"
+        )
+    falling_loss = int((late_change.training_loss_delta_100_minus_10 < 0).sum())
+    falling_test = int((late_change.test_roc_auc_delta_100_minus_10 < 0).sum())
+    lines += [
+        "",
+        "## Late-training diagnostic",
+        "",
+        f"From update 10 to 100, labeled-training loss fell in {falling_loss}/{len(late_change)} "
+        f"family-by-budget curves while test ROC-AUC fell in {falling_test}/{len(late_change)}. "
+        "Falling training loss alongside falling validation/test performance is evidence of "
+        "head overfitting, not optimizer divergence or encoder drift.",
+        "",
+        "| Family | labels/class | Δ train loss (100−10) | Δ test AUC (100−10) | "
+        "validation-selection gain vs 100 |",
+        "|---|---:|---:|---:|---:|",
+    ]
+    for row in late_change.itertuples():
+        lines.append(
+            f"| {row.family} | {row.label_budget_per_class} | "
+            f"{row.training_loss_delta_100_minus_10:+.4f} | "
+            f"{row.test_roc_auc_delta_100_minus_10:+.4f} | "
+            f"{row.validation_selection_gain_over_update_100:+.4f} |"
         )
     lines += [
         "",
