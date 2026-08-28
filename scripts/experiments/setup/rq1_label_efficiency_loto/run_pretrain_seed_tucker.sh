@@ -23,7 +23,7 @@ source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate prodigy
 export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 export PYTHONDONTWRITEBYTECODE=1
-export WANDB_MODE=disabled
+export WANDB_MODE="${WANDB_MODE:-offline}"
 PYTHON="${CONDA_PREFIX}/bin/python"
 mkdir -p "$STATE_ROOT" "$LOG_ROOT/train" "$LOG_ROOT/manifest"
 cd "$REPO_ROOT"
