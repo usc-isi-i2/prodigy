@@ -13,6 +13,7 @@ GPUS_TEXT="${GPUS_TEXT:-2 3}"
 SLOTS_PER_GPU="${SLOTS_PER_GPU:-4}"
 DRY_RUN="${DRY_RUN:-0}"
 ADAPT_PROTOCOL="${ADAPT_PROTOCOL:-canonical}"
+TARGETS_TEXT="${TARGETS_TEXT:-}"
 read -r -a GPUS <<< "$GPUS_TEXT"
 [[ "$SEED" =~ ^[012]$ ]] || { echo "SEED must be 0, 1, or 2" >&2; exit 2; }
 for gpu in "${GPUS[@]}"; do
@@ -29,6 +30,24 @@ mkdir -p "$OUTPUT_ROOT" "$LOG_ROOT" "$CACHE_ROOT"
 cd "$REPO_ROOT"
 
 mapfile -t target_rows < <("$PYTHON" "$SCRIPT_DIR/plan.py" | tail -n +2)
+if [[ -n "$TARGETS_TEXT" ]]; then
+  read -r -a requested_targets <<< "$TARGETS_TEXT"
+  filtered_rows=()
+  for row in "${target_rows[@]}"; do
+    IFS=$'\t' read -r target _excluded _sources <<< "$row"
+    for requested in "${requested_targets[@]}"; do
+      if [[ "$target" == "$requested" ]]; then
+        filtered_rows+=("$row")
+        break
+      fi
+    done
+  done
+  [[ "${#filtered_rows[@]}" -eq "${#requested_targets[@]}" ]] || {
+    echo "TARGETS_TEXT contains an unknown or duplicate target: $TARGETS_TEXT" >&2
+    exit 2
+  }
+  target_rows=("${filtered_rows[@]}")
+fi
 if [[ "$SEED" != 0 ]]; then
   cache_pids=()
   for row in "${target_rows[@]}"; do
