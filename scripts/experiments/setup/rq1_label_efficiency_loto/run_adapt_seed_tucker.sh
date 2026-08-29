@@ -52,6 +52,10 @@ if [[ "$SEED" != 0 ]]; then
   cache_pids=()
   for row in "${target_rows[@]}"; do
     IFS=$'\t' read -r target _excluded _sources <<< "$row"
+    if [[ -f "$CACHE_ROOT/${target}_seed${SEED}.pt" ]]; then
+      echo "SKIP existing cache $CACHE_ROOT/${target}_seed${SEED}.pt"
+      continue
+    fi
     "$PYTHON" -u -m scripts.experiments.setup.rq1_label_efficiency_loto.precompute_adapt_cache \
       --target "$target" --seed "$SEED" --output "$CACHE_ROOT/${target}_seed${SEED}.pt" \
       > "$LOG_ROOT/cache_${target}_seed${SEED}.log" 2>&1 & cache_pids+=("$!")
