@@ -73,6 +73,11 @@ def parse_args():
     parser.add_argument("--pretrained-checkpoint", type=Path)
     parser.add_argument("--budget", type=int, choices=(1, 10, 100, 1000), required=True)
     parser.add_argument("--seed", type=int, choices=(0, 1, 2), required=True)
+    parser.add_argument(
+        "--label-seed",
+        type=int,
+        help="Override only labeled-example selection; all model/data RNGs remain --seed.",
+    )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--max-updates", type=int, default=5000)
@@ -246,7 +251,8 @@ def main() -> int:
     blob, graph = load_graph_blob(str(target.graph))
     labels = load_labels(blob, target.label_key)
     splits = stratified_node_splits(labels, seed=0)
-    selected = sampled_labels(labels, splits["train"], budget=args.budget, seed=args.seed)
+    label_seed = args.seed if args.label_seed is None else args.label_seed
+    selected = sampled_labels(labels, splits["train"], budget=args.budget, seed=label_seed)
     val_nodes = fixed_eval_nodes(labels, splits["val"], args.val_per_class, seed=17000 + args.seed)
     test_nodes = splits["test"]
     if args.smoke:
@@ -285,6 +291,7 @@ def main() -> int:
         "arm": args.arm,
         "budget_per_class": args.budget,
         "seed": args.seed,
+        "label_seed": label_seed,
         "selected_nodes_fingerprint": fingerprint_indices(selected),
         "split_fingerprint": fingerprint_indices(splits["train"], splits["val"], splits["test"]),
         "selected_nodes": selected.tolist(),
