@@ -1,0 +1,56 @@
+dataset: covid19_twitter
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_all9_facebook_final_core_split_seed0.pt
+task_name: neighbor_matching
+
+edge_view: static_train
+target_edge_view: static_test
+neighbor_matching_edge_split: true
+feature_subset: all
+original_features: true
+
+emb_dim: 256
+layers: S,U,M
+gnn_type: sage
+n_layer: 1
+dropout: 0
+n_hop: 2
+neighbor_sampling_hop_sizes: "9,9"
+neighbor_sampling_node_limit: 101
+neighbor_matching_walk_hops: 1
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 16
+learning_rate: 0.002
+weight_decay: 0.001
+
+dataset_len_cap: 10000
+epochs: 1
+eval_step: 500
+eval_by_completed_steps: true
+eval_val_before_train: true
+early_stopping_patience: 3
+early_stopping_min_delta: 0.002
+early_stopping_min_steps: 1500
+separate_selection_and_stopping: true
+val_len_cap: 128
+test_len_cap: 128
+checkpoint_step: 500
+checkpoint_steps: "0,500,1000,1500,2000,2500,3000,3500,4000,4500,5000,5500,6000,6500,7000,7500,8000,8500,9000,9500,10000"
+print_step: 100
+test_during_training: false
+test_only_at_best_after_train: true
+eval_after_train: false
+
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+neighbor_sampling_batch_source_mode: independent
+neighbor_sampling_cross_source_prob: 0.0
+
+# Seed 2* throughput trial: asynchronous sampling plus a 4x larger episode batch.
+workers: 8
+device: 0
+seed: 0
+prefix: rq1_loto
