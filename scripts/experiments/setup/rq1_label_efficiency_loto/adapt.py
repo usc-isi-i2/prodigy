@@ -121,8 +121,7 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def encode_graphs(model, graphs, device):
-    graph = Batch.from_data_list(graphs).to(device)
+def encode_batch(model, graph):
     supernode_idx = graph.supernode + graph.ptr[:-1]
     graph.x = model.initial_input_mlp(graph.x)
     if model.txt_dropout is not None:
@@ -164,6 +163,10 @@ def encode_graphs(model, graphs, device):
     return model.final_input_mlp(x_input)
 
 
+def encode_graphs(model, graphs, device):
+    return encode_batch(model, Batch.from_data_list(graphs).to(device))
+
+
 def balanced_batch(labels, selected, batch_size, seed):
     rng = np.random.default_rng(seed)
     classes = sorted(int(value) for value in np.unique(labels[selected]))
@@ -187,20 +190,32 @@ def fixed_eval_nodes(labels, split_nodes, per_class, seed):
     return np.concatenate(parts).astype(np.int64)
 
 
-@torch.no_grad()
-def evaluate(model, head, dataset, labels, nodes, *, device, batch_size, sampling_seed):
-    model.eval()
-    head.eval()
-    truth, scores, predictions = [], [], []
+def materialize_eval_batches(dataset, labels, nodes, *, device, batch_size, sampling_seed):
+    """Assemble fixed validation subgraphs once and retain device-ready batches."""
+    batches = []
     for batch_index, start in enumerate(range(0, len(nodes), batch_size)):
         random.seed(sampling_seed + batch_index)
         np.random.seed(sampling_seed + batch_index)
         torch.manual_seed(sampling_seed + batch_index)
         chunk = nodes[start : start + batch_size]
-        embeddings = encode_graphs(model, [dataset[int(node)] for node in chunk], device)
+        graph = Batch.from_data_list([dataset[int(node)] for node in chunk]).to(device)
+        truth = torch.as_tensor(labels[chunk], dtype=torch.long, device=device)
+        batches.append((graph, truth))
+    return batches
+
+
+@torch.no_grad()
+def evaluate_batches(model, head, batches):
+    model.eval()
+    head.eval()
+    truth, scores, predictions = [], [], []
+    for graph, batch_truth in batches:
+        # The encoder rewrites graph.x, so clone the already assembled device
+        # batch while retaining the expensive collation and transfer savings.
+        embeddings = encode_batch(model, graph.clone())
         logits = head(embeddings)
         probability = torch.softmax(logits, dim=1).cpu().numpy()
-        truth.extend(labels[chunk].tolist())
+        truth.extend(batch_truth.cpu().tolist())
         scores.extend(probability.tolist())
         predictions.extend(probability.argmax(1).tolist())
     truth = np.asarray(truth, dtype=np.int64)
@@ -214,8 +229,21 @@ def evaluate(model, head, dataset, labels, nodes, *, device, batch_size, samplin
         "roc_auc": float(auc),
         "accuracy": float(accuracy_score(truth, predictions)),
         "macro_f1": float(f1_score(truth, predictions, average="macro", zero_division=0)),
-        "nodes": int(len(nodes)),
+        "nodes": int(len(truth)),
     }
+
+
+@torch.no_grad()
+def evaluate(model, head, dataset, labels, nodes, *, device, batch_size, sampling_seed):
+    batches = materialize_eval_batches(
+        dataset,
+        labels,
+        nodes,
+        device=device,
+        batch_size=batch_size,
+        sampling_seed=sampling_seed,
+    )
+    return evaluate_batches(model, head, batches)
 
 
 def checkpoint_payload(model, head, optimizer, update, best_auc, progress_best_auc, bad_checks, metadata):
@@ -311,6 +339,7 @@ def main() -> int:
         "sampled_neighborhood_cache": "first_sample_per_center_node_in_memory",
         "protocol_version": args.protocol_version,
         "shared_compact_subgraph_cache": str(args.subgraph_cache or ""),
+        "validation_batch_cache": "fully_assembled_device_batches_v1",
     }
     atomic_json(metadata, args.output / "metadata.json")
     latest_path = args.output / "latest.pt"
@@ -332,6 +361,14 @@ def main() -> int:
         bad_checks = int(state["bad_checks"])
         print(f"RESUME update={update} best_val={best_auc:.6f}", flush=True)
     trajectory_path = args.output / "trajectory.jsonl"
+    validation_batches = materialize_eval_batches(
+        subgraphs,
+        labels,
+        val_nodes,
+        device=device,
+        batch_size=args.eval_batch_size,
+        sampling_seed=3000000 + args.seed,
+    )
     started = time.time()
     stop_reason = "max_updates"
     while update < args.max_updates:
@@ -356,16 +393,7 @@ def main() -> int:
             ) % args.eval_every == 0
         if not eval_due and update != args.max_updates:
             continue
-        val = evaluate(
-            model,
-            head,
-            subgraphs,
-            labels,
-            val_nodes,
-            device=device,
-            batch_size=args.eval_batch_size,
-            sampling_seed=3000000 + args.seed,
-        )
+        val = evaluate_batches(model, head, validation_batches)
         raw_improved = val["roc_auc"] > best_auc
         if args.separate_selection_and_stopping:
             meaningful_improved = val["roc_auc"] > progress_best_auc + args.min_delta
@@ -405,6 +433,9 @@ def main() -> int:
     best = torch.load(best_path, map_location=device, weights_only=False)
     model.load_state_dict(best["model"])
     head.load_state_dict(best["head"])
+    del validation_batches
+    if device.type == "cuda":
+        torch.cuda.empty_cache()
     # The test set is evaluated once, so retaining every test neighborhood only
     # increases host RAM without enabling reuse.
     subgraphs.enabled = False
