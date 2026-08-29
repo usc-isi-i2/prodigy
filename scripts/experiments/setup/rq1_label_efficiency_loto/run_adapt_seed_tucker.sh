@@ -14,6 +14,10 @@ SLOTS_PER_GPU="${SLOTS_PER_GPU:-4}"
 DRY_RUN="${DRY_RUN:-0}"
 ADAPT_PROTOCOL="${ADAPT_PROTOCOL:-canonical}"
 TARGETS_TEXT="${TARGETS_TEXT:-}"
+LABEL_SEED="${LABEL_SEED:-$SEED}"
+GRID_LAYOUT="${GRID_LAYOUT:-0}"
+USE_SHARED_CACHE="${USE_SHARED_CACHE:-0}"
+PROTOCOL_VERSION="${PROTOCOL_VERSION:-revised-eval100-then200-patience3-delta001-v1}"
 read -r -a GPUS <<< "$GPUS_TEXT"
 [[ "$SEED" =~ ^[012]$ ]] || { echo "SEED must be 0, 1, or 2" >&2; exit 2; }
 for gpu in "${GPUS[@]}"; do
@@ -48,7 +52,7 @@ if [[ -n "$TARGETS_TEXT" ]]; then
   }
   target_rows=("${filtered_rows[@]}")
 fi
-if [[ "$SEED" != 0 ]]; then
+if [[ "$SEED" != 0 || "$USE_SHARED_CACHE" == 1 ]]; then
   cache_pids=()
   for row in "${target_rows[@]}"; do
     IFS=$'\t' read -r target _excluded _sources <<< "$row"
@@ -80,23 +84,30 @@ worker() {
   for item in "${jobs[@]}"; do
     if (( index % worker_count == worker_index )); then
       IFS=: read -r target arm budget checkpoint <<< "$item"
-      out="$OUTPUT_ROOT/seed_${SEED}/${target}/${budget}/${arm}"
-      log="$LOG_ROOT/seed_${SEED}_${target}_${budget}_${arm}.log"
+      if [[ "$GRID_LAYOUT" == 1 ]]; then
+        out="$OUTPUT_ROOT/model_seed_${SEED}/label_seed_${LABEL_SEED}/${target}/${budget}/${arm}"
+        log="$LOG_ROOT/model_seed_${SEED}_label_seed_${LABEL_SEED}_${target}_${budget}_${arm}.log"
+      else
+        out="$OUTPUT_ROOT/seed_${SEED}/${target}/${budget}/${arm}"
+        log="$LOG_ROOT/seed_${SEED}_${target}_${budget}_${arm}.log"
+      fi
       if [[ -f "$out/result.json" ]]; then
         echo "[gpu $gpu] SKIP $target $budget $arm"
         ((index+=1)); continue
       fi
       cmd=("$PYTHON" -u -m scripts.experiments.setup.rq1_label_efficiency_loto.adapt
         --target "$target" --arm "$arm" --budget "$budget" --seed "$SEED"
+        --label-seed "$LABEL_SEED"
         --output "$out" --device cuda:0 --patience 4)
       if [[ "$ADAPT_PROTOCOL" == revised ]]; then
         cmd+=(--first-eval-update 100 --eval-every 200 --patience 3
           --min-updates 500 --min-delta 0.001 --separate-selection-and-stopping
-          --protocol-version revised-eval100-then200-patience3-delta001-v1)
+          --protocol-version "$PROTOCOL_VERSION")
       elif [[ "$ADAPT_PROTOCOL" != canonical ]]; then
         echo "unknown ADAPT_PROTOCOL=$ADAPT_PROTOCOL" >&2; return 2
       fi
-      [[ "$SEED" != 0 ]] && cmd+=(--subgraph-cache "$CACHE_ROOT/${target}_seed${SEED}.pt")
+      [[ "$SEED" != 0 || "$USE_SHARED_CACHE" == 1 ]] && \
+        cmd+=(--subgraph-cache "$CACHE_ROOT/${target}_seed${SEED}.pt")
       [[ "$arm" == pretrained ]] && cmd+=(--pretrained-checkpoint "$checkpoint")
       printf '[gpu %s] cmd=' "$gpu"; printf '%q ' "${cmd[@]}"; printf '\n'
       [[ "$DRY_RUN" == 1 ]] || CUDA_VISIBLE_DEVICES="$gpu" "${cmd[@]}" > "$log" 2>&1
