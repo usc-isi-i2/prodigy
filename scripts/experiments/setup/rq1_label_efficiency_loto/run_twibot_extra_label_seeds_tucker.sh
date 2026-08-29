@@ -29,7 +29,7 @@ while true; do
 done
 
 jobs=()
-for label_seed in 3 4 5 6; do
+for label_seed in 3 4; do
   for budget in 1 10 100 1000; do
     jobs+=("${label_seed}:scratch:${budget}:")
     jobs+=("${label_seed}:pretrained:${budget}:${CHECKPOINT}")
@@ -63,6 +63,6 @@ for pid in "${pids[@]}"; do wait "$pid" || status=1; done
 [[ "$status" == 0 ]] || exit "$status"
 
 completed="$(find "$OUTPUT_ROOT" -name result.json -type f | wc -l)"
-[[ "$completed" == 32 ]] || { echo "expected 32 extra-label-seed results, found $completed" >&2; exit 4; }
+[[ "$completed" == 16 ]] || { echo "expected 16 extra-label-seed results, found $completed" >&2; exit 4; }
 kill -CONT "$CONTROLLER_PID"
 echo "extra label-seed sweep complete; resumed controller pid=$CONTROLLER_PID"
