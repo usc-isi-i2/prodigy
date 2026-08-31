@@ -22,6 +22,7 @@ def main() -> int:
     parser.add_argument("--target", choices=sorted(TARGETS), required=True)
     parser.add_argument("--seed", type=int, choices=(0, 1, 2), required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--budgets", default="1,10,100,1000")
     args = parser.parse_args()
     if args.output.is_file():
         print(f"SKIP existing {args.output}")
@@ -31,7 +32,10 @@ def main() -> int:
     labels = load_labels(blob, target.label_key)
     splits = stratified_node_splits(labels, seed=0)
     nodes = []
-    for budget in (1, 10, 100, 1000):
+    budgets = tuple(int(value) for value in args.budgets.split(",") if value)
+    if not budgets or any(budget <= 0 for budget in budgets):
+        parser.error("--budgets must contain positive comma-separated integers")
+    for budget in budgets:
         nodes.extend(sampled_labels(labels, splits["train"], budget=budget, seed=args.seed))
     nodes.extend(fixed_eval_nodes(labels, splits["val"], 1000, seed=17000 + args.seed))
     nodes = np.unique(np.asarray(nodes, dtype=np.int64))

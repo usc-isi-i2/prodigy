@@ -19,6 +19,7 @@ GRID_LAYOUT="${GRID_LAYOUT:-0}"
 USE_SHARED_CACHE="${USE_SHARED_CACHE:-0}"
 PROTOCOL_VERSION="${PROTOCOL_VERSION:-revised-eval100-then200-patience3-delta001-v1}"
 PRETRAIN_CHECKPOINT_OVERRIDE="${PRETRAIN_CHECKPOINT_OVERRIDE:-}"
+BUDGETS_TEXT="${BUDGETS_TEXT:-1 10 100 1000}"
 read -r -a GPUS <<< "$GPUS_TEXT"
 [[ "$SEED" =~ ^[012]$ ]] || { echo "SEED must be 0, 1, or 2" >&2; exit 2; }
 for gpu in "${GPUS[@]}"; do
@@ -63,6 +64,7 @@ if [[ "$SEED" != 0 || "$USE_SHARED_CACHE" == 1 ]]; then
     fi
     "$PYTHON" -u -m scripts.experiments.setup.rq1_label_efficiency_loto.precompute_adapt_cache \
       --target "$target" --seed "$SEED" --output "$CACHE_ROOT/${target}_seed${SEED}.pt" \
+      --budgets "${BUDGETS_TEXT// /,}" \
       > "$LOG_ROOT/cache_${target}_seed${SEED}.log" 2>&1 & cache_pids+=("$!")
   done
   for pid in "${cache_pids[@]}"; do wait "$pid"; done
@@ -76,7 +78,7 @@ for row in "${target_rows[@]}"; do
     checkpoint="$PRETRAIN_STATE_ROOT/rq1_loto_${target}_pretrain_s${SEED}_${RUN_STAMP}/state_dict"
   fi
   [[ -f "$checkpoint" ]] || { echo "missing pretraining checkpoint $checkpoint" >&2; exit 3; }
-  for budget in 1 10 100 1000; do
+  for budget in $BUDGETS_TEXT; do
     jobs+=("$target:scratch:$budget:")
     jobs+=("$target:pretrained:$budget:$checkpoint")
   done

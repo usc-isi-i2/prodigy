@@ -71,7 +71,7 @@ def parse_args():
     parser.add_argument("--target", choices=sorted(TARGETS), required=True)
     parser.add_argument("--arm", choices=("scratch", "pretrained"), required=True)
     parser.add_argument("--pretrained-checkpoint", type=Path)
-    parser.add_argument("--budget", type=int, choices=(1, 10, 100, 1000), required=True)
+    parser.add_argument("--budget", type=int, required=True)
     parser.add_argument("--seed", type=int, choices=(0, 1, 2), required=True)
     parser.add_argument(
         "--label-seed",
@@ -96,7 +96,10 @@ def parse_args():
     parser.add_argument("--head-lr", type=float, default=1e-3)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
     parser.add_argument("--smoke", action="store_true")
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.budget <= 0:
+        parser.error("--budget must be positive")
+    return args
 
 
 def atomic_torch_save(value, path: Path) -> None:
