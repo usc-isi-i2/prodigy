@@ -5,8 +5,11 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import sys
 
 import torch
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 
 from scripts.graph_construction.benchmark_targets import build_static_train_val_test_split
 
