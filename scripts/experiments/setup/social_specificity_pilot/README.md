@@ -16,6 +16,12 @@ Both use the final-core architecture and fixed-compute protocol: two hops, fanou
 updates. Evaluation uses the cataloged static train/test edge views and the repository's
 fixed split-derived episode stream.
 
+The original Cora and PubMed artifacts contain the older 85/15 static split. The
+launcher leaves those canonical files unchanged and creates resumable pilot-local
+70/15/15 copies beneath `state/social_specificity_pilot/data/`. Social graph files are
+linked read-only into the same pilot-local data layout so the shared evaluator can use
+one data root.
+
 This is a directional screen, not a training-seed uncertainty study. The eventual
 analysis may bootstrap paired evaluation episodes and compare the effect scale with
 the existing three-seed final-core variation, but it must not call either quantity the

@@ -6,6 +6,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 DATA_ROOT="${DATA_ROOT:-/dataMeR1/phil/data}"
 STATE_ROOT="${STATE_ROOT:-${REPO_ROOT}/state/social_specificity_pilot}"
 LOG_ROOT="${LOG_ROOT:-${REPO_ROOT}/log/social_specificity_pilot}"
+PILOT_DATA_ROOT="${PILOT_DATA_ROOT:-${STATE_ROOT}/data}"
 FINAL_CORE_STATE_ROOT="${FINAL_CORE_STATE_ROOT:-/dataMeR1/phil/gfm/prodigy-final-core/state/final_core}"
 FINAL_CORE_STAMP="${FINAL_CORE_STAMP:-20260807}"
 RUN_STAMP="${RUN_STAMP:-$(date -u +%Y%m%dT%H%M%SZ)}"
@@ -23,6 +24,29 @@ PYTHON="${PYTHON:-${CONDA_PREFIX}/bin/python}"
 mkdir -p "$STATE_ROOT" "$LOG_ROOT/train" "$LOG_ROOT/launch"
 cd "$REPO_ROOT"
 "$PYTHON" "$SCRIPT_DIR/validate_plan.py" --check-data
+
+prepare_data() {
+  local dataset source output
+  mkdir -p "$PILOT_DATA_ROOT"
+  for dataset in ukr_rus_twitter facebook_page_reference; do
+    source="$DATA_ROOT/$dataset/graphs"
+    mkdir -p "$PILOT_DATA_ROOT/$dataset"
+    if [[ ! -e "$PILOT_DATA_ROOT/$dataset/graphs" ]]; then
+      ln -s "$source" "$PILOT_DATA_ROOT/$dataset/graphs"
+    fi
+  done
+  for dataset in cora pubmed; do
+    source="$DATA_ROOT/$dataset/graphs/citation_graph.pt"
+    output="$PILOT_DATA_ROOT/$dataset/graphs/citation_graph.pt"
+    if [[ "$DRY_RUN" == 1 ]]; then
+      printf 'DRY split %q -> %q\n' "$source" "$output"
+    else
+      "$PYTHON" "$SCRIPT_DIR/build_split_artifact.py" --input "$source" --output "$output"
+    fi
+  done
+}
+
+prepare_data
 
 IFS=, read -r GPU2 GPU3 GPU_EXTRA <<< "$GPUS"
 [[ -n "${GPU2:-}" && -n "${GPU3:-}" && -z "${GPU_EXTRA:-}" ]] || {
@@ -43,6 +67,7 @@ train_one() {
   local checkpoint="$STATE_ROOT/$run_name/checkpoint/state_dict_2500.ckpt"
   local -a cmd=("$PYTHON" -u experiments/run_single_experiment.py
     --config "$config" --device "$gpu" --timestamp "$RUN_STAMP"
+    --root "$PILOT_DATA_ROOT/$dataset/graphs" --graph_filename citation_graph.pt
     --state_dir "$STATE_ROOT" --log_dir "$LOG_ROOT")
   if [[ -f "$checkpoint" ]]; then
     echo "SKIP complete $checkpoint"
@@ -82,7 +107,7 @@ else
 fi
 
 eval_cmd=("$PYTHON" -u scripts/eval/eval_ckpts_all_graph_tasks_tucker.py
-  --model-list "$MODEL_LIST" --data-root "$DATA_ROOT"
+  --model-list "$MODEL_LIST" --data-root "$PILOT_DATA_ROOT"
   --datasets ukr_rus_twitter,facebook_page_reference,cora,pubmed
   --tasks nm --shots 3 --nm-n-way 30 --nm-dataset-len-cap 1
   --workers 2 --batch-size 4 --gpus "$GPUS" --seed 0
