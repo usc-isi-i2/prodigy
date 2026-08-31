@@ -1910,6 +1910,7 @@ class TrainerFS():
         # initialization
         best_step = 0
         best_val = float("-inf")
+        patience_best_val = float("-inf")
         test_acc_on_best_val = 0
         best_test_acc = float("-inf")
         other_metrics_on_best = {}
@@ -2081,16 +2082,21 @@ class TrainerFS():
                     if selection_value is None:
                         raise RuntimeError("classification ROC-AUC was not produced during validation")
 
+                min_delta = float(self.parameter.get("early_stopping_min_delta", 0.0))
                 if selection_value >= best_val:
                     best_val = selection_value
                     best_step = e
-                    bad_counts = 0
                     self.save_checkpoint(best_step)  # save the best checkpoint
+
+                if selection_value >= patience_best_val + min_delta:
+                    patience_best_val = selection_value
+                    bad_counts = 0
                 else:
                     bad_counts += 1
                     pbar.write(
                         f"[{time.strftime('%H:%M:%S')}] [step {e}] val {selection_name} "
-                        f"did not improve ({bad_counts} checks without improvement)"
+                        f"did not improve by {min_delta:g} "
+                        f"({bad_counts} checks without meaningful improvement)"
                     )
                     should_stop = bad_counts >= self.early_stopping_patience
 

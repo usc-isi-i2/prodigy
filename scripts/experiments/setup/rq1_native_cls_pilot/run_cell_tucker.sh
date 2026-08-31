@@ -48,7 +48,7 @@ if [[ "$ARM" == pretrained ]]; then
 fi
 
 train_steps=1000
-val_cap=8
+val_cap=32
 test_cap=32
 if [[ "$SMOKE" == 1 ]]; then
   train_steps=3
@@ -111,7 +111,7 @@ selected_val, selected_step = max(val_rows)
 checkpoint = train_state / "state_dict"
 digest = hashlib.sha256(checkpoint.read_bytes()).hexdigest()
 payload = {
-    "protocol_version": "native-cls-rocauc-test-once-v1",
+    "protocol_version": "native-cls-rocauc-val128-delta002-v2",
     "model_seed": 0,
     "label_seed": 0,
     "target": target,

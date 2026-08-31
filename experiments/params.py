@@ -118,6 +118,7 @@ def get_params(argv=None):
     args.add_argument("-force_cache", "--force_cache", default=False, type=str2bool)  # will use preprocessed cache
     args.add_argument("-cl_only", "--classification_only", default=False, type=str2bool) # only set this to true when using the very basic arxiv dataset!!! (this is basic node classification where labels are the same in train and test)
     args.add_argument("-esp", "--early_stopping_patience", default=20, type=int) # early stopping patience (in validation epochs, so with default eval_epoch argument 20 * 10 = 200 epochs)
+    args.add_argument("--early_stopping_min_delta", default=0.0, type=float)
     args.add_argument(
         "--classification_selection_metric",
         default="accuracy",
