@@ -37,7 +37,8 @@ for gpu in "$GPU2" "$GPU3"; do
 done
 
 train_one() {
-  local dataset="$1" gpu="$2" config="$SCRIPT_DIR/${dataset}_nm.yaml"
+  local dataset="$1" gpu="$2"
+  local config="$SCRIPT_DIR/${dataset}_nm.yaml"
   local run_name="socialspec_${dataset}_s0_${RUN_STAMP}"
   local checkpoint="$STATE_ROOT/$run_name/checkpoint/state_dict_2500.ckpt"
   local -a cmd=("$PYTHON" -u experiments/run_single_experiment.py
