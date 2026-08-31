@@ -1,0 +1,42 @@
+dataset: covid_political
+root: /dataMeR1/phil/data/covid_political/graphs
+graph_filename: retweet_graph.pt
+task_name: classification
+
+feature_subset: emb_only
+original_features: true
+input_dim: 768
+emb_dim: 256
+layers: S,U,M
+gnn_type: sage
+n_layer: 1
+dropout: 0
+n_hop: 2
+neighbor_sampling_hop_sizes: "9,9"
+neighbor_sampling_node_limit: 101
+
+n_way: 2
+n_shots: 5
+n_query: 5
+batch_size: 4
+linear_probe: false
+ignore_label_embeddings: false
+
+learning_rate: 0.001
+weight_decay: 0.001
+epochs: 1
+dataset_len_cap: 1000
+val_len_cap: 8
+test_len_cap: 32
+eval_step: 100
+checkpoint_step: 100
+early_stopping_patience: 3
+classification_selection_metric: roc_auc
+eval_test_during_train: false
+eval_after_train: false
+
+workers: 8
+device: 0
+seed: 0
+prefix: rq1_native_cls_pilot
+tags: [rq1, native-cls, label-efficiency, seed0]

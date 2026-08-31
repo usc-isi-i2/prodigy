@@ -2070,15 +2070,26 @@ class TrainerFS():
                     self.model.eval()
                     val_loss, val_acc, val_acc_std, val_aux_loss, ranks = self.do_eval(self.val_dataloader, split_name="val", step=e)
 
-                if val_acc >= best_val:
-                    best_val = val_acc
+                selection_value = val_acc
+                selection_name = self._score_label()
+                if (
+                    self.parameter.get("task_name") == "classification"
+                    and self.parameter.get("classification_selection_metric", "accuracy") == "roc_auc"
+                ):
+                    selection_name = "roc_auc"
+                    selection_value = self._last_eval_metrics.get("roc_auc")
+                    if selection_value is None:
+                        raise RuntimeError("classification ROC-AUC was not produced during validation")
+
+                if selection_value >= best_val:
+                    best_val = selection_value
                     best_step = e
                     bad_counts = 0
                     self.save_checkpoint(best_step)  # save the best checkpoint
                 else:
                     bad_counts += 1
                     pbar.write(
-                        f"[{time.strftime('%H:%M:%S')}] [step {e}] val {self._score_label()} "
+                        f"[{time.strftime('%H:%M:%S')}] [step {e}] val {selection_name} "
                         f"did not improve ({bad_counts} checks without improvement)"
                     )
                     should_stop = bad_counts >= self.early_stopping_patience
@@ -2110,32 +2121,31 @@ class TrainerFS():
                             step=e,
                         )
 
-                # Also evaluate on test set
-                with torch.no_grad():
-                    self.model.eval()
-                    test_loss, test_acc, test_acc_std, test_aux_loss, ranks = self.do_eval(self.test_dataloader, split_name="test", step=e)
-                    log_dict = {
-                        self._score_key("test"): _to_float(test_acc),
-                        "test_loss": _to_float(test_loss),
-                        "test_aux_loss": _to_float(test_aux_loss),
-                        f"test_{self._score_label()}_std": _to_float(test_acc_std),
-                    }
-                    #print("Logging", log_dict)
-                    #wandb.log(log_dict, step=e)
-                    if ranks is not None:
-                        ranks_dict = prefix_dict(ranks, "test_")
-                        log_dict.update(ranks_dict)
-                    wandb.log(log_dict, step=e)
-                    pbar.write(
-                        f"[{time.strftime('%H:%M:%S')}] [step {e}] test "
-                        f"{self._score_label()}={_to_float(test_acc):.4f} ± {_to_float(test_acc_std):.4f}  "
-                        f"loss={_to_float(test_loss):.4f}"
-                    )
-                    best_test_acc = max(best_test_acc, test_acc)
-                    if e == best_step:
-                        test_acc_on_best_val = test_acc
+                # Strict protocols defer test until the validation-selected checkpoint.
+                if self.parameter.get("eval_test_during_train", True):
+                    with torch.no_grad():
+                        self.model.eval()
+                        test_loss, test_acc, test_acc_std, test_aux_loss, ranks = self.do_eval(self.test_dataloader, split_name="test", step=e)
+                        log_dict = {
+                            self._score_key("test"): _to_float(test_acc),
+                            "test_loss": _to_float(test_loss),
+                            "test_aux_loss": _to_float(test_aux_loss),
+                            f"test_{self._score_label()}_std": _to_float(test_acc_std),
+                        }
                         if ranks is not None:
-                            other_metrics_on_best = ranks
+                            ranks_dict = prefix_dict(ranks, "test_")
+                            log_dict.update(ranks_dict)
+                        wandb.log(log_dict, step=e)
+                        pbar.write(
+                            f"[{time.strftime('%H:%M:%S')}] [step {e}] test "
+                            f"{self._score_label()}={_to_float(test_acc):.4f} ± {_to_float(test_acc_std):.4f}  "
+                            f"loss={_to_float(test_loss):.4f}"
+                        )
+                        best_test_acc = max(best_test_acc, test_acc)
+                        if e == best_step:
+                            test_acc_on_best_val = test_acc
+                            if ranks is not None:
+                                other_metrics_on_best = ranks
                 if should_stop:
                     pbar.write(f"[{time.strftime('%H:%M:%S')}] Early stopping at step {e}")
                     break
@@ -2208,17 +2218,24 @@ class TrainerFS():
                     other_metrics_on_best = ranks
             best_test_acc = max(best_test_acc, test_acc)
         _log("Training finished")
+        selection_summary_name = self._score_label()
+        if (
+            self.parameter.get("task_name") == "classification"
+            and self.parameter.get("classification_selection_metric", "accuracy") == "roc_auc"
+        ):
+            selection_summary_name = "roc_auc"
         print(f"  best step:             {best_step}", flush=True)
-        print(f"  best val {self._score_label()}:          {_to_float(best_val):.4f}", flush=True)
-        print(f"  best test {self._score_label()}:         {_to_float(best_test_acc):.4f}", flush=True)
-        print(f"  test {self._score_label()} @ best val:   {_to_float(test_acc_on_best_val):.4f}", flush=True)
+        print(f"  best val {selection_summary_name}:          {_to_float(best_val):.4f}", flush=True)
         wandb.run.summary["best_step"] = best_step
-        wandb.run.summary[f"best_test_{self._score_label()}"] = best_test_acc
-        wandb.run.summary[f"test_{self._score_label()}_on_best_val"] = test_acc_on_best_val
-        wandb.run.summary[f"final_validation_{self._score_label()}"] = best_val
-        if other_metrics_on_best is not None:
-              for key in other_metrics_on_best:
-                  wandb.run.summary["final_test_" + key] = other_metrics_on_best[key]
+        wandb.run.summary[f"final_validation_{selection_summary_name}"] = best_val
+        if self.parameter.get("eval_test_during_train", True):
+            print(f"  best test {self._score_label()}:         {_to_float(best_test_acc):.4f}", flush=True)
+            print(f"  test {self._score_label()} @ best val:   {_to_float(test_acc_on_best_val):.4f}", flush=True)
+            wandb.run.summary[f"best_test_{self._score_label()}"] = best_test_acc
+            wandb.run.summary[f"test_{self._score_label()}_on_best_val"] = test_acc_on_best_val
+            if other_metrics_on_best is not None:
+                  for key in other_metrics_on_best:
+                      wandb.run.summary["final_test_" + key] = other_metrics_on_best[key]
         # `best_step` is still 0 when no validation eval ever recorded one (eval_step above
         # the budget, or a very short run). Step 0 is now a real file whenever
         # --checkpoint_steps asks for the random-init anchor, so copying "the best
@@ -2322,6 +2339,7 @@ class TrainerFS():
         acc_batch_std = np.std(acc_all)
         aux_loss_global = sum(all_aux_loss) / len(all_aux_loss)
         self._log_eval_metrics(eval_metrics, split_name=split_name, step=step)
+        self._last_eval_metrics = dict(eval_metrics)
         self._log_eval_scores(
             loss_global,
             acc_global,
