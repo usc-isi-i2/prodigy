@@ -188,6 +188,13 @@ def get_covid_political_dataloader(
             train_cap=train_cap,
             linear_probe=linear_probe,
             random_query=kwargs.get("eval_random_query", False),
+            support_labels=(
+                _mask_labels_to_node_split(graph.y.numpy(), node_splits["train"])
+                if kwargs.get("classification_support_from_train", False) and split in {"val", "test"}
+                else None
+            ),
+            support_cap=kwargs.get("classification_support_cap"),
+            support_seed=kwargs.get("classification_support_seed", 0),
         )
         task.original_graph_labels = graph.y.numpy().copy()
         task.split_masked_labels = labels.copy()

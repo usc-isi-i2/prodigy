@@ -628,6 +628,15 @@ class TrainerFS():
             "eval_episode_seed_offset", 0
         )
         kwargs["eval_random_query"] = self.parameter.get("eval_random_query", False)
+        kwargs["classification_support_from_train"] = self.parameter.get(
+            "classification_support_from_train", False
+        )
+        kwargs["classification_support_cap"] = self.parameter.get(
+            "classification_support_cap"
+        )
+        kwargs["classification_support_seed"] = self.parameter.get(
+            "classification_support_seed", 0
+        )
         if self.parameter["all_test"]:
             kwargs["all_test"] = True
         if self.parameter["label_set"]:

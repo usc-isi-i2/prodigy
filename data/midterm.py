@@ -779,6 +779,9 @@ def midterm_task(
         train_cap: Optional[int] = None,
         linear_probe: bool = False,
         random_query: bool = False,
+        support_labels: Optional[np.ndarray] = None,
+        support_cap: Optional[int] = None,
+        support_seed: int = 0,
 ) -> MulticlassTask:
     if label_set is not None:
         chosen_label_set = set(label_set)
@@ -806,7 +809,16 @@ def midterm_task(
         chosen_label_set = set(range(num_classes))
 
     train_label = None
-    if train_cap is not None and split == "train":
+    if support_labels is not None:
+        train_label = np.asarray(support_labels).copy()
+        cap = support_cap
+        rng = np.random.default_rng(support_seed)
+        if cap is not None:
+            for i in range(num_classes):
+                idx = np.where(train_label == i)[0]
+                rng.shuffle(idx)
+                train_label[idx[cap:]] = -1 - i
+    elif train_cap is not None and split == "train":
         train_label = labels.copy()
         for i in range(num_classes):
             idx = np.where(labels == i)[0]
@@ -925,6 +937,13 @@ def get_midterm_dataloader(
             train_cap=train_cap,
             linear_probe=linear_probe,
             random_query=kwargs.get("eval_random_query", False),
+            support_labels=(
+                _mask_labels_to_node_split(graph.y.numpy(), node_splits["train"])
+                if kwargs.get("classification_support_from_train", False) and split in {"val", "test"}
+                else None
+            ),
+            support_cap=kwargs.get("classification_support_cap"),
+            support_seed=kwargs.get("classification_support_seed", 0),
         )
         task.original_graph_labels = graph.y.numpy().copy()
         task.split_masked_labels = labels.copy()
