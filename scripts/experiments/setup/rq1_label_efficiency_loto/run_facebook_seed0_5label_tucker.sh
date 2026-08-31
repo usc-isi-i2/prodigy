@@ -20,7 +20,7 @@ for label_seed in 0 1 2 3 4; do
   echo "START facebook model_seed=0 label_seed=$label_seed $(date -Is)"
   SEED=0 LABEL_SEED="$label_seed" GRID_LAYOUT=1 USE_SHARED_CACHE=1 \
     ADAPT_PROTOCOL=revised PROTOCOL_VERSION=facebook-all8-seed0-5label-evalcache-v1 \
-    BUDGETS_TEXT="1 10 100 900" \
+    BUDGETS_TEXT="1 10 100 500" \
     TARGETS_TEXT="facebook_page_category_top30" GPUS_TEXT="2 3" SLOTS_PER_GPU=4 \
     PRETRAIN_CHECKPOINT_OVERRIDE="$CHECKPOINT" OUTPUT_ROOT="$OUTPUT_ROOT" \
     LOG_ROOT="$LOG_ROOT" CACHE_ROOT="$CACHE_ROOT" \
