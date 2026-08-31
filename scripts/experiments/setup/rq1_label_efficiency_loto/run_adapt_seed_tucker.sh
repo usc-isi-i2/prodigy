@@ -18,6 +18,7 @@ LABEL_SEED="${LABEL_SEED:-$SEED}"
 GRID_LAYOUT="${GRID_LAYOUT:-0}"
 USE_SHARED_CACHE="${USE_SHARED_CACHE:-0}"
 PROTOCOL_VERSION="${PROTOCOL_VERSION:-revised-eval100-then200-patience3-delta001-v1}"
+PRETRAIN_CHECKPOINT_OVERRIDE="${PRETRAIN_CHECKPOINT_OVERRIDE:-}"
 read -r -a GPUS <<< "$GPUS_TEXT"
 [[ "$SEED" =~ ^[012]$ ]] || { echo "SEED must be 0, 1, or 2" >&2; exit 2; }
 for gpu in "${GPUS[@]}"; do
@@ -69,7 +70,11 @@ fi
 jobs=()
 for row in "${target_rows[@]}"; do
   IFS=$'\t' read -r target _excluded _sources <<< "$row"
-  checkpoint="$PRETRAIN_STATE_ROOT/rq1_loto_${target}_pretrain_s${SEED}_${RUN_STAMP}/state_dict"
+  if [[ -n "$PRETRAIN_CHECKPOINT_OVERRIDE" ]]; then
+    checkpoint="$PRETRAIN_CHECKPOINT_OVERRIDE"
+  else
+    checkpoint="$PRETRAIN_STATE_ROOT/rq1_loto_${target}_pretrain_s${SEED}_${RUN_STAMP}/state_dict"
+  fi
   [[ -f "$checkpoint" ]] || { echo "missing pretraining checkpoint $checkpoint" >&2; exit 3; }
   for budget in 1 10 100 1000; do
     jobs+=("$target:scratch:$budget:")
