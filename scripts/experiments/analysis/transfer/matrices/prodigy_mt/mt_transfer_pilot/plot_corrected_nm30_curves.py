@@ -32,12 +32,12 @@ for source in SOURCES:
         if not bucket or point != bucket[-1]:
             bucket.append(point)
     # TQDM refreshes after pairs of updates. At each odd displayed counter, the
-    # first distinct metric is MT and the second is NM (step zero is the initial NM).
+    # first distinct metric is NM and the second is MT (step zero is the initial NM).
     for step, points in sorted(by_display_step.items()):
         if step == 0 and points:
             pairs = [("NM", points[0])]
         elif step % 2 == 1 and len(points) >= 2:
-            pairs = [("MT", points[0]), ("NM", points[1])]
+            pairs = [("NM", points[0]), ("MT", points[1])]
         else:
             continue
         for objective, (acc, loss) in pairs:
