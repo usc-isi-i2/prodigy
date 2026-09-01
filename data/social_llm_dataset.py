@@ -19,7 +19,7 @@ from torch_geometric.data import Data
 
 from experiments.sampler import NeighborSampler, sampler_kwargs_from_config
 from .augment import get_aug
-from .dataloader import ParamSampler, BatchSampler, Collator, NeighborTask, RegressionTask
+from .dataloader import ParamSampler, BatchSampler, Collator, NeighborTask, RegressionTask, MultiTaskSplitBatch
 from .dataset import SubgraphDataset
 from .neighbor_matching_split import (
     configure_edge_split,
@@ -219,7 +219,7 @@ def _get_dataloader(dataset_name: str, dataset: SubgraphDataset, split: str,
         label_embeddings = torch.zeros(1, 768).expand(graph.num_nodes, -1)
         is_multiway = True
 
-    elif task_name == "classification":
+    elif task_name in {"classification", "cls_nm"}:
         if getattr(graph, "label_type", "classification") == "regression":
             raise ValueError(
                 f"{dataset_name} graph stores regression labels; use --task_name regression, not classification."
@@ -257,8 +257,21 @@ def _get_dataloader(dataset_name: str, dataset: SubgraphDataset, split: str,
         )
         task.original_graph_labels = graph.y.numpy().copy()
         task.split_masked_labels = labels.copy()
+        task_base = task
+        if task_name == "cls_nm":
+            counts = [int(v) for v in str(kwargs.get("cls_nm_task_counts", "1,1")).split(",")]
+            if len(counts) != 2 or min(counts) < 1:
+                raise ValueError("cls_nm_task_counts must be positive MT,NM integers")
+            task_base = MultiTaskSplitBatch(
+                [task, NeighborTask(positive_sampler_for_split(dataset, split, kwargs), graph.num_nodes,
+                                    "inout", kwargs.get("neighbor_sampling_strategy", "strict"),
+                                    filter_min_degree=bool(kwargs.get("neighbor_matching_edge_split", False)))],
+                ["mct", "nt"], counts,
+            )
+            label_embeddings = {"mct": label_embeddings,
+                                "nt": torch.zeros(1, 768).expand(graph.num_nodes, -1)}
         sampler = BatchSampler(
-            batch_count, task,
+            batch_count, task_base,
             ParamSampler(batch_size, n_way, n_shot, n_query, 1),
             seed=seed,
         )

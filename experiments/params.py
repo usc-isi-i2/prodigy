@@ -484,6 +484,12 @@ def get_params(argv=None):
         "rotation (two-view positives). NM episodes get no aug; FP episodes use "
         "fp_mask_ratio/fp_mask_strategy. Only used when task_name=nm_fp_cl.",
     )
+    args.add_argument(
+        "--cls_nm_task_counts",
+        default="1,1",
+        type=str,
+        help="Episode rotation weights for paper-style supervised MT,NM training.",
+    )
     # --- E4: multi-task objective (masked-feature-recon ⊕ directed-LP ⊕ structural) ---
     # Built on E2's encoder (sage_multi + directed3). MFR + structural share the
     # whole-node masking (fp_mask_ratio/strategy): a masked node's bio block (cols
