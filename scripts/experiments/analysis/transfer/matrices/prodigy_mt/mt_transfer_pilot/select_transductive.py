@@ -9,6 +9,7 @@ import re
 from pathlib import Path
 
 import pandas as pd
+import matplotlib.pyplot as plt
 
 
 RUN_RE = re.compile(
@@ -20,6 +21,7 @@ RUN_RE = re.compile(
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--log-root", type=Path, required=True)
+    parser.add_argument("--variable-way-cells", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, default=Path(__file__).parent / "data")
     args = parser.parse_args()
     rows = []
@@ -30,7 +32,7 @@ def main():
         values = match.groupdict()
         row = {
             "threshold": int(values["threshold"]) / 10,
-            "alpha": int(values["alpha"]) / 100,
+            "alpha": {"025": 0.25, "05": 0.5}[values["alpha"]],
             "iterations": int(values["iterations"]),
             "excluded": values["excluded"], "target": values["target"],
             "run_dir": str(run_dir),
@@ -60,6 +62,15 @@ def main():
         & (frame.iterations == best.iterations)
     ]
     heldout = selected[selected.excluded == selected.target]
+    baseline = pd.read_csv(args.variable_way_cells)
+    baseline = baseline[
+        (baseline.condition == "variable_way") & (baseline.excluded == baseline.target)
+    ][["target", "accuracy", "roc_auc"]].rename(columns={
+        "accuracy": "baseline_accuracy", "roc_auc": "baseline_roc_auc"
+    })
+    comparison = heldout.merge(baseline, on="target", validate="one_to_one")
+    comparison["accuracy_delta"] = comparison.test_accuracy - comparison.baseline_accuracy
+    comparison["roc_auc_delta"] = comparison.test_roc_auc - comparison.baseline_roc_auc
     summary = {
         "selection_metric": "mean validation ROC-AUC across all 25 model-target cells",
         "threshold": float(best.threshold), "alpha": float(best.alpha),
@@ -70,9 +81,30 @@ def main():
     args.output_dir.mkdir(parents=True, exist_ok=True)
     frame.to_csv(args.output_dir / "transductive_grid_cells.csv", index=False)
     grid.to_csv(args.output_dir / "transductive_validation_selection.csv", index=False)
+    comparison.to_csv(args.output_dir / "transductive_selected_heldout.csv", index=False)
     (args.output_dir / "transductive_selected_summary.json").write_text(
         json.dumps(summary, indent=2) + "\n"
     )
+    labels = ["COVID", "Election", "Facebook", "TwiBot", "UKR-RUS"]
+    values = comparison.set_index("target").loc[
+        ["covid_political", "election2020", "facebook_page_reference", "twibot20", "ukr_rus_suspended"],
+        "roc_auc_delta",
+    ].to_numpy() * 100
+    fig, ax = plt.subplots(figsize=(7.3, 4.3), constrained_layout=True)
+    colors = ["#0072B2" if value >= 0 else "#D55E00" for value in values]
+    ax.bar(labels, values, color=colors)
+    ax.axhline(0, color="#555555", lw=1)
+    ax.axhline(values.mean(), color="#0072B2", ls="--", lw=1.2,
+               label=f"Mean {values.mean():+.2f} pp")
+    ax.set(ylabel="Held-out ROC-AUC change (pp)",
+           title="Validation-selected transductive refinement")
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.legend(frameon=False)
+    fig_dir = args.output_dir.parent / "figures"
+    fig_dir.mkdir(parents=True, exist_ok=True)
+    fig.savefig(fig_dir / "transductive_selected_auc_delta.png", dpi=220)
+    fig.savefig(fig_dir / "transductive_selected_auc_delta.pdf")
+    plt.close(fig)
     print(json.dumps(summary, indent=2))
 
 
