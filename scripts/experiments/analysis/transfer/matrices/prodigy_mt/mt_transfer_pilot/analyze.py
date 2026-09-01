@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Aggregate and plot the matched MT versus NM+MT transfer pilot."""
+"""Aggregate and plot the matched MT, NM, and NM+MT transfer pilot."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ SHORT = {
     "ukr_rus_suspended": "UKR-RUS",
 }
 RUN_RE = re.compile(
-    r"^eval_(NM_MT|MT)_(.+)_to_(.+)_pl_3shot_\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2}$"
+    r"^eval_(NM_MT|NM|MT)_(.+)_to_(.+)_pl_3shot_\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2}$"
 )
 
 
@@ -61,7 +61,7 @@ def collect(log_root: Path) -> pd.DataFrame:
         raise RuntimeError(f"No completed pilot metrics found beneath {log_root}")
     # Failed attempts and reruns can share a logical cell; retain the newest result.
     frame = frame.drop_duplicates(["arm", "source", "target"], keep="last")
-    expected = {(a, s, t) for a in ("MT", "NM_MT") for s in GRAPHS for t in GRAPHS}
+    expected = {(a, s, t) for a in ("MT", "NM", "NM_MT") for s in GRAPHS for t in GRAPHS}
     observed = set(frame[["arm", "source", "target"]].itertuples(index=False, name=None))
     missing = sorted(expected - observed)
     if missing:
@@ -103,32 +103,37 @@ def main() -> None:
     results = collect(args.log_root)
     results.to_csv(data_dir / "matched_results.csv", index=False)
     matrices = {}
-    for arm in ("MT", "NM_MT"):
+    for arm in ("MT", "NM", "NM_MT"):
         matrix = results[results.arm == arm].pivot(index="source", columns="target", values="accuracy")
         matrix.loc[GRAPHS, GRAPHS].to_csv(data_dir / f"{arm.lower()}_accuracy_matrix.csv")
         matrices[arm] = matrix
-    delta = matrices["NM_MT"] - matrices["MT"]
-    delta.loc[GRAPHS, GRAPHS].to_csv(data_dir / "nm_mt_minus_mt_accuracy.csv")
+    delta_mt = matrices["NM_MT"] - matrices["MT"]
+    delta_nm = matrices["NM_MT"] - matrices["NM"]
+    delta_mt.loc[GRAPHS, GRAPHS].to_csv(data_dir / "nm_mt_minus_mt_accuracy.csv")
+    delta_nm.loc[GRAPHS, GRAPHS].to_csv(data_dir / "nm_mt_minus_nm_accuracy.csv")
 
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4.6), constrained_layout=True)
+    fig, axes = plt.subplots(1, 5, figsize=(24, 4.6), constrained_layout=True)
     plot_matrix(axes[0], matrices["MT"], "MT accuracy (%)")
-    plot_matrix(axes[1], matrices["NM_MT"], "NM+MT accuracy (%)")
-    plot_matrix(axes[2], delta, "NM+MT − MT accuracy", delta=True)
+    plot_matrix(axes[1], matrices["NM"], "NM accuracy (%)")
+    plot_matrix(axes[2], matrices["NM_MT"], "NM+MT accuracy (%)")
+    plot_matrix(axes[3], delta_mt, "NM+MT − MT", delta=True)
+    plot_matrix(axes[4], delta_nm, "NM+MT − NM", delta=True)
     fig.savefig(fig_dir / "matched_transfer_matrices.png", dpi=220)
     fig.savefig(fig_dir / "matched_transfer_matrices.pdf")
 
     summary = {
         "cells": int(len(results)),
         "mt_mean_accuracy": float(matrices["MT"].to_numpy().mean()),
+        "nm_mean_accuracy": float(matrices["NM"].to_numpy().mean()),
         "nm_mt_mean_accuracy": float(matrices["NM_MT"].to_numpy().mean()),
-        "mean_delta": float(delta.to_numpy().mean()),
-        "median_delta": float(np.median(delta.to_numpy())),
-        "nm_mt_wins": int((delta.to_numpy() > 0).sum()),
-        "mt_wins": int((delta.to_numpy() < 0).sum()),
-        "ties": int((delta.to_numpy() == 0).sum()),
-        "diagonal_mean_delta": float(np.diag(delta.loc[GRAPHS, GRAPHS]).mean()),
-        "off_diagonal_mean_delta": float(
-            delta.loc[GRAPHS, GRAPHS].to_numpy()[~np.eye(5, dtype=bool)].mean()
+        "nm_mt_minus_mt_mean": float(delta_mt.to_numpy().mean()),
+        "nm_mt_minus_nm_mean": float(delta_nm.to_numpy().mean()),
+        "nm_mt_minus_nm_median": float(np.median(delta_nm.to_numpy())),
+        "nm_mt_beats_nm_cells": int((delta_nm.to_numpy() > 0).sum()),
+        "nm_beats_nm_mt_cells": int((delta_nm.to_numpy() < 0).sum()),
+        "nm_mt_minus_nm_diagonal": float(np.diag(delta_nm.loc[GRAPHS, GRAPHS]).mean()),
+        "nm_mt_minus_nm_off_diagonal": float(
+            delta_nm.loc[GRAPHS, GRAPHS].to_numpy()[~np.eye(5, dtype=bool)].mean()
         ),
     }
     (data_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
