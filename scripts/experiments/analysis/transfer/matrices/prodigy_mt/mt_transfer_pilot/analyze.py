@@ -90,6 +90,30 @@ def plot_matrix(ax, matrix: pd.DataFrame, title: str, *, delta: bool = False) ->
     plt.colorbar(image, ax=ax, fraction=0.046, pad=0.04)
 
 
+def build_figure(results, metric, data_dir, fig_dir):
+    matrices = {}
+    for arm in ("MT", "NM", "NM_MT"):
+        matrix = results[results.arm == arm].pivot(index="source", columns="target", values=metric)
+        matrix.loc[GRAPHS, GRAPHS].to_csv(data_dir / f"{arm.lower()}_{metric}_matrix.csv")
+        matrices[arm] = matrix
+    delta_mt = matrices["NM_MT"] - matrices["MT"]
+    delta_nm = matrices["NM_MT"] - matrices["NM"]
+    delta_mt.loc[GRAPHS, GRAPHS].to_csv(data_dir / f"nm_mt_minus_mt_{metric}.csv")
+    delta_nm.loc[GRAPHS, GRAPHS].to_csv(data_dir / f"nm_mt_minus_nm_{metric}.csv")
+    label = "accuracy" if metric == "accuracy" else "ROC-AUC"
+    fig, axes = plt.subplots(1, 5, figsize=(24, 4.6), constrained_layout=True)
+    plot_matrix(axes[0], matrices["MT"], f"MT {label} (%)")
+    plot_matrix(axes[1], matrices["NM"], f"NM {label} (%)")
+    plot_matrix(axes[2], matrices["NM_MT"], f"NM+MT {label} (%)")
+    plot_matrix(axes[3], delta_mt, f"NM+MT − MT {label}", delta=True)
+    plot_matrix(axes[4], delta_nm, f"NM+MT − NM {label}", delta=True)
+    suffix = "matched_transfer_matrices" if metric == "accuracy" else "matched_transfer_matrices_auc"
+    fig.savefig(fig_dir / f"{suffix}.png", dpi=220)
+    fig.savefig(fig_dir / f"{suffix}.pdf")
+    plt.close(fig)
+    return matrices, delta_mt, delta_nm
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--log-root", type=Path, required=True)
@@ -102,24 +126,8 @@ def main() -> None:
 
     results = collect(args.log_root)
     results.to_csv(data_dir / "matched_results.csv", index=False)
-    matrices = {}
-    for arm in ("MT", "NM", "NM_MT"):
-        matrix = results[results.arm == arm].pivot(index="source", columns="target", values="accuracy")
-        matrix.loc[GRAPHS, GRAPHS].to_csv(data_dir / f"{arm.lower()}_accuracy_matrix.csv")
-        matrices[arm] = matrix
-    delta_mt = matrices["NM_MT"] - matrices["MT"]
-    delta_nm = matrices["NM_MT"] - matrices["NM"]
-    delta_mt.loc[GRAPHS, GRAPHS].to_csv(data_dir / "nm_mt_minus_mt_accuracy.csv")
-    delta_nm.loc[GRAPHS, GRAPHS].to_csv(data_dir / "nm_mt_minus_nm_accuracy.csv")
-
-    fig, axes = plt.subplots(1, 5, figsize=(24, 4.6), constrained_layout=True)
-    plot_matrix(axes[0], matrices["MT"], "MT accuracy (%)")
-    plot_matrix(axes[1], matrices["NM"], "NM accuracy (%)")
-    plot_matrix(axes[2], matrices["NM_MT"], "NM+MT accuracy (%)")
-    plot_matrix(axes[3], delta_mt, "NM+MT − MT", delta=True)
-    plot_matrix(axes[4], delta_nm, "NM+MT − NM", delta=True)
-    fig.savefig(fig_dir / "matched_transfer_matrices.png", dpi=220)
-    fig.savefig(fig_dir / "matched_transfer_matrices.pdf")
+    matrices, delta_mt, delta_nm = build_figure(results, "accuracy", data_dir, fig_dir)
+    auc_matrices, auc_delta_mt, auc_delta_nm = build_figure(results, "roc_auc", data_dir, fig_dir)
 
     summary = {
         "cells": int(len(results)),
@@ -135,6 +143,11 @@ def main() -> None:
         "nm_mt_minus_nm_off_diagonal": float(
             delta_nm.loc[GRAPHS, GRAPHS].to_numpy()[~np.eye(5, dtype=bool)].mean()
         ),
+        "mt_mean_roc_auc": float(auc_matrices["MT"].to_numpy().mean()),
+        "nm_mean_roc_auc": float(auc_matrices["NM"].to_numpy().mean()),
+        "nm_mt_mean_roc_auc": float(auc_matrices["NM_MT"].to_numpy().mean()),
+        "nm_mt_minus_mt_auc_mean": float(auc_delta_mt.to_numpy().mean()),
+        "nm_mt_minus_nm_auc_mean": float(auc_delta_nm.to_numpy().mean()),
     }
     (data_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     print(json.dumps(summary, indent=2))
