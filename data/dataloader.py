@@ -100,12 +100,15 @@ class MultiTaskSplitBatch(TaskBase):
     def get_label(self, graph_id):
         raise NotImplementedError
 
-    def sample(self, num_label, num_member, num_shot, num_query, rng):
-        # Sample randomly from rng to pick which task
+    def _next_task(self):
         task_idx = self.task_idx[self.task_idx_idx]
         self.task_idx_idx = (self.task_idx_idx + 1) % len(self.task_idx)
         task = self.tasks[task_idx]
         task_name = self.task_names[task_idx]
+        return task_idx, task, task_name
+
+    def sample(self, num_label, num_member, num_shot, num_query, rng):
+        task_idx, task, task_name = self._next_task()
         if self.task_num_labels is not None and self.task_num_labels[task_idx] is not None:
             num_label = self.task_num_labels[task_idx]
         sampled_task_dct = task.sample(num_label, num_member, num_shot, num_query, rng)
@@ -113,6 +116,24 @@ class MultiTaskSplitBatch(TaskBase):
         for k, v in sampled_task_dct.items():
             labels[(k, task_name)] = v
         return labels
+
+    def sample_batch(self, batch_param, rng):
+        """Choose one task per optimizer update and fill a homogeneous minibatch."""
+        task_idx, task, task_name = self._next_task()
+        num_label = batch_param.n_way
+        if self.task_num_labels is not None and self.task_num_labels[task_idx] is not None:
+            num_label = self.task_num_labels[task_idx]
+        batch = []
+        for _ in range(batch_param.batch_size):
+            sampled = task.sample(
+                num_label,
+                batch_param.n_member,
+                batch_param.n_shot,
+                batch_param.n_query,
+                rng,
+            )
+            batch.append({(key, task_name): value for key, value in sampled.items()})
+        return batch
 
 class MulticlassTask(TaskBase):
     def __init__(self, labels, label_set, train_label=None, linear_probe=False, random_query=False):
