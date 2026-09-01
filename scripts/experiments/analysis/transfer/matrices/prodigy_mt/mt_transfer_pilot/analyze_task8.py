@@ -113,7 +113,7 @@ def plot_plane(coords: pd.DataFrame, metric: str, fig_dir: Path):
     ax.scatter([], [], s=80, marker="D", facecolors="white", edgecolors="#D55E00",
                linewidths=1.5, label="Baseline (0D)")
     ax.scatter([], [], s=80, marker="D", color="#D55E00", label="Task conditioned (8D)")
-    ax.legend(frameon=False, loc="lower left")
+    ax.legend(frameon=False, loc="center left", bbox_to_anchor=(1.01, 0.5))
     suffix = "accuracy" if metric == "accuracy" else "auc"
     fig.savefig(fig_dir / f"task8_seen_unseen_{suffix}_plane.png", dpi=220)
     fig.savefig(fig_dir / f"task8_seen_unseen_{suffix}_plane.pdf")
