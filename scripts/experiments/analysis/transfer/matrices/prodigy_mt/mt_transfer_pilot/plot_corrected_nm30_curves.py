@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
-"""Plot separated NM and MT losses from the corrected alternating-task run logs."""
+"""Plot complete separated NM and MT losses from offline W&B histories."""
 
+import json
 import re
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from wandb.proto import wandb_internal_pb2
+from wandb.sdk.internal.datastore import DataStore
 
 ROOT = Path(__file__).resolve().parents[7]
-LOGS = ROOT / "scripts/experiments/setup/mt_transfer_pilot/run_logs"
+WANDB = ROOT / "wandb"
 OUT = Path(__file__).parent
 SOURCES = {
     "covid_political": "COVID",
@@ -17,32 +20,45 @@ SOURCES = {
     "twibot20": "TwiBot",
     "ukr_rus_suspended": "UKR-RUS",
 }
-POINT = re.compile(r"(\d+)/900.*?acc=([0-9.]+).*?loss=([0-9.]+)")
+EXP = re.compile(r"  exp_name: (mtpilot_NM_MT_(.+)_\d{2}_\d{2}_\d{4}_.*)")
+
+
+def history(record_path):
+    store = DataStore()
+    store.open_for_scan(str(record_path))
+    while True:
+        raw = store.scan_data()
+        if raw is None:
+            return
+        record = wandb_internal_pb2.Record()
+        record.ParseFromString(raw)
+        if not record.history.item:
+            continue
+        row = {}
+        for item in record.history.item:
+            key = item.key or ".".join(item.nested_key)
+            row[key] = json.loads(item.value_json)
+        if {"_step", "train_loss", "train_acc"} <= row.keys():
+            yield row
 
 rows = []
 for source in SOURCES:
-    candidates = sorted(LOGS.glob(f"full_NM_MT_{source}_gpu*_*.log"))
-    if not candidates:
-        raise SystemExit(f"missing corrected log for {source}")
-    matches = POINT.findall(candidates[-1].read_text(errors="ignore").replace("\r", "\n"))
-    by_display_step = {}
-    for step, acc, loss in matches:
-        point = (float(acc), float(loss))
-        bucket = by_display_step.setdefault(int(step), [])
-        if not bucket or point != bucket[-1]:
-            bucket.append(point)
-    # TQDM refreshes after pairs of updates. At each odd displayed counter, the
-    # first distinct metric is NM and the second is MT (step zero is the initial NM).
-    for step, points in sorted(by_display_step.items()):
-        if step == 0 and points:
-            pairs = [("NM", points[0])]
-        elif step % 2 == 1 and len(points) >= 2:
-            pairs = [("NM", points[0]), ("MT", points[1])]
-        else:
+    candidates = []
+    for run_dir in WANDB.glob("offline-run-*"):
+        config = run_dir / "files/effective_config.yaml"
+        records = list(run_dir.glob("run-*.wandb"))
+        if not config.exists() or not records:
             continue
-        for objective, (acc, loss) in pairs:
-            rows.append({"source": source, "objective": objective,
-                         "update": step, "accuracy": acc, "loss": loss})
+        match = EXP.search(config.read_text())
+        if match and match.group(2) == source and "smoke" not in match.group(1):
+            candidates.append((run_dir.name, records[0]))
+    if not candidates:
+        raise SystemExit(f"missing corrected W&B history for {source}")
+    for point in history(sorted(candidates)[-1][1]):
+        step = int(point["_step"])
+        rows.append({"source": source, "objective": "NM" if step % 2 == 0 else "MT",
+                     "update": step + 1, "accuracy": point["train_acc"],
+                     "loss": point["train_loss"]})
 
 data = pd.DataFrame(rows)
 data.to_csv(OUT / "data/corrected_nm30_training_curves.csv", index=False)
