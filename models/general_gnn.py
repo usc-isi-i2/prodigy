@@ -6,6 +6,7 @@ import torch
 import torch_geometric as pyg
 import numpy as np
 from models.layer_classes import MetagraphLayer, SupernodeAggrLayer, SupernodeToBgGraphLayer, BackgroundGNNLayer
+from experiments.task_families import TASK_FAMILIES, TASK_FAMILY_TO_ID, effective_task_family
 
 
 class SingleLayerGeneralGNN(torch.nn.Module):
@@ -27,6 +28,22 @@ class SingleLayerGeneralGNN(torch.nn.Module):
             self.params = params
         self.logit_scale = torch.nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
         self.txt_dropout = text_dropout
+        self.task_embedding_dim = int(self.params.get("task_embedding_dim", 0))
+        self.task_embedding_dropout = float(self.params.get("task_embedding_dropout", 0.0))
+        if not 0.0 <= self.task_embedding_dropout <= 1.0:
+            raise ValueError("task_embedding_dropout must lie in [0, 1]")
+        if self.task_embedding_dim < 0:
+            raise ValueError("task_embedding_dim must be non-negative")
+        if self.task_embedding_dim:
+            self.task_embedding = torch.nn.Embedding(len(TASK_FAMILIES), self.task_embedding_dim)
+            self.task_to_input = torch.nn.Linear(self.task_embedding_dim, params["emb_dim"], bias=False)
+            self.task_to_label = torch.nn.Linear(self.task_embedding_dim, params["emb_dim"], bias=False)
+            default_family = effective_task_family(
+                self.params.get("task_name", ""),
+                self.params.get("dataset", ""),
+                self.params.get("task_embedding_seen_families", ""),
+            )
+            self.default_task_family_id = TASK_FAMILY_TO_ID[default_family]
         if self.params.get("task_name") == "regression":
             self.regression_head = torch.nn.Sequential(
                 torch.nn.Linear(params["emb_dim"], params["emb_dim"]),
@@ -78,6 +95,18 @@ class SingleLayerGeneralGNN(torch.nn.Module):
 
         return input_x_mg, label_x_mg
 
+    def task_condition(self, graph, input_x, label_x):
+        """Condition one homogeneous task minibatch immediately before its metagraph."""
+        if not self.task_embedding_dim:
+            return input_x, label_x
+        family_id = getattr(graph, "task_family_id", self.default_task_family_id)
+        family_id = torch.as_tensor(family_id, device=input_x.device, dtype=torch.long).reshape(-1)[0]
+        if self.training and self.task_embedding_dropout > 0:
+            if torch.rand((), device=input_x.device) < self.task_embedding_dropout:
+                family_id = family_id.new_tensor(TASK_FAMILY_TO_ID["unknown"])
+        embedding = self.task_embedding(family_id)
+        return input_x + self.task_to_input(embedding), label_x + self.task_to_label(embedding)
+
     def forward(self, graph, x_label, y_true_matrix, metagraph_edge_index, metagraph_edge_attr, query_set_mask, input_seqs=None, query_seqs=None, query_seqs_gt=None, task_mask=None):
         '''
         Params as returned by the batching function.
@@ -117,10 +146,14 @@ class SingleLayerGeneralGNN(torch.nn.Module):
         
         x_input = torch.zeros((len(supernode_idx), x_label.size(1))).float().to(x_label.device)
         #x_input = None
+        task_conditioned = False
         for module in self.layer_list:
             if isinstance(module, MetagraphLayer):
                 if x_input is None:
                     raise Exception('MetagraphLayer must be preceded by a layer that produces supernode embeddings!')
+                if not task_conditioned:
+                    x_input, x_label = self.task_condition(graph, x_input, x_label)
+                    task_conditioned = True
                 x_input, new_x_label = self.forward_metagraph(module, x_input, x_label, metagraph_edge_index, metagraph_edge_attr, query_set_mask, input_seqs, query_seqs, query_seqs_gt)
                 if self.params["skip_path"]:
                     x_label = x_label + new_x_label

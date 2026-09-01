@@ -162,6 +162,18 @@ def get_params(argv=None):
     args.add_argument("-weight_decay", "--weight_decay", default=0.001, type=float)
     args.add_argument("-dropout", "--dropout", default=0, type=float)
     args.add_argument("-txt_dropout", "--text_features_dropout", default=0, type=float)  # additionally drop out text features
+    args.add_argument(
+        "--task_embedding_dim", default=0, type=int,
+        help="Dimension of the learned task-family bottleneck; 0 disables conditioning.",
+    )
+    args.add_argument(
+        "--task_embedding_dropout", default=0.0, type=float,
+        help="Training probability of replacing the episode task family with unknown.",
+    )
+    args.add_argument(
+        "--task_embedding_seen_families", default="", type=str,
+        help="Comma-separated task families observed in pretraining; unseen families map to unknown.",
+    )
     args.add_argument("-rel_sample_seed", "--rel_sample_random_seed", default=None, type=float)  # seed for sampling relations
 
     args.add_argument("-split_train_nodes", "--split_train_nodes", default=False, type=str2bool) # Split train nodes into 'train' and 'val'
