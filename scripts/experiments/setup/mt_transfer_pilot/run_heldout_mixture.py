@@ -82,18 +82,23 @@ def main():
     parser.add_argument("--device", type=int, required=True)
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--variable-nm-way", action="store_true")
+    parser.add_argument("--support-relation", action="store_true")
     args = parser.parse_args()
 
     donors = [source for source in SOURCES if source != args.heldout]
     first_root, first_file = SOURCES[donors[0]]
     budget = 12 if args.smoke else 900
     variant = "_varway" if args.variable_nm_way else ""
+    if args.support_relation:
+        variant += "_supportrel"
     prefix = f"mtpilot_{args.arm}{variant}_heldout_{args.heldout}" + ("_smoke" if args.smoke else "")
     base = get_params([
         "--config", str(HERE / "configs" / f"{args.arm}.yaml"),
         "--dataset", donors[0], "--root", first_root, "--graph_filename", first_file,
         "--device", str(args.device), "--dataset_len_cap", str(budget),
         "--checkpoint_step", str(budget), "--prefix", prefix,
+        "--support_label_prototypes", str(args.support_relation),
+        "--learned_relation_scorer", str(args.support_relation),
     ])
     seed_everything(base)
     datasets = {

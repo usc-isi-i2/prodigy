@@ -27,6 +27,27 @@ class SingleLayerGeneralGNN(torch.nn.Module):
             self.params = params
         self.logit_scale = torch.nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
         self.txt_dropout = text_dropout
+        self.support_label_prototypes = bool(self.params.get("support_label_prototypes", False))
+        self.learned_relation_scorer = bool(self.params.get("learned_relation_scorer", False))
+        if self.support_label_prototypes:
+            self.prototype_adapter = torch.nn.Sequential(
+                torch.nn.Linear(params["emb_dim"], params["emb_dim"]),
+                torch.nn.GELU(),
+                torch.nn.Linear(params["emb_dim"], params["emb_dim"]),
+            )
+            # Preserve the baseline at initialization; training decides how strongly
+            # support prototypes should alter each label node.
+            torch.nn.init.zeros_(self.prototype_adapter[-1].weight)
+            torch.nn.init.zeros_(self.prototype_adapter[-1].bias)
+        if self.learned_relation_scorer:
+            self.relation_scorer = torch.nn.Sequential(
+                torch.nn.Linear(4 * params["emb_dim"], params["emb_dim"]),
+                torch.nn.GELU(),
+                torch.nn.Linear(params["emb_dim"], 1),
+            )
+            # A zero residual gives the exact cosine baseline at step zero.
+            torch.nn.init.zeros_(self.relation_scorer[-1].weight)
+            torch.nn.init.zeros_(self.relation_scorer[-1].bias)
         if self.params.get("task_name") == "regression":
             self.regression_head = torch.nn.Sequential(
                 torch.nn.Linear(params["emb_dim"], params["emb_dim"]),
@@ -49,8 +70,30 @@ class SingleLayerGeneralGNN(torch.nn.Module):
         x = torch.cat((input_x, label_x))
         ind0 = metagraph_edge_index[0, :]
         ind1 = metagraph_edge_index[1, :]
-        decoded_logits = self.cos(x[ind0], x[ind1]) * self.logit_scale.exp()
+        left, right = x[ind0], x[ind1]
+        decoded_logits = self.cos(left, right) * self.logit_scale.exp()
+        if self.learned_relation_scorer:
+            relation_features = torch.cat(
+                [left, right, torch.abs(left - right), left * right], dim=1
+            )
+            decoded_logits = decoded_logits + self.relation_scorer(relation_features).reshape(-1)
         return decoded_logits
+
+    def add_support_prototypes(self, input_x, label_x, edge_index, edge_attr, query_mask):
+        """Add one positive-support mean to each label; queries never contribute."""
+        support_positive = (~query_mask.bool()) & (edge_attr[:, -1] > 0)
+        if not bool(support_positive.any()):
+            return label_x
+        source = edge_index[0, support_positive]
+        label_index = edge_index[1, support_positive] - input_x.shape[0]
+        valid = (label_index >= 0) & (label_index < label_x.shape[0])
+        source, label_index = source[valid], label_index[valid]
+        sums = input_x.new_zeros(label_x.shape)
+        counts = input_x.new_zeros((label_x.shape[0], 1))
+        sums.index_add_(0, label_index, input_x[source])
+        counts.index_add_(0, label_index, torch.ones_like(label_index, dtype=input_x.dtype).unsqueeze(1))
+        prototypes = sums / counts.clamp_min(1.0)
+        return label_x + self.prototype_adapter(prototypes)
 
 
     def forward_metagraph(self, module, supernode_x, label_x, metagraph_edge_index, metagraph_edge_attr, query_set_mask, input_seqs, query_seqs, query_seqs_gt):
@@ -121,6 +164,10 @@ class SingleLayerGeneralGNN(torch.nn.Module):
             if isinstance(module, MetagraphLayer):
                 if x_input is None:
                     raise Exception('MetagraphLayer must be preceded by a layer that produces supernode embeddings!')
+                if self.support_label_prototypes:
+                    x_label = self.add_support_prototypes(
+                        x_input, x_label, metagraph_edge_index, metagraph_edge_attr, query_set_mask
+                    )
                 x_input, new_x_label = self.forward_metagraph(module, x_input, x_label, metagraph_edge_index, metagraph_edge_attr, query_set_mask, input_seqs, query_seqs, query_seqs_gt)
                 if self.params["skip_path"]:
                     x_label = x_label + new_x_label
