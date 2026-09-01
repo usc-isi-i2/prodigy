@@ -13,4 +13,4 @@ python3 scripts/eval/eval_ckpts_all_graph_tasks_tucker.py \
   --datasets covid_political,election2020,facebook_page_reference,twibot20,ukr_rus_suspended \
   --graph-filenames facebook_page_reference=page_reference_graph.pt \
   --tasks pl --shots 3 --pl-dataset-len-cap 25 --batch-size 4 --workers 2 \
-  --gpus 2,2,2,3,3,3 --continue-on-error
+  --gpus 2,3,2,3,2,3 --continue-on-error
