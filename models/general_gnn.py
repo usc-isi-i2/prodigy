@@ -30,14 +30,28 @@ class SingleLayerGeneralGNN(torch.nn.Module):
         self.txt_dropout = text_dropout
         self.task_embedding_dim = int(self.params.get("task_embedding_dim", 0))
         self.task_embedding_dropout = float(self.params.get("task_embedding_dropout", 0.0))
+        self.task_embedding_fusion = self.params.get("task_embedding_fusion", "add")
         if not 0.0 <= self.task_embedding_dropout <= 1.0:
             raise ValueError("task_embedding_dropout must lie in [0, 1]")
         if self.task_embedding_dim < 0:
             raise ValueError("task_embedding_dim must be non-negative")
         if self.task_embedding_dim:
             self.task_embedding = torch.nn.Embedding(len(TASK_FAMILIES), self.task_embedding_dim)
-            self.task_to_input = torch.nn.Linear(self.task_embedding_dim, params["emb_dim"], bias=False)
-            self.task_to_label = torch.nn.Linear(self.task_embedding_dim, params["emb_dim"], bias=False)
+            if self.task_embedding_fusion == "add":
+                self.task_to_input = torch.nn.Linear(self.task_embedding_dim, params["emb_dim"], bias=False)
+                self.task_to_label = torch.nn.Linear(self.task_embedding_dim, params["emb_dim"], bias=False)
+            elif self.task_embedding_fusion == "film":
+                self.task_input_gamma = torch.nn.Linear(self.task_embedding_dim, params["emb_dim"], bias=False)
+                self.task_input_beta = torch.nn.Linear(self.task_embedding_dim, params["emb_dim"], bias=False)
+                self.task_label_gamma = torch.nn.Linear(self.task_embedding_dim, params["emb_dim"], bias=False)
+                self.task_label_beta = torch.nn.Linear(self.task_embedding_dim, params["emb_dim"], bias=False)
+                for projection in (
+                    self.task_input_gamma, self.task_input_beta,
+                    self.task_label_gamma, self.task_label_beta,
+                ):
+                    torch.nn.init.zeros_(projection.weight)
+            else:
+                raise ValueError(f"Unknown task_embedding_fusion={self.task_embedding_fusion!r}")
             default_family = effective_task_family(
                 self.params.get("task_name", ""),
                 self.params.get("dataset", ""),
@@ -105,7 +119,14 @@ class SingleLayerGeneralGNN(torch.nn.Module):
             if torch.rand((), device=input_x.device) < self.task_embedding_dropout:
                 family_id = family_id.new_tensor(TASK_FAMILY_TO_ID["unknown"])
         embedding = self.task_embedding(family_id)
-        return input_x + self.task_to_input(embedding), label_x + self.task_to_label(embedding)
+        if self.task_embedding_fusion == "add":
+            return input_x + self.task_to_input(embedding), label_x + self.task_to_label(embedding)
+        input_gamma = torch.tanh(self.task_input_gamma(embedding))
+        label_gamma = torch.tanh(self.task_label_gamma(embedding))
+        return (
+            input_x * (1 + input_gamma) + self.task_input_beta(embedding),
+            label_x * (1 + label_gamma) + self.task_label_beta(embedding),
+        )
 
     def forward(self, graph, x_label, y_true_matrix, metagraph_edge_index, metagraph_edge_attr, query_set_mask, input_seqs=None, query_seqs=None, query_seqs_gt=None, task_mask=None):
         '''

@@ -171,6 +171,10 @@ def get_params(argv=None):
         help="Training probability of replacing the episode task family with unknown.",
     )
     args.add_argument(
+        "--task_embedding_fusion", default="add", choices=["add", "film"],
+        help="How the projected task family conditions pooled inputs and label nodes.",
+    )
+    args.add_argument(
         "--task_embedding_seen_families", default="", type=str,
         help="Comma-separated task families observed in pretraining; unseen families map to unknown.",
     )

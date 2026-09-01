@@ -92,12 +92,16 @@ def main():
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--task-embedding-dim", type=int, default=0)
     parser.add_argument("--task-embedding-dropout", type=float, default=0.25)
+    parser.add_argument("--task-embedding-fusion", choices=["add", "film"], default="add")
     args = parser.parse_args()
 
     donors = [source for source in SOURCES if source != args.heldout]
     first_root, first_file = SOURCES[donors[0]]
     budget = 12 if args.smoke else 900
-    task_tag = f"_task{args.task_embedding_dim}" if args.task_embedding_dim else ""
+    task_tag = (
+        f"_task{args.task_embedding_dim}_{args.task_embedding_fusion}"
+        if args.task_embedding_dim else ""
+    )
     prefix = f"mtpilot_{args.arm}{task_tag}_heldout_{args.heldout}" + ("_smoke" if args.smoke else "")
     seen_families = {"neighbor_matching"}
     seen_families.update(resolve_task_family("classification", donor) for donor in donors)
@@ -108,6 +112,7 @@ def main():
         "--checkpoint_step", str(budget), "--prefix", prefix,
         "--task_embedding_dim", str(args.task_embedding_dim),
         "--task_embedding_dropout", str(args.task_embedding_dropout),
+        "--task_embedding_fusion", args.task_embedding_fusion,
         "--task_embedding_seen_families", ",".join(sorted(seen_families)),
     ])
     seed_everything(base)
