@@ -43,8 +43,8 @@ for row, objective in enumerate(("NM", "MT")):
         ax = axes[row, col]
         curve = data[(data.source == source) & (data.objective == objective)]
         color = "#174ea6" if objective == "NM" else "#b3144a"
-        ax.plot(curve.update, curve.loss, color=color, alpha=.16, lw=.6)
-        ax.plot(curve.update, curve.loss.rolling(25, min_periods=5, center=True).median(),
+        ax.plot(curve["update"], curve.loss, color=color, alpha=.16, lw=.6)
+        ax.plot(curve["update"], curve.loss.rolling(25, min_periods=5, center=True).median(),
                 color=color, lw=2)
         ax.set_title(short)
         ax.grid(alpha=.2)
