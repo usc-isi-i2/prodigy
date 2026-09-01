@@ -3,7 +3,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 MODE="${MODE:-full}"
-SLOTS="${SLOTS:-2,2,2,3,3,3}"
+SLOTS="${SLOTS:-2,3,2,3,2,3}"
 IFS=',' read -r -a SLOT_ARR <<< "${SLOTS}"
 for gpu in "${SLOT_ARR[@]}"; do
   [[ "${gpu}" == 2 || "${gpu}" == 3 ]] || { echo "only GPUs 2 and 3 are allowed" >&2; exit 2; }
@@ -16,7 +16,10 @@ SOURCES=(
   'twibot20|/dataMeR1/phil/data/twibot20/graphs|retweet_graph.pt'
   'ukr_rus_suspended|/dataMeR1/phil/data/ukr_rus_suspended/graphs|retweet_graph.pt'
 )
-ARMS=(MT NM_MT)
+IFS=',' read -r -a ARMS <<< "${ARMS_CSV:-MT,NM_MT}"
+for arm in "${ARMS[@]}"; do
+  [[ "${arm}" == MT || "${arm}" == NM_MT ]] || { echo "unknown arm: ${arm}" >&2; exit 2; }
+done
 JOBS=()
 for arm in "${ARMS[@]}"; do
   for spec in "${SOURCES[@]}"; do JOBS+=("${arm}|${spec}"); done
@@ -44,7 +47,10 @@ run_one() {
     --root "${root}" --graph_filename "${filename}" --device 0 "${extra[@]}" >"${log}" 2>&1
 }
 
-if [[ "${MODE}" == smoke ]]; then JOBS=("MT|${SOURCES[0]}" "NM_MT|${SOURCES[0]}"); fi
+if [[ "${MODE}" == smoke ]]; then
+  JOBS=()
+  for arm in "${ARMS[@]}"; do JOBS+=("${arm}|${SOURCES[0]}"); done
+fi
 next=0
 while (( next < ${#JOBS[@]} )); do
   pids=(); labels=()
