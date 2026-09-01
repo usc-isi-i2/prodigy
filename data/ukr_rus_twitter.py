@@ -319,7 +319,7 @@ def get_ukr_rus_twitter_dataloader(
                 [task, NeighborTask(positive_sampler_for_split(dataset, split, kwargs), graph.num_nodes,
                                     "inout", kwargs.get("neighbor_sampling_strategy", "strict"),
                                     filter_min_degree=bool(kwargs.get("neighbor_matching_edge_split", False)))],
-                ["mct", "nt"], counts,
+                ["mct", "nt"], counts, [n_way, int(kwargs.get("cls_nm_n_way", 30))],
             )
             label_embeddings = {"mct": label_embeddings,
                                 "nt": torch.zeros(1, 768).expand(graph.num_nodes, -1)}

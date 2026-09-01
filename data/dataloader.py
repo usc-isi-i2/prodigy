@@ -86,9 +86,12 @@ class MultiTaskSplitWay(TaskBase):
 
 
 class MultiTaskSplitBatch(TaskBase):
-    def __init__(self, tasks, task_names, task_counts):
+    def __init__(self, tasks, task_names, task_counts, task_num_labels=None):
         self.tasks = tasks
         self.task_names = task_names
+        self.task_num_labels = task_num_labels
+        if task_num_labels is not None and len(task_num_labels) != len(tasks):
+            raise ValueError("task_num_labels must have one entry per task")
         self.task_idx = [i for i, c in enumerate(task_counts) for _ in range(c)]
         random.shuffle(self.task_idx)
         self.task_idx_idx = 0
@@ -103,6 +106,8 @@ class MultiTaskSplitBatch(TaskBase):
         self.task_idx_idx = (self.task_idx_idx + 1) % len(self.task_idx)
         task = self.tasks[task_idx]
         task_name = self.task_names[task_idx]
+        if self.task_num_labels is not None and self.task_num_labels[task_idx] is not None:
+            num_label = self.task_num_labels[task_idx]
         sampled_task_dct = task.sample(num_label, num_member, num_shot, num_query, rng)
         labels = {}
         for k, v in sampled_task_dct.items():

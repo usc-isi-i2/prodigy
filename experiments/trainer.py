@@ -622,6 +622,7 @@ class TrainerFS():
         kwargs["fp_mask_strategy"] = self.parameter.get("fp_mask_strategy", "zero")
         kwargs["mix_task_counts"] = self.parameter.get("mix_task_counts", "1,1,1")
         kwargs["cls_nm_task_counts"] = self.parameter.get("cls_nm_task_counts", "1,1")
+        kwargs["cls_nm_n_way"] = self.parameter.get("cls_nm_n_way", 30)
         kwargs["mix_cl_aug"] = self.parameter.get("mix_cl_aug", "NZ0.2")
         kwargs["e4_combine"] = self.parameter.get("e4_combine", "simultaneous")
         kwargs["e4_task_counts"] = self.parameter.get("e4_task_counts", "1,1,1")

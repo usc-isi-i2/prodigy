@@ -490,6 +490,12 @@ def get_params(argv=None):
         type=str,
         help="Episode rotation weights for paper-style supervised MT,NM training.",
     )
+    args.add_argument(
+        "--cls_nm_n_way",
+        default=30,
+        type=int,
+        help="Number of ways for NM episodes in cls_nm; MT retains --n_way.",
+    )
     # --- E4: multi-task objective (masked-feature-recon ⊕ directed-LP ⊕ structural) ---
     # Built on E2's encoder (sage_multi + directed3). MFR + structural share the
     # whole-node masking (fp_mask_ratio/strategy): a masked node's bio block (cols
