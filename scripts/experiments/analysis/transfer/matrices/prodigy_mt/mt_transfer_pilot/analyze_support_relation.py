@@ -74,7 +74,7 @@ def plot(coords: pd.DataFrame, metric: str, fig_dir: Path):
                    edgecolors="#0072B2", linewidths=1.5, zorder=4)
         ax.scatter(*points["support_relation"], s=105, marker="o", color="#0072B2",
                    edgecolors="white", linewidths=.8, zorder=5)
-        offset = {"facebook_page_reference": (8, -15), "twibot20": (8, 7)}.get(excluded, (6, 4))
+        offset = {"facebook_page_reference": (8, -15), "twibot20": (-52, 8)}.get(excluded, (6, 4))
         ax.annotate(SHORT[excluded], points["support_relation"], xytext=offset,
                     textcoords="offset points", fontsize=8)
     ax.plot([low, 100], [low, 100], "--", color="#999999", lw=1)
