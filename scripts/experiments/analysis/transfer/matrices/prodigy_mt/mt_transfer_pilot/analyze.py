@@ -26,9 +26,14 @@ SHORT = {
     "facebook_page_reference": "Facebook",
     "twibot20": "TwiBot",
     "ukr_rus_suspended": "UKR-RUS",
+    "heldout_mixture": "Held-out mix",
 }
+ROWS = GRAPHS + ["heldout_mixture"]
 RUN_RE = re.compile(
     r"^eval_(NM_MT|NM|MT)_(.+)_to_(.+)_pl_3shot_\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2}$"
+)
+HELDOUT_RE = re.compile(
+    r"^eval_HELDOUT_(NM_MT|NM|MT)_to_(.+)_pl_3shot_\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2}$"
 )
 
 
@@ -36,10 +41,15 @@ def collect(log_root: Path) -> pd.DataFrame:
     rows = []
     for run_dir in sorted(log_root.glob("eval_*_to_*_pl_3shot_*")):
         match = RUN_RE.match(run_dir.name)
-        if not match:
+        heldout_match = HELDOUT_RE.match(run_dir.name)
+        if heldout_match:
+            arm, target = heldout_match.groups()
+            source = "heldout_mixture"
+        elif match:
+            arm, source, target = match.groups()
+        else:
             continue
-        arm, source, target = match.groups()
-        if source not in GRAPHS or target not in GRAPHS:
+        if source not in ROWS or target not in GRAPHS:
             continue
         metric_path = run_dir / "data" / "metrics_test_step0.json"
         if not metric_path.exists():
@@ -62,6 +72,7 @@ def collect(log_root: Path) -> pd.DataFrame:
     # Failed attempts and reruns can share a logical cell; retain the newest result.
     frame = frame.drop_duplicates(["arm", "source", "target"], keep="last")
     expected = {(a, s, t) for a in ("MT", "NM", "NM_MT") for s in GRAPHS for t in GRAPHS}
+    expected |= {(a, "heldout_mixture", t) for a in ("MT", "NM", "NM_MT") for t in GRAPHS}
     observed = set(frame[["arm", "source", "target"]].itertuples(index=False, name=None))
     missing = sorted(expected - observed)
     if missing:
@@ -70,7 +81,7 @@ def collect(log_root: Path) -> pd.DataFrame:
 
 
 def plot_matrix(ax, matrix: pd.DataFrame, title: str, *, delta: bool = False) -> None:
-    values = matrix.loc[GRAPHS, GRAPHS].to_numpy()
+    values = matrix.loc[ROWS, GRAPHS].to_numpy()
     if delta:
         bound = max(0.01, float(np.nanmax(np.abs(values))))
         image = ax.imshow(values, cmap="RdBu", vmin=-bound, vmax=bound)
@@ -80,10 +91,10 @@ def plot_matrix(ax, matrix: pd.DataFrame, title: str, *, delta: bool = False) ->
         fmt, scale = ".1f", 100.0
     ax.set_title(title)
     ax.set_xticks(range(5), [SHORT[g] for g in GRAPHS], rotation=35, ha="right")
-    ax.set_yticks(range(5), [SHORT[g] for g in GRAPHS])
+    ax.set_yticks(range(len(ROWS)), [SHORT[g] for g in ROWS])
     ax.set_xlabel("evaluation target")
     ax.set_ylabel("training source")
-    for i in range(5):
+    for i in range(len(ROWS)):
         for j in range(5):
             ax.text(j, i, format(values[i, j] * scale, fmt), ha="center", va="center", fontsize=7,
                     color="white" if (not delta and values[i, j] < 0.45) else "black")
@@ -94,14 +105,14 @@ def build_figure(results, metric, data_dir, fig_dir):
     matrices = {}
     for arm in ("MT", "NM", "NM_MT"):
         matrix = results[results.arm == arm].pivot(index="source", columns="target", values=metric)
-        matrix.loc[GRAPHS, GRAPHS].to_csv(data_dir / f"{arm.lower()}_{metric}_matrix.csv")
+        matrix.loc[ROWS, GRAPHS].to_csv(data_dir / f"{arm.lower()}_{metric}_matrix.csv")
         matrices[arm] = matrix
     delta_mt = matrices["NM_MT"] - matrices["MT"]
     delta_nm = matrices["NM_MT"] - matrices["NM"]
-    delta_mt.loc[GRAPHS, GRAPHS].to_csv(data_dir / f"nm_mt_minus_mt_{metric}.csv")
-    delta_nm.loc[GRAPHS, GRAPHS].to_csv(data_dir / f"nm_mt_minus_nm_{metric}.csv")
+    delta_mt.loc[ROWS, GRAPHS].to_csv(data_dir / f"nm_mt_minus_mt_{metric}.csv")
+    delta_nm.loc[ROWS, GRAPHS].to_csv(data_dir / f"nm_mt_minus_nm_{metric}.csv")
     label = "accuracy" if metric == "accuracy" else "ROC-AUC"
-    fig, axes = plt.subplots(1, 5, figsize=(24, 4.6), constrained_layout=True)
+    fig, axes = plt.subplots(1, 5, figsize=(24, 5.2), constrained_layout=True)
     plot_matrix(axes[0], matrices["MT"], f"MT {label} (%)")
     plot_matrix(axes[1], matrices["NM"], f"NM {label} (%)")
     plot_matrix(axes[2], matrices["NM_MT"], f"NM+MT {label} (%)")
@@ -131,23 +142,29 @@ def main() -> None:
 
     summary = {
         "cells": int(len(results)),
-        "mt_mean_accuracy": float(matrices["MT"].to_numpy().mean()),
-        "nm_mean_accuracy": float(matrices["NM"].to_numpy().mean()),
-        "nm_mt_mean_accuracy": float(matrices["NM_MT"].to_numpy().mean()),
-        "nm_mt_minus_mt_mean": float(delta_mt.to_numpy().mean()),
-        "nm_mt_minus_nm_mean": float(delta_nm.to_numpy().mean()),
-        "nm_mt_minus_nm_median": float(np.median(delta_nm.to_numpy())),
-        "nm_mt_beats_nm_cells": int((delta_nm.to_numpy() > 0).sum()),
-        "nm_beats_nm_mt_cells": int((delta_nm.to_numpy() < 0).sum()),
+        "mt_mean_accuracy": float(matrices["MT"].loc[GRAPHS, GRAPHS].to_numpy().mean()),
+        "nm_mean_accuracy": float(matrices["NM"].loc[GRAPHS, GRAPHS].to_numpy().mean()),
+        "nm_mt_mean_accuracy": float(matrices["NM_MT"].loc[GRAPHS, GRAPHS].to_numpy().mean()),
+        "nm_mt_minus_mt_mean": float(delta_mt.loc[GRAPHS, GRAPHS].to_numpy().mean()),
+        "nm_mt_minus_nm_mean": float(delta_nm.loc[GRAPHS, GRAPHS].to_numpy().mean()),
+        "nm_mt_minus_nm_median": float(np.median(delta_nm.loc[GRAPHS, GRAPHS].to_numpy())),
+        "nm_mt_beats_nm_cells": int((delta_nm.loc[GRAPHS, GRAPHS].to_numpy() > 0).sum()),
+        "nm_beats_nm_mt_cells": int((delta_nm.loc[GRAPHS, GRAPHS].to_numpy() < 0).sum()),
         "nm_mt_minus_nm_diagonal": float(np.diag(delta_nm.loc[GRAPHS, GRAPHS]).mean()),
         "nm_mt_minus_nm_off_diagonal": float(
             delta_nm.loc[GRAPHS, GRAPHS].to_numpy()[~np.eye(5, dtype=bool)].mean()
         ),
-        "mt_mean_roc_auc": float(auc_matrices["MT"].to_numpy().mean()),
-        "nm_mean_roc_auc": float(auc_matrices["NM"].to_numpy().mean()),
-        "nm_mt_mean_roc_auc": float(auc_matrices["NM_MT"].to_numpy().mean()),
-        "nm_mt_minus_mt_auc_mean": float(auc_delta_mt.to_numpy().mean()),
-        "nm_mt_minus_nm_auc_mean": float(auc_delta_nm.to_numpy().mean()),
+        "mt_mean_roc_auc": float(auc_matrices["MT"].loc[GRAPHS, GRAPHS].to_numpy().mean()),
+        "nm_mean_roc_auc": float(auc_matrices["NM"].loc[GRAPHS, GRAPHS].to_numpy().mean()),
+        "nm_mt_mean_roc_auc": float(auc_matrices["NM_MT"].loc[GRAPHS, GRAPHS].to_numpy().mean()),
+        "nm_mt_minus_mt_auc_mean": float(auc_delta_mt.loc[GRAPHS, GRAPHS].to_numpy().mean()),
+        "nm_mt_minus_nm_auc_mean": float(auc_delta_nm.loc[GRAPHS, GRAPHS].to_numpy().mean()),
+        "heldout_mt_mean_accuracy": float(matrices["MT"].loc["heldout_mixture"].mean()),
+        "heldout_nm_mean_accuracy": float(matrices["NM"].loc["heldout_mixture"].mean()),
+        "heldout_nm_mt_mean_accuracy": float(matrices["NM_MT"].loc["heldout_mixture"].mean()),
+        "heldout_mt_mean_roc_auc": float(auc_matrices["MT"].loc["heldout_mixture"].mean()),
+        "heldout_nm_mean_roc_auc": float(auc_matrices["NM"].loc["heldout_mixture"].mean()),
+        "heldout_nm_mt_mean_roc_auc": float(auc_matrices["NM_MT"].loc["heldout_mixture"].mean()),
     }
     (data_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     print(json.dumps(summary, indent=2))
