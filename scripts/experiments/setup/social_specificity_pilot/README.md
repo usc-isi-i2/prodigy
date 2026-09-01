@@ -13,8 +13,10 @@ The 4×4 matrix has 16 cells. The existing seed-0, step-2,500 final-core Twitter
 Facebook specialists are reused. Only the Cora and PubMed specialists are trained.
 Both use the final-core architecture and fixed-compute protocol: two hops, fanouts
 `9,9`, 101-node cap, 30-way/3-shot/4-query neighbor matching, batch size 4, and 2,500
-updates. Evaluation uses the cataloged static train/test edge views and the repository's
-fixed split-derived episode stream.
+updates. Evaluation uses the common 85/15 `static_background`/`static_holdout` views
+present on all four target artifacts and the repository's fixed split-derived episode
+stream. The evaluation split is therefore identical across source models for a target;
+the citation training artifacts retain the final-core 70/15/15 protocol.
 
 The original Cora and PubMed artifacts contain the older 85/15 static split. The
 launcher leaves those canonical files unchanged and creates resumable pilot-local

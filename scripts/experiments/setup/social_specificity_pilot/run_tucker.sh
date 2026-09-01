@@ -111,7 +111,7 @@ eval_cmd=("$PYTHON" -u scripts/eval/eval_ckpts_all_graph_tasks_tucker.py
   --datasets ukr_rus_twitter,facebook_page_reference,cora,pubmed
   --tasks nm --shots 3 --nm-n-way 30 --nm-dataset-len-cap 1
   --workers 2 --batch-size 4 --gpus "$GPUS" --seed 0
-  -- --n_hop 2 --edge_view static_train --target_edge_view static_test
+  -- --n_hop 2 --edge_view static_background --target_edge_view static_holdout
   --neighbor_matching_edge_split True --neighbor_sampling_hop_sizes 9,9
   --neighbor_sampling_node_limit 101 --log_dir "$LOG_ROOT/eval" --state_dir "$STATE_ROOT/eval")
 
