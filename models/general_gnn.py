@@ -52,6 +52,43 @@ class SingleLayerGeneralGNN(torch.nn.Module):
         decoded_logits = self.cos(x[ind0], x[ind1]) * self.logit_scale.exp()
         return decoded_logits
 
+    def refine_labels_transductively(
+        self, input_x, label_x, metagraph_edge_index, query_set_mask, num_classes
+    ):
+        """Refine each episode's labels from confident, unlabeled query predictions."""
+        if num_classes <= 1:
+            return label_x
+        n_rows = input_x.shape[0]
+        edge_targets = metagraph_edge_index[1].reshape(n_rows, num_classes)
+        query_rows = torch.where(query_set_mask.reshape(n_rows, num_classes)[:, 0].bool())[0]
+        if query_rows.numel() == 0:
+            return label_x
+        refined = label_x
+        threshold = float(self.params.get("transductive_threshold", 0.8))
+        alpha = float(self.params.get("transductive_alpha", 0.25))
+        iterations = int(self.params.get("transductive_iterations", 1))
+        for _ in range(iterations):
+            logits = self.decode(input_x, refined, metagraph_edge_index).reshape(n_rows, num_classes)
+            confidence, predicted = torch.softmax(logits[query_rows], dim=1).max(dim=1)
+            selected = confidence >= threshold
+            if not bool(selected.any()):
+                break
+            rows = query_rows[selected]
+            global_labels = edge_targets[rows, predicted[selected]] - n_rows
+            sums = input_x.new_zeros(refined.shape)
+            weights = input_x.new_zeros((refined.shape[0], 1))
+            selected_confidence = confidence[selected].unsqueeze(1)
+            sums.index_add_(0, global_labels, input_x[rows] * selected_confidence)
+            weights.index_add_(0, global_labels, selected_confidence)
+            has_queries = weights[:, 0] > 0
+            query_prototypes = sums / weights.clamp_min(1e-12)
+            updated = refined.clone()
+            updated[has_queries] = (
+                (1.0 - alpha) * refined[has_queries] + alpha * query_prototypes[has_queries]
+            )
+            refined = updated
+        return refined
+
 
     def forward_metagraph(self, module, supernode_x, label_x, metagraph_edge_index, metagraph_edge_attr, query_set_mask, input_seqs, query_seqs, query_seqs_gt):
         '''
@@ -153,6 +190,11 @@ class SingleLayerGeneralGNN(torch.nn.Module):
 
         x_input = self.final_input_mlp(x_input)
         x_label = self.final_label_mlp(x_label)
+
+        if self.params.get("transductive_refinement", False):
+            x_label = self.refine_labels_transductively(
+                x_input, x_label, metagraph_edge_index, query_set_mask, y_true_matrix.shape[1]
+            )
 
         if self.params.get("task_name") == "regression":
             y_pred_matrix = self.regression_head(x_input).reshape(y_true_matrix.shape)

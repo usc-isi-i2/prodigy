@@ -186,6 +186,10 @@ def get_params(argv=None):
     args.add_argument("-layers", "--layers", default="S,U,M", type=str)  # default: GraphSAGE->Up->Metagraph (see experiments/layers.py for more info)
     args.add_argument("-ignore_label_embs", "--ignore_label_embeddings", default=True, type=str2bool)
     args.add_argument("-zero_lbl", "--zero_label_embeddings", default=False, type=str2bool)
+    args.add_argument("--transductive_refinement", default=False, type=str2bool)
+    args.add_argument("--transductive_threshold", default=0.8, type=float)
+    args.add_argument("--transductive_alpha", default=0.25, type=float)
+    args.add_argument("--transductive_iterations", default=1, type=int)
     args.add_argument("-not_freeze_learned_label_embedding", "--not_freeze_learned_label_embedding", default=False, type=str2bool)
     args.add_argument("-linear_probe", "--linear_probe", default=False, type=str2bool)
     args.add_argument("-fdf", "--fix_datasets_first", default=False,
