@@ -18,6 +18,7 @@ sys.path.insert(0, str(ROOT))
 from experiments.params import get_params  # noqa: E402
 from experiments.run_single_experiment import load_dataset, seed_everything  # noqa: E402
 from experiments.trainer import TrainerFS  # noqa: E402
+from variable_way import episode_n_way  # noqa: E402
 
 
 SOURCES = {
@@ -31,7 +32,6 @@ SOURCES = {
         "/dataMeR1/phil/data/ukr_rus_suspended/graphs", "retweet_graph.pt"
     ),
 }
-
 
 class ScheduledLoader:
     """Yield homogeneous minibatches from a fixed balanced donor/objective cycle."""
@@ -54,14 +54,14 @@ class ScheduledLoader:
                 yield next(iterators[key])
 
 
-def donor_params(base, donor, task):
+def donor_params(base, donor, task, variable_nm_way=False):
     params = copy.deepcopy(base)
     root, filename = SOURCES[donor]
     params["dataset"] = donor
     params["root"] = root
     params["graph_filename"] = filename
     params["task_name"] = task
-    params["n_way"] = 30 if task == "neighbor_matching" else 2
+    params["n_way"] = episode_n_way(task, variable_nm_way)
     return params
 
 
@@ -81,12 +81,14 @@ def main():
     parser.add_argument("--heldout", required=True, choices=list(SOURCES))
     parser.add_argument("--device", type=int, required=True)
     parser.add_argument("--smoke", action="store_true")
+    parser.add_argument("--variable-nm-way", action="store_true")
     args = parser.parse_args()
 
     donors = [source for source in SOURCES if source != args.heldout]
     first_root, first_file = SOURCES[donors[0]]
     budget = 12 if args.smoke else 900
-    prefix = f"mtpilot_{args.arm}_heldout_{args.heldout}" + ("_smoke" if args.smoke else "")
+    variant = "_varway" if args.variable_nm_way else ""
+    prefix = f"mtpilot_{args.arm}{variant}_heldout_{args.heldout}" + ("_smoke" if args.smoke else "")
     base = get_params([
         "--config", str(HERE / "configs" / f"{args.arm}.yaml"),
         "--dataset", donors[0], "--root", first_root, "--graph_filename", first_file,
@@ -94,7 +96,10 @@ def main():
         "--checkpoint_step", str(budget), "--prefix", prefix,
     ])
     seed_everything(base)
-    datasets = {donor: load_dataset(donor_params(base, donor, "neighbor_matching")) for donor in donors}
+    datasets = {
+        donor: load_dataset(donor_params(base, donor, "neighbor_matching", args.variable_nm_way))
+        for donor in donors
+    }
     trainer = TrainerFS(datasets[donors[0]], base)
 
     objectives = {
@@ -105,7 +110,7 @@ def main():
     loaders = {}
     for donor in donors:
         for task in objectives:
-            params = donor_params(base, donor, task)
+            params = donor_params(base, donor, task, args.variable_nm_way)
             loaders[(donor, task)] = build_train_loader(trainer, datasets[donor], params)
     schedule = [(donor, task) for donor in donors for task in objectives]
     trainer.train_dataloader = ScheduledLoader(loaders, schedule, budget)
