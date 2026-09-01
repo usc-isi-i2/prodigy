@@ -17,7 +17,7 @@ SOURCES = {
     "twibot20": "TwiBot",
     "ukr_rus_suspended": "UKR-RUS",
 }
-POINT = re.compile(r"acc=([0-9.]+).*?loss=([0-9.]+)")
+POINT = re.compile(r"(\d+)/900.*?acc=([0-9.]+).*?loss=([0-9.]+)")
 
 rows = []
 for source in SOURCES:
@@ -25,15 +25,24 @@ for source in SOURCES:
     if not candidates:
         raise SystemExit(f"missing corrected log for {source}")
     matches = POINT.findall(candidates[-1].read_text(errors="ignore").replace("\r", "\n"))
-    points = []
-    for acc, loss in matches:
+    by_display_step = {}
+    for step, acc, loss in matches:
         point = (float(acc), float(loss))
-        if not points or point != points[-1]:
-            points.append(point)
-    # The corrected schedule starts with NM and alternates one whole minibatch/update.
-    for update, (acc, loss) in enumerate(points[:900], start=1):
-        rows.append({"source": source, "objective": "NM" if update % 2 else "MT",
-                     "update": update, "accuracy": acc, "loss": loss})
+        bucket = by_display_step.setdefault(int(step), [])
+        if not bucket or point != bucket[-1]:
+            bucket.append(point)
+    # TQDM refreshes after pairs of updates. At each odd displayed counter, the
+    # first distinct metric is MT and the second is NM (step zero is the initial NM).
+    for step, points in sorted(by_display_step.items()):
+        if step == 0 and points:
+            pairs = [("NM", points[0])]
+        elif step % 2 == 1 and len(points) >= 2:
+            pairs = [("MT", points[0]), ("NM", points[1])]
+        else:
+            continue
+        for objective, (acc, loss) in pairs:
+            rows.append({"source": source, "objective": objective,
+                         "update": step, "accuracy": acc, "loss": loss})
 
 data = pd.DataFrame(rows)
 data.to_csv(OUT / "data/corrected_nm30_training_curves.csv", index=False)
