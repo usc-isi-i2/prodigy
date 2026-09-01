@@ -122,7 +122,11 @@ def plot_plane(coords: pd.DataFrame, metric: str, fig_dir: Path):
             ax.scatter(fx, fy, s=105, marker="o", color="#0072B2", edgecolors="white",
                        linewidths=.8, zorder=5)
             label_x, label_y = fx, fy
-        ax.annotate(SHORT[excluded], (label_x, label_y), xytext=(6, 4),
+        offset = {
+            "facebook_page_reference": (8, -15),
+            "twibot20": (8, 7),
+        }.get(excluded, (6, 4))
+        ax.annotate(SHORT[excluded], (label_x, label_y), xytext=offset,
                     textcoords="offset points", fontsize=8)
     ax.plot([low, 100], [low, 100], "--", color="#999999", lw=1)
     ax.set(xlim=(low, 101), ylim=(low, 101),
