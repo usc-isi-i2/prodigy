@@ -18,7 +18,7 @@ SOURCES=(
 )
 IFS=',' read -r -a ARMS <<< "${ARMS_CSV:-MT,NM_MT}"
 for arm in "${ARMS[@]}"; do
-  [[ "${arm}" == MT || "${arm}" == NM_MT ]] || { echo "unknown arm: ${arm}" >&2; exit 2; }
+  [[ "${arm}" == MT || "${arm}" == NM || "${arm}" == NM_MT ]] || { echo "unknown arm: ${arm}" >&2; exit 2; }
 done
 JOBS=()
 for arm in "${ARMS[@]}"; do
