@@ -106,7 +106,7 @@ eval_cmd=("$PYTHON" -u scripts/eval/eval_ckpts_all_graph_tasks_tucker.py
   --datasets covid_political,election2020,ukr_rus_suspended,twibot20
   --tasks classification --shots 10 --workers 2 --continue-on-error
   --gpus "$(IFS=,; echo "${GPU_IDS[*]}")" --seed 0
-  -- --n_hop 2 --edge_view static_background
+  -- --n_hop 2
   --neighbor_sampling_hop_sizes 9,9 --neighbor_sampling_node_limit 101
   --neighbor_matching_walk_hops 1 --log_dir "$LOG_ROOT/eval" --state_dir "$STATE_ROOT/eval")
 
