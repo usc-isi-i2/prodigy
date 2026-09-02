@@ -1,0 +1,7 @@
+model_id	pair	schedule	sources	sequence	sequence_steps
+cov_covpol_interleaved	cov_covpol	interleaved	covid,covid_political		
+cov_then_covpol	cov_covpol	sequential	covid,covid_political	covid,covid_political	1250,1250
+covpol_then_cov	cov_covpol	sequential	covid,covid_political	covid_political,covid	1250,1250
+cov_cphk_interleaved	cov_cphk	interleaved	covid,cp_hk		
+cov_then_cphk	cov_cphk	sequential	covid,cp_hk	covid,cp_hk	1250,1250
+cphk_then_cov	cov_cphk	sequential	covid,cp_hk	cp_hk,covid	1250,1250
