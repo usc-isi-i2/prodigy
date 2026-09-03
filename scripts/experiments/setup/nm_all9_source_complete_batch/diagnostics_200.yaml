@@ -1,0 +1,32 @@
+# Short, from-scratch source-gradient diagnostic; no change to the batch-9 protocol.
+dataset: covid19_twitter
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_all9_facebook_graph.pt
+task_name: neighbor_matching
+edge_view: default
+feature_subset: all
+original_features: true
+n_way: 30
+n_shots: 3
+n_query: 4
+n_hop: 1
+batch_size: 9
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+neighbor_sampling_batch_source_mode: complete
+neighbor_sampling_cross_source_prob: 0.0
+dataset_len_cap: 200
+epochs: 1
+val_len_cap: 2
+test_len_cap: 2
+learning_rate: 0.001
+eval_step: 100000
+print_step: 20
+checkpoint_step: 200
+checkpoint_steps: "0,200"
+source_diagnostics_interval: 20
+workers: 4
+device: 0
+seed: 0
+tags: [nm_all9, source_complete_batch, gradient_diagnostics, short200]
+prefix: nm_all9_source_grad_diag200_sep03

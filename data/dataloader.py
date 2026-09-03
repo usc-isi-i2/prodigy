@@ -933,8 +933,34 @@ class Collator:
         num_labels = len(label_map[0])
         assert all(len(i) == num_labels for i in label_map) # label_map length is the same for all tasks
 
+        source_ids = []
+        for task_graphs in graphs:
+            task_sources = set()
+            for graph in task_graphs:
+                if not hasattr(graph, "graph_id"):
+                    continue
+                graph_ids = graph.graph_id.reshape(-1)
+                center_pos = 0
+                if hasattr(graph, "global_node_ids") and hasattr(graph, "center_node_idx"):
+                    matches = torch.where(
+                        graph.global_node_ids.reshape(-1) == int(graph.center_node_idx)
+                    )[0]
+                    if len(matches):
+                        center_pos = int(matches[0])
+                task_sources.add(int(graph_ids[center_pos]))
+            source_ids.append(next(iter(task_sources)) if len(task_sources) == 1 else -1)
+
         graphs = Batch.from_data_list([g for l in graphs for g in l])
         graphs.task_id_per_sample = torch.arange(num_task).repeat_interleave(task_len)
+        # Preserve episode membership after the model filters down to query rows.  This
+        # lets the trainer report per-episode/source losses without reconstructing the
+        # collator's flattening order.
+        graphs.task_id_per_query = torch.cat([
+            torch.full((int(mask.sum()),), task_id, dtype=torch.long)
+            for task_id, mask in enumerate(query_mask)
+        ])
+        # A source-confined episode has one graph_id. Mixed/unknown episodes use -1.
+        graphs.source_id_per_task = torch.tensor(source_ids, dtype=torch.long)
         # nm_fp_cl rotation: record, per within-batch task-episode, whether it is a
         # masked-feature-prediction (fp) episode so the trainer dispatches the
         # reconstruction loss only there. `label_map` is still per-task here (list of

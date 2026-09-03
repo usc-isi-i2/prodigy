@@ -146,6 +146,16 @@ def get_params(argv=None):
     args.add_argument("-eval_step", "--eval_step", default=2000, type=int)
     args.add_argument("-ckpt_step", "--checkpoint_step", default=2000, type=int)
     args.add_argument(
+        "--source_diagnostics_interval",
+        default=0,
+        type=int,
+        help=(
+            "If positive, log per-source loss, gradient norm, and pairwise gradient "
+            "cosine every N optimizer steps for batches of source-confined episodes. "
+            "Disabled by default because the diagnostic requires extra backward passes."
+        ),
+    )
+    args.add_argument(
         "-ckpt_steps", "--checkpoint_steps", default="", type=str,
         help=(
             "Explicit checkpoint schedule as comma-separated step counts, e.g. "

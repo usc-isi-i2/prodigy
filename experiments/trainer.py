@@ -762,6 +762,62 @@ class TrainerFS():
                 pass  # keep BCE for LP tasks or when pos/neg counts differ
 
         return loss, accuracy(y_true_matrix, y_pred_matrix, calc_roc=not self.is_multiway)[2]
+
+    def _log_source_gradient_diagnostics(self, y_true, y_pred, graph, step):
+        """Log how strongly each source steers a multi-episode optimizer update."""
+        interval = int(self.parameter.get("source_diagnostics_interval", 0) or 0)
+        if interval <= 0 or (step != 1 and step % interval != 0):
+            return
+        if not hasattr(graph, "task_id_per_query") or not hasattr(graph, "source_id_per_task"):
+            return
+
+        task_ids = graph.task_id_per_query
+        source_by_task = graph.source_id_per_task
+        if task_ids.numel() != y_true.shape[0]:
+            return
+        query_sources = source_by_task[task_ids]
+        source_losses = {}
+        for source_id_tensor in torch.unique(query_sources):
+            source_id = int(source_id_tensor)
+            if source_id < 0:
+                continue
+            mask = query_sources == source_id_tensor
+            source_losses[source_id] = self.get_loss_and_acc(y_true[mask], y_pred[mask])[0]
+        if not source_losses:
+            return
+
+        trainable = [parameter for parameter in self.model.parameters() if parameter.requires_grad]
+        gradients = {}
+        metrics = {}
+        for source_id, source_loss in source_losses.items():
+            grads = torch.autograd.grad(
+                source_loss, trainable, retain_graph=True, allow_unused=True
+            )
+            gradients[source_id] = grads
+            norm_sq = sum(
+                grad.detach().float().square().sum() for grad in grads if grad is not None
+            )
+            metrics[f"source_diagnostics/loss/source_{source_id}"] = _to_float(source_loss)
+            metrics[f"source_diagnostics/grad_norm/source_{source_id}"] = _to_float(norm_sq.sqrt())
+
+        source_ids = sorted(gradients)
+        for left_idx, left in enumerate(source_ids):
+            for right in source_ids[left_idx + 1:]:
+                dot = sum(
+                    grad_left.detach().float().mul(grad_right.detach().float()).sum()
+                    for grad_left, grad_right in zip(gradients[left], gradients[right])
+                    if grad_left is not None and grad_right is not None
+                )
+                left_norm = metrics[f"source_diagnostics/grad_norm/source_{left}"]
+                right_norm = metrics[f"source_diagnostics/grad_norm/source_{right}"]
+                denom = left_norm * right_norm
+                metrics[f"source_diagnostics/grad_cosine/source_{left}_vs_{right}"] = (
+                    _to_float(dot) / denom if denom > 0 else 0.0
+                )
+        # Keep a directly readable local record, independent of W&B availability.
+        with open(os.path.join(self.logging_dir, "source_diagnostics.jsonl"), "a", encoding="utf-8") as handle:
+            handle.write(json.dumps({"completed_steps": step, **metrics}) + "\n")
+        wandb.log(metrics, step=step - 1)
     
     def get_hits(self, y_true_matrix, y_pred_matrix, task_mask):
         # get HITS@10, HITS@5, HITS@1, MRR scores
@@ -2024,6 +2080,7 @@ class TrainerFS():
                 aux_loss = self.get_aux_loss(graph)
                 weight = self.parameter["attr_regression_weight"]
                 total_loss = loss + aux_loss * weight
+                self._log_source_gradient_diagnostics(yt, yp, graph, steps_run)
             total_loss.backward()
             self.optimizer.step()
             # self.scheduler.step()
