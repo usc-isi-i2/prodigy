@@ -58,6 +58,8 @@ Setup and launch files remain in `../setup/<name>/`.
 
 ## Evaluation infrastructure
 
+- Ladder training throughput: [`ladder_sampling_profile`](evaluation/performance/ladder_sampling_profile/) profiles full-graph CPU preparation and GPU steps.
+
 - Frozen-encoder label and optimization efficiency: [`adaptation_efficiency`](evaluation/adaptation_efficiency/)
 - Prediction-level diagnostics: [`error_audit`](evaluation/error_audit/)
 - Static-link evaluator repair: [`static_link_prediction_repair`](evaluation/static_link_prediction_repair/)
