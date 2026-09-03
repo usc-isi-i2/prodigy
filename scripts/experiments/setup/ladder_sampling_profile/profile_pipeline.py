@@ -36,6 +36,8 @@ def main():
     parser.add_argument('--threads', default='4,1')
     parser.add_argument('--gpu-steps', type=int, default=16)
     parser.add_argument('--cpu-only', action='store_true')
+    parser.add_argument('--disable-cpu-anomaly', action='store_true',
+                        help='Disable production anomaly debugging during CPU measurements')
     args = parser.parse_args()
     if min(args.episodes_per_source, args.loader_episodes, args.gpu_steps) < 1 or args.warmup < 0:
         parser.error('episode counts must be positive; warmup must be nonnegative')
@@ -55,6 +57,7 @@ def main():
         raise ValueError('This profiler supports batch_size=1 neighbor_matching only')
     if params.get('neighbor_sampling_source_sequence') or params.get('neighbor_sampling_center_radii'):
         raise ValueError('Use the source-confined ladder protocol')
+    torch.autograd.set_detect_anomaly(not args.disable_cpu_anomaly)
     torch.set_num_threads(4)  # same as run_single_experiment.py
     torch.manual_seed(0)
     random.seed(0)
@@ -180,6 +183,9 @@ def main():
         del iterator, bench_loader, b
         gc.collect()
     if args.cpu_only:
+        metadata['completed'] = time.strftime('%Y-%m-%dT%H:%M:%S%z')
+        save()
+        print('PROFILE COMPLETE', flush=True)
         return
 
     # Reuse production trainer/model/loss, but bypass duplicate train/val/test setup.

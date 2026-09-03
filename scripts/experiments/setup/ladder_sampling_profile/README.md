@@ -21,6 +21,8 @@ python scripts/experiments/setup/ladder_sampling_profile/profile_pipeline.py \
 Use a tmux session for the full graph load. The output directory must not exist.
 All counts, config path, CPU thread counts, and loader worker counts are overrideable.
 `--cpu-only` omits model initialization and GPU measurements.
+`--disable-cpu-anomaly` disables the production runner’s anomaly debugging during
+CPU stages and loader benchmarks, to isolate stack-trace recording overhead.
 
 Measurements:
 
