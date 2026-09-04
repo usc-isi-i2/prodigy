@@ -260,9 +260,12 @@ def train(trainer):
             real_ids = graph.graph_id[graph.global_node_ids >= 0].unique().tolist()
             if holdout_id in real_ids or not set(real_ids).issubset(source_ids):
                 raise RuntimeError(f'Source leakage: observed {real_ids}, allowed {source_ids}')
-            observed_source = int(graph.source_id_per_task[0])
-            if observed_source >= 0:
-                exposure[source_names[observed_source]] += 1
+            # Count data-point source fractions so mixed episodes also record
+            # their effective exposure, rather than disappearing under source=-1.
+            sample_sources = graph.graph_id[graph.ptr[:-1]].long()
+            counts = torch.bincount(sample_sources, minlength=len(source_names))
+            for source_id, count in enumerate(counts.tolist()):
+                exposure[source_names[source_id]] += count / len(sample_sources)
             batch = [x.to(trainer.device) for x in cpu]
             trainer.optimizer.zero_grad()
             target_x = None
