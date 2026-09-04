@@ -60,6 +60,9 @@ after multiple full source cycles. Its exact realized exposure is logged and com
 - region_adaptive: loss-adaptive degree-region sampling (no source labels in weights),
   with 70% uniform-band base and bounded 30% adaptive component. Compare with centers
   to isolate adaptivity; compare with baseline for total effect.
+  Updates assign episode loss to degree bands of support/query subgraph centers;
+  these are a proxy for the prototype-center bands used for sampling, rather than
+  a per-prototype loss estimate.
 - coverage: random-start cyclic eligible-center traversal; record locality/order caveat.
 - budget: 1250 episodes/source cap, up to 10k at rung eight; endpoint is a replication
   of baseline distribution, not a new endpoint intervention.
@@ -88,6 +91,8 @@ Run tests before a full-graph smoke; production cannot start on smoke checkpoint
 Use `experiments/run_shared_graph.py` with explicit config list, GPUs 0 1 2 3,
 4 models/GPU initially, total 64 CPU workers, and a fresh absolute run directory.
 Set PATH/conda/prodigy/LD_LIBRARY_PATH and WANDB_MODE=offline inside tmux command.
+Actual production uses GPUs 1–3, four models/GPU and 48 total loader workers: GPU 0
+rejected even a standalone CUDA allocation at preflight. GPUs 4–7 are untouched.
 A failed batch is inspected before replay. Completed configurations/checkpoints are
 retained; any retried partial run has a fresh ID. Never pull a running worktree.
 

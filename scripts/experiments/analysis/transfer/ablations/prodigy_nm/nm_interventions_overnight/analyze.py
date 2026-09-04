@@ -46,12 +46,41 @@ def main():
             endpoint_unseen_status=verdict(unseen),endpoint_unseen_delta=unseen,
             all_rung_included_delta=float(group[group.included].delta.mean()) if complete else None))
     summary=pd.DataFrame(rows);summary.to_csv(HERE/'data/arm_summary.csv',index=False)
+    endpoint=summary[summary.arm!='baseline'].copy()
+    if endpoint.endpoint_included_delta.notna().any():
+        fig,axes=plt.subplots(1,2,figsize=(12,8),sharey=True)
+        for ax,column,title in zip(axes,['endpoint_included_delta','endpoint_unseen_delta'],
+                ['Eight included sources (macro mean)','Unseen TwiBot-20']):
+            values=pd.to_numeric(endpoint[column],errors='coerce')
+            ax.scatter(values,range(len(endpoint)),s=45)
+            ax.axvline(0,color='black',lw=1);ax.axvspan(-.001,.001,color='grey',alpha=.15)
+            ax.set(xlabel='NM ROC-AUC difference from baseline',title=title,
+                   yticks=range(len(endpoint)),yticklabels=endpoint.arm)
+            ax.grid(axis='x',alpha=.2)
+        axes[0].invert_yaxis();fig.suptitle('Eight-source endpoint, seed 0; missing results have no point')
+        fig.tight_layout();(HERE/'figures').mkdir(exist_ok=True)
+        fig.savefig(HERE/'figures/endpoint_deltas.png',dpi=170)
+        fig.savefig(HERE/'figures/endpoint_deltas.pdf');plt.close(fig)
     role=frame.copy()
     role['role']=['included' if inc else 'unseen' if t==HOLDOUT else 'not_yet_included'
                   for inc,t in zip(role.included,role.target)]
     role.groupby(['arm','rung','role'],as_index=False).agg(roc_auc=('roc_auc','mean'),
         target_count=('target','nunique')).to_csv(HERE/'data/role_summary.csv',index=False)
     figures=HERE/'figures';figures.mkdir(exist_ok=True)
+    comparison=''
+    if 'combined' in set(summary.arm):
+        singles=summary[(~summary.arm.isin(['baseline','combined','budget'])) & summary.endpoint_included_delta.notna()]
+        combined=summary[summary.arm=='combined'].iloc[0]
+        if len(singles) and pd.notna(combined.endpoint_included_delta):
+            best=singles.loc[singles.endpoint_included_delta.idxmax()]
+            margin=combined.endpoint_included_delta-best.endpoint_included_delta
+            pd.DataFrame([dict(best_single_arm=best.arm,
+                combined_minus_best_single_included=margin,
+                verdict=verdict(margin),comparison='descriptive test comparison; not selection')]).to_csv(
+                    HERE/'data/combined_comparison.csv',index=False)
+            comparison=(f'\nCombined included-source endpoint delta versus the strongest observed individual '
+                f'endpoint ({best.arm}): {margin:+.6f} ({verdict(margin)}). This is a descriptive test '
+                'comparison; test outcomes did not choose the recipe.\n')
     for name,title in [('included','Included training sources'),('unseen','Unseen TwiBot-20'),
                        ('not_yet_included','Sources outside the current training rung')]:
         subset=role[role.role==name]
@@ -66,7 +95,7 @@ def main():
     (HERE/'FINDINGS.md').write_text('# Source-held-out NM intervention campaign\n\n'
         'Seed 0 exploratory results. All checkpoints selected using active training-source validation only; TwiBot-20 excluded from selection.\n\n'
         'Overall arm status requires all 8 rungs × 9 targets and paired baselines. Endpoint columns describe only the eight-source endpoint and may be available before the full campaign is complete. Effects use a ±0.001 practical threshold, not statistical significance. Baseline is the reference; its zero delta is not an intervention finding.\n\n'+
-        summary.to_markdown(index=False)+'\n\nIncluded-source, unseen-graph, and not-yet-included-source panels are separate. No CLS or LP runs are included. Plateau/cap metadata and exact configurations are retained in data/model_records.json.\n')
+        summary.to_markdown(index=False)+comparison+'\n\nIncluded-source, unseen-graph, and not-yet-included-source panels are separate. No CLS or LP runs are included. Plateau/cap metadata and exact configurations are retained in data/model_records.json.\n')
     print(summary.to_string(index=False))
 
 if __name__=='__main__':main()
