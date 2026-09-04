@@ -13,6 +13,10 @@ class SingleLayerGeneralGNN(torch.nn.Module):
                  final_label_mlp=torch.nn.Identity(), final_input_mlp=torch.nn.Identity(),
                  params=None, text_dropout=None):
         super().__init__()
+        self.campaign_flags = set(str((params or {}).get("campaign_flags", "")).split(","))
+        if "source_affine" in self.campaign_flags:
+            self.source_scale = torch.nn.Parameter(torch.zeros(9, params["input_dim"]))
+            self.source_shift = torch.nn.Parameter(torch.zeros(9, params["input_dim"]))
         self.layer_list = layer_list
         self.cos = torch.nn.CosineSimilarity(dim=1)
         self.initial_label_mlp = initial_label_mlp
@@ -88,6 +92,12 @@ class SingleLayerGeneralGNN(torch.nn.Module):
         #center_nodes = torch.zeros([graph.x.shape[0], 1]).to(graph.x.device)
         #center_nodes[graph.ptr[:-1]] = 1
         #graph.x = self.initial_input_mlp(torch.concat([graph.x, center_nodes], dim = 1))
+        if "feature_standardized" in self.campaign_flags:
+            graph.x = torch.nn.functional.layer_norm(graph.x, (graph.x.shape[-1],))
+        if "source_affine" in self.campaign_flags:
+            ids = graph.graph_id.long()
+            real = (graph.global_node_ids >= 0).unsqueeze(1)
+            graph.x = graph.x * (1 + self.source_scale[ids] * real) + self.source_shift[ids] * real
         graph.x = self.initial_input_mlp(graph.x)
 
         if self.txt_dropout is not None:

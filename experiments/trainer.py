@@ -544,6 +544,8 @@ class TrainerFS():
 
     def _build_dataloaders(self, dataset, dataset_name):
         kwargs = {}
+        kwargs["campaign_flags"] = self.parameter.get("campaign_flags", "")
+        kwargs["campaign_protocol"] = self.parameter.get("campaign_protocol", False)
         kwargs["root"] = os.path.join(self.parameter["root"], dataset_name)
         kwargs["num_workers"] = self.parameter["workers"]
         kwargs["detect_anomaly"] = self.parameter.get("detect_anomaly", False)
@@ -1965,6 +1967,9 @@ class TrainerFS():
         self.best_state_dict_path = best_ckpt
 
     def train(self):
+        if self.parameter.get("campaign_protocol") and not self.parameter.get("eval_only"):
+            from experiments.nm_campaign import train
+            return train(self)
 
         # initialization
         best_step = 0

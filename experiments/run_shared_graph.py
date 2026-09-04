@@ -28,7 +28,8 @@ emb_dim layers gnn_type n_layer dropout neighbor_sampling_source_subset
 neighbor_sampling_source_sequence neighbor_sampling_source_sequence_steps
 neighbor_sampling_episode_source_weighting neighbor_sampling_cross_source_prob
 neighbor_sampling_batch_source_mode pretrained_model_run resume_training_checkpoint
-source_gradient_diagnostics_every source_gradient_diagnostics_max_sources'''.split())
+source_gradient_diagnostics_every source_gradient_diagnostics_max_sources
+campaign_flags campaign_protocol campaign_eval_interval campaign_min_delta campaign_val_per_source campaign_holdout'''.split())
 
 
 def validate_configs(params):
@@ -185,6 +186,9 @@ def train_one(dataset, params, job_dir, threads):
                 raise RuntimeError('Trainer did not receive shared graph storage')
             seed_everything(params)
             torch.autograd.set_detect_anomaly(params['detect_anomaly'])
+            if params.get('campaign_protocol'):
+                from experiments.nm_campaign import prepare_model_dataset
+                dataset = prepare_model_dataset(dataset, params)
             trainer = TrainerFS(dataset, params)
             first_timed = None
             last_timed = None
@@ -256,7 +260,7 @@ def main():
     own, overrides = argv[:split], argv[split+1:]
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--configs', nargs='+', required=True)
-    parser.add_argument('--gpus', nargs='+', type=int, choices=(2, 3), default=[2])
+    parser.add_argument('--gpus', nargs='+', type=int, choices=(0, 1, 2, 3), default=[2])
     parser.add_argument('--models-per-gpu', type=int, default=2)
     parser.add_argument('--worker-budget', type=int, default=32)
     parser.add_argument('--workers-per-model', type=int)
@@ -271,7 +275,7 @@ def main():
     if len(set(args.gpus)) != len(args.gpus):
         parser.error('GPUs must be unique')
     if 'CUDA_VISIBLE_DEVICES' in os.environ:
-        parser.error('Unset CUDA_VISIBLE_DEVICES: select physical owned GPUs with --gpus 2 and/or 3')
+        parser.error('Unset CUDA_VISIBLE_DEVICES: select physical owned GPUs with --gpus 0 1 2 3')
     args.run_dir = args.run_dir.resolve()
     params, workers = make_plan(args, overrides)
     slots = [gpu for gpu in args.gpus for _ in range(args.models_per_gpu)]

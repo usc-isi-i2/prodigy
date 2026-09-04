@@ -17,7 +17,7 @@ Claude should read this via `CLAUDE.md`; Codex/GPT reads this file directly.
 
 - Reaching Tucker requires the USC VPN active, or being on USC wifi. If ssh to Tucker stalls, first check whether VPN is connected.
 - Use Tucker for training, eval, graph construction, embedding generation, and any GPU-heavy workflow.
-- We currently own only GPUs 2 and 3 on Tucker. Use GPUs 2 and 3 for our jobs, and leave GPUs 0-1 and 4-7 untouched.
+- We currently own GPUs 0, 1, 2, and 3 on Tucker. Use GPUs 0-3 for our jobs, and leave GPUs 4-7 untouched.
 - Long jobs run in tmux. The user generally kicks off big or long-running jobs.
 - Reading on Tucker is fine: inspect files, list dirs, check logs, and load graphs read-only.
 - For write operations on Tucker, such as launching training/eval, building artifacts, or moving/deleting files, prefer giving the exact command for the user to run unless they explicitly ask you to execute it.

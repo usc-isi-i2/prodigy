@@ -348,7 +348,21 @@ def get_covid19_twitter_dataloader(
     seed = sum(ord(c) for c in split) + int(
         kwargs.get("eval_episode_seed_offset", 0) or 0
     )
+    if kwargs.get("campaign_protocol") and split == "train" and "one_hop" in kwargs.get("campaign_flags", "").split(","):
+        import copy
+        original = dataset
+        dataset = copy.copy(dataset)
+        dataset.neighbor_sampler = copy.copy(original.neighbor_sampler)
+        dataset.neighbor_sampler.num_hops = 1
+        dataset.neighbor_sampler.hop_sizes = [100]
+        dataset.campaign_eval_dataset = original
     graph = dataset.graph
+    campaign = bool(kwargs.get("campaign_protocol"))
+    campaign_flags = kwargs.get("campaign_flags", "") if split == "train" else ""
+    if campaign and split != "train":
+        kwargs = {**kwargs, "neighbor_sampling_episode_source_weighting": "balanced",
+                  "neighbor_sampling_cross_source_prob": 0.0,
+                  "neighbor_sampling_source_sequence": "", "neighbor_sampling_source_sequence_steps": ""}
     task_name = kwargs.get("task_name", "neighbor_matching")
     aug_by_task = None  # set only by the nm_fp_cl rotation branch (per-episode aug map)
     if task_name == "neighbor_matching":
@@ -464,13 +478,20 @@ def get_covid19_twitter_dataloader(
                 "neighbor_sampling_episode_source='graph_id'; got neither, so the requested "
                 "source restriction would be silently ignored."
             )
+        task_class = NeighborTask
+        task_extra = {}
+        if campaign:
+            from experiments.nm_campaign import CampaignNeighborTask
+            task_class = CampaignNeighborTask
+            task_extra = dict(flags=campaign_flags, adaptive_weights=getattr(dataset, "campaign_region_weights", None))
         sampler = BatchSampler(
             batch_count,
-            NeighborTask(
+            task_class(
                 positive_sampler,
                 graph.num_nodes,
                 "inout",
                 kwargs.get("neighbor_sampling_strategy", "strict"),
+                **task_extra,
                 strata=strata,
                 confine_to_single_stratum=confine_to_single_stratum,
                 stratum_weighting=kwargs.get("neighbor_sampling_episode_source_weighting", "proportional"),

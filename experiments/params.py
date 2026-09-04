@@ -88,6 +88,13 @@ def _apply_config_defaults(parser, config):
 
 def get_params(argv=None):
     args = argparse.ArgumentParser()
+    args.add_argument('--campaign_flags', default='', type=str)
+    args.add_argument('--campaign_protocol', default=False, type=str2bool)
+    args.add_argument('--campaign_eval_interval', default=2000, type=int)
+    args.add_argument('--campaign_min_delta', default=0.001, type=float)
+    args.add_argument('--campaign_val_per_source', default=16, type=int)
+    args.add_argument('--campaign_holdout', default='twibot20', type=str)
+
 
     args.add_argument("--config", default="", type=str, help="Optional YAML config. CLI args override config values.")
     args.add_argument("-root", "--root", default="./FSdatasets", type=str)
