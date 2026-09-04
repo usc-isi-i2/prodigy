@@ -40,10 +40,12 @@ def main():
         complete=observed==expected and group.baseline_auc.notna().all()
         delta=float(inc.delta.mean()) if len(inc)==8 and inc.delta.notna().all() else None
         unseen=float(hold.delta.iloc[0]) if len(hold)==1 else None
+        overall=float(endpoint.delta.mean()) if len(endpoint)==len(TARGETS) and endpoint.delta.notna().all() else None
         rows.append(dict(arm=arm,status=verdict(delta) if complete else 'incomplete',
             cells=len(group),expected_cells=len(expected),
             endpoint_included_status=verdict(delta),endpoint_included_delta=delta,
             endpoint_unseen_status=verdict(unseen),endpoint_unseen_delta=unseen,
+            endpoint_all_targets_delta=overall,
             all_rung_included_delta=float(group[group.included].delta.mean()) if complete else None))
     summary=pd.DataFrame(rows);summary.to_csv(HERE/'data/arm_summary.csv',index=False)
     endpoint=summary[summary.arm!='baseline'].copy()
@@ -64,8 +66,13 @@ def main():
     role=frame.copy()
     role['role']=['included' if inc else 'unseen' if t==HOLDOUT else 'not_yet_included'
                   for inc,t in zip(role.included,role.target)]
-    role.groupby(['arm','rung','role'],as_index=False).agg(roc_auc=('roc_auc','mean'),
-        target_count=('target','nunique')).to_csv(HERE/'data/role_summary.csv',index=False)
+    role_summary=role.groupby(['arm','rung','role'],as_index=False).agg(roc_auc=('roc_auc','mean'),
+        target_count=('target','nunique'))
+    all_targets=role.groupby(['arm','rung'],as_index=False).agg(roc_auc=('roc_auc','mean'),
+        target_count=('target','nunique'))
+    # A fixed-panel mean is defined only when every target has a result.
+    all_targets=all_targets[all_targets.target_count==len(TARGETS)].assign(role='all_targets')
+    pd.concat([role_summary,all_targets],ignore_index=True).to_csv(HERE/'data/role_summary.csv',index=False)
     figures=HERE/'figures';figures.mkdir(exist_ok=True)
     comparison=''
     if 'combined' in set(summary.arm):
@@ -81,9 +88,11 @@ def main():
             comparison=(f'\nCombined included-source endpoint delta versus the strongest observed individual '
                 f'endpoint ({best.arm}): {margin:+.6f} ({verdict(margin)}). This is a descriptive test '
                 'comparison; test outcomes did not choose the recipe.\n')
-    for name,title in [('included','Included training sources'),('unseen','Unseen TwiBot-20'),
+    for name,title in [('all_targets','Fixed nine-graph evaluation panel'),('included','Included training sources'),('unseen','Unseen TwiBot-20'),
                        ('not_yet_included','Sources outside the current training rung')]:
-        subset=role[role.role==name]
+        if name=='all_targets':
+            subset=role.merge(all_targets[['arm','rung']],on=['arm','rung'],how='inner')
+        else:subset=role[role.role==name]
         if subset.empty:continue
         fig,ax=plt.subplots(figsize=(12,7))
         for arm,group in subset.groupby('arm',sort=False):
@@ -95,7 +104,7 @@ def main():
     (HERE/'FINDINGS.md').write_text('# Source-held-out NM intervention campaign\n\n'
         'Seed 0 exploratory results. All checkpoints selected using active training-source validation only; TwiBot-20 excluded from selection.\n\n'
         'Overall arm status requires all 8 rungs × 9 targets and paired baselines. Endpoint columns describe only the eight-source endpoint and may be available before the full campaign is complete. Effects use a ±0.001 practical threshold, not statistical significance. Baseline is the reference; its zero delta is not an intervention finding.\n\n'+
-        summary.to_markdown(index=False)+comparison+'\n\nIncluded-source, unseen-graph, and not-yet-included-source panels are separate. No CLS or LP runs are included. Plateau/cap metadata and exact configurations are retained in data/model_records.json.\n')
+        summary.to_markdown(index=False)+comparison+'\n\nThe all-target curve uses the same nine graphs at every rung and requires a complete target panel. Included-source and not-yet-included-source averages change graph membership across rungs; use the fixed-panel and unseen-graph curves to avoid that composition confound. All panels remain separate. No CLS or LP runs are included. Plateau/cap metadata and exact configurations are retained in data/model_records.json.\n')
     print(summary.to_string(index=False))
 
 if __name__=='__main__':main()
