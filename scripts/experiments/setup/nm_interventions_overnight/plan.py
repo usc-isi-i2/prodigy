@@ -15,6 +15,7 @@ ARMS = {
  'schedule': ('blocked', '64 consecutive episodes per source, cycling over active sources'),
  'composition': ('cross_graph', 'Each class chooses an active source with balanced probability'),
  'centers': ('degree_balanced', 'Choose a positive-degree log2 band uniformly, then a center'),
+ 'eligibility': ('low_degree', 'Keep degree-2+ centers; repeat only within disjoint support/query partitions'),
  'positives': ('uniform_positive', 'Uniform unique one-hop positives instead of sorted random-walk discoveries'),
  'negatives': ('degree_hard', 'Competing centers share a log2 degree band; band probability proportional to size'),
  'context': ('one_hop', 'One-hop training context, fanout 100, same 101-node cap; evaluation stays two-hop'),

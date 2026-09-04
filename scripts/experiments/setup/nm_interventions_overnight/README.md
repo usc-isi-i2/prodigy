@@ -37,8 +37,8 @@ operational, not proof of asymptotic convergence. The budget arm caps at 1250*ru
 
 ## Arms and attribution
 
-`plan.py:ARMS` defines each concrete intervention. 16 methods (baseline plus 15
-individual arms), eight rungs = 128 physical runs before combination. The eight-source
+`plan.py:ARMS` defines each concrete intervention. 17 methods (baseline plus 16
+individual arms), eight rungs = 136 physical runs before combination. The eight-source
 endpoint comes first. The 64-episode blocked schedule is cyclic; stopping occurs only
 after multiple full source cycles. Its exact realized exposure is logged and compared.
 
@@ -64,9 +64,12 @@ after multiple full source cycles. Its exact realized exposure is logged and com
 - budget: 1250 episodes/source cap, up to 10k at rung eight; endpoint is a replication
   of baseline distribution, not a new endpoint intervention.
 
-Low-degree support/query replacement is not silently counted as tested: duplicate
-support/query nodes would create trivial identity leakage. A valid masking/variable-
-episode intervention remains separately incomplete until implemented and validated.
+Low-degree eligibility is a separate arm: retain centers with at least two distinct
+neighbors; if fewer than seven, partition neighbors into disjoint support/query pools
+and repeat only within each pool. The same node never appears in both roles for one
+class. Repeated queries reduce effective unique examples; record this limitation and
+keep evaluation strict and unchanged. Degree>=7 centers retain baseline positives.
+
 
 Every model contains the same auxiliary head for initialization parity; only the
 objective arm trains it. Source affine parameters initialize at identity including

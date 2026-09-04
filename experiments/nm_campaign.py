@@ -55,7 +55,27 @@ class CampaignNeighborTask(NeighborTask):
             self.bins[key] = [(int(b), candidates[bucket == b]) for b in np.unique(bucket)]
         return self.bins[key]
 
+    def _eligible_candidates(self, candidates, num_member, cache_key):
+        minimum = 2 if 'low_degree' in self.flags else num_member
+        return super()._eligible_candidates(candidates, minimum, cache_key)
+
     def _sample_center_members(self, center, num_member, rng):
+        if 'low_degree' in self.flags:
+            if num_member != 7:
+                raise ValueError('Low-degree campaign arm requires 3 support / 4 query')
+            rowptr, col, _ = self.neighbor_sampler.whole_adj.csr()
+            neighbors = [n for n in torch.unique(col[int(rowptr[center]):int(rowptr[center+1])]).tolist() if n != center]
+            if len(neighbors) < 2:
+                return None
+            if len(neighbors) >= num_member:
+                return super()._sample_center_members(center, num_member, rng)
+            rng.shuffle(neighbors)
+            support_count = min(3, max(1, round(len(neighbors)*3/7)))
+            support, query = neighbors[:support_count], neighbors[support_count:]
+            # Repetition is confined to a partition. A support node NEVER also
+            # appears as a query for its class, avoiding the trivial identity leak.
+            return (support + rng.choices(support,k=3-len(support)) +
+                    query + rng.choices(query,k=4-len(query)))
         if 'uniform_positive' not in self.flags:
             return super()._sample_center_members(center, num_member, rng)
         rowptr, col, _ = self.neighbor_sampler.whole_adj.csr()

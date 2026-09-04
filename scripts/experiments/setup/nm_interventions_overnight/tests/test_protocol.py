@@ -47,6 +47,18 @@ class ProtocolTests(unittest.TestCase):
         seen=[next(iter(task.sample(3,7,3,4,rng)))//40 for _ in range(130)]
         self.assertEqual(seen[:64],[0]*64);self.assertEqual(seen[64:128],[1]*64)
 
+    def test_low_degree_roles_never_overlap(self):
+        from types import SimpleNamespace
+        class Adj:
+            def csr(self):
+                return torch.tensor([0,2,2,2]),torch.tensor([1,2]),None
+        task=self.task('low_degree')
+        task.neighbor_sampler=SimpleNamespace(whole_adj=Adj())
+        for seed in range(10):
+            members=task._sample_center_members(0,7,random.Random(seed))
+            self.assertEqual(len(members),7)
+            self.assertFalse(set(members[:3]) & set(members[3:]))
+
     def test_holdout_guard(self):
         with self.assertRaises(ValueError):
             prepare_model_dataset(self.dataset,dict(neighbor_sampling_source_subset='a,twibot20',campaign_holdout='twibot20'))
