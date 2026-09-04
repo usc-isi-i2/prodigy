@@ -15,6 +15,26 @@ def verdict(delta):
     return 'improved' if delta>0.001 else 'degraded' if delta < -0.001 else 'inconclusive'
 
 
+def combined_comparison(summary):
+    if 'combined' not in set(summary.arm):return pd.DataFrame()
+    combined=summary[summary.arm=='combined'].iloc[0]
+    expected=set(ARMS)-{'baseline','budget'}
+    rows=[]
+    for role,column in [('included','endpoint_included_delta'),('unseen','endpoint_unseen_delta'),
+                        ('all_targets','endpoint_all_targets_delta')]:
+        singles=summary[summary.arm.isin(expected)&summary[column].notna()]
+        delta=combined[column]
+        ready=set(singles.arm)==expected and pd.notna(delta)
+        best=singles.loc[singles[column].idxmax()] if ready else None
+        margin=float(delta-best[column]) if ready else None
+        rows.append(dict(role=role,combined_delta_baseline=delta,
+            individuals_compared=len(singles),best_single_arm=best.arm if ready else None,
+            best_single_delta_baseline=float(best[column]) if ready else None,
+            combined_delta_best_single=margin,status_vs_best=verdict(margin),
+            beats_baseline_and_best=(verdict(delta)=='improved' and verdict(margin)=='improved') if ready else None))
+    return pd.DataFrame(rows)
+
+
 def resource_summary():
     path=HERE/'data/resources.csv'
     if not path.exists():return ''
@@ -150,20 +170,13 @@ def main():
         role='all_targets',expected_targets=len(TARGETS),complete_panel=True)
     pd.concat([role_summary,all_targets],ignore_index=True).to_csv(HERE/'data/role_summary.csv',index=False)
     figures=HERE/'figures';figures.mkdir(exist_ok=True)
-    comparison=''
-    if 'combined' in set(summary.arm):
-        singles=summary[(~summary.arm.isin(['baseline','combined','budget'])) & summary.endpoint_included_delta.notna()]
-        combined=summary[summary.arm=='combined'].iloc[0]
-        if len(singles) and pd.notna(combined.endpoint_included_delta):
-            best=singles.loc[singles.endpoint_included_delta.idxmax()]
-            margin=combined.endpoint_included_delta-best.endpoint_included_delta
-            pd.DataFrame([dict(best_single_arm=best.arm,
-                combined_minus_best_single_included=margin,
-                verdict=verdict(margin),comparison='descriptive test comparison; not selection')]).to_csv(
-                    HERE/'data/combined_comparison.csv',index=False)
-            comparison=(f'\nCombined included-source endpoint delta versus the strongest observed individual '
-                f'endpoint ({best.arm}): {margin:+.6f} ({verdict(margin)}). This is a descriptive test '
-                'comparison; test outcomes did not choose the recipe.\n')
+    comparison='';combined_table=combined_comparison(summary)
+    if not combined_table.empty:
+        combined_table.to_csv(HERE/'data/combined_comparison.csv',index=False)
+        comparison=('\n\nCombined eight-source endpoint versus baseline and the strongest individual '
+            'intervention in each panel (budget diagnostic excluded). A best-single comparison requires '
+            'the complete individual candidate set. These are descriptive test comparisons; test outcomes '
+            'did not choose the recipe.\n\n'+combined_table.round(6).to_markdown(index=False)+'\n')
     for name,title in [('all_targets','Fixed nine-graph evaluation panel'),('included','Included training sources'),('unseen','Unseen TwiBot-20'),
                        ('not_yet_included','Sources outside the current training rung')]:
         if name=='all_targets':
