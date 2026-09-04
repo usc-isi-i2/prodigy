@@ -105,6 +105,29 @@ def graph_effects(paired):
     fig.savefig(HERE/'figures/endpoint_by_graph.pdf');plt.close(fig)
 
 
+def unseen_arm_panels(paired):
+    """Show each intervention against its paired baseline without overlapping curves."""
+    unseen=paired[paired.target==HOLDOUT]
+    if unseen.empty:return
+    arms=[arm for arm in ARMS if arm!='baseline']
+    if 'combined' in set(unseen.arm):arms.append('combined')
+    rows=(len(arms)+3)//4
+    fig,axes=plt.subplots(rows,4,figsize=(15,2.8*rows),sharex=True,sharey=True,squeeze=False)
+    baseline=unseen[unseen.arm=='baseline'].set_index('rung').roc_auc.reindex(range(1,9))
+    for ax,arm in zip(axes.flat,arms):
+        curve=unseen[unseen.arm==arm].set_index('rung').roc_auc.reindex(range(1,9))
+        ax.plot(baseline.index,baseline.values,'--o',color='#333333',markersize=3,label='baseline')
+        ax.plot(curve.index,curve.values,'-o',color='#2879b9',markersize=3,label='intervention')
+        ax.set(title=arm,xticks=range(1,9));ax.grid(alpha=.2)
+    for ax in list(axes.flat)[len(arms):]:ax.set_visible(False)
+    fig.suptitle('Unseen TwiBot-20: each intervention against baseline (seed 0)',fontsize=15)
+    fig.supxlabel('Number of training source graphs');fig.supylabel('NM ROC-AUC')
+    fig.legend(*axes[0,0].get_legend_handles_labels(),loc='upper center',bbox_to_anchor=(.5,.965),ncol=2)
+    fig.tight_layout(rect=(.02,.02,1,.935))
+    for suffix in ['png','pdf']:fig.savefig(HERE/f'figures/unseen_by_arm.{suffix}',dpi=170)
+    plt.close(fig)
+
+
 def main():
     path=HERE/'data/nm_results.csv'
     try:frame=pd.read_csv(path)
@@ -122,6 +145,7 @@ def main():
     paired=frame.merge(base,on=['rung','target'],how='left',validate='many_to_one')
     paired['delta']=paired.roc_auc-paired.baseline_auc
     graph_effects(paired)
+    unseen_arm_panels(paired)
     expected={(r,t) for r in range(1,9) for t in TARGETS}
     rows=[]
     for arm in list(ARMS)+(['combined'] if 'combined' in set(paired.arm) else []):
@@ -189,9 +213,12 @@ def main():
             subset=role[role.role==name].merge(complete_pairs,on=['arm','rung'],how='inner')
         if subset.empty:continue
         fig,ax=plt.subplots(figsize=(12,7))
-        for arm,group in subset.groupby('arm',sort=False):
+        arm_order=list(ARMS)+(['combined'] if 'combined' in set(subset.arm) else [])
+        for index,arm in enumerate(arm_order):
+            group=subset[subset.arm==arm]
+            if group.empty:continue
             curve=group.groupby('rung').roc_auc.mean().reindex(range(1,9))
-            ax.plot(curve.index,curve.values,marker='o',label=arm,linewidth=3 if arm=='baseline' else 1.4,alpha=1 if arm=='baseline' else .8)
+            ax.plot(curve.index,curve.values,marker='o',label=arm,color='black' if arm=='baseline' else plt.get_cmap('tab20')(index),linewidth=3 if arm=='baseline' else 1.4,alpha=1 if arm=='baseline' else .8)
         ax.set(xlabel='Number of training source graphs',ylabel='NM ROC-AUC',title=title,xticks=range(1,9))
         ax.grid(alpha=.2);ax.legend(bbox_to_anchor=(1.02,1),loc='upper left',fontsize=8)
         fig.tight_layout();fig.savefig(figures/f'{name}_ladder.png',dpi=170);fig.savefig(figures/f'{name}_ladder.pdf');plt.close(fig)
@@ -216,7 +243,7 @@ def main():
     (HERE/'FINDINGS.md').write_text('# Source-held-out NM intervention campaign\n\n'
         'Seed 0 exploratory results. All checkpoints selected using active training-source validation only; TwiBot-20 excluded from selection.\n\n'
         +recipe_note+'Overall arm status requires all 8 rungs × 9 targets and paired baselines. Endpoint columns describe only the eight-source endpoint and may be available before the full campaign is complete. Effects use a ±0.001 practical threshold, not statistical significance. Baseline is the reference; its zero delta is not an intervention finding.\n\n'+
-        summary.to_markdown(index=False)+comparison+resource_summary()+exposure_note+'\n\nThe all-target curve uses the same nine graphs at every rung and requires a complete target panel. Included-source and not-yet-included-source averages change graph membership across rungs; use the fixed-panel and unseen-graph curves to avoid that composition confound. All panels remain separate. No CLS or LP runs are included. Plateau/cap metadata and exact configurations are retained in data/model_records.json.\n')
+        summary.to_markdown(index=False)+comparison+resource_summary()+exposure_note+'\n\n[Unseen transfer by intervention](figures/unseen_by_arm.png) shows each method against baseline on shared axes. The all-target curve uses the same nine graphs at every rung and requires a complete target panel. Included-source and not-yet-included-source averages change graph membership across rungs; use the fixed-panel and unseen-graph curves to avoid that composition confound. All panels remain separate. No CLS or LP runs are included. Plateau/cap metadata and exact configurations are retained in data/model_records.json.\n')
     print(summary.to_string(index=False))
 
 if __name__=='__main__':main()
