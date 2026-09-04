@@ -301,7 +301,7 @@ class NeighborTask(TaskBase):
         self.strata = None
         if strata is not None:
             self.strata = [
-                [int(node_idx) for node_idx in stratum]
+                stratum if isinstance(stratum, np.ndarray) else [int(node_idx) for node_idx in stratum]
                 for stratum in strata
                 if len(stratum) > 0
             ]

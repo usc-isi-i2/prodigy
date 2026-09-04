@@ -73,6 +73,20 @@ code cannot be mutated by someone else's `git pull`:
   holds ~17 GB). Evaluate from the same worktree that trained, or pass absolute paths;
   do not assume `state/<run_name>/` resolves just because you are on the right branch.
 
+## Fast multi-model training
+
+- Read `docs/fast_training.md` before high-throughput PRODIGY NM training. It
+  records implementation/validation status as well as exact commands.
+- `experiments/run_shared_graph.py` shares one full CPU graph between independent
+  source-restricted trainers. Use `--dry-run` and a total `--worker-budget`.
+- Anomaly debugging is off by default; `--detect_anomaly True` enables it. For one
+  model, 8–16 loader workers is a measured starting point. For many models, divide
+  a total worker budget instead of multiplying that count by every model.
+- Only GPUs 2 and 3 are owned. Long runs need their own worktree and tmux session;
+  existing cluster execution-authorization rules still apply.
+- Smoke runs are explicitly labelled and are not completed experiment results.
+  Exact training-state resume still requires zero workers.
+
 ## Environment
 
 - Use the `prodigy` conda environment for training and evaluation commands.

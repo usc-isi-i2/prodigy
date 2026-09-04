@@ -178,6 +178,10 @@ def get_params(argv=None):
 
     args.add_argument("-verbose", "--verbose", default=False, type=str2bool)
 
+    args.add_argument("--detect_anomaly", default=False, type=str2bool,
+                      help="Enable expensive autograd anomaly debugging (off for normal training).")
+    args.add_argument("--loader_start_method", default="", choices=("", "spawn", "forkserver"),
+                      help="Optional CPU DataLoader process context; shared training uses spawn.")
     args.add_argument("-workers", "--workers", default=10, type=int)  # Number of workers per dataloader
     args.add_argument("-gpu", "--device", default=123, type=int)  # device 123 means CPU
 

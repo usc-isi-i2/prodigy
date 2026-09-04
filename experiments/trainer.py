@@ -142,6 +142,7 @@ class TrainerFS():
     )
 
     def __init__(self, dataset, parameter):
+        torch.autograd.set_detect_anomaly(bool(parameter.get("detect_anomaly", False)))
         wandb.init(project="graph-clip", name=parameter["exp_name"], tags=parameter.get("tags") or None)
         _save_config_to_wandb_files(parameter)
         #wandb.run.log_code(".")
@@ -545,6 +546,8 @@ class TrainerFS():
         kwargs = {}
         kwargs["root"] = os.path.join(self.parameter["root"], dataset_name)
         kwargs["num_workers"] = self.parameter["workers"]
+        kwargs["detect_anomaly"] = self.parameter.get("detect_anomaly", False)
+        kwargs["loader_start_method"] = self.parameter.get("loader_start_method", "")
         kwargs["batch_size"] = self.parameter["batch_size"]
         kwargs["n_way"] = self.parameter["n_way"]
         kwargs["n_shot"] = self.parameter["n_shots"]
@@ -2106,6 +2109,9 @@ class TrainerFS():
                 load=f"{(t2-t1):.2f}s",
                 step=f"{(t3-t2):.2f}s",
             )
+            observer = getattr(self, "training_step_observer", None)
+            if observer is not None:
+                observer(steps_run)
             # Save checkpoints by COMPLETED step count. This used to test and name by the
             # pre-increment loop variable `e`, so `state_dict_2000` from an in-loop save
             # had actually run 2001 steps while the terminal save below counts honestly —

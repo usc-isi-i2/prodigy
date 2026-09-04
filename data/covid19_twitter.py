@@ -1,4 +1,5 @@
 import os
+from functools import partial
 from typing import Optional, Set, Union
 
 import numpy as np
@@ -318,6 +319,11 @@ def parse_source_sequence_steps(steps_spec, expected_count, expected_total):
     return steps
 
 
+def configure_cpu_loader_worker(worker_id, *, detect_anomaly=False):
+    """Set debugging explicitly in spawned CPU workers, without initializing CUDA."""
+    torch.autograd.set_detect_anomaly(detect_anomaly)
+
+
 def get_covid19_twitter_dataloader(
         dataset: SubgraphDataset,
         split: str,
@@ -374,7 +380,9 @@ def get_covid19_twitter_dataloader(
             if not hasattr(graph, "graph_id"):
                 raise ValueError("graph_id neighbor sampling requires graph.graph_id metadata.")
             graph_ids = graph.graph_id.detach().cpu().numpy()
-            stratum_ids = sorted(set(graph_ids.tolist()))
+            shared_pools = getattr(dataset, "source_node_pools", None)
+            stratum_ids = sorted(shared_pools) if shared_pools is not None else sorted(set(graph_ids.tolist()))
+            source_count = len(stratum_ids)
             source_names = list(getattr(graph, "source_graph_names", []))
             # Optionally restrict episodes to a subset of the merged sources. The merge is a
             # disjoint block-concat, so a neighborhood sampled around a center never leaves its
@@ -411,14 +419,16 @@ def get_covid19_twitter_dataloader(
                     "neighbor_sampling_source_sequence_steps was set without "
                     "neighbor_sampling_source_sequence."
                 )
-            strata = [np.where(graph_ids == graph_id)[0].tolist() for graph_id in stratum_ids]
+            strata = ([shared_pools[graph_id].numpy() for graph_id in stratum_ids]
+                      if shared_pools is not None else
+                      [np.where(graph_ids == graph_id)[0].tolist() for graph_id in stratum_ids])
             confine_to_single_stratum = episode_source == "graph_id"
             summary = ", ".join(
                 f"{source_names[graph_id] if graph_id < len(source_names) else graph_id}:{len(stratum)}"
                 for graph_id, stratum in zip(stratum_ids, strata)
             )
             mode = "confine-to-one-source" if confine_to_single_stratum else "balance-within-episode"
-            scope = f" [subset {len(stratum_ids)}/{len(set(graph_ids.tolist()))} sources]" if subset else ""
+            scope = f" [subset {len(stratum_ids)}/{source_count} sources]" if subset else ""
             print(f"Neighbor sampling graph_id strata ({mode}){scope}: {summary}", flush=True)
             if batch_source_mode == "complete":
                 if episode_source != "graph_id":
@@ -803,6 +813,9 @@ def get_covid19_twitter_dataloader(
         dataset,
         batch_sampler=sampler,
         num_workers=num_workers,
+        multiprocessing_context=(kwargs.get("loader_start_method") or None) if num_workers else None,
+        worker_init_fn=partial(configure_cpu_loader_worker,
+                              detect_anomaly=bool(kwargs.get("detect_anomaly", False))),
         collate_fn=Collator(
             label_embeddings, aug=aug_fn, is_multiway=is_multiway,
             task_name=task_name, aug_by_task=aug_by_task,
