@@ -8,9 +8,10 @@ import matplotlib.pyplot as plt
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('snapshot',type=Path)
-    p.add_argument('--output',type=Path,required=True);p.add_argument('--rung',type=int,default=8)
+    p.add_argument('--output',type=Path,required=True);p.add_argument('--rung',type=int,default=8,
+        choices=range(9),help='Training rung to show; 0 shows all rungs')
     args=p.parse_args();snapshot=json.loads(args.snapshot.read_text())
-    models=[m for m in snapshot['models'] if f'_r{args.rung}_' in m['model'] and m.get('training_curve')]
+    models=[m for m in snapshot['models'] if (args.rung==0 or f'_r{args.rung}_' in m['model']) and m.get('training_curve')]
     if not models:raise ValueError('No curves for requested rung')
     fig,axes=plt.subplots(math.ceil(len(models)/4),4,figsize=(18,3.4*math.ceil(len(models)/4)),squeeze=False)
     for ax,model in zip(axes.flat,models):
@@ -25,7 +26,8 @@ def main():
             right.set_ylabel('Source validation AUC',color='tab:orange',fontsize=8)
             right.set_ylim(.5,1)
     for ax in list(axes.flat)[len(models):]:ax.set_visible(False)
-    fig.suptitle(f'Rung {args.rung}: blue = training NM loss; orange = training-source validation only')
+    label='All rungs' if args.rung==0 else f'Rung {args.rung}'
+    fig.suptitle(f'{label}: blue = training NM loss; orange = training-source validation only')
     fig.tight_layout();args.output.parent.mkdir(parents=True,exist_ok=True)
     fig.savefig(args.output,dpi=140);plt.close(fig)
 
