@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 HERE=Path(__file__).resolve().parent
 ROOT=HERE.parents[6]
 sys.path.insert(0,str(ROOT))
-from scripts.experiments.setup.nm_interventions_overnight.plan import ARMS, TARGETS, HOLDOUT
+from scripts.experiments.setup.nm_interventions_overnight.plan import ARMS, TARGETS, HOLDOUT, ORDER
 
 
 def verdict(delta):
@@ -49,6 +49,41 @@ def resource_summary():
         'Effect verdicts apply to this bounded training protocol.\n')
 
 
+def graph_effects(paired):
+    endpoint=paired[(paired.rung==8)&(paired.arm!='baseline')]
+    if endpoint.empty:return
+    arms=[a for a in ARMS if a!='baseline']+(['combined'] if 'combined' in set(endpoint.arm) else [])
+    matrix=endpoint.pivot(index='arm',columns='target',values='delta').reindex(index=arms,columns=list(ORDER)+[HOLDOUT])
+    if not matrix.notna().any().any():return
+    matrix['included_mean']=matrix[list(ORDER)].mean(axis=1).where(matrix[list(ORDER)].notna().all(axis=1))
+    columns=list(ORDER)+['included_mean',HOLDOUT];matrix=matrix[columns]
+    matrix.to_csv(HERE/'data/endpoint_by_graph.csv')
+    catalog=json.loads((ROOT/'docs/graph_catalog.json').read_text())
+    names={g['dataset_key']:g['canonical_name'] for g in catalog['graphs']}
+    aliases={'ukr_rus':'ukr_rus_twitter','covid':'covid19_twitter','cp_hk':'cp_hk_twitter'}
+    labels=[names.get(aliases.get(c,c),c) for c in columns]
+    labels[-2]='included mean';labels[-1]+=' (unseen)'
+    limit=max(.005,float(matrix.abs().max().max()))
+    cmap=plt.get_cmap('RdBu').copy();cmap.set_bad('#dddddd')
+    fig,ax=plt.subplots(figsize=(14,8))
+    im=ax.imshow(matrix.to_numpy(dtype=float),cmap=cmap,vmin=-limit,vmax=limit,aspect='auto')
+    ax.set(xticks=range(len(columns)),xticklabels=labels,yticks=range(len(arms)),yticklabels=arms,
+           title='Eight-source endpoint: per-graph NM ROC-AUC difference from baseline')
+    plt.setp(ax.get_xticklabels(),rotation=40,ha='right',fontsize=8)
+    for i in range(len(arms)):
+        for j in range(len(columns)):
+            value=matrix.iloc[i,j]
+            ax.text(j,i,'—' if pd.isna(value) else f'{value:+.3f}',ha='center',va='center',fontsize=7,
+                    color='white' if pd.notna(value) and abs(value)>limit*.6 else 'black')
+    ax.axvline(len(ORDER)-.5,color='black',lw=1)
+    ax.axvline(len(ORDER)+.5,color='black',lw=1)
+    fig.colorbar(im,ax=ax,label='Δ NM ROC-AUC',shrink=.7)
+    fig.text(.5,.01,'Seed 0; same fixed episodes per graph. Grey cells are pending.',ha='center',fontsize=9)
+    fig.tight_layout(rect=(0,.03,1,1));(HERE/'figures').mkdir(exist_ok=True)
+    fig.savefig(HERE/'figures/endpoint_by_graph.png',dpi=170)
+    fig.savefig(HERE/'figures/endpoint_by_graph.pdf');plt.close(fig)
+
+
 def main():
     path=HERE/'data/nm_results.csv'
     try:frame=pd.read_csv(path)
@@ -65,6 +100,7 @@ def main():
     base=frame[frame.arm=='baseline'][['rung','target','roc_auc']].rename(columns={'roc_auc':'baseline_auc'})
     paired=frame.merge(base,on=['rung','target'],how='left',validate='many_to_one')
     paired['delta']=paired.roc_auc-paired.baseline_auc
+    graph_effects(paired)
     expected={(r,t) for r in range(1,9) for t in TARGETS}
     rows=[]
     for arm in list(ARMS)+(['combined'] if 'combined' in set(paired.arm) else []):
