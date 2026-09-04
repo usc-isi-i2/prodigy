@@ -18,11 +18,13 @@ from scripts.experiments.setup.nm_interventions_overnight.plan import TARGETS, H
 def discover(run_dirs):
     jobs=[]
     for run in run_dirs:
+        manifest=json.loads((Path(run)/'manifest.json').read_text())
         for path in sorted(Path(run).glob('job_*/result.json')):
             result=json.loads(path.read_text())
             if result.get('status')!='complete':
                 continue
             params=json.loads((path.parent/'effective_config.json').read_text())
+            params['campaign_revision']=manifest['revision']
             if params['exp_name'].startswith('smoke_'):
                 continue
             state=Path(result['checkpoint_dir']).parent
