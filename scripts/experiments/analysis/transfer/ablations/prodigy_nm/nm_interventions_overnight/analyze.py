@@ -148,7 +148,9 @@ def main():
     unseen_arm_panels(paired)
     expected={(r,t) for r in range(1,9) for t in TARGETS}
     rows=[]
-    for arm in list(ARMS)+(['combined'] if 'combined' in set(paired.arm) else []):
+    recipe_path=HERE/'data/combined_selection.json'
+    recipe_expected=recipe_path.exists() and bool(json.loads(recipe_path.read_text())['flags'])
+    for arm in list(ARMS)+(['combined'] if recipe_expected or 'combined' in set(paired.arm) else []):
         group=paired[paired.arm==arm];endpoint=group[group.rung==8]
         inc=endpoint[endpoint.included];hold=endpoint[endpoint.target==HOLDOUT]
         observed=set(zip(group.rung,group.target))

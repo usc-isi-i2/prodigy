@@ -25,6 +25,16 @@ Overall arm status requires all 8 rungs × 9 targets and paired baselines. Endpo
 | region_adaptive | degraded     |      72 |               72 | degraded                   |              -0.00623185  | degraded                 |            -0.00522614  |                 -0.0061201   |              -0.0068783   |
 | coverage        | degraded     |      72 |               72 | degraded                   |              -0.00220001  | degraded                 |            -0.00124469  |                 -0.00209386  |              -0.00250602  |
 | budget          | inconclusive |      72 |               72 | inconclusive               |              -0.000964079 | degraded                 |            -0.00262548  |                 -0.00114868  |              -0.00180662  |
+| combined        | incomplete   |       0 |               72 | incomplete                 |             nan           | incomplete               |           nan           |                nan           |             nan           |
+
+Combined eight-source endpoint versus baseline and the strongest individual intervention in each panel (budget diagnostic excluded). A best-single comparison requires the complete individual candidate set. These are descriptive test comparisons; test outcomes did not choose the recipe.
+
+| role        |   combined_delta_baseline |   individuals_compared | best_single_arm   | best_single_delta_baseline   | combined_delta_best_single   | status_vs_best   | beats_baseline_and_best   |
+|:------------|--------------------------:|-----------------------:|:------------------|:-----------------------------|:-----------------------------|:-----------------|:--------------------------|
+| included    |                       nan |                     15 |                   |                              |                              | incomplete       |                           |
+| unseen      |                       nan |                     15 |                   |                              |                              | incomplete       |                           |
+| all_targets |                       nan |                     15 |                   |                              |                              | incomplete       |                           |
+
 
 Training cost and stopping evidence for completed models:
 
@@ -47,10 +57,11 @@ Training cost and stopping evidence for completed models:
 | region_adaptive |                8 |            1640514 |            9000 |               6 |           2 |                          1 |                            56.04 |            482.05 |
 | coverage        |                8 |            1640514 |            9750 |               1 |           7 |                          4 |                            54.64 |            474.87 |
 | budget          |                8 |            1640514 |            5625 |               1 |           7 |                          3 |                            55.49 |            472.8  |
+| combined        |                8 |            1640514 |           10000 |               2 |           6 |                          4 |                            49.05 |            531.88 |
 
 Parameter counts include the registered frozen label table; resources.csv separately records optimizer parameter slots and the auxiliary head. Timing comes from concurrent runs, excludes initial validation-cache construction from the loop timer, and is not an isolated speed benchmark. Peak tensor memory excludes CUDA context overhead. A cap stop is not evidence of convergence; cap_with_last_check_gain counts capped runs whose final validation increment still exceeded 0.001. Effect verdicts apply to this bounded training protocol.
 
 
-Source exposure audit passed for all 136 collected models: 12664 cumulative curve records plus every terminal record. Inactive sources, including TwiBot-20, have zero exposure; source totals match consumed episodes. Blocked-arm records match the exact 64-episode source cycle. See [per-model checks](data/exposure_audit.json) and [terminal exposures](data/source_exposure.csv).
+Source exposure audit passed for all 144 collected models: 13472 cumulative curve records plus every terminal record. Inactive sources, including TwiBot-20, have zero exposure; source totals match consumed episodes. Blocked-arm records match the exact 64-episode source cycle. See [per-model checks](data/exposure_audit.json) and [terminal exposures](data/source_exposure.csv).
 
 [Unseen transfer by intervention](figures/unseen_by_arm.png) shows each method against baseline on shared axes. The all-target curve uses the same nine graphs at every rung and requires a complete target panel. Included-source and not-yet-included-source averages change graph membership across rungs; use the fixed-panel and unseen-graph curves to avoid that composition confound. All panels remain separate. No CLS or LP runs are included. Plateau/cap metadata and exact configurations are retained in data/model_records.json.
