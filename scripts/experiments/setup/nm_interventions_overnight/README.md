@@ -97,6 +97,11 @@ Require average paired validation delta >0.001, positive signs on at least half 
 rungs, and no average per-source regression below -0.01. For region_adaptive, also
 compare against centers. Prefer the larger validation gain for mutually exclusive
 center-policy alternatives. Do not combine a budget diagnostic with a sampler recipe.
+Resolve conflicts greedily by descending validation gain (arm name breaks exact ties).
+Blocked scheduling conflicts with proportional exposure and cross-graph composition;
+cross-graph composition conflicts with episode-wide degree-matched negatives.
+Low-degree eligibility and uniform positives are alternative positive-construction
+policies. Record every compatibility exclusion in the frozen selection artifact.
 If no eligible improvements exist, document baseline as retained and skip redundant
 combination training. Combined success must beat baseline and best single arm.
 
