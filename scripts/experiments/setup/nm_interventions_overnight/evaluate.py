@@ -56,7 +56,7 @@ def model_from_params(params, checkpoint, device):
     return model.to(device).eval()
 
 
-def worker(dataset,jobs,output,worker_id,episodes,targets):
+def worker(dataset,jobs,output,worker_id,episodes,targets,validation_only=False):
     os.setsid()
     import torch
     from experiments.nm_campaign import atomic_json,materialize,evaluate
@@ -69,6 +69,33 @@ def worker(dataset,jobs,output,worker_id,episodes,targets):
     revision=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     try:
         for target in targets:
+            # Replay the trainer's exact validation panel after strict checkpoint
+            # reload. This checks model reconstruction AND metric/data parity.
+            validation_cache={}
+            for job in jobs:
+                if target not in job['selection']['sources']:continue
+                p=job['params'];selection=job['selection'];state=Path(job['state'])
+                protocol=json.loads((state/'validation_protocol.json').read_text())
+                count=protocol['episodes_per_source']
+                if count not in validation_cache:
+                    validation_cache[count]=materialize(dataset,p,target,'val',count)
+                batches,fp=validation_cache[count]
+                if fp!=protocol['fingerprints'][target]:
+                    raise ValueError(f'Validation fingerprint mismatch: {p["prefix"]} {target}')
+                model=model_from_params(p,selection['checkpoint'],device)
+                metrics=evaluate(model,batches,device)
+                history=json.loads((state/'validation_history.json').read_text())
+                expected=next(r for r in history if r['step']==selection['best_step'])['per_source'][target]
+                errors={key:abs(metrics[key]-expected[key]) for key in ('roc_auc','accuracy','loss')}
+                if max(errors.values())>1e-6:
+                    raise ValueError(f'Validation checkpoint replay mismatch: {p["prefix"]} {target}: {errors}')
+                atomic_json(output/'validation_replay'/p['prefix']/f'{target}.json',
+                    dict(status='passed',checkpoint=selection['checkpoint'],fingerprint=fp,
+                         errors=errors,metrics=metrics,evaluation_revision=revision))
+                print(f'VALIDATION REPLAY PASS {p["prefix"]} {target}',flush=True)
+                del model
+            validation_cache.clear()
+            if validation_only:continue
             pending=[]
             for job in jobs:
                 path=output/'cells'/job['params']['prefix']/f'{target}.json'
@@ -112,10 +139,14 @@ def main():
     a.add_argument('--output',type=Path,required=True);a.add_argument('--gpus',nargs='+',type=int,default=[0,1,2,3],choices=range(4))
     a.add_argument('--workers-per-gpu',type=int,default=2);a.add_argument('--episodes',type=int,default=512)
     a.add_argument('--targets',nargs='+',default=list(TARGETS));a.add_argument('--dry-run',action='store_true')
+    a.add_argument('--validation-only',action='store_true',help='Replay selected checkpoints on training-source validation only')
     args=a.parse_args()
     jobs=discover(args.run_dirs)
     if not jobs: raise ValueError('No completed production models')
-    print(f'{len(jobs)} models x {len(args.targets)} targets = {len(jobs)*len(args.targets)} cells',flush=True)
+    if args.validation_only:
+        print(f'{len(jobs)} models: training-source checkpoint replay only; no test results',flush=True)
+    else:
+        print(f'{len(jobs)} models x {len(args.targets)} targets = {len(jobs)*len(args.targets)} cells',flush=True)
     if args.dry_run:return
     import torch
     from experiments.params import get_params
@@ -123,7 +154,8 @@ def main():
     from experiments.run_shared_graph import prepare_shared_dataset,start_on_gpu
     from experiments.nm_campaign import atomic_json
     args.output.mkdir(parents=True,exist_ok=True)
-    atomic_json(args.output/'plan.json',dict(models=[j['params']['prefix'] for j in jobs],targets=args.targets,episodes=args.episodes))
+    atomic_json(args.output/'plan.json',dict(models=[j['params']['prefix'] for j in jobs],targets=args.targets,
+        episodes=args.episodes,validation_only=args.validation_only))
     p=get_params(['--config',jobs[0]['params']['config']])
     torch.set_num_threads(4);torch.autograd.set_detect_anomaly(False)
     dataset=prepare_shared_dataset(load_dataset(p))
@@ -133,7 +165,7 @@ def main():
     for i,gpu in enumerate(slots):
         selected=jobs[i::len(slots)]
         if not selected:continue
-        process=context.Process(target=worker,args=(dataset,selected,str(args.output),i,args.episodes,args.targets))
+        process=context.Process(target=worker,args=(dataset,selected,str(args.output),i,args.episodes,args.targets,args.validation_only))
         start_on_gpu(process,gpu);processes.append(process)
     for process in processes:process.join()
     failures=[p.exitcode for p in processes if p.exitcode!=0]

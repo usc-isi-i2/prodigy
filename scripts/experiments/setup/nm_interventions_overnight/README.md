@@ -107,6 +107,9 @@ combination training. Combined success must beat baseline and best single arm.
 
 Final NM: 512 fixed 30-way/3-shot/4-query episodes per target, fixed source-independent
 random seeds, shared target-major caches, common metric implementation and fingerprints.
+Before testing each selected checkpoint, the evaluation runner replays its training-source
+validation panel and requires identical episode fingerprints and ROC-AUC, accuracy,
+and loss within 1e-6. `run_evaluation.sh --validation-only` runs only this replay gate.
 Report all cells plus included-source, not-yet-included and TwiBot-20-only summaries.
 Do not compare these numbers to historical figures without metric/panel parity.
 Primary endpoint conclusion uses paired source-macro delta >0.001; negative < -0.001;
