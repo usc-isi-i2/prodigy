@@ -2,12 +2,31 @@
 import argparse
 import csv
 import json
+import math
 from pathlib import Path
 import re
 import sys
 ROOT=Path(__file__).resolve().parents[7]
 sys.path.insert(0,str(ROOT))
 from scripts.experiments.setup.nm_interventions_overnight.evaluate import discover
+from scripts.experiments.setup.nm_interventions_overnight.plan import HOLDOUT, TARGETS
+
+
+def audit_exposure(exposure, episodes, sources, flags):
+    """Check actual consumed episodes, including the terminal partial log interval."""
+    if HOLDOUT in sources or set(exposure)!=set(TARGETS):
+        raise ValueError('Invalid source exposure panel')
+    if any(not math.isfinite(v) or v<0 for v in exposure.values()):
+        raise ValueError('Non-finite or negative source exposure')
+    if any(v!=0 for source,v in exposure.items() if source not in sources):
+        raise ValueError('Exposure outside active training sources')
+    if abs(sum(exposure.values())-episodes)>1e-5:
+        raise ValueError('Source exposure does not sum to consumed episodes')
+    if 'blocked' in flags:
+        cycles,remainder=divmod(episodes,64*len(sources))
+        expected={s:cycles*64+max(0,min(64,remainder-i*64)) for i,s in enumerate(sources)}
+        if any(abs(v-expected.get(s,0))>1e-8 for s,v in exposure.items()):
+            raise ValueError('Consumed exposure disagrees with 64-episode source blocks')
 
 
 def write_csv(path,rows):
@@ -31,7 +50,7 @@ def main():
                             (path.parent/'console.log').read_text())
             if not match:raise ValueError(f'Missing model parameter count: {path.parent}')
             runtime[config['prefix']]=dict(result=result,model_parameters_before_label_freeze=int(match.group(1)))
-    records=[];curves=[];vals=[];cells=[];resources=[]
+    records=[];curves=[];vals=[];cells=[];resources=[];exposures=[];exposure_audits=[]
     for job in jobs:
         p=job['params'];selection=job['selection'];model=p['prefix']
         state=Path(job['state']);hist=json.loads((state/'validation_history.json').read_text())
@@ -53,8 +72,20 @@ def main():
             validation_inference_seconds=sum(v['seconds'] for h in hist for v in h['per_source'].values())))
         records.append(dict(model_id=model,params=p,selection=selection,validation_history=hist,runtime=resource,
                             validation_protocol=json.loads((state/'validation_protocol.json').read_text())))
+        curve_checks=0
         for line in (state/'training_curve.jsonl').read_text().splitlines():
-            r=json.loads(line);r.pop('exposure',None);curves.append(dict(model_id=model,**r))
+            r=json.loads(line)
+            audit_exposure(r.pop('exposure'),r['episodes'],selection['sources'],selection['flags'])
+            curve_checks+=1
+            curves.append(dict(model_id=model,**r))
+        final_episodes=selection['training_steps']*p['batch_size']
+        audit_exposure(selection['exposure'],final_episodes,selection['sources'],selection['flags'])
+        exposures.extend(dict(model_id=model,source=source,training_steps=selection['training_steps'],
+                              consumed_episodes=final_episodes,exposure_episodes=value)
+                         for source,value in selection['exposure'].items())
+        exposure_audits.append(dict(model_id=model,status='passed',curve_records_checked=curve_checks,
+                                   terminal_episodes_checked=final_episodes,
+                                   exact_block_schedule_checked='blocked' in selection['flags']))
         for check in hist:
             for source,row in check['per_source'].items():
                 vals.append(dict(model_id=model,step=check['step'],source=source,**row))
@@ -72,6 +103,8 @@ def main():
     write_csv(args.output/'training_curves.csv',curves)
     write_csv(args.output/'validation.csv',vals)
     write_csv(args.output/'resources.csv',resources)
+    write_csv(args.output/'source_exposure.csv',exposures)
+    (args.output/'exposure_audit.json').write_text(json.dumps(exposure_audits,indent=2)+'\n')
     write_csv(args.output/'nm_results.csv',cells)
     (args.output/'coverage.json').write_text(json.dumps(dict(completed_models=len(records),nm_cells=len(cells),fingerprints=fingerprints),indent=2)+'\n')
     print(f'Exported {len(records)} completed models; {len(cells)} NM cells')
