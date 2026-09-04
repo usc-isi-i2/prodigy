@@ -179,10 +179,20 @@ def main():
         ax.set(xlabel='Number of training source graphs',ylabel='NM ROC-AUC',title=title,xticks=range(1,9))
         ax.grid(alpha=.2);ax.legend(bbox_to_anchor=(1.02,1),loc='upper left',fontsize=8)
         fig.tight_layout();fig.savefig(figures/f'{name}_ladder.png',dpi=170);fig.savefig(figures/f'{name}_ladder.pdf');plt.close(fig)
+    exposure_audit=json.loads((HERE/'data/exposure_audit.json').read_text())
+    model_records=json.loads((HERE/'data/model_records.json').read_text())
+    if ({r['model_id'] for r in exposure_audit}!={r['model_id'] for r in model_records}
+            or any(r['status']!='passed' for r in exposure_audit)):
+        raise ValueError('Exposure audit does not cover every collected model')
+    exposure_note=(f"\n\nSource exposure audit passed for all {len(exposure_audit)} collected models: "
+        f"{sum(r['curve_records_checked'] for r in exposure_audit)} cumulative curve records plus every terminal record. "
+        'Inactive sources, including TwiBot-20, have zero exposure; source totals match consumed episodes. '
+        'Blocked-arm records match the exact 64-episode source cycle. '
+        'See [per-model checks](data/exposure_audit.json) and [terminal exposures](data/source_exposure.csv).')
     (HERE/'FINDINGS.md').write_text('# Source-held-out NM intervention campaign\n\n'
         'Seed 0 exploratory results. All checkpoints selected using active training-source validation only; TwiBot-20 excluded from selection.\n\n'
         'Overall arm status requires all 8 rungs × 9 targets and paired baselines. Endpoint columns describe only the eight-source endpoint and may be available before the full campaign is complete. Effects use a ±0.001 practical threshold, not statistical significance. Baseline is the reference; its zero delta is not an intervention finding.\n\n'+
-        summary.to_markdown(index=False)+comparison+resource_summary()+'\n\nThe all-target curve uses the same nine graphs at every rung and requires a complete target panel. Included-source and not-yet-included-source averages change graph membership across rungs; use the fixed-panel and unseen-graph curves to avoid that composition confound. All panels remain separate. No CLS or LP runs are included. Plateau/cap metadata and exact configurations are retained in data/model_records.json.\n')
+        summary.to_markdown(index=False)+comparison+resource_summary()+exposure_note+'\n\nThe all-target curve uses the same nine graphs at every rung and requires a complete target panel. Included-source and not-yet-included-source averages change graph membership across rungs; use the fixed-panel and unseen-graph curves to avoid that composition confound. All panels remain separate. No CLS or LP runs are included. Plateau/cap metadata and exact configurations are retained in data/model_records.json.\n')
     print(summary.to_string(index=False))
 
 if __name__=='__main__':main()
