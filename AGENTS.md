@@ -79,6 +79,8 @@ code cannot be mutated by someone else's `git pull`:
   records implementation/validation status as well as exact commands.
 - `experiments/run_shared_graph.py` shares one full CPU graph between independent
   source-restricted trainers. Use `--dry-run` and a total `--worker-budget`.
+- Eight models completed 200 steps each on Tucker GPU 2 with four workers each
+  at revision `677f50c`; this is smoke validation, not a concurrency optimum.
 - Anomaly debugging is off by default; `--detect_anomaly True` enables it. For one
   model, 8–16 loader workers is a measured starting point. For many models, divide
   a total worker budget instead of multiplying that count by every model.

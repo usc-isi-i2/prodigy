@@ -12,16 +12,23 @@ on idle Tucker. For multiple models, use the launcher's total worker budget.
 ## Status and validation
 
 Implementation worktree: `/Users/philipp/projects/gfm/prodigy-profile`, branch
-`codex/ladder-sampling-profile`. The implementation is currently local and awaits
-approval to push through Git and run its full-graph smoke validation on Tucker.
-Do not describe eight-model training as cluster-validated yet. The earlier
-single-model profiling results are already committed and pushed on this branch.
+`codex/ladder-sampling-profile`, pushed to origin. Tucker worktree:
+`/dataMeR1/phil/gfm/prodigy-profile`. Revision `677f50c` passed a full-graph
+eight-model smoke run on physical GPU 2 on 2026-09-04: all eight ladder rungs
+completed 200 steps with finite, distinct terminal checkpoints. Four loader
+workers per model used a total budget of 32. Aggregate throughput after warmup
+was 57.9 steps/s across the combined measurement window; shared graph setup
+took 144 seconds. This validates concurrent execution, not optimal concurrency,
+long-run stability, or an eightfold speedup. See the
+[validation report](../scripts/experiments/analysis/evaluation/performance/ladder_sampling_profile/SHARED_TRAINING_VALIDATION.md).
 
-Five local CPU correctness tests passed on 2026-09-04. Local checks live in
+The shared-training, source-subset, and sequential-source-schedule suites passed
+22 tests on Tucker. Shared-training checks live in
 `experiments/tests/test_shared_graph_training.py`; run them with the `prodigy`
 Python using `-m unittest discover -s experiments/tests -p test_shared_graph_training.py`.
 They cover spawned shared storage, unchanged source-pool episode draws,
-source boundaries, cross-source edge rejection, and config/worker-budget checks.
+source boundaries, cross-source edge rejection, config/worker-budget checks, and
+GPU visibility being assigned before spawning an interpreter.
 
 ## Plan before launch
 
@@ -48,7 +55,7 @@ after validation and authorization. Long training runs belong in tmux; include t
 PATH export and environment activation **inside** its command. The user normally
 launches long sweeps; this guide does not itself authorize a launch.
 
-For the initial bounded validation, add `--smoke-steps 200` and use a separate
+For a bounded validation, add `--smoke-steps 200` and use a separate
 output directory. Smoke mode labels runs `smoke_`, overrides the budget, and
 disables evaluation. Its checkpoints are not completed ladder results. It rejects
 blocked-source schedules to avoid silently truncating source exposure.
@@ -71,6 +78,9 @@ blocked-source schedules to avoid silently truncating source exposure.
   Start from an unmasked environment (unset `CUDA_VISIBLE_DEVICES`) and select
   physical GPU IDs with `--gpus`. Each trainer is then isolated to its assigned
   GPU and sees it as logical `cuda:0`; outputs record the physical GPU too.
+- GPU visibility is assigned before each interpreter starts. A concurrent CUDA
+  context preflight runs before graph loading. Add `--preflight-only` to check
+  the selected slots without loading the graph or training.
 
 The single-model H100 profile measured 0.45 GiB of peak tensor allocations and
 14.6 ms per synchronized GPU step with anomaly debugging off. Loader throughput

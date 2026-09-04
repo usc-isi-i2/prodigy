@@ -1,5 +1,11 @@
 # PRODIGY ladder pipeline profile — 2026-09-03
 
+Follow-up: the shared-graph launcher subsequently completed an eight-model,
+200-step-per-model validation on GPU 2. See
+[shared-training validation](SHARED_TRAINING_VALIDATION.md) for measured aggregate
+throughput and checkpoint checks. The measurements below are the earlier
+isolated pipeline profile.
+
 The two-worker loader supplies substantially fewer episodes per second than the
 isolated GPU step can consume. Most CPU preparation time is spent constructing
 210 separate subgraphs and combining them. Serial center selection is a small
