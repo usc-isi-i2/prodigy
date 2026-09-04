@@ -3,6 +3,7 @@ import argparse
 import gc
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import subprocess
@@ -56,6 +57,33 @@ def model_from_params(params, checkpoint, device):
     return model.to(device).eval()
 
 
+def completed_cell(output,job,target,episodes):
+    """Reuse a tested cell only after checking checkpoint and validation provenance."""
+    p=job['params'];selection=job['selection'];output=Path(output)
+    path=output/'cells'/p['prefix']/f'{target}.json'
+    if not path.exists():return False
+    old=json.loads(path.read_text())
+    expected=dict(protocol='nmi_fixed_nm_v1',model_id=p['prefix'],target=target,
+                  episodes=episodes,checkpoint=selection['checkpoint'],
+                  checkpoint_step=selection['best_step'],training_steps=selection['training_steps'],
+                  sources=selection['sources'],flags=selection['flags'],holdout=HOLDOUT,
+                  seed=p['seed'],training_revision=p['campaign_revision'])
+    if any(old.get(k)!=v for k,v in expected.items()):raise ValueError(f'Resume metadata mismatch: {path}')
+    checksum=hashlib.sha256(Path(selection['checkpoint']).read_bytes()).hexdigest()
+    if old.get('checkpoint_sha256')!=checksum:raise ValueError(f'Resume checkpoint content mismatch: {path}')
+    if not all(math.isfinite(old[k]) for k in ('roc_auc','accuracy','loss')):
+        raise ValueError(f'Non-finite completed cell: {path}')
+    if target in selection['sources']:
+        replay_path=output/'validation_replay'/p['prefix']/f'{target}.json'
+        if not replay_path.exists():raise ValueError(f'Missing prior validation replay: {path}')
+        replay=json.loads(replay_path.read_text())
+        protocol=json.loads((Path(job['state'])/'validation_protocol.json').read_text())
+        if (replay.get('status')!='passed' or replay.get('checkpoint')!=selection['checkpoint']
+                or replay.get('fingerprint')!=protocol['fingerprints'][target]):
+            raise ValueError(f'Invalid prior validation replay: {path}')
+    return True
+
+
 def worker(dataset,jobs,output,worker_id,episodes,targets,validation_only=False,replay_repeats=1,invocation_id=None):
     os.setsid()
     import torch
@@ -72,10 +100,13 @@ def worker(dataset,jobs,output,worker_id,episodes,targets,validation_only=False,
     print(f'INVOCATION {invocation_id}: {len(jobs)} models; targets={targets}',flush=True)
     try:
         for target in targets:
+            # Completed cells already passed their gate. Check their immutable
+            # provenance, then replay validation only for genuinely pending cells.
+            pending=jobs if validation_only else [j for j in jobs if not completed_cell(output,j,target,episodes)]
             # Replay the trainer's exact validation panel after strict checkpoint
             # reload. This checks model reconstruction AND metric/data parity.
             validation_cache={}
-            for job in jobs:
+            for job in pending:
                 if target not in job['selection']['sources']:continue
                 p=job['params'];selection=job['selection'];state=Path(job['state'])
                 protocol=json.loads((state/'validation_protocol.json').read_text())
@@ -105,15 +136,6 @@ def worker(dataset,jobs,output,worker_id,episodes,targets,validation_only=False,
                 del model
             validation_cache.clear()
             if validation_only:continue
-            pending=[]
-            for job in jobs:
-                path=output/'cells'/job['params']['prefix']/f'{target}.json'
-                if path.exists():
-                    old=json.loads(path.read_text())
-                    if old['checkpoint']!=job['selection']['checkpoint'] or old['episodes']!=episodes or old['protocol']!='nmi_fixed_nm_v1':
-                        raise ValueError(f'Resume mismatch: {path}')
-                else:
-                    pending.append(job)
             if not pending:
                 continue
             print(f'TARGET {target}: {len(pending)} models; materializing {episodes} episodes',flush=True)
