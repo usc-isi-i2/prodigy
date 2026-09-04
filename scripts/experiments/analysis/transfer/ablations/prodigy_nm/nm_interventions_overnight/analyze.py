@@ -68,10 +68,15 @@ def main():
                   for inc,t in zip(role.included,role.target)]
     role_summary=role.groupby(['arm','rung','role'],as_index=False).agg(roc_auc=('roc_auc','mean'),
         target_count=('target','nunique'))
+    role_summary['expected_targets']=[r if role_name=='included' else 1 if role_name=='unseen' else 8-r
+        for r,role_name in zip(role_summary.rung,role_summary.role)]
+    role_summary['complete_panel']=role_summary.target_count==role_summary.expected_targets
+    role_summary.loc[~role_summary.complete_panel,'roc_auc']=float('nan')
     all_targets=role.groupby(['arm','rung'],as_index=False).agg(roc_auc=('roc_auc','mean'),
         target_count=('target','nunique'))
     # A fixed-panel mean is defined only when every target has a result.
-    all_targets=all_targets[all_targets.target_count==len(TARGETS)].assign(role='all_targets')
+    all_targets=all_targets[all_targets.target_count==len(TARGETS)].assign(
+        role='all_targets',expected_targets=len(TARGETS),complete_panel=True)
     pd.concat([role_summary,all_targets],ignore_index=True).to_csv(HERE/'data/role_summary.csv',index=False)
     figures=HERE/'figures';figures.mkdir(exist_ok=True)
     comparison=''
@@ -92,7 +97,9 @@ def main():
                        ('not_yet_included','Sources outside the current training rung')]:
         if name=='all_targets':
             subset=role.merge(all_targets[['arm','rung']],on=['arm','rung'],how='inner')
-        else:subset=role[role.role==name]
+        else:
+            complete_pairs=role_summary[(role_summary.role==name)&role_summary.complete_panel][['arm','rung']]
+            subset=role[role.role==name].merge(complete_pairs,on=['arm','rung'],how='inner')
         if subset.empty:continue
         fig,ax=plt.subplots(figsize=(12,7))
         for arm,group in subset.groupby('arm',sort=False):
