@@ -1,5 +1,7 @@
 """Correctness gates for shared-data training; no local model training."""
 import copy
+import os
+from unittest.mock import patch
 from types import SimpleNamespace
 import random
 
@@ -15,7 +17,7 @@ from data.dataloader import NeighborTask, ParamSampler
 from experiments.sampler import NeighborSampler
 from experiments.params import get_params
 from experiments.run_shared_graph import (REPO, make_plan, prepare_shared_dataset,
-                                          shared_storage_report, validate_configs,
+                                          shared_storage_report, start_on_gpu, validate_configs,
                                           validate_disjoint_sources)
 
 
@@ -39,6 +41,18 @@ def ladder_config():
 
 
 class SharedGraphTests(unittest.TestCase):
+    def test_gpu_visibility_set_before_spawn_and_parent_environment_restored(self):
+        class FakeProcess:
+            def start(process):
+                assert os.environ['CUDA_VISIBLE_DEVICES'] == '2'
+                assert os.environ['CUDA_DEVICE_ORDER'] == 'PCI_BUS_ID'
+                raise RuntimeError('intentional spawn failure')
+        with patch.dict(os.environ, {'CUDA_VISIBLE_DEVICES': 'original', 'CUDA_DEVICE_ORDER': 'original'}):
+            with self.assertRaisesRegex(RuntimeError, 'intentional'):
+                start_on_gpu(FakeProcess(), 2)
+            assert os.environ['CUDA_VISIBLE_DEVICES'] == 'original'
+            assert os.environ['CUDA_DEVICE_ORDER'] == 'original'
+
     def test_shared_source_pools_preserve_episode_stream_and_boundaries(self):
         dataset = tiny_dataset()
         old_graph = dataset.graph

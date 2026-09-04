@@ -102,6 +102,61 @@ def write_json(path, value):
     temp.replace(path)
 
 
+def start_on_gpu(process, gpu):
+    """Set visibility before the fresh interpreter imports/unpickles any library."""
+    values = {'CUDA_VISIBLE_DEVICES': str(gpu), 'CUDA_DEVICE_ORDER': 'PCI_BUS_ID'}
+    previous = {key: os.environ.get(key) for key in values}
+    try:
+        os.environ.update(values)
+        process.start()
+    finally:
+        for key, value in previous.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+
+
+def _cuda_probe(gpu, queue, barrier):
+    try:
+        import torch
+        value = torch.ones(1, device='cuda:0')
+        torch.cuda.synchronize()
+        queue.put(dict(ok=True, physical_gpu=gpu, visible=os.environ['CUDA_VISIBLE_DEVICES'],
+                       device_count=torch.cuda.device_count()))
+        barrier.wait(timeout=60)
+        del value
+    except BaseException:
+        queue.put(dict(ok=False, physical_gpu=gpu, error=traceback.format_exc()))
+        barrier.abort()
+        raise
+
+
+def cuda_preflight(slots):
+    import torch
+    context = torch.multiprocessing.get_context('spawn')
+    queue = context.Queue()
+    barrier = context.Barrier(len(slots))
+    processes = []
+    try:
+        for gpu in slots:
+            process = context.Process(target=_cuda_probe, args=(gpu, queue, barrier))
+            start_on_gpu(process, gpu)
+            processes.append(process)
+        results = [queue.get(timeout=90) for _ in slots]
+        for process in processes:
+            process.join(timeout=10)
+        if any(not r['ok'] or r.get('device_count') != 1 for r in results) or any(p.exitcode != 0 for p in processes):
+            raise RuntimeError(f'Concurrent CUDA preflight failed: {results}')
+        return results
+    finally:
+        for process in processes:
+            if process.is_alive():
+                process.terminate()
+                process.join()
+        queue.close()
+
+
 def train_one(dataset, params, job_dir, threads):
     os.setsid()  # only this trainer and its descendants are killed on cancellation
     job_dir = Path(job_dir)
@@ -109,7 +164,8 @@ def train_one(dataset, params, job_dir, threads):
         os.dup2(stream.fileno(), 1)
         os.dup2(stream.fileno(), 2)
         physical_gpu = params['device'].index
-        os.environ['CUDA_VISIBLE_DEVICES'] = str(physical_gpu)
+        if os.environ.get('CUDA_VISIBLE_DEVICES') != str(physical_gpu):
+            raise RuntimeError('GPU visibility must be assigned before spawning the trainer')
         import torch
         if torch.cuda.is_initialized():
             raise RuntimeError('Spawned trainer unexpectedly initialized CUDA before device isolation')
@@ -208,6 +264,7 @@ def main():
     parser.add_argument('--run-dir', type=Path, required=True)
     parser.add_argument('--smoke-steps', type=int, default=0)
     parser.add_argument('--dry-run', action='store_true')
+    parser.add_argument('--preflight-only', action='store_true', help='Check concurrent CUDA contexts without loading a graph')
     args = parser.parse_args(own)
     if min(args.models_per_gpu, args.threads_per_model) < 1 or args.worker_budget < 0 or args.smoke_steps < 0:
         parser.error('Invalid concurrency, thread, worker, or smoke-step count')
@@ -225,6 +282,10 @@ def main():
                 run_dir=str(args.run_dir), jobs=params)
     print(json.dumps(plan, indent=2, default=str), flush=True)
     if args.dry_run:
+        return
+    plan['cuda_preflight'] = cuda_preflight(slots[:min(len(params), len(slots))])
+    print('Concurrent CUDA preflight passed', flush=True)
+    if args.preflight_only:
         return
     args.run_dir.mkdir(parents=True, exist_ok=False)
     write_json(args.run_dir/'manifest.json', plan)
@@ -271,7 +332,7 @@ def main():
                 job_dir.mkdir()
                 write_json(job_dir/'effective_config.json', p)
                 process = context.Process(target=train_one, args=(dataset, p, str(job_dir), args.threads_per_model))
-                process.start()
+                start_on_gpu(process, gpu)
                 active[slot] = (process, index)
                 print(f"Started job {index} on GPU {gpu}; log {job_dir/'console.log'}", flush=True)
                 index += 1
