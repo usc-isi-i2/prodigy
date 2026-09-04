@@ -27,6 +27,8 @@ Setup and launch files remain in `../setup/<name>/`.
 
 ### Ablations by model
 
+- Source-held-out NM intervention campaign: [`nm_interventions_overnight`](transfer/ablations/prodigy_nm/nm_interventions_overnight/)
+
 - Context hops: [`nm_ladder_nhop2`](transfer/ablations/prodigy_nm/context_depth/nm_ladder_nhop2/)
 - Per-source exposure: [`nm_ladder_fixed_exposure_nhop2`](transfer/ablations/prodigy_nm/source_exposure/nm_ladder_fixed_exposure_nhop2/)
 - Interleaved versus sequential sampling: [`nm_ladder_sequential_nhop2`](transfer/ablations/prodigy_nm/source_schedule/nm_ladder_sequential_nhop2/)
