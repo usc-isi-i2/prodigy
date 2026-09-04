@@ -8,11 +8,16 @@ import time
 def main():
     p=argparse.ArgumentParser();p.add_argument('root',type=Path)
     p.add_argument('--snapshot',action='store_true',help='Include full curves for local visual inspection')
+    p.add_argument('--rung',type=int,choices=range(1,9),help='Inspect only this ladder rung')
+    p.add_argument('--counts-only',action='store_true',help='Print compact process-result counts')
     args=p.parse_args()
     counts={};rows=[]
     for path in sorted(args.root.glob('train_*/job_*/result.json')):
-        result=json.loads(path.read_text());status=result['status'];counts[status]=counts.get(status,0)+1
+        result=json.loads(path.read_text());status=result['status']
         config=json.loads((path.parent/'effective_config.json').read_text())
+        if args.rung and f'_r{args.rung}_' not in config['prefix']:continue
+        counts[status]=counts.get(status,0)+1
+        if args.counts_only:continue
         state=Path(config['state_dir'])/config['exp_name']
         row=dict(model=config['prefix'],status=status,gpu=result['physical_gpu'])
         curve=state/'training_curve.jsonl'
@@ -35,5 +40,5 @@ def main():
         if selection.exists():
             chosen=json.loads(selection.read_text());row['selected_step']=chosen['best_step'];row['stop']=chosen.get('stop_reason')
         rows.append(row)
-    print(json.dumps(dict(captured_at_unix=time.time(),counts=counts,models=rows),indent=2))
+    print(json.dumps(dict(captured_at_unix=time.time(),rung=args.rung,counts=counts,models=rows),indent=2))
 if __name__=='__main__':main()

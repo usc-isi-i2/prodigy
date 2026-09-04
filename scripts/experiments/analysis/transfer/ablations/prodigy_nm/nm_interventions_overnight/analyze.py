@@ -1,5 +1,6 @@
 """Plot frozen NM results; never use this output for combination selection."""
 from pathlib import Path
+import json
 import sys
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -12,6 +13,40 @@ from scripts.experiments.setup.nm_interventions_overnight.plan import ARMS, TARG
 def verdict(delta):
     if pd.isna(delta):return 'incomplete'
     return 'improved' if delta>0.001 else 'degraded' if delta < -0.001 else 'inconclusive'
+
+
+def resource_summary():
+    path=HERE/'data/resources.csv'
+    if not path.exists():return ''
+    try:resources=pd.read_csv(path)
+    except pd.errors.EmptyDataError:return ''
+    records=json.loads((HERE/'data/model_records.json').read_text())
+    late_gain={}
+    for row in records:
+        history=row['validation_history']
+        late_gain[row['model_id']]=(row['selection']['stop_reason']=='cap' and len(history)>1 and
+            history[-1]['macro_roc_auc']-history[-2]['macro_roc_auc']>row['params']['campaign_min_delta'])
+    resources['arm']=resources.model_id.str.extract(r'^nmi_(.+)_r\d+_s\d+$')[0]
+    resources['cap_with_last_check_gain']=resources.model_id.map(late_gain)
+    resources['plateau']=resources.stop_reason.eq('validation_plateau')
+    resources['cap']=resources.stop_reason.eq('cap')
+    resources['seconds_per_1000_episodes']=1000*resources.loop_seconds/resources.training_steps
+    resources['peak_tensor_mib']=resources.peak_allocated_bytes/2**20
+    summary=resources.groupby('arm',sort=False,as_index=False).agg(
+        trained_models=('model_id','count'),model_parameters=('model_parameters','max'),
+        mean_episodes=('training_steps','mean'),plateau_stops=('plateau','sum'),
+        cap_stops=('cap','sum'),cap_with_last_check_gain=('cap_with_last_check_gain','sum'),
+        mean_seconds_per_1000_episodes=('seconds_per_1000_episodes','mean'),
+        peak_tensor_mib=('peak_tensor_mib','max'))
+    summary.to_csv(HERE/'data/resource_summary.csv',index=False)
+    return ('\n\nTraining cost and stopping evidence for completed models:\n\n'+
+        summary.round(2).to_markdown(index=False)+'\n\n'
+        'Parameter counts include the registered frozen label table; resources.csv separately records '
+        'optimizer parameter slots and the auxiliary head. Timing comes from concurrent runs, excludes '
+        'initial validation-cache construction from the loop timer, and is not an isolated speed benchmark. '
+        'Peak tensor memory excludes CUDA context overhead. A cap stop is not evidence of convergence; '
+        'cap_with_last_check_gain counts capped runs whose final validation increment still exceeded 0.001. '
+        'Effect verdicts apply to this bounded training protocol.\n')
 
 
 def main():
@@ -111,7 +146,7 @@ def main():
     (HERE/'FINDINGS.md').write_text('# Source-held-out NM intervention campaign\n\n'
         'Seed 0 exploratory results. All checkpoints selected using active training-source validation only; TwiBot-20 excluded from selection.\n\n'
         'Overall arm status requires all 8 rungs × 9 targets and paired baselines. Endpoint columns describe only the eight-source endpoint and may be available before the full campaign is complete. Effects use a ±0.001 practical threshold, not statistical significance. Baseline is the reference; its zero delta is not an intervention finding.\n\n'+
-        summary.to_markdown(index=False)+comparison+'\n\nThe all-target curve uses the same nine graphs at every rung and requires a complete target panel. Included-source and not-yet-included-source averages change graph membership across rungs; use the fixed-panel and unseen-graph curves to avoid that composition confound. All panels remain separate. No CLS or LP runs are included. Plateau/cap metadata and exact configurations are retained in data/model_records.json.\n')
+        summary.to_markdown(index=False)+comparison+resource_summary()+'\n\nThe all-target curve uses the same nine graphs at every rung and requires a complete target panel. Included-source and not-yet-included-source averages change graph membership across rungs; use the fixed-panel and unseen-graph curves to avoid that composition confound. All panels remain separate. No CLS or LP runs are included. Plateau/cap metadata and exact configurations are retained in data/model_records.json.\n')
     print(summary.to_string(index=False))
 
 if __name__=='__main__':main()
