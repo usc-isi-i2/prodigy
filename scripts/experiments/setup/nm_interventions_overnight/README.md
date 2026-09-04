@@ -117,6 +117,11 @@ validation panel and requires identical episode fingerprints, accuracy/loss with
 1e-6, and ROC-AUC within 1e-5 (100 times below the practical-effect threshold;
 nearly tied ranks can swap under CUDA scatter rounding). `run_evaluation.sh
 --validation-only --replay-repeats 3` quantifies repeat variation without test results.
+On resume, existing cells are reused after verifying their checkpoint SHA-256,
+training metadata and prior successful source-validation replay. Only pending cells
+repeat validation; all numerical tolerances remain unchanged. The standalone
+`diagnose_replay.py` saves repeated query predictions for an active training source
+and rejects sources outside that model's training set; it never reads test episodes.
 Report all cells plus included-source, not-yet-included and TwiBot-20-only summaries.
 Do not compare these numbers to historical figures without metric/panel parity.
 Primary endpoint conclusion uses paired source-macro delta >0.001; negative < -0.001;
