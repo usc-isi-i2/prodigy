@@ -4,6 +4,7 @@ import json
 import sys
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator, FormatStrFormatter
 HERE=Path(__file__).resolve().parent
 ROOT=HERE.parents[6]
 sys.path.insert(0,str(ROOT))
@@ -149,8 +150,10 @@ def main():
             ax.axvline(0,color='black',lw=1);ax.axvspan(-.001,.001,color='grey',alpha=.15)
             ax.set(xlabel='NM ROC-AUC difference from baseline',title=title,
                    yticks=range(len(endpoint)),yticklabels=endpoint.arm)
+            ax.xaxis.set_major_locator(MaxNLocator(nbins=5))
+            ax.xaxis.set_major_formatter(FormatStrFormatter('%.3f'))
             ax.grid(axis='x',alpha=.2)
-        axes[0].invert_yaxis();fig.suptitle('Eight-source endpoint, seed 0; missing results have no point')
+        axes[0].invert_yaxis();fig.suptitle('Eight-source endpoint, seed 0; grey band = ±0.001 practical threshold')
         fig.tight_layout();(HERE/'figures').mkdir(exist_ok=True)
         fig.savefig(HERE/'figures/endpoint_deltas.png',dpi=170)
         fig.savefig(HERE/'figures/endpoint_deltas.pdf');plt.close(fig)
@@ -187,7 +190,7 @@ def main():
         if subset.empty:continue
         fig,ax=plt.subplots(figsize=(12,7))
         for arm,group in subset.groupby('arm',sort=False):
-            curve=group.groupby('rung').roc_auc.mean()
+            curve=group.groupby('rung').roc_auc.mean().reindex(range(1,9))
             ax.plot(curve.index,curve.values,marker='o',label=arm,linewidth=3 if arm=='baseline' else 1.4,alpha=1 if arm=='baseline' else .8)
         ax.set(xlabel='Number of training source graphs',ylabel='NM ROC-AUC',title=title,xticks=range(1,9))
         ax.grid(alpha=.2);ax.legend(bbox_to_anchor=(1.02,1),loc='upper left',fontsize=8)
