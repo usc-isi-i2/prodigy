@@ -2,6 +2,8 @@
 
 Seed 0 exploratory results. All checkpoints selected using active training-source validation only; TwiBot-20 excluded from selection.
 
+Frozen training-validation-selected recipe: objective. Only one intervention met the gate. The second-stage runs repeat that seed-zero recipe and provide no test of interactions between interventions. See [frozen selection](data/combined_selection.json) and [input hashes/timestamp](data/combination_freeze_manifest.json).
+
 Overall arm status requires all 8 rungs × 9 targets and paired baselines. Endpoint columns describe only the eight-source endpoint and may be available before the full campaign is complete. Effects use a ±0.001 practical threshold, not statistical significance. Baseline is the reference; its zero delta is not an intervention finding.
 
 | arm             | status     |   cells |   expected_cells | endpoint_included_status   |   endpoint_included_delta | endpoint_unseen_status   | endpoint_unseen_delta   | endpoint_all_targets_delta   | all_rung_included_delta   |
@@ -28,27 +30,27 @@ Training cost and stopping evidence for completed models:
 
 | arm             |   trained_models |   model_parameters |   mean_episodes |   plateau_stops |   cap_stops |   cap_with_last_check_gain |   mean_seconds_per_1000_episodes |   peak_tensor_mib |
 |:----------------|-----------------:|-------------------:|----------------:|----------------:|------------:|---------------------------:|---------------------------------:|------------------:|
-| baseline        |                8 |            1640514 |        10000    |               1 |           7 |                          5 |                            52.74 |            472.8  |
-| exposure        |                7 |            1640514 |         9142.86 |               4 |           3 |                          2 |                            54.46 |            466.01 |
-| schedule        |                7 |            1640514 |         9428.57 |               4 |           3 |                          3 |                            55.28 |            472.24 |
-| composition     |                7 |            1640514 |        10000    |               0 |           7 |                          0 |                            55.08 |            459.23 |
-| centers         |                7 |            1640514 |         8857.14 |               5 |           2 |                          2 |                            55.38 |            481.58 |
-| eligibility     |                7 |            1640514 |         8857.14 |               4 |           3 |                          0 |                            52.67 |            468.66 |
-| positives       |                7 |            1640514 |         9714.29 |               2 |           5 |                          4 |                            54.07 |            467.93 |
-| negatives       |                7 |            1640514 |         9142.86 |               5 |           2 |                          1 |                            52.8  |            483.62 |
-| context         |                7 |            1640514 |         9714.29 |               3 |           4 |                          3 |                            57.45 |            488.59 |
-| optimization    |                7 |            1640514 |        10000    |               0 |           7 |                          5 |                            55.91 |            476.83 |
-| alignment       |                7 |            1640514 |         9428.57 |               2 |           5 |                          4 |                            60.23 |            472.8  |
-| sharing         |                7 |            1654338 |         8000    |               6 |           1 |                          0 |                            75.45 |            530.01 |
-| capacity        |                7 |            4860034 |         9428.57 |               2 |           5 |                          3 |                            65.03 |            768.18 |
-| objective       |                7 |            1640514 |        10000    |               1 |           6 |                          4 |                            55.8  |            531.88 |
-| region_adaptive |                7 |            1640514 |         8857.14 |               5 |           2 |                          1 |                            56.8  |            482.05 |
-| coverage        |                7 |            1640514 |        10000    |               0 |           7 |                          4 |                            55.41 |            474.87 |
-| budget          |                7 |            1640514 |         5178.57 |               1 |           6 |                          3 |                            56.66 |            472.8  |
+| baseline        |                8 |            1640514 |           10000 |               1 |           7 |                          5 |                            52.74 |            472.8  |
+| exposure        |                8 |            1640514 |            9250 |               4 |           4 |                          2 |                            54.26 |            466.01 |
+| schedule        |                8 |            1640514 |            9500 |               4 |           4 |                          4 |                            55.78 |            472.24 |
+| composition     |                8 |            1640514 |           10000 |               0 |           8 |                          0 |                            54.54 |            459.23 |
+| centers         |                8 |            1640514 |            9000 |               5 |           3 |                          2 |                            55.03 |            482.09 |
+| eligibility     |                8 |            1640514 |            9000 |               4 |           4 |                          1 |                            52.22 |            468.66 |
+| positives       |                8 |            1640514 |            9750 |               2 |           6 |                          4 |                            53.59 |            467.93 |
+| negatives       |                8 |            1640514 |            9250 |               5 |           3 |                          2 |                            53.69 |            483.62 |
+| context         |                8 |            1640514 |            9500 |               4 |           4 |                          3 |                            58.26 |            489.77 |
+| optimization    |                8 |            1640514 |           10000 |               0 |           8 |                          5 |                            55.39 |            476.83 |
+| alignment       |                8 |            1640514 |            9500 |               2 |           6 |                          4 |                            59.37 |            472.8  |
+| sharing         |                8 |            1654338 |            8000 |               7 |           1 |                          0 |                            74.43 |            530.01 |
+| capacity        |                8 |            4860034 |            9500 |               2 |           6 |                          3 |                            63.13 |            768.18 |
+| objective       |                8 |            1640514 |           10000 |               1 |           7 |                          4 |                            55.03 |            531.88 |
+| region_adaptive |                8 |            1640514 |            9000 |               6 |           2 |                          1 |                            56.04 |            482.05 |
+| coverage        |                8 |            1640514 |            9750 |               1 |           7 |                          4 |                            54.64 |            474.87 |
+| budget          |                8 |            1640514 |            5625 |               1 |           7 |                          3 |                            55.49 |            472.8  |
 
 Parameter counts include the registered frozen label table; resources.csv separately records optimizer parameter slots and the auxiliary head. Timing comes from concurrent runs, excludes initial validation-cache construction from the loop timer, and is not an isolated speed benchmark. Peak tensor memory excludes CUDA context overhead. A cap stop is not evidence of convergence; cap_with_last_check_gain counts capped runs whose final validation increment still exceeded 0.001. Effect verdicts apply to this bounded training protocol.
 
 
-Source exposure audit passed for all 120 collected models: 11121 cumulative curve records plus every terminal record. Inactive sources, including TwiBot-20, have zero exposure; source totals match consumed episodes. Blocked-arm records match the exact 64-episode source cycle. See [per-model checks](data/exposure_audit.json) and [terminal exposures](data/source_exposure.csv).
+Source exposure audit passed for all 136 collected models: 12664 cumulative curve records plus every terminal record. Inactive sources, including TwiBot-20, have zero exposure; source totals match consumed episodes. Blocked-arm records match the exact 64-episode source cycle. See [per-model checks](data/exposure_audit.json) and [terminal exposures](data/source_exposure.csv).
 
 The all-target curve uses the same nine graphs at every rung and requires a complete target panel. Included-source and not-yet-included-source averages change graph membership across rungs; use the fixed-panel and unseen-graph curves to avoid that composition confound. All panels remain separate. No CLS or LP runs are included. Plateau/cap metadata and exact configurations are retained in data/model_records.json.

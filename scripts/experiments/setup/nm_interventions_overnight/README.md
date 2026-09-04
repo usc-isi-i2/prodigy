@@ -109,6 +109,9 @@ Low-degree eligibility and uniform positives are alternative positive-constructi
 policies. Record every compatibility exclusion in the frozen selection artifact.
 If no eligible improvements exist, document baseline as retained and skip redundant
 combination training. Combined success must beat baseline and best single arm.
+A nonempty recipe with only one eligible intervention still produces the eight
+second-stage runs; describe them as same-seed recipe replications. They do not test
+interactions between multiple interventions.
 
 Final NM: 512 fixed 30-way/3-shot/4-query episodes per target, fixed source-independent
 random seeds, shared target-major caches, common metric implementation and fingerprints.

@@ -202,9 +202,17 @@ def main():
         'Inactive sources, including TwiBot-20, have zero exposure; source totals match consumed episodes. '
         'Blocked-arm records match the exact 64-episode source cycle. '
         'See [per-model checks](data/exposure_audit.json) and [terminal exposures](data/source_exposure.csv).')
+    recipe_note=''
+    recipe_path=HERE/'data/combined_selection.json'
+    if recipe_path.exists():
+        chosen=json.loads(recipe_path.read_text())['chosen_arms']
+        recipe_note=('Frozen training-validation-selected recipe: '+(', '.join(chosen) if chosen else 'baseline retained')+'. ')
+        if len(chosen)==1:
+            recipe_note+='Only one intervention met the gate. The second-stage runs repeat that seed-zero recipe and provide no test of interactions between interventions. '
+        recipe_note+='See [frozen selection](data/combined_selection.json) and [input hashes/timestamp](data/combination_freeze_manifest.json).\n\n'
     (HERE/'FINDINGS.md').write_text('# Source-held-out NM intervention campaign\n\n'
         'Seed 0 exploratory results. All checkpoints selected using active training-source validation only; TwiBot-20 excluded from selection.\n\n'
-        'Overall arm status requires all 8 rungs × 9 targets and paired baselines. Endpoint columns describe only the eight-source endpoint and may be available before the full campaign is complete. Effects use a ±0.001 practical threshold, not statistical significance. Baseline is the reference; its zero delta is not an intervention finding.\n\n'+
+        +recipe_note+'Overall arm status requires all 8 rungs × 9 targets and paired baselines. Endpoint columns describe only the eight-source endpoint and may be available before the full campaign is complete. Effects use a ±0.001 practical threshold, not statistical significance. Baseline is the reference; its zero delta is not an intervention finding.\n\n'+
         summary.to_markdown(index=False)+comparison+resource_summary()+exposure_note+'\n\nThe all-target curve uses the same nine graphs at every rung and requires a complete target panel. Included-source and not-yet-included-source averages change graph membership across rungs; use the fixed-panel and unseen-graph curves to avoid that composition confound. All panels remain separate. No CLS or LP runs are included. Plateau/cap metadata and exact configurations are retained in data/model_records.json.\n')
     print(summary.to_string(index=False))
 
