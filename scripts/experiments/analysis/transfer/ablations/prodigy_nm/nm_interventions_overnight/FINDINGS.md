@@ -25,15 +25,15 @@ Overall arm status requires all 8 rungs × 9 targets and paired baselines. Endpo
 | region_adaptive | degraded     |      72 |               72 | degraded                   |              -0.00623185  | degraded                 |            -0.00522614  |                 -0.0061201   |              -0.0068783   |
 | coverage        | degraded     |      72 |               72 | degraded                   |              -0.00220001  | degraded                 |            -0.00124469  |                 -0.00209386  |              -0.00250602  |
 | budget          | inconclusive |      72 |               72 | inconclusive               |              -0.000964079 | degraded                 |            -0.00262548  |                 -0.00114868  |              -0.00180662  |
-| combined        | incomplete   |       0 |               72 | incomplete                 |             nan           | incomplete               |           nan           |                nan           |             nan           |
+| combined        | improved     |      72 |               72 | improved                   |               0.00336274  | inconclusive             |             0.000188178 |                  0.00301001  |               0.00075804  |
 
 Combined eight-source endpoint versus baseline and the strongest individual intervention in each panel (budget diagnostic excluded). A best-single comparison requires the complete individual candidate set. These are descriptive test comparisons; test outcomes did not choose the recipe.
 
-| role        |   combined_delta_baseline |   individuals_compared | best_single_arm   | best_single_delta_baseline   | combined_delta_best_single   | status_vs_best   | beats_baseline_and_best   |
-|:------------|--------------------------:|-----------------------:|:------------------|:-----------------------------|:-----------------------------|:-----------------|:--------------------------|
-| included    |                       nan |                     15 |                   |                              |                              | incomplete       |                           |
-| unseen      |                       nan |                     15 |                   |                              |                              | incomplete       |                           |
-| all_targets |                       nan |                     15 |                   |                              |                              | incomplete       |                           |
+| role        |   combined_delta_baseline |   individuals_compared | best_single_arm   |   best_single_delta_baseline |   combined_delta_best_single | status_vs_best   | beats_baseline_and_best   |
+|:------------|--------------------------:|-----------------------:|:------------------|-----------------------------:|-----------------------------:|:-----------------|:--------------------------|
+| included    |                  0.003363 |                     15 | objective         |                     0.002528 |                     0.000834 | inconclusive     | False                     |
+| unseen      |                  0.000188 |                     15 | exposure          |                     0.007492 |                    -0.007304 | degraded         | False                     |
+| all_targets |                  0.00301  |                     15 | objective         |                     0.002226 |                     0.000784 | inconclusive     | False                     |
 
 
 Training cost and stopping evidence for completed models:
