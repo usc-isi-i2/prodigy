@@ -41,6 +41,17 @@ python scripts/experiments/setup/nm_leave_one_out_finalcore/verify_training.py \
 bash scripts/experiments/setup/nm_leave_one_out_finalcore/run_evaluation_tucker.sh
 ```
 
+To append the entire pipeline after the pair sweep's strict evaluation receipt:
+
+```bash
+tmux new-session -d -s nmloo \
+  'export PATH="/home/mhchu/miniconda3/bin:$PATH"; cd /dataMeR1/phil/gfm/prodigy-nm-loo; bash scripts/experiments/setup/nm_leave_one_out_finalcore/run_after_pairs_tucker.sh > log/nm_leave_one_out_finalcore_pipeline_orchestrator.log 2>&1'
+```
+
+The chained launcher refuses to start if pair training fails or the pair evaluation
+session exits without its strict completion receipt. It also waits for GPUs 0--3 to
+be released before starting the LOO trainer.
+
 For a non-mutating launch preview:
 
 ```bash
