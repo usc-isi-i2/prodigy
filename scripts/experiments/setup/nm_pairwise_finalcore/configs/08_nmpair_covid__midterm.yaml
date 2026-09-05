@@ -1,0 +1,46 @@
+dataset: covid19_twitter
+root: /dataMeR1/phil/data/merged/graphs
+graph_filename: ukr_rus_covid_midterm_all9_facebook_final_core_split_seed0.pt
+task_name: neighbor_matching
+
+edge_view: static_train
+target_edge_view: static_test
+neighbor_matching_edge_split: true
+feature_subset: all
+original_features: true
+
+emb_dim: 256
+layers: S,U,M
+gnn_type: sage
+n_layer: 1
+dropout: 0
+n_hop: 2
+neighbor_sampling_hop_sizes: "9,9"
+neighbor_sampling_node_limit: 101
+neighbor_matching_walk_hops: 1
+
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 4
+learning_rate: 0.002
+weight_decay: 0.001
+dataset_len_cap: 2500
+val_len_cap: 500
+test_len_cap: 500
+
+neighbor_sampling_episode_source: graph_id
+neighbor_sampling_episode_source_weighting: balanced
+neighbor_sampling_batch_source_mode: independent
+neighbor_sampling_cross_source_prob: 0.0
+
+epochs: 1
+eval_step: 100000
+checkpoint_step: 100000
+checkpoint_steps: "100,300,900,2500"
+print_step: 100
+workers: 2
+device: 0
+seed: 0
+prefix: nmpair_covid__midterm
+neighbor_sampling_source_subset: "covid,midterm"

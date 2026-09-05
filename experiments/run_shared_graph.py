@@ -256,7 +256,7 @@ def main():
     own, overrides = argv[:split], argv[split+1:]
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--configs', nargs='+', required=True)
-    parser.add_argument('--gpus', nargs='+', type=int, choices=(2, 3), default=[2])
+    parser.add_argument('--gpus', nargs='+', type=int, choices=(0, 1, 2, 3), default=[2])
     parser.add_argument('--models-per-gpu', type=int, default=2)
     parser.add_argument('--worker-budget', type=int, default=32)
     parser.add_argument('--workers-per-model', type=int)
@@ -271,7 +271,7 @@ def main():
     if len(set(args.gpus)) != len(args.gpus):
         parser.error('GPUs must be unique')
     if 'CUDA_VISIBLE_DEVICES' in os.environ:
-        parser.error('Unset CUDA_VISIBLE_DEVICES: select physical owned GPUs with --gpus 2 and/or 3')
+        parser.error('Unset CUDA_VISIBLE_DEVICES: select physical owned GPUs with --gpus 0 1 2 3')
     args.run_dir = args.run_dir.resolve()
     params, workers = make_plan(args, overrides)
     slots = [gpu for gpu in args.gpus for _ in range(args.models_per_gpu)]

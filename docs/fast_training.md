@@ -3,7 +3,8 @@
 Use `experiments/run_shared_graph.py` for independent source-restricted NM models
 that use the same full graph. The supervisor loads the graph and sampling indices
 once in shared CPU memory. Spawned trainers own separate weights, optimizers,
-RNGs, source schedules, metrics, and checkpoints. Only GPUs **2 and 3** are allowed.
+RNGs, source schedules, metrics, and checkpoints. Only the owned Tucker GPUs
+**0--3** are allowed.
 
 Anomaly debugging is off by default in the trainer (`--detect_anomaly True`
 restores it). For one model using the normal runner, start with 8–16 loader workers
@@ -63,7 +64,8 @@ blocked-source schedules to avoid silently truncating source exposure.
 ## Concurrency controls
 
 - `--gpus 2 --models-per-gpu 8`: eight independent models on one GPU.
-- `--gpus 2 3 --models-per-gpu 4`: eight models across both owned GPUs.
+- `--gpus 0 1 2 3 --models-per-gpu 8`: 32 active models across all owned GPUs.
+- `--gpus 2 3 --models-per-gpu 4`: eight models across two owned GPUs.
 - The default is two models per GPU, not a measured optimum.
 - `--worker-budget 32` bounds concurrent training-loader workers. Eight models get
   four each; one model gets at most sixteen by default. Config worker values are
