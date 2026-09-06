@@ -248,6 +248,8 @@ def parse_args():
     p.add_argument("--specialists-only", action="store_true")
     p.add_argument("--include-random", action="store_true")
     p.add_argument("--reference-tsv", default="")
+    p.add_argument("--auc-parity-atol", type=float, default=1e-6,
+                   help="Explicit CPU/GPU AUC tie-order tolerance; accuracy/F1 remain at 1e-6.")
     p.add_argument("--variants", default="baseline")
     p.add_argument("--device", default="3")
     p.add_argument("--batch-count", type=int, default=32)
@@ -276,6 +278,8 @@ def main():
         raise ValueError("invalid or duplicate variant")
     if not 1 <= args.batch_count <= 32:
         raise ValueError("batch count must be 1..32; 32 is the full 128-episode protocol")
+    if not 0 <= args.auc_parity_atol <= 1e-5:
+        raise ValueError("AUC parity tolerance must be in [0, 1e-5]")
     print(json.dumps({"models": [m.model_id for m in models], "targets": names,
                       "variants": variants, "episodes": args.batch_count * 4}), flush=True)
     if args.dry_run:
@@ -388,7 +392,9 @@ def main():
                             if prior["episode_fingerprint"] != fingerprint.hexdigest():
                                 raise RuntimeError(f"official episode fingerprint mismatch for {name}")
                             row["official_metric_max_abs_error"] = max(abs(metrics[k] - float(prior[k])) for k in ("accuracy", "f1", "roc_auc"))
-                            if row["official_metric_max_abs_error"] > 1e-6:
+                            row["official_auc_parity_atol"] = args.auc_parity_atol
+                            row["official_decision_metric_max_abs_error"] = max(abs(metrics[k] - float(prior[k])) for k in ("accuracy", "f1"))
+                            if row["official_decision_metric_max_abs_error"] > 1e-6 or abs(metrics["roc_auc"] - float(prior["roc_auc"])) > args.auc_parity_atol:
                                 raise RuntimeError(f"official metric parity failed: {row}")
                         rows.append(row)
                     torch.save(exports, target_dir / f"{model.model_id}__{variant}.pt")

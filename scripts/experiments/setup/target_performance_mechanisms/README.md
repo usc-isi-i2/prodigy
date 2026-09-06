@@ -7,6 +7,13 @@ intervention gets a fresh clone of the same batch. A second SHA-256 covers all
 tensor values (including features). Stage observers must give bit-identical logits
 to an unobserved forward. With 32 batches and seed offset 0, baseline full-model
 metrics and episode hashes must match the reference lattice or the job fails.
+The default metric tolerance is 1e-6. CPU/GPU float32 evaluation can reorder
+near-tied scores: the first TwiBot cell differed by 1.70e-6 AUC with identical
+accuracy/F1 and episode hash. `--auc-parity-atol 1e-5` explicitly permits this
+small ranking-only portability error; accuracy/F1 stay at 1e-6 and per-cell
+observed errors and the selected tolerance are saved. It is not exact-logit
+parity with historical GPU outputs, which were not saved. Trace/no-trace logits
+on the same device must still be bit-identical.
 
 Run as a module from this worktree, in the prodigy environment:
 
