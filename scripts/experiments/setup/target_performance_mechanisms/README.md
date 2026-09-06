@@ -1,5 +1,16 @@
 # Target-performance mechanism replay
 
+Individual-case review is available through `inspect_examples` (module in this
+folder). Run `extract` in prodigy with `--roots <original-replay-root>
+<tail-replay-root> --output <new-output>`; GPUs must be hidden. It selects two
+queries per disagreement stratum from each of three targets, verifies cached
+features/labels and saved baseline logits, and tests changes localized to the
+query or its supports. Then run `hydrate --input <extract-output> --output
+<new-text-output>` in bio-embeddings-v001. The text join verifies each stored
+Facebook/TwiBot embedding shard against its graph feature bytes. Keep bulk
+profile texts private. Findings and compact numeric evidence belong in the
+name-aligned analysis directory. Test with `test_inspect_examples`.
+
 Uses the existing `icl_arch_matrix` dataset construction, parameters, episode
 fingerprint, and metric implementation. Does not change the production model.
 Caches the actual collated test batches once per target; every model and input

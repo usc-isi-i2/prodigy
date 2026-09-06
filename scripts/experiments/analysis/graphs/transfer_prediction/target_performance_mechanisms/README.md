@@ -5,6 +5,14 @@ instructions are in `scripts/experiments/setup/target_performance_mechanisms/`.
 The [summary figure](figures/target_bottlenecks.png) contrasts target-input signal
 and full-model performance on the original and fresh episode streams.
 
+For actual individual examples, read [FINDINGS_EXAMPLES.md](FINDINGS_EXAMPLES.md):
+24 outcome-stratified cases, verified raw text/feature identities, and 360
+query-only versus support-only interventions with bit-exact baseline replay.
+Numeric evidence is `data/individual_examples.json`; bulk profile text remains
+in the private, unversioned paper-evidence folder identified in that file.
+`summarize_examples.py --input <private-text-records> --output <new-json>` rebuilds
+the compact evidence. These selected cases are not prevalence estimates.
+
 `analyze_update_numerics.py` validates the complete fixed-input decoder-localization
 receipts in `data/control_{decoder,real_input}_numerics.json`. It checks all
 12 replays per workload, initialization/input hashes, mode identities, decoder
