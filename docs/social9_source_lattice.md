@@ -19,7 +19,10 @@ Every run retains `best.pt`, periodic and terminal checkpoints, optimizer state,
 the full pretraining-model state, the downstream GraphSAGE encoder state,
 effective metadata, JSONL curves, a summary, and an offline W&B run when W&B is
 installed. Four long-lived workers load their required graphs once and reuse
-them across assigned models. Only Tucker GPUs 0–3 are accepted.
+them across assigned models. LP's deterministic edge partitions are cached
+under the experiment state with a process lock, so expensive canonicalization
+happens once per graph rather than once per GPU. GraphMAE bypasses that LP-only
+work and loads the observed topology directly. Only Tucker GPUs 0–3 are accepted.
 
 Before each full pass, run the three-model curve gate:
 

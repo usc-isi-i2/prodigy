@@ -1,4 +1,7 @@
-from mixture_scaling.lattice import SOURCE_ORDER, lattice_rows, selected_rows, update_selection
+import torch
+
+from mixture_scaling.lattice import SOURCE_ORDER, lattice_rows, mae_loss, selected_rows, update_selection
+from mixture_scaling.model import GraphMAE
 
 
 def test_lattice_is_9_plus_36_plus_9():
@@ -21,3 +24,18 @@ def test_absolute_best_is_saved_without_patience_reset():
     assert (best_loss, best_step, save_best) == (0.999, 250, True)
     assert reference == 1.0
     assert patience == 1
+
+
+def test_graphmae_loss_masks_and_reconstructs_roots():
+    class Batch:
+        x = torch.randn(6, 4)
+        edge_index = torch.tensor([[0, 1, 2, 3], [1, 2, 3, 4]])
+        batch_size = 3
+
+        def to(self, _device):
+            return self
+
+    model = GraphMAE(4, 3, 3)
+    loss = mae_loss(model, Batch(), torch.device("cpu"), 0.5, 2.0, torch.Generator().manual_seed(0))
+    assert loss.ndim == 0
+    assert torch.isfinite(loss)

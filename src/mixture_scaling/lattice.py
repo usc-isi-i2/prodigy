@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import itertools
 import json
 import math
@@ -14,6 +15,7 @@ import torch
 import torch.nn.functional as F
 import torch_geometric.typing
 from torch_geometric.loader import LinkNeighborLoader, NeighborLoader
+from torch_geometric.data import Data
 
 from .config import load_config
 from .data import GraphArtifact, load_graph
@@ -86,6 +88,51 @@ def make_lp_loader(graph: GraphArtifact, protocol: dict, validation: bool):
         shuffle=not validation,
         num_workers=0,
     )
+
+
+def _raw_data(name: str, path: str | Path) -> Data:
+    raw = torch.load(path, map_location="cpu", weights_only=False)
+    if not isinstance(raw, dict):
+        raw = raw.to_dict()
+    x, edge_index, y = raw.get("x"), raw.get("edge_index"), raw.get("y")
+    if x is None or edge_index is None:
+        raise ValueError(f"{name}: artifact requires x and edge_index")
+    if x.ndim != 2 or x.shape[1] != 768:
+        raise ValueError(f"{name}: expected [N,768] features, got {tuple(x.shape)}")
+    return Data(x=x.float(), edge_index=edge_index.long(), y=y)
+
+
+def load_shared_graph(name, path, objective, protocol, seed, cache_root: Path) -> GraphArtifact:
+    """Load raw topology for MAE or an exactly cached LP edge partition."""
+    path = Path(path)
+    if objective == "graphmae":
+        data = _raw_data(name, path)
+        empty = torch.empty((2, 0), dtype=torch.long)
+        return GraphArtifact(name, path, data, empty, empty)
+
+    cache_root.mkdir(parents=True, exist_ok=True)
+    cache_path = cache_root / f"{name}_edge_split_s{seed}.pt"
+    lock_path = cache_root / f"{name}_edge_split_s{seed}.lock"
+    with lock_path.open("w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        if not cache_path.is_file():
+            graph = load_graph(
+                name, path,
+                validation_fraction=float(protocol["edge_validation_fraction"]),
+                seed=seed,
+            )
+            temporary = cache_path.with_suffix(".tmp")
+            torch.save(
+                {"train_edges": graph.train_edges, "validation_edges": graph.validation_edges},
+                temporary,
+            )
+            temporary.replace(cache_path)
+            return graph
+        split = torch.load(cache_path, map_location="cpu", weights_only=False)
+    data = _raw_data(name, path)
+    train_edges = split["train_edges"].long()
+    data.edge_index = torch.cat((train_edges, train_edges.flip(0)), dim=1)
+    return GraphArtifact(name, path, data, train_edges, split["validation_edges"].long())
 
 
 def node_partition(graph: GraphArtifact, validation: bool, seed: int, fraction: float) -> torch.Tensor:
@@ -311,6 +358,7 @@ def main() -> int:
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--device", type=int, required=True)
     parser.add_argument("--output-root", required=True)
+    parser.add_argument("--cache-root")
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
     if args.device not in (0, 1, 2, 3):
@@ -323,10 +371,10 @@ def main() -> int:
     required = {source for _, sources in rows for source in sources}
     # Each worker loads every graph it needs exactly once and reuses it across models.
     graphs = {
-        source: load_graph(
-            source, config["graphs"][source]["path"],
-            validation_fraction=float(config["protocol"]["edge_validation_fraction"]),
-            seed=args.seed,
+        source: load_shared_graph(
+            source, config["graphs"][source]["path"], args.objective,
+            config["protocol"], args.seed,
+            Path(args.cache_root or (Path(args.output_root) / "_cache")),
         )
         for source in SOURCE_ORDER if source in required
     }

@@ -39,7 +39,7 @@ for gpu in 0 1 2 3; do
     --config configs/social9_lattice.yaml \
     --objective "$OBJECTIVE" --selection "$SELECTION" \
     --worker-index "$gpu" --workers 4 --device "$gpu" \
-    --output-root "$OUTPUT_ROOT" --seed 0 \
+    --output-root "$OUTPUT_ROOT" --cache-root "$OUTPUT_ROOT/_cache" --seed 0 \
     > "$LOG_ROOT/worker_${gpu}.log" 2>&1 &
   pids+=("$!")
 done
