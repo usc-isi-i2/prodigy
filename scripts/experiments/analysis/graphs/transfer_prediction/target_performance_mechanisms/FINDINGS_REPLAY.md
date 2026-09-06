@@ -32,6 +32,15 @@ Nine specialists plus one deterministic random initialization, identical cached
 episode's support labels. Ridge regularization is fixed at 1 after row-wise
 feature normalization; no query labels select it. No model weights are updated.
 
+Facebook's label universe is the 30 page categories, with two categories sampled
+per episode; its raw text is a page description, not a Twitter biography. The
+production metric uses episode-local binary labels for this episodic label
+space, while the other four targets use their fixed global binary mapping.
+The comparison preserves that existing metric contract for every decoder.
+Facebook's raw-center advantage is also present in decision accuracy (Ukraine
+full model .6924 versus raw-center ridge .8398 on the original stream), so it
+is not only a pooled-AUC calibration difference.
+
 For all 45 pretrained baseline cells, reference episode hashes match and the
 largest aggregate metric difference from historical GPU evaluation is 1.70e-6.
 Trace/no-trace logits are bit-identical on the same device. The cached-batch hash
