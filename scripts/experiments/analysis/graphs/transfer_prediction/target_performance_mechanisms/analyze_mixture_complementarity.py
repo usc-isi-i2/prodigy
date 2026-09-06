@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 from scripts.experiments.setup.target_performance_mechanisms.prepare_mixture_complementarity import TARGETS, validate_lattice
+from scripts.experiments.setup.target_performance_mechanisms.mixture_numerical_reference import numerical_reference
 
 STREAMS = ("original", "fresh")
 KEY = ["stream", "target", "model_id"]
@@ -45,6 +46,13 @@ def validate_artifacts(root, inputs):
     for name, field in (("classification_long.tsv", "snapshot_metrics_sha256"), ("model_list.tsv", "snapshot_models_sha256")):
         if hashlib.sha256((inputs / name).read_bytes()).hexdigest() != manifest[field]:
             raise ValueError("frozen historical snapshot changed")
+    numerical_path = root / "numerical_audit.json"
+    if numerical_path.exists():
+        reference, numerical_change = numerical_reference(reference, json.loads(numerical_path.read_text()))
+        if protocol.get("individually_audited_numerical_cells") != 1 or protocol.get("strict_original_official_parity_cells") != 224:
+            raise ValueError("strict versus numerically audited parity counts differ")
+    elif protocol.get("individually_audited_numerical_cells", 0) != 0:
+        raise ValueError("declared numerical audit missing")
     sources = models.set_index("model_id").source_set.to_dict()
     checkpoint = models.set_index("model_id").checkpoint.to_dict()
     mixtures = {m for m, s in sources.items() if len(s) > 1}
@@ -82,6 +90,10 @@ def validate_artifacts(root, inputs):
             raise ValueError("saved logits failed their official metric reproduction")
     if not inventory.groupby("model_id").weights_sha256.nunique().eq(1).all():
         raise ValueError("checkpoint weights differ across targets or streams")
+    if numerical_path.exists():
+        cell = inventory[(inventory.model_id == numerical_change["model_id"]) & (inventory.target == numerical_change["dataset"]) & (inventory.stream == "original")].iloc[0]
+        if any(cell[k] != numerical_change[k] for k in ("weights_sha256", "checkpoint", "episode_fingerprint")):
+            raise ValueError("numerical audit differs from actual prediction inventory")
     for name in ("model_metrics", "comparisons", "error_strata"):
         for row in tables[name].itertuples():
             if tuple(row.sources) != sources[row.model_id] or row.source_count != len(sources[row.model_id]):
@@ -228,6 +240,7 @@ def main():
                   "primary_ensemble": "fixed equal probability", "causal_interference_claim": False,
                   "rank_associations": "descriptive within-target; no independent-pair inference",
                   "role_corrected_runs_included": False, "undefined_partial_associations": int(associations.partial_rank_correlation.isna().sum()),
+                  "individually_audited_numerical_cells": int((root / "numerical_audit.json").exists()),
                   "raw_artifact_sha256": {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(root.glob("*.json"))}}
     (args.data / "mixture_complementarity_validation.json").write_text(json.dumps(validation, indent=2) + "\n")
     columns = ["stream", "target", "source_count", "mixtures", "mean_mixture_minus_probability_ensemble_roc_auc", "mean_shared_error_net_accuracy_contribution"]

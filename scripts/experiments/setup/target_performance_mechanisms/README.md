@@ -352,3 +352,15 @@ input tensors stay on Tucker. Copy the compact tables into the analysis folder's
 `data/mixture_complementarity_predictions/` and run its
 `analyze_mixture_complementarity.py` to reproduce the summaries. Original scalar
 metric reproduction is an integrity gate, not a new independent evaluation.
+
+The initial mixture replay was preserved after a suspension-target AUC guard
+failed. The direct audit in `data/mixture_numerical_audit/` identifies exactly
+one CPU/GPU score tie, with all decisions unchanged and three GPU repeats
+matching the original metrics. Pass its `audit.json` via `--numerical-audit` to
+the mixture runner, using a new output directory (the continuation is
+`mixture_complementarity_20260906_v2`). This creates an explicitly aligned
+reference **copy**, changes only the audited AUC cell, and retains both original
+and CPU values. General replay tolerances remain unchanged. Completion records
+separate 224 strict original mixture cells from one individually audited numerical
+cell. The prediction analysis propagates this evidence to its compact export;
+the local aggregate analysis checks it against the untouched historical table.

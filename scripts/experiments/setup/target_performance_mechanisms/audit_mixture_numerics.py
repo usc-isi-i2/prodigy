@@ -1,12 +1,10 @@
 """Direct repeated CPU/GPU forwards to audit a failed historical AUC parity cell."""
 import argparse
-import copy
 import json
 from pathlib import Path
 import subprocess
 from types import SimpleNamespace
 
-import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score
 import torch

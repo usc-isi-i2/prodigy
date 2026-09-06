@@ -16,13 +16,15 @@ from experiments.run_shared_graph import write_json
 from .finish_member_pipeline import compare_cached_inputs
 from .prepare_mixture_complementarity import TARGETS, validate_lattice
 from .verify_member_training import model_digest
+from .mixture_numerical_reference import numerical_reference, validate_numerical_audit
 from scripts.experiments.analysis.graphs.transfer_prediction.target_performance_mechanisms.analyze_trajectories import DECODERS
 
 
-def verify_replay_tables(outputs, inventory):
+def verify_replay_tables(outputs, inventory, numerical_audit=None):
     expected = {(r["model_id"], d) for r in inventory if r["source_count"] > 1 for d in DECODERS}
     lookup = {r["model_id"]: r for r in inventory}
-    count, full_count = 0, 0
+    count, full_count, numerical_cells = 0, 0, 0
+    change = validate_numerical_audit(numerical_audit) if numerical_audit else None
     for stream, output in outputs.items():
         if not (output / "DONE").is_file():
             raise ValueError("mixture replay incomplete")
@@ -43,12 +45,20 @@ def verify_replay_tables(outputs, inventory):
                     raise ValueError("nonfinite replay metric")
                 if row["decoder"] == "full_model":
                     full_count += 1
+                    if stream == "original" and change and row["model_id"] == change["model_id"] and target == change["dataset"]:
+                        if any(row[k] != change[k] for k in ("checkpoint", "weights_sha256", "episode_fingerprint")) or abs(row["roc_auc"] - change["audited_cpu_roc_auc"]) > 1e-12:
+                            raise ValueError("audited CPU tie cell did not reproduce exactly")
+                        numerical_cells += 1
                     if stream == "original" and (row.get("official_metric_max_abs_error", math.inf) > 1e-5 or row.get("official_decision_metric_max_abs_error", math.inf) > 1e-6):
                         raise ValueError("missing or failed original official parity")
             count += len(rows)
     if set(outputs) != {"original", "fresh"} or count != 7650 or full_count != 450:
         raise ValueError("complete original and fresh mixture grid required")
-    return {"rows": count, "full_model_cells": full_count, "original_official_parity_cells": 225}
+    if numerical_cells != int(change is not None):
+        raise ValueError("numerically audited cell missing")
+    return {"rows": count, "full_model_cells": full_count, "original_official_parity_cells": 225,
+            "strict_original_official_parity_cells": 225 - numerical_cells,
+            "individually_audited_numerical_cells": numerical_cells}
 
 
 def verify_inventory(inputs):
@@ -86,12 +96,15 @@ def main():
     parser.add_argument("--threads", type=int, default=4)
     parser.add_argument("--reference-root", type=Path, default=Path("/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms"))
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--numerical-audit", type=Path, help="Explicit one-cell CPU/GPU tie audit; original reference stays unchanged")
     args = parser.parse_args()
     if args.output.exists() or not 1 <= args.threads <= 8 or torch.cuda.is_available():
         raise ValueError("existing output, invalid threads, or visible GPU")
     torch.set_num_threads(args.threads)
     if args.dry_run:
         validate_lattice(pd.read_csv(args.inputs / "classification_long.tsv", sep="\t"), pd.read_csv(args.inputs / "model_list.tsv", sep="\t"))
+        if args.numerical_audit:
+            numerical_reference(pd.read_csv(args.inputs / "classification_long.tsv", sep="\t"), json.loads(args.numerical_audit.read_text()))
         print("45 frozen mixture models, five targets, two streams, 128 episodes; no training.")
         return
     args.output.mkdir(parents=True)
@@ -101,6 +114,16 @@ def main():
     try:
         inventory = verify_inventory(args.inputs)
         write_json(args.output / "checkpoint_inventory.json", {"models": inventory, "finite_common_architecture": True})
+        reference_path = args.inputs / "classification_long.tsv"
+        audit = json.loads(args.numerical_audit.read_text()) if args.numerical_audit else None
+        if audit:
+            aligned, change = numerical_reference(pd.read_csv(reference_path, sep="\t"), audit)
+            if not any(all(r[k] == change[k] for k in ("model_id", "checkpoint", "weights_sha256")) for r in inventory):
+                raise ValueError("audited checkpoint is not in the verified inventory")
+            reference_path = args.output / "numerically_aligned_reference.tsv"
+            aligned.to_csv(reference_path, sep="\t", index=False)
+            write_json(args.output / "numerical_audit.json", audit)
+            write_json(args.output / "numerical_reference_change.json", change)
         # Generate the executable mixture list from the verified full inventory.
         model_list = args.output / "verified_mixture_models.tsv"
         model_list.write_text("model_id\tcheckpoint\tsources\n" + "".join(
@@ -114,12 +137,12 @@ def main():
             command = [sys.executable, "-u", "-m", "scripts.experiments.setup.target_performance_mechanisms.replay",
                        "--model-list", str(model_list), "--output", str(output), "--datasets", ",".join(sorted(TARGETS)),
                        "--variants", "baseline", "--device", "123", "--threads", str(args.threads),
-                       "--eval-episode-seed-offset", str(offset), "--reference-tsv", str(args.inputs / "classification_long.tsv"),
+                       "--eval-episode-seed-offset", str(offset), "--reference-tsv", str(reference_path),
                        "--auc-parity-atol", "0.00001"]
             with (args.output / f"{stream}.log").open("w") as log:
                 subprocess.run(command, check=True, stdout=log, stderr=subprocess.STDOUT)
         write_json(args.output / "input_validation.json", compare_cached_inputs(outputs, args.reference_root))
-        grid = verify_replay_tables(outputs, inventory)
+        grid = verify_replay_tables(outputs, inventory, audit)
         status.update(status="complete", completed=time.time())
         write_json(args.output / "pipeline.json", status)
         write_json(args.output / "DONE.json", {"mixture_models": 45, "targets": 5, "streams": 2,

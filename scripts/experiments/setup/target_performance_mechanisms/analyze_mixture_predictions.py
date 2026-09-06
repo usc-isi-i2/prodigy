@@ -165,7 +165,11 @@ def main():
         raise ValueError("existing output, invalid threads, or visible GPU")
     torch.set_num_threads(args.threads)
     inventory = json.loads((args.replay / "checkpoint_inventory.json").read_text())["models"]
-    verify_replay_tables({s: args.replay / s for s in ("original", "fresh")}, inventory)
+    audit_path = args.replay / "numerical_audit.json"
+    numerical_audit = json.loads(audit_path.read_text()) if audit_path.exists() else None
+    parity = verify_replay_tables({s: args.replay / s for s in ("original", "fresh")}, inventory, numerical_audit)
+    if receipt.get("individually_audited_numerical_cells", 0) != parity["individually_audited_numerical_cells"]:
+        raise ValueError("numerical-audit receipt mismatch")
     singles = [r for r in inventory if r["source_count"] == 1]
     mixtures = [r for r in inventory if r["source_count"] > 1]
     if len(singles) != 9 or len(mixtures) != 45:
@@ -227,12 +231,16 @@ def main():
     for name, value in (("model_metrics", metrics_output), ("comparisons", comparisons), ("error_strata", strata_output),
                         ("prediction_inventory", prediction_inventory), ("input_inventory", input_inventory)):
         write_json(args.output / f"{name}.json", value)
+    if numerical_audit:
+        write_json(args.output / "numerical_audit.json", numerical_audit)
     write_json(args.output / "protocol.json", {"replay": str(args.replay), "reference_root": str(args.reference_root),
         "revision": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(), "new_training": False,
         "ensemble_weights_fitted": False, "query_labels_used_for_classifier_fitting": False,
         "query_labels_used_for_error_diagnostics": True, "primary_ensemble": "mean float32 production probabilities in float64",
         "secondary_ensemble": "mean logits in float64", "ensemble_nll": "stable float64 log-sum-exp from constituent logits",
-        "training_seeds": [0], "ensemble_training_and_inference_cost_multiplier": [2, 8], "causal_interference_claim": False})
+        "training_seeds": [0], "ensemble_training_and_inference_cost_multiplier": [2, 8], "causal_interference_claim": False,
+        "strict_original_official_parity_cells": parity["strict_original_official_parity_cells"],
+        "individually_audited_numerical_cells": parity["individually_audited_numerical_cells"]})
     write_json(args.output / "DONE.json", {"models": 54, "verified_model_target_stream_cells": 540,
         "mixture_comparisons": 450, "error_strata": 1350, "all_logits_reproduce_metrics": True,
         "all_specialist_mixture_inputs_identical": True, "complete_both_streams": True})
