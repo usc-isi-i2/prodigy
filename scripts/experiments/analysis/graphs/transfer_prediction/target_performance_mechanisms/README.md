@@ -2,17 +2,23 @@
 
 Start with [FINDINGS_REPLAY.md](FINDINGS_REPLAY.md). Setup and operational
 instructions are in `scripts/experiments/setup/target_performance_mechanisms/`.
+The [summary figure](figures/target_bottlenecks.png) contrasts target-input signal
+and full-model performance on the original and fresh episode streams.
 
-Reproduce the currently completed three-target summary:
+Reproduce the completed five-target summary:
 
 ```bash
 MPLBACKEND=Agg /opt/homebrew/bin/python3.11 \
-  scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/analyze_replay.py \
-  --targets covid_political,facebook_page_reference,election2020
+  scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/analyze_replay.py
+MPLBACKEND=Agg /opt/homebrew/bin/python3.11 \
+  scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/analyze_pairs.py
+MPLBACKEND=Agg /opt/homebrew/bin/python3.11 \
+  scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/analyze_fresh_and_coverage.py
 ```
 
 The raw per-target JSONL files in `data/replay/` are copied from each target's
-`metrics.jsonl` in Tucker's initial replay run. They contain 250 rows each.
+`metrics.jsonl` in Tucker's initial replay run (the first three targets) or its
+completed continuation (TwiBot and Ukraine Suspended). They contain 250 rows each.
 Large cached batches, query logits, and latent tensors stay on Tucker. All paths,
 revisions, and the distinction between completed targets and incomplete sweeps
 are recorded in the findings. `data/source_sampler_summary.json` and
