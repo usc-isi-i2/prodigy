@@ -61,12 +61,51 @@ def verify_checkpoint_states(initial, states, condition):
         if condition == "frozen" and any(not torch.equal(state[k], initial[k]) for k in READOUT_KEYS):
             raise ValueError("frozen tensor changed at a saved checkpoint")
         if step:
-            if not any(not torch.equal(state[k], initial[k]) for k in initial if k not in READOUT_KEYS):
+            other_parameters = [k for k in initial if k not in READOUT_KEYS and
+                                k.endswith((".weight", ".bias", "logit_scale"))]
+            if not any(not torch.equal(state[k], initial[k]) for k in other_parameters):
                 raise ValueError("other network weights did not update")
             if condition == "free" and not all(not torch.equal(state[k], initial[k]) for k in READOUT_KEYS):
                 raise ValueError("control readout did not update")
         changed.append(step)
     return sorted(changed)
+
+
+def compare_prior_controls(records, prior_run, steps):
+    """Check earlier member identities/RNG and report, rather than hide, weight drift."""
+    arms = json.loads((prior_run / "verified/arms.json").read_text())
+    jobs = json.loads((prior_run / "manifest.json").read_text())["jobs"]
+    params_by_id = {p["prefix"]: p for p in jobs}
+    output = []
+    for current in records:
+        if current["condition"] != "free" or current["source"] not in {"ukr_rus", "cp_hk"}:
+            continue
+        matches = [r for r in arms if r["source"] == current["source"] and r["seed"] == current["seed"] and r["policy"] == "lowest_sorted"]
+        if len(matches) != 1:
+            raise ValueError("previous control not uniquely resolved")
+        prior = matches[0]
+        p = params_by_id[prior["model_id"]]
+        consumed = audit_consumed(Path(p["log_dir"]) / p["exp_name"] / "data/consumed_episodes.jsonl.gz", p, steps)
+        for key in ("anchor_hashes", "member_order_hashes", "member_set_hashes", "summary"):
+            if consumed[key] != current[key]:
+                raise ValueError(f"new free control changed prior consumed {key}")
+        if current["initial_sha256"] != prior["initial_sha256"] or current["final_walk_rng_sha256"] != prior["final_walk_rng_sha256"]:
+            raise ValueError("new free control changed prior initialization or walk RNG")
+        old_state = torch.load(prior["checkpoint"], map_location="cpu", weights_only=True)["model"]
+        new_state = torch.load(current["checkpoint"], map_location="cpu", weights_only=True)["model"]
+        if model_digest(old_state) != prior["final_sha256"]:
+            raise ValueError("previous verified checkpoint changed")
+        changed = [k for k in old_state if not torch.equal(old_state[k], new_state[k])]
+        output.append({"model_id": current["model_id"], "previous_model_id": prior["model_id"],
+                       "source": current["source"], "seed": current["seed"],
+                       "same_initialization_and_member_stream": True, "same_final_walk_rng": True,
+                       "old_full_input_hashes_available": False,
+                       "previous_weights_sha256": prior["final_sha256"], "weights_sha256": current["final_sha256"],
+                       "weights_bit_exact": not changed, "changed_keys": changed,
+                       "maximum_absolute_tensor_difference": max(float((new_state[k].double() - old_state[k].double()).abs().max()) for k in old_state)})
+    if len(output) != 6:
+        raise ValueError("all six historical matched controls required")
+    return output
 
 
 def main():
@@ -75,6 +114,7 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--expected-steps", type=int, default=2500)
     parser.add_argument("--allow-smoke", action="store_true")
+    parser.add_argument("--prior-training", type=Path, default=Path("/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906"))
     args = parser.parse_args()
     if args.output.exists() or (not args.allow_smoke and args.expected_steps != 2500):
         raise ValueError("existing output or wrong substantive budget")
@@ -143,10 +183,12 @@ def main():
         records.append(record)
         print(json.dumps({k: record[k] for k in ("model_id", "source", "seed", "condition", "verified_checkpoints")}), flush=True)
     check_pairs(records)
+    prior = compare_prior_controls(records, args.prior_training, args.expected_steps) if not args.allow_smoke else None
     args.output.mkdir(parents=True)
     write_json(args.output / "arms.json", [{k: v for k, v in r.items() if not k.endswith("hashes")} for r in records])
     write_json(args.output / "paired_input_hashes.json", [{k: r[k] for k in ("model_id", "source", "seed", "condition", "input_hashes")} for r in records])
     if not args.allow_smoke:
+        write_json(args.output / "control_reproduction.json", prior)
         (args.output / "model_list.tsv").write_text("model_id\tcheckpoint\tsources\n" + "".join(
             f"{r['model_id']}\t{r['checkpoint']}\t{r['source']}\n" for r in records))
     write_json(args.output / "DONE.json", {"valid": True, "research_result": not args.allow_smoke,

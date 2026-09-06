@@ -60,6 +60,11 @@ class ReadoutTrainingTests(unittest.TestCase):
             verify_checkpoint_states(initial, {3: initial}, "frozen")
         with self.assertRaises(ValueError):
             verify_checkpoint_states(initial, {3: valid}, "free")
+        initial["normalization.num_batches_tracked"] = torch.tensor(0)
+        buffers_only = copy.deepcopy(initial)
+        buffers_only["normalization.num_batches_tracked"] += 1
+        with self.assertRaisesRegex(ValueError, "other network weights"):
+            verify_checkpoint_states(initial, {3: buffers_only}, "frozen")
 
     def test_complete_pair_grid_and_full_inputs_required(self):
         rows = [{"source": source, "seed": seed, "condition": condition,

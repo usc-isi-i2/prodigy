@@ -140,3 +140,14 @@ analysis, `plot_readout_interventions.py` shows representation-probe versus
 full-model changes for restoration and reverse implantation. Both figures keep
 every policy/seed and both episode streams; the complete tables retain all five
 targets. A probe improvement is not presented as an end-to-end improvement.
+
+The prospective training follow-up has a separate complete-grid analysis,
+`analyze_readout_training.py`. It requires 18 new free/frozen-readout training
+runs (Ukraine/Hong Kong/COVID, seeds 0/1/2), all saved checkpoints and per-update
+constraint checks, complete paired training-input fingerprints, both fixed test
+streams, and every target/decoder. The primary endpoint is frozen-minus-free
+**Facebook full-model AUC**, averaged over the three sources within each seed.
+It separately reports each source/seed, all-target probe/model effects, and
+reproduction differences for the six historical standard-policy controls. The
+positive-consistency criterion was fixed before outcomes; probe-only improvement
+does not meet it. This is an exploratory follow-up, not a fresh-domain test.
