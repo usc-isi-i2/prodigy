@@ -5,7 +5,7 @@ import torch
 import torch.nn.functional as F
 from torch_geometric.data import Data
 
-from .support_identity_gradients import support_plan, label_intervention, cancellation, verify_interventions, gradient_probe, tensor_receipt
+from .support_identity_gradients import support_plan, label_intervention, cancellation, verify_interventions, gradient_probe, tensor_receipt, gradient_comparison
 from .replay import batch_hash, clone_batch
 
 
@@ -86,6 +86,14 @@ class SupportIdentityTests(unittest.TestCase):
         self.assertEqual(r[0]["pair_cosine_mean"], -1)
         self.assertEqual(r[1]["shared_gradient_ratio"], 1)
         self.assertEqual(r[1]["pair_cosine_mean"], 1)
+
+    def test_unused_projection_is_explicit_not_an_observed_zero_gradient(self):
+        base = {"logit_scale": torch.tensor(1.)}
+        result = gradient_comparison(base, {"logit_scale": torch.tensor(2.)})
+        self.assertEqual(result["label_input"]["active_parameter_tensors"], 0)
+        self.assertIsNone(result["label_input"]["cosine"])
+        self.assertEqual(result["logit_scale"]["active_parameter_tensors"], 1)
+        self.assertEqual(result["logit_scale"]["difference_norm"], 1)
 
     def test_malformed_support_relations_rejected(self):
         b = fixture()

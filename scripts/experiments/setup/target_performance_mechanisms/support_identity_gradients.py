@@ -182,13 +182,14 @@ def gradient_comparison(reference, changed):
         "readout": [k for k in reference if k.startswith("layer_list.0.reset")],
         "metagraph": [k for k in reference if k.startswith("layer_list.2")],
         "label_input": [k for k in reference if k.startswith("initial_label_mlp")],
-        "logit_scale": ["logit_scale"]}
+        "logit_scale": [k for k in reference if k == "logit_scale"]}
     results = {}
     for name, keys in groups.items():
-        a = torch.cat([reference[k].double().reshape(-1) for k in keys])
-        b = torch.cat([changed[k].double().reshape(-1) for k in keys])
+        a = torch.cat([reference[k].double().reshape(-1) for k in keys]) if keys else torch.empty(0, dtype=torch.float64)
+        b = torch.cat([changed[k].double().reshape(-1) for k in keys]) if keys else torch.empty(0, dtype=torch.float64)
         na, nb = float(a.norm()), float(b.norm())
-        results[name] = {"baseline_norm": na, "changed_norm": nb,
+        results[name] = {"active_parameter_tensors": len(keys), "active_parameter_elements": a.numel(),
+            "baseline_norm": na, "changed_norm": nb,
             "difference_norm": float((a-b).norm()),
             "relative_difference": float((a-b).norm())/na if na else None,
             "cosine": float(a.dot(b))/(na*nb) if na*nb else None}

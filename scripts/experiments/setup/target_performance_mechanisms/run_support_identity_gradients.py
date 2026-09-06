@@ -63,7 +63,9 @@ def make_shell(params, state):
     expected = {"layers": "S,U,M", "gnn_type": "sage", "dropout": 0, "text_features_dropout": 0,
         "has_final_back": False, "skip_path": False, "meta_gnn_pos_only": False,
         "no_bn_encoder": False, "no_bn_metagraph": False, "task_name": "neighbor_matching",
-        "use_edge_features": False, "attr_regression_weight": 0}
+        "use_edge_features": False, "attr_regression_weight": 0,
+        "ignore_label_embeddings": True, "zero_label_embeddings": False,
+        "not_freeze_learned_label_embedding": False}
     if any(p.get(k) != v for k, v in expected.items()):
         raise ValueError("unhandled model/training architecture")
     layers = get_module_list(p["layers"], p["emb_dim"], edge_attr_dim=None,
