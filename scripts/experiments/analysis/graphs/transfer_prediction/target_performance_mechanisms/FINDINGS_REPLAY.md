@@ -172,11 +172,25 @@ partners per target. Mean Ukraine-minus-TwiBot AUC across these matched partners
 | COVID Political | +.0124 (6/6 positive) | +.0084 (5/6) | +.0172 (6/6) |
 | Facebook | −.0131 (6/6 negative) | −.0261 (6/6) | −.0296 (6/6) |
 
-The pair reversal is already visible in the learned pooled encoder features
-under a common support-only decoder. It is **not only a final-metagraph effect**.
+On the original episodes, the pair reversal is already visible in the learned
+pooled encoder features under a common support-only decoder. It is **not only
+a final-metagraph effect on that stream**.
 For Facebook, it grows through the learned readout. The six partners are six
 composition contrasts, not six independent training-seed replications. See
 `data/pair_stage_contrasts.csv` and `data/pair_validation.json`.
+
+**Fresh-pair replication qualifies the reversal.** With unchanged checkpoint
+hashes and new target episode fingerprints, COVID Political keeps a +.0144 full
+model advantage and +.0081 pooled-feature advantage for Ukraine, both positive
+for all six partners. Facebook's mean full-model contrast is still negative
+(−.0107), but only four of six partners favor TwiBot; pooled features average
+−.0032 with three of six favoring it. The readout-stage mean is −.0085 (five of
+six negative). Thus the universal Facebook sign and every-partner encoder
+reversal **do not replicate**. Among the five partners foreign to both targets,
+the source-by-target interaction has the original direction for four of five
+on fresh episodes. Do not pool the two targets' six-partner averages as though
+their partner sets were identical. Evidence: `data/pair_stage_replication.csv`
+and `data/fresh_pair_validation.json`.
 
 On COVID Political, the larger final donor gap is not present with the common
 decoder on pooled S features. On Facebook, TwiBot's advantage is visible before
@@ -363,8 +377,8 @@ detail alone. The negative result is useful: it removes one plausible distractio
   models, eight tensor threads and two loader workers each (60 total). Automatic
   consumed-stream verification must pass before substantive training. No
   policy-effect results exist yet. Do not update that worktree while it runs.
-- Fresh-episode matched-pair stage replay is running in the main mechanism
-  worktree at `4fc6c7bd`, `fresh_pair_stage_cpu_20260906`.
+- Fresh-episode matched-pair stage replay: all 28 baseline cells complete in the
+  main mechanism worktree at `4fc6c7bd`, `fresh_pair_stage_cpu_20260906`.
 - The 24-arm member-selection intervention (two sources × four policies × three
   training seeds) is implemented at `5e0a3537`. All 24 lightweight tests and a
   four-policy, three-update toy CPU integration passed on Tucker. These are

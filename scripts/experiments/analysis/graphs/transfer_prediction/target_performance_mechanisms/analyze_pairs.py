@@ -1,4 +1,5 @@
 """Stage-resolved Ukraine/TwiBot substitution contrasts at fixed pair partners."""
+import argparse
 import json
 from pathlib import Path
 
@@ -6,16 +7,30 @@ import pandas as pd
 
 
 def main():
+    parser = argparse.ArgumentParser(__doc__)
+    parser.add_argument("--fresh", action="store_true")
+    args = parser.parse_args()
     root = Path(__file__).parent / "data"
-    cells = pd.DataFrame([json.loads(line) for path in sorted((root / "pair_replay").glob("*.jsonl"))
+    prefix = "fresh_pair" if args.fresh else "pair"
+    cells = pd.DataFrame([json.loads(line) for path in sorted((root / f"{prefix}_replay").glob("*.jsonl"))
                           for line in path.read_text().splitlines()])
     if len(cells) != 476 or cells.duplicated(["dataset", "model_id", "decoder"]).any():
         raise ValueError("expected exactly 14 paired models x 2 targets x 17 decoders")
     full = cells[cells.decoder == "full_model"]
-    if len(full) != 28 or full.official_metric_max_abs_error.isna().any() or (full.official_metric_max_abs_error > 1e-5).any():
-        raise ValueError("unverified reference parity")
-    if (full.official_decision_metric_max_abs_error > 1e-6).any():
-        raise ValueError("decision metrics drifted")
+    if len(full) != 28:
+        raise ValueError("incomplete model-by-target grid")
+    if args.fresh:
+        original = pd.DataFrame([json.loads(line) for path in (root / "pair_replay").glob("*.jsonl")
+                                 for line in path.read_text().splitlines()])
+        joined = cells.merge(original[["dataset", "model_id", "decoder", "weights_sha256", "episode_fingerprint"]],
+            on=["dataset", "model_id", "decoder"], suffixes=("", "_original"), validate="one_to_one")
+        if len(joined) != len(cells) or not (joined.weights_sha256 == joined.weights_sha256_original).all() or (joined.episode_fingerprint == joined.episode_fingerprint_original).any():
+            raise ValueError("fresh replay changed weights or did not change episode inputs")
+    else:
+        if full.official_metric_max_abs_error.isna().any() or (full.official_metric_max_abs_error > 1e-5).any():
+            raise ValueError("unverified reference parity")
+        if (full.official_decision_metric_max_abs_error > 1e-6).any():
+            raise ValueError("decision metrics drifted")
     rows = []
     for target, part in cells.groupby("dataset"):
         if part.episode_fingerprint.nunique() != 1 or set(part.episodes) != {128}:
@@ -32,16 +47,23 @@ def main():
                          "ukraine_auc": values.ukr_rus, "twibot_auc": values.twibot20,
                          "ukraine_minus_twibot_auc": values.ukr_rus - values.twibot20})
     pairs = pd.DataFrame(rows)
-    pairs.to_csv(root / "pair_stage_contrasts.csv", index=False)
+    pairs.to_csv(root / f"{prefix}_stage_contrasts.csv", index=False)
     summary = pairs.groupby(["dataset", "decoder"]).ukraine_minus_twibot_auc.agg(
         mean="mean", minimum="min", maximum="max", positive=lambda x: int((x > 0).sum()), matched_partners="size")
-    summary.to_csv(root / "pair_stage_summary.csv")
+    summary.to_csv(root / f"{prefix}_stage_summary.csv")
+    if args.fresh:
+        original_contrasts = pd.read_csv(root / "pair_stage_contrasts.csv")
+        replication = original_contrasts.merge(pairs, on=["dataset", "partner", "decoder"],
+            suffixes=("_original", "_fresh"), validate="one_to_one")
+        replication.to_csv(root / "pair_stage_replication.csv", index=False)
     print(summary.loc[(slice(None), ["raw_center/ridge", "S0_conv_center/ridge", "S0_pool/ridge", "U1_pre_meta/ridge", "M2_post_meta/ridge", "final_input/ridge", "full_model"]), :].to_string())
-    receipt = {"rows": len(cells), "official_parity_cells": len(full),
-               "max_official_metric_error": float(full.official_metric_max_abs_error.max()),
+    receipt = {"rows": len(cells), "official_parity_cells": 0 if args.fresh else len(full),
+               "same_weights_new_episodes_verified": args.fresh,
+               "eval_episode_offset": 100003 if args.fresh else 0,
+               "max_official_metric_error": None if args.fresh else float(full.official_metric_max_abs_error.max()),
                "training_seeds": [0], "foreign_partners_per_target": 6,
                "independent_training_seed_replications": False}
-    (root / "pair_validation.json").write_text(json.dumps(receipt, indent=2) + "\n")
+    (root / f"{prefix}_validation.json").write_text(json.dumps(receipt, indent=2) + "\n")
 
 
 if __name__ == "__main__":
