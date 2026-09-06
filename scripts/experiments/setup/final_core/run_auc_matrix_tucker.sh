@@ -16,6 +16,8 @@ PRELOAD_GIB_PER_WORKER="${PRELOAD_GIB_PER_WORKER:-125}"
 MAX_EXISTING_GPU_MIB="${MAX_EXISTING_GPU_MIB:-1000}"
 CPU_THREADS_PER_WORKER="${CPU_THREADS_PER_WORKER:-24}"
 REFERENCE_FINGERPRINTS="${REFERENCE_FINGERPRINTS:-/dataMeR1/phil/gfm/prodigy-final-core-cache/log/final_core_cached_test/production/bs32/summary/episode_fingerprints.tsv}"
+SEEDS_TEXT="${SEEDS:-0 1 2}"
+read -r -a SELECTED_SEEDS <<< "$SEEDS_TEXT"
 SMOKE_ONLY="${SMOKE_ONLY:-0}"
 SKIP_SMOKE="${SKIP_SMOKE:-0}"
 
@@ -52,7 +54,8 @@ mkdir -p "$EVAL_STATE_ROOT" "$EVAL_LOG_ROOT/queue" "$EVAL_LOG_ROOT/ready"
 cd "$REPO_ROOT"
 
 missing=0
-for seed in 0 1 2; do
+for seed in "${SELECTED_SEEDS[@]}"; do
+  [[ "$seed" =~ ^[0-2]$ ]] || { echo "invalid seed $seed" >&2; exit 2; }
   for source in ukr_rus covid midterm covid_political election2020 ukr_rus_suspended twibot20 cp_hk facebook_page_reference; do
     checkpoint="$TRAINING_STATE_ROOT/finalcore_ss_${source}_s${seed}_${TRAINING_RUN_STAMP}/checkpoint/state_dict_2500.ckpt"
     if [[ ! -f "$checkpoint" ]]; then
@@ -62,7 +65,7 @@ for seed in 0 1 2; do
   done
 done
 (( missing == 0 )) || { echo "$missing specialist checkpoints are missing" >&2; exit 1; }
-[[ -f "$REFERENCE_FINGERPRINTS" ]] || {
+[[ -z "$REFERENCE_FINGERPRINTS" || -f "$REFERENCE_FINGERPRINTS" ]] || {
   echo "MISSING reference fingerprint ledger $REFERENCE_FINGERPRINTS" >&2
   exit 1
 }
@@ -117,6 +120,7 @@ launch_workers() {
     [[ "$kind" == smoke ]] && targets="$(smoke_targets "$worker")"
     cmd=("$PYTHON" -u "$SCRIPT_DIR/evaluate_fixed_grid.py"
          --specialists-only --worker-index "$worker" --worker-count "$WORKER_COUNT"
+         --seeds "$(IFS=,; echo "${SELECTED_SEEDS[*]}")"
          --targets "$targets" --batch-size "$BATCH_SIZE" --episode-count 512
          --config "$SCRIPT_DIR/training.yaml"
          --training-state-root "$TRAINING_STATE_ROOT"
@@ -125,9 +129,9 @@ launch_workers() {
          --evaluation-log-root "$EVAL_LOG_ROOT/internal/${kind}_bs${BATCH_SIZE}"
          --results-root "$results_root"
          --evaluation-run-stamp "${RUN_ID}_${kind}_bs${BATCH_SIZE}"
-         --reference-fingerprints "$REFERENCE_FINGERPRINTS"
          --ready-dir "$ready_dir" --expected-workers "$WORKER_COUNT"
          --min-host-reserve-gib "$MIN_HOST_RESERVE_GIB")
+    [[ -n "$REFERENCE_FINGERPRINTS" ]] && cmd+=(--reference-fingerprints "$REFERENCE_FINGERPRINTS")
     [[ "$kind" == smoke ]] && cmd+=(--max-checkpoints 1)
     echo "LAUNCH kind=$kind worker=$worker gpu=$gpu targets=$targets"
     CUDA_VISIBLE_DEVICES="$gpu" "${cmd[@]}" \
@@ -167,7 +171,8 @@ mkdir -p "$results_root" "$summary_root" "$ready_dir"
   echo "branch=$(git rev-parse --abbrev-ref HEAD)"
   echo "training_state_root=$TRAINING_STATE_ROOT"
   echo "checkpoint_step=2500"
-  echo "specialist_cells=243"
+  echo "training_seeds=${SEEDS_TEXT}"
+  echo "specialist_cells=$((81 * ${#SELECTED_SEEDS[@]}))"
   echo "reference_fingerprints=$REFERENCE_FINGERPRINTS"
   echo "started_utc=$(date -u +%FT%TZ)"
 } > "$EVAL_LOG_ROOT/production/bs${BATCH_SIZE}/provenance.txt"
@@ -176,6 +181,6 @@ wait_for_resources
 launch_workers production "$results_root" "$ready_dir"
 "$PYTHON" "$SCRIPT_DIR/aggregate_auc_matrix.py" \
   --results-root "$results_root" --output-root "$summary_root" \
-  --expected-batch-size "$BATCH_SIZE"
+  --expected-batch-size "$BATCH_SIZE" --seeds "$(IFS=,; echo "${SELECTED_SEEDS[*]}")"
 date -u +%FT%TZ > "$EVAL_LOG_ROOT/production/bs${BATCH_SIZE}/complete_utc.txt"
 echo "FINAL_CORE_AUC_COMPLETE summary=$summary_root"
