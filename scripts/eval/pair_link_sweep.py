@@ -121,6 +121,7 @@ def main() -> int:
         )
 
     import torch
+    from torch_geometric.data import Batch
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -296,6 +297,24 @@ def main() -> int:
         node_limit=args.node_limit,
     )
 
+    # Sampling and PyG collation dominate PRODIGY inference on the largest
+    # graphs. The evaluation node set is identical for every checkpoint, so
+    # materialize immutable CPU batches once and clone them before each model
+    # mutates graph.x. This is the fixed-grid replay protocol used by the fast
+    # downstream evaluator.
+    cached_batches = None
+    if not args.export_examples:
+        cached_batches = []
+        cache_started = time.time()
+        node_list = all_nodes.tolist()
+        for start in range(0, len(node_list), args.batch_size):
+            chunk = node_list[start:start + args.batch_size]
+            cached_batches.append(Batch.from_data_list([dataset_obj[node] for node in chunk]))
+        print(
+            f"[{args.dataset}] cached {len(cached_batches)} CPU batches once "
+            f"({time.time()-cache_started:.0f}s)", flush=True,
+        )
+
     params = dict(ENCODER_DEFAULTS)
     params.update(emb_dim=args.emb_dim, input_dim=args.input_dim,
                   gnn_type=args.gnn_type, n_layer=args.n_layer, layers=args.layers)
@@ -310,6 +329,7 @@ def main() -> int:
                 device=args.device, batch_size=args.batch_size,
                 return_context=args.export_examples,
                 context_size=args.context_neighbors,
+                cached_batches=cached_batches,
             )
             if args.export_examples:
                 emb, contexts = embedded

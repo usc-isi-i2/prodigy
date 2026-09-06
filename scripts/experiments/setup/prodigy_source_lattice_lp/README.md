@@ -20,3 +20,8 @@ The launcher is resumable and refuses to report completion unless all 486 model
 by target cells are present. Outputs remain under
 `log/prodigy_source_lattice_lp/`; checkpoints are read-only inputs from their
 original isolated training worktrees.
+
+For execution speed, each worker samples and collates the target's required node
+neighborhoods once into immutable CPU batches, then clones and replays those
+same batches through every checkpoint. This preserves identical neighborhoods
+across models and avoids per-checkpoint Python sampling and PyG collation.

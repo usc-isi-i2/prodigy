@@ -583,6 +583,7 @@ def embed_nodes(
     batch_size: int = 256,
     return_context: bool = False,
     context_size: int = 3,
+    cached_batches=None,
 ):
     """Pooled subgraph embedding per node, using the model's own encoder stack.
 
@@ -611,10 +612,15 @@ def embed_nodes(
     contexts: Dict[int, List[int]] = {}
 
     with torch.no_grad():
-        for start in range(0, len(node_ids), batch_size):
+        starts = list(range(0, len(node_ids), batch_size))
+        if cached_batches is not None and len(cached_batches) != len(starts):
+            raise ValueError("cached batch count does not match node_ids/batch_size")
+        for batch_index, start in enumerate(starts):
             chunk = [int(n) for n in node_ids[start:start + batch_size]]
-            graphs = [subgraph_dataset[n] for n in chunk]
-            if return_context:
+            graphs = None
+            if cached_batches is None:
+                graphs = [subgraph_dataset[n] for n in chunk]
+            if return_context and graphs is not None:
                 for center, sampled in zip(chunk, graphs):
                     global_ids = getattr(sampled, "global_node_ids", None)
                     if global_ids is None:
@@ -625,7 +631,11 @@ def embed_nodes(
                         for node in global_ids.detach().cpu().reshape(-1).tolist()
                         if int(node) >= 0 and int(node) != center
                     ][:max(0, int(context_size))]
-            graph = Batch.from_data_list(graphs).to(device)
+            graph = (
+                Batch.from_data_list(graphs)
+                if cached_batches is None
+                else cached_batches[batch_index].clone()
+            ).to(device)
 
             supernode_idx = graph.supernode + graph.ptr[:-1]
             graph.x = model.initial_input_mlp(graph.x)
