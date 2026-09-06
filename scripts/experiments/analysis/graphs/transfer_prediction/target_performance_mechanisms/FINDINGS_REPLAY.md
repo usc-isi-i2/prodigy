@@ -490,6 +490,72 @@ interface restoration as the explanation or a demonstrated rescue. Support-label
 relations remain essential; invariance to label-vector changes is not invariance
 to erasing the support examples' labels.
 
+## Existing NM interventions do not supply a general classification remedy
+
+The complete compatible campaign extension reuses 15 eight-source training runs,
+all excluding TwiBot. Thirty declared checkpoints keep **common 6,000 updates**
+and **original source-validation-selected** comparisons separate. Both streams,
+all five classification targets, and all 17 decoders are complete: 5,100 rows,
+300 full-model cells. All 320 cached batch hashes match prior references; all
+30 strict finite checkpoint/forward checks and weight digests pass. The selected
+checkpoint file hashes also match the original NM result files exactly.
+
+This is one training seed, batch size one, learning rate .001, and a maximum
+10,000-update campaign, not the historical specialist protocol. Only within-
+campaign contrasts share that recipe. Of the original 18 endpoint models, three
+requiring feature-standardized/source-affine/wider forward implementations are
+explicitly excluded before classification outcomes. The budget endpoint is a
+baseline-distribution repeat; the selected recipe repeats the objective arm with
+the same training seed. Neither is an extra seed or an independent intervention.
+
+**At the common budget, no alternative has a positive TwiBot classification
+change on both streams.** Twelve of fourteen are negative on both; auxiliary
+reconstruction and the budget repeat change sign across streams. Baseline AUC is
+.6663/.6367. The largest declines include low-degree eligibility
+(−.0949/−.0750), blocked scheduling (−.0863/−.0742), and degree-balanced centers
+(−.0745/−.0413). Uniform-neighbor positives give −.0492/−.0402. Those positives
+draw directly from unique adjacency neighbors: they are not the new factorial's
+uniform retention from matched random-walk endpoint sets.
+
+**NM gains do not guarantee classification gains on the same held-out graph.**
+The following comparisons use each run's originally selected checkpoint for
+both tasks, including an 8,000-update baseline. They do not attach selected NM
+metrics to the common-6,000 classification checkpoint:
+
+| Intervention | Selected TwiBot NM ΔAUC | Selected CLS ΔAUC, original / fresh |
+|---|---:|---:|
+| Proportional source exposure | +.00749 | −.01810 / −.02785 |
+| Uniform-neighbor positives | +.00408 | −.00314 / −.01190 |
+| Degree-matched competing classes | +.00323 | −.00948 / −.00018 |
+| Low-degree eligibility | −.00704 | +.02303 / +.01987 |
+| Auxiliary reconstruction | −.00019 | +.01011 / +.01416 |
+| Objective-only recipe repeat | +.00019 | −.03305 / −.03417 |
+
+The last two NM changes are near zero, not substantive NM wins. The recipe's
+opposite classification outcome makes the modest auxiliary gain particularly
+unsafe to present as a reliable method. Low-degree eligibility's selected
+checkpoint is update 2,000, versus baseline 8,000; its positive selected-workflow
+effect reverses at common update 6,000. That is sensitivity to the full training/
+selection workflow, not an isolated eligibility benefit or proof that earlier
+stopping alone causes the difference. No checkpoint or variant was selected
+using these classification outcomes.
+
+Stage comparisons again resist a single "better representation" story. At common
+6,000 updates, uniform-neighbor positives improve pooled-S TwiBot ridge AUC by
+.0098/.0059, while the learned-readout probe declines by .0209/.0326 and the
+full model by .0492/.0402. Gradient normalization improves both pooled-S and
+readout probe AUC on both streams but reduces the full-model result. These
+matched-decoder diagnostics are not causal mediation or additive decompositions.
+All target/stage outcomes remain in the exported tables, including improvements
+on other targets. The proper conclusion is **no robust remedy established by
+this one-seed compatible reuse**, not that every possible data intervention fails.
+
+Evidence: `data/campaign_cls_{cells,deltas}.csv`,
+`data/campaign_cls_validation.json`, `data/campaign_nm_cls_selected_deltas.csv`,
+`data/campaign_original_selected_nm.csv`, and
+`figures/campaign_nm_cls_comparison.png`. Four analysis unit tests pass, including
+missing-grid, changed-input/checkpoint, raw-probe, and checkpoint-rule guards.
+
 ## Artifacts and runtime provenance
 
 - Local branch/worktree: `codex/target-performance-mechanisms`,
@@ -562,12 +628,13 @@ to erasing the support examples' labels.
   `data/label_interface_checkpoint_inventory.json` records exact digests and norms.
   Both components are byte-identical across every historical source and step.
 - Cross-task replay of 15 pre-existing compatible eight-source NM interventions
-  is running in the main mechanism worktree at frozen revision `3c88bdbf`, tmux
+  completed in the main mechanism worktree at frozen revision `3c88bdbf`, tmux
   `mechanism-campaign-cls`, four CPU threads. Its 30 declared checkpoints separate
   a common 6,000-update rule from original source-validation selection. All 30
   strict finite-weight/forward checks passed, and all 15 selected checkpoint-file
   hashes match their original NM results. Three forward-incompatible models are
-  explicitly excluded. Manifest revision `6732081a`; no new training or target-
+  explicitly excluded. Both `DONE` markers and every input/weight/original-NM
+  checkpoint-file gate passed. Manifest revision `6732081a`; no new training or target-
   selected checkpoints. Only TwiBot is an unseen source. This is a one-training-
   seed exploratory reuse, not a substitute for the running 24-arm factorial.
 - The 24-arm member-selection intervention (two sources × four policies × three

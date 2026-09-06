@@ -1,5 +1,6 @@
 """Complete cross-task replay of a declared compatible NM-intervention subset."""
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
@@ -59,8 +60,12 @@ def main():
     manifest = pd.DataFrame(protocol["models"])
     receipt = json.loads((args.data / "campaign_cls_checkpoint_inventory.json").read_text())
     inventory = pd.DataFrame(receipt["rows"])
+    if receipt.get("manifest_sha256") != hashlib.sha256(manifest_path.read_bytes()).hexdigest():
+        raise ValueError("declared manifest differs from checkpoint compatibility audit")
     if len(inventory) != 30 or inventory.model_id.duplicated().any() or not inventory[["finite_weights", "strict_load", "finite_forward"]].all().all():
         raise ValueError("missing complete compatibility inventory")
+    if set(inventory.model_id) != set(manifest.model_id) or not (inventory.checkpoint == inventory.model_id.map(manifest.set_index("model_id").checkpoint)).all():
+        raise ValueError("checkpoint inventory differs from declared model paths")
     input_receipt = json.loads((args.data / "campaign_cls_input_validation.json").read_text())
     if input_receipt.get("all_cached_batches_identical") is not True or input_receipt.get("stream_target_cells") != 10:
         raise ValueError("exact cross-task input validation missing")

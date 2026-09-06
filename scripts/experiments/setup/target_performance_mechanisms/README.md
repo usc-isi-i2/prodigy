@@ -54,9 +54,12 @@ Intervention meanings:
 - `no_background_edges`: remove S background edges; keep pooling context and U/M
   edges. Separates message passing from direct context pooling.
 - `zero_support_relations`: erase the +/- support-label edge channel.
-- `zero_label_text`: zero raw label-text embeddings; retains support relations.
+- `zero_label_text`: zero the input label vectors; retains support relations and
+  the initial projection bias. The legacy CLI name is unchanged, but these
+  original-feature runs use class-keyed deterministic random vectors, not
+  semantic text embeddings.
 - `zero_support_and_label_text`: erase both prompt-label channels. Erasing only
-  support relations does not guarantee chance when label text is still present.
+  support relations does not guarantee chance when input label vectors remain.
 - `bn_batch_*`: use current batch moments at the selected BN layers, without
   updating weights or running buffers. **Transductive diagnostic**: includes
   test-query covariates and neighboring episodes in the batch. This is not a

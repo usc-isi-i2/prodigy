@@ -84,6 +84,8 @@ NM comparisons require the original checkpoint file hashes to match. The manifes
 and explicit forward-incompatible exclusions live under setup's
 `data/campaign_cls_manifest_v2/`. Only TwiBot is a held-out source; one seed and
 repeat conditions must not be counted as independent training replications.
+The replay is complete. `plot_campaign_cls.py` renders its two checkpoint rules
+and matched selected-checkpoint NM outcomes in `figures/campaign_nm_cls_comparison.png`.
 
 `analyze_member_cue_alignment.py` reports the prospective exploratory secondary
 cue effects only after the complete primary member-policy analysis passes.

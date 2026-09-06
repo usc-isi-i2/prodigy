@@ -2,10 +2,40 @@ import unittest
 
 import pandas as pd
 
-from .analyze_campaign_cls import paired_deltas
+from .analyze_campaign_cls import DECODERS, PANEL, paired_deltas, validate
 
 
 class CampaignAnalysisTests(unittest.TestCase):
+    def complete_fixture(self):
+        models = [f"model_{i}" for i in range(30)]
+        manifest = pd.DataFrame([dict(model_id=m, checkpoint=f"/{m}/checkpoint", sources=["source"],
+                                      forward_params={}, classification_adaptation={}) for m in models])
+        inventory = pd.DataFrame([dict(model_id=m, weights_sha256=m) for m in models])
+        cells = pd.DataFrame([dict(dataset=t, model_id=m, decoder=d, variant="baseline", episodes=128,
+                                   queries=3072, checkpoint=f"/{m}/checkpoint", sources=["source"],
+                                   weights_sha256=m, episode_fingerprint=t, roc_auc=.7, accuracy=.6, f1=.5, nll=.8)
+                              for t in PANEL for m in models for d in DECODERS])
+        return cells, manifest, inventory, cells[cells.model_id == models[0]].copy(deep=True)
+
+    def test_complete_grid_is_required(self):
+        cells, manifest, inventory, reference = self.complete_fixture()
+        self.assertEqual(len(validate(cells, manifest, inventory, reference, "original")), 2550)
+        with self.assertRaisesRegex(ValueError, "incomplete"):
+            validate(cells.iloc[1:], manifest, inventory, reference, "original")
+
+    def test_checkpoint_input_and_raw_probe_changes_fail(self):
+        for field, value, message in (("weights_sha256", "wrong", "weights"),
+                                      ("checkpoint", "/wrong", "checkpoint"),
+                                      ("episode_fingerprint", "wrong", "inputs")):
+            cells, manifest, inventory, reference = self.complete_fixture()
+            cells.loc[0, field] = value
+            with self.assertRaisesRegex(ValueError, message):
+                validate(cells, manifest, inventory, reference, "original")
+        cells, manifest, inventory, reference = self.complete_fixture()
+        cells.loc[cells.decoder == "raw_center/ridge", "roc_auc"] = .8
+        with self.assertRaisesRegex(ValueError, "raw input probe"):
+            validate(cells, manifest, inventory, reference, "original")
+
     def fixture(self):
         rows = []
         for role, baseline in (("common6000", .6), ("source_val_selected", .7)):
