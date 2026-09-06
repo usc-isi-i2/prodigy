@@ -33,6 +33,16 @@ Nine specialists plus one deterministic random initialization, identical cached
 episode's support labels. Ridge regularization is fixed at 1 after row-wise
 feature normalization; no query labels select it. No model weights are updated.
 
+**Label-interface clarification:** these original-feature graph runs do not load
+a sentence encoder for labels unless one is explicitly requested. With the
+current empty `label_emb_model`, classification uses 768-dimensional standard-
+normal vectors generated deterministically from each class index/name, then
+projects them. They are **not semantic label-text embeddings**. NM training
+instead uses its frozen 256-dimensional label table. The table and initial label
+projection have identical tensors across all 36 historical checkpoints (all nine
+sources, four steps). Historical control names such as `zero_label_text` are
+retained for artifact compatibility but mean erasing those input label vectors.
+
 Facebook's label universe is the 30 page categories, with two categories sampled
 per episode; its raw text is a page description, not a Twitter biography. The
 production metric uses episode-local binary labels for this episodic label
@@ -313,11 +323,12 @@ particular scalar is the model's sole mechanism. All 60 fresh intervention
 cells match baseline checkpoint hashes and original cached input fingerprints
 for that fresh stream. Data: `data/fresh_intervention_deltas.csv`.
 
-Zeroing raw label-text embeddings barely changes Ukraine/TwiBot on these targets.
+Zeroing input label vectors barely changes Ukraine/TwiBot on these targets.
 Erasing support-label relations gives much worse, roughly chance-level results
 on COVID Political and Facebook, but **not universally chance**: Election retains
-strong positive or inverted rankings with label-text embeddings still present.
-A joint erasure of support relations and label text gives exactly .5000 AUC in
+strong positive or inverted rankings with class-keyed random label vectors still
+present. This must not be attributed to label-text semantics. A joint erasure of
+support relations and input label vectors gives exactly .5000 AUC in
 all 15 fresh cells (three donor models × five targets). A unit test also changes
 query labels alone and verifies bit-identical model logits. This is a useful
 sanity check on prompt-label information, not a complete dataset-leakage audit.
@@ -509,6 +520,15 @@ detail alone. The negative result is useful: it removes one plausible distractio
   exports (~44 MB; no graph-feature export), code `a1c0aa4b`. All 648 cells passed
   exact cached-input checks; two rank/orientation/constant-score unit tests passed.
   This new analysis remains local pending approval to publish to the public remote.
+- Frozen label-interface controls are running in a new detached private worktree,
+  `/dataMeR1/phil/gfm/prodigy-mechanisms-followup`, revision `1010d57c`, tmux
+  `mechanism-label-interface`, four CPU threads. All 16 scoped-hook/replay tests
+  passed locally and on Tucker. Both streams and all five targets are fixed in
+  advance. Code reached Tucker by **direct private git transport**, without any
+  public GitHub update; active training/evaluation worktrees were not changed.
+- The label-table/projection audit reads all 36 existing checkpoint tensors;
+  `data/label_interface_checkpoint_inventory.json` records exact digests and norms.
+  Both components are byte-identical across every historical source and step.
 - The 24-arm member-selection intervention (two sources × four policies × three
   training seeds) is implemented at `5e0a3537`. All 24 lightweight tests and a
   four-policy, three-update toy CPU integration passed on Tucker. These are

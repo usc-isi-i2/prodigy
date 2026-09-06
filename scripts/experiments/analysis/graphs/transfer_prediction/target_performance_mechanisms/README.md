@@ -69,3 +69,15 @@ prespecified COVID Political/Facebook/TwiBot primary panel, with role effects,
 interactions, all-target outcomes, and actual consumed exposure as secondary
 outputs. No significance test treats targets, episode streams, checkpoints, or
 mixture partners as independent training-seed replications.
+
+`analyze_label_interface.py` is the fail-closed analysis for the running frozen
+label-vector controls. It requires all nine specialists, all six conditions,
+all five targets, both episode streams, exact input/weight matches, and successful
+norm/flag audits. Run as a module after the completed outputs and input receipt
+are collected. These graph runs use class-keyed deterministic random label
+vectors, not semantic label-text embeddings; legacy control names are unchanged.
+
+`analyze_member_cue_alignment.py` reports the prospective exploratory secondary
+cue effects only after the complete primary member-policy analysis passes.
+Undefined correlations from constant predictions remain missing; no arm is
+dropped to compute a more favorable contrast.
