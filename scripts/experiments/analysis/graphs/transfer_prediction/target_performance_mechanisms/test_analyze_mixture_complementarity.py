@@ -129,6 +129,19 @@ class MixtureAnalysisTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "complete 28"):
             rank_association(frame.iloc[:-1], "gain")
 
+    def test_figure_keeps_all_foreign_pairs_and_loo_cases(self):
+        from .plot_mixture_complementarity import panel_data
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            inputs, _ = fixture(root)
+            comparisons, _, _, _ = summarize(validate_artifacts(root, inputs))
+            shown = panel_data(comparisons)
+            self.assertEqual(len(shown), 290)
+            self.assertEqual(shown.source_count.value_counts().to_dict(), {2: 280, 8: 10})
+            self.assertTrue(shown.fixes_pp.eq(12.5).all())
+            with self.assertRaisesRegex(ValueError, "complete 450"):
+                panel_data(comparisons.iloc[:-1])
+
 
 if __name__ == "__main__":
     unittest.main()
