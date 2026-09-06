@@ -192,11 +192,21 @@ def main() -> int:
     parser.add_argument("--output-root", required=True)
     parser.add_argument("--prodigy-root", default="/dataMeR1/phil/gfm/prodigy-nm-pairs")
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--run-id", help="evaluate only this lattice run (smoke/debug)")
+    parser.add_argument("--target", help="evaluate only this target (smoke/debug)")
     args = parser.parse_args()
     config = load_config(args.config)
     configure_sampling_backend(config["protocol"])
     rows = lattice_rows()
     targets = CLS_TARGETS if args.task == "cls" else LP_TARGETS
+    if args.run_id:
+        rows = [row for row in rows if row[0] == args.run_id]
+        if not rows:
+            parser.error(f"unknown --run-id {args.run_id!r}")
+    if args.target:
+        if args.target not in targets:
+            parser.error(f"invalid --target {args.target!r} for task {args.task!r}")
+        targets = (args.target,)
     assigned = targets[args.worker_index::args.workers]
     pair = None if args.task == "cls" else load_pair_module(Path(args.prodigy_root))
     device = torch.device(f"cuda:{args.device}")
