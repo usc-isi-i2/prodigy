@@ -764,6 +764,37 @@ policy here, but RNG coupling and full-run protocols differ; do not treat those
 new lattice runs as exact numerical replicas or merge them into historical cells.
 That worktree and the user's `rolefix-lattice-0906` jobs were left untouched.
 
+## Prospective initial-readout-frozen training: launched, no target outcomes yet
+
+The fixed-weight results motivated a different training-time test, recorded
+before launch in `paper/planning/readout_training_constraint_2026-09-06.md` outside
+git. Eighteen new CPU models compare freely trained and exact-initial-readout-
+frozen conditions for Ukraine/Hong Kong/COVID and seeds 0/1/2. Both conditions
+are newly trained, with the original lowest-ID/sorted member policy and matched
+initialization and complete input tensors. Every other model component adapts
+normally. The primary prediction is a **Facebook full-model AUC improvement**;
+a probe-only improvement does not satisfy it. All other targets and both streams
+remain required. This is a data-informed exploratory follow-up, not untouched-
+domain confirmation or an established remedy.
+
+The two-arm three-update toy run and 18-arm eight-update full-graph smoke passed
+all input, initialization, optimizer and frozen-weight gates. The latter was
+rechecked at `f20e6495`, including a stronger requirement for actual non-readout
+parameter updates rather than normalization-buffer changes alone. Eight combined
+constraint/analysis tests and all six shared-graph tests passed on Tucker; 31
+analysis tests passed locally. Local shared-memory tests hit a sandbox permission
+restriction and were therefore run successfully on Tucker, not silently waived.
+
+Substantive training started **11:01:24 UTC**, frozen Tucker worktree
+`/dataMeR1/phil/gfm/prodigy-mechanisms-freeze` at `f20e6495`, tmux
+`mechanism-readout-training`, six concurrent CPU models, eight tensor threads and
+two loader workers each, with all GPUs hidden. Each model runs 2,500 updates and
+keeps 0/100/300/900/2500 checkpoints. The finite continuation evaluates both
+128-episode streams only after all 18 training gates pass. Output:
+`log/target_mechanisms/readout_constraint_training_20260906`.
+The local complete-grid analyzer is committed before outcomes. No result of this
+new experiment is available at this update.
+
 ## Artifacts and runtime provenance
 
 - Local branch/worktree: `codex/target-performance-mechanisms`,

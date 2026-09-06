@@ -1,0 +1,1334 @@
+[
+  {
+    "model_id": "readouttrain_ukr_rus_free_s0",
+    "source": "ukr_rus",
+    "seed": 0,
+    "condition": "free",
+    "initial_sha256": "45bb682d264595f7cc71903e33f8abc9b91954c596e5a0cdce3defb9bba84904",
+    "final_sha256": "8461c81f0d4ce614426938031d9d0b51984b45175c524b38e2d1cc2cee2eedf5",
+    "checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_smoke_20260906/state/smoke_readouttrain_ukr_rus_free_s0_20260906_035605_000/checkpoint/state_dict_8.ckpt",
+    "final_walk_rng_sha256": "dc6bb94b565821e9332395cd0be6dc9ed8e435627257aedfb9c5b85498a8cb75",
+    "verified_checkpoints": [
+      0,
+      8
+    ],
+    "training_constraint": {
+      "condition": "free",
+      "initial_model_sha256": "45bb682d264595f7cc71903e33f8abc9b91954c596e5a0cdce3defb9bba84904",
+      "initial_readout_sha256": "5b621207592b76870030505cf0ccc6324eb384263ff3158bca35a7aabe32520c",
+      "readout_keys": [
+        "layer_list.0.reset_mlp_c.bias",
+        "layer_list.0.reset_mlp_c.weight",
+        "layer_list.0.reset_mlp_m.bias",
+        "layer_list.0.reset_mlp_m.weight"
+      ],
+      "optimizer_parameter_names": [
+        [
+          "logit_scale",
+          "layer_list.0.module_list.0.lin_x.weight",
+          "layer_list.0.module_list.0.lin_x.bias",
+          "layer_list.0.module_list.0.lin_self_loops.weight",
+          "layer_list.0.module_list.0.lin_self_loops.bias",
+          "layer_list.0.module_list.0.mlp.0.weight",
+          "layer_list.0.module_list.0.mlp.0.bias",
+          "layer_list.0.module_list.0.mlp.2.weight",
+          "layer_list.0.module_list.0.mlp.2.bias",
+          "layer_list.0.module_list.0.bn.weight",
+          "layer_list.0.module_list.0.bn.bias",
+          "layer_list.0.reset_mlp.weight",
+          "layer_list.0.reset_mlp.bias",
+          "layer_list.0.reset_mlp_c.weight",
+          "layer_list.0.reset_mlp_c.bias",
+          "layer_list.0.reset_mlp_m.weight",
+          "layer_list.0.reset_mlp_m.bias",
+          "layer_list.2.gnn_layers.0.mlp_kqv.weight",
+          "layer_list.2.gnn_layers.0.mlp_kqv.bias",
+          "layer_list.2.gnn_layers.0.lin_edge.weight",
+          "layer_list.2.gnn_layers.0.lin_edge.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.0.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.0.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.2.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.2.bias",
+          "layer_list.2.gnn_layers.0.out_proj.weight",
+          "layer_list.2.gnn_layers.0.out_proj.bias",
+          "layer_list.2.gnn_layers.0.bn.weight",
+          "layer_list.2.gnn_layers.0.bn.bias",
+          "initial_label_mlp.weight",
+          "initial_label_mlp.bias"
+        ]
+      ],
+      "other_trainable_parameters_unchanged": true,
+      "steps_checked": 8,
+      "inputs_hashed": 8
+    },
+    "summary": {
+      "steps": 8,
+      "episodes": 32,
+      "member_positions": 6720,
+      "unique_members": 4758,
+      "unique_anchors": 960,
+      "effective_member_count": 1910.253807106599,
+      "cross_class_duplicate_fraction": 0.03407738095238095,
+      "context_nodes_mean": 78.39092261904761,
+      "source_ids": {
+        "0": 32
+      }
+    }
+  },
+  {
+    "model_id": "readouttrain_ukr_rus_frozen_s0",
+    "source": "ukr_rus",
+    "seed": 0,
+    "condition": "frozen",
+    "initial_sha256": "45bb682d264595f7cc71903e33f8abc9b91954c596e5a0cdce3defb9bba84904",
+    "final_sha256": "9f41bd6c5802951ca0290c1cffcbc695c9b2bf0f7b9e0dfeb0141304bc5bf4d4",
+    "checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_smoke_20260906/state/smoke_readouttrain_ukr_rus_frozen_s0_20260906_035605_001/checkpoint/state_dict_8.ckpt",
+    "final_walk_rng_sha256": "dc6bb94b565821e9332395cd0be6dc9ed8e435627257aedfb9c5b85498a8cb75",
+    "verified_checkpoints": [
+      0,
+      8
+    ],
+    "training_constraint": {
+      "condition": "frozen",
+      "initial_model_sha256": "45bb682d264595f7cc71903e33f8abc9b91954c596e5a0cdce3defb9bba84904",
+      "initial_readout_sha256": "5b621207592b76870030505cf0ccc6324eb384263ff3158bca35a7aabe32520c",
+      "readout_keys": [
+        "layer_list.0.reset_mlp_c.bias",
+        "layer_list.0.reset_mlp_c.weight",
+        "layer_list.0.reset_mlp_m.bias",
+        "layer_list.0.reset_mlp_m.weight"
+      ],
+      "optimizer_parameter_names": [
+        [
+          "logit_scale",
+          "layer_list.0.module_list.0.lin_x.weight",
+          "layer_list.0.module_list.0.lin_x.bias",
+          "layer_list.0.module_list.0.lin_self_loops.weight",
+          "layer_list.0.module_list.0.lin_self_loops.bias",
+          "layer_list.0.module_list.0.mlp.0.weight",
+          "layer_list.0.module_list.0.mlp.0.bias",
+          "layer_list.0.module_list.0.mlp.2.weight",
+          "layer_list.0.module_list.0.mlp.2.bias",
+          "layer_list.0.module_list.0.bn.weight",
+          "layer_list.0.module_list.0.bn.bias",
+          "layer_list.0.reset_mlp.weight",
+          "layer_list.0.reset_mlp.bias",
+          "layer_list.2.gnn_layers.0.mlp_kqv.weight",
+          "layer_list.2.gnn_layers.0.mlp_kqv.bias",
+          "layer_list.2.gnn_layers.0.lin_edge.weight",
+          "layer_list.2.gnn_layers.0.lin_edge.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.0.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.0.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.2.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.2.bias",
+          "layer_list.2.gnn_layers.0.out_proj.weight",
+          "layer_list.2.gnn_layers.0.out_proj.bias",
+          "layer_list.2.gnn_layers.0.bn.weight",
+          "layer_list.2.gnn_layers.0.bn.bias",
+          "initial_label_mlp.weight",
+          "initial_label_mlp.bias"
+        ]
+      ],
+      "other_trainable_parameters_unchanged": true,
+      "steps_checked": 8,
+      "inputs_hashed": 8
+    },
+    "summary": {
+      "steps": 8,
+      "episodes": 32,
+      "member_positions": 6720,
+      "unique_members": 4758,
+      "unique_anchors": 960,
+      "effective_member_count": 1910.253807106599,
+      "cross_class_duplicate_fraction": 0.03407738095238095,
+      "context_nodes_mean": 78.39092261904761,
+      "source_ids": {
+        "0": 32
+      }
+    }
+  },
+  {
+    "model_id": "readouttrain_ukr_rus_free_s1",
+    "source": "ukr_rus",
+    "seed": 1,
+    "condition": "free",
+    "initial_sha256": "744597b4ca3e3e5b9e5e7c6ee36385db262d1349b88898a154da932d8991a2e5",
+    "final_sha256": "55810d71f68e007a217da33374c0b0b301f18decd22dae2399d6c8bd37497a79",
+    "checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_smoke_20260906/state/smoke_readouttrain_ukr_rus_free_s1_20260906_035605_002/checkpoint/state_dict_8.ckpt",
+    "final_walk_rng_sha256": "c0c353d267980954f878468d4613599c90b10930c0b0872792f0c55f5cbd44c9",
+    "verified_checkpoints": [
+      0,
+      8
+    ],
+    "training_constraint": {
+      "condition": "free",
+      "initial_model_sha256": "744597b4ca3e3e5b9e5e7c6ee36385db262d1349b88898a154da932d8991a2e5",
+      "initial_readout_sha256": "3a05296dbd8ddf6155b3ea8a630dff83578c950043460cdb9105fa4b0db3be3c",
+      "readout_keys": [
+        "layer_list.0.reset_mlp_c.bias",
+        "layer_list.0.reset_mlp_c.weight",
+        "layer_list.0.reset_mlp_m.bias",
+        "layer_list.0.reset_mlp_m.weight"
+      ],
+      "optimizer_parameter_names": [
+        [
+          "logit_scale",
+          "layer_list.0.module_list.0.lin_x.weight",
+          "layer_list.0.module_list.0.lin_x.bias",
+          "layer_list.0.module_list.0.lin_self_loops.weight",
+          "layer_list.0.module_list.0.lin_self_loops.bias",
+          "layer_list.0.module_list.0.mlp.0.weight",
+          "layer_list.0.module_list.0.mlp.0.bias",
+          "layer_list.0.module_list.0.mlp.2.weight",
+          "layer_list.0.module_list.0.mlp.2.bias",
+          "layer_list.0.module_list.0.bn.weight",
+          "layer_list.0.module_list.0.bn.bias",
+          "layer_list.0.reset_mlp.weight",
+          "layer_list.0.reset_mlp.bias",
+          "layer_list.0.reset_mlp_c.weight",
+          "layer_list.0.reset_mlp_c.bias",
+          "layer_list.0.reset_mlp_m.weight",
+          "layer_list.0.reset_mlp_m.bias",
+          "layer_list.2.gnn_layers.0.mlp_kqv.weight",
+          "layer_list.2.gnn_layers.0.mlp_kqv.bias",
+          "layer_list.2.gnn_layers.0.lin_edge.weight",
+          "layer_list.2.gnn_layers.0.lin_edge.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.0.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.0.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.2.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.2.bias",
+          "layer_list.2.gnn_layers.0.out_proj.weight",
+          "layer_list.2.gnn_layers.0.out_proj.bias",
+          "layer_list.2.gnn_layers.0.bn.weight",
+          "layer_list.2.gnn_layers.0.bn.bias",
+          "initial_label_mlp.weight",
+          "initial_label_mlp.bias"
+        ]
+      ],
+      "other_trainable_parameters_unchanged": true,
+      "steps_checked": 8,
+      "inputs_hashed": 8
+    },
+    "summary": {
+      "steps": 8,
+      "episodes": 32,
+      "member_positions": 6720,
+      "unique_members": 4750,
+      "unique_anchors": 960,
+      "effective_member_count": 1920.653283429738,
+      "cross_class_duplicate_fraction": 0.034375,
+      "context_nodes_mean": 78.80595238095238,
+      "source_ids": {
+        "0": 32
+      }
+    }
+  },
+  {
+    "model_id": "readouttrain_ukr_rus_frozen_s1",
+    "source": "ukr_rus",
+    "seed": 1,
+    "condition": "frozen",
+    "initial_sha256": "744597b4ca3e3e5b9e5e7c6ee36385db262d1349b88898a154da932d8991a2e5",
+    "final_sha256": "cf2d5b6847b35323900d938d3c798b6cdaae31c769c08cded5a01d2ae968f37b",
+    "checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_smoke_20260906/state/smoke_readouttrain_ukr_rus_frozen_s1_20260906_035605_003/checkpoint/state_dict_8.ckpt",
+    "final_walk_rng_sha256": "c0c353d267980954f878468d4613599c90b10930c0b0872792f0c55f5cbd44c9",
+    "verified_checkpoints": [
+      0,
+      8
+    ],
+    "training_constraint": {
+      "condition": "frozen",
+      "initial_model_sha256": "744597b4ca3e3e5b9e5e7c6ee36385db262d1349b88898a154da932d8991a2e5",
+      "initial_readout_sha256": "3a05296dbd8ddf6155b3ea8a630dff83578c950043460cdb9105fa4b0db3be3c",
+      "readout_keys": [
+        "layer_list.0.reset_mlp_c.bias",
+        "layer_list.0.reset_mlp_c.weight",
+        "layer_list.0.reset_mlp_m.bias",
+        "layer_list.0.reset_mlp_m.weight"
+      ],
+      "optimizer_parameter_names": [
+        [
+          "logit_scale",
+          "layer_list.0.module_list.0.lin_x.weight",
+          "layer_list.0.module_list.0.lin_x.bias",
+          "layer_list.0.module_list.0.lin_self_loops.weight",
+          "layer_list.0.module_list.0.lin_self_loops.bias",
+          "layer_list.0.module_list.0.mlp.0.weight",
+          "layer_list.0.module_list.0.mlp.0.bias",
+          "layer_list.0.module_list.0.mlp.2.weight",
+          "layer_list.0.module_list.0.mlp.2.bias",
+          "layer_list.0.module_list.0.bn.weight",
+          "layer_list.0.module_list.0.bn.bias",
+          "layer_list.0.reset_mlp.weight",
+          "layer_list.0.reset_mlp.bias",
+          "layer_list.2.gnn_layers.0.mlp_kqv.weight",
+          "layer_list.2.gnn_layers.0.mlp_kqv.bias",
+          "layer_list.2.gnn_layers.0.lin_edge.weight",
+          "layer_list.2.gnn_layers.0.lin_edge.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.0.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.0.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.2.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.2.bias",
+          "layer_list.2.gnn_layers.0.out_proj.weight",
+          "layer_list.2.gnn_layers.0.out_proj.bias",
+          "layer_list.2.gnn_layers.0.bn.weight",
+          "layer_list.2.gnn_layers.0.bn.bias",
+          "initial_label_mlp.weight",
+          "initial_label_mlp.bias"
+        ]
+      ],
+      "other_trainable_parameters_unchanged": true,
+      "steps_checked": 8,
+      "inputs_hashed": 8
+    },
+    "summary": {
+      "steps": 8,
+      "episodes": 32,
+      "member_positions": 6720,
+      "unique_members": 4750,
+      "unique_anchors": 960,
+      "effective_member_count": 1920.653283429738,
+      "cross_class_duplicate_fraction": 0.034375,
+      "context_nodes_mean": 78.80595238095238,
+      "source_ids": {
+        "0": 32
+      }
+    }
+  },
+  {
+    "model_id": "readouttrain_ukr_rus_free_s2",
+    "source": "ukr_rus",
+    "seed": 2,
+    "condition": "free",
+    "initial_sha256": "c350d50c3a2883b1e4f8fc62f7b3bff81880691db12024469aa94231386f2723",
+    "final_sha256": "06ea2c8b952ca14c829c3b41abf7e548f3016f4be9189a0b6e8f550c4d9cdcde",
+    "checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_smoke_20260906/state/smoke_readouttrain_ukr_rus_free_s2_20260906_035605_004/checkpoint/state_dict_8.ckpt",
+    "final_walk_rng_sha256": "2b68436b9f456d80c0bd2c56f48f8792d215d1edea4a3eb87310a9e2ea20a06c",
+    "verified_checkpoints": [
+      0,
+      8
+    ],
+    "training_constraint": {
+      "condition": "free",
+      "initial_model_sha256": "c350d50c3a2883b1e4f8fc62f7b3bff81880691db12024469aa94231386f2723",
+      "initial_readout_sha256": "73ada7aa8c0bddd6f022eb38fb8f735c132be059f3a5160fd51588f17460a553",
+      "readout_keys": [
+        "layer_list.0.reset_mlp_c.bias",
+        "layer_list.0.reset_mlp_c.weight",
+        "layer_list.0.reset_mlp_m.bias",
+        "layer_list.0.reset_mlp_m.weight"
+      ],
+      "optimizer_parameter_names": [
+        [
+          "logit_scale",
+          "layer_list.0.module_list.0.lin_x.weight",
+          "layer_list.0.module_list.0.lin_x.bias",
+          "layer_list.0.module_list.0.lin_self_loops.weight",
+          "layer_list.0.module_list.0.lin_self_loops.bias",
+          "layer_list.0.module_list.0.mlp.0.weight",
+          "layer_list.0.module_list.0.mlp.0.bias",
+          "layer_list.0.module_list.0.mlp.2.weight",
+          "layer_list.0.module_list.0.mlp.2.bias",
+          "layer_list.0.module_list.0.bn.weight",
+          "layer_list.0.module_list.0.bn.bias",
+          "layer_list.0.reset_mlp.weight",
+          "layer_list.0.reset_mlp.bias",
+          "layer_list.0.reset_mlp_c.weight",
+          "layer_list.0.reset_mlp_c.bias",
+          "layer_list.0.reset_mlp_m.weight",
+          "layer_list.0.reset_mlp_m.bias",
+          "layer_list.2.gnn_layers.0.mlp_kqv.weight",
+          "layer_list.2.gnn_layers.0.mlp_kqv.bias",
+          "layer_list.2.gnn_layers.0.lin_edge.weight",
+          "layer_list.2.gnn_layers.0.lin_edge.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.0.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.0.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.2.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.2.bias",
+          "layer_list.2.gnn_layers.0.out_proj.weight",
+          "layer_list.2.gnn_layers.0.out_proj.bias",
+          "layer_list.2.gnn_layers.0.bn.weight",
+          "layer_list.2.gnn_layers.0.bn.bias",
+          "initial_label_mlp.weight",
+          "initial_label_mlp.bias"
+        ]
+      ],
+      "other_trainable_parameters_unchanged": true,
+      "steps_checked": 8,
+      "inputs_hashed": 8
+    },
+    "summary": {
+      "steps": 8,
+      "episodes": 32,
+      "member_positions": 6720,
+      "unique_members": 4741,
+      "unique_anchors": 960,
+      "effective_member_count": 1886.3157894736842,
+      "cross_class_duplicate_fraction": 0.03601190476190477,
+      "context_nodes_mean": 78.31979166666666,
+      "source_ids": {
+        "0": 32
+      }
+    }
+  },
+  {
+    "model_id": "readouttrain_ukr_rus_frozen_s2",
+    "source": "ukr_rus",
+    "seed": 2,
+    "condition": "frozen",
+    "initial_sha256": "c350d50c3a2883b1e4f8fc62f7b3bff81880691db12024469aa94231386f2723",
+    "final_sha256": "850c49f84225b07120aae634a8f21b41b810a07ba5f0f6d54a563149ecd7fbb9",
+    "checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_smoke_20260906/state/smoke_readouttrain_ukr_rus_frozen_s2_20260906_035605_005/checkpoint/state_dict_8.ckpt",
+    "final_walk_rng_sha256": "2b68436b9f456d80c0bd2c56f48f8792d215d1edea4a3eb87310a9e2ea20a06c",
+    "verified_checkpoints": [
+      0,
+      8
+    ],
+    "training_constraint": {
+      "condition": "frozen",
+      "initial_model_sha256": "c350d50c3a2883b1e4f8fc62f7b3bff81880691db12024469aa94231386f2723",
+      "initial_readout_sha256": "73ada7aa8c0bddd6f022eb38fb8f735c132be059f3a5160fd51588f17460a553",
+      "readout_keys": [
+        "layer_list.0.reset_mlp_c.bias",
+        "layer_list.0.reset_mlp_c.weight",
+        "layer_list.0.reset_mlp_m.bias",
+        "layer_list.0.reset_mlp_m.weight"
+      ],
+      "optimizer_parameter_names": [
+        [
+          "logit_scale",
+          "layer_list.0.module_list.0.lin_x.weight",
+          "layer_list.0.module_list.0.lin_x.bias",
+          "layer_list.0.module_list.0.lin_self_loops.weight",
+          "layer_list.0.module_list.0.lin_self_loops.bias",
+          "layer_list.0.module_list.0.mlp.0.weight",
+          "layer_list.0.module_list.0.mlp.0.bias",
+          "layer_list.0.module_list.0.mlp.2.weight",
+          "layer_list.0.module_list.0.mlp.2.bias",
+          "layer_list.0.module_list.0.bn.weight",
+          "layer_list.0.module_list.0.bn.bias",
+          "layer_list.0.reset_mlp.weight",
+          "layer_list.0.reset_mlp.bias",
+          "layer_list.2.gnn_layers.0.mlp_kqv.weight",
+          "layer_list.2.gnn_layers.0.mlp_kqv.bias",
+          "layer_list.2.gnn_layers.0.lin_edge.weight",
+          "layer_list.2.gnn_layers.0.lin_edge.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.0.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.0.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.2.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.2.bias",
+          "layer_list.2.gnn_layers.0.out_proj.weight",
+          "layer_list.2.gnn_layers.0.out_proj.bias",
+          "layer_list.2.gnn_layers.0.bn.weight",
+          "layer_list.2.gnn_layers.0.bn.bias",
+          "initial_label_mlp.weight",
+          "initial_label_mlp.bias"
+        ]
+      ],
+      "other_trainable_parameters_unchanged": true,
+      "steps_checked": 8,
+      "inputs_hashed": 8
+    },
+    "summary": {
+      "steps": 8,
+      "episodes": 32,
+      "member_positions": 6720,
+      "unique_members": 4741,
+      "unique_anchors": 960,
+      "effective_member_count": 1886.3157894736842,
+      "cross_class_duplicate_fraction": 0.03601190476190477,
+      "context_nodes_mean": 78.31979166666666,
+      "source_ids": {
+        "0": 32
+      }
+    }
+  },
+  {
+    "model_id": "readouttrain_cp_hk_free_s0",
+    "source": "cp_hk",
+    "seed": 0,
+    "condition": "free",
+    "initial_sha256": "45bb682d264595f7cc71903e33f8abc9b91954c596e5a0cdce3defb9bba84904",
+    "final_sha256": "983e899d727d6ebbed600695236343c132f39a348135b50a97dada66735d8f67",
+    "checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_smoke_20260906/state/smoke_readouttrain_cp_hk_free_s0_20260906_035605_006/checkpoint/state_dict_8.ckpt",
+    "final_walk_rng_sha256": "c542f924cc6d8c2279910608cf5b2c73522935fb7b6cee5ecb31d777d6ae8942",
+    "verified_checkpoints": [
+      0,
+      8
+    ],
+    "training_constraint": {
+      "condition": "free",
+      "initial_model_sha256": "45bb682d264595f7cc71903e33f8abc9b91954c596e5a0cdce3defb9bba84904",
+      "initial_readout_sha256": "5b621207592b76870030505cf0ccc6324eb384263ff3158bca35a7aabe32520c",
+      "readout_keys": [
+        "layer_list.0.reset_mlp_c.bias",
+        "layer_list.0.reset_mlp_c.weight",
+        "layer_list.0.reset_mlp_m.bias",
+        "layer_list.0.reset_mlp_m.weight"
+      ],
+      "optimizer_parameter_names": [
+        [
+          "logit_scale",
+          "layer_list.0.module_list.0.lin_x.weight",
+          "layer_list.0.module_list.0.lin_x.bias",
+          "layer_list.0.module_list.0.lin_self_loops.weight",
+          "layer_list.0.module_list.0.lin_self_loops.bias",
+          "layer_list.0.module_list.0.mlp.0.weight",
+          "layer_list.0.module_list.0.mlp.0.bias",
+          "layer_list.0.module_list.0.mlp.2.weight",
+          "layer_list.0.module_list.0.mlp.2.bias",
+          "layer_list.0.module_list.0.bn.weight",
+          "layer_list.0.module_list.0.bn.bias",
+          "layer_list.0.reset_mlp.weight",
+          "layer_list.0.reset_mlp.bias",
+          "layer_list.0.reset_mlp_c.weight",
+          "layer_list.0.reset_mlp_c.bias",
+          "layer_list.0.reset_mlp_m.weight",
+          "layer_list.0.reset_mlp_m.bias",
+          "layer_list.2.gnn_layers.0.mlp_kqv.weight",
+          "layer_list.2.gnn_layers.0.mlp_kqv.bias",
+          "layer_list.2.gnn_layers.0.lin_edge.weight",
+          "layer_list.2.gnn_layers.0.lin_edge.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.0.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.0.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.2.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.2.bias",
+          "layer_list.2.gnn_layers.0.out_proj.weight",
+          "layer_list.2.gnn_layers.0.out_proj.bias",
+          "layer_list.2.gnn_layers.0.bn.weight",
+          "layer_list.2.gnn_layers.0.bn.bias",
+          "initial_label_mlp.weight",
+          "initial_label_mlp.bias"
+        ]
+      ],
+      "other_trainable_parameters_unchanged": true,
+      "steps_checked": 8,
+      "inputs_hashed": 8
+    },
+    "summary": {
+      "steps": 8,
+      "episodes": 32,
+      "member_positions": 6720,
+      "unique_members": 1531,
+      "unique_anchors": 946,
+      "effective_member_count": 78.43377009545776,
+      "cross_class_duplicate_fraction": 0.37336309523809524,
+      "context_nodes_mean": 67.26175595238095,
+      "source_ids": {
+        "7": 32
+      }
+    }
+  },
+  {
+    "model_id": "readouttrain_cp_hk_frozen_s0",
+    "source": "cp_hk",
+    "seed": 0,
+    "condition": "frozen",
+    "initial_sha256": "45bb682d264595f7cc71903e33f8abc9b91954c596e5a0cdce3defb9bba84904",
+    "final_sha256": "1df3e94c80baf24c611d84af16cc8d258e813721329ab4ba1aadf4a75a964d21",
+    "checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_smoke_20260906/state/smoke_readouttrain_cp_hk_frozen_s0_20260906_035605_007/checkpoint/state_dict_8.ckpt",
+    "final_walk_rng_sha256": "c542f924cc6d8c2279910608cf5b2c73522935fb7b6cee5ecb31d777d6ae8942",
+    "verified_checkpoints": [
+      0,
+      8
+    ],
+    "training_constraint": {
+      "condition": "frozen",
+      "initial_model_sha256": "45bb682d264595f7cc71903e33f8abc9b91954c596e5a0cdce3defb9bba84904",
+      "initial_readout_sha256": "5b621207592b76870030505cf0ccc6324eb384263ff3158bca35a7aabe32520c",
+      "readout_keys": [
+        "layer_list.0.reset_mlp_c.bias",
+        "layer_list.0.reset_mlp_c.weight",
+        "layer_list.0.reset_mlp_m.bias",
+        "layer_list.0.reset_mlp_m.weight"
+      ],
+      "optimizer_parameter_names": [
+        [
+          "logit_scale",
+          "layer_list.0.module_list.0.lin_x.weight",
+          "layer_list.0.module_list.0.lin_x.bias",
+          "layer_list.0.module_list.0.lin_self_loops.weight",
+          "layer_list.0.module_list.0.lin_self_loops.bias",
+          "layer_list.0.module_list.0.mlp.0.weight",
+          "layer_list.0.module_list.0.mlp.0.bias",
+          "layer_list.0.module_list.0.mlp.2.weight",
+          "layer_list.0.module_list.0.mlp.2.bias",
+          "layer_list.0.module_list.0.bn.weight",
+          "layer_list.0.module_list.0.bn.bias",
+          "layer_list.0.reset_mlp.weight",
+          "layer_list.0.reset_mlp.bias",
+          "layer_list.2.gnn_layers.0.mlp_kqv.weight",
+          "layer_list.2.gnn_layers.0.mlp_kqv.bias",
+          "layer_list.2.gnn_layers.0.lin_edge.weight",
+          "layer_list.2.gnn_layers.0.lin_edge.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.0.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.0.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.2.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.2.bias",
+          "layer_list.2.gnn_layers.0.out_proj.weight",
+          "layer_list.2.gnn_layers.0.out_proj.bias",
+          "layer_list.2.gnn_layers.0.bn.weight",
+          "layer_list.2.gnn_layers.0.bn.bias",
+          "initial_label_mlp.weight",
+          "initial_label_mlp.bias"
+        ]
+      ],
+      "other_trainable_parameters_unchanged": true,
+      "steps_checked": 8,
+      "inputs_hashed": 8
+    },
+    "summary": {
+      "steps": 8,
+      "episodes": 32,
+      "member_positions": 6720,
+      "unique_members": 1531,
+      "unique_anchors": 946,
+      "effective_member_count": 78.43377009545776,
+      "cross_class_duplicate_fraction": 0.37336309523809524,
+      "context_nodes_mean": 67.26175595238095,
+      "source_ids": {
+        "7": 32
+      }
+    }
+  },
+  {
+    "model_id": "readouttrain_cp_hk_free_s1",
+    "source": "cp_hk",
+    "seed": 1,
+    "condition": "free",
+    "initial_sha256": "744597b4ca3e3e5b9e5e7c6ee36385db262d1349b88898a154da932d8991a2e5",
+    "final_sha256": "86eb2372e231827d2ea563c12da9e2438b3c3967ff2600cd2121fb601ef4baa9",
+    "checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_smoke_20260906/state/smoke_readouttrain_cp_hk_free_s1_20260906_035605_008/checkpoint/state_dict_8.ckpt",
+    "final_walk_rng_sha256": "01bca7d8e522491e02faf00fa7a2e69f9848ea2940208325545b599abe8162b4",
+    "verified_checkpoints": [
+      0,
+      8
+    ],
+    "training_constraint": {
+      "condition": "free",
+      "initial_model_sha256": "744597b4ca3e3e5b9e5e7c6ee36385db262d1349b88898a154da932d8991a2e5",
+      "initial_readout_sha256": "3a05296dbd8ddf6155b3ea8a630dff83578c950043460cdb9105fa4b0db3be3c",
+      "readout_keys": [
+        "layer_list.0.reset_mlp_c.bias",
+        "layer_list.0.reset_mlp_c.weight",
+        "layer_list.0.reset_mlp_m.bias",
+        "layer_list.0.reset_mlp_m.weight"
+      ],
+      "optimizer_parameter_names": [
+        [
+          "logit_scale",
+          "layer_list.0.module_list.0.lin_x.weight",
+          "layer_list.0.module_list.0.lin_x.bias",
+          "layer_list.0.module_list.0.lin_self_loops.weight",
+          "layer_list.0.module_list.0.lin_self_loops.bias",
+          "layer_list.0.module_list.0.mlp.0.weight",
+          "layer_list.0.module_list.0.mlp.0.bias",
+          "layer_list.0.module_list.0.mlp.2.weight",
+          "layer_list.0.module_list.0.mlp.2.bias",
+          "layer_list.0.module_list.0.bn.weight",
+          "layer_list.0.module_list.0.bn.bias",
+          "layer_list.0.reset_mlp.weight",
+          "layer_list.0.reset_mlp.bias",
+          "layer_list.0.reset_mlp_c.weight",
+          "layer_list.0.reset_mlp_c.bias",
+          "layer_list.0.reset_mlp_m.weight",
+          "layer_list.0.reset_mlp_m.bias",
+          "layer_list.2.gnn_layers.0.mlp_kqv.weight",
+          "layer_list.2.gnn_layers.0.mlp_kqv.bias",
+          "layer_list.2.gnn_layers.0.lin_edge.weight",
+          "layer_list.2.gnn_layers.0.lin_edge.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.0.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.0.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.2.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.2.bias",
+          "layer_list.2.gnn_layers.0.out_proj.weight",
+          "layer_list.2.gnn_layers.0.out_proj.bias",
+          "layer_list.2.gnn_layers.0.bn.weight",
+          "layer_list.2.gnn_layers.0.bn.bias",
+          "initial_label_mlp.weight",
+          "initial_label_mlp.bias"
+        ]
+      ],
+      "other_trainable_parameters_unchanged": true,
+      "steps_checked": 8,
+      "inputs_hashed": 8
+    },
+    "summary": {
+      "steps": 8,
+      "episodes": 32,
+      "member_positions": 6720,
+      "unique_members": 1538,
+      "unique_anchors": 946,
+      "effective_member_count": 76.95180969259083,
+      "cross_class_duplicate_fraction": 0.375,
+      "context_nodes_mean": 67.10357142857143,
+      "source_ids": {
+        "7": 32
+      }
+    }
+  },
+  {
+    "model_id": "readouttrain_cp_hk_frozen_s1",
+    "source": "cp_hk",
+    "seed": 1,
+    "condition": "frozen",
+    "initial_sha256": "744597b4ca3e3e5b9e5e7c6ee36385db262d1349b88898a154da932d8991a2e5",
+    "final_sha256": "d7ec62cb329ee7b187c69ba4d7f520dc2f8f0b118ca671f6cb5e383aa0542d34",
+    "checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_smoke_20260906/state/smoke_readouttrain_cp_hk_frozen_s1_20260906_035605_009/checkpoint/state_dict_8.ckpt",
+    "final_walk_rng_sha256": "01bca7d8e522491e02faf00fa7a2e69f9848ea2940208325545b599abe8162b4",
+    "verified_checkpoints": [
+      0,
+      8
+    ],
+    "training_constraint": {
+      "condition": "frozen",
+      "initial_model_sha256": "744597b4ca3e3e5b9e5e7c6ee36385db262d1349b88898a154da932d8991a2e5",
+      "initial_readout_sha256": "3a05296dbd8ddf6155b3ea8a630dff83578c950043460cdb9105fa4b0db3be3c",
+      "readout_keys": [
+        "layer_list.0.reset_mlp_c.bias",
+        "layer_list.0.reset_mlp_c.weight",
+        "layer_list.0.reset_mlp_m.bias",
+        "layer_list.0.reset_mlp_m.weight"
+      ],
+      "optimizer_parameter_names": [
+        [
+          "logit_scale",
+          "layer_list.0.module_list.0.lin_x.weight",
+          "layer_list.0.module_list.0.lin_x.bias",
+          "layer_list.0.module_list.0.lin_self_loops.weight",
+          "layer_list.0.module_list.0.lin_self_loops.bias",
+          "layer_list.0.module_list.0.mlp.0.weight",
+          "layer_list.0.module_list.0.mlp.0.bias",
+          "layer_list.0.module_list.0.mlp.2.weight",
+          "layer_list.0.module_list.0.mlp.2.bias",
+          "layer_list.0.module_list.0.bn.weight",
+          "layer_list.0.module_list.0.bn.bias",
+          "layer_list.0.reset_mlp.weight",
+          "layer_list.0.reset_mlp.bias",
+          "layer_list.2.gnn_layers.0.mlp_kqv.weight",
+          "layer_list.2.gnn_layers.0.mlp_kqv.bias",
+          "layer_list.2.gnn_layers.0.lin_edge.weight",
+          "layer_list.2.gnn_layers.0.lin_edge.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.0.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.0.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.2.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.2.bias",
+          "layer_list.2.gnn_layers.0.out_proj.weight",
+          "layer_list.2.gnn_layers.0.out_proj.bias",
+          "layer_list.2.gnn_layers.0.bn.weight",
+          "layer_list.2.gnn_layers.0.bn.bias",
+          "initial_label_mlp.weight",
+          "initial_label_mlp.bias"
+        ]
+      ],
+      "other_trainable_parameters_unchanged": true,
+      "steps_checked": 8,
+      "inputs_hashed": 8
+    },
+    "summary": {
+      "steps": 8,
+      "episodes": 32,
+      "member_positions": 6720,
+      "unique_members": 1538,
+      "unique_anchors": 946,
+      "effective_member_count": 76.95180969259083,
+      "cross_class_duplicate_fraction": 0.375,
+      "context_nodes_mean": 67.10357142857143,
+      "source_ids": {
+        "7": 32
+      }
+    }
+  },
+  {
+    "model_id": "readouttrain_cp_hk_free_s2",
+    "source": "cp_hk",
+    "seed": 2,
+    "condition": "free",
+    "initial_sha256": "c350d50c3a2883b1e4f8fc62f7b3bff81880691db12024469aa94231386f2723",
+    "final_sha256": "92e8decbec14747a8ea134280b82926e131f07739e0d9ae77572d8e2eddf9661",
+    "checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_smoke_20260906/state/smoke_readouttrain_cp_hk_free_s2_20260906_035605_010/checkpoint/state_dict_8.ckpt",
+    "final_walk_rng_sha256": "514573d4eabc0ede10d6921362338c0f145e389c31bebbee8f1c5d815b12cb1d",
+    "verified_checkpoints": [
+      0,
+      8
+    ],
+    "training_constraint": {
+      "condition": "free",
+      "initial_model_sha256": "c350d50c3a2883b1e4f8fc62f7b3bff81880691db12024469aa94231386f2723",
+      "initial_readout_sha256": "73ada7aa8c0bddd6f022eb38fb8f735c132be059f3a5160fd51588f17460a553",
+      "readout_keys": [
+        "layer_list.0.reset_mlp_c.bias",
+        "layer_list.0.reset_mlp_c.weight",
+        "layer_list.0.reset_mlp_m.bias",
+        "layer_list.0.reset_mlp_m.weight"
+      ],
+      "optimizer_parameter_names": [
+        [
+          "logit_scale",
+          "layer_list.0.module_list.0.lin_x.weight",
+          "layer_list.0.module_list.0.lin_x.bias",
+          "layer_list.0.module_list.0.lin_self_loops.weight",
+          "layer_list.0.module_list.0.lin_self_loops.bias",
+          "layer_list.0.module_list.0.mlp.0.weight",
+          "layer_list.0.module_list.0.mlp.0.bias",
+          "layer_list.0.module_list.0.mlp.2.weight",
+          "layer_list.0.module_list.0.mlp.2.bias",
+          "layer_list.0.module_list.0.bn.weight",
+          "layer_list.0.module_list.0.bn.bias",
+          "layer_list.0.reset_mlp.weight",
+          "layer_list.0.reset_mlp.bias",
+          "layer_list.0.reset_mlp_c.weight",
+          "layer_list.0.reset_mlp_c.bias",
+          "layer_list.0.reset_mlp_m.weight",
+          "layer_list.0.reset_mlp_m.bias",
+          "layer_list.2.gnn_layers.0.mlp_kqv.weight",
+          "layer_list.2.gnn_layers.0.mlp_kqv.bias",
+          "layer_list.2.gnn_layers.0.lin_edge.weight",
+          "layer_list.2.gnn_layers.0.lin_edge.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.0.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.0.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.2.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.2.bias",
+          "layer_list.2.gnn_layers.0.out_proj.weight",
+          "layer_list.2.gnn_layers.0.out_proj.bias",
+          "layer_list.2.gnn_layers.0.bn.weight",
+          "layer_list.2.gnn_layers.0.bn.bias",
+          "initial_label_mlp.weight",
+          "initial_label_mlp.bias"
+        ]
+      ],
+      "other_trainable_parameters_unchanged": true,
+      "steps_checked": 8,
+      "inputs_hashed": 8
+    },
+    "summary": {
+      "steps": 8,
+      "episodes": 32,
+      "member_positions": 6720,
+      "unique_members": 1538,
+      "unique_anchors": 946,
+      "effective_member_count": 77.1806528798496,
+      "cross_class_duplicate_fraction": 0.3748511904761905,
+      "context_nodes_mean": 67.19419642857143,
+      "source_ids": {
+        "7": 32
+      }
+    }
+  },
+  {
+    "model_id": "readouttrain_cp_hk_frozen_s2",
+    "source": "cp_hk",
+    "seed": 2,
+    "condition": "frozen",
+    "initial_sha256": "c350d50c3a2883b1e4f8fc62f7b3bff81880691db12024469aa94231386f2723",
+    "final_sha256": "429a8c033e52764bbc1b8b6bf8a65ac36812a0eb02494b30409c889ecbc32d4f",
+    "checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_smoke_20260906/state/smoke_readouttrain_cp_hk_frozen_s2_20260906_035605_011/checkpoint/state_dict_8.ckpt",
+    "final_walk_rng_sha256": "514573d4eabc0ede10d6921362338c0f145e389c31bebbee8f1c5d815b12cb1d",
+    "verified_checkpoints": [
+      0,
+      8
+    ],
+    "training_constraint": {
+      "condition": "frozen",
+      "initial_model_sha256": "c350d50c3a2883b1e4f8fc62f7b3bff81880691db12024469aa94231386f2723",
+      "initial_readout_sha256": "73ada7aa8c0bddd6f022eb38fb8f735c132be059f3a5160fd51588f17460a553",
+      "readout_keys": [
+        "layer_list.0.reset_mlp_c.bias",
+        "layer_list.0.reset_mlp_c.weight",
+        "layer_list.0.reset_mlp_m.bias",
+        "layer_list.0.reset_mlp_m.weight"
+      ],
+      "optimizer_parameter_names": [
+        [
+          "logit_scale",
+          "layer_list.0.module_list.0.lin_x.weight",
+          "layer_list.0.module_list.0.lin_x.bias",
+          "layer_list.0.module_list.0.lin_self_loops.weight",
+          "layer_list.0.module_list.0.lin_self_loops.bias",
+          "layer_list.0.module_list.0.mlp.0.weight",
+          "layer_list.0.module_list.0.mlp.0.bias",
+          "layer_list.0.module_list.0.mlp.2.weight",
+          "layer_list.0.module_list.0.mlp.2.bias",
+          "layer_list.0.module_list.0.bn.weight",
+          "layer_list.0.module_list.0.bn.bias",
+          "layer_list.0.reset_mlp.weight",
+          "layer_list.0.reset_mlp.bias",
+          "layer_list.2.gnn_layers.0.mlp_kqv.weight",
+          "layer_list.2.gnn_layers.0.mlp_kqv.bias",
+          "layer_list.2.gnn_layers.0.lin_edge.weight",
+          "layer_list.2.gnn_layers.0.lin_edge.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.0.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.0.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.2.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.2.bias",
+          "layer_list.2.gnn_layers.0.out_proj.weight",
+          "layer_list.2.gnn_layers.0.out_proj.bias",
+          "layer_list.2.gnn_layers.0.bn.weight",
+          "layer_list.2.gnn_layers.0.bn.bias",
+          "initial_label_mlp.weight",
+          "initial_label_mlp.bias"
+        ]
+      ],
+      "other_trainable_parameters_unchanged": true,
+      "steps_checked": 8,
+      "inputs_hashed": 8
+    },
+    "summary": {
+      "steps": 8,
+      "episodes": 32,
+      "member_positions": 6720,
+      "unique_members": 1538,
+      "unique_anchors": 946,
+      "effective_member_count": 77.1806528798496,
+      "cross_class_duplicate_fraction": 0.3748511904761905,
+      "context_nodes_mean": 67.19419642857143,
+      "source_ids": {
+        "7": 32
+      }
+    }
+  },
+  {
+    "model_id": "readouttrain_covid_free_s0",
+    "source": "covid",
+    "seed": 0,
+    "condition": "free",
+    "initial_sha256": "45bb682d264595f7cc71903e33f8abc9b91954c596e5a0cdce3defb9bba84904",
+    "final_sha256": "afe3d3f7296f4f4dac43bfd44dfa3a597364ee24d504d2b2ba7f0fe9c665aeaa",
+    "checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_smoke_20260906/state/smoke_readouttrain_covid_free_s0_20260906_035605_012/checkpoint/state_dict_8.ckpt",
+    "final_walk_rng_sha256": "3f397d4c519ef5ca223049ba77bdaa230a86e37bc272bac1b297b80725c21f3f",
+    "verified_checkpoints": [
+      0,
+      8
+    ],
+    "training_constraint": {
+      "condition": "free",
+      "initial_model_sha256": "45bb682d264595f7cc71903e33f8abc9b91954c596e5a0cdce3defb9bba84904",
+      "initial_readout_sha256": "5b621207592b76870030505cf0ccc6324eb384263ff3158bca35a7aabe32520c",
+      "readout_keys": [
+        "layer_list.0.reset_mlp_c.bias",
+        "layer_list.0.reset_mlp_c.weight",
+        "layer_list.0.reset_mlp_m.bias",
+        "layer_list.0.reset_mlp_m.weight"
+      ],
+      "optimizer_parameter_names": [
+        [
+          "logit_scale",
+          "layer_list.0.module_list.0.lin_x.weight",
+          "layer_list.0.module_list.0.lin_x.bias",
+          "layer_list.0.module_list.0.lin_self_loops.weight",
+          "layer_list.0.module_list.0.lin_self_loops.bias",
+          "layer_list.0.module_list.0.mlp.0.weight",
+          "layer_list.0.module_list.0.mlp.0.bias",
+          "layer_list.0.module_list.0.mlp.2.weight",
+          "layer_list.0.module_list.0.mlp.2.bias",
+          "layer_list.0.module_list.0.bn.weight",
+          "layer_list.0.module_list.0.bn.bias",
+          "layer_list.0.reset_mlp.weight",
+          "layer_list.0.reset_mlp.bias",
+          "layer_list.0.reset_mlp_c.weight",
+          "layer_list.0.reset_mlp_c.bias",
+          "layer_list.0.reset_mlp_m.weight",
+          "layer_list.0.reset_mlp_m.bias",
+          "layer_list.2.gnn_layers.0.mlp_kqv.weight",
+          "layer_list.2.gnn_layers.0.mlp_kqv.bias",
+          "layer_list.2.gnn_layers.0.lin_edge.weight",
+          "layer_list.2.gnn_layers.0.lin_edge.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.0.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.0.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.2.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.2.bias",
+          "layer_list.2.gnn_layers.0.out_proj.weight",
+          "layer_list.2.gnn_layers.0.out_proj.bias",
+          "layer_list.2.gnn_layers.0.bn.weight",
+          "layer_list.2.gnn_layers.0.bn.bias",
+          "initial_label_mlp.weight",
+          "initial_label_mlp.bias"
+        ]
+      ],
+      "other_trainable_parameters_unchanged": true,
+      "steps_checked": 8,
+      "inputs_hashed": 8
+    },
+    "summary": {
+      "steps": 8,
+      "episodes": 32,
+      "member_positions": 6720,
+      "unique_members": 5434,
+      "unique_anchors": 960,
+      "effective_member_count": 2985.8767521819623,
+      "cross_class_duplicate_fraction": 0.019047619047619042,
+      "context_nodes_mean": 69.99241071428571,
+      "source_ids": {
+        "1": 32
+      }
+    }
+  },
+  {
+    "model_id": "readouttrain_covid_frozen_s0",
+    "source": "covid",
+    "seed": 0,
+    "condition": "frozen",
+    "initial_sha256": "45bb682d264595f7cc71903e33f8abc9b91954c596e5a0cdce3defb9bba84904",
+    "final_sha256": "afb7b7dcc7009805b5930827e62581eee202fa1bf05dc62021e7398ba18064c8",
+    "checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_smoke_20260906/state/smoke_readouttrain_covid_frozen_s0_20260906_035605_013/checkpoint/state_dict_8.ckpt",
+    "final_walk_rng_sha256": "3f397d4c519ef5ca223049ba77bdaa230a86e37bc272bac1b297b80725c21f3f",
+    "verified_checkpoints": [
+      0,
+      8
+    ],
+    "training_constraint": {
+      "condition": "frozen",
+      "initial_model_sha256": "45bb682d264595f7cc71903e33f8abc9b91954c596e5a0cdce3defb9bba84904",
+      "initial_readout_sha256": "5b621207592b76870030505cf0ccc6324eb384263ff3158bca35a7aabe32520c",
+      "readout_keys": [
+        "layer_list.0.reset_mlp_c.bias",
+        "layer_list.0.reset_mlp_c.weight",
+        "layer_list.0.reset_mlp_m.bias",
+        "layer_list.0.reset_mlp_m.weight"
+      ],
+      "optimizer_parameter_names": [
+        [
+          "logit_scale",
+          "layer_list.0.module_list.0.lin_x.weight",
+          "layer_list.0.module_list.0.lin_x.bias",
+          "layer_list.0.module_list.0.lin_self_loops.weight",
+          "layer_list.0.module_list.0.lin_self_loops.bias",
+          "layer_list.0.module_list.0.mlp.0.weight",
+          "layer_list.0.module_list.0.mlp.0.bias",
+          "layer_list.0.module_list.0.mlp.2.weight",
+          "layer_list.0.module_list.0.mlp.2.bias",
+          "layer_list.0.module_list.0.bn.weight",
+          "layer_list.0.module_list.0.bn.bias",
+          "layer_list.0.reset_mlp.weight",
+          "layer_list.0.reset_mlp.bias",
+          "layer_list.2.gnn_layers.0.mlp_kqv.weight",
+          "layer_list.2.gnn_layers.0.mlp_kqv.bias",
+          "layer_list.2.gnn_layers.0.lin_edge.weight",
+          "layer_list.2.gnn_layers.0.lin_edge.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.0.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.0.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.2.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.2.bias",
+          "layer_list.2.gnn_layers.0.out_proj.weight",
+          "layer_list.2.gnn_layers.0.out_proj.bias",
+          "layer_list.2.gnn_layers.0.bn.weight",
+          "layer_list.2.gnn_layers.0.bn.bias",
+          "initial_label_mlp.weight",
+          "initial_label_mlp.bias"
+        ]
+      ],
+      "other_trainable_parameters_unchanged": true,
+      "steps_checked": 8,
+      "inputs_hashed": 8
+    },
+    "summary": {
+      "steps": 8,
+      "episodes": 32,
+      "member_positions": 6720,
+      "unique_members": 5434,
+      "unique_anchors": 960,
+      "effective_member_count": 2985.8767521819623,
+      "cross_class_duplicate_fraction": 0.019047619047619042,
+      "context_nodes_mean": 69.99241071428571,
+      "source_ids": {
+        "1": 32
+      }
+    }
+  },
+  {
+    "model_id": "readouttrain_covid_free_s1",
+    "source": "covid",
+    "seed": 1,
+    "condition": "free",
+    "initial_sha256": "744597b4ca3e3e5b9e5e7c6ee36385db262d1349b88898a154da932d8991a2e5",
+    "final_sha256": "bc015c9b45e47d5955418d582f6e0747db480e4f197694d9c49e418de5371bfc",
+    "checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_smoke_20260906/state/smoke_readouttrain_covid_free_s1_20260906_035605_014/checkpoint/state_dict_8.ckpt",
+    "final_walk_rng_sha256": "eee88adea1e15a52a4c19d5d173b41c83030f29b303dda75274d2f1eccc5e8a5",
+    "verified_checkpoints": [
+      0,
+      8
+    ],
+    "training_constraint": {
+      "condition": "free",
+      "initial_model_sha256": "744597b4ca3e3e5b9e5e7c6ee36385db262d1349b88898a154da932d8991a2e5",
+      "initial_readout_sha256": "3a05296dbd8ddf6155b3ea8a630dff83578c950043460cdb9105fa4b0db3be3c",
+      "readout_keys": [
+        "layer_list.0.reset_mlp_c.bias",
+        "layer_list.0.reset_mlp_c.weight",
+        "layer_list.0.reset_mlp_m.bias",
+        "layer_list.0.reset_mlp_m.weight"
+      ],
+      "optimizer_parameter_names": [
+        [
+          "logit_scale",
+          "layer_list.0.module_list.0.lin_x.weight",
+          "layer_list.0.module_list.0.lin_x.bias",
+          "layer_list.0.module_list.0.lin_self_loops.weight",
+          "layer_list.0.module_list.0.lin_self_loops.bias",
+          "layer_list.0.module_list.0.mlp.0.weight",
+          "layer_list.0.module_list.0.mlp.0.bias",
+          "layer_list.0.module_list.0.mlp.2.weight",
+          "layer_list.0.module_list.0.mlp.2.bias",
+          "layer_list.0.module_list.0.bn.weight",
+          "layer_list.0.module_list.0.bn.bias",
+          "layer_list.0.reset_mlp.weight",
+          "layer_list.0.reset_mlp.bias",
+          "layer_list.0.reset_mlp_c.weight",
+          "layer_list.0.reset_mlp_c.bias",
+          "layer_list.0.reset_mlp_m.weight",
+          "layer_list.0.reset_mlp_m.bias",
+          "layer_list.2.gnn_layers.0.mlp_kqv.weight",
+          "layer_list.2.gnn_layers.0.mlp_kqv.bias",
+          "layer_list.2.gnn_layers.0.lin_edge.weight",
+          "layer_list.2.gnn_layers.0.lin_edge.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.0.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.0.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.2.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.2.bias",
+          "layer_list.2.gnn_layers.0.out_proj.weight",
+          "layer_list.2.gnn_layers.0.out_proj.bias",
+          "layer_list.2.gnn_layers.0.bn.weight",
+          "layer_list.2.gnn_layers.0.bn.bias",
+          "initial_label_mlp.weight",
+          "initial_label_mlp.bias"
+        ]
+      ],
+      "other_trainable_parameters_unchanged": true,
+      "steps_checked": 8,
+      "inputs_hashed": 8
+    },
+    "summary": {
+      "steps": 8,
+      "episodes": 32,
+      "member_positions": 6720,
+      "unique_members": 5416,
+      "unique_anchors": 960,
+      "effective_member_count": 2967.0433639947437,
+      "cross_class_duplicate_fraction": 0.019047619047619042,
+      "context_nodes_mean": 69.90520833333333,
+      "source_ids": {
+        "1": 32
+      }
+    }
+  },
+  {
+    "model_id": "readouttrain_covid_frozen_s1",
+    "source": "covid",
+    "seed": 1,
+    "condition": "frozen",
+    "initial_sha256": "744597b4ca3e3e5b9e5e7c6ee36385db262d1349b88898a154da932d8991a2e5",
+    "final_sha256": "7e00b94cb123bf9e46209c8d0661fef6fed6127b365d7b7122a988d2a89b4696",
+    "checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_smoke_20260906/state/smoke_readouttrain_covid_frozen_s1_20260906_035605_015/checkpoint/state_dict_8.ckpt",
+    "final_walk_rng_sha256": "eee88adea1e15a52a4c19d5d173b41c83030f29b303dda75274d2f1eccc5e8a5",
+    "verified_checkpoints": [
+      0,
+      8
+    ],
+    "training_constraint": {
+      "condition": "frozen",
+      "initial_model_sha256": "744597b4ca3e3e5b9e5e7c6ee36385db262d1349b88898a154da932d8991a2e5",
+      "initial_readout_sha256": "3a05296dbd8ddf6155b3ea8a630dff83578c950043460cdb9105fa4b0db3be3c",
+      "readout_keys": [
+        "layer_list.0.reset_mlp_c.bias",
+        "layer_list.0.reset_mlp_c.weight",
+        "layer_list.0.reset_mlp_m.bias",
+        "layer_list.0.reset_mlp_m.weight"
+      ],
+      "optimizer_parameter_names": [
+        [
+          "logit_scale",
+          "layer_list.0.module_list.0.lin_x.weight",
+          "layer_list.0.module_list.0.lin_x.bias",
+          "layer_list.0.module_list.0.lin_self_loops.weight",
+          "layer_list.0.module_list.0.lin_self_loops.bias",
+          "layer_list.0.module_list.0.mlp.0.weight",
+          "layer_list.0.module_list.0.mlp.0.bias",
+          "layer_list.0.module_list.0.mlp.2.weight",
+          "layer_list.0.module_list.0.mlp.2.bias",
+          "layer_list.0.module_list.0.bn.weight",
+          "layer_list.0.module_list.0.bn.bias",
+          "layer_list.0.reset_mlp.weight",
+          "layer_list.0.reset_mlp.bias",
+          "layer_list.2.gnn_layers.0.mlp_kqv.weight",
+          "layer_list.2.gnn_layers.0.mlp_kqv.bias",
+          "layer_list.2.gnn_layers.0.lin_edge.weight",
+          "layer_list.2.gnn_layers.0.lin_edge.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.0.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.0.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.2.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.2.bias",
+          "layer_list.2.gnn_layers.0.out_proj.weight",
+          "layer_list.2.gnn_layers.0.out_proj.bias",
+          "layer_list.2.gnn_layers.0.bn.weight",
+          "layer_list.2.gnn_layers.0.bn.bias",
+          "initial_label_mlp.weight",
+          "initial_label_mlp.bias"
+        ]
+      ],
+      "other_trainable_parameters_unchanged": true,
+      "steps_checked": 8,
+      "inputs_hashed": 8
+    },
+    "summary": {
+      "steps": 8,
+      "episodes": 32,
+      "member_positions": 6720,
+      "unique_members": 5416,
+      "unique_anchors": 960,
+      "effective_member_count": 2967.0433639947437,
+      "cross_class_duplicate_fraction": 0.019047619047619042,
+      "context_nodes_mean": 69.90520833333333,
+      "source_ids": {
+        "1": 32
+      }
+    }
+  },
+  {
+    "model_id": "readouttrain_covid_free_s2",
+    "source": "covid",
+    "seed": 2,
+    "condition": "free",
+    "initial_sha256": "c350d50c3a2883b1e4f8fc62f7b3bff81880691db12024469aa94231386f2723",
+    "final_sha256": "8f46ff74603878a3fd2c8d66e2db68bab3c3e1d5d8a79d55314ac531c32e501e",
+    "checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_smoke_20260906/state/smoke_readouttrain_covid_free_s2_20260906_035605_016/checkpoint/state_dict_8.ckpt",
+    "final_walk_rng_sha256": "2b9e7dfca12e9ab7892cde8e4191e36a226dcc76c5727cb1fc1f42e84fadaf8b",
+    "verified_checkpoints": [
+      0,
+      8
+    ],
+    "training_constraint": {
+      "condition": "free",
+      "initial_model_sha256": "c350d50c3a2883b1e4f8fc62f7b3bff81880691db12024469aa94231386f2723",
+      "initial_readout_sha256": "73ada7aa8c0bddd6f022eb38fb8f735c132be059f3a5160fd51588f17460a553",
+      "readout_keys": [
+        "layer_list.0.reset_mlp_c.bias",
+        "layer_list.0.reset_mlp_c.weight",
+        "layer_list.0.reset_mlp_m.bias",
+        "layer_list.0.reset_mlp_m.weight"
+      ],
+      "optimizer_parameter_names": [
+        [
+          "logit_scale",
+          "layer_list.0.module_list.0.lin_x.weight",
+          "layer_list.0.module_list.0.lin_x.bias",
+          "layer_list.0.module_list.0.lin_self_loops.weight",
+          "layer_list.0.module_list.0.lin_self_loops.bias",
+          "layer_list.0.module_list.0.mlp.0.weight",
+          "layer_list.0.module_list.0.mlp.0.bias",
+          "layer_list.0.module_list.0.mlp.2.weight",
+          "layer_list.0.module_list.0.mlp.2.bias",
+          "layer_list.0.module_list.0.bn.weight",
+          "layer_list.0.module_list.0.bn.bias",
+          "layer_list.0.reset_mlp.weight",
+          "layer_list.0.reset_mlp.bias",
+          "layer_list.0.reset_mlp_c.weight",
+          "layer_list.0.reset_mlp_c.bias",
+          "layer_list.0.reset_mlp_m.weight",
+          "layer_list.0.reset_mlp_m.bias",
+          "layer_list.2.gnn_layers.0.mlp_kqv.weight",
+          "layer_list.2.gnn_layers.0.mlp_kqv.bias",
+          "layer_list.2.gnn_layers.0.lin_edge.weight",
+          "layer_list.2.gnn_layers.0.lin_edge.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.0.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.0.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.2.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.2.bias",
+          "layer_list.2.gnn_layers.0.out_proj.weight",
+          "layer_list.2.gnn_layers.0.out_proj.bias",
+          "layer_list.2.gnn_layers.0.bn.weight",
+          "layer_list.2.gnn_layers.0.bn.bias",
+          "initial_label_mlp.weight",
+          "initial_label_mlp.bias"
+        ]
+      ],
+      "other_trainable_parameters_unchanged": true,
+      "steps_checked": 8,
+      "inputs_hashed": 8
+    },
+    "summary": {
+      "steps": 8,
+      "episodes": 32,
+      "member_positions": 6720,
+      "unique_members": 5423,
+      "unique_anchors": 960,
+      "effective_member_count": 3029.951690821256,
+      "cross_class_duplicate_fraction": 0.01919642857142857,
+      "context_nodes_mean": 70.0188988095238,
+      "source_ids": {
+        "1": 32
+      }
+    }
+  },
+  {
+    "model_id": "readouttrain_covid_frozen_s2",
+    "source": "covid",
+    "seed": 2,
+    "condition": "frozen",
+    "initial_sha256": "c350d50c3a2883b1e4f8fc62f7b3bff81880691db12024469aa94231386f2723",
+    "final_sha256": "f3d27f7448dd4cb4100ff5e2c4382efbb61e28eabc2ac5d6b99642d82cb38166",
+    "checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_smoke_20260906/state/smoke_readouttrain_covid_frozen_s2_20260906_035605_017/checkpoint/state_dict_8.ckpt",
+    "final_walk_rng_sha256": "2b9e7dfca12e9ab7892cde8e4191e36a226dcc76c5727cb1fc1f42e84fadaf8b",
+    "verified_checkpoints": [
+      0,
+      8
+    ],
+    "training_constraint": {
+      "condition": "frozen",
+      "initial_model_sha256": "c350d50c3a2883b1e4f8fc62f7b3bff81880691db12024469aa94231386f2723",
+      "initial_readout_sha256": "73ada7aa8c0bddd6f022eb38fb8f735c132be059f3a5160fd51588f17460a553",
+      "readout_keys": [
+        "layer_list.0.reset_mlp_c.bias",
+        "layer_list.0.reset_mlp_c.weight",
+        "layer_list.0.reset_mlp_m.bias",
+        "layer_list.0.reset_mlp_m.weight"
+      ],
+      "optimizer_parameter_names": [
+        [
+          "logit_scale",
+          "layer_list.0.module_list.0.lin_x.weight",
+          "layer_list.0.module_list.0.lin_x.bias",
+          "layer_list.0.module_list.0.lin_self_loops.weight",
+          "layer_list.0.module_list.0.lin_self_loops.bias",
+          "layer_list.0.module_list.0.mlp.0.weight",
+          "layer_list.0.module_list.0.mlp.0.bias",
+          "layer_list.0.module_list.0.mlp.2.weight",
+          "layer_list.0.module_list.0.mlp.2.bias",
+          "layer_list.0.module_list.0.bn.weight",
+          "layer_list.0.module_list.0.bn.bias",
+          "layer_list.0.reset_mlp.weight",
+          "layer_list.0.reset_mlp.bias",
+          "layer_list.2.gnn_layers.0.mlp_kqv.weight",
+          "layer_list.2.gnn_layers.0.mlp_kqv.bias",
+          "layer_list.2.gnn_layers.0.lin_edge.weight",
+          "layer_list.2.gnn_layers.0.lin_edge.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.0.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.0.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.2.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.2.bias",
+          "layer_list.2.gnn_layers.0.out_proj.weight",
+          "layer_list.2.gnn_layers.0.out_proj.bias",
+          "layer_list.2.gnn_layers.0.bn.weight",
+          "layer_list.2.gnn_layers.0.bn.bias",
+          "initial_label_mlp.weight",
+          "initial_label_mlp.bias"
+        ]
+      ],
+      "other_trainable_parameters_unchanged": true,
+      "steps_checked": 8,
+      "inputs_hashed": 8
+    },
+    "summary": {
+      "steps": 8,
+      "episodes": 32,
+      "member_positions": 6720,
+      "unique_members": 5423,
+      "unique_anchors": 960,
+      "effective_member_count": 3029.951690821256,
+      "cross_class_duplicate_fraction": 0.01919642857142857,
+      "context_nodes_mean": 70.0188988095238,
+      "source_ids": {
+        "1": 32
+      }
+    }
+  }
+]
