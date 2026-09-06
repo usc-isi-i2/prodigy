@@ -396,6 +396,10 @@ the historical trajectories; do not choose checkpoints on target performance.
 and mixture exports, then reads saved predictions only. It verifies all 810
 distinct model/step/target/stream outputs and constructs all four specialist-step
 ensembles for every pair/LOO mixture (1800 comparisons, 5400 error strata).
+Before reading predictions, it resolves all 54 actual saved training configs
+against their completed run logs/results and exact checkpoint paths, checking
+source restrictions, four-episode batches, the 2500-update budget and explicit
+saved-step schedule. Compact config hashes and checked fields are retained.
 Every terminal-step result must reproduce the completed complementarity analysis.
 The same production probability/logit and error-accounting functions are reused.
 

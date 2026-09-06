@@ -1,16 +1,61 @@
 """Reuse saved prediction tensors for fixed specialist-training-budget comparisons."""
 import argparse
+import hashlib
 import json
 from pathlib import Path
+import re
 import subprocess
 
 import pandas as pd
 import torch
+import yaml
 
 from experiments.run_shared_graph import write_json
 from .analyze_mixture_predictions import input_labels, load_predictions, compare_predictions
 from scripts.experiments.analysis.graphs.transfer_prediction.target_performance_mechanisms.analyze_mixture_budget import (
-    STEPS, TARGETS, STREAMS, budget_step, model_registry, validate_artifacts, validate_budget)
+    STEPS, TARGETS, STREAMS, TRAIN_FIELDS, budget_step, model_registry, validate_artifacts, validate_budget, validate_training_audit)
+
+
+def audit_training_configs(models):
+    """Resolve actual saved run configs; do not infer episode counts from filenames."""
+    output, shared_runs = [], {}
+    for model in models[models.step.eq(2500)].itertuples():
+        checkpoint = Path(model.checkpoint)
+        if model.source_count == 1:
+            files_root = checkpoint.parents[4]
+            log = files_root / "log/final_core/train" / (checkpoint.parents[1].name + ".log")
+            text = log.read_text()
+            found = set(re.findall(r"Saved effective config YAML to W&B files: (\S+)", text))
+            if len(found) != 1 or "2500/2500" not in text:
+                raise ValueError("unique saved config and complete singleton training log required")
+            relative = Path(found.pop()).relative_to("/dataMeR1/phil/gfm/prodigy-final-core")
+            config_path = files_root / relative
+            config = yaml.safe_load(config_path.read_text())["params"]
+            provenance = str(log)
+        else:
+            run_root = checkpoint.parents[3]
+            if run_root not in shared_runs:
+                shared_runs[run_root] = {}
+                for result_path in run_root.glob("job_*/result.json"):
+                    result = json.loads(result_path.read_text())
+                    if result.get("status") == "complete":
+                        directory = result["checkpoint_dir"]
+                        if directory in shared_runs[run_root]:
+                            raise ValueError("ambiguous completed mixture training result")
+                        shared_runs[run_root][directory] = result_path
+            result_path = shared_runs[run_root].get(str(checkpoint.parent))
+            if result_path is None:
+                raise ValueError("completed training result for exact mixture checkpoint not found")
+            config_path = result_path.parent / "effective_config.json"
+            config = json.loads(config_path.read_text())
+            provenance = str(result_path)
+        keys = list(TRAIN_FIELDS) + ["neighbor_sampling_source_subset", "checkpoint_steps"]
+        output.append({"model_id": model.model_id, "checkpoint": model.checkpoint,
+            "config_path": str(config_path), "completion_provenance": provenance,
+            "config_sha256": hashlib.sha256(config_path.read_bytes()).hexdigest(),
+            "parameter_contract": {k: config[k] for k in keys}})
+    validate_training_audit(output, models)
+    return output
 
 
 def main():
@@ -29,6 +74,7 @@ def main():
     prior = validate_artifacts(args.data / "mixture_complementarity_predictions", args.data / "mixture_complementarity_inputs")
     manifest = pd.read_csv(repo / "scripts/experiments/setup/target_performance_mechanisms/data/trajectory_model_list.tsv", sep="\t")
     models = model_registry(manifest, pd.read_json(args.data / "trajectory_checkpoint_inventory.json"), prior)
+    training_audit = audit_training_configs(models)
     for stream in STREAMS:
         directory = args.trajectory_root / f"trajectory_{stream}_20260906"
         if not (directory / "DONE").is_file():
@@ -43,7 +89,8 @@ def main():
                     raise FileNotFoundError(file)
     if args.dry_run:
         print(json.dumps({"models": 81, "prediction_cells": 810, "comparisons": 1800, "error_strata": 5400,
-                          "pair_selected_step": budget_step(2), "loo_selected_step": budget_step(8), "new_training": False}))
+                          "pair_selected_step": budget_step(2), "loo_selected_step": budget_step(8), "new_training": False,
+                          "actual_training_configs_verified": len(training_audit)}))
         return
     args.output.mkdir(parents=True)
     tables = {name: [] for name in ("model_metrics", "prediction_inventory", "comparisons", "error_strata", "input_inventory")}
@@ -86,6 +133,7 @@ def main():
     validate_budget({name: pd.DataFrame(values) for name, values in tables.items()}, models, prior)
     for name, values in tables.items():
         write_json(args.output / f"{name}.json", values)
+    write_json(args.output / "training_budget_audit.json", training_audit)
     write_json(args.output / "protocol.json", {"revision": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
         "steps": list(STEPS), "training_seeds": [0], "mixture_step": 2500, "new_training": False,
         "ensemble_weights_fitted": False, "matched_training_inputs": False, "matched_flops": False,
@@ -93,7 +141,7 @@ def main():
         "inference_models": [2, 8], "primary_ensemble": "equal probability", "secondary_ensemble": "equal logits",
         "historical_sampler_only": True, "mixture_replay": str(args.mixture_replay), "trajectory_root": str(args.trajectory_root)})
     write_json(args.output / "DONE.json", {"models": 81, "prediction_cells": 810, "comparisons": 1800, "error_strata": 5400,
-        "complete_both_streams": True, "terminal_reference_reproduced": True})
+        "complete_both_streams": True, "terminal_reference_reproduced": True, "training_configs_verified": True})
 
 
 if __name__ == "__main__":

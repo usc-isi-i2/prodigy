@@ -8,7 +8,7 @@ import pandas as pd
 
 from .test_analyze_mixture_complementarity import fixture as prior_fixture
 from .analyze_mixture_complementarity import validate_artifacts
-from .analyze_mixture_budget import STEPS, budget_step, model_registry, validate_budget, summarize_budget
+from .analyze_mixture_budget import STEPS, TRAIN_FIELDS, budget_step, model_registry, validate_budget, summarize_budget, validate_training_audit
 
 
 def fixture(root):
@@ -47,6 +47,19 @@ def fixture(root):
 
 
 class MixtureBudgetTests(unittest.TestCase):
+    def test_budget_requires_actual_configs_and_matching_sources(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            models, _, _ = fixture(Path(tmp))
+            audit = [{"model_id": m.model_id, "checkpoint": m.checkpoint, "config_sha256": "a" * 64,
+                      "parameter_contract": {**TRAIN_FIELDS, "neighbor_sampling_source_subset": ",".join(m.sources),
+                          "checkpoint_steps": "100,300,900,2500"}} for m in models[models.step.eq(2500)].itertuples()]
+            validate_training_audit(audit, models)
+            for key, value in (("batch_size", 32), ("neighbor_sampling_source_subset", "different"), ("checkpoint_steps", "100,2500")):
+                changed = copy.deepcopy(audit)
+                changed[0]["parameter_contract"][key] = value
+                with self.assertRaises(ValueError):
+                    validate_training_audit(changed, models)
+
     def test_budget_is_selected_by_updates_not_target(self):
         self.assertEqual((budget_step(2), budget_step(8)), (900, 300))
         with self.assertRaises(ValueError):

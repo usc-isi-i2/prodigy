@@ -13,12 +13,28 @@ from .analyze_trajectories import STEPS
 from .analyze_mixture_complementarity import STREAMS, TARGETS, METRICS, STRATA, RULES, close, complete_grid, validate_artifacts
 
 KEY = ["stream", "target", "model_id", "specialist_step"]
+TRAIN_FIELDS = {"batch_size": 4, "epochs": 1, "dataset_len_cap": 2500, "seed": 0,
+                "task_name": "neighbor_matching", "n_way": 30, "n_shots": 3, "n_query": 4}
 
 
 def budget_step(count):
     if count not in (2, 8):
         raise ValueError("only pair and LOO budgets are declared")
     return max(step for step in STEPS if count * step <= 2500)
+
+
+def validate_training_audit(records, models):
+    terminal = models[models.step.eq(2500)].set_index("model_id")
+    if len(records) != 54 or len({r["model_id"] for r in records}) != 54 or {r["model_id"] for r in records} != set(terminal.index):
+        raise ValueError("54 actual training configs required")
+    for record in records:
+        model, config = terminal.loc[record["model_id"]], record["parameter_contract"]
+        if record["checkpoint"] != model.checkpoint or any(config.get(k) != v for k, v in TRAIN_FIELDS.items()):
+            raise ValueError("actual training budget or checkpoint differs")
+        if sorted(config["neighbor_sampling_source_subset"].split(",")) != sorted(model.sources):
+            raise ValueError("actual training source restriction differs")
+        if [int(s) for s in config["checkpoint_steps"].split(",")] != list(STEPS) or len(record["config_sha256"]) != 64:
+            raise ValueError("actual saved-step schedule or config digest differs")
 
 
 def model_registry(manifest, inventory, prior):
@@ -172,7 +188,7 @@ def main():
     read = lambda name: json.loads((export / f"{name}.json").read_text())
     receipt, protocol = read("DONE"), read("protocol")
     if any(receipt.get(k) != v for k, v in {"models": 81, "prediction_cells": 810, "comparisons": 1800, "error_strata": 5400,
-           "complete_both_streams": True, "terminal_reference_reproduced": True}.items()):
+           "complete_both_streams": True, "terminal_reference_reproduced": True, "training_configs_verified": True}.items()):
         raise ValueError("complete budget prediction receipt required")
     if protocol.get("steps") != list(STEPS) or any(protocol.get(k) is not False for k in
             ("new_training", "ensemble_weights_fitted", "matched_training_inputs", "matched_flops", "causal_interference_claim")):
@@ -180,6 +196,7 @@ def main():
     prior = validate_artifacts(args.data / "mixture_complementarity_predictions", args.data / "mixture_complementarity_inputs")
     model_list = Path(__file__).resolve().parents[6] / "scripts/experiments/setup/target_performance_mechanisms/data/trajectory_model_list.tsv"
     models = model_registry(pd.read_csv(model_list, sep="\t"), pd.read_json(args.data / "trajectory_checkpoint_inventory.json"), prior)
+    validate_training_audit(read("training_budget_audit"), models)
     tables = {name: pd.DataFrame(read(name)) for name in ("model_metrics", "prediction_inventory", "comparisons", "error_strata", "input_inventory")}
     validate_budget(tables, models, prior)
     cells, summary = summarize_budget(tables["comparisons"])
