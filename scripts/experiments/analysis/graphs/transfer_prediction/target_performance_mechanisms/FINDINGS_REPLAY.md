@@ -2,7 +2,7 @@
 
 2026-09-06 UTC. Exploratory, training seed 0. This is not a causal source-ranking
 claim or a completed ICLR result. Three classification targets are complete here;
-the remaining two and a targeted metagraph control are running on Tucker.
+the remaining two are running on Tucker. The targeted metagraph control is complete.
 
 ## What changed our next experiment
 
@@ -141,7 +141,7 @@ transfer predictor: Facebook has the best raw NM prototype accuracy (.315), but
 is a poor downstream donor. Keep conditional task alignment and learned use in
 the explanation; do not rename the project around sample coverage yet.
 
-## Targeted architecture hypothesis under test
+## A targeted architecture hypothesis that did not explain the gap
 
 The metagraph projects each attention-weighted message with an affine map, then
 sums. Its output-projection bias is therefore added once per incoming edge, not
@@ -149,10 +149,14 @@ once per destination. An analytic unit test proves this term. Default example
 degrees change from 31 in 30-way NM to 3 in binary CLS; label-node degrees change
 from 91 to 21 with the current support counts.
 
-A diagnostic now removes only that excess bias, holding all attention coefficients
-and learned weights fixed. It may improve, harm, or leave transfer unchanged;
-the implementation detail alone is not evidence that it explains performance.
-If promising, it needs matched retraining and independent episode/training seeds.
+A diagnostic removed only that excess bias, holding all attention coefficients
+and learned weights fixed. It completed all 45 specialist-by-target cells with
+matching reference episode fingerprints. The results are nearly unchanged;
+the exact paired deltas are in `data/meta_bias_deltas.csv`. For example, Ukraine
+on COVID Political changes from .9464 to .9465 and TwiBot from .9185 to .9179.
+This control does not explain the large observed transfer gaps. Do not prioritize
+a bias-placement training intervention on the strength of the implementation
+detail alone. The negative result is useful: it removes one plausible distraction.
 
 ## Artifacts and current jobs
 
@@ -163,10 +167,11 @@ If promising, it needs matched retraining and independent episode/training seeds
 - Source audit: Tucker `prodigy-mechanisms-audit/log/target_mechanisms/source_sampler_20260906_v2`;
   revision `1308f9b0`, all nine sources complete and `DONE` present.
 - Continuation: tmux `mechanism-replay-tail`, output `specialist_cpu_tail_20260906`.
-- Architecture control: tmux `mechanism-meta-bias`, output `meta_bias_cpu_20260906`
-  in `prodigy-mechanisms-audit`.
-- Both new jobs use revision `b260cd56`, Tucker CPU, eight threads each. No user
-  GPU jobs were interrupted. Both worktrees must stay at their revisions while running.
+- Architecture control: output `meta_bias_cpu_20260906` in
+  `prodigy-mechanisms-audit`; all 45 cells complete and `DONE` verified.
+- Both new runs use revision `b260cd56`, Tucker CPU, eight threads each. No user
+  GPU jobs were interrupted. The main mechanism worktree must stay at its revision
+  while the two-target continuation is running.
 
 Compact evidence: `data/replay_cells.csv`, `data/replay_stage_auc.csv`,
 `data/replay_intervention_deltas.csv`, `data/replay_validation.json`,
