@@ -13,7 +13,14 @@ substantial cross-launch drift, documented below rather than called replication.
 A bounded numerical audit now localizes a sufficient source of CPU update drift
 to the cosine decoder's repeated advanced indexing, on fixed synthetic inputs
 and hash-matched real training inputs with the actual initial weights. Its
-historical target-AUC contribution remains unquantified.
+historical target-AUC contribution is not retrospectively decomposed. The
+full-run stress test now establishes .0719/.0629 AUC variability between two
+new default executions with identical complete inputs; deterministic states
+and predictions match exactly. See [FINDINGS_NUMERICS.md](FINDINGS_NUMERICS.md).
+The latest example-driven mechanism, replicated across three seeds, is in
+[FINDINGS_ROLE_CONTEXT.md](FINDINGS_ROLE_CONTEXT.md): Hong Kong's political
+support-side message passing degrades final class representations while query
+representations are unchanged.
 
 ## What changed our next experiment
 
@@ -969,7 +976,7 @@ reduced-input check `data/control_update_numerics.json` (runtime `e1ec61e6`), an
 dimension workloads: 24 replays, 216 tensor comparisons and 32 decoder parity checks.
 The latter aggregates comparisons, not independent training seeds.
 
-### Full-run numerical stress test — running, no final outcomes yet
+### Full-run numerical stress test — complete
 
 The four-arm eight-update Hong Kong seed-2 smoke passes at `294014f1`: all 32
 complete inputs match the recorded free-control prefix, initial model/optimizer/
@@ -978,13 +985,18 @@ match exactly. The full 2500-update experiment launched at 17:54 UTC in isolated
 Tucker worktree `/dataMeR1/phil/gfm/prodigy-mechanisms-numfull`, runtime `376f5af3`.
 Its four controls are two default and two deterministic executions, all with
 the same free-audit hook and full per-step input matching to the earlier run.
-All five targets and both streams follow the complete training validity gate.
+All five targets and both streams passed the complete training validity gate;
+all 680 diagnostic cells and 40 full-model cells are now independently validated.
 
 Hong Kong seed 2 was selected because it had the largest prior AUC drift; this
 is a **selected stress case**, not a population variability estimate or four new
 training seeds. The prediction is exact deterministic saved states and target
 logits. No favorable target or minimum default-repeat AUC difference is selected.
 The finite pipeline and declared analysis retain unfavorable or null outcomes.
+The prediction passes: all deterministic saved states match, and all target
+logits match exactly. The default repeats differ by .0719/.0629 AUC on political
+classification and have task-dependent differences elsewhere. Full results and
+limits are in [FINDINGS_NUMERICS.md](FINDINGS_NUMERICS.md).
 Numerical training variability does not invalidate measurements of the already
 saved fixed models or the frozen parameter-swap interventions. It limits claims
 that same-seed retraining alone provides an exactly controlled comparison.

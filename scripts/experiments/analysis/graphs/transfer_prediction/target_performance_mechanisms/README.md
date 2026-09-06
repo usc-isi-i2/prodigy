@@ -5,6 +5,15 @@ instructions are in `scripts/experiments/setup/target_performance_mechanisms/`.
 The [summary figure](figures/target_bottlenecks.png) contrasts target-input signal
 and full-model performance on the original and fresh episode streams.
 
+Latest: [FINDINGS_ROLE_CONTEXT.md](FINDINGS_ROLE_CONTEXT.md) quantifies the
+individual-case hypotheses across all nine historical singletons, five targets,
+two streams, and eight query/support conditions (720 cells). A separate complete
+three-seed check replicates Hong Kong's political support-edge penalty and traces
+it exactly through changed label representations, with query vectors unchanged.
+Run `analyze_role_context --input <data/role_context_replay>` and
+`analyze_support_path` as modules to independently validate and rebuild results.
+The Facebook anecdotal rescues do not become a general context-removal benefit.
+
 For actual individual examples, read [FINDINGS_EXAMPLES.md](FINDINGS_EXAMPLES.md):
 24 outcome-stratified cases, verified raw text/feature identities, and 360
 query-only versus support-only interventions with bit-exact baseline replay.
@@ -27,7 +36,11 @@ including state and logit comparisons, plus both `data/numerical_controls_{origi
 replay exports. It reports every repeat contrast and the two earlier controls
 without counting same-seed executions as independent seeds. A failed determinism
 prediction is retained as an outcome; incomplete or input-mismatched runs fail
-the validity gate. The full-run stress test currently has no final results.
+the validity gate. The full-run stress test is now complete:
+[FINDINGS_NUMERICS.md](FINDINGS_NUMERICS.md). Default matched-input repeats differ
+by up to .0719 full-model AUC; deterministic saved states and predictions match
+exactly across all five targets and both streams. This is one selected stress
+case, not a typical-variability estimate or a transfer-performance remedy.
 
 Reproduce the completed five-target summary:
 

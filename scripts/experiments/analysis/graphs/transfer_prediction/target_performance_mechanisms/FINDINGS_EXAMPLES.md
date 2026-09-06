@@ -2,6 +2,11 @@
 
 2026-09-06. **Exploratory qualitative audit, not a representative performance estimate.**
 
+Follow-up now complete: [FINDINGS_ROLE_CONTEXT.md](FINDINGS_ROLE_CONTEXT.md)
+tests these hypotheses across 720 cells and checks the political support-side
+mechanism on all three existing Ukraine/Hong Kong seeds. It also shows why
+the selected Facebook rescues do not justify blanket context removal.
+
 The missing piece was reading what an example actually contains. I inspected
 24 selected query cases across COVID Political, Facebook Page Reference, and
 TwiBot20, and examined the actual support texts and sampled neighborhoods for
