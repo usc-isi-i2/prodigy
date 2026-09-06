@@ -5,7 +5,16 @@ instructions are in `scripts/experiments/setup/target_performance_mechanisms/`.
 The [summary figure](figures/target_bottlenecks.png) contrasts target-input signal
 and full-model performance on the original and fresh episode streams.
 
-Latest: [FINDINGS_ROLE_CONTEXT.md](FINDINGS_ROLE_CONTEXT.md) quantifies the
+Latest: [FINDINGS_NATURAL_SUPPORT.md](FINDINGS_NATURAL_SUPPORT.md) tests natural,
+unmodified support replacements on all six Ukraine/Hong Kong seed controls,
+five targets and both streams. Both declared political predictions pass, but
+support-only selection is not a general remedy: it usually worsens Ukraine's
+political NLL and is less effective than eight-context averaging for that loss.
+Rebuild the independent validation and figure with the `analyze_natural_support`
+and `plot_natural_support` modules. The larger labeled pool is not a fair
+standard 10-shot evaluation.
+
+[FINDINGS_ROLE_CONTEXT.md](FINDINGS_ROLE_CONTEXT.md) quantifies the
 individual-case hypotheses across all nine historical singletons, five targets,
 two streams, and eight query/support conditions (720 cells). A separate complete
 three-seed check replicates Hong Kong's political support-edge penalty and traces

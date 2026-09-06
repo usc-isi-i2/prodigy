@@ -4,6 +4,11 @@
 This explains part of the computation behind a target-specific donor gap; it
 does not establish which property of pretraining data caused that computation.
 
+The [natural-support follow-up](FINDINGS_NATURAL_SUPPORT.md) is now complete:
+unmodified support replacements confirm greater political sensitivity for
+Hong Kong, with all queries fixed. Support-only held-out selection helps Hong
+Kong's political NLL in every seed/stream but usually worsens Ukraine's.
+
 ## Main result
 
 On COVID Political, removing background message-passing edges **only from the
