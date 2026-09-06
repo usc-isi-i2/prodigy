@@ -76,7 +76,8 @@ python -m scripts.experiments.setup.target_performance_mechanisms.audit_source_e
 ```
 
 Run on Tucker CPU, with its own worktree and tmux session. Graph preprocessing is
-memory-intensive; check host RAM and `/dev/shm` before execution. The graph is
-memory-mapped and only the training adjacency is preprocessed. Runtime `.pt`
+memory-intensive; check host RAM and `/dev/shm` before execution. Newer PyTorch
+versions memory-map the graph; Tucker's PyTorch 2.0 loads the full artifact.
+Only the training adjacency is preprocessed. Runtime `.pt`
 files contain exact simulated member IDs and corresponding feature rows; these
 can support target-to-sampled-source coverage diagnostics later.

@@ -87,9 +87,11 @@ def main():
     output.mkdir(parents=True, exist_ok=False)
     torch.set_num_threads(args.threads)
     torch.manual_seed(args.seed)
-    # Mmap avoids eagerly reading unused target-view tensors and metadata. All
-    # arrays remain read-only; the production graph builder selects feature/view.
-    raw = torch.load(graph_path, map_location="cpu", weights_only=False, mmap=True)
+    # Torch 2.0 on Tucker predates mmap loading. Newer versions can avoid eagerly
+    # reading unused target-view tensors; otherwise budget RAM for the full file.
+    load_options = {"mmap": True} if "mmap" in inspect.signature(torch.load).parameters else {}
+    print(f"Loading source graph (mmap={bool(load_options)})", flush=True)
+    raw = torch.load(graph_path, map_location="cpu", weights_only=False, **load_options)
     ensure_static_views(raw, params)
     graph, view = _build_covid19_twitter_graph(raw, **params)
     if view != "static_train":
@@ -106,7 +108,7 @@ def main():
     protocol = {**vars(args), "graph_path": str(graph_path), "graph_size_bytes": graph_path.stat().st_size,
                 "commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
                 "member_selector_sha256": hashlib.sha256(inspect.getsource(NeighborTask._sample_center_members).encode()).hexdigest(),
-                "historical_realized_stream": False, "edge_view": view,
+                "historical_realized_stream": False, "edge_view": view, "mmap_loading": bool(load_options),
                 "feature_dim": graph.x.shape[1], "num_nodes": graph.num_nodes,
                 "source_ids": source_ids.tolist(), "source_names": list(source_names)}
     (output / "protocol.json").write_text(json.dumps(protocol, indent=2))
