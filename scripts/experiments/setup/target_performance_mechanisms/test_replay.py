@@ -149,6 +149,21 @@ class ReplayTest(unittest.TestCase):
         torch.testing.assert_close(standardized_probe(x, batch), standardized_probe(x, changed))
         torch.testing.assert_close(standardized_probe(x, batch, x), standardized_probe(x, changed, x))
 
+    def test_model_ignores_query_labels_and_joint_label_erasure_is_symmetric(self):
+        model, batch = fixture()
+        batch[1].normal_()
+        changed = clone_batch(batch)
+        query = batch[5].reshape(-1, 2)[:, 0].bool()
+        changed[2][query] = changed[2][query].flip(1)
+        with torch.no_grad():
+            _, first, _ = model(*clone_batch(batch))
+            _, second, _ = model(*clone_batch(changed))
+            torch.testing.assert_close(first, second, rtol=0, atol=0)
+            erased = clone_batch(batch)
+            intervene(erased, "zero_support_and_label_text", 0)
+            _, logits, _ = model(*erased)
+            torch.testing.assert_close(logits[:, 0], logits[:, 1], rtol=0, atol=1e-6)
+
     def test_feature_shuffle_invariants(self):
         _, batch = fixture()
         changed = clone_batch(batch)

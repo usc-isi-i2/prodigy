@@ -163,6 +163,9 @@ def intervene(batch, variant, seed):
         batch[4][:, 1] = 0
     elif variant == "zero_label_text":
         batch[1].zero_()
+    elif variant == "zero_support_and_label_text":
+        batch[4][:, 1] = 0
+        batch[1].zero_()
     else:
         raise ValueError(variant)
 
@@ -273,7 +276,7 @@ def main():
         raise ValueError("unknown target")
     variants = args.variants.split(",")
     allowed = {"baseline", "center_features_only", "no_background_edges", "shuffle_context",
-               "zero_support_relations", "zero_label_text", "bn_batch_encoder", "bn_batch_meta", "bn_batch_all", "meta_bias_normalized"}
+               "zero_support_relations", "zero_label_text", "zero_support_and_label_text", "bn_batch_encoder", "bn_batch_meta", "bn_batch_all", "meta_bias_normalized"}
     if not set(variants) <= allowed or len(set(variants)) != len(variants):
         raise ValueError("invalid or duplicate variant")
     if not 1 <= args.batch_count <= 32:
