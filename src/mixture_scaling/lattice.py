@@ -273,7 +273,7 @@ def train_one(run_id, sources, objective, graphs, config, device, output_root, s
             int(protocol["output_dim"]), int(protocol["layers"]), float(protocol["dropout"]),
         ).to(device)
     optimizer = torch.optim.AdamW(
-        model.parameters(), lr=float(protocol["learning_rate"]),
+        model.parameters(), lr=float(protocol.get(f"{objective}_learning_rate", protocol["learning_rate"])),
         weight_decay=float(protocol["weight_decay"]),
     )
     metadata = {
@@ -318,6 +318,9 @@ def train_one(run_id, sources, objective, graphs, config, device, output_root, s
         if not torch.isfinite(loss):
             raise FloatingPointError(f"non-finite loss at step {step}: {loss}")
         loss.backward()
+        gradient_norm = float(torch.nn.utils.clip_grad_norm_(
+            model.parameters(), float(protocol["gradient_clip_norm"])
+        ))
         optimizer.step()
         train_window.append(float(loss))
         if step in checkpoints:
@@ -329,7 +332,7 @@ def train_one(run_id, sources, objective, graphs, config, device, output_root, s
         row = {
             "step": step, "train_loss": float(np.mean(train_window)), "validation_loss": value,
             "per_source_validation_loss": per_source, "elapsed_seconds": elapsed,
-            "updates_per_second": step / elapsed,
+            "updates_per_second": step / elapsed, "gradient_norm": gradient_norm,
         }
         with (run_dir / "validation.jsonl").open("a") as handle:
             handle.write(json.dumps(row) + "\n")

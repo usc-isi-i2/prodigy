@@ -8,7 +8,11 @@ Two objective passes use the identical model lattice and stopping rule:
 
 1. source-confined link prediction with five sampled negatives per positive;
 2. GraphMAE masked-feature reconstruction with a 50% node mask and scaled
-   cosine error (alpha 2).
+cosine error (alpha 2).
+
+The LP pass uses AdamW at `5e-4`; the initial `1e-3` gate produced repeatable
+large loss oscillations in the eight-source mixture. GraphMAE retains `1e-3`.
+Both objectives clip the global gradient norm at 1.0 and log the unclipped norm.
 
 Mixtures receive uniform round-robin source updates. Validation runs every 250
 updates. Training cannot stop before 2,000 updates; it stops after eight checks
