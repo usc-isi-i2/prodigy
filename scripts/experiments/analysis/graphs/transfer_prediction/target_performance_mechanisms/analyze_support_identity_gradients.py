@@ -64,6 +64,11 @@ def validate(root):
                 raise ValueError("nonfinite/negative gradient norm")
         if (data.cosine.dropna().abs() > 1+1e-12).any():
             raise ValueError("invalid gradient cosine")
+        inactive = data[data.active_parameter_tensors == 0]
+        if not (inactive.active_parameter_elements == 0).all() or not (inactive[["baseline_norm", "changed_norm", "difference_norm"]] == 0).all().all():
+            raise ValueError("inactive gradient block has active magnitude")
+        if not inactive.cosine.isna().all() or not inactive.relative_difference.isna().all():
+            raise ValueError("inactive gradient alignment must be undefined")
     if groups.duplicated(KEY+["kind", "group"]).any():
         raise ValueError("duplicate gradient-cancellation group")
     counted = groups.groupby(KEY+["kind"]).agg(count=("group", "size"), members=("members", "sum")).reset_index()
@@ -109,18 +114,52 @@ def derive(cells, binding, groups):
     return contrasts, cancellation
 
 
+def validate_prefix_receipts(cells, root):
+    done = json.loads((root/"DONE.json").read_text())
+    if not done["complete"] or done["phase"] != "inputs" or done["jobs"] != 9:
+        raise ValueError("incomplete actual input-prefix receipts")
+    seen, initial_by_seed = set(), {}
+    for directory in sorted(root.glob("job_*")):
+        receipt = json.loads((directory/"DONE.json").read_text())
+        params = json.loads((directory/"params.json").read_text())
+        arm = receipt["arm"]
+        if arm["model_id"] in seen or not all(receipt[k] for k in ("complete", "full_prefix_hashes_verified",
+            "actual_trainer_reconstruction_bit_exact", "source_members_and_contexts_verified",
+            "finite_dispatch_prefix_with_normal_worker_exhaustion")):
+            raise ValueError("invalid/duplicate prefix receipt")
+        seen.add(arm["model_id"])
+        expected = {"neighbor_sampling_source_subset": arm["source"], "seed": arm["seed"],
+            "n_way": 30, "n_shots": 3, "n_query": 4, "batch_size": 4,
+            "ignore_label_embeddings": True, "not_freeze_learned_label_embedding": False}
+        if any(params[k] != v for k, v in expected.items()) or [r["step"] for r in receipt["inputs"]] != [1, 2, 3, 4]:
+            raise ValueError("prefix configuration/step contract differs")
+        initial_by_seed.setdefault(arm["seed"], set()).add(arm["initial_sha256"])
+        data = cells[cells.model_id == arm["model_id"]]
+        for item in receipt["inputs"]:
+            if set(data[data.input_step==item["step"]].input_sha256) != {item["batch_sha256"]}:
+                raise ValueError("prefix and gradient input hashes differ")
+        for step, key in ((0, "initial_sha256"), (2500, "final_sha256")):
+            if set(data[data.checkpoint_step==step].weights_sha256) != {arm[key]}:
+                raise ValueError("prefix and gradient weights differ")
+    if seen != set(cells.model_id) or any(len(v) != 1 for v in initial_by_seed.values()):
+        raise ValueError("prefix model grid or shared initialization differs")
+    return {"local_prefix_receipts_checked": 9, "local_full_input_hash_links_checked": 36,
+        "same_initial_model_across_sources_within_seed": True}
+
+
 def main():
     p = argparse.ArgumentParser(__doc__)
     p.add_argument("--input", type=Path, default=HERE/"data/support_identity_gradients")
     p.add_argument("--output", type=Path, default=HERE/"data")
     args = p.parse_args()
     cells, gradients, binding, groups, done = validate(args.input)
+    prefix = validate_prefix_receipts(cells, args.input.parent/"support_identity_inputs")
     contrasts, cancellation = derive(cells, binding, groups)
     contrasts.to_csv(args.output/"support_identity_loss_contrasts.csv", index=False)
     cancellation.to_csv(args.output/"support_identity_cancellation_contrasts.csv", index=False)
     summary = contrasts.groupby(["source", "seed", "checkpoint_step", "mode"]).mean(numeric_only=True).reset_index()
     summary.to_csv(args.output/"support_identity_seed_summary.csv", index=False)
-    (args.output/"support_identity_validation.json").write_text(json.dumps({**done,
+    (args.output/"support_identity_validation.json").write_text(json.dumps({**done, **prefix,
         "local_complete_grid_and_aggregate_checks": True, "training_prefix_batches_per_model": 4,
         "reused_checkpoints_not_independent_training_runs": True, "exploratory_not_transfer_evidence": True}, indent=2))
     print(summary.groupby(["source", "checkpoint_step", "mode"])[["actual_minus_baseline_nll",

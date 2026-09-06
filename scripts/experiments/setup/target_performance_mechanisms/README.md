@@ -487,6 +487,32 @@ module. Identity-only bounds do not apply to full graph inputs; context sizes
 are recorded, but complete context-node identities are not. The audit is an
 exploratory follow-up to already known outcomes, not a confirmatory experiment.
 
+## Matched support-identity gradient probe
+
+`run_support_identity_gradients` has two phases. From an idle dedicated Tucker
+worktree, `--phase inputs --run-dir <new-cache-directory>` reconstructs the first
+four consumed batches for all nine free-readout source/seed controls. It uses the
+exact saved initial sampler/RNG contract, preserves loader workers and collation,
+and limits only dispatch to a finite prefix so workers exhaust normally. Every
+full batch hash must match the original training record. The lightweight probe
+model must also match actual TrainerFS logits, gradients and buffers exactly.
+
+Then use `--phase probe --inputs <completed-cache> --run-dir <new-smoke> --smoke
+--models 1`. Validate the smoke with `summarize_support_identity_gradients --run
+<new-smoke> --inputs <completed-cache> --output <new-smoke>/verified`. For the full
+grid, use a different output, omit `--smoke`, and repeat the tensor summary. CPU
+concurrency is bounded at three models; all GPUs remain hidden. No optimizer
+updates or target evaluations occur. All raw tensors remain on Tucker.
+
+The 432 substantive cells cross nine source/seed models,
+initial/final training states, four actual input-prefix batches, production versus
+frozen-metagraph normalization, and baseline/identity-soft/permuted-soft support
+labels. Only the latter's binding to support identities differs between treatment
+and matched control. The inactive text-label projection is reported as having no
+active gradient parameters, not as a measured zero gradient. Run the downstream
+`analyze_support_identity_gradients` module only on a complete non-smoke export;
+prefix gradient changes are not evidence of a transfer improvement.
+
 ## Bounded CPU numerical replay
 
 `audit_update_numerics.py` diagnoses update reproducibility without changing

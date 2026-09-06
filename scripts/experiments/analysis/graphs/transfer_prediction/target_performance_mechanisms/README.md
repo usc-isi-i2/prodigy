@@ -5,7 +5,16 @@ instructions are in `scripts/experiments/setup/target_performance_mechanisms/`.
 The [summary figure](figures/target_bottlenecks.png) contrasts target-input signal
 and full-model performance on the original and fresh episode streams.
 
-Latest upstream audit: [FINDINGS_CONSUMED_CONFLICTS.md](FINDINGS_CONSUMED_CONFLICTS.md)
+Latest matched learning-signal test:
+[FINDINGS_SUPPORT_GRADIENTS.md](FINDINGS_SUPPORT_GRADIENTS.md) completes 432
+no-update probes on 36 exact consumed input batches. Identity-specific soft
+support labels are less harmful than the matched control for Hong Kong/COVID,
+but more harmful for Ukraine. The contrast survives disabling the training-only
+normalization path into queries. This is source-specific learning evidence, not
+a demonstrated transfer repair. `analyze_support_identity_gradients` checks the
+complete compact export and reproduces all contrasts.
+
+[FINDINGS_CONSUMED_CONFLICTS.md](FINDINGS_CONSUMED_CONFLICTS.md)
 checks all 33 completed training-record streams, with role-specific identity
 conflicts and concrete consumed examples. Hong Kong has many more conflicting
 pseudo-labels, but the existing role-shuffle results refute a simple monotonic
