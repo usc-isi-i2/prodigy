@@ -5,6 +5,9 @@ Evaluates the seed-0 final-core lattice (9 specialists, 36 unordered pairs, and
 pair-link protocol. The sweep uses one shared, deterministic degree-matched pair
 set per target, validation-locked cosine orientation, background-only message
 passing, 2,000 held-out positive edges, and explicit leakage/endpoint gates.
+The background/holdout partitions are loaded from the canonical seed-0 caches
+shared with the GraphSAGE and SAMGPT evaluations, including for graph artifacts
+that do not embed named static-link views.
 
 Run on Tucker from this worktree with GPUs 0-3:
 

@@ -35,6 +35,7 @@ for worker in 0 1 2 3; do
       graph="${TARGETS[$index]#*:}"
       python "${ROOT}/scripts/eval/pair_link_sweep.py" \
         --graph "${graph}" --dataset "${target}" --model-list "${MODEL_LIST}" \
+        --edge-split "/dataMeR1/phil/gfm/mixture-scaling-graphmae/state/social9_source_lattice/_cache/${target}_edge_split_s0.pt" \
         --out-dir "${OUT_ROOT}/data" --negative-kinds degree_matched \
         --max-positives 2000 --n-hop 1 --batch-size 256 --seed 0 \
         --device "cuda:${worker}" --resume
