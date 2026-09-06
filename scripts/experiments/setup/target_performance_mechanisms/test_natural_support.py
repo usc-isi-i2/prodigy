@@ -46,8 +46,11 @@ class NaturalSupportTest(unittest.TestCase):
         for a, b in zip(mappings, other):
             torch.testing.assert_close(a, b, rtol=0, atol=0)
         centers = batch[0].global_node_ids[batch[0].ptr[:-1]]
+        source_records = {i: dict(center=int(centers[i]), episode=int(batch[0].task_id_per_sample[i]),
+                                global_label=int(batch[0].task_label_map[batch[0].task_id_per_sample[i], batch[2][i].argmax()]))
+                          for i in (~q).nonzero().flatten().tolist()}
         for row in plan["audits"]:
-            chosen = row["selected"]
+            chosen = [source_records[i] for i in row["selected"]]
             self.assertEqual(len(set(r["center"] for r in chosen)), row["shots"])
             forbidden = set(centers[q & batch[0].task_id_per_sample.eq(row["episode"])].tolist())
             self.assertFalse(forbidden.intersection(r["center"] for r in chosen))

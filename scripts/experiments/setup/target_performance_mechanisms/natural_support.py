@@ -125,9 +125,10 @@ def support_plan(batches, draws, seed):
                     audits.append(dict(batch=bi, episode=origin, draw=draw, global_class=global_class,
                                        shots=len(slots), eligible_unique_ids=len(eligible),
                                        overlap_with_original=len(original_ids.intersection(chosen_ids)),
-                                       selected=chosen))
+                                       selected=[r["flat"] for r in chosen]))
         mappings.append(mapping)
     packed = {"seed": seed, "draws": draws, "mappings": [m.tolist() for m in mappings], "audits": audits,
+              "inputs": [{k: v.tolist() if torch.is_tensor(v) else v for k, v in spec.items()} for spec in specs],
               "pool_unique_identities": len(identity_labels), "pool_occurrences": len(pool)}
     packed["sha256"] = hashlib.sha256(json.dumps(packed, sort_keys=True).encode()).hexdigest()
     return mappings, packed
