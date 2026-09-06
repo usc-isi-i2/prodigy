@@ -70,12 +70,20 @@ interactions, all-target outcomes, and actual consumed exposure as secondary
 outputs. No significance test treats targets, episode streams, checkpoints, or
 mixture partners as independent training-seed replications.
 
-`analyze_label_interface.py` is the fail-closed analysis for the running frozen
+`analyze_label_interface.py` is the fail-closed analysis for the completed frozen
 label-vector controls. It requires all nine specialists, all six conditions,
 all five targets, both episode streams, exact input/weight matches, and successful
 norm/flag audits. Run as a module after the completed outputs and input receipt
 are collected. These graph runs use class-keyed deterministic random label
 vectors, not semantic label-text embeddings; legacy control names are unchanged.
+
+`analyze_campaign_cls.py --nm-results <original-nm-results.csv>` validates the
+declared 15-run, 30-checkpoint cross-task replay. Common 6,000-update and original
+source-validation-selected comparisons are kept separate. Selected-checkpoint
+NM comparisons require the original checkpoint file hashes to match. The manifest
+and explicit forward-incompatible exclusions live under setup's
+`data/campaign_cls_manifest_v2/`. Only TwiBot is a held-out source; one seed and
+repeat conditions must not be counted as independent training replications.
 
 `analyze_member_cue_alignment.py` reports the prospective exploratory secondary
 cue effects only after the complete primary member-policy analysis passes.

@@ -459,6 +459,37 @@ This control does not explain the large observed transfer gaps. Do not prioritiz
 a bias-placement training intervention on the strength of the implementation
 detail alone. The negative result is useful: it removes one plausible distraction.
 
+## Label-interface mismatch does not explain the target deficits
+
+The complete frozen-weight diagnostic contains nine specialists × five targets ×
+six conditions × two episode streams (540 full-model cells; 1,980 diagnostic
+rows). Every baseline reproduces its previous metrics; all 320 cached batch
+hashes match the references, checkpoint hashes are unchanged, and all scoped
+norm/flag audits pass. The conditions were fixed before their outcomes.
+
+Restoring the frozen training label table changes mean TwiBot AUC by only
+**+.00004 / −.00023** (original / fresh); matching projected-vector magnitude to
+the training table gives **+.00046 / +.00035**. Permuting the active training-table
+slots gives −.00034 / −.00086. Even the largest individual TwiBot improvement
+among these declared controls is below .005 AUC. Zeroing the entire projected
+label input, including its bias, gives mean −.00023 / −.00026.
+
+Facebook's corresponding training-table effect is −.00043 / −.00062; scale
+matching is −.00049 / −.00046. Neither comes close to the approximately .15–.16
+gap from the raw-center support-only probe. Across every target and condition,
+the largest absolute source-mean change is .00298; the largest individual change
+is .01349, on the low-performing suspension task under the fixed table permutation.
+These are paired diagnostic effects, not confidence intervals or independent
+training-seed replications. Full per-source outcomes, including negative changes,
+are preserved in `data/label_interface_deltas.csv`.
+
+Thus these particular train/test label-interface differences do **not** account
+for the large target deficits. This does not prove every possible metagraph
+interface change is irrelevant. It does rule out prioritizing this simple
+interface restoration as the explanation or a demonstrated rescue. Support-label
+relations remain essential; invariance to label-vector changes is not invariance
+to erasing the support examples' labels.
+
 ## Artifacts and runtime provenance
 
 - Local branch/worktree: `codex/target-performance-mechanisms`,
@@ -520,15 +551,25 @@ detail alone. The negative result is useful: it removes one plausible distractio
   exports (~44 MB; no graph-feature export), code `a1c0aa4b`. All 648 cells passed
   exact cached-input checks; two rank/orientation/constant-score unit tests passed.
   This new analysis remains local pending approval to publish to the public remote.
-- Frozen label-interface controls are running in a new detached private worktree,
+- Frozen label-interface controls completed in a detached private worktree,
   `/dataMeR1/phil/gfm/prodigy-mechanisms-followup`, revision `1010d57c`, tmux
   `mechanism-label-interface`, four CPU threads. All 16 scoped-hook/replay tests
   passed locally and on Tucker. Both streams and all five targets are fixed in
-  advance. Code reached Tucker by **direct private git transport**, without any
+  advance; both `DONE` markers and all input/weight/baseline/norm gates passed.
+  Code reached Tucker by **direct private git transport**, without any
   public GitHub update; active training/evaluation worktrees were not changed.
 - The label-table/projection audit reads all 36 existing checkpoint tensors;
   `data/label_interface_checkpoint_inventory.json` records exact digests and norms.
   Both components are byte-identical across every historical source and step.
+- Cross-task replay of 15 pre-existing compatible eight-source NM interventions
+  is running in the main mechanism worktree at frozen revision `3c88bdbf`, tmux
+  `mechanism-campaign-cls`, four CPU threads. Its 30 declared checkpoints separate
+  a common 6,000-update rule from original source-validation selection. All 30
+  strict finite-weight/forward checks passed, and all 15 selected checkpoint-file
+  hashes match their original NM results. Three forward-incompatible models are
+  explicitly excluded. Manifest revision `6732081a`; no new training or target-
+  selected checkpoints. Only TwiBot is an unseen source. This is a one-training-
+  seed exploratory reuse, not a substitute for the running 24-arm factorial.
 - The 24-arm member-selection intervention (two sources × four policies × three
   training seeds) is implemented at `5e0a3537`. All 24 lightweight tests and a
   four-policy, three-update toy CPU integration passed on Tucker. These are
