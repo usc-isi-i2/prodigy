@@ -5,7 +5,7 @@ import unittest
 
 import pandas as pd
 
-from .analyze_readout_interventions import MODES, READOUT_KEYS, UNCHANGED, METRICS, validate_manifest, validate_grid, parameter_effects
+from .analyze_readout_interventions import MODES, READOUT_KEYS, UNCHANGED, METRICS, validate_manifest, validate_grid, parameter_effects, analyze_cues, baseline_cue_changes
 from .analyze_trajectories import PANEL, DECODERS
 
 
@@ -76,6 +76,59 @@ class ReadoutAnalysisTests(unittest.TestCase):
         self.assertTrue(((full.background_by_readout_interaction_roc_auc - .1).abs() < 1e-12).all())
         with self.assertRaises(ValueError):
             parameter_effects(changes.iloc[1:])
+
+    def test_complete_cue_grid_including_new_center_branch_and_constants(self):
+        data = Path(__file__).parent / "data"
+        arms = pd.read_json(data / "member_training_verified/arms.json")
+        initial = pd.read_csv(data / "member_initial_cells.csv")
+        references = pd.concat([pd.read_csv(data / "member_replay_cells.csv"), initial], ignore_index=True)
+        manifest = validate_manifest(json.loads((data / "readout_interventions/manifest.json").read_text()),
+                                     json.loads((data / "readout_interventions/DONE.json").read_text()), arms, initial)
+        previous = pd.read_csv(data / "member_cue_alignment_cells.csv")
+        keys = ["stream", "model_id", "decoder", "cue"]
+        columns = [f"mean_within_episode_{k}" for k in ("spearman", "pearson", "decision_agreement")]
+        prior = previous.set_index(keys)
+        reference = references[references.dataset == "twibot20"].set_index(["stream", "model_id", "decoder"])
+        decoders = ("S0_conv_center/ridge", "S0_pool/ridge", "U1_pre_meta/ridge", "full_model")
+        cue_names = ("center_indegree", "raw_center", "raw_context")
+        rows, base, cells = [], {}, []
+        for stream in ("original", "fresh"):
+            for model_id in references.model_id.unique():
+                for decoder in decoders:
+                    ref = reference.loc[stream, model_id, decoder]
+                    for cue in cue_names:
+                        key = (stream, model_id, decoder, cue)
+                        row = dict(zip(keys, key)) | dict(weights_sha256=ref.weights_sha256,
+                            episode_fingerprint=ref.episode_fingerprint, total_episodes=128, valid_episodes=128,
+                            **{c: .2 for c in columns})
+                        if key in prior.index:
+                            row.update({c: prior.loc[key, c] for c in columns})
+                        # Undefined correlations must survive every paired comparison.
+                        if key == ("original", "memberinit_s0", "S0_conv_center/ridge", "center_indegree"):
+                            row.update(valid_episodes=0, **{c: None for c in columns})
+                        rows.append(row)
+                        base[key] = row
+            for model in manifest.itertuples():
+                for decoder in decoders:
+                    bg = reference.loc[stream, model.background_model_id, decoder]
+                    cells.append(dict(stream=stream, dataset="twibot20", model_id=model.model_id, decoder=decoder,
+                                      weights_sha256=model.weights_sha256, episode_fingerprint=bg.episode_fingerprint))
+                    for cue in cue_names:
+                        row = base[stream, model.background_model_id, decoder, cue].copy()
+                        row.update(model_id=model.model_id, weights_sha256=model.weights_sha256)
+                        if decoder not in UNCHANGED:
+                            row.update(**{c: .1 for c in columns})
+                        rows.append(row)
+        cues = pd.DataFrame(rows)
+        changes = analyze_cues(cues, manifest, pd.DataFrame(cells), references, previous)
+        self.assertEqual(len(changes), 1152)
+        constants = changes[(changes.background_model_id == "memberinit_s0") & (changes.stream == "original") &
+                            (changes.decoder == "S0_conv_center/ridge") & (changes.cue == "center_indegree")]
+        self.assertEqual(len(constants), 8)
+        self.assertTrue(constants.delta_mean_within_episode_spearman.isna().all())
+        self.assertEqual(len(baseline_cue_changes(cues, arms, initial)), 576)
+        with self.assertRaises(ValueError):
+            analyze_cues(cues.iloc[1:], manifest, pd.DataFrame(cells), references, previous)
 
 
 if __name__ == "__main__":

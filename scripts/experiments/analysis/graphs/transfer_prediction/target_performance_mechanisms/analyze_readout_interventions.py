@@ -150,6 +150,11 @@ def analyze_cues(cues, manifest, cells, references, previous):
         raise ValueError("missing cue background comparison")
     for column in columns:
         changes[f"delta_{column}"] = changes[column] - changes[f"{column}_background"]
+    upstream = changes.decoder.isin(["S0_conv_center/ridge", "S0_pool/ridge"])
+    if not (changes.loc[upstream, "valid_episodes"] == changes.loc[upstream, "valid_episodes_background"]).all() or any(
+            not np.allclose(changes.loc[upstream, column], changes.loc[upstream, f"{column}_background"],
+                            atol=1e-10, rtol=0, equal_nan=True) for column in columns):
+        raise ValueError("cue analysis changed an exactly identical upstream prediction")
     # No missing-value imputation and no implicit conversion into a mediation claim.
     return changes
 
