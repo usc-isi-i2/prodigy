@@ -838,6 +838,33 @@ Within-target partial rank associations are descriptive; 28 foreign pairs share
 sources and do not provide 28 independent training replications. No ensemble or
 error-complementarity result has been interpreted at this update.
 
+## Corrected production sampler: relevance check underway
+
+A read-only audit found that the separate corrected lattice pipeline completed
+all nine singleton trainings at 10:28:43 UTC, then stopped before NM evaluation
+or pair/LOO training because its reference ledger pointed into a removed worktree.
+The original log is preserved in `data/corrected_sampler_verified/source_pipeline.txt`.
+The ledger exists in the runtime archive, but blindly replacing its path is not
+a verified fix: the corrected member selector also changes generated NM test
+episodes. Our work leaves that pipeline untouched and reuses its checkpoints
+for the established classification protocol instead.
+
+All 36 checkpoint/training-state pairs (nine sources × 100/300/900/2500 updates)
+passed finite-state, common-architecture, optimizer-step, source-restriction and
+effective-config checks. A separate CPU replay launched **11:43:00 UTC**, frozen
+revision `311383ab`, worktree `/dataMeR1/phil/gfm/prodigy-mechanisms-corrected`,
+tmux `mechanism-corrected-sampler`, four threads with GPUs hidden. Five targets,
+17 decoders and both fixed episode streams are required; no corrected transfer
+results are interpreted until all 6,120 cells and input checks pass.
+
+The question is whether the earlier target-specific bottlenecks and checkpoint
+trends survive the newer production recipe. This is **not** a role-only causal
+contrast: shuffling before truncation changes retained identities and roles
+jointly, with different random-number consumption. Training inputs and initial
+weights are not guaranteed matched to the historical runs. The three-seed
+factorial remains the controlled experiment; this one-seed reuse addresses
+relevance to the corrected models, not fresh-domain or independent-seed proof.
+
 ## Artifacts and runtime provenance
 
 - Local branch/worktree: `codex/target-performance-mechanisms`,

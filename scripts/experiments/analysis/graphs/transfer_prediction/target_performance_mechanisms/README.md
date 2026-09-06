@@ -166,3 +166,15 @@ AUC range, but do not provide independent-pair inference: pairs share sources,
 and there is only one training seed. Undefined partial associations remain
 undefined. Ensemble compute is 2x/8x the mixture; this is not causal interference
 evidence. Toy arithmetic and mutation tests exercise these reporting gates.
+
+`analyze_corrected_sampler.py` separately checks whether the historical stage/
+target patterns persist in the nine newer corrected-sampler singleton runs.
+It requires all 36 verified saved checkpoints and all 6,120 replay cells, with
+the complete immutable-input receipt under `data/corrected_sampler_verified/`
+and metrics in `data/corrected_sampler_{original,fresh}/`. Comparisons join the
+historical trajectory by source, update, target, decoder and episode stream—not
+by selecting a best checkpoint. Both all-source and foreign-source summaries are
+retained. This is a joint retention/role/RNG recipe comparison on one training
+seed, not a matched-training or role-only causal intervention. Three tests cover
+the full grid, fixed endpoint arithmetic, source/budget metadata, raw-probe/input
+identity, and missing/mutated artifacts.
