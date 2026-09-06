@@ -365,3 +365,27 @@ and CPU values. General replay tolerances remain unchanged. Completion records
 separate 224 strict original mixture cells from one individually audited numerical
 cell. The prediction analysis propagates this evidence to its compact export;
 the local aggregate analysis checks it against the untouched historical table.
+
+## Corrected-sampler checkpoint reuse
+
+`run_corrected_sampler_replay.py` reads the nine completed seed-zero singleton
+runs in `/dataMeR1/phil/gfm/prodigy-roleexposure`. Their source pipeline stopped
+after training because a separate NM evaluation fingerprint ledger was missing;
+this helper neither repairs nor restarts that pipeline. It verifies all 36 saved
+100/300/900/2500 states against their training sidecars, optimizer steps, effective
+configs, source restriction and recorded training revision. It then replays all
+five classification targets, 17 decoders and both established episode streams
+on CPUs, checking exact input correspondence. Run in a separate frozen worktree:
+
+```bash
+CUDA_VISIBLE_DEVICES='' WANDB_MODE=offline \
+  /home/mhchu/miniconda3/envs/prodigy/bin/python -m \
+  scripts.experiments.setup.target_performance_mechanisms.run_corrected_sampler_replay \
+  --output log/target_mechanisms/corrected_sampler_replay_20260906 --threads 4
+```
+
+Use `--dry-run` before launch. The corrected selector shuffles before truncation,
+changing retention and role order jointly and consuming randomness differently.
+This reuse is not the matched three-seed factorial, a role-only causal comparison,
+or an untouched-target validation. Require all 6,120 rows before comparing with
+the historical trajectories; do not choose checkpoints on target performance.
