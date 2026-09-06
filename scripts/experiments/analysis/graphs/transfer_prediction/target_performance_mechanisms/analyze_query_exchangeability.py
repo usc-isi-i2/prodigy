@@ -91,6 +91,14 @@ def analyze(root, output, baseline_path):
         raise ValueError("requires a complete non-smoke experiment")
     cells, groups, audits = (pd.read_csv(root/f"{name}.csv") for name in ("cells", "groups", "audits"))
     validate_frames(cells, groups, audits)
+    independent = json.loads((root/"independent_verification.json").read_text())
+    if not independent["complete"] or not independent["every_cyclic_assignment_enumerated_from_raw_logits"]:
+        raise ValueError("missing independent raw-tensor enumeration")
+    if (independent["actual_input_batches_rehashed"], independent["baseline_tensor_cells"],
+        independent["identity_groups_enumerated"], independent["whole_input_tensor_witnesses_rechecked"]) != (36, 144, len(groups), 36):
+        raise ValueError("incomplete independent tensor verification")
+    if independent["maximum_group_statistic_error"] > 1e-10:
+        raise ValueError("independent enumeration differs")
     if (done["cells"], done["identity_group_rows"], done["suffix_audits"], done["whole_input_audits"]) != (
         len(cells), len(groups), len(audits), 36):
         raise ValueError("completion inventory mismatch")
@@ -125,6 +133,7 @@ def analyze(root, output, baseline_path):
         **{c+"_max": float(audits[c].max()) for c in ("suffix_logit_error", "suffix_post_error",
             "whole_pre_error", "whole_logit_error", "whole_vs_suffix_error")},
         "frozen_suffix_all_bit_exact": True, "all_cohort_and_loss_decompositions_recomputed": True,
+        "independent_raw_tensor_enumeration_verified": True,
         "scope": "36 actual training-prefix batches, not held-out NM or target transfer",
         "symmetrized_bound_not_realized_input_ceiling": True}
     (output/"query_exchangeability_validation.json").write_text(json.dumps(report, indent=2)+"\n")

@@ -513,6 +513,32 @@ active gradient parameters, not as a measured zero gradient. Run the downstream
 `analyze_support_identity_gradients` module only on a complete non-smoke export;
 prefix gradient changes are not evidence of a transfer improvement.
 
+## Exact-input query-context exchangeability
+
+After the completed support-gradient cache/probe phases, run on an idle isolated
+Tucker worktree in the prodigy environment:
+
+```bash
+python -m scripts.experiments.setup.target_performance_mechanisms.run_query_exchangeability \
+  --inputs <completed-support-identity-input-cache> \
+  --probes <completed-support-identity-full-probe-root> \
+  --run-dir <new-output-directory> --threads 4 --smoke
+```
+
+The smoke checks Hong Kong seed 0's first actual batch at both saved checkpoints
+and normalization modes. After it passes, omit `--smoke` and use a new output for
+all nine models/four input batches. Use tmux for the full CPU run; GPUs are hidden.
+Then run `verify_query_exchangeability --run <completed-full-output>` to enumerate
+every cyclic score assignment independently from the raw tensors and recheck
+whole-input witnesses. No full source-graph reload, optimizer updates, or target
+labels are involved. Existing outputs are never overwritten.
+
+Retrieve only `DONE.json`, `protocol.json`, `cells.csv`, `groups.csv`, `audits.csv`
+and `independent_verification.json` into the analysis data directory. Run the
+downstream `analyze_query_exchangeability` module to validate/rebuild summaries.
+Large `whole_input_witnesses.pt` stays on Tucker. The symmetrized bound is not a
+bound on one arbitrary original finite context assignment.
+
 ## Bounded CPU numerical replay
 
 `audit_update_numerics.py` diagnoses update reproducibility without changing

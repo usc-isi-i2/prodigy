@@ -5,7 +5,17 @@ instructions are in `scripts/experiments/setup/target_performance_mechanisms/`.
 The [summary figure](figures/target_bottlenecks.png) contrasts target-input signal
 and full-model performance on the original and fresh episode streams.
 
-Latest matched learning-signal test:
+Latest actual-input ambiguity test:
+[FINDINGS_QUERY_EXCHANGEABILITY.md](FINDINGS_QUERY_EXCHANGEABILITY.md) verifies
+context exchange at the embedding and whole-graph levels. Hong Kong's
+symmetrized query-ambiguity floor is .390 versus measured loss 2.346; original
+context assignments have negligible average advantage, while unique-query
+identities remain poorly predicted. This is a symmetrized experiment, not a
+finite-input ceiling or a causal percentage of transfer explained.
+`analyze_query_exchangeability` validates the full export and independent
+raw-tensor enumeration.
+
+Matched learning-signal test:
 [FINDINGS_SUPPORT_GRADIENTS.md](FINDINGS_SUPPORT_GRADIENTS.md) completes 432
 no-update probes on 36 exact consumed input batches. Identity-specific soft
 support labels are less harmful than the matched control for Hong Kong/COVID,

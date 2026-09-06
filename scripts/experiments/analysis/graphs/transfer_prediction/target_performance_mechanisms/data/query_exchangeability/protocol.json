@@ -1,0 +1,15 @@
+{
+  "revision": "b3f0c47a1d10b8e822144dee1c1e223d584957f9",
+  "inputs": "/dataMeR1/phil/gfm/prodigy-mechanisms-role/log/support_identity_inputs_v2_20260906",
+  "probes": "/dataMeR1/phil/gfm/prodigy-mechanisms-role/log/support_identity_full_20260906",
+  "smoke": false,
+  "threads": 4,
+  "torch": "2.0.1+cu118",
+  "permutation": "one cyclic shift per identity within episode",
+  "whole_graph_inputs": "first actual batch of every model; both checkpoints and normalization modes",
+  "whole_graph_atol": 0.0001,
+  "whole_graph_rtol": 1e-05,
+  "no_optimizer_updates": true,
+  "no_target_outcomes": true,
+  "population_bound_assumption": "conditionally exchangeable context draws; code has no anchor argument, not proof of PRNG independence"
+}
