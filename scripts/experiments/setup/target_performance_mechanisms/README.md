@@ -322,7 +322,8 @@ CUDA_VISIBLE_DEVICES='' WANDB_MODE=offline \
   /home/mhchu/miniconda3/envs/prodigy/bin/python -m \
   scripts.experiments.setup.target_performance_mechanisms.run_mixture_complementarity \
   --inputs scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/data/mixture_complementarity_inputs \
-  --output log/target_mechanisms/mixture_complementarity_20260906 --threads 4
+  --numerical-audit scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/data/mixture_numerical_audit/audit.json \
+  --output log/target_mechanisms/mixture_complementarity_20260906_v2 --threads 4
 ```
 
 Use `--dry-run` before loading weights or data. Equal-probability constituent
@@ -343,7 +344,7 @@ updating a worktree whose training or replay is still active:
 CUDA_VISIBLE_DEVICES='' WANDB_MODE=offline \
   /home/mhchu/miniconda3/envs/prodigy/bin/python -m \
   scripts.experiments.setup.target_performance_mechanisms.analyze_mixture_predictions \
-  --replay /dataMeR1/phil/gfm/prodigy-mechanisms-mixtures/log/target_mechanisms/mixture_complementarity_20260906 \
+  --replay /dataMeR1/phil/gfm/prodigy-mechanisms-complement/log/target_mechanisms/mixture_complementarity_20260906_v2 \
   --output log/target_mechanisms/mixture_complementarity_predictions_20260906 --threads 4
 ```
 
