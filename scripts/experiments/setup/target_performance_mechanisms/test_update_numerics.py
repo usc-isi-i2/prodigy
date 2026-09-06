@@ -1,8 +1,10 @@
 import unittest
 
 import torch
+from types import SimpleNamespace
 
-from .audit_update_numerics import differences
+from models.general_gnn import SingleLayerGeneralGNN
+from .audit_update_numerics import differences, index_select_decode
 
 
 class NumericalComparisonTests(unittest.TestCase):
@@ -20,6 +22,18 @@ class NumericalComparisonTests(unittest.TestCase):
     def test_missing_tensor_is_not_an_exact_match(self):
         with self.assertRaisesRegex(ValueError, "inventory"):
             differences({"weight": torch.tensor(1.)}, {})
+
+    def test_index_select_preserves_both_decoder_forward_paths(self):
+        rng = torch.Generator().manual_seed(424)
+        model = SimpleNamespace(cos=torch.nn.CosineSimilarity(dim=1), logit_scale=torch.tensor(2.3))
+        x, y = torch.randn(7, 16, generator=rng), torch.randn(3, 16, generator=rng)
+        for bipartite in (False, True):
+            edges = torch.tensor([[0, 0, 2, 2, 2, 6], [0, 1, 0, 0, 2, 1]])
+            if not bipartite:
+                edges[1] += len(x)
+            a = SingleLayerGeneralGNN.decode(model, x, y, edges, bipartite)
+            b = index_select_decode(model, x, y, edges, bipartite)
+            self.assertTrue(torch.equal(a, b))
 
 
 if __name__ == "__main__":

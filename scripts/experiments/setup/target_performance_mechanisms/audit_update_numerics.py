@@ -9,7 +9,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
-from types import SimpleNamespace
+from types import MethodType, SimpleNamespace
 
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
 os.environ.setdefault("WANDB_MODE", "offline")
@@ -30,10 +30,10 @@ from .verify_member_training import model_digest
 BASE = Path(__file__).parent / "member_configs/00_memberctl_ukr_rus_lowest_sorted_s0.yaml"
 
 
-def synthetic_dataset():
+def synthetic_dataset(feature_dim=768):
     rng = torch.Generator().manual_seed(7193)
     n = 320
-    x = torch.randn(n, 256, generator=rng)
+    x = torch.randn(n, feature_dim, generator=rng)
     x = torch.nn.functional.normalize(x, dim=1)
     edges = torch.tensor([(i, (i + j) % n) for i in range(n) for j in range(1, 25)]).T.contiguous()
     graph = Data(x=x, edge_index=edges, y=torch.zeros(n).long(),
@@ -74,7 +74,16 @@ def indexed_gradient_audit():
     return rows
 
 
-def replay_updates(trainer, template, batches, rng_state, folder, deterministic, hook):
+def index_select_decode(self, input_x, label_x, metagraph_edge_index, edgelist_bipartite=False):
+    """Same cosine decoder, replacing only its two advanced indexed reads."""
+    ind0, ind1 = metagraph_edge_index[0], metagraph_edge_index[1]
+    if edgelist_bipartite:
+        return (self.cos(input_x.index_select(0, ind0), label_x.index_select(0, ind1)) + 1) / 2
+    x = torch.cat((input_x, label_x))
+    return self.cos(x.index_select(0, ind0), x.index_select(0, ind1)) * self.logit_scale.exp()
+
+
+def replay_updates(trainer, template, batches, rng_state, folder, deterministic, hook, decoder_index_select=False):
     torch.use_deterministic_algorithms(deterministic)
     model, optimizer = copy.deepcopy(template)
     parameter_ids = {id(v) for v in model.parameters()}
@@ -86,6 +95,18 @@ def replay_updates(trainer, template, batches, rng_state, folder, deterministic,
                             resume_step=0, logging_dir=str(folder))
     if hook:
         configure_trainer(shell)
+    forward_parity = []
+    if decoder_index_select:
+        original_decode = model.decode
+        def checked_decode(module, *args, **kwargs):
+            value = index_select_decode(module, *args, **kwargs)
+            with torch.no_grad():
+                exact = torch.equal(value.detach(), original_decode(*args, **kwargs))
+            if not exact:
+                raise ValueError("index-select decoder changed forward values")
+            forward_parity.append(exact)
+            return value
+        model.decode = MethodType(checked_decode, model)
     trainer._restore_rng_state(rng_state)
     initial = model_digest(model.state_dict())
     rows, tensors = [], []
@@ -111,7 +132,8 @@ def replay_updates(trainer, template, batches, rng_state, folder, deterministic,
                      "gradients_sha256": model_digest(gradients), "weights_sha256": model_digest(state)})
         if batch_hash(cached) != expected_input:
             raise ValueError("production forward changed the retained input")
-    return {"initial_sha256": initial, "deterministic": deterministic, "hook": hook, "steps": rows}, tensors
+    return {"initial_sha256": initial, "deterministic": deterministic, "hook": hook, "steps": rows,
+            "decoder_index_select": decoder_index_select, "decoder_forward_parity": forward_parity}, tensors
 
 
 def main():
@@ -119,6 +141,9 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--steps", type=int, default=4)
     parser.add_argument("--threads", type=int, default=8)
+    parser.add_argument("--feature-dim", type=int, choices=(256, 768), default=768)
+    parser.add_argument("--initial-checkpoint", type=Path)
+    parser.add_argument("--localize-decoder", action="store_true")
     args = parser.parse_args()
     if not 2 <= args.steps <= 8 or not 1 <= args.threads <= 8 or args.output.exists() or torch.cuda.is_available():
         raise ValueError("invalid bounded CPU diagnostic or existing output")
@@ -126,7 +151,7 @@ def main():
     torch.set_num_threads(args.threads)
     primitive = indexed_gradient_audit()
     torch.use_deterministic_algorithms(False)
-    dataset = synthetic_dataset()
+    dataset = synthetic_dataset(args.feature_dim)
     params = get_params(["--config", str(BASE), "--device", "123", "--workers", "0",
                          "--dataset_len_cap", str(args.steps), "--checkpoint_steps", "0",
                          "--prefix", "synthetic_update_audit_only", "--timestamp", "fixed",
@@ -134,25 +159,35 @@ def main():
     seed_everything(params)
     trainer = TrainerFS(dataset, params)
     initial_rng = trainer._rng_state_dict()
+    if args.initial_checkpoint:
+        actual = torch.load(args.initial_checkpoint, map_location="cpu", weights_only=False)
+        if actual["_training_checkpoint"]["completed_steps"] != 0:
+            raise ValueError("only an actual step-zero training checkpoint is allowed")
+        trainer.model.load_state_dict(actual["model"], strict=True)
+        trainer.optimizer.load_state_dict(actual["_training_checkpoint"]["optimizer"])
+        initial_rng = actual["_training_checkpoint"]["rng"]
     template = copy.deepcopy((trainer.model, trainer.optimizer))
     batches = [clone_batch(b) for b in trainer.train_dataloader]
     if len(batches) != args.steps:
         raise ValueError("incomplete fixed synthetic workload")
     torch.save(batches, args.output / "synthetic_batches.pt")
     rows, comparisons = [], []
-    for deterministic in (False, True):
+    modes = [("default", False, False), ("deterministic", True, False)]
+    if args.localize_decoder:
+        modes.append(("decoder_index_select", False, True))
+    for mode, deterministic, decoder_index_select in modes:
         reference = None
         for hook in (False, True):
             for repeat in (0, 1):
-                name = f"{'deterministic' if deterministic else 'default'}_{'hook' if hook else 'plain'}_{repeat}"
+                name = f"{mode}_{'hook' if hook else 'plain'}_{repeat}"
                 result, tensors = replay_updates(trainer, template, batches, initial_rng, args.output / name,
-                                                 deterministic, hook)
+                                                 deterministic, hook, decoder_index_select)
                 result["name"] = name
                 rows.append(result)
                 if reference is None:
                     reference = tensors
                 else:
-                    comparisons.append({"name": name, "against": f"{'deterministic' if deterministic else 'default'}_plain_0",
+                    comparisons.append({"name": name, "against": f"{mode}_plain_0",
                         "steps": [{"step": i + 1, **{key: differences(a[key], b[key])
                                   for key in ("logits", "gradients", "weights")}}
                                   for i, (a, b) in enumerate(zip(reference, tensors, strict=True))]})
@@ -162,6 +197,8 @@ def main():
         raise ValueError("numerical audit did not hold inputs and initial weights fixed")
     receipt = {"complete": True, "research_model_result": False, "synthetic_workload": True,
                "target_data_used": False, "torch_version": torch.__version__, "threads": args.threads,
+               "synthetic_input_dimension": args.feature_dim,
+               "actual_initial_checkpoint": str(args.initial_checkpoint) if args.initial_checkpoint else None,
                "revision": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
                "indexed_gradient": primitive, "replays": rows, "comparisons": comparisons}
     (args.output / "DONE.json").write_text(json.dumps(receipt, indent=2) + "\n")
