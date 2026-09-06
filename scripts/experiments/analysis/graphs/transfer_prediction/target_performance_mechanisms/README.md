@@ -117,3 +117,16 @@ initial-to-terminal changes. This is not an arbitrary new random baseline or a
 retroactive initial reference for the separate historical nine-source trajectories.
 The primary contrast is unchanged. Four additional tests cover exact seed/weight,
 complete-grid, finite-metric, and cached-input matching.
+
+The exploratory exact-readout-weight swaps are analyzed by
+`analyze_readout_interventions.py`, after the completed primary and exact-initial
+analyses above. It requires all 48 hybrids on five targets, 17 decoders, and two
+streams (8,160 rows), the exact saved-state manifest, and the separate tensor/
+input/upstream-output audit under `data/readout_audit/`. Reference metrics come
+from the same training seed's verified terminal or exact initial state, depending
+on swap direction. Raw and pre-readout probes must remain unchanged. Both direct
+swap effects and background-by-readout interactions retain every policy and seed;
+the rest-of-network background is not described as an encoder-only intervention.
+The secondary cue analysis checks all 1,350 hybrid/background cells and reproduces
+the existing 432 terminal cue cells before calculating paired changes. It does
+not fit query labels or equate a probe improvement with a full-model remedy.

@@ -230,3 +230,21 @@ use `--include-random` or select a checkpoint. Require complete inputs/weights
 and unchanged upstream probe outputs before interpreting readout changes.
 The full exploratory protocol is outside git in
 `../paper/planning/readout_weight_intervention_2026-09-06.md`.
+
+After both streams complete, run the independent saved-artifact audit from a
+separate frozen checkout; never update the active replay worktree:
+
+```bash
+python -m scripts.experiments.setup.target_performance_mechanisms.verify_readout_replay \
+  --interventions /dataMeR1/phil/gfm/prodigy-mechanisms-readout/log/target_mechanisms/readout_interventions_20260906 \
+  --original /dataMeR1/phil/gfm/prodigy-mechanisms-readout/log/target_mechanisms/readout_replay_original_20260906 \
+  --fresh /dataMeR1/phil/gfm/prodigy-mechanisms-readout/log/target_mechanisms/readout_replay_fresh_20260906 \
+  --output log/target_mechanisms/readout_verification_unique_name
+```
+
+All terminal/initial/cue reference roots are overrideable. The auditor rereads
+every saved hybrid and both donors, verifies all tensor identities, and compares
+153,600 upstream prediction tensors exactly (ten decoders, 32 batches, 480 cells).
+It also exports the planned saved-logit cue comparisons for all hybrids and their
+backgrounds. Its receipt is written only after every target and both streams
+pass; no query labels are used for fitting or selecting a comparison.

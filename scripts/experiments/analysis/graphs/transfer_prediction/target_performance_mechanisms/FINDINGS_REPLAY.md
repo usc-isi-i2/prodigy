@@ -664,6 +664,30 @@ and predicts downstream performance without looking at query labels.
 Evidence: `data/member_initial_cells.csv`, `data/member_initial_to_terminal_{changes,summary}.csv`,
 `data/member_initial_validation.json`, and `data/member_initial_input_validation.json`.
 
+## Directional readout-weight diagnostic: running, not yet interpreted
+
+The exploratory follow-up recorded at 10:16 UTC replaces only
+`layer_list.0.reset_mlp_{c,m}.{weight,bias}` between each model's exact initial
+and terminal states, in both directions. All 48 hybrid states were constructed
+and tensor-verified without new training. Replay started at 10:17:55 UTC in
+`/dataMeR1/phil/gfm/prodigy-mechanisms-readout`, frozen revision `d804bad0`, tmux
+`mechanism-readout-reference`, four CPU threads with GPUs hidden. Both streams
+and all five targets/17 decoders are required before interpreting its 8,160 rows.
+
+An independent auditor in `/dataMeR1/phil/gfm/prodigy-mechanisms-verify` at
+`86777996` rereads saved weights and checks exact donor tensors, all cached
+inputs, and every unchanged upstream probe prediction. Source/policy/seed effects,
+reverse swaps, full-model tradeoffs, and cue comparisons are all declared, not
+chosen after a favorable result. The updated analysis code is `870b5b75`.
+
+The concurrently developed sampler correction (`ece9cb28` in the separate
+training-role-exposure worktree) shuffles unique endpoints **before truncation**.
+It changes retention and role assignment jointly, rather than being a role-only
+change. Its ordered selection law corresponds to the joint uniform/shuffled
+policy here, but RNG coupling and full-run protocols differ; do not treat those
+new lattice runs as exact numerical replicas or merge them into historical cells.
+That worktree and its active `rolefix-lattice-0906` jobs remain untouched.
+
 ## Artifacts and runtime provenance
 
 - Local branch/worktree: `codex/target-performance-mechanisms`,
