@@ -969,6 +969,26 @@ reduced-input check `data/control_update_numerics.json` (runtime `e1ec61e6`), an
 dimension workloads: 24 replays, 216 tensor comparisons and 32 decoder parity checks.
 The latter aggregates comparisons, not independent training seeds.
 
+### Full-run numerical stress test — running, no final outcomes yet
+
+The four-arm eight-update Hong Kong seed-2 smoke passes at `294014f1`: all 32
+complete inputs match the recorded free-control prefix, initial model/optimizer/
+RNG match, default repeats diverge, and deterministic model/optimizer states
+match exactly. The full 2500-update experiment launched at 17:54 UTC in isolated
+Tucker worktree `/dataMeR1/phil/gfm/prodigy-mechanisms-numfull`, runtime `376f5af3`.
+Its four controls are two default and two deterministic executions, all with
+the same free-audit hook and full per-step input matching to the earlier run.
+All five targets and both streams follow the complete training validity gate.
+
+Hong Kong seed 2 was selected because it had the largest prior AUC drift; this
+is a **selected stress case**, not a population variability estimate or four new
+training seeds. The prediction is exact deterministic saved states and target
+logits. No favorable target or minimum default-repeat AUC difference is selected.
+The finite pipeline and declared analysis retain unfavorable or null outcomes.
+Numerical training variability does not invalidate measurements of the already
+saved fixed models or the frozen parameter-swap interventions. It limits claims
+that same-seed retraining alone provides an exactly controlled comparison.
+
 ## Complete mixture complementarity diagnostic — verified
 
 The historical 54-model singleton/pair/LOO lattice has aggregate metrics but did

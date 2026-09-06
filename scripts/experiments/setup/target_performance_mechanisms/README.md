@@ -471,3 +471,18 @@ parameter contract, and exact full prefix input hashes before replay. It keeps
 the 512-GiB available-host / 200-GiB shared-memory guards and restricts every
 sampled real node to Ukraine. No target evaluation is run. The completed compact
 receipts are analyzed downstream; full batches stay on Tucker.
+
+`run_numerical_controls.py` extends the question to a prespecified full-run stress
+case: the completed Hong Kong seed-2 free control. It copies that run's resolved
+parameters, checks initial model/optimizer/RNG and every complete training input,
+and crosses default/deterministic computation with two execution repeats each.
+The existing shared CPU supervisor runs four trainers (eight tensor threads and
+two loader workers each), with GPUs hidden and unchanged resource guards.
+
+In a new frozen worktree, run the module with `--run-dir <new-smoke-output>
+--smoke-steps 8 --dry-run`, then without `--dry-run`. After smoke verification,
+use a different `--run-dir <new-full-output> --evaluate` for all 2500 updates.
+`--reference` overrides the completed training root; the source/seed remain fixed
+by the declared stress-case contract. Evaluation follows the full validity gate
+and saves all five targets, both streams, and exact decoder-logit comparisons.
+It does not tune a target checkpoint or alter production training defaults.

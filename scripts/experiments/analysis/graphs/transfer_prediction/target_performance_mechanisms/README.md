@@ -13,6 +13,14 @@ Run as a module with `--receipts <synthetic-receipt> <real-input-receipt>` to re
 `data/control_numerics_{steps,summary}.csv` and the validation JSON. These are CPU
 reproducibility diagnostics, not target-performance results or extra seeds.
 
+The prespecified full-run stress-case analysis is `analyze_numerical_controls.py`.
+It requires the complete four-control `data/numerical_controls_verified/` receipts,
+including state and logit comparisons, plus both `data/numerical_controls_{original,fresh}/`
+replay exports. It reports every repeat contrast and the two earlier controls
+without counting same-seed executions as independent seeds. A failed determinism
+prediction is retained as an outcome; incomplete or input-mismatched runs fail
+the validity gate. The full-run stress test currently has no final results.
+
 Reproduce the completed five-target summary:
 
 ```bash
