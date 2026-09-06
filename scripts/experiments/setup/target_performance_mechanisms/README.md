@@ -300,3 +300,34 @@ gates pass and verifies both target streams against established cached inputs.
 separately with explicit training/output/reference paths. All runtime files and
 full training-input fingerprints stay private on Tucker until compact evidence
 is collected. No public push is required.
+
+## Complete mixture-complementarity diagnostic
+
+`prepare_mixture_complementarity.py` snapshots and validates the historical
+54-model, five-target, seed-zero CLS lattice. It requires all singletons, pairs,
+and leave-one-out compositions at update 2,500, with matching checkpoint/source
+inventories. Snapshot data and file digests live in the analysis folder's
+`data/mixture_complementarity_inputs/`; newer role-corrected runs are not included.
+
+`run_mixture_complementarity.py` verifies all 54 finite, architecture-compatible
+checkpoint states, then replays all 45 mixtures on both complete fixed test
+streams using the existing stage replay. It requires all 7,650 rows, 450 full-
+model cells, exact cached-input checks, and the 225 original-stream reference
+parity checks before publishing a completion receipt. No new model training or
+GPU is needed. Run it in a separate frozen Tucker worktree, never the worktree
+holding the active readout-training job:
+
+```bash
+CUDA_VISIBLE_DEVICES='' WANDB_MODE=offline \
+  /home/mhchu/miniconda3/envs/prodigy/bin/python -m \
+  scripts.experiments.setup.target_performance_mechanisms.run_mixture_complementarity \
+  --inputs scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/data/mixture_complementarity_inputs \
+  --output log/target_mechanisms/mixture_complementarity_20260906 --threads 4
+```
+
+Use `--dry-run` before loading weights or data. Equal-probability constituent
+averaging is the declared primary comparison; equal-logit averaging is secondary.
+No target-selected weights or checkpoints. Foreign pair and foreign LOO results
+stay separate. Extra ensemble compute, one training seed, and prior target
+inspection limit the interpretation: this is not a causal interference test or
+an untouched-domain prediction study.
