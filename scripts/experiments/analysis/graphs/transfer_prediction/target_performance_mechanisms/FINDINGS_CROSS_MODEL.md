@@ -127,9 +127,12 @@ The existing three-seed support-to-label intervention gives a concrete fixed-mod
 mechanism behind part of that problem. The cross-family reversal defines the
 boundary: the larger encoder/training-data interaction is still unresolved.
 
-Next work should be a paper draft and one targeted utility or falsification test,
-not another exhaustive diagnostic sweep. Small SAMGPT margins are a lead for a
-cheap representation-geometry check, not yet evidence of representation collapse.
+The targeted utility test is now complete in `FINDINGS_READOUT_SELECTION.md`:
+support-only selection improves both families' panel means, but does not recover
+the best fixed rule per target. The actual manuscript is outside Git at
+`/Users/philipp/projects/gfm/paper/transfer-prediction/mechanism-draft-2026-09-06/manuscript.md`.
+Do not expand into another diagnostic sweep. Small SAMGPT margins alone are not
+evidence of representation collapse; the optional geometry check is deferred.
 
 ## Artifacts
 

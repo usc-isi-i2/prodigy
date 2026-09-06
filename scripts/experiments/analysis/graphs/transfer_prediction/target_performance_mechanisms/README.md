@@ -1,13 +1,24 @@
 # Target-performance mechanisms
 
+Completed practical follow-up: [FINDINGS_READOUT_SELECTION.md](FINDINGS_READOUT_SELECTION.md).
+The same twenty supports select a readout that beats every fixed rule's
+three-target panel mean in both families and both streams; it does not beat
+the best rule chosen separately per target. Rebuild with
+`analyze_support_readout_selection` and `plot_support_readout_selection`.
+[FINDINGS_FIXED_SUPPORT_CONTEXT.md](FINDINGS_FIXED_SUPPORT_CONTEXT.md) closes the
+same-account neighborhood control: greater hongkong sensitivity persists, but
+eight draws do not materially repair its political-transfer gap.
+
 Latest publication-facing comparison:
 [FINDINGS_CROSS_MODEL.md](FINDINGS_CROSS_MODEL.md). The nine-source, five-target
 SAMGPT/PRODIGY replay matches target episodes and prototype readouts. Political
 source rankings reverse across trained families; TwiBot source rankings can reverse
 within PRODIGY when the readout changes. Run `analyze_cross_model_matching.py`
 to rebuild the source contrasts and two figures from `data/cross_model_matching/`.
-The focused manuscript spine is outside Git at
-`/Users/philipp/projects/gfm/paper/planning/target_transfer_paper_spine_2026-09-06.md`.
+The substantive manuscript draft is outside Git at
+`/Users/philipp/projects/gfm/paper/transfer-prediction/mechanism-draft-2026-09-06/manuscript.md`.
+`plot_support_path_publication` renders the three-seed political effect and its
+twibot20 counterexample from the completed evidence.
 
 Start with [FINDINGS_REPLAY.md](FINDINGS_REPLAY.md). Setup and operational
 instructions are in `scripts/experiments/setup/target_performance_mechanisms/`.

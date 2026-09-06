@@ -602,6 +602,28 @@ completed output `log/crossmatch_full_v2_20260906`. Large embeddings/predictions
 stay on Tucker. Compact results are in the matching analysis leaf under
 `data/cross_model_matching/`.
 
+## Support-only readout selection
+
+With the complete matched-family export available, run the fixed twenty-support
+selection test from an isolated, CPU-only Tucker worktree:
+
+```bash
+python -u -m scripts.experiments.setup.target_performance_mechanisms.run_support_readout_selection \
+  --matched /dataMeR1/phil/gfm/prodigy-mechanisms-crossmatch/log/crossmatch_full_v2_20260906 \
+  --output <new-output-directory> --threads 4
+```
+
+`--smoke` uses one hongkong source and one original covid-political batch in both
+families. Full completion requires 1,260 metric cells and 180 family/source/
+target/stream cells. The ten balanced support folds choose by held-out AUC;
+ties prefer raw, encoder prototype, then full inference. All fixed comparators
+receive the same support-only RMS margin scaling. No new encoder passes,
+pretraining or extra labels are needed; cached transductive context is inherited.
+The completed runtime is `992354e9`, output `log/readout_selection_full_20260906`
+in the crossmatch worktree. Retrieve compact JSON/CSV exports into the analysis
+leaf's `data/support_readout_selection/`; predictions stay on Tucker. Rebuild
+with `analyze_support_readout_selection` and `plot_support_readout_selection`.
+
 ## Bounded CPU numerical replay
 
 `audit_update_numerics.py` diagnoses update reproducibility without changing
