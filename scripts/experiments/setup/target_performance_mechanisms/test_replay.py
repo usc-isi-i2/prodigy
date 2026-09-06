@@ -1,4 +1,5 @@
 import unittest
+import random
 
 import torch
 from torch_geometric.data import Data, Batch
@@ -6,6 +7,7 @@ from torch_geometric.data import Data, Batch
 from experiments.layers import get_module_list
 from models.general_gnn import SingleLayerGeneralGNN
 from .replay import batch_hash, bn_mode, clone_batch, episode_probe, intervene, trace_stages
+from .audit_source_episodes import member_variants, raw_probe_stats
 
 
 def fixture():
@@ -36,6 +38,22 @@ def fixture():
 
 
 class ReplayTest(unittest.TestCase):
+    def test_member_policies_hold_walks_and_selected_sets_fixed(self):
+        walk = torch.arange(12).repeat(6)
+        policies = member_variants({99: list(range(7))}, {99: walk}, random.Random(41))
+        self.assertEqual(policies["production_sorted"].tolist(), [list(range(7))])
+        self.assertEqual(set(policies["same_members_shuffled_roles"][0].tolist()), set(range(7)))
+        self.assertEqual(len(set(policies["uniform_walk_endpoints"][0].tolist())), 7)
+        with self.assertRaises(RuntimeError):
+            member_variants({99: list(range(1, 8))}, {99: walk}, random.Random(41))
+
+    def test_nm_raw_probe_known_perfect_case(self):
+        features = torch.eye(30)[:, None, :].expand(-1, 7, -1)
+        result = raw_probe_stats(features)
+        self.assertEqual(result["raw_prototype_nm_accuracy"], 1.0)
+        self.assertEqual(result["raw_support_query_cosine"], 1.0)
+        self.assertEqual(result["raw_prototype_margin"], 1.0)
+
     def test_trace_exact_parity_and_restore(self):
         model, batch = fixture()
         digest = batch_hash(batch)

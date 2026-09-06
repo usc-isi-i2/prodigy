@@ -57,3 +57,26 @@ All are mechanistic sensitivity tests, not causal estimates of why a training
 source won. Their main purpose is to choose a controlled follow-up. Runtime data,
 cached batches, and large trace exports remain in Tucker's ignored log tree;
 compact results/findings belong in the name-aligned analysis folder.
+
+## Exact-source sampling audit
+
+`audit_source_episodes` uses the production graph builder and member sampler on
+the stored all-nine `static_train` graph. It simulates 256 new episodes per source
+by default, recording eligible anchors, rejection frequency, duplicate members,
+feature/role statistics, and raw-feature NM probes. It does **not** claim to
+recover the historical multiworker training stream. The sorted member policy,
+same retained members with shuffled support/query roles, and uniformly selected
+unique walk endpoints are compared on the same successful anchors and walks.
+Context summaries use a fresh sample of production-policy members, not a
+counterfactual topology. No shared graph/checkpoint artifacts are modified.
+
+```bash
+python -m scripts.experiments.setup.target_performance_mechanisms.audit_source_episodes \
+  --output log/target_mechanisms/source_audit_unique_name --dry-run
+```
+
+Run on Tucker CPU, with its own worktree and tmux session. Graph preprocessing is
+memory-intensive; check host RAM and `/dev/shm` before execution. The graph is
+memory-mapped and only the training adjacency is preprocessed. Runtime `.pt`
+files contain exact simulated member IDs and corresponding feature rows; these
+can support target-to-sampled-source coverage diagnostics later.
