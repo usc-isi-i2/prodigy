@@ -3,7 +3,8 @@
 2026-09-06 UTC. Exploratory, training seed 0. This is not a causal source-ranking
 claim or a completed ICLR result. All five classification targets, a fresh-episode
 replication, matched-pair stage replay, input probes, source coverage, and the
-targeted metagraph control are complete. Controlled retraining is running; its
+targeted metagraph control, and all-nine-source training trajectories are complete.
+Controlled retraining is running; its
 outcomes are not available yet.
 
 ## What changed our next experiment
@@ -124,10 +125,53 @@ fingerprints on every target. All probes again fit only episode supports.
 | Election neighborhood coherence | .9863 | .9767 |
 | Election best full specialist | .9909 | .9872 |
 
-TwiBot's best full donor changes from Ukraine to Midterm on the fresh stream;
+TwiBot's best full donor changes from Ukraine to Election2020 on the fresh stream;
 the Ukraine/TwiBot singleton Facebook ordering also changes. Do not present those
 rankings as stable conclusions. These are two episode streams from the same
 domains and frozen training seed, not independent training or domain replications.
+
+### Training trajectories distinguish underuse from deterioration
+
+All nine historical seed-0 specialists are replayed at steps 100, 300, 900, and
+2,500 on both cached episode streams. This is a complete 360-cell full-model
+grid (6,120 diagnostic rows), not target-selected checkpoints. All 36 checkpoint
+digests match between streams; terminal checkpoint metrics match the prior
+replays, and every cached input tensor hash matches the established reference.
+There is no saved historical step-0 checkpoint: the separate random encoder is
+**not** a verified matched initialization for these trajectories.
+
+Mean AUC change from step 100 to 2,500 across the nine source models:
+
+| Target / stage | Original episodes | Fresh episodes |
+|---|---:|---:|
+| COVID Political: pooled S + ridge | +.2285 | +.2146 |
+| COVID Political: full model | +.2130 | +.2049 |
+| Facebook: pooled S + ridge | +.2188 | +.2335 |
+| Facebook: learned U + ridge | +.2210 | +.2225 |
+| Facebook: full model | +.1681 | +.1691 |
+| TwiBot: pooled S + ridge | +.0472 | +.0496 |
+| TwiBot: learned U + ridge | −.0273 | −.0365 |
+| TwiBot: full model | −.0779 | −.0809 |
+
+Facebook improves for **all nine sources at all three stages on both streams**,
+but still falls short of the raw-center probe. Thus its current deficit is not
+evidence of progressive deterioration between steps 100 and 2,500. The input
+signal is available but inadequately used by this trained architecture/protocol.
+
+TwiBot shows a different trajectory. Pooled-S decodability improves for eight of
+nine sources on each stream, while full-model AUC declines for eight of nine.
+Learned-U decodability declines for eight sources on the original stream and all
+nine on fresh episodes. **Ukraine is the only source whose full-model TwiBot AUC
+improves on both streams** (+.0513/+.0397). This localizes a reproducible
+training-associated mismatch later in the computation; it is not a causal
+decomposition of stage AUCs or proof of information destruction. Intermediate
+curves can be nonmonotonic and are all retained, not used for model selection.
+
+Election also improves strongly (mean full-model changes +.3559/+.3622), while
+suspension remains near its current bio-only floor (−.0037/−.0031). These remain
+one training seed on five datasets. Evidence: `data/trajectory_cells.csv`,
+`data/trajectory_endpoint_summary.csv`, `data/trajectory_validation.json`, and
+`data/trajectory_input_validation.json`; figure `figures/training_stage_changes.png`.
 
 ### Suspension: test the input restriction, not just another source mixture
 
@@ -395,6 +439,15 @@ detail alone. The negative result is useful: it removes one plausible distractio
   while it runs. All GPUs are hidden from these processes.
 - Fresh-episode matched-pair stage replay: all 28 baseline cells complete in the
   main mechanism worktree at `4fc6c7bd`, `fresh_pair_stage_cpu_20260906`.
+- All-nine-source, four-checkpoint trajectories on both episode streams:
+  `trajectory_{original,fresh}_20260906` in the main mechanism worktree, frozen
+  revision `3c88bdbfeafacc49464afbacea8250ddf673d9b1`, four CPU threads. Both
+  `DONE` markers and all checkpoint/input/terminal-reference gates passed.
+- Finite training-to-evaluation continuation is waiting in audit worktree tmux
+  `mechanism-member-eval`, frozen revision `c23bee34`. It requires all 24 CPU
+  training validity gates, then evaluates original and fresh episodes and checks
+  all cached tensors against established references. It will not treat the smoke
+  experiment as a research result. Output: `member_evaluation_20260906`.
 - The 24-arm member-selection intervention (two sources × four policies × three
   training seeds) is implemented at `5e0a3537`. All 24 lightweight tests and a
   four-policy, three-update toy CPU integration passed on Tucker. These are
