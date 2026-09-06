@@ -452,3 +452,22 @@ CUDA_VISIBLE_DEVICES="" WANDB_MODE=offline OMP_NUM_THREADS=8 OPENBLAS_NUM_THREAD
 Analyze a completed, verified grid with
 `scripts.experiments.analysis.graphs.transfer_prediction.target_performance_mechanisms.analyze_episode_cardinality`
 using `--results <run-directory> --output <analysis-data-directory>`.
+
+## Bounded CPU numerical replay
+
+`audit_update_numerics.py` diagnoses update reproducibility without changing
+production defaults or completed models. In an isolated Tucker worktree, invoke
+the module with `--output <new-directory> --steps 4 --threads 8 --feature-dim 768
+--localize-decoder --initial-checkpoint <actual-step-zero-training-state>`.
+It runs default/deterministic/decoder-only-index-select computation, plain and
+with the free audit hook, twice each. It caches four synthetic NM batches and
+compares complete logits, gradients and state after every update. Replacement
+decoder forwards must match original forwards exactly.
+
+Add `--real-training-input-audit <completed-Ukraine-seed0-constraint_inputs.jsonl.gz>`
+to load the real merged source artifact with the original 2500-batch/two-worker
+contract. This mode requires the actual initial checkpoint, original resume
+parameter contract, and exact full prefix input hashes before replay. It keeps
+the 512-GiB available-host / 200-GiB shared-memory guards and restricts every
+sampled real node to Ukraine. No target evaluation is run. The completed compact
+receipts are analyzed downstream; full batches stay on Tucker.

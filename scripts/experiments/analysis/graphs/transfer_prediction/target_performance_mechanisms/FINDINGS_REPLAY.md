@@ -10,6 +10,10 @@ The subsequent 18-model readout-training intervention is also complete. Its
 Facebook full-model consistency prediction fails despite positive readout-probe
 effects in every pair on both streams. A separate same-seed control audit finds
 substantial cross-launch drift, documented below rather than called replication.
+A bounded numerical audit now localizes a sufficient source of CPU update drift
+to the cosine decoder's repeated advanced indexing, on fixed synthetic inputs
+and hash-matched real training inputs with the actual initial weights. Its
+historical target-AUC contribution remains unquantified.
 
 ## What changed our next experiment
 
@@ -874,12 +878,14 @@ A read-only audit of all six pairs at updates 0/100/2500 establishes:
   full-input hashing hook and constraint observer; these are not an independently
   demonstrated explanation for the drift.
 
-The cross-launch cause remains unresolved; numerical nondeterminism, unrecorded
-worker/context state, or other unrecorded execution/input differences must not
-be presented as established causes. The **new** paired full-input audit supports
-the within-experiment contrast, but does not repair the missing historical audit
-or prove deterministic optimization. These are three seeds on already-inspected
-targets, not untouched-domain confirmation.
+A numerical source of update drift is now demonstrated in the bounded test below.
+Its quantitative contribution to the cross-launch AUC changes remains unresolved;
+unrecorded historical worker/context differences have not been excluded. The
+**new** paired full-input audit establishes input matching, but does not establish
+deterministic optimization: the paired contrast can still include numerical
+execution variability. These are three seeds on already-inspected targets, not
+untouched-domain confirmation. Do not silently replace the failed primaries or
+claim that the input-matched pairs isolate a noise-free intervention effect.
 
 Evidence: `data/readout_training_{cells,changes,primary,summary}.csv`,
 `data/readout_training_validation.json`, `data/readout_training_control_reproduction.csv`,
@@ -895,6 +901,73 @@ activated child selected `/home/mhchu/miniconda3/bin/python`, which lacks PyG.
 The corrected launch explicitly invokes the `prodigy` environment's Python;
 the original failure log is preserved with `_failed_environment.log`. The
 experiment code, smoke validation, and declared training protocol are unchanged.
+
+### Decoder-localized CPU update nondeterminism — controlled diagnostic
+
+On Tucker's actual PyTorch 2.0.1+cu118 environment with eight CPU threads, a
+fixed repeated-index gradient primitive varies across identical executions.
+The production S/U/M model also drifts on four fixed synthetic NM batches.
+The stronger localization test uses **768-dimensional inputs and the exact
+Ukraine seed-0 initial model and AdamW state**, with the production 30-way,
+3-support, 4-query, batch-four architecture/loss. Twelve replays cross three
+numerical modes with plain/free-audit-hook execution and two repetitions each.
+All inputs and initial model digests match; no target-test data or labels are used.
+
+| Numerical mode | First logits | First gradients / updated weights | All four updates across plain/hook repeats |
+|---|---|---|---|
+| Default production indexing | Bit-exact | Differ; max 2.16e-7 / .003437 | Not exact |
+| Deterministic algorithms | Bit-exact | Bit-exact | All logits, gradients and model-state tensors exact |
+| Default mode; only two decoder reads use `index_select` | Bit-exact | Bit-exact | All logits, gradients and model-state tensors exact |
+
+Every decoder replacement forward is also checked against the original decoder
+on the same tensors: **16/16 bit-exact**. Default plain-versus-plain logit drift
+is .06163 by update four (.06744 is the largest across all three default
+comparisons). The first weight drift occurs despite gradient differences of
+only about 2e-7; it is an observed optimizer amplification, not a prediction
+of its eventual target-AUC effect. The free audit hook is not necessary for drift.
+
+This has a concrete library-level explanation. Advanced-index autograd dispatches
+to indexed accumulation; the pinned CPU float implementation uses parallel
+atomic additions when deterministic algorithms are disabled and serial
+accumulation when enabled. Addition order can change floating-point results.
+[PyTorch 2.0.1 autograd](https://github.com/pytorch/pytorch/blob/v2.0.1/torch/csrc/autograd/FunctionsManual.cpp#L4514-L4521),
+[CPU indexing kernel](https://github.com/pytorch/pytorch/blob/v2.0.1/aten/src/ATen/native/cpu/IndexKernel.cpp#L140-L166).
+The decoder-only intervention localizes a sufficient source in this workload;
+it does not prove that every other operation is deterministic on every graph,
+device, thread count, or software version.
+
+The prespecified **real-source confirmation also succeeds** at runtime `bf18f2d2`.
+The first four Ukraine NM training batches hash-identically to the completed
+free-control input audit, after restoring its actual step-zero model, optimizer,
+sampler and RNG and keeping the original 2500-batch/two-worker contract. Every
+sampled real node belongs to Ukraine. Across twelve replays, default first
+predictions match but gradients differ by up to 3.30e-7 and first updated
+parameters by .003478. Plain-versus-plain logits differ by .31551 at update four.
+The largest model-state difference (.26061) is a metagraph BatchNorm running
+variance, **not a learned weight**. Both stabilizations again give bit-exact
+logits, gradients and complete model state at every update, including hook/plain
+comparisons. Their two reference trajectories also have identical digests.
+All 16 decoder replacement forward checks pass on these real batches.
+
+The bounded loader emits worker-abort messages during early iterator teardown,
+after collecting the four batches. The complete full-input hash checks pass
+before replay, all twelve replay results complete, and the sampler/loader
+processes have exited. The original log is retained; this is not a failed input
+fetch or a silently omitted replay. No further loader inputs are used.
+
+No global production defaults, completed weights, user jobs or historical scores
+were modified. This is a reproducibility repair prerequisite, **not a new transfer
+remedy or stand-alone ICLR contribution**. The quantitative .09347 historical
+AUC difference is still not explained by a four-update test. These real inputs
+match the newer free control, whose historical predecessor lacks full input
+hashes; do not retroactively claim that predecessor's tensors were verified.
+
+Evidence: `data/control_decoder_numerics.json` (runtime `555a230a`), the earlier
+reduced-input check `data/control_update_numerics.json` (runtime `e1ec61e6`), and
+`data/control_real_input_numerics.json` (runtime `bf18f2d2`). The validated
+`data/control_numerics_{steps,summary}.csv` / validation JSON covers both full-
+dimension workloads: 24 replays, 216 tensor comparisons and 32 decoder parity checks.
+The latter aggregates comparisons, not independent training seeds.
 
 ## Complete mixture complementarity diagnostic — verified
 

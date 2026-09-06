@@ -5,6 +5,14 @@ instructions are in `scripts/experiments/setup/target_performance_mechanisms/`.
 The [summary figure](figures/target_bottlenecks.png) contrasts target-input signal
 and full-model performance on the original and fresh episode streams.
 
+`analyze_update_numerics.py` validates the complete fixed-input decoder-localization
+receipts in `data/control_{decoder,real_input}_numerics.json`. It checks all
+12 replays per workload, initialization/input hashes, mode identities, decoder
+forward parity, and agreement between tensor digests and reported differences.
+Run as a module with `--receipts <synthetic-receipt> <real-input-receipt>` to rebuild
+`data/control_numerics_{steps,summary}.csv` and the validation JSON. These are CPU
+reproducibility diagnostics, not target-performance results or extra seeds.
+
 Reproduce the completed five-target summary:
 
 ```bash
