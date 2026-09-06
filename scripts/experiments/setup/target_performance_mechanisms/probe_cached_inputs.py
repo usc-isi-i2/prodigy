@@ -22,6 +22,10 @@ def detailed_summaries(batch, raw, topology, text):
     counts = torch.bincount(groups, minlength=len(centers)).float().clamp_min(1)
     avg_norm = torch.zeros(len(centers)).scatter_add_(0, groups, norm) / counts
     nonzero = torch.zeros(len(centers)).scatter_add_(0, groups, (norm > 1e-8).float()) / counts
+    unit_sum = torch.zeros(len(centers), graph.x.shape[1]).index_add_(0, groups, F.normalize(graph.x[mask], dim=1))
+    valid_count = torch.zeros(len(centers)).scatter_add_(0, groups, (norm > 1e-8).float())
+    pairwise = (unit_sum.square().sum(1) - valid_count) / (valid_count * (valid_count - 1)).clamp_min(1)
+    pairwise[valid_count < 2] = 0
     return {
         "sample_nodes": topology[:, 0], "sample_edges": topology[:, 1],
         "center_outdegree": topology[:, 2], "center_indegree": topology[:, 3],
@@ -30,6 +34,8 @@ def detailed_summaries(batch, raw, topology, text):
         "center_context_cosine": text[:, 2],
         "context_nonzero_fraction": nonzero, "context_avg_norm": avg_norm,
         "context_coherence": text[:, 1] / avg_norm.clamp_min(1e-8),
+        "context_pairwise_cosine": pairwise,
+        "has_incoming_edge": (topology[:, 3] > 0).float(),
     }
 
 

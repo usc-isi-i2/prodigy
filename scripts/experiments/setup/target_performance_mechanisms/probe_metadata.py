@@ -23,8 +23,8 @@ FIELDS = ("acc_age", "friends_count", "listed_count", "followers_count", "favour
 
 def metadata_features(frame):
     numbers = frame[list(FIELDS)].apply(pd.to_numeric, errors="coerce")
-    values = torch.from_numpy(numbers.fillna(0).to_numpy()).float().clamp_min(0).log1p()
-    missing = torch.from_numpy(numbers.isna().to_numpy()).float()
+    values = torch.from_numpy(numbers.fillna(0).to_numpy(copy=True)).float().clamp_min(0).log1p()
+    missing = torch.from_numpy(numbers.isna().to_numpy(copy=True)).float()
     verified = frame["verified"].astype(str).str.strip().str.lower().map({"true": 1., "false": 0., "1": 1., "0": 0., "1.0": 1., "0.0": 0.})
     return torch.cat([values, torch.tensor(verified.fillna(0).to_numpy())[:, None].float()], 1), torch.cat([missing, torch.tensor(verified.isna().to_numpy())[:, None].float()], 1)
 

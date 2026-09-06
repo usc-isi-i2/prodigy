@@ -82,7 +82,13 @@ class ReplayTest(unittest.TestCase):
         torch.testing.assert_close(detail["context_avg_norm"], torch.ones(8))
         torch.testing.assert_close(detail["context_mean_norm"], torch.ones(8))
         torch.testing.assert_close(detail["context_coherence"], torch.ones(8))
+        torch.testing.assert_close(detail["context_pairwise_cosine"], torch.zeros(8))
         self.assertTrue(all(torch.isfinite(x).all() for x in detail.values()))
+        for start in graph.ptr[:-1].tolist():
+            graph.x[start + 2, 0] = 2
+        raw, topology, text = input_summaries(batch)
+        detail = detailed_summaries(batch, raw, topology, text)
+        torch.testing.assert_close(detail["context_pairwise_cosine"], torch.ones(8))
 
     def test_meta_projection_bias_is_degree_scaled_and_control_removes_only_excess(self):
         layer = MetaGNNLayer(2, 8, heads=2, batch_norm=False).eval()
