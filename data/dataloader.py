@@ -409,17 +409,22 @@ class NeighborTask(TaskBase):
         node_idx = self.neighbor_sampler.random_walk(node_idx, self.direction)
         if node_idx.numel() == 0:
             return None
-        unique_node_idx = torch.unique(node_idx)
-        if unique_node_idx.size(0) >= num_member:
-            return unique_node_idx[:num_member].tolist()
+        # torch.unique sorts node ids.  The collator assigns the first n_shot
+        # members to support and the remainder to query, so returning this tensor
+        # directly made low-id neighbors systematically become supports.  Shuffle
+        # before truncation to make role assignment exchangeable.
+        unique_nodes = torch.unique(node_idx).tolist()
+        rng.shuffle(unique_nodes)
+        if len(unique_nodes) >= num_member:
+            return unique_nodes[:num_member]
         if self.sampling_strategy == "replacement":
-            sampled = unique_node_idx.tolist()
+            sampled = unique_nodes
             while len(sampled) < num_member:
                 sampled.append(rng.choice(sampled))
             return sampled[:num_member]
         return None
 
-    def _sample_center_members_disjoint(self, center, num_member, forbidden):
+    def _sample_center_members_disjoint(self, center, num_member, forbidden, rng):
         """Sample unique positives while preventing cross-label target collisions."""
         node_idx = torch.full(
             (num_member * 20,), int(center), dtype=torch.long
@@ -427,8 +432,10 @@ class NeighborTask(TaskBase):
         node_idx = self.neighbor_sampler.random_walk(node_idx, self.direction)
         if node_idx.numel() == 0:
             return None
+        candidates = torch.unique(node_idx).tolist()
+        rng.shuffle(candidates)
         members = []
-        for node in torch.unique(node_idx).tolist():
+        for node in candidates:
             node = int(node)
             if node not in forbidden:
                 members.append(node)
@@ -436,13 +443,13 @@ class NeighborTask(TaskBase):
                 return members
         return None
 
-    def _build_disjoint_task(self, centers, num_member):
+    def _build_disjoint_task(self, centers, num_member, rng):
         centers = [int(center) for center in centers]
         forbidden = set(centers)
         task = {}
         for center in centers:
             members = self._sample_center_members_disjoint(
-                center, num_member, forbidden
+                center, num_member, forbidden, rng
             )
             if members is None:
                 return None
@@ -535,7 +542,7 @@ class NeighborTask(TaskBase):
                 )
                 if chosen is None:
                     continue
-            task = self._build_disjoint_task(chosen, num_member)
+            task = self._build_disjoint_task(chosen, num_member, rng)
             if task is not None:
                 self.last_center_sampling_attempts = attempt
                 return task
