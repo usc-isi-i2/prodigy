@@ -205,3 +205,28 @@ python -m scripts.experiments.setup.target_performance_mechanisms.finish_member_
 Remove `--dry-run` to start the finite continuation. Existing outputs are never
 overwritten; a failed dependency stops with a preserved `pipeline.json` report.
 The two replay logs and outputs remain underneath that unique output directory.
+
+### Exact readout-weight intervention (exploratory, no training)
+
+After the completed member-policy and exact-initialization analyses,
+`build_readout_interventions.py` constructs two hybrids for every one of the
+24 matched models. It swaps only `layer_list.0.reset_mlp_{c,m}.{weight,bias}`:
+initial readout into terminal background, and terminal readout into initial
+background. All other model tensors, including buffers and downstream weights,
+must remain exactly equal to their declared background. This is not a claim
+about the parameterless U operation or an additive decomposition of training.
+
+```bash
+python -m scripts.experiments.setup.target_performance_mechanisms.build_readout_interventions \
+  --verified-training /dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/verified \
+  --output log/target_mechanisms/readout_interventions_unique_name --threads 4 --dry-run
+```
+
+Remove `--dry-run` to construct the 48 frozen states, preserving all parents.
+The output contains the exact tensor-provenance manifest and a `model_list.tsv`
+accepted by the existing replay. Evaluate all five targets, `--variants baseline`,
+`--device 123 --threads 4`, and offsets 0 and 100003 in distinct outputs. Do not
+use `--include-random` or select a checkpoint. Require complete inputs/weights
+and unchanged upstream probe outputs before interpreting readout changes.
+The full exploratory protocol is outside git in
+`../paper/planning/readout_weight_intervention_2026-09-06.md`.
