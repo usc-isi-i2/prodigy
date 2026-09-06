@@ -258,6 +258,15 @@ def get_params(argv=None):
     args.add_argument("-shot", "--n_shots", default=3, type=int) # if not zeroshot, how many shots do we want in the training dataset?
     args.add_argument("-qry", "--n_query", default=24, type=int)
     args.add_argument(
+        "--track_training_user_roles",
+        default=False,
+        type=str2bool,
+        help=(
+            "For neighbor-matching training, write exact per-node anchor/support/query "
+            "exposure counts to the run state directory."
+        ),
+    )
+    args.add_argument(
         "--neighbor_sampling_strategy",
         default="strict",
         choices=["strict", "replacement"],
