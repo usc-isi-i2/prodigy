@@ -1,0 +1,22 @@
+{
+  "smoke": false,
+  "targets": [
+    "covid_political",
+    "election2020",
+    "facebook_page_reference",
+    "twibot20",
+    "ukr_rus_suspended"
+  ],
+  "samgpt_repository": "/dataMeR1/phil/gfm/samgpt-source-lattice",
+  "samgpt_revision": "7bda99145c1b70d9887a2af325f824cb92933eb8",
+  "checkpoint_update": 500,
+  "seed": 39,
+  "source_graph_views_matched_to_prodigy": false,
+  "encoder": "native full-graph frozen base GCN, no downstream prompt fitting",
+  "native_metric_tolerances": {
+    "roc_auc_mean": 0.0001,
+    "accuracy_mean": 0.001
+  },
+  "accuracy_tolerance_note": "Initial 1e-4 gate stopped on one of 3072 decisions (0.000326); retain all discrepancies, allow 0.001 accuracy error, keep AUC gate unchanged.",
+  "new_training": false
+}

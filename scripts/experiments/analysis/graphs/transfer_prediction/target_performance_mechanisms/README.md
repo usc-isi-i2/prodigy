@@ -1,5 +1,14 @@
 # Target-performance mechanisms
 
+Latest publication-facing comparison:
+[FINDINGS_CROSS_MODEL.md](FINDINGS_CROSS_MODEL.md). The nine-source, five-target
+SAMGPT/PRODIGY replay matches target episodes and prototype readouts. Political
+source rankings reverse across trained families; TwiBot source rankings can reverse
+within PRODIGY when the readout changes. Run `analyze_cross_model_matching.py`
+to rebuild the source contrasts and two figures from `data/cross_model_matching/`.
+The focused manuscript spine is outside Git at
+`/Users/philipp/projects/gfm/paper/planning/target_transfer_paper_spine_2026-09-06.md`.
+
 Start with [FINDINGS_REPLAY.md](FINDINGS_REPLAY.md). Setup and operational
 instructions are in `scripts/experiments/setup/target_performance_mechanisms/`.
 The [summary figure](figures/target_bottlenecks.png) contrasts target-input signal

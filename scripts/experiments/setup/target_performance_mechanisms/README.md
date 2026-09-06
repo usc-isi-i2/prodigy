@@ -539,6 +539,69 @@ downstream `analyze_query_exchangeability` module to validate/rebuild summaries.
 Large `whole_input_witnesses.pt` stays on Tucker. The symmetrized bound is not a
 bound on one arbitrary original finite context assignment.
 
+## Same-account natural support-context control
+
+`run_fixed_support_context` separates target graph sampling from model replay.
+Use a new dedicated Tucker worktree with CPU-only execution and four threads.
+First run `--phase cache --output <new-smoke-cache> --smoke --dry-run`, then
+without `--dry-run`. This rebuilds the production political target sampler and
+checks one original batch plus one fresh draw around the same support centers.
+Then run `--phase evaluate --cache <new-smoke-cache> --output <new-smoke-eval>
+--smoke`; both Ukraine/Hong Kong seed-0 controls must reproduce original
+predictions and query representations exactly.
+
+For the full campaign, omit `--smoke` and use new cache and evaluation output
+directories. In tmux, run the cache phase and only after success the evaluation
+phase. The full cache contains ten target/stream plans, each with 32 input batches
+and eight support-context draws (original plus seven fresh). All six verified
+original-member-policy controls at checkpoint 2500 use those same contexts.
+There are no new labeled support accounts, no query resampling, and no training
+updates. Eight-pass averaging costs additional inference compute.
+
+After completion, `verify_fixed_support_context --cache <full-cache> --run
+<full-eval>` rehashes all 2560 saved support-draw batches, repeats the query and
+center-preservation checks, and independently recomputes prediction metrics and
+variances. Run this verifier from a worktree containing it without changing any
+still-running runtime. It refuses incomplete campaigns and existing receipts.
+Retrieve the compact evaluation JSON/episode CSV, independent receipt, and cache
+`plans.json` into `data/fixed_support_context/` under the matching analysis leaf;
+bulk support contexts and predictions remain on Tucker. The downstream
+`analyze_fixed_support_context` module retains the complete 540-metric grid and
+reports the six prespecified political source-variance comparisons, including
+failures. Ensemble NLL improvement over mean single-draw NLL is a Jensen
+inequality consequence, not an empirical primary success criterion.
+
+## Matched SAMGPT / PRODIGY target decisions
+
+The completed focused replay reuses nine historical source specialists, five
+targets and both cached 128-episode streams. It runs SAMGPT's native frozen base
+encoder in a separate process to avoid its top-level `models` import conflicting
+with PRODIGY. Native AUC is checked to 1e-4, accuracy to .001, and every discrepancy
+is retained. The initial stricter accuracy gate stopped on one of 3072 decisions;
+the failed attempt remains separate from the completed rerun.
+
+From an isolated Tucker worktree with GPUs hidden, invoke:
+
+```bash
+python -u -m scripts.experiments.setup.target_performance_mechanisms.run_cross_model_matching \
+  --samgpt-root /dataMeR1/phil/gfm/samgpt-source-lattice \
+  --plans /dataMeR1/phil/gfm/prodigy-mechanisms-fixedctx/log/fixedctx_cache_full_20260906/plans.json \
+  --output <new-output-directory> --threads 4
+```
+
+`--smoke` uses two models and one target; `--embeddings <complete-native-export>`
+reuses a previous native export. Full completion is 45 native embedding cells and
+290 matched metric cells. The existing 24 examples are retained. Both learned
+families share the prototype rule; PRODIGY's full-model output and raw 768/50-dim
+prototypes are separate conditions. Source sampled views, objectives, update
+budgets and encoder graph context remain different. This is not a pure
+architecture intervention or full SAMGPT downstream prompt adaptation.
+
+Runtime `47b89335`, worktree `/dataMeR1/phil/gfm/prodigy-mechanisms-crossmatch`,
+completed output `log/crossmatch_full_v2_20260906`. Large embeddings/predictions
+stay on Tucker. Compact results are in the matching analysis leaf under
+`data/cross_model_matching/`.
+
 ## Bounded CPU numerical replay
 
 `audit_update_numerics.py` diagnoses update reproducibility without changing
