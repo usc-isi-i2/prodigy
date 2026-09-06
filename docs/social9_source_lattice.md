@@ -42,3 +42,11 @@ The gate covers a large specialist (`covid19_twitter`), a heterogeneous pair
 eight-source leave-COVID-out mixture. Inspect training and validation curves,
 per-source validation losses, throughput, GPU utilization, early-stop steps,
 NaNs, and worker failures before releasing the corresponding full pass.
+
+Evaluation covers 270 frozen linear-probe classification cells (54 models by
+five labeled targets) and 324 repaired static-link cells (54 by six eligible
+targets). Static LP uses 2,000 held-out positives, degree-matched negatives,
+validation-locked score orientation, both-endpoint cosine scoring, and explicit
+leakage and endpoint-sensitivity gates. `mixture_scaling.aggregate_lattice`
+refuses to emit final TSVs unless every model, checkpoint, offline W&B history,
+and evaluation cell is present and valid.
