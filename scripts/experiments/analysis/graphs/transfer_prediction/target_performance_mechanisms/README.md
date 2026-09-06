@@ -134,3 +134,9 @@ The additional center-branch cue was declared before reading swap outcomes, afte
 the existing exact-initialization table showed center features already declining
 while pooled features improved. The original three cue stages are retained. The
 576 initial-to-terminal cue differences separate these parallel encoder branches.
+
+The full swap replay and exact-output audit are complete. After reproducing the
+analysis, `plot_readout_interventions.py` shows representation-probe versus
+full-model changes for restoration and reverse implantation. Both figures keep
+every policy/seed and both episode streams; the complete tables retain all five
+targets. A probe improvement is not presented as an end-to-end improvement.

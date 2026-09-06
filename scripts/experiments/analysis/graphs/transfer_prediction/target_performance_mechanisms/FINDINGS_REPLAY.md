@@ -670,7 +670,7 @@ and predicts downstream performance without looking at query labels.
 Evidence: `data/member_initial_cells.csv`, `data/member_initial_to_terminal_{changes,summary}.csv`,
 `data/member_initial_validation.json`, and `data/member_initial_input_validation.json`.
 
-## Directional readout-weight diagnostic: running, not yet interpreted
+## Directional readout-weight diagnostic: complete, source-dependent effects
 
 The exploratory follow-up recorded at 10:16 UTC replaces only
 `layer_list.0.reset_mlp_{c,m}.{weight,bias}` between each model's exact initial
@@ -678,19 +678,83 @@ and terminal states, in both directions. All 48 hybrid states were constructed
 and tensor-verified without new training. Replay started at 10:17:55 UTC in
 `/dataMeR1/phil/gfm/prodigy-mechanisms-readout`, frozen revision `d804bad0`, tmux
 `mechanism-readout-reference`, four CPU threads with GPUs hidden. Both streams
-and all five targets/17 decoders are required before interpreting its 8,160 rows.
+and all five targets/17 decoders completed by 10:39 UTC: 8,160 rows, 480 full-model
+cells. There is no new training, random replacement, or target-selected checkpoint.
 
 An independent auditor in `/dataMeR1/phil/gfm/prodigy-mechanisms-verify` at
-`86777996` rereads saved weights and checks exact donor tensors, all cached
-inputs, and every unchanged upstream probe prediction. Source/policy/seed effects,
+`212ba556` reread saved weights and checked exact donor tensors, all cached
+inputs, and every unchanged upstream probe prediction. It completed by 10:42 UTC.
+All 48 saved states match their exact donors; all 320 cached input batches match;
+153,600 unchanged upstream prediction-tensor comparisons are bit-exact.
+Source/policy/seed effects,
 reverse swaps, full-model tradeoffs, and cue comparisons are all declared, not
-chosen after a favorable result. The updated analysis code is `870b5b75`.
+chosen after a favorable result. The completed analysis code is `7780ddf6`.
 At 10:33 UTC, before calculating any swap effects, the secondary cue analysis
 was extended to include the already-exported center branch. It retains all
 original stages and adds 450 cue cells (1,800 total), plus 576 exact-initial-to-
 terminal cue differences. This amendment follows the completed baseline branch
 audit; it is not represented as preceding those baseline outcomes. The 8,160-row
-swap grid and original directional prediction are unchanged.
+swap grid and original directional prediction are unchanged. All 1,800 cue cells
+have 128 valid episodes, and the previous 432 terminal cue cells reproduce.
+
+**The predicted universal TwiBot readout rescue fails.** Under the original
+lowest-ID/sorted policy, restoring the exact initial readout improves Ukraine's
+TwiBot readout probe in all three seeds on both streams, but worsens Hong Kong's
+in all three. Means below are three-seed AUC changes, original/fresh streams:
+
+| Target/source | Restore initial readout: probe | Restore initial readout: full model | Implant trained readout in initial background: probe | Implant: full model |
+|---|---:|---:|---:|---:|
+| TwiBot / Hong Kong | −.04163/−.04579 | −.03563/−.04373 | −.00355/−.00119 | −.11374/−.10940 |
+| TwiBot / Ukraine | +.01585/+.00391 | −.03256/−.01578 | −.00748/−.00568 | +.04353/+.05258 |
+| Facebook / Hong Kong | +.08403/+.08003 | −.03017/−.02270 | −.07427/−.06940 | +.00482/+.00115 |
+| Facebook / Ukraine | +.05616/+.06617 | −.08276/−.08391 | −.04625/−.06826 | +.00278/+.00057 |
+
+These are interventions in a fixed rest-of-network background, not an additive
+decomposition of training. Restoring the readout leaves the previously observed
+center-branch degradation exactly unchanged. The TwiBot result is consistent
+with Hong Kong's trained readout partly compensating for its altered upstream
+features, whereas Ukraine's readout imposes a small additional diagnostic penalty.
+It does not identify a universal harmful component or establish causal mediation.
+
+Keeping **all four policies and all three seeds** does not erase this distinction.
+TwiBot restoration improves Ukraine's probe in 12/12 original and 10/12 fresh
+cases (mean +.01379/+.00658), but worsens Hong Kong's in 11/12 and 12/12
+(mean −.02389/−.03686). Ukraine's full model instead worsens in 12/12 original
+and 10/12 fresh cases (mean −.05055/−.03056). Hong Kong's full-model signs are
+mixed, and the reverse full-model swap has large seed/policy variation. Three
+policies sharing a training seed are not three additional independent seeds.
+
+**Facebook provides a replicated parameter-level readout penalty for this fixed
+probe, but not a model rescue.** Restoration improves the readout probe in all
+24 models on both streams; reverse implantation worsens it in all 24 on both.
+Across all policies, restoration gains average +.10459/+.10695 for Hong Kong and
++.05508/+.06568 for Ukraine. Yet all 24 full models worsen on the original stream;
+on fresh episodes all 12 Ukraine models and 7/12 Hong Kong models worsen. This
+separates probe accessibility from the learned downstream decision mechanism.
+No conclusion about information-theoretic loss follows from one fixed probe.
+
+The other targets are retained, not hidden nulls. Under the standard policy,
+restoring the initial readout reduces COVID Political probe/full AUC for both
+sources (full means: Hong Kong −.11700/−.12030, Ukraine −.17655/−.17404), and
+Election full AUC by −.30581/−.31083 and −.22603/−.21562 respectively. Suspension
+effects remain small and mixed near the weak-input baseline. This is a
+target-specific tradeoff, not a generally superior initialized readout.
+
+The added branch audit finds reduced incoming-degree cue agreement already in
+the post-convolution center branch for **all 24 models on both streams**.
+At the readout, restoring Ukraine's initial weights increases degree agreement
+under the standard policy (+.08951/+.08923); restoring Hong Kong's decreases it
+(−.13530/−.13505), matching their opposing probe effects. However, Ukraine's
+full-model degree agreement also increases (+.04157/+.06467, all three seeds),
+while full-model AUC mostly decreases. Increasing agreement with this useful cue
+is not sufficient to improve the actual classifier.
+
+Evidence: `data/readout_intervention_{cells,summary}.csv`,
+`data/readout_intervention_validation.json`, `data/readout_parameter_effects.csv`, `data/readout_cue_*.csv`,
+`data/readout_baseline_cue_changes.csv`, and exact receipts in `data/readout_audit/`.
+`figures/readout_{restoration,implant}_tradeoffs.png` shows both directions on
+Facebook/TwiBot with every seed, policy, and stream. Other targets and all 17
+decoders remain in the complete tables.
 
 The concurrently developed sampler correction (`ece9cb28` in the separate
 training-role-exposure worktree) shuffles unique endpoints **before truncation**.
@@ -698,7 +762,7 @@ It changes retention and role assignment jointly, rather than being a role-only
 change. Its ordered selection law corresponds to the joint uniform/shuffled
 policy here, but RNG coupling and full-run protocols differ; do not treat those
 new lattice runs as exact numerical replicas or merge them into historical cells.
-That worktree and its active `rolefix-lattice-0906` jobs remain untouched.
+That worktree and the user's `rolefix-lattice-0906` jobs were left untouched.
 
 ## Artifacts and runtime provenance
 
