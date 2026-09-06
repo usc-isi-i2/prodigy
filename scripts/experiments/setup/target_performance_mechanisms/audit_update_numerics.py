@@ -5,6 +5,8 @@ data or query outcomes are used. Never change completed checkpoints or defaults.
 """
 import argparse
 import copy
+import gzip
+from itertools import islice
 import json
 import os
 from pathlib import Path
@@ -20,7 +22,7 @@ import wandb
 
 from data.dataset import SubgraphDataset
 from experiments.params import get_params
-from experiments.run_single_experiment import seed_everything
+from experiments.run_single_experiment import load_dataset, seed_everything
 from experiments.sampler import NeighborSampler
 from experiments.trainer import TrainerFS
 from .readout_training_constraint import configure_trainer
@@ -74,6 +76,15 @@ def indexed_gradient_audit():
     return rows
 
 
+def check_reference_inputs(batches, path):
+    with gzip.open(path, "rt") as handle:
+        expected = [json.loads(line) for line in islice(handle, len(batches))]
+    actual = [{"step": i + 1, "batch_sha256": batch_hash(batch)} for i, batch in enumerate(batches)]
+    if actual != expected:
+        raise ValueError("real source batches do not match the completed training input audit")
+    return {"path": str(path), "steps_checked": len(actual), "all_inputs_bit_exact": True}
+
+
 def index_select_decode(self, input_x, label_x, metagraph_edge_index, edgelist_bipartite=False):
     """Same cosine decoder, replacing only its two advanced indexed reads."""
     ind0, ind1 = metagraph_edge_index[0], metagraph_edge_index[1]
@@ -120,8 +131,12 @@ def replay_updates(trainer, template, batches, rng_state, folder, deterministic,
         truth, logits, graph = model(*batch)
         loss, _ = trainer.get_loss_and_acc(truth, logits)
         total = loss + trainer.get_aux_loss(graph) * trainer.parameter["attr_regression_weight"]
+        if not torch.isfinite(total).all() or not torch.isfinite(logits).all():
+            raise ValueError("non-finite numerical diagnostic")
         total.backward()
         gradients = {k: p.grad.detach().clone() for k, p in model.named_parameters() if p.grad is not None}
+        if not all(torch.isfinite(v).all() for v in gradients.values()):
+            raise ValueError("non-finite gradient")
         optimizer.step()
         if hook:
             shell.training_step_observer(step)
@@ -144,18 +159,34 @@ def main():
     parser.add_argument("--feature-dim", type=int, choices=(256, 768), default=768)
     parser.add_argument("--initial-checkpoint", type=Path)
     parser.add_argument("--localize-decoder", action="store_true")
+    parser.add_argument("--real-training-input-audit", type=Path,
+                        help="Use real Ukraine NM data; require exact prefix hashes from the completed training run.")
     args = parser.parse_args()
     if not 2 <= args.steps <= 8 or not 1 <= args.threads <= 8 or args.output.exists() or torch.cuda.is_available():
         raise ValueError("invalid bounded CPU diagnostic or existing output")
+    real = args.real_training_input_audit is not None
+    if real:
+        if not args.initial_checkpoint or args.feature_dim != 768:
+            raise ValueError("real source replay requires its actual initialization and 768-dimensional inputs")
+        mem = {line.split(':')[0]: int(line.split()[1]) for line in Path('/proc/meminfo').read_text().splitlines()}
+        shm = os.statvfs('/dev/shm')
+        if mem['MemAvailable'] < 512 * 1024**2 or shm.f_bavail * shm.f_frsize < 200 * 1024**3:
+            raise RuntimeError("insufficient host/shared-memory headroom for real source replay")
     args.output.mkdir(parents=True)
     torch.set_num_threads(args.threads)
     primitive = indexed_gradient_audit()
     torch.use_deterministic_algorithms(False)
-    dataset = synthetic_dataset(args.feature_dim)
-    params = get_params(["--config", str(BASE), "--device", "123", "--workers", "0",
-                         "--dataset_len_cap", str(args.steps), "--checkpoint_steps", "0",
-                         "--prefix", "synthetic_update_audit_only", "--timestamp", "fixed",
+    params = get_params(["--config", str(BASE), "--device", "123", "--workers", "2" if real else "0",
+                         "--dataset_len_cap", "2500" if real else str(args.steps), "--checkpoint_steps", "0",
+                         "--prefix", "numerical_update_audit_only", "--timestamp", "fixed",
                          "--state_dir", str(args.output / "state"), "--log_dir", str(args.output / "log")])
+    if real:
+        from experiments.run_shared_graph import prepare_shared_dataset
+        params['loader_start_method'] = 'spawn'
+        torch.multiprocessing.set_sharing_strategy('file_system')
+        dataset = prepare_shared_dataset(load_dataset(params))
+    else:
+        dataset = synthetic_dataset(args.feature_dim)
     seed_everything(params)
     trainer = TrainerFS(dataset, params)
     initial_rng = trainer._rng_state_dict()
@@ -166,11 +197,24 @@ def main():
         trainer.model.load_state_dict(actual["model"], strict=True)
         trainer.optimizer.load_state_dict(actual["_training_checkpoint"]["optimizer"])
         initial_rng = actual["_training_checkpoint"]["rng"]
+        if real:
+            if trainer._resume_parameter_contract() != actual['_training_checkpoint']['parameter_contract']:
+                raise ValueError("real source training parameter contract differs")
+            trainer._training_batch_sampler().load_state_dict(actual['_training_checkpoint']['train_batch_sampler'])
+            trainer._restore_rng_state(initial_rng)
     template = copy.deepcopy((trainer.model, trainer.optimizer))
-    batches = [clone_batch(b) for b in trainer.train_dataloader]
+    batches = [clone_batch(b) for b in islice(trainer.train_dataloader, args.steps)]
     if len(batches) != args.steps:
-        raise ValueError("incomplete fixed synthetic workload")
-    torch.save(batches, args.output / "synthetic_batches.pt")
+        raise ValueError("incomplete fixed workload")
+    reference_inputs = check_reference_inputs(batches, args.real_training_input_audit) if real else None
+    if real:
+        source_id = list(dataset.graph.source_graph_names).index('ukr_rus')
+        for batch in batches:
+            nodes = batch[0].global_node_ids
+            if not (dataset.graph.graph_id[nodes[nodes >= 0]] == source_id).all():
+                raise ValueError("real source replay contains another source")
+    torch.save(batches, args.output / ("real_source_batches.pt" if real else "synthetic_batches.pt"))
+    print(json.dumps({"inputs_ready": True, "real_source": real, "reference_inputs": reference_inputs}), flush=True)
     rows, comparisons = [], []
     modes = [("default", False, False), ("deterministic", True, False)]
     if args.localize_decoder:
@@ -195,9 +239,10 @@ def main():
     if len({r["initial_sha256"] for r in rows}) != 1 or not all(
             [s["input_sha256"] for s in row["steps"]] == [s["input_sha256"] for s in rows[0]["steps"]] for row in rows):
         raise ValueError("numerical audit did not hold inputs and initial weights fixed")
-    receipt = {"complete": True, "research_model_result": False, "synthetic_workload": True,
-               "target_data_used": False, "torch_version": torch.__version__, "threads": args.threads,
-               "synthetic_input_dimension": args.feature_dim,
+    receipt = {"complete": True, "research_model_result": False, "synthetic_workload": not real,
+               "target_evaluation_episodes_used": False, "torch_version": torch.__version__, "threads": args.threads,
+               "synthetic_input_dimension": None if real else args.feature_dim,
+               "real_source": "ukr_rus" if real else None, "reference_inputs": reference_inputs,
                "actual_initial_checkpoint": str(args.initial_checkpoint) if args.initial_checkpoint else None,
                "revision": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
                "indexed_gradient": primitive, "replays": rows, "comparisons": comparisons}
