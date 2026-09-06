@@ -8,6 +8,7 @@ from experiments.layers import get_module_list
 from models.general_gnn import SingleLayerGeneralGNN
 from .replay import batch_hash, bn_mode, clone_batch, episode_probe, intervene, trace_stages, meta_bias_mode
 from models.metaGNN import MetaGNNLayer
+from .probe_cached_inputs import standardized_probe
 from .audit_source_episodes import member_variants, raw_probe_stats
 
 
@@ -95,6 +96,8 @@ class ReplayTest(unittest.TestCase):
         changed[2][query] = changed[2][query].flip(1)
         for method in ("ridge", "prototype"):
             torch.testing.assert_close(episode_probe(x, batch, method), episode_probe(x, changed, method))
+        torch.testing.assert_close(standardized_probe(x, batch), standardized_probe(x, changed))
+        torch.testing.assert_close(standardized_probe(x, batch, x), standardized_probe(x, changed, x))
 
     def test_feature_shuffle_invariants(self):
         _, batch = fixture()
