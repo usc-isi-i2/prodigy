@@ -6,6 +6,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 OUTPUT_ROOT="${OUTPUT_ROOT:-${REPO_ROOT}/log/nm_cls_lattice_20260905}"
 MODEL_LIST="${OUTPUT_ROOT}/model_list.tsv"
+SPECIALIST_ROOT="${SPECIALIST_ROOT:-/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core}"
+PAIR_ROOT="${PAIR_ROOT:-/dataMeR1/phil/gfm/prodigy-nm-pairs/log/nm_pairwise_finalcore/shared_seed0_20260904/state}"
+LOO_ROOT="${LOO_ROOT:-/dataMeR1/phil/gfm/prodigy-nm-loo/log/nm_leave_one_out_finalcore/shared_seed0_20260905_retry1/state}"
 GPUS_TEXT="${GPUS:-0 1 2 3}"
 read -r -a GPU_IDS <<< "${GPUS_TEXT}"
 
@@ -25,7 +28,8 @@ PYTHON="${PYTHON:-${CONDA_PREFIX}/bin/python}"
 mkdir -p "${OUTPUT_ROOT}/results" "${OUTPUT_ROOT}/runs" "${OUTPUT_ROOT}/queue" "${OUTPUT_ROOT}/eval_state"
 cd "${REPO_ROOT}"
 "${PYTHON}" -m scripts.experiments.setup.nm_pairwise_finalcore.make_cls_lattice_model_list \
-  --output "${MODEL_LIST}"
+  --output "${MODEL_LIST}" --specialist-root "$SPECIALIST_ROOT" \
+  --pair-root "$PAIR_ROOT" --loo-root "$LOO_ROOT"
 [[ "$(($(wc -l < "${MODEL_LIST}") - 1))" == 54 ]] || { echo "model list must have 54 rows" >&2; exit 2; }
 
 for index in 0 1 2 3; do
