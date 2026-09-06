@@ -216,10 +216,11 @@ def main():
     parser.add_argument("--threads", type=int, default=4)
     parser.add_argument("--smoke", action="store_true")
     args = parser.parse_args()
+    existed = args.run_dir.exists()
     try:
         run(args)
     except BaseException:
-        if args.run_dir.exists():
+        if not existed and args.run_dir.exists():
             write_json(args.run_dir/"FAILED.json", {"error": traceback.format_exc()})
         raise
 
