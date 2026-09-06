@@ -464,6 +464,29 @@ Analyze a completed, verified grid with
 `scripts.experiments.analysis.graphs.transfer_prediction.target_performance_mechanisms.analyze_episode_cardinality`
 using `--results <run-directory> --output <analysis-data-directory>`.
 
+## Read-only audit of consumed training identities
+
+`audit_consumed_conflicts` reads the complete saved episode audits from the
+24-model member-policy campaign and nine free readout-training controls. It
+does not load the graph, sample episodes, evaluate weights, or use a GPU.
+All identities are verified against the stored hashes and original complete
+training summaries. On Tucker, from an idle dedicated worktree, run:
+
+```bash
+CUDA_VISIBLE_DEVICES="" OPENBLAS_NUM_THREADS=1 \
+  /home/mhchu/miniconda3/envs/prodigy/bin/python -m \
+  scripts.experiments.setup.target_performance_mechanisms.audit_consumed_conflicts \
+  --member-run /dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906 \
+  --readout-run /dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_training_20260906 \
+  --output <new-output-directory>
+```
+
+Rebuild the downstream validation and existing-target joins with the
+`scripts.experiments.analysis.graphs.transfer_prediction.target_performance_mechanisms.analyze_consumed_conflicts`
+module. Identity-only bounds do not apply to full graph inputs; context sizes
+are recorded, but complete context-node identities are not. The audit is an
+exploratory follow-up to already known outcomes, not a confirmatory experiment.
+
 ## Bounded CPU numerical replay
 
 `audit_update_numerics.py` diagnoses update reproducibility without changing

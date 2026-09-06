@@ -5,7 +5,15 @@ instructions are in `scripts/experiments/setup/target_performance_mechanisms/`.
 The [summary figure](figures/target_bottlenecks.png) contrasts target-input signal
 and full-model performance on the original and fresh episode streams.
 
-Latest: [FINDINGS_NATURAL_SUPPORT.md](FINDINGS_NATURAL_SUPPORT.md) tests natural,
+Latest upstream audit: [FINDINGS_CONSUMED_CONFLICTS.md](FINDINGS_CONSUMED_CONFLICTS.md)
+checks all 33 completed training-record streams, with role-specific identity
+conflicts and concrete consumed examples. Hong Kong has many more conflicting
+pseudo-labels, but the existing role-shuffle results refute a simple monotonic
+query-conflict explanation. This is exploratory, not a solved training cause.
+`analyze_consumed_conflicts` validates the records and links every existing
+policy/target contrast; six repeated control streams are not extra exposures.
+
+[FINDINGS_NATURAL_SUPPORT.md](FINDINGS_NATURAL_SUPPORT.md) tests natural,
 unmodified support replacements on all six Ukraine/Hong Kong seed controls,
 five targets and both streams. Both declared political predictions pass, but
 support-only selection is not a general remedy: it usually worsens Ukraine's
