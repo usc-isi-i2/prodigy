@@ -2,6 +2,7 @@
 import argparse
 import copy
 import gzip
+from itertools import islice
 import json
 import os
 from pathlib import Path
@@ -29,6 +30,31 @@ from .support_identity_gradients import (VARIANTS, MODES, support_plan, label_in
 
 
 DEFAULT_REFERENCE = Path("/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_training_20260906")
+
+
+class PrefixBatches:
+    """Consume only a fixed prefix while allowing normal DataLoader exhaustion."""
+    def __init__(self, sampler, length):
+        self.sampler, self.length = sampler, length
+
+    def __iter__(self):
+        return islice(iter(self.sampler), self.length)
+
+    def __len__(self):
+        return self.length
+
+
+def prefix_loader(original, length):
+    # Retain the exact dataset, collator, worker assignment, worker seed creation,
+    # and underlying restored sampler. Only stop dispatching after the prefix;
+    # don't abort workers while they are returning unneeded prefetched tensors.
+    return torch.utils.data.DataLoader(original.dataset,
+        batch_sampler=PrefixBatches(original.batch_sampler, length),
+        num_workers=original.num_workers, collate_fn=original.collate_fn,
+        pin_memory=original.pin_memory, timeout=original.timeout,
+        worker_init_fn=original.worker_init_fn, multiprocessing_context=original.multiprocessing_context,
+        generator=original.generator, prefetch_factor=original.prefetch_factor,
+        persistent_workers=original.persistent_workers, pin_memory_device=original.pin_memory_device)
 
 
 def make_shell(params, state):
@@ -99,11 +125,13 @@ def export_inputs(dataset, job, output, threads):
     with gzip.open(reference, "rt") as handle:
         expected = [json.loads(next(handle)) for _ in range(4)]
     source_id = list(dataset.graph.source_graph_names).index(arm["source"])
-    iterator = iter(trainer.train_dataloader)
+    iterator = iter(prefix_loader(trainer.train_dataloader, 4))
     observed = []
     try:
-        for step in range(1, 5):
-            batch = clone_batch(next(iterator))
+        for step, original_batch in enumerate(iterator, 1):
+            if step > 4:
+                raise ValueError("prefix sampler exceeded bound")
+            batch = clone_batch(original_batch)
             record = {"step": step, "batch_sha256": batch_hash(batch)}
             if record != expected[step-1]:
                 raise ValueError("actual full training input hash differs")
@@ -113,6 +141,8 @@ def export_inputs(dataset, job, output, threads):
             torch.save(batch, output/f"batch_{step:03d}.pt")
             observed.append(record)
             del batch
+        if len(observed) != 4:
+            raise ValueError("incomplete four-batch prefix")
     finally:
         if hasattr(iterator, "_shutdown_workers"):
             iterator._shutdown_workers()
@@ -132,6 +162,7 @@ def export_inputs(dataset, job, output, threads):
         "full_prefix_hashes_verified": True, "initial_checkpoint": str(initial_path),
         "actual_trainer_reconstruction_bit_exact": True, "reference_probe": tensor_receipt(first),
         "source_members_and_contexts_verified": True, "prefix_not_full_training": True,
+        "finite_dispatch_prefix_with_normal_worker_exhaustion": True,
         "params_path": str(output/"params.json")})
     wandb.finish()
 

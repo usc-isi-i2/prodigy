@@ -9,6 +9,14 @@ from .support_identity_gradients import support_plan, label_intervention, cancel
 from .replay import batch_hash, clone_batch
 
 
+class RandomWorkerDataset(torch.utils.data.Dataset):
+    def __len__(self):
+        return 16
+
+    def __getitem__(self, i):
+        return torch.tensor([float(i), float(torch.rand(()))])
+
+
 def fixture():
     # Two episodes, three classes, three supports and two queries per class.
     ids = torch.arange(30)
@@ -28,6 +36,18 @@ def fixture():
 
 
 class SupportIdentityTests(unittest.TestCase):
+    def test_finite_prefix_preserves_spawned_worker_input_values(self):
+        from .run_support_identity_gradients import prefix_loader
+        original = torch.utils.data.DataLoader(RandomWorkerDataset(), batch_size=2, num_workers=2,
+            multiprocessing_context="spawn")
+        torch.manual_seed(7021)
+        full = list(original)
+        torch.manual_seed(7021)
+        prefix = list(prefix_loader(original, 4))
+        self.assertEqual(len(prefix), 4)
+        for a, b in zip(full, prefix):
+            torch.testing.assert_close(a, b, rtol=0, atol=0)
+
     def test_mass_and_magnitude_matched_support_only_interventions(self):
         b = fixture()
         before = batch_hash(b)
