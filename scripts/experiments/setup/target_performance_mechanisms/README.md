@@ -417,3 +417,38 @@ Copy completed compact JSON tables to the analysis folder's
 No new training or model forward is performed. This compares saved-update and
 episode budgets, not measured FLOPs or wall time. Ensembles retain 2x/8x inference
 models; results are not a causal interference test or untouched-target evidence.
+# Episode-cardinality attention diagnostic (2026-09-06)
+
+`run_episode_cardinality.py` reuses the nine historical specialists' saved
+pre-metagraph embeddings. It applies the production metagraph and cosine decoder
+under seven fixed attention/bias multiplicity conditions, without encoder passes
+or new training. Every baseline suffix and restored suffix must reproduce saved
+logits bit-exactly; cached post-metagraph embeddings must also match exactly.
+This is a multiplicity diagnostic, not an actual 30-class evaluation.
+
+The prespecified primary is joint attention-only restoration on foreign donors
+for both Facebook and TwiBot, positive and better than its reciprocal-direction
+control on both streams. The full 630-cell grid and all controls are retained.
+The prospective design is in the sibling paper planning directory:
+`planning/episode_cardinality_diagnostic_2026-09-06.md`.
+
+Run in an isolated Tucker worktree with GPUs hidden and the explicit `prodigy`
+interpreter. Add `--dry-run` first; output must not already exist.
+
+```bash
+CUDA_VISIBLE_DEVICES="" WANDB_MODE=offline OMP_NUM_THREADS=8 OPENBLAS_NUM_THREADS=1 \
+/home/mhchu/miniconda3/envs/prodigy/bin/python -m \
+  scripts.experiments.setup.target_performance_mechanisms.run_episode_cardinality \
+  --original-roots \
+    /dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/specialist_cpu_20260906 \
+    /dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/specialist_cpu_tail_20260906 \
+  --fresh-roots \
+    /dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/fresh_stage_cpu_20260906 \
+  --training-audit \
+    /dataMeR1/phil/gfm/prodigy-mechanisms-budget/log/target_mechanisms/mixture_budget_predictions_20260906/training_budget_audit.json \
+  --output log/target_mechanisms/episode_cardinality_20260906 --threads 8
+```
+
+Analyze a completed, verified grid with
+`scripts.experiments.analysis.graphs.transfer_prediction.target_performance_mechanisms.analyze_episode_cardinality`
+using `--results <run-directory> --output <analysis-data-directory>`.
