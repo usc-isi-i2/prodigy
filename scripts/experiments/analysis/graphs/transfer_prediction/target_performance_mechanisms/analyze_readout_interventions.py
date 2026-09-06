@@ -126,9 +126,9 @@ def analyze_cues(cues, manifest, cells, references, previous):
     keys = ["stream", "model_id", "decoder", "cue"]
     known_ids = set(manifest.model_id) | set(references.model_id)
     expected = {(s, m, d, c) for s in ("original", "fresh") for m in known_ids
-                for d in ("S0_pool/ridge", "U1_pre_meta/ridge", "full_model")
+                for d in ("S0_conv_center/ridge", "S0_pool/ridge", "U1_pre_meta/ridge", "full_model")
                 for c in ("center_indegree", "raw_center", "raw_context")}
-    if len(cues) != 1350 or cues.duplicated(keys).any() or set(map(tuple, cues[keys].to_numpy())) != expected:
+    if len(cues) != 1800 or cues.duplicated(keys).any() or set(map(tuple, cues[keys].to_numpy())) != expected:
         raise ValueError("incomplete hybrid-plus-background cue grid")
     if set(cues.total_episodes) != {128} or not cues.valid_episodes.between(0, 128).all():
         raise ValueError("invalid cue episode count")
@@ -138,7 +138,7 @@ def analyze_cues(cues, manifest, cells, references, previous):
     provenance = ["stream", "model_id", "decoder", "weights_sha256", "episode_fingerprint"]
     known = pd.concat([cells[cells.dataset == "twibot20"][provenance], references[references.dataset == "twibot20"][provenance]]).drop_duplicates()
     checked = cues.merge(known, on=provenance[:3], suffixes=("", "_reference"), validate="many_to_one")
-    if len(checked) != 1350 or any(not (checked[k] == checked[f"{k}_reference"]).all() for k in provenance[3:]):
+    if len(checked) != 1800 or any(not (checked[k] == checked[f"{k}_reference"]).all() for k in provenance[3:]):
         raise ValueError("cue provenance differs from validated primary results")
     prior = cues.merge(previous[keys + columns + ["valid_episodes"]], on=keys, suffixes=("", "_prior"), validate="one_to_one")
     if len(prior) != 432 or not (prior.valid_episodes == prior.valid_episodes_prior).all() or any(not np.allclose(prior[k], prior[f"{k}_prior"], atol=1e-9, rtol=0, equal_nan=True) for k in columns):
@@ -146,12 +146,26 @@ def analyze_cues(cues, manifest, cells, references, previous):
     treatment = cues.merge(manifest[["model_id", "source", "seed", "policy", "intervention", "background_model_id"]], on="model_id", validate="many_to_one")
     baseline = cues.rename(columns={"model_id": "background_model_id"})
     changes = treatment.merge(baseline, on=["stream", "background_model_id", "decoder", "cue"], suffixes=("", "_background"), validate="many_to_one")
-    if len(changes) != 864:
+    if len(changes) != 1152:
         raise ValueError("missing cue background comparison")
     for column in columns:
         changes[f"delta_{column}"] = changes[column] - changes[f"{column}_background"]
     # No missing-value imputation and no implicit conversion into a mediation claim.
     return changes
+
+
+def baseline_cue_changes(cues, arms, initial):
+    """Secondary center-branch diagnostic added before reading swap outcomes."""
+    columns = [f"mean_within_episode_{k}" for k in ("spearman", "pearson", "decision_agreement")]
+    final = cues.merge(arms[["model_id", "source", "seed", "policy", "initial_sha256"]], on="model_id", validate="many_to_one")
+    initial_ids = initial[["model_id", "seed"]].drop_duplicates()
+    reference = cues.merge(initial_ids, on="model_id", validate="many_to_one")
+    paired = final.merge(reference, on=["stream", "seed", "decoder", "cue"], suffixes=("", "_initial"), validate="many_to_one")
+    if len(paired) != 576 or not (paired.weights_sha256_initial == paired.initial_sha256).all() or not (paired.episode_fingerprint == paired.episode_fingerprint_initial).all():
+        raise ValueError("unmatched initial-to-terminal cue diagnostic")
+    for column in columns:
+        paired[f"change_0_to_2500_{column}"] = paired[column] - paired[f"{column}_initial"]
+    return paired
 
 
 def main():
@@ -194,10 +208,12 @@ def main():
     cue_changes = analyze_cues(cues, manifest, cells, references, pd.read_csv(data / "member_cue_alignment_cells.csv"))
     cues.to_csv(data / "readout_cue_cells.csv", index=False)
     cue_changes.to_csv(data / "readout_cue_changes.csv", index=False)
+    baseline_cue_changes(cues, arms, initial).to_csv(data / "readout_baseline_cue_changes.csv", index=False)
     (data / "readout_intervention_validation.json").write_text(json.dumps({"rows": len(cells), "full_model_cells": 480,
         "hybrid_models": 48, "training_seeds": [0, 1, 2], "upstream_tensor_comparisons": 153600,
         "all_initial_terminal_hybrid_digests_match": True, "all_cached_inputs_match": True,
         "cue_cells": len(cues), "cue_changes": len(cue_changes), "previous_terminal_cue_cells_reproduced": 432,
+        "center_branch_cue_added_before_swap_outcomes": True, "initial_to_terminal_cue_changes": 576,
         "query_labels_fitted": False, "causal_mediation_claim": False, "causal_additive_stage_decomposition": False,
         "exploratory_after_member_primary": True}, indent=2) + "\n")
     print(summary.loc[(slice(None), slice(None), slice(None), "lowest_sorted", "twibot20", ["U1_pre_meta/ridge", "full_model"]), :].to_string())

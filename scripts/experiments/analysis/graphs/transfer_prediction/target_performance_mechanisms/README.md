@@ -127,6 +127,10 @@ from the same training seed's verified terminal or exact initial state, dependin
 on swap direction. Raw and pre-readout probes must remain unchanged. Both direct
 swap effects and background-by-readout interactions retain every policy and seed;
 the rest-of-network background is not described as an encoder-only intervention.
-The secondary cue analysis checks all 1,350 hybrid/background cells and reproduces
+The secondary cue analysis checks all 1,800 hybrid/background cells and reproduces
 the existing 432 terminal cue cells before calculating paired changes. It does
 not fit query labels or equate a probe improvement with a full-model remedy.
+The additional center-branch cue was declared before reading swap outcomes, after
+the existing exact-initialization table showed center features already declining
+while pooled features improved. The original three cue stages are retained. The
+576 initial-to-terminal cue differences separate these parallel encoder branches.

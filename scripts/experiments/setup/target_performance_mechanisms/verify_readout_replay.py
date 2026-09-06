@@ -64,7 +64,7 @@ def cue_rows(predictions, cues, cache, metadata, stream):
     if len(predictions) != 32 or len(cues) != 32:
         raise ValueError("incomplete TwiBot cue inputs")
     result = []
-    for decoder in ("S0_pool/ridge", "U1_pre_meta/ridge", "full_model"):
+    for decoder in ("S0_conv_center/ridge", "S0_pool/ridge", "U1_pre_meta/ridge", "full_model"):
         comparisons = {key: [] for key in ("center_indegree", "raw_center", "raw_context")}
         for index, (model, cue) in enumerate(zip(predictions, cues)):
             if model["batch"] != index or cue["batch"] != index or model["batch_sha256"] != cue["batch_sha256"] or cue["batch_sha256"] != cache["batch_sha256"][index]:
@@ -152,7 +152,7 @@ def main():
             if target == "twibot20":
                 for model_id, prediction in baseline_predictions.items():
                     alignment.extend(cue_rows(prediction, cues, cache, baseline_metadata[model_id], stream))
-    if len(output_cells) != 480 or sum(r["unchanged_prediction_tensors"] for r in output_cells) != 153600 or len(alignment) != 1350:
+    if len(output_cells) != 480 or sum(r["unchanged_prediction_tensors"] for r in output_cells) != 153600 or len(alignment) != 1800:
         raise ValueError("incomplete output audit")
     args.output.mkdir(parents=True)
     (args.output / "input_validation.json").write_text(json.dumps(inputs, indent=2) + "\n")
@@ -162,7 +162,7 @@ def main():
             ["git", "rev-parse", "HEAD"], text=True).strip()}, indent=2) + "\n")
     (args.output / "cue_alignment.json").write_text(json.dumps(alignment, indent=2) + "\n")
     (args.output / "DONE").write_text("Complete exact-weight/input/upstream-output audit and saved-logit cue comparisons.\n")
-    print(json.dumps({"models": 48, "exact_upstream_tensor_comparisons": 153600, "cue_rows": 1350, "query_labels_fitted": 0}))
+    print(json.dumps({"models": 48, "exact_upstream_tensor_comparisons": 153600, "cue_rows": 1800, "query_labels_fitted": 0}))
 
 
 if __name__ == "__main__":

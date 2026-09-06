@@ -167,6 +167,7 @@ Mean AUC change from step 100 to 2,500 across the nine source models:
 | Facebook: pooled S + ridge | +.2188 | +.2335 |
 | Facebook: learned U + ridge | +.2210 | +.2225 |
 | Facebook: full model | +.1681 | +.1691 |
+| TwiBot: post-convolution center + ridge | −.0211 | −.0372 |
 | TwiBot: pooled S + ridge | +.0472 | +.0496 |
 | TwiBot: learned U + ridge | −.0273 | −.0365 |
 | TwiBot: full model | −.0779 | −.0809 |
@@ -180,9 +181,11 @@ TwiBot shows a different trajectory. Pooled-S decodability improves for eight of
 nine sources on each stream, while full-model AUC declines for eight of nine.
 Learned-U decodability declines for eight sources on the original stream and all
 nine on fresh episodes. **Ukraine is the only source whose full-model TwiBot AUC
-improves on both streams** (+.0513/+.0397). This localizes a reproducible
-training-associated mismatch later in the computation; it is not a causal
-decomposition of stage AUCs or proof of information destruction. Intermediate
+improves on both streams** (+.0513/+.0397). The post-convolution **center branch
+already declines for all nine sources on both streams**, before the learned
+readout mixes it with the improving pooled branch. This is a branch-dependent
+training-associated mismatch, not proof that the readout weights caused it, a
+causal decomposition of stage AUCs, or information destruction. Intermediate
 curves can be nonmonotonic and are all retained, not used for model selection.
 
 Election also improves strongly (mean full-model changes +.3559/+.3622), while
@@ -633,13 +636,14 @@ This does not recover the historical nine-source experiment's missing step zero.
 For the original production policy (lowest-ID members, sorted roles), mean
 TwiBot AUC changes from step 0 to 2,500 are:
 
-| Source | Pooled-S ridge, original / fresh | Learned-readout ridge, original / fresh | Full model, original / fresh |
-|---|---:|---:|---:|
-| Hong Kong | +.06597 / +.07366 | −.01372 / −.02208 | +.10783 / +.10695 |
-| Ukraine | +.04688 / +.05086 | −.02857 / −.03447 | +.08947 / +.07162 |
+| Source | Center-branch ridge, original / fresh | Pooled-S ridge, original / fresh | Learned-readout ridge, original / fresh | Full model, original / fresh |
+|---|---:|---:|---:|---:|
+| Hong Kong | −.07163 / −.07562 | +.06597 / +.07366 | −.01372 / −.02208 | +.10783 / +.10695 |
+| Ukraine | −.03199 / −.04185 | +.04688 / +.05086 | −.02857 / −.03447 | +.08947 / +.07162 |
 
-All six standard-policy models improve at pooled S and decline at the learned
-readout, on both streams. This readout decline is also present for **all twelve
+All six standard-policy models improve at pooled S and decline at both the
+post-convolution center branch and learned readout, on both streams. This
+readout decline is also present for **all twelve
 Ukraine policy/seed models** on both streams, while every one of the 24 models
 improves at pooled S. Hong Kong alternatives can partly reverse its readout
 decline: uniform retention plus shuffled roles has mean +.01381/+.01324 versus
@@ -654,9 +658,11 @@ The initial learned-readout ridge is far more stable: .7110–.7115 original and
 reference for a claim about the effect of training. The historical step-100 to
 2,500 deterioration and the new step-zero comparison answer different questions.
 
-These paired stage probes strengthen the localization to the learned
-center/mean readout representation, but do not isolate which weights cause it:
-the upstream convolution changes simultaneously, U itself is parameterless, and
+The center-branch audit materially qualifies the earlier pooled-S/readout
+contrast: the readout receives one branch whose TwiBot decodability has already
+declined and another whose decodability improved. These are parallel inputs,
+not successive layers in a simple information-loss chain. We cannot locate the
+cause in readout weights without intervention. U itself is parameterless, and
 different-stage probe AUCs are not an additive causal decomposition. We still
 need an independently validated intervention that preserves useful target cues
 and predicts downstream performance without looking at query labels.
@@ -679,6 +685,12 @@ An independent auditor in `/dataMeR1/phil/gfm/prodigy-mechanisms-verify` at
 inputs, and every unchanged upstream probe prediction. Source/policy/seed effects,
 reverse swaps, full-model tradeoffs, and cue comparisons are all declared, not
 chosen after a favorable result. The updated analysis code is `870b5b75`.
+At 10:33 UTC, before calculating any swap effects, the secondary cue analysis
+was extended to include the already-exported center branch. It retains all
+original stages and adds 450 cue cells (1,800 total), plus 576 exact-initial-to-
+terminal cue differences. This amendment follows the completed baseline branch
+audit; it is not represented as preceding those baseline outcomes. The 8,160-row
+swap grid and original directional prediction are unchanged.
 
 The concurrently developed sampler correction (`ece9cb28` in the separate
 training-role-exposure worktree) shuffles unique endpoints **before truncation**.
