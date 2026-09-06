@@ -49,6 +49,7 @@ from fixed_test_plan import (  # noqa: E402
     CHECKPOINT_STEP,
     EPISODE_COUNT,
     PROTOCOL,
+    SEEDS,
     checkpoint_path,
     physical_jobs,
 )
