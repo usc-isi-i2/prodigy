@@ -6,6 +6,7 @@ from .role_context import VARIANTS, intervene_roles, query_mask, role_prediction
 from .replay import batch_hash, clone_batch, trace_stages
 from .test_replay import fixture
 from .run_role_context import paired_counts, cohorts
+from .check_support_path_seeds import inspect_path
 
 
 class RoleContextTest(unittest.TestCase):
@@ -78,6 +79,17 @@ class RoleContextTest(unittest.TestCase):
         masks = cohorts(meta)
         self.assertEqual(masks["raw_center_context_agree"].tolist(), [False, True, False])
         self.assertEqual(masks["raw_center_context_disagree"].tolist(), [False, False, True])
+
+    def test_support_edges_change_label_side_only_in_single_meta_layer(self):
+        model, b = fixture()
+        digest = batch_hash(b)
+        with torch.no_grad():
+            values, audit = inspect_path(model, b)
+        self.assertEqual(set(values), {"baseline", "edges_support"})
+        self.assertTrue(audit["query_pre_and_post_bit_exact"])
+        self.assertTrue(audit["label_only_recomposition_bit_exact"])
+        self.assertGreater(audit["label_max_abs_change"], 0)
+        self.assertEqual(batch_hash(b), digest)
 
 
 if __name__ == "__main__":
