@@ -13,7 +13,13 @@ MPLBACKEND=Agg /opt/homebrew/bin/python3.11 \
 MPLBACKEND=Agg /opt/homebrew/bin/python3.11 \
   scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/analyze_pairs.py
 MPLBACKEND=Agg /opt/homebrew/bin/python3.11 \
+  scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/analyze_pairs.py --fresh
+MPLBACKEND=Agg /opt/homebrew/bin/python3.11 \
   scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/analyze_fresh_and_coverage.py
+MPLBACKEND=Agg /opt/homebrew/bin/python3.11 \
+  scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/analyze_fresh_interventions.py
+MPLBACKEND=Agg /opt/homebrew/bin/python3.11 \
+  scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/plot_target_bottlenecks.py
 ```
 
 The raw per-target JSONL files in `data/replay/` are copied from each target's

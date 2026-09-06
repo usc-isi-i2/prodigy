@@ -3,7 +3,8 @@
 2026-09-06 UTC. Exploratory, training seed 0. This is not a causal source-ranking
 claim or a completed ICLR result. All five classification targets, a fresh-episode
 replication, matched-pair stage replay, input probes, source coverage, and the
-targeted metagraph control are complete. Controlled retraining has not started.
+targeted metagraph control are complete. Controlled retraining is running; its
+outcomes are not available yet.
 
 ## What changed our next experiment
 
@@ -372,18 +373,23 @@ detail alone. The negative result is useful: it removes one plausible distractio
   full source graph, eight tensor threads, and four loader workers. It is not one
   of the 24 substantive models. Setup took 175 seconds; steady training took
   1.626 seconds/update. All 20 consumed steps and finite updated weights passed.
-- A 24-arm **concurrent CPU smoke only** is now running in the training worktree,
+- A 24-arm **concurrent CPU smoke only** passed in the training worktree,
   revision `75f0853f`, `member_cpu_smoke_20260906`: 20 updates per arm, six active
-  models, eight tensor threads and two loader workers each (60 total). Automatic
-  consumed-stream verification must pass before substantive training. No
-  policy-effect results exist yet. Do not update that worktree while it runs.
+  models, eight tensor threads and two loader workers each (60 total). All 24
+  finite-weight, initialization, consumed-anchor, member-set, and walk-RNG gates
+  passed. Steady throughput was 1.37–2.06 seconds/update across arms.
+  `data/cpu_concurrent_smoke_receipt.json` preserves the validity receipt.
+- Substantive 24-arm CPU training started **2026-09-06 05:52 UTC**, same frozen
+  training revision and resources, output `member_cpu_training_20260906`, tmux
+  `mechanism-member-cpu`. The prospective CPU execution amendment was recorded
+  before launch. No policy-effect results exist yet. Do not update this worktree
+  while it runs. All GPUs are hidden from these processes.
 - Fresh-episode matched-pair stage replay: all 28 baseline cells complete in the
   main mechanism worktree at `4fc6c7bd`, `fresh_pair_stage_cpu_20260906`.
 - The 24-arm member-selection intervention (two sources × four policies × three
   training seeds) is implemented at `5e0a3537`. All 24 lightweight tests and a
   four-policy, three-update toy CPU integration passed on Tucker. These are
-  implementation checks, not substantive training results. The large run is
-  awaiting an available owned GPU. A fail-closed consumed-stream verifier is
+  implementation checks, not substantive training results. A fail-closed consumed-stream verifier is
   implemented at `c4cd97aa`; its 12 combined diagnostic/verifier tests passed
   locally and on Tucker. No user GPU jobs were interrupted.
 

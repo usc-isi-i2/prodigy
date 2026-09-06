@@ -55,6 +55,8 @@ Intervention meanings:
   edges. Separates message passing from direct context pooling.
 - `zero_support_relations`: erase the +/- support-label edge channel.
 - `zero_label_text`: zero raw label-text embeddings; retains support relations.
+- `zero_support_and_label_text`: erase both prompt-label channels. Erasing only
+  support relations does not guarantee chance when label text is still present.
 - `bn_batch_*`: use current batch moments at the selected BN layers, without
   updating weights or running buffers. **Transductive diagnostic**: includes
   test-query covariates and neighboring episodes in the batch. This is not a
@@ -140,3 +142,41 @@ its artifacts are not research results. The substantive budget remains 2500.
 
 The prospective hypothesis, estimands, evaluation panel and validity gates are
 recorded outside git at `../paper/planning/member_selection_intervention_2026-09-06.md`.
+
+### Validated GPU-hidden CPU alternative
+
+The 24-arm, 20-update concurrent smoke passed on Tucker at revision `75f0853f`.
+Its automatic verifier confirmed common initial weights, consumed anchors,
+retained sets within role pairs, and final walk RNG state. This path uses one
+shared graph, six concurrent models, eight tensor threads and two loader workers
+per model. It hides GPUs before importing PyTorch. It refuses insufficient RAM,
+shared memory, an existing output directory, or more than a quarter of the host's
+available logical CPU slots. Inspect current host load and other jobs as well.
+
+```bash
+python -m scripts.experiments.setup.target_performance_mechanisms.run_cpu_member_training \
+  --run-dir log/target_mechanisms/member_cpu_unique_name \
+  --models 6 --threads-per-model 8 --workers-per-model 2 --dry-run
+```
+
+For a separate smoke use `--smoke-steps 20` and remove `--dry-run`. For the full
+2,500-update run remove both flags, from a dedicated frozen worktree in tmux.
+All 24 arms must use the same training device; do not combine CPU and GPU arms
+in the factorial contrast. CPU trajectories are not bitwise reruns of the old
+GPU models. The prospective protocol records this execution amendment.
+
+Both launchers must be followed by consumed-stream verification. The CPU launcher
+does so automatically. The standalone command is:
+
+```bash
+python -m scripts.experiments.setup.target_performance_mechanisms.verify_member_training \
+  --run-dir log/target_mechanisms/member_cpu_unique_name \
+  --output log/target_mechanisms/member_cpu_unique_name/verified
+```
+
+Only a substantive run that passes all checks produces a validated
+`verified/model_list.tsv` for the fixed-episode replay. Its primary checkpoint is
+2,500 updates, regardless of intermediate target scores. Evaluate both episode
+offsets 0 and 100003, with separate outputs, all five targets, and no historical
+metric-parity requirement for these new weights. Check target fingerprints against
+the established caches, and weight hashes across episode streams, in the analysis.
