@@ -198,11 +198,32 @@ those sampled edges. On Facebook, context shuffling also hurts the trained
 models, despite a better raw center-only decoder; a trained model can depend on
 context without being the best way to use the available inputs.
 
+Fresh-episode interventions replicate a sharp task-dependent distinction for
+the **same Ukraine-trained weights**:
+
+| Target | Shuffle context features: ΔAUC original / fresh | Remove background edges: ΔAUC original / fresh |
+|---|---:|---:|
+| COVID Political | −.2699 / −.2646 | +.0033 / +.0002 |
+| Election | −.3484 / −.3929 | −.0004 / −.0027 |
+| Facebook | −.1449 / −.1075 | −.0048 / +.0025 |
+| TwiBot | −.0148 / −.0027 | −.0637 / −.0646 |
+
+On the political tasks, graph-selected neighborhood **features** matter much
+more than the remaining message-passing edges; on TwiBot, edge-dependent
+information is important and permuting context features has little effect.
+This is a sensitivity result for fixed sampled inputs, not a proof that one
+particular scalar is the model's sole mechanism. All 60 fresh intervention
+cells match baseline checkpoint hashes and original cached input fingerprints
+for that fresh stream. Data: `data/fresh_intervention_deltas.csv`.
+
 Zeroing raw label-text embeddings barely changes Ukraine/TwiBot on these targets.
 Erasing support-label relations gives much worse, roughly chance-level results
 on COVID Political and Facebook, but **not universally chance**: Election retains
 strong positive or inverted rankings with label-text embeddings still present.
-A joint erasure of support relations and label text is being checked separately.
+A joint erasure of support relations and label text gives exactly .5000 AUC in
+all 15 fresh cells (three donor models × five targets). A unit test also changes
+query labels alone and verifies bit-identical model logits. This is a useful
+sanity check on prompt-label information, not a complete dataset-leakage audit.
 Target-batch BN
 moments do not close the Facebook gap. Those BN tests use query covariates and
 are explicitly transductive, not valid leakage-free adaptation claims.
@@ -330,12 +351,20 @@ detail alone. The negative result is useful: it removes one plausible distractio
   no in-place writes; the helper now explicitly copies that array.
 - Size-adjusted coherence/incoming-presence follow-up:
   `cue_controls_{original,fresh}_20260906`, revision `8c227089`, both complete.
-- Fresh fixed-input perturbations and joint prompt-label erasure are running in
-  the main mechanism worktree at `4fc6c7bd`.
-- A bounded **20-update timing run only**, with GPUs explicitly hidden, is running
+- Fresh fixed-input perturbations and joint prompt-label erasure: all 60 cells
+  complete, main mechanism worktree at `4fc6c7bd`.
+- A bounded **20-update timing run only**, with GPUs explicitly hidden, completed
   in the training worktree at `ecd48890`: `cpu_timing_20260906`. It uses the exact
   full source graph, eight tensor threads, and four loader workers. It is not one
-  of the 24 substantive models; no policy-effect results exist yet.
+  of the 24 substantive models. Setup took 175 seconds; steady training took
+  1.626 seconds/update. All 20 consumed steps and finite updated weights passed.
+- A 24-arm **concurrent CPU smoke only** is now running in the training worktree,
+  revision `75f0853f`, `member_cpu_smoke_20260906`: 20 updates per arm, six active
+  models, eight tensor threads and two loader workers each (60 total). Automatic
+  consumed-stream verification must pass before substantive training. No
+  policy-effect results exist yet. Do not update that worktree while it runs.
+- Fresh-episode matched-pair stage replay is running in the main mechanism
+  worktree at `4fc6c7bd`, `fresh_pair_stage_cpu_20260906`.
 - The 24-arm member-selection intervention (two sources × four policies × three
   training seeds) is implemented at `5e0a3537`. All 24 lightweight tests and a
   four-policy, three-update toy CPU integration passed on Tucker. These are
