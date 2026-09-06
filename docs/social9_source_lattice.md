@@ -1,0 +1,37 @@
+# Social-9 native GraphSAGE objective lattice
+
+This experiment trains the same native one-layer 768→256 GraphSAGE encoder on
+the nine social graphs used by the source-transfer matrix. It covers all 9
+specialists, 36 unordered pairs, and 9 everything-minus-one mixtures at seed 0.
+
+Two objective passes use the identical model lattice and stopping rule:
+
+1. source-confined link prediction with five sampled negatives per positive;
+2. GraphMAE masked-feature reconstruction with a 50% node mask and scaled
+   cosine error (alpha 2).
+
+Mixtures receive uniform round-robin source updates. Validation runs every 250
+updates. Training cannot stop before 2,000 updates; it stops after eight checks
+without a 0.25% relative improvement, or at 10,000 updates. The absolute best
+validation checkpoint is tracked independently from the patience reference.
+
+Every run retains `best.pt`, periodic and terminal checkpoints, optimizer state,
+the full pretraining-model state, the downstream GraphSAGE encoder state,
+effective metadata, JSONL curves, a summary, and an offline W&B run when W&B is
+installed. Four long-lived workers load their required graphs once and reuse
+them across assigned models. Only Tucker GPUs 0–3 are accepted.
+
+Before each full pass, run the three-model curve gate:
+
+```bash
+bash scripts/run_social9_lattice_tucker.sh lp gate
+bash scripts/run_social9_lattice_tucker.sh lp full
+bash scripts/run_social9_lattice_tucker.sh graphmae gate
+bash scripts/run_social9_lattice_tucker.sh graphmae full
+```
+
+The gate covers a large specialist (`covid19_twitter`), a heterogeneous pair
+(`ukr_rus_suspended` + `facebook_page_reference`), and the heterogeneous
+eight-source leave-COVID-out mixture. Inspect training and validation curves,
+per-source validation losses, throughput, GPU utilization, early-stop steps,
+NaNs, and worker failures before releasing the corresponding full pass.

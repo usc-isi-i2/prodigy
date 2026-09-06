@@ -32,3 +32,25 @@ class GraphSAGE(nn.Module):
                 x = self.dropout(torch.relu(x))
         return x
 
+
+class GraphMAE(nn.Module):
+    """GraphSAGE encoder with a lightweight masked-feature decoder."""
+
+    def __init__(
+        self,
+        input_dim: int,
+        hidden_dim: int,
+        output_dim: int,
+        layers: int = 1,
+        dropout: float = 0.0,
+    ) -> None:
+        super().__init__()
+        self.encoder = GraphSAGE(input_dim, hidden_dim, output_dim, layers, dropout)
+        self.mask_token = nn.Parameter(torch.zeros(input_dim))
+        self.decoder = nn.Linear(output_dim, input_dim)
+
+    def encode(self, x: torch.Tensor, edge_index: torch.Tensor) -> torch.Tensor:
+        return self.encoder(x, edge_index)
+
+    def forward(self, x: torch.Tensor, edge_index: torch.Tensor) -> torch.Tensor:
+        return self.decoder(self.encode(x, edge_index))
