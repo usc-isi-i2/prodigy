@@ -3,9 +3,10 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+import torch
 
 from experiments.params import get_params
-from .run_numerical_controls import make_plans, reference_params, REFERENCE_ID
+from .run_numerical_controls import compare_logits, make_plans, reference_params, REFERENCE_ID
 
 
 class NumericalControlsTests(unittest.TestCase):
@@ -48,6 +49,16 @@ class NumericalControlsTests(unittest.TestCase):
             path.write_text(json.dumps({'jobs': [self.reference]}))
             with self.assertRaisesRegex(ValueError, 'recipe'):
                 reference_params(Path(folder))
+
+    def test_prediction_repeat_comparison_retains_drift_and_rejects_wrong_inputs(self):
+        a = [dict(batch=0, batch_sha256='same', logits={'full_model': torch.tensor([1., 2.])})]
+        b = copy.deepcopy(a)
+        self.assertTrue(compare_logits(a, b, 1, 1)['all_logits_bit_exact'])
+        b[0]['logits']['full_model'][0] += .5
+        self.assertFalse(compare_logits(a, b, 1, 1)['all_logits_bit_exact'])
+        b[0]['batch_sha256'] = 'other'
+        with self.assertRaisesRegex(ValueError, 'input identity'):
+            compare_logits(a, b, 1, 1)
 
 
 if __name__ == '__main__':

@@ -146,7 +146,36 @@ def evaluate(training):
             subprocess.run(command, check=True, stdout=handle, stderr=subprocess.STDOUT)
     inputs = compare_cached_inputs(outputs, Path('/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms'))
     write_json(output / 'input_validation.json', inputs)
-    write_json(output / 'DONE.json', dict(complete=True, models=4, targets=5, streams=2, same_target_inputs=True))
+    records = json.loads((training / 'verified/arms.json').read_text())
+    comparisons = []
+    for stream, destination in outputs.items():
+        for target in TARGETS:
+            for mode in MODES:
+                models = sorted((r for r in records if r['mode'] == mode), key=lambda r: r['repeat'])
+                left, right = [torch.load(destination / target / f"{r['model_id']}__baseline.pt",
+                                         map_location='cpu', weights_only=False) for r in models]
+                comparisons.append(dict(stream=stream, target=target, mode=mode,
+                                        **compare_logits(left, right)))
+    write_json(output / 'logit_comparisons.json', comparisons)
+    write_json(output / 'DONE.json', dict(complete=True, models=4, targets=5, streams=2, same_target_inputs=True,
+        deterministic_logits_bit_exact=all(r['all_logits_bit_exact'] for r in comparisons if r['mode'] == 'deterministic')))
+
+
+def compare_logits(left, right, expected_batches=32, expected_decoders=17):
+    if len(left) != expected_batches or len(right) != expected_batches:
+        raise ValueError('incomplete saved prediction stream')
+    maxima = {}
+    for i, (a, b) in enumerate(zip(left, right, strict=True)):
+        if (a['batch'] != i or b['batch'] != i or a['batch_sha256'] != b['batch_sha256']
+                or a['logits'].keys() != b['logits'].keys() or len(a['logits']) != expected_decoders):
+            raise ValueError('prediction decoder or input identity differs')
+        for decoder in a['logits']:
+            x, y = a['logits'][decoder], b['logits'][decoder]
+            if x.shape != y.shape or not torch.isfinite(x).all() or not torch.isfinite(y).all():
+                raise ValueError('prediction shape differs or values non-finite')
+            maxima[decoder] = max(maxima.get(decoder, 0), float((x.double() - y.double()).abs().max()))
+    return dict(all_logits_bit_exact=all(v == 0 for v in maxima.values()),
+                comparisons=expected_batches * expected_decoders, maximum_absolute_difference_by_decoder=maxima)
 
 
 def main():
