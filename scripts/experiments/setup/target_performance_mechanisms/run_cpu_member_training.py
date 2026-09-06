@@ -40,7 +40,7 @@ def make_plan(configs, run_dir, workers, smoke_steps):
     return plans
 
 
-def train_cpu(dataset, params, job_dir, threads):
+def train_cpu(dataset, params, job_dir, threads, trainer_setup=None):
     os.setsid()
     job_dir = Path(job_dir)
     with (job_dir / "console.log").open("a", buffering=1) as stream:
@@ -56,15 +56,25 @@ def train_cpu(dataset, params, job_dir, threads):
             torch.multiprocessing.set_sharing_strategy("file_system")
             seed_everything(params)
             trainer = TrainerFS(dataset, params)
+            if trainer_setup is not None:
+                trainer_setup(trainer)
             observed = []
-            trainer.training_step_observer = lambda step: observed.append((step, time.monotonic()))
+            prior_observer = getattr(trainer, "training_step_observer", None)
+            def observe(step):
+                if prior_observer is not None:
+                    prior_observer(step)
+                observed.append((step, time.monotonic()))
+            trainer.training_step_observer = observe
             result.update(status="training", training_started=time.time())
             write_json(job_dir / "result.json", result)
             trainer.train()
             steady = observed[4:]
             result.update(status="complete", completed=time.time(), checkpoint_dir=trainer.ckpt_dir,
                           steps_observed=len(observed),
-                          steady_seconds_per_step=(steady[-1][1] - steady[0][1]) / (steady[-1][0] - steady[0][0]))
+                          steady_seconds_per_step=((steady[-1][1] - steady[0][1]) / (steady[-1][0] - steady[0][0])
+                                                   if len(steady) > 1 else None))
+            if hasattr(trainer, "training_constraint_receipt"):
+                result["training_constraint"] = trainer.training_constraint_receipt
             write_json(job_dir / "result.json", result)
         except BaseException:
             result.update(status="failed", error=traceback.format_exc(), completed=time.time())
@@ -97,6 +107,21 @@ def main():
           f"{args.smoke_steps or 2500} steps/model; {'smoke' if args.smoke_steps else 'substantive'}", flush=True)
     if args.dry_run:
         return
+    verify = [sys.executable, "-m", "scripts.experiments.setup.target_performance_mechanisms.verify_member_training",
+              "--run-dir", str(args.run_dir), "--output", str(args.run_dir / "verified")]
+    if args.smoke_steps:
+        verify += ["--allow-smoke", "--expected-steps", str(args.smoke_steps)]
+    execute_cpu_plans(args, plans, configs, verify)
+
+
+def execute_cpu_plans(args, plans, configs, verify, trainer_setup=None):
+    """Common bounded supervisor; callers must validate their experiment grid."""
+    budget = args.models * (args.threads_per_model + args.workers_per_model)
+    if (not 1 <= args.models <= 8 or not 1 <= args.threads_per_model <= 16
+            or not 0 <= args.workers_per_model <= 4 or budget > 96):
+        raise ValueError("invalid bounded CPU resources")
+    if args.run_dir.exists() or torch.cuda.is_available():
+        raise RuntimeError("output exists or GPU visible")
     if budget > len(os.sched_getaffinity(0)) // 4:
         raise RuntimeError("would exceed one quarter of available logical CPU slots")
     mem = {line.split(':')[0]: int(line.split()[1]) for line in Path("/proc/meminfo").read_text().splitlines()}
@@ -112,7 +137,8 @@ def main():
     torch.multiprocessing.set_sharing_strategy("file_system")
     started = time.monotonic()
     dataset = prepare_shared_dataset(load_dataset(plans[0]))
-    manifest.update(shared_graph_setup_seconds=time.monotonic() - started, shared_storage=shared_storage_report(dataset))
+    manifest.update(shared_graph_setup_seconds=time.monotonic() - started, shared_storage=shared_storage_report(dataset),
+                    source_names=list(dataset.graph.source_graph_names))
     write_json(args.run_dir / "manifest.json", manifest)
     context = torch.multiprocessing.get_context("spawn")
     active, finished, index = {}, [], 0
@@ -125,7 +151,7 @@ def main():
                 job = args.run_dir / f"job_{index:03d}"
                 job.mkdir()
                 write_json(job / "effective_config.json", plans[index])
-                process = context.Process(target=train_cpu, args=(dataset, plans[index], str(job), args.threads_per_model))
+                process = context.Process(target=train_cpu, args=(dataset, plans[index], str(job), args.threads_per_model, trainer_setup))
                 process.start()
                 active[index] = process
                 print(f"Started CPU job {index}: {plans[index]['prefix']}", flush=True)
@@ -140,10 +166,6 @@ def main():
                     print(f"Completed CPU job {job_index}", flush=True)
             time.sleep(1)
         write_json(args.run_dir / "status.json", {"status": "complete", "finished": finished})
-        verify = [sys.executable, "-m", "scripts.experiments.setup.target_performance_mechanisms.verify_member_training",
-                  "--run-dir", str(args.run_dir), "--output", str(args.run_dir / "verified")]
-        if args.smoke_steps:
-            verify += ["--allow-smoke", "--expected-steps", str(args.smoke_steps)]
         subprocess.run(verify, check=True)
         print("All CPU runs and consumed-stream validity checks passed.", flush=True)
     except BaseException:

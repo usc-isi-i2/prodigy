@@ -248,3 +248,48 @@ every saved hybrid and both donors, verifies all tensor identities, and compares
 It also exports the planned saved-logit cue comparisons for all hybrids and their
 backgrounds. Its receipt is written only after every target and both streams
 pass; no query labels are used for fitting or selecting a comparison.
+# Readout training constraint (prospective follow-up, 6 September)
+
+`run_readout_training.py` uses the existing shared-CPU-graph supervisor for 18
+new runs: Ukraine/Hong Kong/COVID × seeds 0/1/2 × free/frozen initial readout.
+Only the four `layer_list.0.reset_mlp_{c,m}.{weight,bias}` tensors are frozen;
+the remainder of the network trains normally. No model algebra or sampling
+implementation is changed. The original lowest-ID/sorted policy and private
+sampler streams are retained. The primary predicted effect is **full-model
+Facebook AUC improvement**, not merely a readout-probe gain. Report every seed
+and source, all five targets, and both streams. This is discovery on previously
+inspected targets, not untouched-domain confirmation.
+
+The setup hook excludes the four frozen tensors from the unused optimizer and
+checks them after every update. A forward pre-hook hashes every training-input
+tensor before the model mutates it. The verifier requires matching complete
+input streams and initializations within each pair, declared configurations,
+source labels, final sampler states, maintained frozen weights at all saved
+checkpoints, and updated control/readout and other network weights. The three
+seeds are the replications; sources and episode streams are not extra seeds.
+
+Run only in a new, frozen Tucker worktree, with the documented `prodigy` conda
+environment and GPUs hidden. Unit checks are local; actual smoke training runs
+on Tucker. An eight-update full-graph smoke validates the 18-arm launcher before
+the substantive 2,500-update experiment. Use separate output paths; do not reuse
+smoke outputs as research results.
+
+```bash
+CUDA_VISIBLE_DEVICES='' WANDB_MODE=offline python -m \
+  scripts.experiments.setup.target_performance_mechanisms.smoke_readout_training \
+  --output log/target_mechanisms/readout_constraint_toy_20260906
+CUDA_VISIBLE_DEVICES='' WANDB_MODE=offline python -m \
+  scripts.experiments.setup.target_performance_mechanisms.run_readout_training \
+  --run-dir log/target_mechanisms/readout_constraint_smoke_20260906 --smoke-steps 8
+CUDA_VISIBLE_DEVICES='' WANDB_MODE=offline python -m \
+  scripts.experiments.setup.target_performance_mechanisms.run_readout_training \
+  --run-dir log/target_mechanisms/readout_constraint_training_20260906 --evaluate
+```
+
+`--dry-run` prints the plan without loading a graph. `--evaluate` is forbidden
+for smoke runs; for substantive runs it executes only after all 18 validity
+gates pass and verifies both target streams against established cached inputs.
+`finish_readout_training.py` can perform that finite evaluation continuation
+separately with explicit training/output/reference paths. All runtime files and
+full training-input fingerprints stay private on Tucker until compact evidence
+is collected. No public push is required.
