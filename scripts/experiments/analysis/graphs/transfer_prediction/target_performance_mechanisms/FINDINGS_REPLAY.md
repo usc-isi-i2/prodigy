@@ -6,6 +6,10 @@ source-ranking explanation or a submission-ready ICLR result. All five targets,
 both episode streams, all 24 controlled models, the planned cue analysis, and an
 exact-initialization supplementary reference are complete. The prespecified
 coverage prediction is not supported: its primary effect reverses across seeds.
+The subsequent 18-model readout-training intervention is also complete. Its
+Facebook full-model consistency prediction fails despite positive readout-probe
+effects in every pair on both streams. A separate same-seed control audit finds
+substantial cross-launch drift, documented below rather than called replication.
 
 ## What changed our next experiment
 
@@ -457,8 +461,9 @@ from 91 to 21 with the current support counts.
 A diagnostic removed only that excess bias, holding all attention coefficients
 and learned weights fixed. It completed all 45 specialist-by-target cells with
 matching reference episode fingerprints. The results are nearly unchanged;
-the exact paired deltas are in `data/meta_bias_deltas.csv`. For example, Ukraine
-on COVID Political changes from .9464 to .9465 and TwiBot from .9185 to .9179.
+the exact paired deltas are in `data/meta_bias_deltas.csv`. On the COVID Political
+target, the Ukraine-trained donor changes from .9464 to .9465 and the
+TwiBot-trained donor from .9185 to .9179 (these are not TwiBot-target scores).
 This control does not explain the large observed transfer gaps. Do not prioritize
 a bias-placement training intervention on the strength of the implementation
 detail alone. The negative result is useful: it removes one plausible distraction.
@@ -764,7 +769,7 @@ policy here, but RNG coupling and full-run protocols differ; do not treat those
 new lattice runs as exact numerical replicas or merge them into historical cells.
 That worktree and the user's `rolefix-lattice-0906` jobs were left untouched.
 
-## Prospective initial-readout-frozen training: launched, no target outcomes yet
+## Initial-readout-frozen training: completed; full-model primary fails
 
 The fixed-weight results motivated a different training-time test, recorded
 before launch in `paper/planning/readout_training_constraint_2026-09-06.md` outside
@@ -792,8 +797,97 @@ two loader workers each, with all GPUs hidden. Each model runs 2,500 updates and
 keeps 0/100/300/900/2500 checkpoints. The finite continuation evaluates both
 128-episode streams only after all 18 training gates pass. Output:
 `log/target_mechanisms/readout_constraint_training_20260906`.
-The local complete-grid analyzer is committed before outcomes. No result of this
-new experiment is available at this update.
+The local complete-grid analyzer was committed before outcomes. All 18 models
+and training gates completed; evaluation ran from **14:17:53 to 14:25:59 UTC**.
+All 3,060 rows, 180 full-model cells, and 1,530 paired changes pass the unchanged
+analysis. Every one of the 2,500 full training-input hashes matches within each
+free/frozen pair, as do initial weights and consumed member/walk records. Frozen
+readout tensors remain exactly initial at every update and saved checkpoint;
+other parameters genuinely train. Target inputs match the established cache.
+
+The primary rule required every seed's source-average Facebook full-model gain
+and every source's three-seed mean to be positive on **both** streams. It fails:
+
+| Seed | COVID original / fresh | Hong Kong original / fresh | Ukraine original / fresh | Source average original / fresh |
+|---|---:|---:|---:|---:|
+| 0 | +.01005 / +.00606 | −.00944 / −.02208 | +.00102 / −.00453 | +.00054 / −.00685 |
+| 1 | +.01397 / +.01977 | +.01777 / −.01840 | +.01137 / −.00544 | +.01437 / −.00136 |
+| 2 | +.02116 / +.01767 | +.03050 / +.01962 | +.00934 / −.01409 | +.02033 / +.00773 |
+
+Values are frozen minus freely trained AUC, not percentage points. The original
+stream has three positive seed averages, but fresh episodes have two negative
+averages. Hong Kong and Ukraine source means turn negative on fresh episodes.
+COVID improves in all three pairs on both streams; this favorable secondary
+source result does not replace the unsuccessful all-source primary.
+
+The Facebook readout probe nevertheless improves in **all nine pairs on both
+streams**. Mean gains are COVID +.04194/+.06483, Hong Kong +.09316/+.09039, and
+Ukraine +.03845/+.03535. Thus the probe/model distinction survives a training-time
+intervention in which the downstream network can adapt, not only an abrupt
+post-training parameter swap. This rejects the proposed general rescue, not
+every possible training constraint or every decoder of these representations.
+
+All other targets expose tradeoffs. Full-model three-seed means are:
+
+| Target | COVID original / fresh | Hong Kong original / fresh | Ukraine original / fresh |
+|---|---:|---:|---:|
+| COVID Political | +.00892 / +.01112 | +.01668 / +.01384 | −.00107 / +.00399 |
+| Election | −.00138 / −.00269 | −.04136 / −.04364 | −.00189 / −.00167 |
+| TwiBot | −.00387 / +.00168 | +.00830 / +.01210 | +.01368 / +.00948 |
+| Suspension | −.00323 / +.02545 | +.00724 / +.02976 | +.03253 / +.04307 |
+
+On TwiBot, Ukraine's full model improves in all three pairs on both streams;
+Hong Kong and COVID have mixed signs. TwiBot readout probes improve for all
+Ukraine and COVID pairs but worsen for **all Hong Kong pairs**, on both streams.
+Mean probe effects are Ukraine +.03665/+.02465, COVID +.02775/+.02083, and
+Hong Kong −.01859/−.02123. The opposing Ukraine/Hong Kong probe directions agree
+with the earlier swap diagnostic, but do not imply identical full-model effects.
+Hong Kong's Election full-model effects are negative in all three pairs on both
+streams. Suspension changes do not establish a strong or prospective predictor.
+
+### Same-seed controls are not exact cross-launch reproductions
+
+All six new freely trained Ukraine/Hong Kong controls differ from their earlier
+same-seed standard-policy models. On identical target tensors, the largest
+absolute **full-model** AUC change is .09347 (Hong Kong seed 2, COVID Political,
+original episodes). Do not conflate the even larger post-metagraph probe changes
+with full-classifier changes, or count these controls as additional seeds.
+
+A read-only audit of all six pairs at updates 0/100/2500 establishes:
+
+- At initialization, every model tensor, optimizer state, recorded Python/NumPy/
+  Torch RNG state, complete batch-sampler state and resume parameter contract
+  matches exactly.
+- Recorded parent RNG and complete sampler states still match at 100 and 2500,
+  but 31 model-state keys and the optimizer state already differ at update 100.
+  Maximum parameter differences are .170–.308 then and 1.077–1.341 at update 2500.
+  The much larger terminal differences of 305–2034 belong to metagraph batch-
+  normalization running variances, not individual learned weight values.
+- Every field in all 2,500 consumed audit rows matches for each control pair,
+  including every member's context-node count, not merely its aggregate mean.
+  Final walk RNG also matches. Earlier runs did **not** record complete training
+  input hashes or worker RNG states. Matching identities and parent RNG therefore
+  does not establish matching sampled context tensors/features across launches.
+- The production training/model/sampler implementation is unchanged between
+  revisions `75f0853f` and `f20e6495`; recorded resolved configurations differ only
+  in run identifiers/paths and the new free-condition tag. The launcher adds a
+  full-input hashing hook and constraint observer; these are not an independently
+  demonstrated explanation for the drift.
+
+The cross-launch cause remains unresolved; numerical nondeterminism, unrecorded
+worker/context state, or other unrecorded execution/input differences must not
+be presented as established causes. The **new** paired full-input audit supports
+the within-experiment contrast, but does not repair the missing historical audit
+or prove deterministic optimization. These are three seeds on already-inspected
+targets, not untouched-domain confirmation.
+
+Evidence: `data/readout_training_{cells,changes,primary,summary}.csv`,
+`data/readout_training_validation.json`, `data/readout_training_control_reproduction.csv`,
+all ten raw replay files, and complete receipts in `data/readout_training_verified/`.
+`control_state_audit.json` retains all 18 saved-state comparisons; the read-only
+helper is `setup/target_performance_mechanisms/audit_readout_control_states.py`.
+`figures/readout_training_tradeoffs.png` shows all 90 target/source/seed/stream
+probe/full-model contrasts, including unfavorable targets and failed primary.
 
 The initial 11:01:24 launch failed before producing a training directory. A
 read-only reproduction showed that prepending conda's base bin inside an already
@@ -997,10 +1091,85 @@ Evidence: `data/mixture_budget_predictions/` (including actual-config audit),
 `data/mixture_budget_{comparisons,summary}.csv`, `data/mixture_budget_validation.json`,
 and `figures/mixture_training_budget_foreign.png`.
 
+## Restoring training-time attention multiplicity does not rescue transfer
+
+The prospective count-restoration diagnostic is complete: **630 full-model
+cells**, nine historical singleton checkpoints, five targets, seven conditions,
+and both 128-episode streams. No encoder passes or training were needed. Reusing
+cached pre-metagraph embeddings with the production metagraph and cosine decoder
+reproduces **all 2,880 baseline batches bit-exactly**, both saved post-metagraph
+embeddings and full-model logits. Unhooked restoration also reproduces every
+baseline; all checkpoint digests, input tensor hashes and baseline metrics pass.
+
+The hypothesis was that moving from 30-way/3-shot training to 2-way/10-shot
+evaluation changes the attention balance in a harmful way. Known counts define
+weights, without query-label fitting: label destinations give positive supports
+weight .3 and negative supports 8.7; query destinations give each incoming label
+weight 15; self loops keep weight one. Adding log(weight) before softmax changes
+attention only. A separate virtual-multiplicity condition also changes the
+aggregate affine bias to sum(weight)*bias, and a bias-only control separates it.
+Way-only, shot-only and reciprocal-direction controls are all retained.
+
+**The primary prediction fails in all four target/stream cells.** Joint
+attention-only restoration must improve the eight foreign donors' mean full-model
+AUC and beat reciprocal-direction restoration for each of Facebook and TwiBot
+on both streams. Instead, restoration worsens the mean on every target/stream:
+
+| Target, eight foreign donors | Joint attention ΔAUC points, original/fresh | Reciprocal control ΔAUC points, original/fresh |
+|---|---:|---:|
+| COVID Political | −.532 / −.582 | +.369 / +.365 |
+| Election | −.169 / −.364 | +.114 / +.071 |
+| Facebook pages | −.712 / −.631 | +.400 / +.357 |
+| TwiBot | −.484 / −.528 | +.426 / +.329 |
+| Ukraine suspension | −.126 / −.171 | +.449 / +.373 |
+
+Only 1/8 and 2/8 Facebook donors improve on original/fresh episodes, respectively;
+TwiBot has 4/8 and 2/8. The favorable reciprocal control does not replace the
+failed primary prediction. Its small average gains do not close the prior probe/
+full-model gaps or establish a remedy, and individual donor signs vary. The
+way-only condition closely tracks the joint effect, whereas shot-only effects
+are small. Including virtual-multiplicity bias does not rescue either primary
+target: Facebook −.778/−.686 points and TwiBot −.285/−.221 points.
+
+This is not a null manipulation. Averaged over the nine donors, both streams,
+batches and heads, Facebook label-node negative-support attention mass rises
+from .1965 to .3281, and query attention to label nodes rises from .1034 to .2176.
+TwiBot's corresponding changes are .1952 to .3275 and .1083 to .2302. Every
+per-head destination-group mass audit sums to one. Changed attention is not
+equivalent to useful task-specific computation.
+
+The production one-layer graph also explains why **other-query count is not a
+direct inference dependency**, conditional on fixed supports, label vectors,
+query inputs and evaluation normalization: query messages do not enter label
+nodes, and each query attends only to initial label nodes and itself. Adding a
+query leaves existing outputs unchanged in the algebraic test for all seven
+conditions. This does not make episode distribution irrelevant during training.
+
+These controls reweight existing examples; they do **not** create 30 distinct
+classes or diverse new negatives, change training normalization, or constitute
+a matched-training cardinality ablation. They weaken this precise attention-mass
+restoration explanation, not all train/test episode shift. One training seed and
+previously inspected targets preclude untouched-domain confirmation. The
+Ukraine/COVID donor-quality mechanism remains unresolved.
+
+Evidence: `data/episode_cardinality_replay/`,
+`data/episode_cardinality_{cells,summary,attention}.csv`,
+`data/episode_cardinality_validation.json`, and
+`figures/episode_cardinality_foreign.png`. The complete per-batch/head attention
+audit is losslessly compressed; query predictions remain on Tucker.
+
 ## Artifacts and runtime provenance
 
 - Local branch/worktree: `codex/target-performance-mechanisms`,
   `/Users/philipp/projects/gfm/prodigy-mechanisms`.
+- Episode-cardinality diagnostic: frozen `b882d95a` in Tucker
+  `/dataMeR1/phil/gfm/prodigy-mechanisms-count`, output
+  `log/target_mechanisms/episode_cardinality_20260906`, tmux
+  `mechanism-episode-count`, eight CPU threads, GPUs hidden. Launched
+  12:36:34 UTC and verified complete by 12:38:50 UTC on September 6. Nine
+  count/algebra/primary-rule tests passed on Tucker before launch; the expanded
+  local analysis suite has 49 passing tests. Active training worktrees were not
+  changed. The prospective design remains in the sibling paper planning tree.
 - Three-target replay: Tucker `prodigy-mechanisms/log/target_mechanisms/specialist_cpu_20260906`;
   code revision `97cc7704`. Partial run, three targets complete.
 - Source audit: Tucker `prodigy-mechanisms-audit/log/target_mechanisms/source_sampler_20260906_v2`;

@@ -1,5 +1,6 @@
 """Evaluate the prespecified count-restoration prediction, retaining all controls."""
 import argparse
+import gzip
 import hashlib
 from itertools import product
 import json
@@ -21,7 +22,11 @@ ROLES = {"label": ("label_positive", "label_negative", "label_self"),
 
 def validate(root):
     def read(name):
-        return json.loads((root / f"{name}.json").read_text())
+        path = root / f"{name}.json"
+        if path.exists():
+            return json.loads(path.read_text())
+        with gzip.open(root / f"{name}.json.gz", "rt") as handle:
+            return json.load(handle)
     done = read("DONE")
     expected_done = {"full_model_cells": 630, "model_target_stream_cells": 90,
         "baseline_suffix_bit_exact_batches": 2880, "all_weights_unchanged": True,
@@ -119,8 +124,12 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     for name, frame in (("cells", cells), ("summary", summary), ("attention", attention)):
         frame.to_csv(args.output / f"episode_cardinality_{name}.csv", index=False)
-    result["input_sha256"] = {name: hashlib.sha256((args.results / name).read_bytes()).hexdigest()
-        for name in ("protocol.json", "DONE.json", "metrics.json", "inventory.json", "input_inventory.json", "attention.json")}
+    result["input_sha256"] = {}
+    for name in ("protocol.json", "DONE.json", "metrics.json", "inventory.json", "input_inventory.json", "attention.json"):
+        path = args.results / name
+        if not path.exists():
+            path = args.results / (name + ".gz")
+        result["input_sha256"][path.name] = hashlib.sha256(path.read_bytes()).hexdigest()
     (args.output / "episode_cardinality_validation.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result, indent=2))
 

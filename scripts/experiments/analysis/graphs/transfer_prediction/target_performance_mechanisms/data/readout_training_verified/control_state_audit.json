@@ -1,0 +1,541 @@
+{
+  "read_only": true,
+  "training_pairs": 6,
+  "steps": [
+    0,
+    100,
+    2500
+  ],
+  "consumed_record_comparisons": [
+    {
+      "model_id": "readouttrain_ukr_rus_free_s0",
+      "steps": 2500,
+      "different_fields_step_counts": {},
+      "first_difference_step": null
+    },
+    {
+      "model_id": "readouttrain_ukr_rus_free_s1",
+      "steps": 2500,
+      "different_fields_step_counts": {},
+      "first_difference_step": null
+    },
+    {
+      "model_id": "readouttrain_ukr_rus_free_s2",
+      "steps": 2500,
+      "different_fields_step_counts": {},
+      "first_difference_step": null
+    },
+    {
+      "model_id": "readouttrain_cp_hk_free_s0",
+      "steps": 2500,
+      "different_fields_step_counts": {},
+      "first_difference_step": null
+    },
+    {
+      "model_id": "readouttrain_cp_hk_free_s1",
+      "steps": 2500,
+      "different_fields_step_counts": {},
+      "first_difference_step": null
+    },
+    {
+      "model_id": "readouttrain_cp_hk_free_s2",
+      "steps": 2500,
+      "different_fields_step_counts": {},
+      "first_difference_step": null
+    }
+  ],
+  "comparisons": [
+    {
+      "model_id": "readouttrain_ukr_rus_free_s0",
+      "previous_model_id": "memberctl_ukr_rus_lowest_sorted_s0",
+      "source": "ukr_rus",
+      "seed": 0,
+      "steps": [
+        {
+          "step": 0,
+          "old_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/state/memberctl_ukr_rus_lowest_sorted_s0_cpu_20260905_225245_000/checkpoint/training_state_0.ckpt",
+          "new_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_training_20260906/state/readouttrain_ukr_rus_free_s0_20260906_040412_000/checkpoint/training_state_0.ckpt",
+          "rng_equal": {
+            "python": true,
+            "numpy": true,
+            "torch_cpu": true
+          },
+          "contract_equal": true,
+          "sampler_equal": true,
+          "sampler_components_equal": {
+            "rng_state": true,
+            "task_state": true,
+            "task_sampling_state": true
+          },
+          "optimizer_equal": true,
+          "model_equal": true,
+          "changed_keys": 0,
+          "max_parameter_absolute_difference": 0,
+          "largest_tensor_differences": {}
+        },
+        {
+          "step": 100,
+          "old_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/state/memberctl_ukr_rus_lowest_sorted_s0_cpu_20260905_225245_000/checkpoint/training_state_100.ckpt",
+          "new_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_training_20260906/state/readouttrain_ukr_rus_free_s0_20260906_040412_000/checkpoint/training_state_100.ckpt",
+          "rng_equal": {
+            "python": true,
+            "numpy": true,
+            "torch_cpu": true
+          },
+          "contract_equal": true,
+          "sampler_equal": true,
+          "sampler_components_equal": {
+            "rng_state": true,
+            "task_state": true,
+            "task_sampling_state": true
+          },
+          "optimizer_equal": false,
+          "model_equal": false,
+          "changed_keys": 31,
+          "max_parameter_absolute_difference": 0.23375631868839264,
+          "largest_tensor_differences": {
+            "layer_list.2.gnn_layers.0.bn.running_var": 111.11799335479736,
+            "layer_list.2.gnn_layers.0.bn.running_mean": 10.278908252716064,
+            "layer_list.0.module_list.0.bn.running_var": 2.417951285839081
+          }
+        },
+        {
+          "step": 2500,
+          "old_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/state/memberctl_ukr_rus_lowest_sorted_s0_cpu_20260905_225245_000/checkpoint/training_state_2500.ckpt",
+          "new_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_training_20260906/state/readouttrain_ukr_rus_free_s0_20260906_040412_000/checkpoint/training_state_2500.ckpt",
+          "rng_equal": {
+            "python": true,
+            "numpy": true,
+            "torch_cpu": true
+          },
+          "contract_equal": true,
+          "sampler_equal": true,
+          "sampler_components_equal": {
+            "rng_state": true,
+            "task_state": true,
+            "task_sampling_state": true
+          },
+          "optimizer_equal": false,
+          "model_equal": false,
+          "changed_keys": 31,
+          "max_parameter_absolute_difference": 1.2026723623275757,
+          "largest_tensor_differences": {
+            "layer_list.2.gnn_layers.0.bn.running_var": 1581.6951141357422,
+            "layer_list.2.gnn_layers.0.bn.running_mean": 95.55610823631287,
+            "layer_list.0.reset_mlp_m.weight": 1.2026723623275757
+          }
+        }
+      ]
+    },
+    {
+      "model_id": "readouttrain_ukr_rus_free_s1",
+      "previous_model_id": "memberctl_ukr_rus_lowest_sorted_s1",
+      "source": "ukr_rus",
+      "seed": 1,
+      "steps": [
+        {
+          "step": 0,
+          "old_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/state/memberctl_ukr_rus_lowest_sorted_s1_cpu_20260905_225245_004/checkpoint/training_state_0.ckpt",
+          "new_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_training_20260906/state/readouttrain_ukr_rus_free_s1_20260906_040412_002/checkpoint/training_state_0.ckpt",
+          "rng_equal": {
+            "python": true,
+            "numpy": true,
+            "torch_cpu": true
+          },
+          "contract_equal": true,
+          "sampler_equal": true,
+          "sampler_components_equal": {
+            "rng_state": true,
+            "task_state": true,
+            "task_sampling_state": true
+          },
+          "optimizer_equal": true,
+          "model_equal": true,
+          "changed_keys": 0,
+          "max_parameter_absolute_difference": 0,
+          "largest_tensor_differences": {}
+        },
+        {
+          "step": 100,
+          "old_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/state/memberctl_ukr_rus_lowest_sorted_s1_cpu_20260905_225245_004/checkpoint/training_state_100.ckpt",
+          "new_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_training_20260906/state/readouttrain_ukr_rus_free_s1_20260906_040412_002/checkpoint/training_state_100.ckpt",
+          "rng_equal": {
+            "python": true,
+            "numpy": true,
+            "torch_cpu": true
+          },
+          "contract_equal": true,
+          "sampler_equal": true,
+          "sampler_components_equal": {
+            "rng_state": true,
+            "task_state": true,
+            "task_sampling_state": true
+          },
+          "optimizer_equal": false,
+          "model_equal": false,
+          "changed_keys": 31,
+          "max_parameter_absolute_difference": 0.246302530169487,
+          "largest_tensor_differences": {
+            "layer_list.2.gnn_layers.0.bn.running_var": 104.05256271362305,
+            "layer_list.2.gnn_layers.0.bn.running_mean": 7.999360054731369,
+            "layer_list.0.module_list.0.bn.running_var": 1.8635412231087685
+          }
+        },
+        {
+          "step": 2500,
+          "old_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/state/memberctl_ukr_rus_lowest_sorted_s1_cpu_20260905_225245_004/checkpoint/training_state_2500.ckpt",
+          "new_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_training_20260906/state/readouttrain_ukr_rus_free_s1_20260906_040412_002/checkpoint/training_state_2500.ckpt",
+          "rng_equal": {
+            "python": true,
+            "numpy": true,
+            "torch_cpu": true
+          },
+          "contract_equal": true,
+          "sampler_equal": true,
+          "sampler_components_equal": {
+            "rng_state": true,
+            "task_state": true,
+            "task_sampling_state": true
+          },
+          "optimizer_equal": false,
+          "model_equal": false,
+          "changed_keys": 31,
+          "max_parameter_absolute_difference": 1.1784932017326355,
+          "largest_tensor_differences": {
+            "layer_list.2.gnn_layers.0.bn.running_var": 2034.1668701171875,
+            "layer_list.2.gnn_layers.0.bn.running_mean": 84.9188232421875,
+            "layer_list.0.reset_mlp_m.weight": 1.1784932017326355
+          }
+        }
+      ]
+    },
+    {
+      "model_id": "readouttrain_ukr_rus_free_s2",
+      "previous_model_id": "memberctl_ukr_rus_lowest_sorted_s2",
+      "source": "ukr_rus",
+      "seed": 2,
+      "steps": [
+        {
+          "step": 0,
+          "old_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/state/memberctl_ukr_rus_lowest_sorted_s2_cpu_20260905_225245_008/checkpoint/training_state_0.ckpt",
+          "new_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_training_20260906/state/readouttrain_ukr_rus_free_s2_20260906_040412_004/checkpoint/training_state_0.ckpt",
+          "rng_equal": {
+            "python": true,
+            "numpy": true,
+            "torch_cpu": true
+          },
+          "contract_equal": true,
+          "sampler_equal": true,
+          "sampler_components_equal": {
+            "rng_state": true,
+            "task_state": true,
+            "task_sampling_state": true
+          },
+          "optimizer_equal": true,
+          "model_equal": true,
+          "changed_keys": 0,
+          "max_parameter_absolute_difference": 0,
+          "largest_tensor_differences": {}
+        },
+        {
+          "step": 100,
+          "old_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/state/memberctl_ukr_rus_lowest_sorted_s2_cpu_20260905_225245_008/checkpoint/training_state_100.ckpt",
+          "new_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_training_20260906/state/readouttrain_ukr_rus_free_s2_20260906_040412_004/checkpoint/training_state_100.ckpt",
+          "rng_equal": {
+            "python": true,
+            "numpy": true,
+            "torch_cpu": true
+          },
+          "contract_equal": true,
+          "sampler_equal": true,
+          "sampler_components_equal": {
+            "rng_state": true,
+            "task_state": true,
+            "task_sampling_state": true
+          },
+          "optimizer_equal": false,
+          "model_equal": false,
+          "changed_keys": 31,
+          "max_parameter_absolute_difference": 0.19722475484013557,
+          "largest_tensor_differences": {
+            "layer_list.2.gnn_layers.0.bn.running_var": 73.71529960632324,
+            "layer_list.2.gnn_layers.0.bn.running_mean": 11.619162321090698,
+            "layer_list.0.module_list.0.bn.running_var": 1.7937055230140686
+          }
+        },
+        {
+          "step": 2500,
+          "old_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/state/memberctl_ukr_rus_lowest_sorted_s2_cpu_20260905_225245_008/checkpoint/training_state_2500.ckpt",
+          "new_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_training_20260906/state/readouttrain_ukr_rus_free_s2_20260906_040412_004/checkpoint/training_state_2500.ckpt",
+          "rng_equal": {
+            "python": true,
+            "numpy": true,
+            "torch_cpu": true
+          },
+          "contract_equal": true,
+          "sampler_equal": true,
+          "sampler_components_equal": {
+            "rng_state": true,
+            "task_state": true,
+            "task_sampling_state": true
+          },
+          "optimizer_equal": false,
+          "model_equal": false,
+          "changed_keys": 31,
+          "max_parameter_absolute_difference": 1.07699254155159,
+          "largest_tensor_differences": {
+            "layer_list.2.gnn_layers.0.bn.running_var": 1195.389663696289,
+            "layer_list.2.gnn_layers.0.bn.running_mean": 46.52260780334473,
+            "layer_list.0.reset_mlp_m.weight": 1.07699254155159
+          }
+        }
+      ]
+    },
+    {
+      "model_id": "readouttrain_cp_hk_free_s0",
+      "previous_model_id": "memberctl_cp_hk_lowest_sorted_s0",
+      "source": "cp_hk",
+      "seed": 0,
+      "steps": [
+        {
+          "step": 0,
+          "old_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/state/memberctl_cp_hk_lowest_sorted_s0_cpu_20260905_225245_012/checkpoint/training_state_0.ckpt",
+          "new_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_training_20260906/state/readouttrain_cp_hk_free_s0_20260906_040412_006/checkpoint/training_state_0.ckpt",
+          "rng_equal": {
+            "python": true,
+            "numpy": true,
+            "torch_cpu": true
+          },
+          "contract_equal": true,
+          "sampler_equal": true,
+          "sampler_components_equal": {
+            "rng_state": true,
+            "task_state": true,
+            "task_sampling_state": true
+          },
+          "optimizer_equal": true,
+          "model_equal": true,
+          "changed_keys": 0,
+          "max_parameter_absolute_difference": 0,
+          "largest_tensor_differences": {}
+        },
+        {
+          "step": 100,
+          "old_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/state/memberctl_cp_hk_lowest_sorted_s0_cpu_20260905_225245_012/checkpoint/training_state_100.ckpt",
+          "new_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_training_20260906/state/readouttrain_cp_hk_free_s0_20260906_040412_006/checkpoint/training_state_100.ckpt",
+          "rng_equal": {
+            "python": true,
+            "numpy": true,
+            "torch_cpu": true
+          },
+          "contract_equal": true,
+          "sampler_equal": true,
+          "sampler_components_equal": {
+            "rng_state": true,
+            "task_state": true,
+            "task_sampling_state": true
+          },
+          "optimizer_equal": false,
+          "model_equal": false,
+          "changed_keys": 31,
+          "max_parameter_absolute_difference": 0.30823300778865814,
+          "largest_tensor_differences": {
+            "layer_list.2.gnn_layers.0.bn.running_var": 147.74100017547607,
+            "layer_list.2.gnn_layers.0.bn.running_mean": 15.293635368347168,
+            "layer_list.0.module_list.0.bn.running_var": 3.8544326424598694
+          }
+        },
+        {
+          "step": 2500,
+          "old_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/state/memberctl_cp_hk_lowest_sorted_s0_cpu_20260905_225245_012/checkpoint/training_state_2500.ckpt",
+          "new_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_training_20260906/state/readouttrain_cp_hk_free_s0_20260906_040412_006/checkpoint/training_state_2500.ckpt",
+          "rng_equal": {
+            "python": true,
+            "numpy": true,
+            "torch_cpu": true
+          },
+          "contract_equal": true,
+          "sampler_equal": true,
+          "sampler_components_equal": {
+            "rng_state": true,
+            "task_state": true,
+            "task_sampling_state": true
+          },
+          "optimizer_equal": false,
+          "model_equal": false,
+          "changed_keys": 31,
+          "max_parameter_absolute_difference": 1.087679386138916,
+          "largest_tensor_differences": {
+            "layer_list.2.gnn_layers.0.bn.running_var": 323.2213439941406,
+            "layer_list.2.gnn_layers.0.bn.running_mean": 16.84683132171631,
+            "layer_list.0.reset_mlp_m.weight": 1.087679386138916
+          }
+        }
+      ]
+    },
+    {
+      "model_id": "readouttrain_cp_hk_free_s1",
+      "previous_model_id": "memberctl_cp_hk_lowest_sorted_s1",
+      "source": "cp_hk",
+      "seed": 1,
+      "steps": [
+        {
+          "step": 0,
+          "old_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/state/memberctl_cp_hk_lowest_sorted_s1_cpu_20260905_225245_016/checkpoint/training_state_0.ckpt",
+          "new_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_training_20260906/state/readouttrain_cp_hk_free_s1_20260906_040412_008/checkpoint/training_state_0.ckpt",
+          "rng_equal": {
+            "python": true,
+            "numpy": true,
+            "torch_cpu": true
+          },
+          "contract_equal": true,
+          "sampler_equal": true,
+          "sampler_components_equal": {
+            "rng_state": true,
+            "task_state": true,
+            "task_sampling_state": true
+          },
+          "optimizer_equal": true,
+          "model_equal": true,
+          "changed_keys": 0,
+          "max_parameter_absolute_difference": 0,
+          "largest_tensor_differences": {}
+        },
+        {
+          "step": 100,
+          "old_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/state/memberctl_cp_hk_lowest_sorted_s1_cpu_20260905_225245_016/checkpoint/training_state_100.ckpt",
+          "new_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_training_20260906/state/readouttrain_cp_hk_free_s1_20260906_040412_008/checkpoint/training_state_100.ckpt",
+          "rng_equal": {
+            "python": true,
+            "numpy": true,
+            "torch_cpu": true
+          },
+          "contract_equal": true,
+          "sampler_equal": true,
+          "sampler_components_equal": {
+            "rng_state": true,
+            "task_state": true,
+            "task_sampling_state": true
+          },
+          "optimizer_equal": false,
+          "model_equal": false,
+          "changed_keys": 31,
+          "max_parameter_absolute_difference": 0.1702088825404644,
+          "largest_tensor_differences": {
+            "layer_list.2.gnn_layers.0.bn.running_var": 252.27158451080322,
+            "layer_list.2.gnn_layers.0.bn.running_mean": 12.42077922821045,
+            "layer_list.0.module_list.0.bn.running_var": 2.053265754133463
+          }
+        },
+        {
+          "step": 2500,
+          "old_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/state/memberctl_cp_hk_lowest_sorted_s1_cpu_20260905_225245_016/checkpoint/training_state_2500.ckpt",
+          "new_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_training_20260906/state/readouttrain_cp_hk_free_s1_20260906_040412_008/checkpoint/training_state_2500.ckpt",
+          "rng_equal": {
+            "python": true,
+            "numpy": true,
+            "torch_cpu": true
+          },
+          "contract_equal": true,
+          "sampler_equal": true,
+          "sampler_components_equal": {
+            "rng_state": true,
+            "task_state": true,
+            "task_sampling_state": true
+          },
+          "optimizer_equal": false,
+          "model_equal": false,
+          "changed_keys": 31,
+          "max_parameter_absolute_difference": 1.0966687947511673,
+          "largest_tensor_differences": {
+            "layer_list.2.gnn_layers.0.bn.running_var": 304.7942085266113,
+            "layer_list.2.gnn_layers.0.bn.running_mean": 20.73725414276123,
+            "layer_list.0.module_list.0.bn.running_mean": 1.1814422011375427
+          }
+        }
+      ]
+    },
+    {
+      "model_id": "readouttrain_cp_hk_free_s2",
+      "previous_model_id": "memberctl_cp_hk_lowest_sorted_s2",
+      "source": "cp_hk",
+      "seed": 2,
+      "steps": [
+        {
+          "step": 0,
+          "old_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/state/memberctl_cp_hk_lowest_sorted_s2_cpu_20260905_225245_020/checkpoint/training_state_0.ckpt",
+          "new_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_training_20260906/state/readouttrain_cp_hk_free_s2_20260906_040412_010/checkpoint/training_state_0.ckpt",
+          "rng_equal": {
+            "python": true,
+            "numpy": true,
+            "torch_cpu": true
+          },
+          "contract_equal": true,
+          "sampler_equal": true,
+          "sampler_components_equal": {
+            "rng_state": true,
+            "task_state": true,
+            "task_sampling_state": true
+          },
+          "optimizer_equal": true,
+          "model_equal": true,
+          "changed_keys": 0,
+          "max_parameter_absolute_difference": 0,
+          "largest_tensor_differences": {}
+        },
+        {
+          "step": 100,
+          "old_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/state/memberctl_cp_hk_lowest_sorted_s2_cpu_20260905_225245_020/checkpoint/training_state_100.ckpt",
+          "new_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_training_20260906/state/readouttrain_cp_hk_free_s2_20260906_040412_010/checkpoint/training_state_100.ckpt",
+          "rng_equal": {
+            "python": true,
+            "numpy": true,
+            "torch_cpu": true
+          },
+          "contract_equal": true,
+          "sampler_equal": true,
+          "sampler_components_equal": {
+            "rng_state": true,
+            "task_state": true,
+            "task_sampling_state": true
+          },
+          "optimizer_equal": false,
+          "model_equal": false,
+          "changed_keys": 31,
+          "max_parameter_absolute_difference": 0.25487253069877625,
+          "largest_tensor_differences": {
+            "layer_list.2.gnn_layers.0.bn.running_var": 124.67130374908447,
+            "layer_list.2.gnn_layers.0.bn.running_mean": 12.560423374176025,
+            "layer_list.0.module_list.0.bn.running_var": 2.7027758359909058
+          }
+        },
+        {
+          "step": 2500,
+          "old_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/state/memberctl_cp_hk_lowest_sorted_s2_cpu_20260905_225245_020/checkpoint/training_state_2500.ckpt",
+          "new_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_training_20260906/state/readouttrain_cp_hk_free_s2_20260906_040412_010/checkpoint/training_state_2500.ckpt",
+          "rng_equal": {
+            "python": true,
+            "numpy": true,
+            "torch_cpu": true
+          },
+          "contract_equal": true,
+          "sampler_equal": true,
+          "sampler_components_equal": {
+            "rng_state": true,
+            "task_state": true,
+            "task_sampling_state": true
+          },
+          "optimizer_equal": false,
+          "model_equal": false,
+          "changed_keys": 31,
+          "max_parameter_absolute_difference": 1.3407053351402283,
+          "largest_tensor_differences": {
+            "layer_list.2.gnn_layers.0.bn.running_var": 444.40704345703125,
+            "layer_list.2.gnn_layers.0.bn.running_mean": 19.044471740722656,
+            "layer_list.0.reset_mlp_m.weight": 1.3407053351402283
+          }
+        }
+      ]
+    }
+  ]
+}
