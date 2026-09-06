@@ -44,7 +44,7 @@ trap cleanup_workers EXIT INT TERM
 
 mkdir -p "$EVAL_STATE_ROOT" "$EVAL_LOG_ROOT/queue" "$EVAL_LOG_ROOT/ready"
 cd "$REPO_ROOT"
-[[ -f "$REFERENCE_FINGERPRINTS" ]] || { echo "missing fingerprint ledger $REFERENCE_FINGERPRINTS" >&2; exit 1; }
+[[ -z "$REFERENCE_FINGERPRINTS" || -f "$REFERENCE_FINGERPRINTS" ]] || { echo "missing fingerprint ledger $REFERENCE_FINGERPRINTS" >&2; exit 1; }
 if [[ "$DRY_RUN" != 1 ]]; then
   "$PYTHON" "$SCRIPT_DIR/verify_training.py" --run-dir "$TRAINING_RUN_DIR" \
     > "$EVAL_LOG_ROOT/training_verification.json"
@@ -103,9 +103,9 @@ launch_wave() {
          --evaluation-log-root "$EVAL_LOG_ROOT/internal/production_bs${BATCH_SIZE}"
          --results-root "$RESULTS_ROOT"
          --evaluation-run-stamp "${RUN_ID}_${wave}_bs${BATCH_SIZE}"
-         --reference-fingerprints "$REFERENCE_FINGERPRINTS"
          --ready-dir "$ready_dir" --expected-workers "$expected"
          --min-host-reserve-gib "$MIN_HOST_RESERVE_GIB")
+    [[ -n "$REFERENCE_FINGERPRINTS" ]] && cmd+=(--reference-fingerprints "$REFERENCE_FINGERPRINTS")
     if [[ "$DRY_RUN" == 1 ]]; then
       printf 'DRY wave=%s worker=%s gpu=%s target=%s' "$wave" "$worker" "$gpu" "$target"
       printf ' %q' "${cmd[@]}"; printf '\n'
