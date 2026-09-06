@@ -91,6 +91,9 @@ def main():
     receipt = json.loads((args.data / "member_training_verified/DONE.json").read_text())
     arms = pd.read_json(args.data / "member_training_verified/arms.json")
     verify_receipt(receipt, arms)
+    input_receipt = json.loads((args.data / "member_training_verified/input_validation.json").read_text())
+    if input_receipt.get("all_cached_batches_identical") is not True or input_receipt.get("stream_target_cells") != 10:
+        raise ValueError("exact cached-input validation missing")
     old = pd.read_csv(args.data / "replay_cells.csv")
     references = {"original": old[old.variant == "baseline"], "fresh": pd.read_csv(args.data / "fresh_replay_cells.csv")}
     streams = [validate_replay(read_jsonl(args.data / f"member_replay_{s}"), arms, ref, s) for s, ref in references.items()]

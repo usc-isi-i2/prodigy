@@ -92,6 +92,14 @@ def main():
     for stream, ref in references.items():
         streams.append(validate(read_jsonl(args.data / f"trajectory_{stream}"), manifest, ref, stream))
     cells = pd.concat(streams, ignore_index=True)
+    inventory = pd.read_json(args.data / "trajectory_checkpoint_inventory.json")
+    if len(inventory) != 36 or inventory.model_id.duplicated().any() or not inventory.finite.all():
+        raise ValueError("missing finite-checkpoint inventory")
+    if not (cells.weights_sha256 == cells.model_id.map(inventory.set_index("model_id").weights_sha256)).all():
+        raise ValueError("checkpoint digest differs from read-only inventory")
+    input_receipt = json.loads((args.data / "trajectory_input_validation.json").read_text())
+    if not input_receipt.get("all_cached_batches_identical") or input_receipt.get("stream_target_cells") != 10:
+        raise ValueError("missing exact cached-input comparison")
     matched = streams[0].merge(streams[1], on=KEY, suffixes=("_original", "_fresh"), validate="one_to_one")
     if not (matched.weights_sha256_original == matched.weights_sha256_fresh).all() or (matched.episode_fingerprint_original == matched.episode_fingerprint_fresh).any():
         raise ValueError("changed weights or unchanged episodes across streams")

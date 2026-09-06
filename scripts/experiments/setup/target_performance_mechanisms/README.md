@@ -180,3 +180,25 @@ Only a substantive run that passes all checks produces a validated
 offsets 0 and 100003, with separate outputs, all five targets, and no historical
 metric-parity requirement for these new weights. Check target fingerprints against
 the established caches, and weight hashes across episode streams, in the analysis.
+
+### Finite training-to-evaluation dependency
+
+`finish_member_pipeline.py` can run in a separate frozen worktree/tmux session
+while the existing CPU trainer completes. It does not launch or modify training.
+It waits at most 12 hours for the substantive validity receipt, rejects failed or
+smoke runs and revision mismatches, then replays all 24 models on both prescribed
+episode streams using four CPU threads and hidden GPUs. It validates all 320
+cached batch hashes against the established original/fresh caches and publishes
+`input_validation.json` only after both complete. Example (use the actual training
+revision, not the current evaluation worktree's HEAD):
+
+```bash
+python -m scripts.experiments.setup.target_performance_mechanisms.finish_member_pipeline \
+  --training-run /dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906 \
+  --training-revision 75f0853f96272120a1e295dfbd38c04f2b71fe62 \
+  --output log/target_mechanisms/member_evaluation_unique_name --dry-run
+```
+
+Remove `--dry-run` to start the finite continuation. Existing outputs are never
+overwritten; a failed dependency stops with a preserved `pipeline.json` report.
+The two replay logs and outputs remain underneath that unique output directory.
