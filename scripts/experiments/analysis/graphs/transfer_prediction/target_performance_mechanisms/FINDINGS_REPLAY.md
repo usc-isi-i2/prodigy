@@ -802,6 +802,42 @@ The corrected launch explicitly invokes the `prodigy` environment's Python;
 the original failure log is preserved with `_failed_environment.log`. The
 experiment code, smoke validation, and declared training protocol are unchanged.
 
+## Complete mixture complementarity diagnostic — pending
+
+The historical 54-model singleton/pair/LOO lattice has aggregate metrics but did
+not retain the complete query predictions needed to distinguish complementary
+specialist errors from different decisions learned by a mixture. The new replay
+covers all 45 mixtures, all five targets and both fixed episode streams. The
+nine specialist exports are reused only after exact input/checkpoint identity
+and metric reproduction checks. Equal-probability constituent averaging is
+primary; equal-logit averaging is secondary. Neither fits query labels or selects
+ensemble weights. Foreign-source pairs and LOO are reported separately; an
+ensemble's 2x/8x compute advantage is not evidence of causal training interference.
+These are the historical sampler models, not the later corrected runs.
+
+The first replay stopped on one numerical parity failure. A direct matched audit
+at `4c89f1b7` established that the Hong Kong-omitted LOO model's suspension AUC
+differs by exactly one CPU-tied positive/negative query pair: original GPU
+0.5087890625 versus CPU 0.508819580078125. All three GPU repeats reproduce the
+original metrics; a fresh unhooked CPU pass reproduces every saved CPU logit
+bit-exactly. All predicted classes are unchanged. The original results, failed
+replay, pair scores and all repeats are retained. See
+`data/mixture_numerical_audit/README.md` and `audit.json`.
+
+The retry launched **11:34:09 UTC**, frozen revision `5fdfba2a`, Tucker worktree
+`/dataMeR1/phil/gfm/prodigy-mechanisms-complement`, tmux
+`mechanism-mixture-complementarity`. Fourteen tests and the dry run passed.
+Its four-thread CPU pipeline uses a generated reference copy for only the audited
+cell, preserving the immutable historical table and all general parity tolerances.
+Completion must distinguish 224 strict original mixture cells from one individually
+audited numerical cell. The full 7,650-row replay automatically precedes the
+540-model-cell prediction audit, 450 fixed-ensemble comparisons and 1,350 error
+strata. The local reporting code checks complete source coverage, all metric
+arithmetic, shared-error accounting and both episode streams before summarizing.
+Within-target partial rank associations are descriptive; 28 foreign pairs share
+sources and do not provide 28 independent training replications. No ensemble or
+error-complementarity result has been interpreted at this update.
+
 ## Artifacts and runtime provenance
 
 - Local branch/worktree: `codex/target-performance-mechanisms`,
