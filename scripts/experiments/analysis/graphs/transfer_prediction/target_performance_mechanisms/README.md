@@ -195,3 +195,6 @@ remain visible. The primary exploratory prediction is that the foreign Facebook
 LOO ensemble advantage remains positive on both streams at step 300; a failure
 must be reported. These are update/episode budgets, not matched training FLOPs,
 capacity, inference cost or training data. No query-selected ensemble weights.
+The complete analysis is now verified; its primary Facebook prediction failed.
+`plot_mixture_budget.py` renders every foreign case at all four saved steps,
+including the fixed budget rule, inference-cost caveat and both episode streams.

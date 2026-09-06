@@ -47,6 +47,15 @@ def fixture(root):
 
 
 class MixtureBudgetTests(unittest.TestCase):
+    def test_figure_keeps_all_foreign_cases_and_steps(self):
+        from .plot_mixture_budget import panel_data
+        with tempfile.TemporaryDirectory() as tmp:
+            _, _, tables = fixture(Path(tmp))
+            cells, _ = summarize_budget(tables["comparisons"])
+            self.assertEqual(len(panel_data(cells)), 1160)
+            with self.assertRaisesRegex(ValueError, "1800"):
+                panel_data(cells[cells.specialist_step != 100])
+
     def test_budget_requires_actual_configs_and_matching_sources(self):
         with tempfile.TemporaryDirectory() as tmp:
             models, _, _ = fixture(Path(tmp))

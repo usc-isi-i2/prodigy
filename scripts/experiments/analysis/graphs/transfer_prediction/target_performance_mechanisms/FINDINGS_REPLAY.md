@@ -843,6 +843,9 @@ the trained mixture trails fixed probability averaging by **2.49/1.88 AUC points
 trails its eight-specialist ensemble by **6.24/8.17 points**: mixture AUC
 .7651/.7368 versus ensemble .8275/.8186. The ensemble also exceeds the best
 constituent (.7738/.7680), so this is not solely selection of the strongest donor.
+This comparison trains every specialist for 2500 updates. The later budget
+check below **does not reproduce the Facebook LOO advantage within the joint
+model's total update budget**; do not cite the large gap as a budget-controlled result.
 Pair mixtures fix 4.89/5.14% of queries that both constituents miss, but introduce
 errors on 7.22/7.01% that both get right. This accounts for nearly all their mean
 accuracy disadvantage; it is an accuracy decomposition, not an AUC decomposition.
@@ -932,6 +935,67 @@ benefit of the sampler correction or explains general donor quality.
 Evidence: `data/corrected_sampler_{cells,vs_historical,endpoint_changes,endpoint_summary,terminal_ranking}.csv`,
 `data/corrected_sampler_verified/`, and
 `figures/corrected_sampler_twibot_trajectories.png`.
+
+## Specialist training-update budget check — complete, primary prediction failed
+
+The exploratory protocol was recorded after terminal ensemble/trajectory results
+were known but before computing earlier-checkpoint ensembles. All four saved
+specialist steps (100/300/900/2500), all 45 fixed 2500-update mixtures, five
+targets and both streams were retained. All 54 actual training configurations
+were resolved against completed run logs/results and exact checkpoint paths:
+source restrictions, four episodes per batch, 2500 total updates and the explicit
+four-step save schedule agree. This is not a checkpoint-name-only budget claim.
+
+The CPU prediction-only job ran in `/dataMeR1/phil/gfm/prodigy-mechanisms-budget`,
+frozen revision `1fee2c57`, tmux `mechanism-mixture-budget`, launched
+**12:12:14 UTC** and verified complete by 12:14:56 UTC. Ten tests and the audited
+dry run passed on Tucker. All 810 distinct prediction cells reproduce saved
+metrics and exact cached inputs; 1800 comparisons and 5400 error strata pass
+local arithmetic/coverage checks. Every step-2500 model/ensemble/stratum result
+reproduces the earlier complementarity analysis, with no relaxed tolerances.
+
+The fixed rule chooses the largest available specialist step with K × step ≤
+2500: **900 per pair member (1800 total)** and **300 per LOO member (2400 total)**.
+The primary prediction was a positive foreign Facebook LOO ensemble advantage
+on both streams. It **fails on both**: ensemble AUC .73746/.73412 versus joint
+model .76510/.73685, differences **−2.764/−.272 AUC points**. At 900 updates
+per specialist (7200 total), the ensemble rises to .80975/.79615; at 2500 each
+(20000 total), .82754/.81856. The large terminal Facebook advantage cannot be
+used to rule out extra training budget. Its source/capacity/optimization causes
+remain entangled; this observation is not proof that extra updates cause the gap.
+
+Secondary outcomes under the same fixed rule, ensemble minus trained-mixture
+AUC points (original/fresh):
+
+| Foreign target | Pair mean, 28 cases | LOO, one case |
+|---|---:|---:|
+| COVID Political | −1.861 / −1.384 | −2.993 / −1.827 |
+| Election | −.277 / −.057 | +.311 / −.433 |
+| Facebook pages | +.975 / +.251 | −2.764 / −.272 |
+| TwiBot | +.806 / +1.022 | +7.526 / +7.791 |
+| Ukraine suspension | +.388 / +.039 | +1.422 / +1.324 |
+
+**TwiBot supplies a secondary within-update-budget advantage, not a replacement
+primary success.** At step 300, its foreign ensemble scores .70012/.68524
+versus the LOO model's .62486/.60733. It also beats the best same-step
+constituent by .02243/.00971. Continuing the specialists to steps 900 and 2500
+reduces ensemble AUC on both streams; their gain falls to .07/.36 AUC points
+at step 2500. Foreign Facebook pair ensembles have a much smaller positive
+mean at step 900, with 13/28 positive on both streams; COVID Political still
+favors the trained mixtures. Suspension remains close to chance and Election
+changes sign across streams.
+
+All budget comparisons keep ensemble capacity and model forwards **2x/8x**.
+Saved-update/episode counts are not matched training FLOPs or wall time, since
+sampled subgraphs differ. No query-fitted weights, temperatures, or checkpoint
+selection were used. One seed, shared sources and already-inspected targets
+preclude independent replication or a general remedy claim. The joint model
+is fixed at step 2500; these curves do not establish a matched mixture-trajectory
+causal contrast or a new explanation of overall Ukraine/COVID donor quality.
+
+Evidence: `data/mixture_budget_predictions/` (including actual-config audit),
+`data/mixture_budget_{comparisons,summary}.csv`, `data/mixture_budget_validation.json`,
+and `figures/mixture_training_budget_foreign.png`.
 
 ## Artifacts and runtime provenance
 
