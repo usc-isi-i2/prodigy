@@ -1,5 +1,6 @@
 import unittest
 import random
+import pandas as pd
 
 import torch
 from torch_geometric.data import Data, Batch
@@ -10,6 +11,7 @@ from .replay import batch_hash, bn_mode, clone_batch, episode_probe, intervene, 
 from models.metaGNN import MetaGNNLayer
 from .probe_cached_inputs import standardized_probe, input_summaries, detailed_summaries
 from .probe_source_coverage import select_references, nearest_cosine, double_center, correlation
+from .probe_metadata import metadata_features, FIELDS
 from .audit_source_episodes import member_variants, raw_probe_stats
 
 
@@ -41,6 +43,19 @@ def fixture():
 
 
 class ReplayTest(unittest.TestCase):
+    def test_metadata_excludes_label_and_marks_missing(self):
+        frame = pd.DataFrame({**{field: [3., None] for field in FIELDS},
+                              "verified": ["True", "unknown"], "label_suspended": [1, 0]})
+        values, missing = metadata_features(frame)
+        changed = frame.copy()
+        changed["label_suspended"] = [0, 1]
+        other, _ = metadata_features(changed)
+        torch.testing.assert_close(values, other)
+        self.assertEqual(values.shape, (2, 12))
+        self.assertTrue(torch.isfinite(values).all())
+        self.assertEqual(float(values[0, -1]), 1.)
+        torch.testing.assert_close(missing[1], torch.ones(12))
+
     def test_coverage_normalization_and_residualization(self):
         reference, selected = select_references(torch.eye(4) * 3, torch.ones(4), 4, "uniform_unique", 1)
         score = nearest_cosine(torch.eye(4) * 2, reference, chunk=2)
