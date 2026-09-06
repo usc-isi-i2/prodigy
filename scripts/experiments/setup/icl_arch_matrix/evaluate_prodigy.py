@@ -73,6 +73,15 @@ def parse_args():
     parser.add_argument("--run-stamp", default="20260810")
     parser.add_argument("--device", default="0")
     parser.add_argument("--model-ids", default="")
+    parser.add_argument(
+        "--model-list",
+        default="",
+        help=(
+            "Optional TSV with model_id, checkpoint, and comma-separated sources. "
+            "This permits the audited CLS protocol to evaluate checkpoints outside "
+            "the built-in final-core/architecture layouts."
+        ),
+    )
     parser.add_argument("--datasets", default="")
     parser.add_argument(
         "--include-facebook",
@@ -93,6 +102,32 @@ def parse_args():
         help="Evaluate one deterministically initialized, untrained PRODIGY model.",
     )
     return parser.parse_args()
+
+
+def load_external_models(path: str | Path):
+    rows = []
+    with Path(path).open(encoding="utf-8") as handle:
+        header = handle.readline().rstrip("\n").split("\t")
+        if header != ["model_id", "checkpoint", "sources"]:
+            raise ValueError(f"unexpected model-list header: {header}")
+        for line_number, raw in enumerate(handle, start=2):
+            fields = raw.rstrip("\n").split("\t")
+            if len(fields) != 3:
+                raise ValueError(f"invalid model-list row {line_number}: {raw!r}")
+            model_id, checkpoint, sources = fields
+            rows.append(
+                SimpleNamespace(
+                    model_id=model_id,
+                    checkpoint=Path(checkpoint),
+                    sources=tuple(filter(None, sources.split(","))),
+                )
+            )
+    if not rows:
+        raise ValueError(f"empty model list: {path}")
+    ids = [row.model_id for row in rows]
+    if len(ids) != len(set(ids)):
+        raise ValueError(f"duplicate model ids in {path}")
+    return rows
 
 
 def checkpoint_path(args, model_id: str, checkpoint_step: int) -> Path:
@@ -178,9 +213,15 @@ def main() -> int:
     if args.random_init:
         if args.checkpoint_step != TRAIN_STEPS:
             raise ValueError("--checkpoint-step cannot be combined with --random-init")
-        if selected:
-            raise ValueError("--model-ids cannot be combined with --random-init")
+        if selected or args.model_list:
+            raise ValueError("--model-ids/--model-list cannot be combined with --random-init")
         models = [SimpleNamespace(model_id="random_init", sources=())]
+    elif args.model_list:
+        models = load_external_models(args.model_list)
+        if selected:
+            models = [model for model in models if model.model_id in selected]
+            if selected != {model.model_id for model in models}:
+                raise ValueError(f"unknown model ids: {sorted(selected - {m.model_id for m in models})}")
     else:
         if args.checkpoint_layout == "radius-finalcore":
             if not selected:
@@ -219,7 +260,9 @@ def main() -> int:
                 checkpoint = None
                 checkpoint_step = 0 if args.random_init else args.checkpoint_step
                 if not args.random_init:
-                    checkpoint = checkpoint_path(args, plan_model.model_id, checkpoint_step)
+                    checkpoint = getattr(plan_model, "checkpoint", None)
+                    if checkpoint is None:
+                        checkpoint = checkpoint_path(args, plan_model.model_id, checkpoint_step)
                     if not checkpoint.is_file():
                         raise FileNotFoundError(checkpoint)
                 params = resolved_params(

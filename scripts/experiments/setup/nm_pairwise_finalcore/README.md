@@ -110,3 +110,23 @@ grid. Strict aggregation refuses partial, duplicate, wrong-protocol, wrong-strea
 or non-finite cells. Its outputs include the long 324-cell table, three 36x9
 metric matrices, a seen-versus-held-out summary, and a completeness receipt under
 `log/nm_pairwise_finalcore_eval/production/bs32/summary/`.
+
+## Downstream classification lattice
+
+The follow-up CLS sweep evaluates the seed-0 step-2,500 checkpoints for all nine
+specialists, all 36 pairs, and all nine leave-one-out models on the five labeled
+social targets. It uses the established audited protocol: 128 fixed 2-way,
+10-shot episodes per cell, including Facebook Pages. The 270 cells run over GPUs
+0--3 with W&B offline and aggregate only after complete unique coverage validates.
+
+```bash
+tmux new-session -d -s nm-cls-lattice \
+  'export PATH="/home/mhchu/miniconda3/bin:$PATH"; \
+   cd /dataMeR1/phil/gfm/prodigy-nm-pairs; \
+   bash scripts/experiments/setup/nm_pairwise_finalcore/run_cls_lattice_tucker.sh \
+   > log/nm_cls_lattice_orchestrator.log 2>&1'
+```
+
+Results land in `log/nm_cls_lattice_20260905/classification_long.tsv` with a
+completeness receipt, per-GPU raw JSONL, exact checkpoint manifest, provenance,
+run logs, and offline W&B histories.
