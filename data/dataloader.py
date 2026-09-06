@@ -229,7 +229,8 @@ class NeighborTask(TaskBase):
                  center_radii=None, center_radius_weights=None,
                  center_region_fanout=64, center_region_node_limit=4096,
                  center_region_candidate_limit=512, center_region_sampler=None,
-                 center_max_attempts=200):
+                 center_max_attempts=200, member_policy="lowest_sorted",
+                 member_sampling_seed=-1):
         self.neighbor_sampler = neighbor_sampler
         self.center_region_sampler = center_region_sampler or neighbor_sampler
         self.size = size
@@ -240,6 +241,23 @@ class NeighborTask(TaskBase):
                 "Use 'strict' or 'replacement'."
             )
         self.sampling_strategy = sampling_strategy
+        policies = {"lowest_sorted", "lowest_shuffled", "uniform_sorted", "uniform_shuffled"}
+        if member_policy not in policies:
+            raise ValueError(f"unknown NM member policy: {member_policy}")
+        self.member_policy = member_policy
+        self.member_sampling_seed = int(member_sampling_seed)
+        if member_policy != "lowest_sorted" and self.member_sampling_seed < 0:
+            raise ValueError("experimental member policies require a dedicated sampling seed")
+        if self.member_sampling_seed >= 0 and (
+            sampling_strategy != "strict" or center_radii or not filter_min_degree or not confine_to_single_stratum
+        ):
+            raise ValueError("dedicated member streams require strict, degree-filtered, source-confined, non-radius NM episodes")
+        # Separate walk, retained-set and role RNGs make the factorial treatments
+        # share anchors/walks, independent of context sampling and model RNG use.
+        self.member_generators = None if self.member_sampling_seed < 0 else {
+            key: torch.Generator().manual_seed(self.member_sampling_seed + offset)
+            for key, offset in (("walk", 0), ("retention", 1), ("roles", 2))
+        }
         self.filter_min_degree = bool(filter_min_degree)
         self._eligible_cache = {}
         self.center_radii = None
@@ -406,18 +424,44 @@ class NeighborTask(TaskBase):
 
     def _sample_center_members(self, center, num_member, rng):
         node_idx = torch.ones(num_member * 10, dtype=torch.long) * center
-        node_idx = self.neighbor_sampler.random_walk(node_idx, self.direction)
+        streams = getattr(self, "member_generators", None)
+        kwargs = {} if streams is None else {"generator": streams["walk"]}
+        node_idx = self.neighbor_sampler.random_walk(node_idx, self.direction, **kwargs)
         if node_idx.numel() == 0:
             return None
         unique_node_idx = torch.unique(node_idx)
         if unique_node_idx.size(0) >= num_member:
-            return unique_node_idx[:num_member].tolist()
+            policy = getattr(self, "member_policy", "lowest_sorted")
+            if policy.startswith("uniform_"):
+                selected = unique_node_idx[torch.randperm(len(unique_node_idx), generator=streams["retention"])[:num_member]]
+                selected = selected.sort().values
+            else:
+                selected = unique_node_idx[:num_member]
+            if policy.endswith("_shuffled"):
+                selected = selected[torch.randperm(num_member, generator=streams["roles"])]
+            return selected.tolist()
         if self.sampling_strategy == "replacement":
             sampled = unique_node_idx.tolist()
             while len(sampled) < num_member:
                 sampled.append(rng.choice(sampled))
             return sampled[:num_member]
         return None
+
+    def sampling_state_dict(self):
+        return {"member_policy": self.member_policy,
+                "member_sampling_seed": self.member_sampling_seed,
+                "generators": None if self.member_generators is None else {
+                    key: generator.get_state() for key, generator in self.member_generators.items()}}
+
+    def load_sampling_state_dict(self, state):
+        if (state["member_policy"], state["member_sampling_seed"]) != (self.member_policy, self.member_sampling_seed):
+            raise ValueError("cannot restore a different member policy or sampling seed")
+        saved = state["generators"]
+        if (saved is None) != (self.member_generators is None):
+            raise ValueError("incompatible dedicated member streams")
+        if saved is not None:
+            for key, generator in self.member_generators.items():
+                generator.set_state(saved[key].cpu())
 
     def _sample_center_members_disjoint(self, center, num_member, forbidden):
         """Sample unique positives while preventing cross-label target collisions."""
@@ -858,10 +902,13 @@ class BatchSampler(Sampler):
         for name in ("scheduled_episode", "task_idx_idx"):
             if hasattr(self.task, name):
                 task_state[name] = int(getattr(self.task, name))
-        return {
+        result = {
             "rng_state": self.rng.getstate(),
             "task_state": task_state,
         }
+        if hasattr(self.task, "sampling_state_dict"):
+            result["task_sampling_state"] = self.task.sampling_state_dict()
+        return result
 
     def load_state_dict(self, state_dict):
         """Restore a state produced by :meth:`state_dict`."""
@@ -873,6 +920,13 @@ class BatchSampler(Sampler):
                     f"{type(self.task).__name__} has no such attribute."
                 )
             setattr(self.task, name, int(value))
+        sampling = state_dict.get("task_sampling_state")
+        if sampling is not None:
+            if not hasattr(self.task, "load_sampling_state_dict"):
+                raise ValueError("task cannot restore member sampling state")
+            self.task.load_sampling_state_dict(sampling)
+        elif getattr(self.task, "member_generators", None) is not None:
+            raise ValueError("checkpoint is missing dedicated member RNG states")
 
 
 def linearize(mask, inputs_idx, output_idx, batch_rand_perm = None):

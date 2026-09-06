@@ -628,6 +628,13 @@ def get_params(argv=None):
             "extracting two-hop context."
         ),
     )
+    args.add_argument("--neighbor_matching_member_policy", default="lowest_sorted",
+                      choices=["lowest_sorted", "lowest_shuffled", "uniform_sorted", "uniform_shuffled"],
+                      help="Training-only member retention/role control for merged covid19_twitter-format NM.")
+    args.add_argument("--neighbor_matching_member_seed", default=-1, type=int,
+                      help="Nonnegative enables private NM walk/retention/role streams; -1 preserves historical global RNG.")
+    args.add_argument("--train_episode_audit", default=False, type=str2bool,
+                      help="Record consumed training anchor/member IDs and role metadata for mechanism audits.")
     args.add_argument("--graph_filename", default="graph_data.pt", type=str)  # graph file to load from root
     args.add_argument(
         "--target_feature",
@@ -804,6 +811,16 @@ def get_params(argv=None):
         "e4": "e4_multi",
     }
     params["task_name"] = task_aliases.get(params["task_name"], params["task_name"])
+    member_control = params["neighbor_matching_member_policy"] != "lowest_sorted" or params["neighbor_matching_member_seed"] >= 0
+    if member_control:
+        if params["dataset"] != "covid19_twitter" or params["task_name"] != "neighbor_matching":
+            raise ValueError("member-policy controls currently require covid19_twitter-format neighbor_matching")
+        if params["neighbor_matching_member_seed"] < 0:
+            raise ValueError("member-policy controls require a nonnegative dedicated sampling seed")
+        if params.get("neighbor_sampling_episode_source") != "graph_id" or not params.get("neighbor_matching_edge_split"):
+            raise ValueError("member-policy controls require source-confined split-aware NM")
+    if params["train_episode_audit"] and params["task_name"] != "neighbor_matching":
+        raise ValueError("train_episode_audit currently supports NM only")
 
     # Feature-ablation intervention: compose the ablation aug into the eval path.
     # Meant for -eval_only True runs; if used during training it would also ablate

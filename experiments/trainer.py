@@ -128,12 +128,14 @@ def _save_config_to_wandb_files(parameter):
 
 
 class TrainerFS():
+    _RESUME_DEFAULTS = {"neighbor_matching_member_policy": "lowest_sorted", "neighbor_matching_member_seed": -1}
     _RESUME_CONTRACT_KEYS = (
         "seed", "dataset", "root", "graph_filename", "task_name",
         "edge_view", "target_edge_view", "feature_subset", "original_features",
         "emb_dim", "layers", "gnn_type", "n_layer", "dropout", "n_hop",
         "neighbor_sampling_hop_sizes", "neighbor_sampling_node_limit",
         "neighbor_matching_walk_hops", "neighbor_sampling_strategy",
+        "neighbor_matching_member_policy", "neighbor_matching_member_seed",
         "neighbor_sampling_strata", "neighbor_sampling_episode_source",
         "neighbor_sampling_cross_source_prob", "neighbor_sampling_center_radii",
         "neighbor_sampling_center_radius_weights", "n_way", "n_shots", "n_query",
@@ -618,6 +620,8 @@ class TrainerFS():
         kwargs["neighbor_matching_edge_split"] = self.parameter.get(
             "neighbor_matching_edge_split", False
         )
+        kwargs["neighbor_matching_member_policy"] = self.parameter.get("neighbor_matching_member_policy", "lowest_sorted")
+        kwargs["neighbor_matching_member_seed"] = self.parameter.get("neighbor_matching_member_seed", -1)
         kwargs["label_emb_texts"] = self.parameter.get("label_emb_texts", "")
         kwargs["midterm_lp_neg_ratio"] = self.parameter.get("midterm_lp_neg_ratio", 1)
         kwargs["hard_negatives"] = self.parameter.get("hard_negatives", True)
@@ -1018,7 +1022,7 @@ class TrainerFS():
 
     def _resume_parameter_contract(self):
         return {
-            key: _config_safe_value(self.parameter.get(key))
+            key: _config_safe_value(self.parameter.get(key, self._RESUME_DEFAULTS.get(key)))
             for key in self._RESUME_CONTRACT_KEYS
         }
 
@@ -1089,6 +1093,10 @@ class TrainerFS():
                 f"{path} was produced with DataLoader workers and is not exact-resumable."
             )
         saved_contract = training.get("parameter_contract")
+        if isinstance(saved_contract, dict):
+            # Old checkpoints precede the opt-in member controls. Their missing
+            # keys mean the historical policy/global RNG, never a new treatment.
+            saved_contract = {**self._RESUME_DEFAULTS, **saved_contract}
         current_contract = self._resume_parameter_contract()
         if saved_contract != current_contract:
             if not isinstance(saved_contract, dict):
@@ -2057,6 +2065,9 @@ class TrainerFS():
                 train_dataloader_itr = iter(self.train_dataloader)
                 batch = next(train_dataloader_itr)
             t2 = time.time()
+            if self.parameter.get("train_episode_audit", False):
+                from experiments.episode_audit import append_episode_audit
+                append_episode_audit(batch, steps_run, self.logging_dir)
             batch = [i.to(self.device) for i in batch]
             raw_debug_graph = self._snapshot_debug_graph(batch)
             yt, yp, graph = self.model(*batch) # apply the model

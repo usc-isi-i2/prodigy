@@ -96,3 +96,47 @@ versions memory-map the graph; Tucker's PyTorch 2.0 loads the full artifact.
 Only the training adjacency is preprocessed. Runtime `.pt`
 files contain exact simulated member IDs and corresponding feature rows; these
 can support target-to-sampled-source coverage diagnostics later.
+
+## Controlled member-selection training
+
+`member_configs/` contains 24 prospective models: Ukraine/Hong Kong, three seeds,
+and retained-endpoint policy (lowest IDs/uniform) crossed with role order
+(ascending/shuffled). It is generated from the final-core recipe by:
+
+```bash
+python -m scripts.experiments.setup.target_performance_mechanisms.make_member_configs
+```
+
+The generator refuses an existing output directory. These configs use opt-in,
+separate walk/retention/role random streams so changes in context sampling or
+role randomization cannot shift subsequent positive walks. Legacy defaults
+preserve the historical RNG and sorted selection. Validation/test always use
+the legacy selector. Training state checkpoints include the private RNG states.
+Consumed anchor/member IDs, roles, and context sizes are recorded in each run's
+`data/consumed_episodes.jsonl.gz`, with hashes for matched-treatment verification.
+
+Before substantive training, run the small CPU integration check **on Tucker**:
+
+```bash
+WANDB_MODE=offline python -m scripts.experiments.setup.target_performance_mechanisms.smoke_member_training \
+  --output log/target_mechanisms/member_toy_unique_name
+```
+
+Then inspect the shared-graph plan (the example selects GPU 3; it must be free):
+
+```bash
+python -m scripts.experiments.setup.target_performance_mechanisms.run_member_training \
+  --run-dir log/target_mechanisms/member_training_unique_name --gpus 3 --dry-run
+```
+
+The wrapper uses `experiments/run_shared_graph.py`, six models per GPU, four
+loader workers per model, and a bounded total worker budget. CLI arguments can
+change concurrency. It refuses active compute processes on selected GPUs,
+insufficient host/shared RAM, or an existing run directory. Check tmux and pending
+user jobs too: an apparently idle GPU may be reserved by a loading process.
+Use a dedicated worktree and tmux. Do not start training until the selected
+owned GPUs are available. `--smoke-steps 3` runs a separate GPU integration smoke;
+its artifacts are not research results. The substantive budget remains 2500.
+
+The prospective hypothesis, estimands, evaluation panel and validity gates are
+recorded outside git at `../paper/planning/member_selection_intervention_2026-09-06.md`.

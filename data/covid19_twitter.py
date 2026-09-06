@@ -495,6 +495,8 @@ def get_covid19_twitter_dataloader(
                 center_max_attempts=int(
                     kwargs.get("neighbor_sampling_center_max_attempts", 200)
                 ),
+                member_policy=kwargs.get("neighbor_matching_member_policy", "lowest_sorted") if split == "train" else "lowest_sorted",
+                member_sampling_seed=int(kwargs.get("neighbor_matching_member_seed", -1)) if split == "train" else -1,
             ),
             ParamSampler(batch_size, n_way, n_shot, n_query, 1),
             seed=seed,
