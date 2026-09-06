@@ -151,3 +151,18 @@ It separately reports each source/seed, all-target probe/model effects, and
 reproduction differences for the six historical standard-policy controls. The
 positive-consistency criterion was fixed before outcomes; probe-only improvement
 does not meet it. This is an exploratory follow-up, not a fresh-domain test.
+
+The separate historical mixture diagnostic uses the frozen 54-model lattice in
+`data/mixture_complementarity_inputs/`, not the sampler-corrected models. After
+the Tucker logit export/analysis completes, `analyze_mixture_complementarity.py`
+requires all 540 model cells, 450 mixture comparisons, 1,350 error strata and
+10 input sets under `data/mixture_complementarity_predictions/`. It independently
+checks source coverage, original aggregate parity, metric arithmetic, binary
+ensemble unanimity, error-stratum accounting and shared checkpoint/input identity.
+It reports all/foreign/target-seen panels for pairs and LOO separately, retaining
+both episode streams. Equal-probability averaging is primary; equal-logit is
+secondary. Within-target rank associations adjust for constituent mean AUC and
+AUC range, but do not provide independent-pair inference: pairs share sources,
+and there is only one training seed. Undefined partial associations remain
+undefined. Ensemble compute is 2x/8x the mixture; this is not causal interference
+evidence. Toy arithmetic and mutation tests exercise these reporting gates.

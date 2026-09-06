@@ -331,3 +331,24 @@ No target-selected weights or checkpoints. Foreign pair and foreign LOO results
 stay separate. Extra ensemble compute, one training seed, and prior target
 inspection limit the interpretation: this is not a causal interference test or
 an untouched-domain prediction study.
+
+After the complete replay, `analyze_mixture_predictions.py` reads saved logits
+and the cached input tensors, recomputes all 540 constituent/mixture metrics,
+and creates the fixed ensembles and unanimous/mixed error strata. It checks every
+batch hash and the production global/episode-local label mapping. An incomplete
+replay is rejected. Run this from an idle, appropriately revised worktree, not by
+updating a worktree whose training or replay is still active:
+
+```bash
+CUDA_VISIBLE_DEVICES='' WANDB_MODE=offline \
+  /home/mhchu/miniconda3/envs/prodigy/bin/python -m \
+  scripts.experiments.setup.target_performance_mechanisms.analyze_mixture_predictions \
+  --replay /dataMeR1/phil/gfm/prodigy-mechanisms-mixtures/log/target_mechanisms/mixture_complementarity_20260906 \
+  --output log/target_mechanisms/mixture_complementarity_predictions_20260906 --threads 4
+```
+
+The output consists of compact JSON tables and provenance; large prediction and
+input tensors stay on Tucker. Copy the compact tables into the analysis folder's
+`data/mixture_complementarity_predictions/` and run its
+`analyze_mixture_complementarity.py` to reproduce the summaries. Original scalar
+metric reproduction is an integrity gate, not a new independent evaluation.
