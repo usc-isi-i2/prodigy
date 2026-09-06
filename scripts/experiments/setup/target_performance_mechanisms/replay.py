@@ -31,6 +31,7 @@ from scripts.experiments.setup.icl_arch_matrix.common_protocol import (
 from scripts.experiments.setup.icl_arch_matrix.evaluate_prodigy import (
     resolved_params, load_external_models,
 )
+from scripts.experiments.setup.target_performance_mechanisms.label_interface import LABEL_VARIANTS, label_interface_mode
 
 
 def clone_batch(batch, device="cpu"):
@@ -140,7 +141,7 @@ def episode_probe(embeddings, batch, method):
 def intervene(batch, variant, seed):
     """Fixed-context input interventions; no labels used for feature shuffling."""
     graph = batch[0]
-    if variant in {"baseline", "bn_batch_encoder", "bn_batch_meta", "bn_batch_all", "meta_bias_normalized"}:
+    if variant in {"baseline", "bn_batch_encoder", "bn_batch_meta", "bn_batch_all", "meta_bias_normalized"} | LABEL_VARIANTS:
         return
     if variant == "center_features_only":
         real = graph.global_node_ids >= 0
@@ -264,6 +265,8 @@ def parse_args():
     p.add_argument("--data-root", default="/dataMeR1/phil/data")
     p.add_argument("--training-seed", type=int, default=0)
     p.add_argument("--eval-episode-seed-offset", type=int, default=0)
+    p.add_argument("--training-label-count", type=int, default=120,
+                   help="Active pretraining label-table rows: final-core 30 ways x batch 4 = 120")
     return p.parse_args()
 
 
@@ -276,7 +279,7 @@ def main():
         raise ValueError("unknown target")
     variants = args.variants.split(",")
     allowed = {"baseline", "center_features_only", "no_background_edges", "shuffle_context",
-               "zero_support_relations", "zero_label_text", "zero_support_and_label_text", "bn_batch_encoder", "bn_batch_meta", "bn_batch_all", "meta_bias_normalized"}
+               "zero_support_relations", "zero_label_text", "zero_support_and_label_text", "bn_batch_encoder", "bn_batch_meta", "bn_batch_all", "meta_bias_normalized"} | LABEL_VARIANTS
     if not set(variants) <= allowed or len(set(variants)) != len(variants):
         raise ValueError("invalid or duplicate variant")
     if not 1 <= args.batch_count <= 32:
@@ -345,7 +348,8 @@ def main():
                 for variant in variants:
                     collected = defaultdict(lambda: {"yt": [], "yp": [], "global": []})
                     exports = []
-                    with torch.no_grad(), bn_mode(trainer.model, variant), meta_bias_mode(trainer.model, variant):
+                    with torch.no_grad(), bn_mode(trainer.model, variant), meta_bias_mode(trainer.model, variant), \
+                            label_interface_mode(trainer.model, variant, args.training_label_count) as label_audit:
                         for index, path in enumerate(batch_paths):
                             # Trusted artifacts just created in this invocation.
                             raw = torch.load(path, map_location="cpu", weights_only=False)
@@ -389,6 +393,7 @@ def main():
                                "variant": variant, "decoder": decoder, "episodes": 4 * len(batch_paths),
                                "queries": len(yt), "episode_fingerprint": fingerprint.hexdigest(),
                                "weights_sha256": state_hash.hexdigest(), "checkpoint": str(model.checkpoint),
+                               "label_interface_diagnostic": label_audit,
                                "nll": F.cross_entropy(yp, yt).item(), **metrics}
                         prior = reference.get((model.model_id, name))
                         if variant == "baseline" and decoder == "full_model" and prior and args.batch_count == 32 and args.eval_episode_seed_offset == 0:
