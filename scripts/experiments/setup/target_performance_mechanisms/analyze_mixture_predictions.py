@@ -151,6 +151,26 @@ def load_predictions(directory, model, labels, metrics_rows):
         "queries": len(full), "metric_reproduction_max_abs_error": max(errors.values())}
 
 
+def compare_predictions(common, constituents, constituent_scores, mixture, mixture_score, labels):
+    """One fixed comparison, shared by terminal and training-budget diagnostics."""
+    ensemble = ensemble_scores(constituents, labels)
+    strata, extra = error_strata(constituents, mixture, ensemble, labels)
+    row = {**common, **extra}
+    for metric in METRICS:
+        values = [score[metric] for score in constituent_scores]
+        for name, op in (("mean", np.mean), ("min", np.min), ("max", np.max)):
+            row[f"constituent_{name}_{metric}"] = float(op(values))
+        row[f"mixture_{metric}"] = mixture_score[metric]
+        for rule, (result, _) in ensemble.items():
+            row[f"{rule}_ensemble_{metric}"] = result[metric]
+            row[f"mixture_minus_{rule}_ensemble_{metric}"] = mixture_score[metric] - result[metric]
+    for rule, (_, probs) in ensemble.items():
+        mixture_prob = F.softmax(mixture, dim=1)
+        row[f"mixture_{rule}_ensemble_decision_agreement"] = float((mixture_prob.argmax(1) == probs.argmax(1)).double().mean())
+        row[f"mixture_{rule}_ensemble_probability_l1"] = float((mixture_prob.double() - probs.double()).abs().sum(1).mean())
+    return row, [{**common, **r} for r in strata]
+
+
 def main():
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("--replay", type=Path, required=True)
@@ -204,27 +224,13 @@ def main():
             for model in mixtures:
                 members = [singleton_ids[s] for s in model["sources"]]
                 stacked = torch.stack([prediction[m] for m in members])
-                ensemble = ensemble_scores(stacked, labels)
-                strata, extra = error_strata(stacked, prediction[model["model_id"]], ensemble, labels)
                 common = {"stream": stream, "target": target, "model_id": model["model_id"],
                           "sources": model["sources"], "source_count": model["source_count"],
                           "target_seen": target in model["sources"], "queries": len(labels["local_y"])}
-                row = {**common, **extra}
-                for metric in METRICS:
-                    values = [scores[m][metric] for m in members]
-                    row[f"constituent_mean_{metric}"] = float(np.mean(values))
-                    row[f"constituent_min_{metric}"] = float(np.min(values))
-                    row[f"constituent_max_{metric}"] = float(np.max(values))
-                    row[f"mixture_{metric}"] = scores[model["model_id"]][metric]
-                    for rule, (result, _) in ensemble.items():
-                        row[f"{rule}_ensemble_{metric}"] = result[metric]
-                        row[f"mixture_minus_{rule}_ensemble_{metric}"] = row[f"mixture_{metric}"] - result[metric]
-                for rule, (_, probs) in ensemble.items():
-                    mixture_prob = F.softmax(prediction[model["model_id"]], dim=1)
-                    row[f"mixture_{rule}_ensemble_decision_agreement"] = float((mixture_prob.argmax(1) == probs.argmax(1)).double().mean())
-                    row[f"mixture_{rule}_ensemble_probability_l1"] = float((mixture_prob.double() - probs.double()).abs().sum(1).mean())
+                row, strata = compare_predictions(common, stacked, [scores[m] for m in members],
+                    prediction[model["model_id"]], scores[model["model_id"]], labels)
                 comparisons.append(row)
-                strata_output.extend([{**common, **r} for r in strata])
+                strata_output.extend(strata)
             print(json.dumps({"stream": stream, "target": target, "verified_model_predictions": 54, "mixture_comparisons": 45}), flush=True)
     if (len(metrics_output), len(comparisons), len(strata_output), len(prediction_inventory)) != (540, 450, 1350, 540):
         raise ValueError("incomplete model/comparison/stratum outputs")

@@ -178,6 +178,20 @@ and metrics in `data/corrected_sampler_{original,fresh}/`. Comparisons join the
 historical trajectory by source, update, target, decoder and episode stream—not
 by selecting a best checkpoint. Both all-source and foreign-source summaries are
 retained. This is a joint retention/role/RNG recipe comparison on one training
-seed, not a matched-training or role-only causal intervention. Three tests cover
+seed, not a matched-training or role-only causal intervention. Four tests cover
 the full grid, fixed endpoint arithmetic, source/budget metadata, raw-probe/input
-identity, and missing/mutated artifacts.
+identity, missing/mutated artifacts, and complete plotted trajectories. This
+replay is complete; `plot_corrected_sampler.py` shows every source and saved
+checkpoint for the four TwiBot diagnostic branches, with both episode streams.
+
+`analyze_mixture_budget.py` extends only the historical complementarity analysis
+to fixed specialist checkpoints at 100/300/900/2500 updates. It requires all
+810 prediction cells, 1800 comparisons and 5400 error strata under
+`data/mixture_budget_predictions/`, exact agreement with the saved trajectory
+weights/inputs, and full reproduction of every earlier step-2500 result. The
+budget rule selects the largest available specialist step with K × step ≤ 2500:
+900 for pairs and 300 for LOO. All steps, targets and source-membership panels
+remain visible. The primary exploratory prediction is that the foreign Facebook
+LOO ensemble advantage remains positive on both streams at step 300; a failure
+must be reported. These are update/episode budgets, not matched training FLOPs,
+capacity, inference cost or training data. No query-selected ensemble weights.

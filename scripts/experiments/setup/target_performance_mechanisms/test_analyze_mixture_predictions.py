@@ -8,7 +8,7 @@ import torch
 import torch.nn.functional as F
 
 from experiments.trainer import TrainerFS
-from .analyze_mixture_predictions import evaluate_logits, ensemble_scores, error_strata, load_predictions
+from .analyze_mixture_predictions import evaluate_logits, ensemble_scores, error_strata, load_predictions, compare_predictions
 
 
 def labels_for(y):
@@ -16,6 +16,18 @@ def labels_for(y):
 
 
 class MixturePredictionTests(unittest.TestCase):
+    def test_shared_comparison_preserves_metric_deltas_and_error_accounting(self):
+        labels = labels_for(torch.tensor([0, 1, 0, 1]))
+        a = torch.tensor([[2., 0.], [0., 2.], [0., 2.], [2., 0.]])
+        b = torch.tensor([[2., 0.], [2., 0.], [0., 2.], [0., 2.]])
+        members = torch.stack([a, b])
+        member_scores = [evaluate_logits(value, labels) for value in members]
+        row, strata = compare_predictions({"model_id": "m", "queries": 4}, members, member_scores, a, member_scores[0], labels)
+        ensemble = ensemble_scores(members, labels)
+        self.assertEqual(row["mixture_minus_probability_ensemble_roc_auc"], member_scores[0]["roc_auc"] - ensemble["probability"][0]["roc_auc"])
+        self.assertEqual(sum(s["mixture_correct"] for s in strata) / 4, row["mixture_accuracy"])
+        self.assertEqual([s["queries"] for s in strata], [1, 1, 2])
+
     def test_metrics_match_production_for_global_binary_and_facebook_local_labels(self):
         y = torch.tensor([0, 1, 0, 1])
         logits = torch.tensor([[2., 0.], [0., 3.], [.2, 1.], [2., .5]])

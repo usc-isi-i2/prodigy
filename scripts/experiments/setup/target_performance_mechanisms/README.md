@@ -389,3 +389,27 @@ changing retention and role order jointly and consuming randomness differently.
 This reuse is not the matched three-seed factorial, a role-only causal comparison,
 or an untouched-target validation. Require all 6,120 rows before comparing with
 the historical trajectories; do not choose checkpoints on target performance.
+
+## Specialist ensemble training-update budgets
+
+`analyze_mixture_budget_predictions.py` requires completed historical trajectory
+and mixture exports, then reads saved predictions only. It verifies all 810
+distinct model/step/target/stream outputs and constructs all four specialist-step
+ensembles for every pair/LOO mixture (1800 comparisons, 5400 error strata).
+Every terminal-step result must reproduce the completed complementarity analysis.
+The same production probability/logit and error-accounting functions are reused.
+
+```bash
+CUDA_VISIBLE_DEVICES='' WANDB_MODE=offline \
+  /home/mhchu/miniconda3/envs/prodigy/bin/python -m \
+  scripts.experiments.setup.target_performance_mechanisms.analyze_mixture_budget_predictions \
+  --output log/target_mechanisms/mixture_budget_predictions_20260906 --threads 4 --dry-run
+```
+
+After the dry run passes, remove `--dry-run` and run in its own frozen Tucker
+worktree/tmux session. Output/data/trajectory/mixture paths are overrideable.
+Copy completed compact JSON tables to the analysis folder's
+`data/mixture_budget_predictions/` and run `analyze_mixture_budget.py` locally.
+No new training or model forward is performed. This compares saved-update and
+episode budgets, not measured FLOPs or wall time. Ensembles retain 2x/8x inference
+models; results are not a causal interference test or untouched-target evidence.
