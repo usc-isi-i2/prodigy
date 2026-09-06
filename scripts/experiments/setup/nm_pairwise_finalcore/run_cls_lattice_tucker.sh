@@ -24,7 +24,8 @@ PYTHON="${PYTHON:-${CONDA_PREFIX}/bin/python}"
 
 mkdir -p "${OUTPUT_ROOT}/results" "${OUTPUT_ROOT}/runs" "${OUTPUT_ROOT}/queue" "${OUTPUT_ROOT}/eval_state"
 cd "${REPO_ROOT}"
-"${PYTHON}" "${SCRIPT_DIR}/make_cls_lattice_model_list.py" --output "${MODEL_LIST}"
+"${PYTHON}" -m scripts.experiments.setup.nm_pairwise_finalcore.make_cls_lattice_model_list \
+  --output "${MODEL_LIST}"
 [[ "$(($(wc -l < "${MODEL_LIST}") - 1))" == 54 ]] || { echo "model list must have 54 rows" >&2; exit 2; }
 
 for index in 0 1 2 3; do
@@ -68,7 +69,7 @@ status=0
 for pid in "${pids[@]}"; do wait "${pid}" || status=1; done
 (( status == 0 )) || { echo "one or more CLS shards failed" >&2; exit 1; }
 
-"${PYTHON}" "${SCRIPT_DIR}/aggregate_cls_lattice.py" \
+"${PYTHON}" -m scripts.experiments.setup.nm_pairwise_finalcore.aggregate_cls_lattice \
   --input-root "${OUTPUT_ROOT}/results" \
   --output "${OUTPUT_ROOT}/classification_long.tsv"
 date -u +%FT%TZ > "${OUTPUT_ROOT}/complete_utc.txt"
