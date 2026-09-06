@@ -47,6 +47,19 @@ def view(graph, name: str) -> torch.Tensor:
     raise KeyError(f"missing required {name} edge view")
 
 
+def cached_lp_views(state_root: str | Path, target: str, seed: int) -> tuple[torch.Tensor, torch.Tensor]:
+    """Return the exact background/holdout partition used by LP pretraining."""
+    path = Path(state_root) / "_cache" / f"{target}_edge_split_s{seed}.pt"
+    if not path.is_file():
+        raise FileNotFoundError(f"missing canonical LP edge split: {path}")
+    split = torch.load(path, map_location="cpu", weights_only=False)
+    train = split["train_edges"].long()
+    holdout = split["validation_edges"].long()
+    if train.ndim != 2 or holdout.ndim != 2 or train.shape[0] != 2 or holdout.shape[0] != 2:
+        raise ValueError(f"malformed canonical LP edge split: {path}")
+    return torch.cat((train, train.flip(0)), dim=1), holdout
+
+
 def encoder(config: dict, checkpoint: dict, device: torch.device) -> GraphSAGE:
     protocol = dict(config["protocol"])
     protocol.update(checkpoint["metadata"].get("protocol", {}))
@@ -121,8 +134,7 @@ def eval_cls_target(target, args, config, rows, device, output_root):
 
 def eval_lp_target(target, args, config, rows, device, output_root, pair):
     graph = unwrap(config["graphs"][target]["path"])
-    background_edges = view(graph, "static_background")
-    holdout_edges = view(graph, "static_holdout")
+    background_edges, holdout_edges = cached_lp_views(args.state_root, target, args.seed)
     n_nodes = int(graph.num_nodes)
     background = pair.Adjacency.from_edge_index(background_edges.numpy(), n_nodes)
     holdout = pair.Adjacency.from_edge_index(holdout_edges.numpy(), n_nodes)
@@ -139,6 +151,7 @@ def eval_lp_target(target, args, config, rows, device, output_root, pair):
     if not baseline_path.is_file():
         baseline = {
             "target": target, "negative_kind": "degree_matched", "seed": args.seed,
+            "edge_partition": "canonical_lp_training_cache",
             "n_pairs": len(pairs), "n_positive": int((pairs.label == 1).sum()),
             "holdout_leakage_edges": pair.leakage_check(background, pairs),
             "raw_feature_cosine": pair.evaluate_scores(
@@ -165,6 +178,7 @@ def eval_lp_target(target, args, config, rows, device, output_root, pair):
             "run_id": run_id, "objective": args.objective,
             "sources": checkpoint["metadata"]["sources"],
             "checkpoint_step": int(checkpoint["step"]), "seed": args.seed,
+            "edge_partition": "canonical_lp_training_cache",
             "negative_kind": "degree_matched", "n_pairs": len(pairs), "report": report,
             "gates": {
                 "holdout_leakage_edges": pair.leakage_check(background, pairs),
