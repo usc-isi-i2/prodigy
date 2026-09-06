@@ -91,6 +91,10 @@ def main():
     receipt = json.loads((args.data / "member_training_verified/DONE.json").read_text())
     arms = pd.read_json(args.data / "member_training_verified/arms.json")
     verify_receipt(receipt, arms)
+    contract = json.loads((args.data / "member_training_contract_validation.json").read_text())
+    if contract.get("models") != 24 or not all(contract.get(k) is True for k in (
+            "declared_cpu_recipe_matches", "common_non_treatment_settings", "consumed_episode_source_labels_match")):
+        raise ValueError("independent effective-config/source-label contract audit required")
     input_receipt = json.loads((args.data / "member_training_verified/input_validation.json").read_text())
     if input_receipt.get("all_cached_batches_identical") is not True or input_receipt.get("stream_target_cells") != 10:
         raise ValueError("exact cached-input validation missing")
@@ -115,6 +119,7 @@ def main():
     (args.data / "member_intervention_validation.json").write_text(json.dumps({
         "replay_rows": len(cells), "models": 24, "training_seeds": [0, 1, 2],
         "steps": 2500, "episode_offsets": [0, 100003], "matched_training_receipt": receipt,
+        "training_contract": contract,
         "same_weights_across_streams": True, "target_fingerprints_match_reference": True,
         "best_checkpoint_selected": False, "independent_domains": False,
     }, indent=2) + "\n")

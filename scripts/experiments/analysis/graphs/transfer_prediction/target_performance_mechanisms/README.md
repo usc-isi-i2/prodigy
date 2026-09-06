@@ -61,6 +61,8 @@ the trajectory module's decoder contract:
 
 ```bash
 MPLBACKEND=Agg /opt/homebrew/bin/python3.11 -m \
+  scripts.experiments.analysis.graphs.transfer_prediction.target_performance_mechanisms.audit_member_contract
+MPLBACKEND=Agg /opt/homebrew/bin/python3.11 -m \
   scripts.experiments.analysis.graphs.transfer_prediction.target_performance_mechanisms.analyze_member_intervention
 ```
 
@@ -69,6 +71,19 @@ prespecified COVID Political/Facebook/TwiBot primary panel, with role effects,
 interactions, all-target outcomes, and actual consumed exposure as secondary
 outputs. No significance test treats targets, episode streams, checkpoints, or
 mixture partners as independent training-seed replications.
+
+The independent contract audit also checks all 24 saved effective configurations
+against their declared CPU recipes and common non-treatment parameters, and maps
+the consumed episode-source labels to the exact graph audit's source-name order.
+Those labels are derived by the production collator from all member centers'
+graph IDs. This is not a second independent lookup of every ID in the full graph.
+`--config-only` is allowed before training finishes and does not publish the
+completed contract receipt. The compact configuration inventory reconstructs
+the complete original dictionaries from one shared base plus lossless deltas.
+After the complete primary analysis, `plot_member_intervention.py` displays the
+observed repeated-member fraction, each source's primary-panel retention effect,
+and the prespecified Hong Kong-minus-Ukraine contrast, retaining every seed and
+both episode streams. It does not select a target, seed, or checkpoint.
 
 `analyze_label_interface.py` is the fail-closed analysis for the completed frozen
 label-vector controls. It requires all nine specialists, all six conditions,

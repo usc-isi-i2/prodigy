@@ -1,0 +1,809 @@
+{
+  "base_effective_config": {
+    "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/00_memberctl_ukr_rus_lowest_sorted_s0.yaml",
+    "root": "/dataMeR1/phil/data/merged/graphs",
+    "dataset": "covid19_twitter",
+    "csv_filename": "twitter_data.csv",
+    "facebook_pkl_filename": "facebook_2022-06-24_2022-06-25_part1.pkl",
+    "facebook_edges_filename": "facebook_2022-06-24_2022-06-25_part1_edges.csv",
+    "facebook_node_features_filename": "facebook_2022-06-24_2022-06-25_part1_node_features.csv",
+    "facebook_data_source": "csv",
+    "facebook_use_edge_features": false,
+    "facebook_edge_feature_columns": "",
+    "facebook_source_pkl_path": "",
+    "facebook_embeddings_path": "",
+    "facebook_embedding_ids_path": "",
+    "facebook_text_emb_model": "",
+    "facebook_target_dim": 768,
+    "facebook_filter_to_uk_ru": true,
+    "facebook_max_posts": null,
+    "label_type": "verified",
+    "max_users": null,
+    "invalidate_cache": false,
+    "dataset_len_cap": 2500,
+    "val_len_cap": 2,
+    "test_len_cap": 2,
+    "shuffle_index": false,
+    "force_cache": false,
+    "classification_only": false,
+    "early_stopping_patience": 20,
+    "reset_after_layer": null,
+    "original_features": true,
+    "override_log": false,
+    "seed": 0,
+    "eval_episode_seed_offset": 0,
+    "metric": "Acc",
+    "learning_rate": 0.002,
+    "epochs": 1,
+    "print_epoch": 10,
+    "eval_epoch": 10,
+    "checkpoint_epoch": 10,
+    "print_step": 100,
+    "eval_step": 100000,
+    "checkpoint_step": 100000,
+    "source_diagnostics_interval": 0,
+    "checkpoint_steps": "0,100,300,900,2500",
+    "batch_size": 4,
+    "weight_decay": 0.001,
+    "dropout": 0,
+    "text_features_dropout": 0,
+    "rel_sample_random_seed": null,
+    "split_train_nodes": false,
+    "verbose": false,
+    "detect_anomaly": false,
+    "loader_start_method": "spawn",
+    "workers": 2,
+    "device": "cpu",
+    "input_dim": 768,
+    "emb_dim": 256,
+    "gnn_type": "sage",
+    "n_layer": 1,
+    "meta_n_layer": 1,
+    "second_gnn": "Atten",
+    "attention_mask_scheme": "causal",
+    "skip_path": false,
+    "has_final_back": false,
+    "layers": "S,U,M",
+    "ignore_label_embeddings": true,
+    "zero_label_embeddings": false,
+    "not_freeze_learned_label_embedding": false,
+    "linear_probe": false,
+    "fix_datasets_first": false,
+    "no_bn_metagraph": false,
+    "no_bn_encoder": false,
+    "calc_ranks": false,
+    "save_roc_curve": false,
+    "eval_only": false,
+    "eval_only_split": "test",
+    "eval_test_before_train": false,
+    "eval_val_before_train": false,
+    "eval_after_train": false,
+    "meta_gnn_pos_only": false,
+    "task_name": "neighbor_matching",
+    "zero_shot": false,
+    "no_split_labels": true,
+    "all_test": false,
+    "train_cap": null,
+    "label_set": null,
+    "csr_split": false,
+    "n_way": 30,
+    "n_shots": 3,
+    "n_query": 4,
+    "neighbor_sampling_strategy": "strict",
+    "neighbor_sampling_strata": "",
+    "neighbor_sampling_episode_source": "graph_id",
+    "neighbor_sampling_source_subset": "ukr_rus",
+    "neighbor_sampling_source_sequence": "",
+    "neighbor_sampling_source_sequence_steps": "",
+    "neighbor_sampling_episode_source_weighting": "balanced",
+    "neighbor_sampling_batch_source_mode": "independent",
+    "neighbor_sampling_cross_source_prob": 0,
+    "neighbor_sampling_center_radii": "",
+    "neighbor_sampling_center_radius_weights": "",
+    "neighbor_sampling_center_region_fanout": 64,
+    "neighbor_sampling_center_region_node_limit": 4096,
+    "neighbor_sampling_center_region_candidate_limit": 512,
+    "neighbor_sampling_center_max_attempts": 200,
+    "neighbor_matching_edge_split": true,
+    "n_way_upper": -1,
+    "n_shots_upper": -1,
+    "n_query_upper": -1,
+    "max_length": -1,
+    "augmentation": "",
+    "augment_test": false,
+    "ablate_features": "none",
+    "ablate_edges": "none",
+    "structural_features": "none",
+    "attr_regression_weight": 0,
+    "fp_mask_ratio": 0.3,
+    "fp_mask_strategy": "zero",
+    "mix_task_counts": "1,1,1",
+    "mix_cl_aug": "NZ0.2",
+    "e4_combine": "simultaneous",
+    "e4_weights": "1,1,1",
+    "e4_task_counts": "1,1,1",
+    "e4_lp_neg_k": 1,
+    "prefix": "memberctl_ukr_rus_lowest_sorted_s0",
+    "timestamp": "05_09_2026_22_52_45",
+    "tags": [],
+    "log_dir": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/log",
+    "state_dir": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/state",
+    "bert_emb_model": "multi-qa-distilbert-cos-v1",
+    "bert_cache": "multi-qa-distilbert-cos-v1",
+    "label_emb_model": "",
+    "label_emb_texts": "",
+    "label_emb_revision": "",
+    "label_emb_trust_remote_code": true,
+    "label_emb_normalize": true,
+    "kg_emb_model": "",
+    "pretrained_model_run": "",
+    "resume_training_checkpoint": "",
+    "n_hop": 2,
+    "neighbor_sampling_hop_sizes": "9,9",
+    "neighbor_sampling_node_limit": 101,
+    "neighbor_matching_walk_hops": 1,
+    "neighbor_matching_member_policy": "lowest_sorted",
+    "neighbor_matching_member_seed": 280100,
+    "train_episode_audit": true,
+    "graph_filename": "ukr_rus_covid_midterm_all9_facebook_final_core_split_seed0.pt",
+    "target_feature": "",
+    "target_feature_keep_in_x": false,
+    "target_transform": "none",
+    "feature_subset": "all",
+    "midterm_label_downsample": "",
+    "eval_random_query": false,
+    "edge_view": "static_train",
+    "target_edge_view": "static_test",
+    "edge_feature_subset": "all",
+    "midterm_lp_neg_ratio": 1,
+    "hard_negatives": true,
+    "use_edge_features": false,
+    "midterm_debug_print_episodes": 0,
+    "debug_print_predictions": 0,
+    "export_predictions": false,
+    "prediction_context_neighbors": 3,
+    "prediction_support_per_label": 3,
+    "small_dataset": false,
+    "experiment_type": "metagraph",
+    "exp_name": "memberctl_ukr_rus_lowest_sorted_s0_cpu_20260905_225245_000"
+  },
+  "manifest_path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/manifest.json",
+  "manifest_file_sha256": "886e49f14ac885f5b589a84449fbe56227be240ce0d0e57199a86688af381598",
+  "manifest": {
+    "configs": [
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/00_memberctl_ukr_rus_lowest_sorted_s0.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/01_memberctl_ukr_rus_lowest_shuffled_s0.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/02_memberctl_ukr_rus_uniform_sorted_s0.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/03_memberctl_ukr_rus_uniform_shuffled_s0.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/04_memberctl_ukr_rus_lowest_sorted_s1.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/05_memberctl_ukr_rus_lowest_shuffled_s1.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/06_memberctl_ukr_rus_uniform_sorted_s1.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/07_memberctl_ukr_rus_uniform_shuffled_s1.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/08_memberctl_ukr_rus_lowest_sorted_s2.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/09_memberctl_ukr_rus_lowest_shuffled_s2.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/10_memberctl_ukr_rus_uniform_sorted_s2.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/11_memberctl_ukr_rus_uniform_shuffled_s2.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/12_memberctl_cp_hk_lowest_sorted_s0.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/13_memberctl_cp_hk_lowest_shuffled_s0.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/14_memberctl_cp_hk_uniform_sorted_s0.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/15_memberctl_cp_hk_uniform_shuffled_s0.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/16_memberctl_cp_hk_lowest_sorted_s1.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/17_memberctl_cp_hk_lowest_shuffled_s1.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/18_memberctl_cp_hk_uniform_sorted_s1.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/19_memberctl_cp_hk_uniform_shuffled_s1.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/20_memberctl_cp_hk_lowest_sorted_s2.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/21_memberctl_cp_hk_lowest_shuffled_s2.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/22_memberctl_cp_hk_uniform_sorted_s2.yaml",
+      "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/23_memberctl_cp_hk_uniform_shuffled_s2.yaml"
+    ],
+    "device": "cpu",
+    "cpu_thread_budget": 60,
+    "mode": "training",
+    "models_active": 6,
+    "revision": "75f0853f96272120a1e295dfbd38c04f2b71fe62",
+    "shared_graph_setup_seconds": 200.1827968749567,
+    "shared_storage": {
+      "features": true,
+      "edges": true,
+      "graph_id": true,
+      "csr_rowptr": true,
+      "csr_col": true,
+      "csr_values": true,
+      "source_0": true,
+      "source_1": true,
+      "source_2": true,
+      "source_3": true,
+      "source_4": true,
+      "source_5": true,
+      "source_6": true,
+      "source_7": true,
+      "source_8": true
+    }
+  },
+  "planned_jobs": [
+    {
+      "changes": {},
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/01_memberctl_ukr_rus_lowest_shuffled_s0.yaml",
+        "prefix": "memberctl_ukr_rus_lowest_shuffled_s0",
+        "neighbor_matching_member_policy": "lowest_shuffled",
+        "exp_name": "memberctl_ukr_rus_lowest_shuffled_s0_cpu_20260905_225245_001"
+      },
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/02_memberctl_ukr_rus_uniform_sorted_s0.yaml",
+        "prefix": "memberctl_ukr_rus_uniform_sorted_s0",
+        "neighbor_matching_member_policy": "uniform_sorted",
+        "exp_name": "memberctl_ukr_rus_uniform_sorted_s0_cpu_20260905_225245_002"
+      },
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/03_memberctl_ukr_rus_uniform_shuffled_s0.yaml",
+        "prefix": "memberctl_ukr_rus_uniform_shuffled_s0",
+        "neighbor_matching_member_policy": "uniform_shuffled",
+        "exp_name": "memberctl_ukr_rus_uniform_shuffled_s0_cpu_20260905_225245_003"
+      },
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/04_memberctl_ukr_rus_lowest_sorted_s1.yaml",
+        "seed": 1,
+        "prefix": "memberctl_ukr_rus_lowest_sorted_s1",
+        "neighbor_matching_member_seed": 280101,
+        "exp_name": "memberctl_ukr_rus_lowest_sorted_s1_cpu_20260905_225245_004"
+      },
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/05_memberctl_ukr_rus_lowest_shuffled_s1.yaml",
+        "seed": 1,
+        "prefix": "memberctl_ukr_rus_lowest_shuffled_s1",
+        "neighbor_matching_member_policy": "lowest_shuffled",
+        "neighbor_matching_member_seed": 280101,
+        "exp_name": "memberctl_ukr_rus_lowest_shuffled_s1_cpu_20260905_225245_005"
+      },
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/06_memberctl_ukr_rus_uniform_sorted_s1.yaml",
+        "seed": 1,
+        "prefix": "memberctl_ukr_rus_uniform_sorted_s1",
+        "neighbor_matching_member_policy": "uniform_sorted",
+        "neighbor_matching_member_seed": 280101,
+        "exp_name": "memberctl_ukr_rus_uniform_sorted_s1_cpu_20260905_225245_006"
+      },
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/07_memberctl_ukr_rus_uniform_shuffled_s1.yaml",
+        "seed": 1,
+        "prefix": "memberctl_ukr_rus_uniform_shuffled_s1",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "uniform_shuffled",
+        "neighbor_matching_member_seed": 280101,
+        "exp_name": "memberctl_ukr_rus_uniform_shuffled_s1_cpu_20260905_225245_007"
+      },
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/08_memberctl_ukr_rus_lowest_sorted_s2.yaml",
+        "seed": 2,
+        "prefix": "memberctl_ukr_rus_lowest_sorted_s2",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_seed": 280102,
+        "exp_name": "memberctl_ukr_rus_lowest_sorted_s2_cpu_20260905_225245_008"
+      },
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/09_memberctl_ukr_rus_lowest_shuffled_s2.yaml",
+        "seed": 2,
+        "prefix": "memberctl_ukr_rus_lowest_shuffled_s2",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "lowest_shuffled",
+        "neighbor_matching_member_seed": 280102,
+        "exp_name": "memberctl_ukr_rus_lowest_shuffled_s2_cpu_20260905_225245_009"
+      },
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/10_memberctl_ukr_rus_uniform_sorted_s2.yaml",
+        "seed": 2,
+        "prefix": "memberctl_ukr_rus_uniform_sorted_s2",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "uniform_sorted",
+        "neighbor_matching_member_seed": 280102,
+        "exp_name": "memberctl_ukr_rus_uniform_sorted_s2_cpu_20260905_225245_010"
+      },
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/11_memberctl_ukr_rus_uniform_shuffled_s2.yaml",
+        "seed": 2,
+        "prefix": "memberctl_ukr_rus_uniform_shuffled_s2",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "uniform_shuffled",
+        "neighbor_matching_member_seed": 280102,
+        "exp_name": "memberctl_ukr_rus_uniform_shuffled_s2_cpu_20260905_225245_011"
+      },
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/12_memberctl_cp_hk_lowest_sorted_s0.yaml",
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_lowest_sorted_s0",
+        "timestamp": "05_09_2026_22_52_46",
+        "exp_name": "memberctl_cp_hk_lowest_sorted_s0_cpu_20260905_225245_012"
+      },
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/13_memberctl_cp_hk_lowest_shuffled_s0.yaml",
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_lowest_shuffled_s0",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "lowest_shuffled",
+        "exp_name": "memberctl_cp_hk_lowest_shuffled_s0_cpu_20260905_225245_013"
+      },
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/14_memberctl_cp_hk_uniform_sorted_s0.yaml",
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_uniform_sorted_s0",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "uniform_sorted",
+        "exp_name": "memberctl_cp_hk_uniform_sorted_s0_cpu_20260905_225245_014"
+      },
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/15_memberctl_cp_hk_uniform_shuffled_s0.yaml",
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_uniform_shuffled_s0",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "uniform_shuffled",
+        "exp_name": "memberctl_cp_hk_uniform_shuffled_s0_cpu_20260905_225245_015"
+      },
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/16_memberctl_cp_hk_lowest_sorted_s1.yaml",
+        "seed": 1,
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_lowest_sorted_s1",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_seed": 280101,
+        "exp_name": "memberctl_cp_hk_lowest_sorted_s1_cpu_20260905_225245_016"
+      },
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/17_memberctl_cp_hk_lowest_shuffled_s1.yaml",
+        "seed": 1,
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_lowest_shuffled_s1",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "lowest_shuffled",
+        "neighbor_matching_member_seed": 280101,
+        "exp_name": "memberctl_cp_hk_lowest_shuffled_s1_cpu_20260905_225245_017"
+      },
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/18_memberctl_cp_hk_uniform_sorted_s1.yaml",
+        "seed": 1,
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_uniform_sorted_s1",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "uniform_sorted",
+        "neighbor_matching_member_seed": 280101,
+        "exp_name": "memberctl_cp_hk_uniform_sorted_s1_cpu_20260905_225245_018"
+      },
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/19_memberctl_cp_hk_uniform_shuffled_s1.yaml",
+        "seed": 1,
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_uniform_shuffled_s1",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "uniform_shuffled",
+        "neighbor_matching_member_seed": 280101,
+        "exp_name": "memberctl_cp_hk_uniform_shuffled_s1_cpu_20260905_225245_019"
+      },
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/20_memberctl_cp_hk_lowest_sorted_s2.yaml",
+        "seed": 2,
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_lowest_sorted_s2",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_seed": 280102,
+        "exp_name": "memberctl_cp_hk_lowest_sorted_s2_cpu_20260905_225245_020"
+      },
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/21_memberctl_cp_hk_lowest_shuffled_s2.yaml",
+        "seed": 2,
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_lowest_shuffled_s2",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "lowest_shuffled",
+        "neighbor_matching_member_seed": 280102,
+        "exp_name": "memberctl_cp_hk_lowest_shuffled_s2_cpu_20260905_225245_021"
+      },
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/22_memberctl_cp_hk_uniform_sorted_s2.yaml",
+        "seed": 2,
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_uniform_sorted_s2",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "uniform_sorted",
+        "neighbor_matching_member_seed": 280102,
+        "exp_name": "memberctl_cp_hk_uniform_sorted_s2_cpu_20260905_225245_022"
+      },
+      "removed": []
+    },
+    {
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/23_memberctl_cp_hk_uniform_shuffled_s2.yaml",
+        "seed": 2,
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_uniform_shuffled_s2",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "uniform_shuffled",
+        "neighbor_matching_member_seed": 280102,
+        "exp_name": "memberctl_cp_hk_uniform_shuffled_s2_cpu_20260905_225245_023"
+      },
+      "removed": []
+    }
+  ],
+  "effective_configs": [
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_000/effective_config.json",
+      "file_sha256": "672fe02a2653732dbb1642dbf613e14f8a49ab3f0191d6374bc0cd79e35fa619",
+      "changes": {},
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_001/effective_config.json",
+      "file_sha256": "985a2c8805789811cf1d4355584ab7ace1eaad6b4987ae0887fdcb3e947f7c2a",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/01_memberctl_ukr_rus_lowest_shuffled_s0.yaml",
+        "prefix": "memberctl_ukr_rus_lowest_shuffled_s0",
+        "neighbor_matching_member_policy": "lowest_shuffled",
+        "exp_name": "memberctl_ukr_rus_lowest_shuffled_s0_cpu_20260905_225245_001"
+      },
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_002/effective_config.json",
+      "file_sha256": "c3c6fc8b88fce62702c5ee77e714530984aaea3044eb0d95d9e8b87b0d56e7bd",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/02_memberctl_ukr_rus_uniform_sorted_s0.yaml",
+        "prefix": "memberctl_ukr_rus_uniform_sorted_s0",
+        "neighbor_matching_member_policy": "uniform_sorted",
+        "exp_name": "memberctl_ukr_rus_uniform_sorted_s0_cpu_20260905_225245_002"
+      },
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_003/effective_config.json",
+      "file_sha256": "24ece6c9194281da6c296d43e986d955e6188948945a83d294f55ba8059bbb71",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/03_memberctl_ukr_rus_uniform_shuffled_s0.yaml",
+        "prefix": "memberctl_ukr_rus_uniform_shuffled_s0",
+        "neighbor_matching_member_policy": "uniform_shuffled",
+        "exp_name": "memberctl_ukr_rus_uniform_shuffled_s0_cpu_20260905_225245_003"
+      },
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_004/effective_config.json",
+      "file_sha256": "9fd8554d614f0b0eb81eb0eaaba3328f4926b6bd1b1cdfe9b84a4e7cb21e9933",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/04_memberctl_ukr_rus_lowest_sorted_s1.yaml",
+        "seed": 1,
+        "prefix": "memberctl_ukr_rus_lowest_sorted_s1",
+        "neighbor_matching_member_seed": 280101,
+        "exp_name": "memberctl_ukr_rus_lowest_sorted_s1_cpu_20260905_225245_004"
+      },
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_005/effective_config.json",
+      "file_sha256": "bfdec1b2e5d91d853c78b72b615452ccb3a0155c903fd7fa5aa33d979614799e",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/05_memberctl_ukr_rus_lowest_shuffled_s1.yaml",
+        "seed": 1,
+        "prefix": "memberctl_ukr_rus_lowest_shuffled_s1",
+        "neighbor_matching_member_policy": "lowest_shuffled",
+        "neighbor_matching_member_seed": 280101,
+        "exp_name": "memberctl_ukr_rus_lowest_shuffled_s1_cpu_20260905_225245_005"
+      },
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_006/effective_config.json",
+      "file_sha256": "1214038695a6aee25280256056fcee639d0e7afc25aee58dce7867a902ae3d2a",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/06_memberctl_ukr_rus_uniform_sorted_s1.yaml",
+        "seed": 1,
+        "prefix": "memberctl_ukr_rus_uniform_sorted_s1",
+        "neighbor_matching_member_policy": "uniform_sorted",
+        "neighbor_matching_member_seed": 280101,
+        "exp_name": "memberctl_ukr_rus_uniform_sorted_s1_cpu_20260905_225245_006"
+      },
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_007/effective_config.json",
+      "file_sha256": "a2700754059e591225c38382286634d3ba5a8c656b487c474db708e3568c5e8f",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/07_memberctl_ukr_rus_uniform_shuffled_s1.yaml",
+        "seed": 1,
+        "prefix": "memberctl_ukr_rus_uniform_shuffled_s1",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "uniform_shuffled",
+        "neighbor_matching_member_seed": 280101,
+        "exp_name": "memberctl_ukr_rus_uniform_shuffled_s1_cpu_20260905_225245_007"
+      },
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_008/effective_config.json",
+      "file_sha256": "9c70674b361950643659f997e843be2d349b30ad605c108c045da7857f92f980",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/08_memberctl_ukr_rus_lowest_sorted_s2.yaml",
+        "seed": 2,
+        "prefix": "memberctl_ukr_rus_lowest_sorted_s2",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_seed": 280102,
+        "exp_name": "memberctl_ukr_rus_lowest_sorted_s2_cpu_20260905_225245_008"
+      },
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_009/effective_config.json",
+      "file_sha256": "11787405bba02ce266e412b8d4759813ac7322f683f1d75f6c5506714b60ee49",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/09_memberctl_ukr_rus_lowest_shuffled_s2.yaml",
+        "seed": 2,
+        "prefix": "memberctl_ukr_rus_lowest_shuffled_s2",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "lowest_shuffled",
+        "neighbor_matching_member_seed": 280102,
+        "exp_name": "memberctl_ukr_rus_lowest_shuffled_s2_cpu_20260905_225245_009"
+      },
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_010/effective_config.json",
+      "file_sha256": "9df68efa0c6d2c58ed76977e286cf6af1fad5c2d7346fb6489f409b0603074eb",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/10_memberctl_ukr_rus_uniform_sorted_s2.yaml",
+        "seed": 2,
+        "prefix": "memberctl_ukr_rus_uniform_sorted_s2",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "uniform_sorted",
+        "neighbor_matching_member_seed": 280102,
+        "exp_name": "memberctl_ukr_rus_uniform_sorted_s2_cpu_20260905_225245_010"
+      },
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_011/effective_config.json",
+      "file_sha256": "4c06961303cf3cf439096ed78577be379558d7e3585aaa8f79d4a3b332013abd",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/11_memberctl_ukr_rus_uniform_shuffled_s2.yaml",
+        "seed": 2,
+        "prefix": "memberctl_ukr_rus_uniform_shuffled_s2",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "uniform_shuffled",
+        "neighbor_matching_member_seed": 280102,
+        "exp_name": "memberctl_ukr_rus_uniform_shuffled_s2_cpu_20260905_225245_011"
+      },
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_012/effective_config.json",
+      "file_sha256": "18fa721d50cf7d5323c71f5585d24141afb95c0327ec6bb887b6f7f635e08a4b",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/12_memberctl_cp_hk_lowest_sorted_s0.yaml",
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_lowest_sorted_s0",
+        "timestamp": "05_09_2026_22_52_46",
+        "exp_name": "memberctl_cp_hk_lowest_sorted_s0_cpu_20260905_225245_012"
+      },
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_013/effective_config.json",
+      "file_sha256": "c0a5fce3141a4b576a5735cb94e0479e796c449af12ca6c7e59d39a7a64744ce",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/13_memberctl_cp_hk_lowest_shuffled_s0.yaml",
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_lowest_shuffled_s0",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "lowest_shuffled",
+        "exp_name": "memberctl_cp_hk_lowest_shuffled_s0_cpu_20260905_225245_013"
+      },
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_014/effective_config.json",
+      "file_sha256": "e80e28bc54adc3c7558b0762c181075336f2f02fcf241feb836474149fdce7db",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/14_memberctl_cp_hk_uniform_sorted_s0.yaml",
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_uniform_sorted_s0",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "uniform_sorted",
+        "exp_name": "memberctl_cp_hk_uniform_sorted_s0_cpu_20260905_225245_014"
+      },
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_015/effective_config.json",
+      "file_sha256": "bd6c2f24f4254b42739494c4ac51b00e68d37b8ba040e92438a4dc58c4e234c9",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/15_memberctl_cp_hk_uniform_shuffled_s0.yaml",
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_uniform_shuffled_s0",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "uniform_shuffled",
+        "exp_name": "memberctl_cp_hk_uniform_shuffled_s0_cpu_20260905_225245_015"
+      },
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_016/effective_config.json",
+      "file_sha256": "cbd9161243b2b982b38512634d8f70a0ef5c9dcadbfb883711fe75e29b596913",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/16_memberctl_cp_hk_lowest_sorted_s1.yaml",
+        "seed": 1,
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_lowest_sorted_s1",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_seed": 280101,
+        "exp_name": "memberctl_cp_hk_lowest_sorted_s1_cpu_20260905_225245_016"
+      },
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_017/effective_config.json",
+      "file_sha256": "7196d1cd872b04607cf089d8dd1d87c616474b62c966f7508bec1350e56f5cfd",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/17_memberctl_cp_hk_lowest_shuffled_s1.yaml",
+        "seed": 1,
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_lowest_shuffled_s1",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "lowest_shuffled",
+        "neighbor_matching_member_seed": 280101,
+        "exp_name": "memberctl_cp_hk_lowest_shuffled_s1_cpu_20260905_225245_017"
+      },
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_018/effective_config.json",
+      "file_sha256": "7f82bf7020c0274926d86b4a1a200b8b369995e4f297907a0a20ed3818cf2469",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/18_memberctl_cp_hk_uniform_sorted_s1.yaml",
+        "seed": 1,
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_uniform_sorted_s1",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "uniform_sorted",
+        "neighbor_matching_member_seed": 280101,
+        "exp_name": "memberctl_cp_hk_uniform_sorted_s1_cpu_20260905_225245_018"
+      },
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_019/effective_config.json",
+      "file_sha256": "ec9359c560efe49a8eec12668a44279e63483aed072a0a2f47bef9f4588120b1",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/19_memberctl_cp_hk_uniform_shuffled_s1.yaml",
+        "seed": 1,
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_uniform_shuffled_s1",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "uniform_shuffled",
+        "neighbor_matching_member_seed": 280101,
+        "exp_name": "memberctl_cp_hk_uniform_shuffled_s1_cpu_20260905_225245_019"
+      },
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_020/effective_config.json",
+      "file_sha256": "b12e7b2f2f07cc00b708111ffcf6cb7e9333e5987d258709a46a8993ef8bc38e",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/20_memberctl_cp_hk_lowest_sorted_s2.yaml",
+        "seed": 2,
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_lowest_sorted_s2",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_seed": 280102,
+        "exp_name": "memberctl_cp_hk_lowest_sorted_s2_cpu_20260905_225245_020"
+      },
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_021/effective_config.json",
+      "file_sha256": "d4aaeb46337a11c6e1af292a0d55cf875f28c63cbc3f6310352c559bfca7c70c",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/21_memberctl_cp_hk_lowest_shuffled_s2.yaml",
+        "seed": 2,
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_lowest_shuffled_s2",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "lowest_shuffled",
+        "neighbor_matching_member_seed": 280102,
+        "exp_name": "memberctl_cp_hk_lowest_shuffled_s2_cpu_20260905_225245_021"
+      },
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_022/effective_config.json",
+      "file_sha256": "689e9ae0715c70d3fb989eed37bb83d735987f36ebafe561913d8fbc8738d21f",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/22_memberctl_cp_hk_uniform_sorted_s2.yaml",
+        "seed": 2,
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_uniform_sorted_s2",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "uniform_sorted",
+        "neighbor_matching_member_seed": 280102,
+        "exp_name": "memberctl_cp_hk_uniform_sorted_s2_cpu_20260905_225245_022"
+      },
+      "removed": []
+    },
+    {
+      "path": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/log/target_mechanisms/member_cpu_training_20260906/job_023/effective_config.json",
+      "file_sha256": "fff666190522d2641474a39c764e28953c8dd60612d807b5b78a3e933d1eaa36",
+      "changes": {
+        "config": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/scripts/experiments/setup/target_performance_mechanisms/member_configs/23_memberctl_cp_hk_uniform_shuffled_s2.yaml",
+        "seed": 2,
+        "neighbor_sampling_source_subset": "cp_hk",
+        "prefix": "memberctl_cp_hk_uniform_shuffled_s2",
+        "timestamp": "05_09_2026_22_52_46",
+        "neighbor_matching_member_policy": "uniform_shuffled",
+        "neighbor_matching_member_seed": 280102,
+        "exp_name": "memberctl_cp_hk_uniform_shuffled_s2_cpu_20260905_225245_023"
+      },
+      "removed": []
+    }
+  ]
+}
