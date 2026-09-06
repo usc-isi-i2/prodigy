@@ -44,6 +44,14 @@ and episode fingerprints to the established replay. It reports endpoint changes
 and complete curves; it does not select the best target checkpoint.
 `plot_trajectories.py` renders the all-source endpoint-change summary.
 
+The completed post-hoc TwiBot cue check uses saved prediction-only exports, not
+new model fitting. `analyze_cue_alignment.py --input <completed-output>` validates
+the checkpoint/input provenance and summarizes all four checkpoints against the
+support-only incoming-degree, raw-center, and raw-context probes. Compact results
+are `data/twibot_cue_alignment_*.csv`. The raw tensor exports remain in ignored
+runtime storage. The executable comparison is
+`scripts/experiments/setup/target_performance_mechanisms/analyze_twibot_cue_alignment.py`.
+
 The member-policy experiment uses the completed-run verifier's exact
 `arms.json` and `DONE.json` under `data/member_training_verified/`, plus
 `data/member_replay_{original,fresh}/`. The analysis refuses smoke or incomplete

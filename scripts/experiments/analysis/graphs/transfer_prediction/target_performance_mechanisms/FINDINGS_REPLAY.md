@@ -132,6 +132,13 @@ domains and frozen training seed, not independent training or domain replication
 
 ### Training trajectories distinguish underuse from deterioration
 
+Stage names refer to **observation points**, not three independently learned
+modules. `S0_pool` is the mean of post-convolution features before the encoder's
+learned center/mean readout. `U1_pre_meta` is the resulting learned center
+readout passed to the metagraph. The default U operation itself is parameterless
+and copies that center to its supernode; the learned readout weights live in S.
+Thus a declining U-stage probe does not identify a faulty learned U module.
+
 All nine historical seed-0 specialists are replayed at steps 100, 300, 900, and
 2,500 on both cached episode streams. This is a complete 360-cell full-model
 grid (6,120 diagnostic rows), not target-selected checkpoints. All 36 checkpoint
@@ -172,6 +179,28 @@ suspension remains near its current bio-only floor (−.0037/−.0031). These re
 one training seed on five datasets. Evidence: `data/trajectory_cells.csv`,
 `data/trajectory_endpoint_summary.csv`, `data/trajectory_validation.json`, and
 `data/trajectory_input_validation.json`; figure `figures/training_stage_changes.png`.
+
+**Post-hoc cue agreement narrows the TwiBot lead.** On those same saved query
+logits, compute mean within-episode Spearman correlation between each model's
+binary margins and three fixed support-only probe margins: sampled center
+in-degree, raw center features, and raw context features. This fits no query
+labels and avoids pooling incompatible episode-local class orientations. All
+128 episodes have nonconstant scores for every comparison; all 648 cells match
+the independently validated checkpoint and input provenance.
+
+From step 100 to 2,500, learned-readout agreement with the in-degree cue declines
+for **all nine sources on both streams** (mean changes −.2605/−.2778), while its
+agreement with both raw-center and raw-context predictions increases for every
+source. Full-model in-degree agreement declines for eight sources on both streams
+(mean −.4308/−.4674). Ukraine is again the only increasing source
+(+.0927/+.0628), matching its exceptional positive full-model AUC trajectory.
+Pooled-S in-degree agreement has mixed signs, unlike the consistent later-stage
+decline. This is consistent with a training-associated shift in cue use, not
+simply every encoder feature becoming worse. It does **not** prove that degree
+is the sole causal mediator, that information was destroyed, or that increasing
+cue agreement by intervention would improve generalization. Evidence:
+`data/twibot_cue_alignment_{cells,changes,summary}.csv` and
+`data/twibot_cue_alignment_validation.json`.
 
 ### Suspension: test the input restriction, not just another source mixture
 
@@ -374,6 +403,34 @@ transfer predictor: Facebook has the best raw NM prototype accuracy (.315), but
 is a poor downstream donor. Keep conditional task alignment and learned use in
 the explanation; do not rename the project around sample coverage yet.
 
+### A graph-renumbering dependence, not a graph-similarity property
+
+Condition on a successful random walk with a fixed set of unique endpoints.
+The original rule retains the smallest numerical IDs and sorts support before
+query. A pure renaming of those same nodes can therefore change both the retained
+identities and their roles, without changing graph structure or node features.
+Shuffling roles alone removes neither the retention bias nor its dependence on
+node naming. Uniform retention fixes the unordered member-set law, but retaining
+sorted roles still depends on the names. Only **uniform retention plus shuffled
+roles** makes the ordered member-selection law invariant in distribution under
+arbitrary renaming, conditional on that endpoint set.
+
+For `m` unique endpoints and `k` retained members, the last policy gives each
+ordered distinct `k`-tuple probability `1 / (binom(m,k) * k!)`. This is a
+conditional sampling statement, not pathwise equality for a fixed RNG seed or
+a verified invariance theorem for every other part of the training pipeline.
+Four exact unit tests exercise the actual selection method; the small exhaustive
+case checks all 24 renamings and all equiprobable retention/role permutations.
+The historical rule changes its selected original identities under reversal.
+Tests: `data/tests/test_member_permutation.py` (four passed).
+
+This establishes an implementation-level dependency that ordinary isomorphism-
+invariant graph similarities cannot describe. It does **not** establish how much
+that dependency changes target performance. The running factorial experiment
+tests policy effects; it is not a separate fixed-global-renumbering experiment,
+and uniform draws on each episode are not the same joint process as applying one
+fixed random node-ID permutation to the whole graph.
+
 ## A targeted architecture hypothesis that did not explain the gap
 
 The metagraph projects each attention-weighted message with an affine map, then
@@ -448,6 +505,10 @@ detail alone. The negative result is useful: it removes one plausible distractio
   training validity gates, then evaluates original and fresh episodes and checks
   all cached tensors against established references. It will not treat the smoke
   experiment as a research result. Output: `member_evaluation_20260906`.
+- Post-hoc TwiBot cue agreement ran locally using existing prediction-only tensor
+  exports (~44 MB; no graph-feature export), code `a1c0aa4b`. All 648 cells passed
+  exact cached-input checks; two rank/orientation/constant-score unit tests passed.
+  This new analysis remains local pending approval to publish to the public remote.
 - The 24-arm member-selection intervention (two sources × four policies × three
   training seeds) is implemented at `5e0a3537`. All 24 lightweight tests and a
   four-policy, three-update toy CPU integration passed on Tucker. These are
