@@ -36,6 +36,14 @@ def fixture():
 
 
 class CorrectedAnalysisTests(unittest.TestCase):
+    def test_plot_keeps_all_sources_steps_and_streams(self):
+        from .plot_corrected_sampler import panel_data
+        receipt, manifest, cells, old = fixture()
+        joined, _ = validate_cells(cells, validate_inventory(receipt, manifest), old)
+        self.assertEqual(len(panel_data(joined)), 288)
+        with self.assertRaisesRegex(ValueError, "all sources"):
+            panel_data(joined[joined.step != 300])
+
     def test_full_grid_and_fixed_checkpoint_changes(self):
         receipt, manifest, cells, old = fixture()
         inventory = validate_inventory(receipt, manifest)

@@ -19,9 +19,10 @@ must be checked separately. We have not restarted or altered that pipeline.
 Our classification replay launched 11:43:00 UTC in
 `/dataMeR1/phil/gfm/prodigy-mechanisms-corrected`, revision `311383ab`, tmux
 `mechanism-corrected-sampler`, four CPU threads and no visible GPUs. The complete
-6,120-row replay and exact comparison of its 320 cached batches are required
-before interpreting results. `DONE.json` and `input_validation.json` will be
-collected only once those gates pass. The inventory alone is not an eval result.
+6,120-row replay and exact comparison of its 320 cached batches are complete.
+`DONE.json` and `input_validation.json` were collected only after all those gates
+passed. Local analysis also passed the full-grid, raw-probe, saved-weight,
+source/step and cross-stream checks. The inventory alone is not an eval result.
 
 The correction changes retention, role order and random-number consumption
 jointly. This single-seed production-recipe comparison has matched test inputs,

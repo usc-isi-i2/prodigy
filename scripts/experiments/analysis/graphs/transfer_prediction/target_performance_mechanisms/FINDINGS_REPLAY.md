@@ -869,7 +869,7 @@ Evidence: `data/mixture_complementarity_{summary,comparisons,associations,stream
 `data/mixture_complementarity_predictions/`, and
 `figures/mixture_complementarity_foreign.png`.
 
-## Corrected production sampler: relevance check underway
+## Corrected production sampler: relevance check complete
 
 A read-only audit found that the separate corrected lattice pipeline completed
 all nine singleton trainings at 10:28:43 UTC, then stopped before NM evaluation
@@ -885,8 +885,9 @@ passed finite-state, common-architecture, optimizer-step, source-restriction and
 effective-config checks. A separate CPU replay launched **11:43:00 UTC**, frozen
 revision `311383ab`, worktree `/dataMeR1/phil/gfm/prodigy-mechanisms-corrected`,
 tmux `mechanism-corrected-sampler`, four threads with GPUs hidden. Five targets,
-17 decoders and both fixed episode streams are required; no corrected transfer
-results are interpreted until all 6,120 cells and input checks pass.
+17 decoders and both fixed episode streams are complete. All 6,120 cells, 320
+cached-batch comparisons, raw-probe equivalence, weight identities, source/step
+coverage and original/fresh input checks passed before interpretation.
 
 The question is whether the earlier target-specific bottlenecks and checkpoint
 trends survive the newer production recipe. This is **not** a role-only causal
@@ -895,6 +896,42 @@ jointly, with different random-number consumption. Training inputs and initial
 weights are not guaranteed matched to the historical runs. The three-seed
 factorial remains the controlled experiment; this one-seed reuse addresses
 relevance to the corrected models, not fresh-domain or independent-seed proof.
+
+**The TwiBot pooled-probe/full-model mismatch survives.** From update 100 to
+2500, all nine corrected models improve pooled ridge AUC on both streams
+(mean +.05129/+.05577), while all nine full models decline
+(−.08177/−.09296). Restricting to the eight foreign sources gives
++.04735/+.05423 for pooling and −.08961/−.09887 for the full model. The learned
+readout probe declines for 7/9 original and 8/9 fresh models (mean
+−.01646/−.02589). These are fixed-checkpoint trends, not a claim that training
+from initialization is universally harmful; no exact historical step-zero
+reference exists for this comparison.
+
+**A stronger earlier center-branch statement does not transfer unchanged.**
+The historical center probe declined for every source, but corrected center
+changes are positive for 6/9 on original episodes and only 1/9 on fresh episodes
+(means +.00462/−.00842). Its endpoint change is less negative than historical
+for all nine sources on both streams. The corrected center/readout/full trends
+must be kept distinct; pooled and center branches remain parallel computations.
+
+**Facebook's raw-input gap also survives.** Raw-description ridge AUC is
+.91961/.93011, versus a best corrected full model of .77827/.76330 and a
+nine-source mean of .70348/.69247. All foreign-source full models improve from
+100 to 2500, but their terminal mean is slightly below the historical recipe
+(−.00937/−.00906). Correcting sampling does not close the gap between the raw
+description probe and the trained classifier.
+
+At the terminal checkpoint, foreign-source mean full-model changes from the
+historical recipe are small and target-dependent: COVID Political
+−.00295/−.00438; Election +.00315/−.00066; TwiBot +.00825/+.00358;
+suspension +.00413/+.00291. Foreign donor rank correlations are high for
+COVID Political (.929/.976) and TwiBot (.952/.881), weaker or stream-sensitive
+elsewhere. None of these unmatched single-seed differences establishes a causal
+benefit of the sampler correction or explains general donor quality.
+
+Evidence: `data/corrected_sampler_{cells,vs_historical,endpoint_changes,endpoint_summary,terminal_ranking}.csv`,
+`data/corrected_sampler_verified/`, and
+`figures/corrected_sampler_twibot_trajectories.png`.
 
 ## Artifacts and runtime provenance
 
