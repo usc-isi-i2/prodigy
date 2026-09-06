@@ -802,7 +802,7 @@ The corrected launch explicitly invokes the `prodigy` environment's Python;
 the original failure log is preserved with `_failed_environment.log`. The
 experiment code, smoke validation, and declared training protocol are unchanged.
 
-## Complete mixture complementarity diagnostic — pending
+## Complete mixture complementarity diagnostic — verified
 
 The historical 54-model singleton/pair/LOO lattice has aggregate metrics but did
 not retain the complete query predictions needed to distinguish complementary
@@ -829,14 +829,45 @@ The retry launched **11:34:09 UTC**, frozen revision `5fdfba2a`, Tucker worktree
 `mechanism-mixture-complementarity`. Fourteen tests and the dry run passed.
 Its four-thread CPU pipeline uses a generated reference copy for only the audited
 cell, preserving the immutable historical table and all general parity tolerances.
-Completion must distinguish 224 strict original mixture cells from one individually
-audited numerical cell. The full 7,650-row replay automatically precedes the
-540-model-cell prediction audit, 450 fixed-ensemble comparisons and 1,350 error
-strata. The local reporting code checks complete source coverage, all metric
-arithmetic, shared-error accounting and both episode streams before summarizing.
+The full 7,650-row replay and automatic prediction analysis are complete and
+verified: 224 strict original mixture cells plus one individually audited
+numerical cell, 540 model cells, 450 fixed-ensemble comparisons and 1,350 error
+strata. Local validation passed complete source coverage, all metric arithmetic,
+shared-error accounting and both episode streams before interpretation.
 Within-target partial rank associations are descriptive; 28 foreign pairs share
-sources and do not provide 28 independent training replications. No ensemble or
-error-complementarity result has been interpreted at this update.
+sources and do not provide 28 independent training replications.
+
+**Facebook is the clearest lost-complementarity case.** For foreign-source pairs,
+the trained mixture trails fixed probability averaging by **2.49/1.88 AUC points**
+(original/fresh); 20 of 28 pairs are worse on both streams. The foreign LOO model
+trails its eight-specialist ensemble by **6.24/8.17 points**: mixture AUC
+.7651/.7368 versus ensemble .8275/.8186. The ensemble also exceeds the best
+constituent (.7738/.7680), so this is not solely selection of the strongest donor.
+Pair mixtures fix 4.89/5.14% of queries that both constituents miss, but introduce
+errors on 7.22/7.01% that both get right. This accounts for nearly all their mean
+accuracy disadvantage; it is an accuracy decomposition, not an AUC decomposition.
+
+**COVID Political differs.** Foreign pair mixtures outperform probability
+averaging by **1.97/1.44 AUC points** on average; 16 of 28 win on both streams.
+Their positive mean accuracy difference comes from disagreement cases, despite
+a negative net contribution on unanimous-correct/shared-wrong queries. Joint
+training is not uniformly worse than combining specialist predictions.
+
+TwiBot's mean mixture-versus-ensemble AUC differences are small and negative
+(pairs −.10/−.18 points, LOO −.07/−.36). Election changes sign across streams;
+suspension remains near chance. Disagreement alone is not a stable source-quality
+explanation: COVID Political's strong raw association with gain over the mean
+constituent (.760/.727) shrinks to .021/−.016 after descriptive adjustment for
+constituent mean and AUC range. No independent-pair significance is claimed.
+
+These outcomes support **target-dependent information combination**, not a causal
+proof of training interference or a general remedy. The ensemble uses 2x/8x total
+training updates and model forwards; checkpoint diversity, calibration, capacity
+and reduced per-source exposure in fixed-budget joint training remain unresolved.
+Both streams reuse the same five inspected domains and one training seed.
+Evidence: `data/mixture_complementarity_{summary,comparisons,associations,stream_agreement}.csv`,
+`data/mixture_complementarity_predictions/`, and
+`figures/mixture_complementarity_foreign.png`.
 
 ## Corrected production sampler: relevance check underway
 

@@ -43,8 +43,8 @@ def main():
     shown = panel_data(pd.read_csv(args.data_dir / "mixture_complementarity_comparisons.csv"))
     plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 9})
     colors = {"original": "#236d9f", "fresh": "#cc632f"}
-    fig, axes = plt.subplots(2, 5, figsize=(16, 8.2))
-    fig.subplots_adjust(left=.06, right=.99, bottom=.21, top=.83, wspace=.32, hspace=.48)
+    fig, axes = plt.subplots(2, 5, figsize=(16, 9.2))
+    fig.subplots_adjust(left=.06, right=.99, bottom=.27, top=.83, wspace=.32, hspace=.48)
     for col, (target, title) in enumerate(TARGETS):
         group = shown[shown.target == target]
         for row, (x, y) in enumerate((("ensemble_gain_pp", "mixture_gain_pp"), ("fixes_pp", "harms_pp"))):
@@ -83,7 +83,8 @@ def main():
              "The bottom panel is an accuracy decomposition, not an AUC decomposition; mixed-correctness queries are reported in the tables.",
              fontsize=9, linespacing=1.6)
     fig.text(.06, .035,
-             "Historical sampler; one training seed. Ensembles cost 2x/8x total training and inference. Cases share sources and are not independent trials.\n"
+             "Historical sampler; one training seed. Ensembles use 2x/8x training updates and model forwards, not measured wall-clock cost.\n"
+             "Cases share sources and are not independent trials. "
              "No fitted ensemble weights, target-selected checkpoints, or causal interference claim. Axis ranges vary by target.", fontsize=9, linespacing=1.5)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     for suffix in ("png", "pdf"):
