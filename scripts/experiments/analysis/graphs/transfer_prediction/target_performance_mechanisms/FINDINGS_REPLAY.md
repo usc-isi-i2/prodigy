@@ -785,7 +785,7 @@ constraint/analysis tests and all six shared-graph tests passed on Tucker; 31
 analysis tests passed locally. Local shared-memory tests hit a sandbox permission
 restriction and were therefore run successfully on Tucker, not silently waived.
 
-Substantive training started **11:01:24 UTC**, frozen Tucker worktree
+The substantive pipeline launched **11:04:09 UTC**, frozen Tucker worktree
 `/dataMeR1/phil/gfm/prodigy-mechanisms-freeze` at `f20e6495`, tmux
 `mechanism-readout-training`, six concurrent CPU models, eight tensor threads and
 two loader workers each, with all GPUs hidden. Each model runs 2,500 updates and
@@ -794,6 +794,13 @@ keeps 0/100/300/900/2500 checkpoints. The finite continuation evaluates both
 `log/target_mechanisms/readout_constraint_training_20260906`.
 The local complete-grid analyzer is committed before outcomes. No result of this
 new experiment is available at this update.
+
+The initial 11:01:24 launch failed before producing a training directory. A
+read-only reproduction showed that prepending conda's base bin inside an already
+activated child selected `/home/mhchu/miniconda3/bin/python`, which lacks PyG.
+The corrected launch explicitly invokes the `prodigy` environment's Python;
+the original failure log is preserved with `_failed_environment.log`. The
+experiment code, smoke validation, and declared training protocol are unchanged.
 
 ## Artifacts and runtime provenance
 

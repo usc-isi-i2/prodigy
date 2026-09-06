@@ -274,6 +274,13 @@ on Tucker. An eight-update full-graph smoke validates the 18-arm launcher before
 the substantive 2,500-update experiment. Use separate output paths; do not reuse
 smoke outputs as research results.
 
+For detached launches from an already-activated parent, invoke
+`/home/mhchu/miniconda3/envs/prodigy/bin/python` explicitly. Prepending conda's base
+bin followed by re-activating the already active environment can leave the base
+Python first on PATH. This was reproduced during a failed import-only launch;
+using the explicit environment interpreter avoids that ambiguity for this run
+and for child verifiers/evaluators, which inherit `sys.executable`.
+
 ```bash
 CUDA_VISIBLE_DEVICES='' WANDB_MODE=offline python -m \
   scripts.experiments.setup.target_performance_mechanisms.smoke_readout_training \
