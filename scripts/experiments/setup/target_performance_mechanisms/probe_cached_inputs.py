@@ -12,6 +12,27 @@ from scripts.experiments.setup.icl_arch_matrix.common_protocol import classifica
 from scripts.experiments.setup.target_performance_mechanisms.replay import batch_hash, episode_probe, raw_stages
 
 
+def detailed_summaries(batch, raw, topology, text):
+    graph = batch[0]
+    centers = graph.ptr[:-1]
+    mask = graph.global_node_ids >= 0
+    mask[centers] = False
+    groups = graph.batch[mask]
+    norm = graph.x[mask].norm(dim=1)
+    counts = torch.bincount(groups, minlength=len(centers)).float().clamp_min(1)
+    avg_norm = torch.zeros(len(centers)).scatter_add_(0, groups, norm) / counts
+    nonzero = torch.zeros(len(centers)).scatter_add_(0, groups, (norm > 1e-8).float()) / counts
+    return {
+        "sample_nodes": topology[:, 0], "sample_edges": topology[:, 1],
+        "center_outdegree": topology[:, 2], "center_indegree": topology[:, 3],
+        "sample_density": topology[:, 4],
+        "center_norm": text[:, 0], "context_mean_norm": text[:, 1],
+        "center_context_cosine": text[:, 2],
+        "context_nonzero_fraction": nonzero, "context_avg_norm": avg_norm,
+        "context_coherence": text[:, 1] / avg_norm.clamp_min(1e-8),
+    }
+
+
 def input_summaries(batch):
     graph = batch[0]
     centers = graph.ptr[:-1]
@@ -61,6 +82,8 @@ def main():
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--catalog", default="docs/graph_catalog.json")
     p.add_argument("--threads", type=int, default=4)
+    p.add_argument("--single-features", action="store_true",
+                   help="Exploratory follow-up: probe every scalar and export query-level summaries.")
     args = p.parse_args()
     args.output.mkdir(parents=True, exist_ok=False)
     torch.set_num_threads(args.threads)
@@ -96,6 +119,9 @@ def main():
                                "raw_center_plus_topology": standardized_probe(topology, batch, raw["raw_center"]),
                                "raw_joint_plus_topology": standardized_probe(topology, batch, raw["raw_joint"]),
                                "raw_center_random_projection_256": episode_probe(raw["raw_center"] @ projection, batch, "ridge")}
+                detail = detailed_summaries(batch, raw, topology, text) if args.single_features else {}
+                predictions.update({f"scalar_{key}": standardized_probe(value[:, None], batch)
+                                    for key, value in detail.items()})
                 query = batch[5].reshape(-1, 2)[:, 0].bool()
                 yt = batch[2][query]
                 for name, yp in predictions.items():
@@ -103,7 +129,8 @@ def main():
                     collected[name]["yp"].append(yp)
                     collected[name]["global"].append(metric._extract_global_classification_eval(batch, yt, yp))
                 exports.append({"batch": i, "batch_sha256": cache["batch_sha256"][i],
-                                "topology": topology, "text_summaries": text, "logits": predictions})
+                                "topology": topology, "text_summaries": text,
+                                "detail": detail, "logits": predictions})
             for probe, part in collected.items():
                 yt, yp = torch.cat(part["yt"]), torch.cat(part["yp"])
                 scores = metric._compute_eval_metrics(yt, yp, global_eval=_concat_global_eval_parts(part["global"]))

@@ -8,7 +8,8 @@ from experiments.layers import get_module_list
 from models.general_gnn import SingleLayerGeneralGNN
 from .replay import batch_hash, bn_mode, clone_batch, episode_probe, intervene, trace_stages, meta_bias_mode
 from models.metaGNN import MetaGNNLayer
-from .probe_cached_inputs import standardized_probe
+from .probe_cached_inputs import standardized_probe, input_summaries, detailed_summaries
+from .probe_source_coverage import select_references, nearest_cosine, double_center, correlation
 from .audit_source_episodes import member_variants, raw_probe_stats
 
 
@@ -40,6 +41,34 @@ def fixture():
 
 
 class ReplayTest(unittest.TestCase):
+    def test_coverage_normalization_and_residualization(self):
+        reference, selected = select_references(torch.eye(4) * 3, torch.ones(4), 4, "uniform_unique", 1)
+        score = nearest_cosine(torch.eye(4) * 2, reference, chunk=2)
+        torch.testing.assert_close(score, torch.ones(4))
+        self.assertEqual(len(selected), 4)
+        random_state = torch.get_rng_state().clone()
+        select_references(torch.eye(4), torch.tensor([100, 1, 1, 1]), 4, "exposure_weighted", 3)
+        torch.testing.assert_close(random_state, torch.get_rng_state(), rtol=0, atol=0)
+        additive = torch.arange(4.)[:, None] + torch.arange(8.)[None, :]
+        torch.testing.assert_close(double_center(additive), torch.zeros_like(additive))
+        self.assertIsNone(correlation(torch.ones(5), torch.arange(5)))
+
+    def test_detailed_inputs_exclude_center_and_supernode(self):
+        _, batch = fixture()
+        graph = batch[0]
+        graph.x.zero_()
+        for start in graph.ptr[:-1].tolist():
+            graph.x[start] = 4
+            graph.x[start + 1, 0] = 2
+            graph.x[start + 3] = 100
+        raw, topology, text = input_summaries(batch)
+        detail = detailed_summaries(batch, raw, topology, text)
+        torch.testing.assert_close(detail["context_nonzero_fraction"], torch.full((8,), .5))
+        torch.testing.assert_close(detail["context_avg_norm"], torch.ones(8))
+        torch.testing.assert_close(detail["context_mean_norm"], torch.ones(8))
+        torch.testing.assert_close(detail["context_coherence"], torch.ones(8))
+        self.assertTrue(all(torch.isfinite(x).all() for x in detail.values()))
+
     def test_meta_projection_bias_is_degree_scaled_and_control_removes_only_excess(self):
         layer = MetaGNNLayer(2, 8, heads=2, batch_norm=False).eval()
         with torch.no_grad():
