@@ -106,3 +106,14 @@ and matched selected-checkpoint NM outcomes in `figures/campaign_nm_cls_comparis
 cue effects only after the complete primary member-policy analysis passes.
 Undefined correlations from constant predictions remain missing; no arm is
 dropped to compute a more favorable contrast.
+
+`analyze_member_initial_reference.py` is the completed exploratory supplementary
+comparison to the three exact saved step-zero states, each shared by eight
+source/policy models. Run after the full primary analysis and collecting
+`data/member_initial_{original,fresh}/` plus `data/member_initial_input_validation.json`.
+It checks all initial weight digests against consumed-training records and all
+320 batch hashes against the terminal reference, then reports all 4,080 same-seed
+initial-to-terminal changes. This is not an arbitrary new random baseline or a
+retroactive initial reference for the separate historical nine-source trajectories.
+The primary contrast is unchanged. Four additional tests cover exact seed/weight,
+complete-grid, finite-metric, and cached-input matching.

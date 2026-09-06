@@ -63,7 +63,7 @@ def main():
     fig.text(.065, .86, "24 matched CPU models · two source graphs · four retention/role policies · three training seeds", fontsize=11)
     fig.text(.065, .075,
              "Each point is one training seed, not a confidence interval. Retention effects average both role orders and the fixed\n"
-             "COVID Political / Facebook / TwiBot panel. Positive right-panel values support the prespecified differential prediction.\n"
+             "COVID Political / Facebook / TwiBot panel. A positive source difference need not mean an absolute performance gain.\n"
              "Both streams use the same terminal weights at update 2,500; fresh episodes are not independent domains.", fontsize=9)
     (root / "figures").mkdir(exist_ok=True)
     for suffix in ("png", "pdf"):

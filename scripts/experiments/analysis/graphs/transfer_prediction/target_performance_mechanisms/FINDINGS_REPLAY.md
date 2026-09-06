@@ -1,11 +1,11 @@
-# First mechanism results: input signal, learned readout, and sampled task quality
+# Mechanism results: target signal, learned readout, and a failed coverage prediction
 
-2026-09-06 UTC. Exploratory, training seed 0. This is not a causal source-ranking
-claim or a completed ICLR result. All five classification targets, a fresh-episode
-replication, matched-pair stage replay, input probes, source coverage, and the
-targeted metagraph control, and all-nine-source training trajectories are complete.
-Controlled retraining is running; its
-outcomes are not available yet.
+2026-09-06 UTC. The historical nine-source analyses use training seed 0; the
+completed controlled retraining uses three seeds. This is not a complete causal
+source-ranking explanation or a submission-ready ICLR result. All five targets,
+both episode streams, all 24 controlled models, the planned cue analysis, and an
+exact-initialization supplementary reference are complete. The prespecified
+coverage prediction is not supported: its primary effect reverses across seeds.
 
 ## What changed our next experiment
 
@@ -22,9 +22,10 @@ biography distance. It identifies two distinct bottlenecks worth manipulating:
    This is far more severe for Hong Kong and COVID Political than for COVID,
    Ukraine, or TwiBot. A fixed-walk member-selection control reduces it.
 
-Neither result alone establishes why changing a training source causes the final
-target performance. The next controlled retraining should test member selection
-and label conflicts, while fixed-query replay tests representation/decoder use.
+Neither result alone establishes why changing a training source causes final
+target performance. The controlled member-selection experiment below successfully
+changes exposure but does not produce the predicted robust transfer benefit.
+The stage-resolved target-signal mismatch survives this failed explanation.
 
 ## Exact comparison contract
 
@@ -556,6 +557,113 @@ Evidence: `data/campaign_cls_{cells,deltas}.csv`,
 `figures/campaign_nm_cls_comparison.png`. Four analysis unit tests pass, including
 missing-grid, changed-input/checkpoint, raw-probe, and checkpoint-rule guards.
 
+## Completed three-seed factorial: coverage is not a sufficient explanation
+
+Twenty-four matched models cross two sources (Ukraine/Hong Kong), three training
+seeds, lowest-ID/uniform endpoint retention, and sorted/shuffled support-query
+roles. Each receives 2,500 updates and 10,000 episodes. All 120 planned checkpoint
+files are present. Within each source/seed, initial weights, consumed anchors and
+final walk-RNG state match across policies; role pairs retain exactly the same
+member sets. Initial weights also match across sources within seed. Independent
+effective-config and consumed-source-label audits pass. Every terminal weight is
+finite and changed, and all 320 cached evaluation-batch hashes match the prior
+original/fresh references. This is 240 full-model cells / 4,080 diagnostic rows.
+
+**The manipulation worked.** Hong Kong repeated positions fall from 39.51% to
+29.80% and effective member count rises from 74.63 to 148.62. Ukraine changes
+from 3.54% to 2.24% and 2,516 to 4,006. These are actual consumed training
+episodes, not the earlier simulated audit. The policies do not equalize the
+sources; changed identities also alter feature/context coverage, so this is not
+an isolated repetition-only intervention.
+
+The prespecified primary endpoint averages retention effects over both role
+orders and the fixed COVID Political/Facebook/TwiBot panel. Positive values in
+the last column mean a larger Hong Kong effect, not necessarily an absolute gain:
+
+| Seed | Hong Kong ΔAUC, original / fresh | Ukraine ΔAUC, original / fresh | Hong Kong minus Ukraine, original / fresh |
+|---|---:|---:|---:|
+| 0 | −.01997 / −.01541 | +.00035 / +.00259 | −.02032 / −.01800 |
+| 1 | +.02372 / +.01732 | +.00289 / +.00154 | +.02082 / +.01578 |
+| 2 | −.01664 / −.01120 | +.00492 / −.00057 | −.02156 / −.01063 |
+| Descriptive mean | −.00430 / −.00310 | +.00272 / +.00118 | **−.00702 / −.00428** |
+
+Both episode streams agree on the primary sign within each seed, but seeds
+disagree. **The predicted stable Hong Kong benefit is not established.** This
+does not refute every sampler effect or rule out benefits in other settings.
+All-target effects, role main effects, interactions, and all three seeds remain
+in `data/member_factorial_contrasts.csv`; no target/checkpoint is selected.
+
+Secondary full-model means illustrate the heterogeneity. Hong Kong retention
+changes COVID Political by −.02184/−.01572, Election by −.02619/−.02059, Facebook
+by +.00078/−.00958, and TwiBot by +.00817/+.01601. Its TwiBot gain is not shared
+by all seeds on both streams (seed 0 reverses −.01032/+.00677). Ukraine's role
+shuffle averages +.02019/+.00982 on Facebook and +.00992/+.01117 on TwiBot, but
+neither benefit has a positive effect for every seed on both streams. Hong Kong
+also has sizeable retention-by-role interactions: COVID Political's mean is
+−.08322/−.08168. A factorial main-effect average must not be read as an additive,
+policy-independent mechanism.
+
+**Cue use changed, but that does not rescue the prediction.** The planned
+secondary analysis contains all 432 model/stage/cue/stream cells and matches
+the validated primary weights and inputs. Hong Kong retention increases mean
+learned-readout agreement with the support-only incoming-degree probe by
+.07405/.08145; full-model agreement increases .03757/.07755. Ukraine full-model
+degree agreement rises .03852/.04059, positive for all three seeds in both
+streams, yet its TwiBot retention AUC effect is not positive in all those cells.
+Thus greater agreement with this useful cue is not sufficient for a universal
+performance gain. These rank agreements are not causal mediation estimates.
+All correlations here have 128 valid nonconstant episodes; the analysis retains
+undefined values rather than silently dropping any condition if that changes.
+
+Evidence: `data/member_{replay_cells,factorial_contrasts,primary_contrast,consumed_exposure}.csv`,
+`data/member_intervention_validation.json`, `data/member_training_contract_validation.json`,
+`data/member_cue_alignment_{cells,contrasts}.csv`, and
+`figures/member_policy_primary.png`.
+
+## Exact starting weights qualify what "training hurts TwiBot" means
+
+An explicitly exploratory supplement was recorded at 10:05 UTC, after training
+but before calculating complete factorial effects; the primary analysis was run
+first. The three saved step-zero states (not freshly sampled random networks)
+are each shared by all eight source/policy models in that seed. Replaying them
+produces 510 diagnostic rows; exact weight digests and all 320 input hashes match.
+Every one of the 4,080 terminal cells is paired to its own true initialization.
+This does not recover the historical nine-source experiment's missing step zero.
+
+For the original production policy (lowest-ID members, sorted roles), mean
+TwiBot AUC changes from step 0 to 2,500 are:
+
+| Source | Pooled-S ridge, original / fresh | Learned-readout ridge, original / fresh | Full model, original / fresh |
+|---|---:|---:|---:|
+| Hong Kong | +.06597 / +.07366 | −.01372 / −.02208 | +.10783 / +.10695 |
+| Ukraine | +.04688 / +.05086 | −.02857 / −.03447 | +.08947 / +.07162 |
+
+All six standard-policy models improve at pooled S and decline at the learned
+readout, on both streams. This readout decline is also present for **all twelve
+Ukraine policy/seed models** on both streams, while every one of the 24 models
+improves at pooled S. Hong Kong alternatives can partly reverse its readout
+decline: uniform retention plus shuffled roles has mean +.01381/+.01324 versus
+initialization, but one fresh-seed change is slightly negative (−.00056).
+
+**Full-model training is not universally harmful relative to initialization.**
+For each source, seeds 0 and 2 improve full-model TwiBot AUC and seed 1 declines,
+under all four policies and both streams. Initial full-model AUC itself varies
+greatly across seeds: .3305/.3330, .6913/.6823, .5813/.5683 (original/fresh).
+The initial learned-readout ridge is far more stable: .7110–.7115 original and
+.6945–.6961 fresh. A single arbitrary random full model is therefore a poor
+reference for a claim about the effect of training. The historical step-100 to
+2,500 deterioration and the new step-zero comparison answer different questions.
+
+These paired stage probes strengthen the localization to the learned
+center/mean readout representation, but do not isolate which weights cause it:
+the upstream convolution changes simultaneously, U itself is parameterless, and
+different-stage probe AUCs are not an additive causal decomposition. We still
+need an independently validated intervention that preserves useful target cues
+and predicts downstream performance without looking at query labels.
+
+Evidence: `data/member_initial_cells.csv`, `data/member_initial_to_terminal_{changes,summary}.csv`,
+`data/member_initial_validation.json`, and `data/member_initial_input_validation.json`.
+
 ## Artifacts and runtime provenance
 
 - Local branch/worktree: `codex/target-performance-mechanisms`,
@@ -600,19 +708,33 @@ missing-grid, changed-input/checkpoint, raw-probe, and checkpoint-rule guards.
 - Substantive 24-arm CPU training started **2026-09-06 05:52 UTC**, same frozen
   training revision and resources, output `member_cpu_training_20260906`, tmux
   `mechanism-member-cpu`. The prospective CPU execution amendment was recorded
-  before launch. No policy-effect results exist yet. Do not update this worktree
-  while it runs. All GPUs are hidden from these processes.
+  before launch. All 24 runs completed at **09:55:58 UTC**; all consumed-stream
+  gates passed at **09:56:39 UTC**. Every declared checkpoint (0/100/300/900/2500;
+  120 files) is retained.
+  Initial weights match even across the two sources within each seed. An
+  independent audit confirms all effective configurations match the declared CPU
+  recipe, all non-treatment settings are common, and all consumed episode-source
+  labels identify the intended source. No target-policy effects are interpreted
+  before both complete evaluation streams pass. All GPUs were hidden.
 - Fresh-episode matched-pair stage replay: all 28 baseline cells complete in the
   main mechanism worktree at `4fc6c7bd`, `fresh_pair_stage_cpu_20260906`.
 - All-nine-source, four-checkpoint trajectories on both episode streams:
   `trajectory_{original,fresh}_20260906` in the main mechanism worktree, frozen
   revision `3c88bdbfeafacc49464afbacea8250ddf673d9b1`, four CPU threads. Both
   `DONE` markers and all checkpoint/input/terminal-reference gates passed.
-- Finite training-to-evaluation continuation is waiting in audit worktree tmux
+- Finite training-to-evaluation continuation completed in audit worktree tmux
   `mechanism-member-eval`, frozen revision `c23bee34`. It requires all 24 CPU
   training validity gates, then evaluates original and fresh episodes and checks
-  all cached tensors against established references. It will not treat the smoke
-  experiment as a research result. Output: `member_evaluation_20260906`.
+  all cached tensors against established references. All gates passed; the smoke
+  experiment is not a research result. Output: `member_evaluation_20260906`.
+- Actual consumed exposure (10,000 episodes per model, three seeds): uniform
+  retention changes Hong Kong's repeated-member fraction from .39510 to .29795
+  and effective member count from 74.63 to 148.62; Ukraine changes from .03536 to
+  .02242 and 2,516 to 4,006. The manipulation works but does not equalize the
+  source distributions. Consumed context means are 67.42/68.89 for Hong Kong and
+  79.06/78.83 for Ukraine (lowest/uniform); these are exposure-weighted actual
+  training contexts, not the earlier small uniform-unique-member context sample.
+  These manipulation checks alone are not evidence of a target-performance gain.
 - Post-hoc TwiBot cue agreement ran locally using existing prediction-only tensor
   exports (~44 MB; no graph-feature export), code `a1c0aa4b`. All 648 cells passed
   exact cached-input checks; two rank/orientation/constant-score unit tests passed.
@@ -636,7 +758,12 @@ missing-grid, changed-input/checkpoint, raw-probe, and checkpoint-rule guards.
   explicitly excluded. Both `DONE` markers and every input/weight/original-NM
   checkpoint-file gate passed. Manifest revision `6732081a`; no new training or target-
   selected checkpoints. Only TwiBot is an unseen source. This is a one-training-
-  seed exploratory reuse, not a substitute for the running 24-arm factorial.
+  seed exploratory reuse, not a substitute for the completed 24-arm factorial.
+- Exact-initialization reference completed in the unchanged private follow-up
+  worktree at `1010d57c`, four CPU threads, tmux `mechanism-initial-reference`:
+  `initial_reference_{original,fresh}_20260906`. Both `DONE` markers, all starting-
+  weight digests, raw-probe matches, and every cached-input gate passed. Only
+  the checkpoint manifest was transferred as data; no source files were copied.
 - The 24-arm member-selection intervention (two sources × four policies × three
   training seeds) is implemented at `5e0a3537`. All 24 lightweight tests and a
   four-policy, three-update toy CPU integration passed on Tucker. These are

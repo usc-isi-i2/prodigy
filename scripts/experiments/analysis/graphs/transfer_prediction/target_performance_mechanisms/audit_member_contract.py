@@ -86,7 +86,12 @@ def main():
     result = {"models": 24, "revision": REVISION, "declared_cpu_recipe_matches": True,
               "common_non_treatment_settings": True, "consumed_episode_source_labels_match": True,
               "source_map_from_exact_graph_audit": True,
-              "independent_graph_id_lookup_of_each_member": False}
+              "independent_graph_id_lookup_of_each_member": False,
+              "distinct_initializations": len({r["initial_sha256"] for r in arms}),
+              "same_initialization_across_sources_per_seed": all(
+                  len({r["initial_sha256"] for r in arms if r["seed"] == seed}) == 1 for seed in range(3)),
+              "distinct_walk_states_per_source": {source: len({r["final_walk_rng_sha256"] for r in arms if r["source"] == source})
+                                                  for source in sorted({r["source"] for r in arms})}}
     (args.data / "member_training_contract_validation.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result))
 
