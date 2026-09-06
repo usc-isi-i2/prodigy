@@ -1,6 +1,7 @@
 import torch
+from torch_geometric.data import Data
 
-from mixture_scaling.lattice import SOURCE_ORDER, lattice_rows, mae_loss, selected_rows, update_selection
+from mixture_scaling.lattice import SOURCE_ORDER, lattice_rows, lp_loss, mae_loss, selected_rows, update_selection, validate
 from mixture_scaling.model import GraphMAE
 
 
@@ -39,3 +40,27 @@ def test_graphmae_loss_masks_and_reconstructs_roots():
     loss = mae_loss(model, Batch(), torch.device("cpu"), 0.5, 2.0, torch.Generator().manual_seed(0))
     assert loss.ndim == 0
     assert torch.isfinite(loss)
+
+
+def test_lp_validation_replays_identical_negative_samples():
+    class Batch:
+        x = torch.randn(8, 4)
+        edge_index = torch.tensor([[0, 1, 2, 3, 4, 5], [1, 2, 3, 4, 5, 6]])
+
+        def __init__(self):
+            self.edge_label_index = torch.stack((torch.arange(6), torch.randperm(8)[:6]))
+            self.edge_label = torch.tensor([1, 1, 1, 0, 0, 0], dtype=torch.float)
+
+        def to(self, _device):
+            return self
+
+    class RandomLoader:
+        def __iter__(self):
+            return iter([Batch()])
+
+    model = GraphMAE(4, 3, 3).encoder
+    protocol = {"validation_batches": 1, "mask_rate": 0.5, "sce_alpha": 2.0}
+    first = validate(model, {"tiny": RandomLoader()}, "lp", torch.device("cpu"), protocol, 0)
+    torch.rand(20)
+    second = validate(model, {"tiny": RandomLoader()}, "lp", torch.device("cpu"), protocol, 0)
+    assert first == second

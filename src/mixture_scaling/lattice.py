@@ -214,6 +214,12 @@ def update_selection(value, step, best_loss, best_step, reference, patience, thr
 @torch.no_grad()
 def validate(model, loaders, objective, device, protocol, seed):
     model.eval()
+    cpu_state = torch.random.get_rng_state()
+    cuda_state = torch.cuda.get_rng_state_all() if torch.cuda.is_available() else []
+    # Recreate the exact same loader sampling and LP negatives at every check.
+    torch.manual_seed(seed + 32452843)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed + 32452843)
     values = {}
     generator = torch.Generator().manual_seed(seed + 32452843)
     for source, loader in loaders.items():
@@ -235,6 +241,9 @@ def validate(model, loaders, objective, device, protocol, seed):
         if not losses:
             raise RuntimeError(f"validation loader for {source} yielded no batches")
         values[source] = float(np.mean(losses))
+    torch.random.set_rng_state(cpu_state)
+    if cuda_state:
+        torch.cuda.set_rng_state_all(cuda_state)
     model.train()
     return float(np.mean(list(values.values()))), values
 
