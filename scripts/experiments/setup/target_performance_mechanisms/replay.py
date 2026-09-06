@@ -23,6 +23,7 @@ from torch_geometric.nn import global_mean_pool
 
 from experiments.trainer import TrainerFS, _concat_global_eval_parts
 from models.layer_classes import SupernodeAggrLayer, MetagraphLayer, BackgroundGNNLayer
+from models.metaGNN import MetaGNNLayer
 from scripts.experiments.setup.icl_arch_matrix.common_protocol import (
     build_classification_dataset, classification_targets, iter_episodes,
     new_fingerprint, reset_episode_rng, update_episode_fingerprint,
@@ -139,7 +140,7 @@ def episode_probe(embeddings, batch, method):
 def intervene(batch, variant, seed):
     """Fixed-context input interventions; no labels used for feature shuffling."""
     graph = batch[0]
-    if variant in {"baseline", "bn_batch_encoder", "bn_batch_meta", "bn_batch_all"}:
+    if variant in {"baseline", "bn_batch_encoder", "bn_batch_meta", "bn_batch_all", "meta_bias_normalized"}:
         return
     if variant == "center_features_only":
         real = graph.global_node_ids >= 0
@@ -189,6 +190,41 @@ def bn_mode(model, variant):
             module.training, module.track_running_stats = training, tracking
 
 
+@contextmanager
+def meta_bias_mode(model, variant):
+    """Diagnostic: apply attention output-projection bias once per destination.
+
+    Production projects each already-attention-weighted message before summing,
+    hence its bias is added indegree times. This observer subtracts only the
+    excess bias, retaining every learned weight and attention coefficient.
+    """
+    handles = []
+    if variant == "meta_bias_normalized":
+        for layer in model.modules():
+            if not isinstance(layer, MetaGNNLayer):
+                continue
+            saved = {}
+            def capture(m, args, kwargs, _saved=saved):
+                x = args[0] if args else kwargs["x"]
+                edges = args[1] if len(args) > 1 else kwargs["edge_index"]
+                index = edges[1]
+                degrees = torch.bincount(index, minlength=len(x))
+                _saved["factor"] = (1 - 1 / degrees[index].to(x.dtype))[:, None]
+            def correct(m, args, out, _saved=saved):
+                if out.shape[0] != _saved["factor"].shape[0]:
+                    raise RuntimeError("unexpected metagraph message ordering")
+                return out - _saved["factor"] * m.bias
+            handles.append(layer.register_forward_pre_hook(capture, with_kwargs=True))
+            handles.append(layer.out_proj.register_forward_hook(correct))
+        if not handles:
+            raise RuntimeError("no compatible metagraph layer")
+    try:
+        yield
+    finally:
+        for handle in handles:
+            handle.remove()
+
+
 def select_models(args):
     models = load_external_models(args.model_list)
     if args.model_ids:
@@ -235,7 +271,7 @@ def main():
         raise ValueError("unknown target")
     variants = args.variants.split(",")
     allowed = {"baseline", "center_features_only", "no_background_edges", "shuffle_context",
-               "zero_support_relations", "zero_label_text", "bn_batch_encoder", "bn_batch_meta", "bn_batch_all"}
+               "zero_support_relations", "zero_label_text", "bn_batch_encoder", "bn_batch_meta", "bn_batch_all", "meta_bias_normalized"}
     if not set(variants) <= allowed or len(set(variants)) != len(variants):
         raise ValueError("invalid or duplicate variant")
     if not 1 <= args.batch_count <= 32:
@@ -302,7 +338,7 @@ def main():
                 for variant in variants:
                     collected = defaultdict(lambda: {"yt": [], "yp": [], "global": []})
                     exports = []
-                    with torch.no_grad(), bn_mode(trainer.model, variant):
+                    with torch.no_grad(), bn_mode(trainer.model, variant), meta_bias_mode(trainer.model, variant):
                         for index, path in enumerate(batch_paths):
                             # Trusted artifacts just created in this invocation.
                             raw = torch.load(path, map_location="cpu", weights_only=False)

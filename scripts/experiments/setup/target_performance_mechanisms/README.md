@@ -52,6 +52,14 @@ Intervention meanings:
   updating weights or running buffers. **Transductive diagnostic**: includes
   test-query covariates and neighboring episodes in the batch. This is not a
   leakage-free adaptation benchmark or evidence for a deployable improvement.
+- `meta_bias_normalized`: apply the metagraph attention output-projection bias
+  once per destination, retaining attention and weights. Production applies the
+  affine output projection to each weighted message, then sums; its bias is
+  therefore multiplied by destination indegree. The control removes only the
+  excess bias. For default self-loops, an example node has degree 31 during
+  30-way NM but degree 3 in binary CLS; a label node has degree 91 versus 21
+  (30x3 versus 2x10 supports). This is a cardinality-sensitivity diagnostic,
+  not a validated model fix: the weights were trained with the original term.
 
 All are mechanistic sensitivity tests, not causal estimates of why a training
 source won. Their main purpose is to choose a controlled follow-up. Runtime data,

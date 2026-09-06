@@ -6,7 +6,8 @@ from torch_geometric.data import Data, Batch
 
 from experiments.layers import get_module_list
 from models.general_gnn import SingleLayerGeneralGNN
-from .replay import batch_hash, bn_mode, clone_batch, episode_probe, intervene, trace_stages
+from .replay import batch_hash, bn_mode, clone_batch, episode_probe, intervene, trace_stages, meta_bias_mode
+from models.metaGNN import MetaGNNLayer
 from .audit_source_episodes import member_variants, raw_probe_stats
 
 
@@ -38,6 +39,21 @@ def fixture():
 
 
 class ReplayTest(unittest.TestCase):
+    def test_meta_projection_bias_is_degree_scaled_and_control_removes_only_excess(self):
+        layer = MetaGNNLayer(2, 8, heads=2, batch_norm=False).eval()
+        with torch.no_grad():
+            layer.out_proj.weight.zero_()
+            layer.out_proj.bias.fill_(1)
+            x = torch.zeros(3, 8)
+            edges = torch.tensor([[0, 0, 0, 0, 0, 0], [0, 1, 1, 2, 2, 2]])
+            attrs = torch.zeros(6, 2)
+            before = layer(x, edges, edge_attr=attrs)
+            torch.testing.assert_close(before, torch.tensor([1., 2., 3.])[:, None].expand(-1, 8))
+            with meta_bias_mode(layer, "meta_bias_normalized"):
+                result = layer(x, edges, edge_attr=attrs)
+            torch.testing.assert_close(result, torch.ones_like(result))
+            torch.testing.assert_close(before, layer(x, edges, edge_attr=attrs), rtol=0, atol=0)
+
     def test_member_policies_hold_walks_and_selected_sets_fixed(self):
         walk = torch.arange(12).repeat(6)
         policies = member_variants({99: list(range(7))}, {99: walk}, random.Random(41))
