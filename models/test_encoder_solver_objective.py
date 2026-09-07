@@ -48,6 +48,43 @@ def fixture(mode):
 
 
 class IsolationTest(unittest.TestCase):
+    def test_centered_scaled_gradient_paths_and_identical_initialization(self):
+        torch.manual_seed(91)
+        native, batch = fixture("native")
+        torch.manual_seed(91)
+        model, _ = fixture("ridge_centered_scaled")
+        for key,value in native.state_dict().items():
+            self.assertTrue(torch.equal(value,model.state_dict()[key]),key)
+        model.encoder_solver_training=True
+        yt,yp,_=model(*copy.deepcopy(batch))
+        native_loss=torch.nn.functional.cross_entropy(yp,yt)
+        self.assertIsNone(torch.autograd.grad(native_loss,model.layer_list[0].linear.weight,retain_graph=True,allow_unused=True)[0])
+        model.encoder_solver_ridge_loss.backward()
+        self.assertIsNotNone(model.layer_list[0].linear.weight.grad)
+        self.assertIsNotNone(model.logit_scale.grad)
+        self.assertNotEqual(float(model.logit_scale.grad),0)
+        self.assertIsNone(model.layer_list[2].linear.weight.grad)
+        for name,param in model.named_parameters():
+            if name.startswith(('initial_label_mlp.','final_input_mlp.','final_label_mlp.','learned_label_embedding.')):
+                self.assertIsNone(param.grad,name)
+
+    def test_centered_formula_uses_support_mean_not_query(self):
+        _,batch=fixture("joint")
+        z=torch.randn(8,4,dtype=torch.double,requires_grad=True)
+        y,edges,mask=batch[2].double(),batch[3],batch[5]
+        scale=torch.tensor(1.2,dtype=torch.double,requires_grad=True)
+        actual=ridge_query_loss(z,y,edges,mask,support_center=True,logit_scale=scale)
+        q=mask.reshape(8,2)[:,0]
+        expected=[]
+        for start in (0,4):
+            rows=torch.arange(start,start+4);s=rows[~q[rows]];t=rows[q[rows]]
+            mean=z[s].mean(0)
+            xs=torch.nn.functional.normalize(z[s]-mean,dim=-1)
+            xq=torch.nn.functional.normalize(z[t]-mean,dim=-1)
+            logits=xq@xs.T@torch.linalg.solve(xs@xs.T+torch.eye(len(s),dtype=z.dtype),y[s])
+            expected.append(torch.nn.functional.cross_entropy(logits*scale.exp(),y[t].argmax(1)))
+        torch.testing.assert_close(actual,torch.stack(expected).mean(),atol=0,rtol=0)
+
     def test_losses_gradients_and_adamw(self):
         torch.manual_seed(42)
         original, batch = fixture("joint")

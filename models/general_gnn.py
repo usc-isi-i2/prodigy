@@ -126,8 +126,10 @@ class SingleLayerGeneralGNN(torch.nn.Module):
                 mode = self.params.get("encoder_solver_objective", "native")
                 if self.encoder_solver_training and mode != "native":
                     self.encoder_solver_ridge_loss = ridge_query_loss(
-                        x_input, y_true_matrix, metagraph_edge_index, query_set_mask)
-                    if mode in {"isolated", "ridge_only"}:
+                        x_input, y_true_matrix, metagraph_edge_index, query_set_mask,
+                        support_center=mode == "ridge_centered_scaled",
+                        logit_scale=self.logit_scale if mode == "ridge_centered_scaled" else None)
+                    if mode in {"isolated", "ridge_only", "ridge_centered_scaled"}:
                         x_input = x_input.detach()
                 if x_input is None:
                     raise Exception('MetagraphLayer must be preceded by a layer that produces supernode embeddings!')

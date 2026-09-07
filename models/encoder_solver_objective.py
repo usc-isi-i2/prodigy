@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 def configure_objective(params):
     mode = params.get("encoder_solver_objective", "native")
-    if mode not in {"native", "joint", "isolated", "ridge_only"}:
+    if mode not in {"native", "joint", "isolated", "ridge_only", "ridge_centered_scaled"}:
         raise ValueError(f"Unknown encoder_solver_objective: {mode}")
     if mode != "native":
         checks = {
@@ -27,14 +27,18 @@ def configure_objective(params):
         "mode": mode, "ridge_lambda": 1.0, "ridge_logit_scale": 1.0,
         "ridge_intercept": False, "ridge_feature_normalization": "row_l2",
         "ridge_target": "support_one_hot", "ridge_loss": "query_cross_entropy",
-        "native_loss_weight": 0.0 if mode == "ridge_only" else 1.0,
+        "native_loss_weight": 0.0 if mode in {"ridge_only", "ridge_centered_scaled"} else 1.0,
         "ridge_loss_weight": 0.0 if mode == "native" else 1.0,
-        "detach_u1_for_native": mode in {"isolated", "ridge_only"},
+        "detach_u1_for_native": mode in {"isolated", "ridge_only", "ridge_centered_scaled"},
     }
+    if mode == "ridge_centered_scaled":
+        params["encoder_solver_effective"].update(
+            ridge_centering="task_support_mean_before_row_l2", ridge_logit_scale="exp(model.logit_scale), learned",
+            ridge_scale_initialization="existing model log(1/0.07); no new parameters or RNG draws")
     return mode
 
 
-def ridge_query_loss(u1, labels, edge_index, query_mask):
+def ridge_query_loss(u1, labels, edge_index, query_mask, *, support_center=False, logit_scale=None):
     """Fit each actual metagraph task independently; never fit query labels."""
     n, ways = labels.shape
     if ways < 2 or u1.shape[0] != n:
@@ -57,10 +61,16 @@ def ridge_query_loss(u1, labels, edge_index, query_mask):
         support, query = rows & ~q, rows & q
         if not support.any() or not query.any() or not (labels[support].sum(0) > 0).all():
             raise ValueError("Each task needs support for every class and queries")
-        xs = z[support]
+        if support_center:
+            mean = u1[support].mean(0, keepdim=True)
+            xs, xq = F.normalize(u1[support] - mean, dim=-1), F.normalize(u1[query] - mean, dim=-1)
+        else:
+            xs, xq = z[support], z[query]
         # Dual solve is exact ridge with lambda=1 and no intercept.
         gram = xs @ xs.T + torch.eye(xs.shape[0], device=xs.device, dtype=xs.dtype)
         coef = torch.linalg.solve(gram, labels[support].to(xs.dtype))
-        logits = z[query] @ xs.T @ coef
+        logits = xq @ xs.T @ coef
+        if logit_scale is not None:
+            logits = logits * logit_scale.exp()
         losses.append(F.cross_entropy(logits, labels[query].argmax(-1), reduction="sum"))
     return torch.stack(losses).sum() / q.sum()

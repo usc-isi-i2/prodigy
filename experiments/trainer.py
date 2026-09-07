@@ -2157,8 +2157,10 @@ class TrainerFS():
                     ridge_loss = self.model.encoder_solver_ridge_loss
                     if ridge_loss is None:
                         raise RuntimeError("Missing training U1 ridge loss")
-                    total_loss = ridge_loss if self.encoder_solver_objective == "ridge_only" else total_loss + ridge_loss
+                    total_loss = ridge_loss if self.encoder_solver_objective in {"ridge_only", "ridge_centered_scaled"} else total_loss + ridge_loss
                     wandb.log({"train_ridge_loss": _to_float(ridge_loss), "train_native_loss": _to_float(loss)}, step=e)
+                    if self.encoder_solver_objective == "ridge_centered_scaled":
+                        wandb.log({"train_ridge_logit_scale": _to_float(self.model.logit_scale.exp())}, step=e)
             total_loss.backward()
             self.optimizer.step()
             # self.scheduler.step()
