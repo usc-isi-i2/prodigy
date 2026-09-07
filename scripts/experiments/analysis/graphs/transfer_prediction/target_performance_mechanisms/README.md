@@ -1,5 +1,13 @@
 # Target-performance mechanisms
 
+Latest completed reviewer controls: [FINDINGS_SUPPORT_DOSE.md](FINDINGS_SUPPORT_DOSE.md).
+All 1140 dose/saved-checkpoint cells pass. Increasing support suppression improves
+Hong Kong political ranking and worsens both sources' bot ranking monotonically
+in all 18 individual curves per source/target; page intervention signs reverse
+between steps 100 and 2500. `analyze_support_dose` validates all saved-step,
+query-invariance and endpoint receipts; `plot_support_dose` shows every target.
+This closes the dose/checkpoint follow-ups in the earlier message-content findings.
+
 Completed practical follow-up: [FINDINGS_READOUT_SELECTION.md](FINDINGS_READOUT_SELECTION.md).
 The same twenty supports select a readout that beats every fixed rule's
 three-target panel mean in both families and both streams; it does not beat

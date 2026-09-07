@@ -112,8 +112,8 @@ implementation check, not a surprising discovery. The second nonpolitical
 target weakens a politics-only account without resolving all feature/label
 construction concerns. Demote the readout selector to an appendix comparison.
 
-Two bounded follow-ups remain valuable: a shared edge-retention dose curve
-and intervention sensitivity at other saved checkpoint steps. Source-training
+The shared edge-retention dose curve and saved-checkpoint intervention study
+are now complete: see [FINDINGS_SUPPORT_DOSE.md](FINDINGS_SUPPORT_DOSE.md). Source-training
 degree/label descriptors, direct feature-label overlap checks and a portable
 end-to-end release still require work. Do not keep rerunning the completed
 rewiring or message grid, claim population significance from the two streams,
