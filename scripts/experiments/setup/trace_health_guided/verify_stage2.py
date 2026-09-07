@@ -60,7 +60,10 @@ def main() -> int:
         wrong = {
             key: (contract.get(key), value)
             for key, value in expected.items()
-            if contract.get(key) != value
+            # TSV shell readers can retain the final CR from a CRLF row.
+            # Normalize only that terminator; all schedule content stays exact.
+            if (contract.get(key).removesuffix("\r")
+                if isinstance(contract.get(key), str) else contract.get(key)) != value
         }
         if metadata.get("completed_steps") != args.total_steps or wrong:
             raise ValueError(f"health-guided contract differs for {run_name}: {wrong}")
