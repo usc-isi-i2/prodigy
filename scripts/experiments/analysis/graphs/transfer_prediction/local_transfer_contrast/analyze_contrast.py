@@ -255,7 +255,9 @@ def route_features(record, arrays, view):
 
 
 def make_router(x):
-    n_components = min(32, x.shape[1], x.shape[0] - 1)
+    # Keep this below the smallest training fold in near-ceiling contrasts,
+    # where only a few dozen examples distinguish the experts.
+    n_components = min(8, x.shape[1], x.shape[0] - 1)
     steps = [("scale", StandardScaler())]
     if x.shape[1] > n_components:
         steps.append(("pca", PCA(n_components=n_components, random_state=RANDOM_STATE)))
