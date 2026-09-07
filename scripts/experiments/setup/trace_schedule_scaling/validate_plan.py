@@ -60,7 +60,7 @@ def main() -> int:
         "neighbor_sampling_cross_source_prob": 0.0,
         "neighbor_matching_member_policy": "uniform_shuffled",
         "train_episode_audit": True,
-        "track_training_user_roles": True,
+        "track_training_user_roles": False,
     }
     wrong = {key: (config.get(key), value) for key, value in required.items()
              if config.get(key) != value}

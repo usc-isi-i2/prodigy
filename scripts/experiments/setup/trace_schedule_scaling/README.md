@@ -11,7 +11,10 @@ three-seed comparison of:
 Within every rung and seed, all three arms consume exactly the same per-source episode
 multiset. Independent per-source Python and Torch RNG streams make schedule order the
 only data intervention. Seed-wise rotations vary which source comes last. Exact
-consumed episodes and per-node anchor/support/query counts are retained.
+consumed anchors, members, support/query roles, and source IDs are retained. Dense
+graph-wide role counters are disabled because they would bloat every checkpoint on
+the tens-of-millions-node merge; the consumed-episode record is both smaller and more exact for
+this comparison.
 
 On Tucker, use the dedicated `codex/trace-schedule-scaling` worktree. First run:
 
