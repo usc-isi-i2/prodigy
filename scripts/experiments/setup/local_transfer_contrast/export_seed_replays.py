@@ -6,12 +6,34 @@ import json
 from pathlib import Path
 
 import torch
+import torch.nn.functional as F
 
 from experiments.run_shared_graph import write_json
 from scripts.experiments.setup.target_performance_mechanisms.analyze_mixture_predictions import input_labels
 
 
 RAW_STAGES = ("raw_center", "raw_context", "raw_joint")
+
+
+def support_loo_prototype_accuracy(embeddings, batch):
+    """Episode score using only support labels; repeat it for that episode's queries."""
+    labels = batch[2].argmax(1)
+    query = batch[5].reshape(-1, 2)[:, 0].bool()
+    tasks = batch[0].task_id_per_sample
+    x = F.normalize(embeddings, dim=1)
+    result = embeddings.new_empty(len(labels))
+    for task in tasks.unique(sorted=True):
+        support_indices = torch.where((tasks == task) & ~query)[0]
+        correct = []
+        for held_out in support_indices:
+            keep = support_indices[support_indices != held_out]
+            prototypes = torch.stack([
+                x[keep][labels[keep] == class_id].mean(0) for class_id in range(2)
+            ])
+            prediction = int((x[held_out] @ F.normalize(prototypes, dim=1).T).argmax())
+            correct.append(prediction == int(labels[held_out]))
+        result[(tasks == task) & query] = sum(correct) / len(correct)
+    return result[query]
 
 
 def reference_for(roots, target):
@@ -71,6 +93,10 @@ def load_stream(root, target, stream, seed, reference_roots, raw_parity_atol):
                 raise ValueError(f"batch receipt mismatch for {model_id}/{index}")
         logits = {name: torch.cat([record["logits"][name] for record in records])
                   for name in records[0]["logits"]}
+        support_health = torch.cat([
+            support_loo_prototype_accuracy(record["embeddings"]["U1_pre_meta"], batch)
+            for record, batch in zip(records, batches)
+        ])
         raw = {stage: torch.cat([
             record["embeddings"][stage][mask] for record, mask in zip(records, query_masks)
         ]) for stage in RAW_STAGES}
@@ -84,6 +110,7 @@ def load_stream(root, target, stream, seed, reference_roots, raw_parity_atol):
                 )
         output["models"][model_id] = {
             "weights_sha256": row["weights_sha256"], "logits": logits,
+            "support_health": {"u1_loo_prototype_accuracy": support_health},
         }
     n = len(labels["local_y"])
     if any(len(values) != n for values in output["input"]["embeddings"].values()):

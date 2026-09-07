@@ -40,6 +40,26 @@ def select_first_healthy(ranking, healthy):
     return selected
 
 
+def select_by_support_score(models, support_scores, healthy=None, tie_prior=None):
+    """Per-query argmax with deterministic, label-free target-health tie breaking."""
+    ranking = sorted(models, key=lambda name: (-(tie_prior or {}).get(name, 0.0), name))
+    n = len(support_scores[ranking[0]])
+    selected = np.full(n, ranking[0], dtype=object)
+    best_score = np.full(n, -np.inf)
+    any_eligible = np.zeros(n, dtype=bool)
+    for model in ranking:
+        eligible = np.ones(n, dtype=bool) if healthy is None else healthy[model]
+        score = support_scores[model]
+        choose = eligible & (score > best_score)
+        selected[choose] = model
+        best_score[choose] = score[choose]
+        any_eligible |= eligible
+    if healthy is not None and (~any_eligible).any():
+        fallback = select_by_support_score(models, support_scores, tie_prior=tie_prior)
+        selected[~any_eligible] = fallback[~any_eligible]
+    return selected
+
+
 def evaluate_selection(record, selected, temperatures, labels):
     logits = np.empty((len(selected), 2), dtype=np.float64)
     for name in np.unique(selected):
@@ -84,6 +104,18 @@ def analyze_target(path, target_name):
     }
     selections = {"fixed_best": np.full(len(y), best, dtype=object)}
     selections.update({name: select_first_healthy(ranking, values) for name, values in health.items()})
+    if all("support_health" in validation["models"][model] for model in models):
+        u1_rate = {model: float(health["u1_agreement"][model].mean()) for model in models}
+        support_scores = {
+            model: to_numpy(validation["models"][model]["support_health"]["u1_loo_prototype_accuracy"])
+            for model in models
+        }
+        selections["support_loo"] = select_by_support_score(
+            models, support_scores, tie_prior=u1_rate,
+        )
+        selections["support_loo_u1_agreement"] = select_by_support_score(
+            models, support_scores, healthy=health["u1_agreement"], tie_prior=u1_rate,
+        )
     # Query-label oracle is diagnostic only.
     correctness = {
         model: to_numpy(validation["models"][model]["logits"]["full_model"]).argmax(1) == y
@@ -105,6 +137,9 @@ def analyze_target(path, target_name):
         rows.append({
             "target": target_name, "method": method, "n": len(y), "best_model_from_discovery": best,
             "uses_validation_query_labels": method == "oracle_expert",
+            "uses_any_query_labels_for_selection": method in {
+                "fixed_best", "u1_agreement", "raw_agreement", "learned_stage_consensus", "oracle_expert"
+            },
             "accuracy": float(accuracy_score(y, predictions)), "auc": auc(auc_y, auc_score),
             "nll": float(log_loss(y, probabilities, labels=[0, 1])),
             "accuracy_gain_over_fixed_best": float(correct.mean() - fixed_correct.mean()),
