@@ -1,12 +1,15 @@
 # Fast PinSAGE versus GraphSAGE ablation
 
 This experiment changes only neighborhood selection and aggregation while retaining the
-latest fast PRODIGY NM protocol: the shared all-eight graph, 40k optimizer steps, two-hop
-context budget, one-hop NM positives, balanced source sampling, model dimensions, and seed.
+latest PRODIGY final-core NM protocol with shared-graph loading: the immutable all-nine
+70/15/15 edge-split graph, 2,500 optimizer updates at batch size 4, learning rate 0.002,
+two-hop context, one-hop NM positives, balanced source sampling, and checkpoints at
+100/300/900/2,500, repeated with seeds 0, 1, and 2.
 
 The four paired source sets are COVID (largest graph), election2020-political (highest
-average degree), TwiBot-20 (bot-domain relevance), and the all-eight mixture with TwiBot-20
-left out. Every source set trains one historical GraphSAGE control and one PinSAGE arm.
+average degree), TwiBot-20 (bot-domain relevance), and the all-nine mixture with TwiBot-20
+left out. Every source set trains paired GraphSAGE and PinSAGE arms for all three seeds
+(24 physical models).
 
 PinSAGE uses 64 two-step walks from each episode center. Repeated visits are reduced to
 counts; up to 100 distinct nodes become tokens, and normalized counts weight the messages
@@ -22,7 +25,7 @@ SMOKE_STEPS=200 bash scripts/experiments/setup/nm_pinsage_fast_ablation/run_trai
 `GPUS` is a space-separated list and `MODELS_PER_GPU` controls concurrency. For
 example, `GPUS="0 1" MODELS_PER_GPU=4` runs all eight jobs while GPUs 2-3 are occupied.
 
-Use a fresh run directory for the full launch. On Tucker it belongs in a detached tmux
+Use a fresh run directory for the full 2,500-update launch. On Tucker it belongs in a detached tmux
 session after checking `tmux ls`, GPU processes, RAM, and `/dev/shm`. Only GPUs 0-3 are
 allowed.
 

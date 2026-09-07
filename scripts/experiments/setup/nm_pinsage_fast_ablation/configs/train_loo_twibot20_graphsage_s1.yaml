@@ -1,9 +1,11 @@
 # Paired fast-protocol sampler ablation: loo_twibot20, graphsage.
 dataset: covid19_twitter
 root: /dataMeR1/phil/data/merged/graphs
-graph_filename: ukr_rus_covid_midterm_all8_retweet_graph.pt
+graph_filename: ukr_rus_covid_midterm_all9_facebook_final_core_split_seed0.pt
 task_name: neighbor_matching
-edge_view: default
+edge_view: static_train
+target_edge_view: static_test
+neighbor_matching_edge_split: true
 feature_subset: all
 original_features: true
 
@@ -25,18 +27,20 @@ pinsage_topk: 100
 n_way: 30
 n_shots: 3
 n_query: 4
-batch_size: 1
-dataset_len_cap: 10000
+batch_size: 4
+learning_rate: 0.002
+dataset_len_cap: 2500
 val_len_cap: 500
 test_len_cap: 500
 neighbor_sampling_episode_source: graph_id
 neighbor_sampling_episode_source_weighting: balanced
-neighbor_sampling_source_subset: ukr_rus,covid,midterm,covid_political,election2020,ukr_rus_suspended,cp_hk
+neighbor_sampling_source_subset: ukr_rus,covid,midterm,covid_political,election2020,ukr_rus_suspended,cp_hk,facebook_page_reference
 
-epochs: 4
+epochs: 1
 eval_step: 100000
-checkpoint_step: 10000
+checkpoint_step: 100000
+checkpoint_steps: "100,300,900,2500"
 workers: 2
 device: 0
-seed: 0
-prefix: nm_loo_twibot20_graphsage_fast40k
+seed: 1
+prefix: nm_loo_twibot20_graphsage_s1_finalcore2500
