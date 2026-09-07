@@ -46,12 +46,12 @@ def prediction_rule(rows):
 
 def load_cell(args, stream):
     read = lambda path: json.loads(path.read_text())
-    if args.phase == 'discovery':
+    if args.phase in ('discovery', 'pair_test'):
         cp = read(args.contrast_root / 'protocol.json')
         scale = Path(cp['scale_root']); dose = Path(cp['dose_root'])
         top = read(Path(read(scale / 'protocol.json')['reference_replay']) / 'protocol.json')
         recs = [r for r in read(dose / 'checkpoint_inventory.json') if
-                r['source'] == 'cp_hk' and r['seed'] == 0 and r['step'] == 2500]
+                r['source'] == ('ukr_rus' if args.phase == 'pair_test' else 'cp_hk') and r['seed'] == 0 and r['step'] == 2500]
         if len(recs) != 1: raise ValueError('discovery checkpoint not unique')
         rec = recs[0]
         saved = torch.load(scale / 'predictions' / TARGET / stream / (rec['model_id'] + '.pt'), map_location='cpu', weights_only=False)
@@ -117,26 +117,34 @@ def geometry(audit, intact, removed, batch):
 
 
 def main():
+    global TARGET
     p = argparse.ArgumentParser(__doc__)
-    p.add_argument('--phase', choices=['discovery', 'long_test'], required=True)
+    p.add_argument('--phase', choices=['discovery', 'long_test', 'pair_test'], required=True)
     p.add_argument('--contrast-root', type=Path, required=True)
     p.add_argument('--long-root', type=Path, required=True)
     p.add_argument('--discovery-root', type=Path)
     p.add_argument('--output', type=Path, required=True)
     args = p.parse_args()
+    if args.phase == 'pair_test':
+        TARGET = 'twibot20'
     if args.output.exists() or torch.cuda.is_available(): raise ValueError('new output and hidden GPUs required')
     torch.set_num_threads(4)
     for root, count, key in [(args.contrast_root, 252, 'score_cells'), (args.long_root, 84, 'cells')]:
         done = json.loads((root / 'DONE.json').read_text())
         if done[key] != count or done['smoke_only']: raise ValueError('complete parent experiments required')
     prediction = None
+    if args.phase == 'pair_test':
+        prediction = {'hypothesis':'values_carry_useful_context',
+            'prediction':'In EACH stream: value-only within-AUC delta <0 and <= key-only delta minus .01.',
+            'practical_separation_auc':.01,'not_statistical_significance':True,
+            'nomination':'Independent contribution review: Ukraine to TwiBot20, distinct source and target, known non-extreme suppression harm; K/V outcomes unseen.'}
     if args.phase == 'long_test':
         if args.discovery_root is None: raise ValueError('frozen discovery prediction required')
         if not (args.discovery_root / 'DONE.json').exists(): raise ValueError('discovery incomplete')
         prediction = json.loads((args.discovery_root / 'prediction.json').read_text())
         if prediction['hypothesis'] == 'ambiguous': raise ValueError('ambiguous discovery: do not force a follow-up')
     protocol = {'phase': args.phase, 'revision': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
-        'target': TARGET, 'source': 'cp_hk', 'streams': ['original'] if args.phase == 'discovery' else ['original', 'fresh'],
+        'target': TARGET, 'source': 'ukr_rus' if args.phase=='pair_test' else 'cp_hk', 'streams': ['original'] if args.phase == 'discovery' else ['original', 'fresh'],
         'conditions': CONDITIONS, 'prediction_rule': prediction_rule.__doc__, 'new_training': False,
         'discovery_selection': 'Initial HK seed0 step2500, political original128 episodes, selected before new K/V outcomes.',
         'frozen_prediction': prediction, 'primary_metric': 'within_episode_auc',
@@ -145,6 +153,9 @@ def main():
             'component': 'Positive singleton exceeds other singleton by at least .01 within-AUC.',
             'joint': 'Both singleton deltas nonpositive while joint delta positive.',
             'otherwise': 'Ambiguous; stop without testing a forced prediction.'}}
+    if args.phase=='pair_test':
+        protocol['discovery_selection']=prediction['nomination']
+        protocol['discovery_rule_details']={'frozen_pair_rule':prediction['prediction']}
     args.output.mkdir(parents=True); write_json(args.output / 'protocol.json', protocol)
     all_metrics = []; all_geo = []; receipts = []; start = time.monotonic()
     for stream in protocol['streams']:
@@ -176,7 +187,7 @@ def main():
             if batch_hash(batch) != expected[bi]: raise ValueError('input mutated')
             private = args.output / 'private_activations' / stream; private.mkdir(parents=True, exist_ok=True)
             torch.save({c: r[4] for c, r in outcomes.items()}, private / f'batch_{bi:03d}.pt')
-        common = {'source': 'cp_hk', 'target': TARGET, 'stream': stream, 'step': rec['step'], 'seed': 0}
+        common = {'source': rec['source'], 'target': TARGET, 'stream': stream, 'step': rec['step'], 'seed': 0}
         logits = {k: torch.cat(v) for k, v in values.items()}
         for k, ref in zip(['intact', 'removed'], reference):
             torch.testing.assert_close(logits[k], ref, rtol=0, atol=0)
@@ -202,8 +213,8 @@ def main():
             sub = {r['condition']: r['within_episode_auc'] for r in all_metrics if r['stream'] == stream}
             d = {k: sub[k] - sub['intact'] for k in CONDITIONS}
             h = prediction['hypothesis']
-            passed = (d['joint_kv'] > 0 and d['keys_only'] <= 0 and d['values_only'] <= 0) if h == 'joint_dependence' else (
-                d[h] > 0 and d[h] > d['values_only' if h == 'keys_only' else 'keys_only'])
+            passed = (d['values_only'] < 0 and d['values_only'] <= d['keys_only']-.01) if args.phase=='pair_test' else ((d['joint_kv'] > 0 and d['keys_only'] <= 0 and d['values_only'] <= 0) if h == 'joint_dependence' else (
+                d[h] > 0 and d[h] > d['values_only' if h == 'keys_only' else 'keys_only']))
             assessment.append({'stream': stream, 'within_deltas': d, 'primary_prediction_passed': passed})
         write_json(args.output / 'prediction_assessment.json', assessment)
     write_json(args.output / 'DONE.json', {'phase': args.phase, 'cells': len(all_metrics), 'streams': len(receipts),
