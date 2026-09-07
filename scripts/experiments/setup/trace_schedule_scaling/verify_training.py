@@ -167,6 +167,30 @@ def main() -> int:
                         f"per-source episode order differs for {key}/{source}: "
                         f"{reference_arm.schedule} versus {arm.schedule}"
                     )
+    # Retained sources also share private streams across mixture sizes. A
+    # smaller-rung draw must be an exact prefix of the larger-rung draw, not a
+    # separately resampled approximation to the same source distribution.
+    by_seed_source = defaultdict(list)
+    for (rung, seed), group in grouped.items():
+        reference_arm, reference = group[0]
+        for source in reference_arm.sources:
+            by_seed_source[(seed, source)].append(
+                (
+                    rung,
+                    [
+                        episode_payload(row)
+                        for row in reference["source_rows"][source]
+                    ],
+                )
+            )
+    for key, streams in by_seed_source.items():
+        longest_rung, longest = max(streams, key=lambda item: len(item[1]))
+        for rung, stream in streams:
+            if longest[: len(stream)] != stream:
+                raise ValueError(
+                    f"cross-rung source prefix differs for {key}: "
+                    f"rung {rung} is not a prefix of rung {longest_rung}"
+                )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(
@@ -175,6 +199,7 @@ def main() -> int:
                 "arms": len(receipts),
                 "total_steps": args.total_steps,
                 "schedule_is_only_data_intervention": True,
+                "cross_rung_source_prefixes_match": True,
                 "receipts": receipts,
             },
             indent=2,
