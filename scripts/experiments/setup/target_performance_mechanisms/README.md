@@ -657,3 +657,30 @@ use a different `--run-dir <new-full-output> --evaluate` for all 2500 updates.
 by the declared stress-case contract. Evaluation follows the full validity gate
 and saves all five targets, both streams, and exact decoder-logit comparisons.
 It does not tune a target checkpoint or alter production training defaults.
+# Published political-cue audit (2026-09-07)
+
+`run_annotation_cues` reuses the completed role-topology predictions and joins
+every covid-political graph row to its original pre-cleaning profile by all eight
+released row fields. It fails on incomplete/ambiguous joins. The vocabulary is
+the 29 entries in Retweet-BERT Table 3, not an outcome-selected keyword list.
+An exact original-hashtag detector and a broader cleaned-surface sensitivity
+are crossed with all declared query/support cue strata, all six fixed control
+models and both complete input streams. No label polarity is inferred from text;
+no model is trained or forwarded. Raw profiles remain on Tucker.
+
+Use a separate pinned worktree if another job is using this checkout:
+
+```bash
+CUDA_VISIBLE_DEVICES='' WANDB_MODE=offline python -m unittest \
+  scripts.experiments.setup.target_performance_mechanisms.test_annotation_cues
+CUDA_VISIBLE_DEVICES='' WANDB_MODE=offline python -m \
+  scripts.experiments.setup.target_performance_mechanisms.run_annotation_cues \
+  --topology /dataMeR1/phil/gfm/prodigy-role-topology/log/role_topology_full_20260907 \
+  --output /dataMeR1/phil/gfm/prodigy-annotation-cues/log/published_cues_20260907 \
+  --dry-run
+```
+
+Remove `--dry-run` to produce the aggregate audit. `--data-root`, `--threads`
+and every artifact path are overrideable. Run in the `prodigy` environment;
+the complete CPU audit belongs on Tucker. This is a cue-stratified diagnostic,
+not a cue-removal experiment or a reconstruction of the upstream news heuristic.
