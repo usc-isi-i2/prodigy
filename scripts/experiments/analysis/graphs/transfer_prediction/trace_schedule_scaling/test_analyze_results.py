@@ -43,6 +43,7 @@ def test_paired_contrasts_and_scaling_interaction() -> None:
     blocked = interactions[
         interactions.schedule.eq("blocked")
         & interactions.stream.eq("fresh")
+        & interactions.scope.eq("all_targets")
         & interactions.metric.eq("roc_auc")
     ].iloc[0]
     assert abs(blocked.mean_delta_rung2 - 0.03) < 1e-12

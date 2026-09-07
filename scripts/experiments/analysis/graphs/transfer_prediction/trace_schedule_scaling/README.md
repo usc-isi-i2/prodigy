@@ -19,6 +19,8 @@ The primary scaling interaction is:
 
 `(blocked - interleaved at rung 2) - mean(blocked - interleaved at rungs 3 and 4)`.
 
-Uncertainty for that interaction uses a crossed bootstrap over training seeds and
-target datasets. Episode streams are fixed across models; they are not treated as
-independent checkpoint seeds.
+Uncertainty for that interaction and for TRACE-health correlations uses a crossed
+bootstrap over training seeds and target datasets. The all-target interaction is
+primary; an explicitly labeled secondary view excludes the support-incompetent,
+chance-level suspended target. Episode streams are fixed across models; they are not
+treated as independent checkpoint seeds.
