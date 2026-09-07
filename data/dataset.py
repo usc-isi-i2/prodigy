@@ -31,14 +31,19 @@ class SubgraphDataset(Dataset):
 
     def get_subgraph(self, node_idx, sampling_seed=None): # refactor as __item__, add supernode in here
         if sampling_seed is None:
-            node_list, edge_index, edge_id = self.neighbor_sampler.sample_node(node_idx)
+            sampled = self.neighbor_sampler.sample_node(node_idx)
         else:
             # torch_sparse.sample_adj uses the process-wide CPU RNG and does not
             # accept a Generator.  Isolate it so loader-worker assignment and the
             # order in which sources are presented cannot change graph context.
             with torch.random.fork_rng(devices=[]):
                 torch.manual_seed(int(sampling_seed))
-                node_list, edge_index, edge_id = self.neighbor_sampler.sample_node(node_idx)
+                sampled = self.neighbor_sampler.sample_node(node_idx)
+        pinsage_weight = None
+        if len(sampled) == 4:
+            node_list, edge_index, edge_id, pinsage_weight = sampled
+        else:
+            node_list, edge_index, edge_id = sampled
         data = {}
         data['center_node_idx'] = node_idx
         # Preserve the full-graph ids of the nodes the sampler actually returned.
@@ -52,8 +57,11 @@ class SubgraphDataset(Dataset):
         data['num_nodes'] = len(node_list)
         for key in self.node_attrs:
             data[key] = self.graph[key][node_list]
-        for key in self.edge_attrs:
-            data[key] = self.graph[key][edge_id]
+        if pinsage_weight is None:
+            for key in self.edge_attrs:
+                data[key] = self.graph[key][edge_id]
+        else:
+            data['pinsage_edge_weight'] = pinsage_weight
         if self.bidirectional:
             num_edges = edge_index.size(1)
             data['edge_index'] = torch.cat([edge_index, edge_index.flip(0)], dim=1)

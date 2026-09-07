@@ -188,6 +188,35 @@ class SAGEConvSelfLoops(MessagePassing):
         return self.mlp(aggr_out)
 
 
+class PinSAGEConv(SAGEConvSelfLoops):
+    """GraphSAGE shell with PinSAGE's normalized importance-weighted pooling."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs["aggr"] = "add"
+        super().__init__(*args, **kwargs)
+
+    def forward(self, x, edge_index, edge_attr=None, edge_weight=None):
+        if edge_weight is None:
+            raise ValueError("PinSAGE requires pinsage_edge_weight from its sampler")
+        x_transformed = self.lin_x(x)
+        edge_attr_emb = None
+        if self.lin_edge_attr is not None and edge_attr is not None:
+            edge_attr_emb = self.lin_edge_attr(edge_attr)
+        x_msg = self.propagate(
+            edge_index=edge_index, x=x_transformed,
+            edge_attr=edge_attr_emb, edge_weight=edge_weight,
+        )
+        if self.transform_x:
+            x_msg += self.lin_self_loops(x)
+        if x.shape[1] == x_msg.shape[1]:
+            x_msg = self.dropout(x_msg) + x
+        return self.bn(x_msg)
+
+    def message(self, x_j, edge_attr=None, edge_weight=None):
+        message = x_j if edge_attr is None else x_j + edge_attr
+        return message * edge_weight.view(-1, 1)
+
+
 class GINConv(MessagePassing):
     # NEED TO ADD SELF-LOOPS!
     """
@@ -375,6 +404,7 @@ gnn_models = {
     "gin": GINConv,
     "no_msg_passing": NoMessagePassing,
     "sage": SAGEConvSelfLoops,
+    "pinsage": PinSAGEConv,
     "sage_multi": MultiAggSAGE,
     "molecule_sage": SimpleMoleculeGNN,
     "gat": GATv2ConvOptionalEdgeAttr
