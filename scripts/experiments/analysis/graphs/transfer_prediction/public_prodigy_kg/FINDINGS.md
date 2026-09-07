@@ -753,3 +753,51 @@ Leave reversed label rows untouched. Require bit-exact captured U1 after this
 clamp and full model-state restoration. This tests changing label codes with
 representations literally fixed, rather than accepting uncontrolled numerical
 drift. Keep first32 episodes and the single reversal unchanged.
+
+### Assignment outcome: modest decision sensitivity, not a repair result
+
+`publickg_anchor_assignment_retry1_20260907` completed at `b8e939e8`, all32
+output hashes verified. All32 U1 clamps were bit-exact; factual native replay
+max error9.5367e-6 and natural reversed-U1 drift max9.5367e-6. Every model-state
+restoration check passed. Six unit tests passed before deployment.
+
+| Assignment | Accuracy | Macro-F1 | OVR AUC | NLL |
+|---|---:|---:|---:|---:|
+| Identity | .742578 | .725439 | .976295 | .868602 |
+| Reverse | .744141 | .726645 | .976434 | .862749 |
+
+86/2560 query predictions differ (3.359375%); maximum absolute logit difference
+is1.648638. Changes in accuracy/macro-F1 are only +0.15625/+0.12052 points.
+Thus arbitrary label-code assignment can alter individual native decisions with
+representation features fixed. This single reversal does not establish a
+systematic performance penalty, explain the intermediate-readout advantage, or
+provide a beneficial deployment rule. No assignment search, second permutation,
+or claim of a substantial average repair follows from these data. Keep this as
+a limited sensitivity finding rather than the central contribution.
+
+## Nominated temporal component crossover
+
+Independent review identifies one unresolved alternative to a probe/head
+mismatch: whether the observed2k-to8k native regression follows changes in the
+inference component, rather than changes in encoder information or compatibility.
+Fix a2x2 crossover of encoder checkpoint2000/8000 and inference checkpoint2000/8000
+on the same128 trajectory episodes. No target-fit alignment or additional
+checkpoint search. Both diagonal outputs must reproduce the saved trajectory.
+
+Boundary from pinned S2,UX,M2 implementation: encoder owns `layer_list.0`,
+`layer_list.1`, and `initial_input_mlp`; inference owns `layer_list.2`,
+`initial_label_mlp`, `learned_label_embedding`, both final MLPs and `logit_scale`.
+Assign normalization buffers with their containing module. Reject unclassified
+state keys. Keep each encoder's saved U1 literally fixed across inference
+conditions, after checking naturally computed U1 at public numerical tolerance.
+The initial-label path is ignored in this recipe and final MLPs are identities,
+but their ownership remains explicit rather than silently inherited.
+
+Prediction before crossing outcomes: early inference restores late-encoder
+performance and late inference worsens early-encoder performance. This would
+localize a conditional effect of inference changes during training, not explain
+the entire U1 advantage. If both crossings fail, incompatible co-adapted
+components prevent attribution; close without alignment searches. Compare
+accuracy/macro-F1 as well as AUC/NLL, do not call probability-only changes a
+classification rescue. This is a discovery test; second-seed replication remains
+necessary for a general temporal claim.
