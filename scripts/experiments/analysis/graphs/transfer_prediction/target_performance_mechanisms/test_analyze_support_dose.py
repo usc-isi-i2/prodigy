@@ -1,6 +1,6 @@
 import unittest
 
-from .analyze_support_dose import summarize
+from .analyze_support_dose import summarize, individual_draw_curves
 
 
 class DoseSummaryTest(unittest.TestCase):
@@ -25,6 +25,9 @@ class DoseSummaryTest(unittest.TestCase):
         self.assertTrue(curves[0]["auc_nondecreasing"])
         self.assertFalse(curves[0]["auc_nonincreasing"])
         self.assertAlmostEqual(curves[0]["auc_delta_at_25"], .025)
+        draws = individual_draw_curves(cells)
+        self.assertEqual(len(draws), 3)
+        self.assertTrue(all(r["roc_auc_nondecreasing"] and r["nll_nonincreasing"] for r in draws))
 
 
 if __name__ == "__main__":

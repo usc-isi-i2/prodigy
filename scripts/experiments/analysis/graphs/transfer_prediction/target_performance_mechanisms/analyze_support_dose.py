@@ -65,6 +65,26 @@ def write_csv(path, rows):
         writer.writerows(rows)
 
 
+def individual_draw_curves(paired):
+    groups = {}
+    for r in paired:
+        if r["step"] == 2500:
+            groups.setdefault((r["target"], r["stream"], r["model_id"], r["source"], r["seed"]), {})[r["suppression_percent"], r["draw"]] = r
+    result = []
+    for key, cells in sorted(groups.items()):
+        for draw in range(3):
+            curve = [cells[d, draw if d in (25, 50, 75) else 0] for d in (0, 25, 50, 75, 100)]
+            r = dict(zip(("target", "stream", "model_id", "source", "seed"), key), draw=draw)
+            for metric in ("roc_auc", "nll"):
+                diff = np.diff([c[metric] for c in curve])
+                r[metric+"_nondecreasing"] = bool((diff >= -1e-12).all())
+                r[metric+"_nonincreasing"] = bool((diff <= 1e-12).all())
+                for c in curve:
+                    r[f"{metric}_delta_at_{c['suppression_percent']}"] = c["delta_"+metric]
+            result.append(r)
+    return result
+
+
 def main():
     p = argparse.ArgumentParser(__doc__)
     p.add_argument("--input", type=Path, required=True)
@@ -138,8 +158,9 @@ def main():
                           "emptied_support_subgraphs": sum(r["emptied_support_subgraphs"] for r in group),
                           "nonempty_support_subgraphs": sum(r["nonempty_support_subgraphs"] for r in group)})
     paired, step_summary, dose_cells, monotonicity = summarize(rows)
+    draws = individual_draw_curves(paired)
     args.output.mkdir(parents=True, exist_ok=True)
-    for name, values in (("cells", paired), ("step_summary", step_summary), ("dose_cells", dose_cells), ("monotonicity", monotonicity), ("actual_fractions", fractions)):
+    for name, values in (("cells", paired), ("step_summary", step_summary), ("dose_cells", dose_cells), ("monotonicity", monotonicity), ("draw_monotonicity", draws), ("actual_fractions", fractions)):
         write_csv(args.output / f"{name}.csv", values)
     validation = {"cells": len(rows), "saved_checkpoints": len(inventory), "input_model_step_receipts": len(receipts),
                   "query_pre_exact_checks": sum(r["query_pre_exact_checks"] for r in receipts),
