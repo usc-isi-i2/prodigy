@@ -57,6 +57,7 @@ Setup and launch files remain in `../setup/<name>/`.
 - Similarity as a transfer predictor: [`similarity_vs_transfer`](graphs/transfer_prediction/similarity_vs_transfer/), [`similarity_vs_transfer_v2`](graphs/transfer_prediction/similarity_vs_transfer_v2/)
 - Target-performance mechanisms: [fixed-query stage replay and source-sampler audit](graphs/transfer_prediction/target_performance_mechanisms/FINDINGS_REPLAY.md)
 - Role-topology follow-up: [degree-preserving rewiring, second-target repair and aggregation audit](graphs/transfer_prediction/target_performance_mechanisms/FINDINGS_ROLE_TOPOLOGY.md)
+- Message-content follow-up: [background-message presence versus content and cached input degree/label audit](graphs/transfer_prediction/target_performance_mechanisms/FINDINGS_MESSAGE_CONTENT.md)
 
 ## Evaluation infrastructure
 

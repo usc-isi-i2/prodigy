@@ -72,7 +72,7 @@ more than Ukraine. The successful deletion increases label-pair cosine, so
 "the repair makes class label vectors more separated" is not the explanation.
 These are descriptive geometry checks, not a demonstrated mediation model.
 
-## Verified implementation issue and next discriminating control
+## Verified implementation issue and completed follow-up
 
 Read-only Tucker inspection found PyG 2.3.1 and the following concrete mismatch:
 `SAGEConvSelfLoops(..., aggr="mean")` reports `aggr == "mean"`, but its actual
@@ -90,10 +90,12 @@ No production code or checkpoint was patched. `message_content.py` adds scoped,
 reversible **experimental controls**: actual mean aggregation, removing the
 message projection's affine bias, bias-only messages, subgraph-mean messages,
 and zero messages. Tests verify restoration and equivalence of zero messages
-to edge removal. These controls have not yet produced target-performance
-results. The immediate next experiment should distinguish degree-dependent
-message scaling from neighbor-specific information before upgrading the causal
-claim or retraining anything.
+to edge removal. The complete 960-cell follow-up now shows that actual mean
+does not recover the political/page gain; bias-only and subgraph-mean messages
+remain much closer to intact performance than to deletion. See
+[message-content findings](FINDINGS_MESSAGE_CONTENT.md) for all target ranges,
+the input degree/label audit and interpretation limits. No retraining is needed
+to establish this empirical presence-versus-content distinction.
 
 ## Completion and provenance
 
@@ -112,5 +114,5 @@ claim or retraining anything.
   `/dataMeR1/phil/gfm/prodigy-role-topology/log/role_topology_full_20260907/`.
 - Branch `codex/role-topology-interactions`, local worktree
   `/Users/philipp/projects/gfm/prodigy/.worktrees/role-topology`; Tucker worktree
-  `/dataMeR1/phil/gfm/prodigy-role-topology`. The paper PDF is not yet revised
-  with this follow-up. The earlier results are preserved, not overwritten.
+  `/dataMeR1/phil/gfm/prodigy-role-topology`. The paper follow-up is prepared in
+  the separate dated manuscript directory. Earlier results are preserved.
