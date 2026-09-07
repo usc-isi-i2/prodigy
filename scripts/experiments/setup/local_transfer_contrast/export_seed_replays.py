@@ -38,7 +38,7 @@ def full_model_rows(directory):
     return selected
 
 
-def load_stream(root, target, stream, seed, reference_roots):
+def load_stream(root, target, stream, seed, reference_roots, raw_parity_atol):
     directory = root / target
     labels = input_labels(directory, target)
     reference = input_labels(reference_for(reference_roots, target), target)
@@ -79,7 +79,9 @@ def load_stream(root, target, stream, seed, reference_roots):
             output["input"]["embeddings"] = raw
         else:
             for stage in RAW_STAGES:
-                torch.testing.assert_close(reference_raw[stage], raw[stage], rtol=0, atol=0)
+                torch.testing.assert_close(
+                    reference_raw[stage], raw[stage], rtol=0, atol=raw_parity_atol,
+                )
         output["models"][model_id] = {
             "weights_sha256": row["weights_sha256"], "logits": logits,
         }
@@ -98,10 +100,14 @@ def main():
     parser.add_argument("--fresh-root", type=Path, required=True)
     parser.add_argument("--reference-original-roots", type=Path, nargs="+", required=True)
     parser.add_argument("--reference-fresh-roots", type=Path, nargs="+", required=True)
+    parser.add_argument("--raw-parity-atol", type=float, default=0.0,
+                        help="Tolerance for CUDA-reduced raw observer embeddings; input tensors stay hash-exact.")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.output.exists():
         raise ValueError("choose a new output directory")
+    if not 0 <= args.raw_parity_atol <= 1e-6:
+        raise ValueError("raw parity tolerance must be in [0, 1e-6]")
     targets = sorted(path.name for path in args.original_root.iterdir() if (path / "cache.json").is_file())
     if len(targets) != 5:
         raise ValueError(f"expected five complete target directories, got {targets}")
@@ -114,7 +120,7 @@ def main():
             ("original", args.original_root, args.reference_original_roots),
             ("fresh", args.fresh_root, args.reference_fresh_roots),
         ):
-            record = load_stream(root, target, stream, args.seed, references)
+            record = load_stream(root, target, stream, args.seed, references, args.raw_parity_atol)
             destination = target_out / f"{stream}.pt"
             torch.save(record, destination)
             receipts.append({"target": target, "stream": stream, "queries": len(record["labels"]["local_y"]),
@@ -129,6 +135,7 @@ def main():
         "targets": targets,
         "streams": ["original", "fresh"],
         "fixed_episode_identity_verified_against_seed0": True,
+        "raw_observer_parity_atol": args.raw_parity_atol,
         "receipts": receipts,
     })
     write_json(args.output / "DONE.json", {"complete": True, "cells": 90, "files": 10})
