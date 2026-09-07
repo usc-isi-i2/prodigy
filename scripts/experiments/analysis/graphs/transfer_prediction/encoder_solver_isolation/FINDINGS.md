@@ -22,8 +22,29 @@ initialization. This legacy smoke did not save step-zero weights.
 The CPU model tests use a simplified encoder and do not establish numerical
 parity of the actual CUDA scatter-based encoder. A real-batch paired-gradient
 check with an identical-objective null is required to distinguish numerical
-variation from an unintended gradient path. Full training is on hold pending
-that diagnosis. Do not silently loosen an error tolerance to approve the run.
+variation from an unintended gradient path. Do not silently loosen an error
+tolerance to approve the run.
+
+## Real-batch CUDA null comparison
+
+Diagnostic revision `0b9d9641`, output
+`/dataMeR1/phil/gfm/prodigy-isolation-parity/log/parity_20260907.json`.
+Actual first training batch on GPU1; all input tensor hashes and restored model
+states match exactly across three forwards. No added deterministic settings.
+
+Isolated versus identical isolated repeat: maximum encoder gradient difference
+6.333e-8; post-AdamW encoder-state difference 0.0012785; maximum U1/full-output
+difference 4.292e-6. Isolated versus ridge-only: corresponding differences
+5.960e-8, 0.0011033, and 4.768e-6. All three ridge losses are 3.3591527939.
+The largest one-step parameter differences are in `lin_self_loops.bias` and
+`mlp.2.bias`, consistent with AdamW amplifying tiny reduction differences.
+
+Decision: the one-batch isolation comparison shows no excess gradient error
+relative to the identical-objective null. Exact CUDA trajectory equality is not
+a valid smoke criterion here. This does not prove that every 20-step difference
+is numerical or establish multi-seed robustness. Proceed with the fixed pilot
+after all smoke arms and consumed-example audits pass; capture initial weights,
+retain measured parity errors, and expand seeds only for a promising outcome.
 
 ## Outcome analysis prepared
 

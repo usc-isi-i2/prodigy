@@ -8,6 +8,10 @@ Four objectives on identical source-private episode streams and initialization:
 native, joint native+ridge loss, isolated native+ridge loss (native path detached
 at U1), and ridge-only. Joint versus isolated changes only gradient access to U1.
 Isolated and ridge-only encoder updates must match under controlled randomness.
+CUDA reductions are not bit-exact in this implementation: the real-batch
+identical-objective null at revision0b9d9641 showed gradient differences of
+6.33e-8 versus5.96e-8 for isolated/ridge-only. Do not require exact GPU checkpoint
+equality or describe observed trajectories as identical; retain measured errors.
 Ridge uses normalized support/query vectors, lambda1 and fixed logit scale1.
 No target tuning of temperature or loss weights. Equal steps are not equal FLOPs;
 record training walltime and the extra ridge computation.
