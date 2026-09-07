@@ -421,6 +421,18 @@ def decoder_audit(record, b, c, full_arrays, stream):
     return summary_rows, outcome_rows, transitions, raw_identity
 
 
+def grouped_bootstrap_difference(candidate_correct, reference_correct, groups, seed, draws=10000):
+    groups = np.asarray(groups)
+    differences = np.asarray(candidate_correct, dtype=float) - np.asarray(reference_correct, dtype=float)
+    unique, inverse = np.unique(groups, return_inverse=True)
+    sums = np.bincount(inverse, weights=differences)
+    counts = np.bincount(inverse)
+    rng = np.random.default_rng(seed)
+    samples = rng.integers(0, len(unique), size=(draws, len(unique)))
+    estimates = sums[samples].sum(1) / counts[samples].sum(1)
+    return float(np.quantile(estimates, .025)), float(np.quantile(estimates, .975))
+
+
 def heuristic_audit(record, b, c, arrays, stream):
     """Evaluate fixed, direct-readout, and outcome-label-free expert choices."""
     y = arrays["y"]
@@ -453,21 +465,31 @@ def heuristic_audit(record, b, c, arrays, stream):
     }
     rows = []
     fixed_accuracy = float(arrays["correct_b"].mean())
-    for name, choose_b in choices.items():
+    groups = to_numpy(record["labels"]["episode_ids"])
+    for method_index, (name, choose_b) in enumerate(choices.items()):
         metrics = routed_metrics(arrays, choose_b)
+        routed_pred = np.where(choose_b, pred_b, pred_c)
+        ci_low, ci_high = grouped_bootstrap_difference(
+            routed_pred == y, arrays["correct_b"], groups, RANDOM_STATE + method_index,
+        )
         rows.append({
             "stream": stream, "method": name, "uses_target_query_outcomes": name == "oracle_expert",
             "uses_discovery_query_labels": name == "calibrated_full_confidence",
             "n": len(y), **metrics, "accuracy_gain_over_fixed_b": metrics["accuracy"] - fixed_accuracy,
+            "episode_bootstrap_gain_ci_low": ci_low, "episode_bootstrap_gain_ci_high": ci_high,
             "fraction_choose_b": float(choose_b.mean()),
         })
     raw_probs = softmax(raw_logits)
+    ci_low, ci_high = grouped_bootstrap_difference(
+        raw_pred == y, arrays["correct_b"], groups, RANDOM_STATE + len(choices),
+    )
     rows.append({
         "stream": stream, "method": "raw_joint_ridge_direct", "uses_target_query_outcomes": False,
         "uses_discovery_query_labels": False, "n": len(y),
         "accuracy": float(np.mean(raw_pred == y)), "auc": safe_auc(y, raw_probs[:, 1]),
         "nll": float(log_loss(y, raw_probs, labels=[0, 1])),
         "accuracy_gain_over_fixed_b": float(np.mean(raw_pred == y)) - fixed_accuracy,
+        "episode_bootstrap_gain_ci_low": ci_low, "episode_bootstrap_gain_ci_high": ci_high,
         "fraction_choose_b": np.nan,
     })
     return rows

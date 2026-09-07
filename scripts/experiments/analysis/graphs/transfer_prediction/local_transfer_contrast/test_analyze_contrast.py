@@ -4,6 +4,7 @@ import torch
 from scripts.experiments.analysis.graphs.transfer_prediction.local_transfer_contrast.analyze_contrast import (
     decoder_audit,
     fit_temperature,
+    grouped_bootstrap_difference,
     per_example_ce,
     stream_summary,
 )
@@ -60,3 +61,11 @@ def test_decoder_audit_conditions_on_masked_labels():
                        row["decoder"] == "full_model" and row["full_model_outcome"] == "b_only")
     assert b_only_full["conditional_accuracy"] == 1.0
     assert identities["raw_center/ridge"]
+
+
+def test_grouped_bootstrap_preserves_paired_positive_gain():
+    candidate = np.array([1, 1, 0, 1], dtype=bool)
+    reference = np.array([0, 1, 0, 0], dtype=bool)
+    low, high = grouped_bootstrap_difference(candidate, reference, [0, 0, 1, 1], seed=3, draws=1000)
+    assert low > 0
+    assert high > 0
