@@ -39,3 +39,13 @@ python -m scripts.experiments.setup.encoder_solver_isolation.run --output log/is
 Default is dry-run. Add --execute only after checking owned GPU availability;
 full mode uses --steps2500 (as separate arguments: --steps 2500) and a new output.
 The launcher is sequential on one selected GPU and preserves any failed output.
+
+For downstream classification evaluation, explicitly set
+`--encoder_solver_objective native`: the objective flag controls pretraining,
+not the deployment readout. Preserve the original training objective in the
+checkpoint inventory. Ordinary inference must not recompute the training loss.
+
+`python -m scripts.experiments.setup.encoder_solver_isolation.verify --root <run>`
+checks complete checkpoints, objective metadata, exact per-source consumed
+examples across all eight arms, and reports isolated/ridge-only encoder tensor
+differences. It does not claim independently captured initialization equality.

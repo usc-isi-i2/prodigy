@@ -89,7 +89,7 @@ class IsolationTest(unittest.TestCase):
         self.assertIsNone(model.encoder_solver_ridge_loss)
         self.assertEqual(list(model.state_dict()), list(default.state_dict()))
 
-    def test_task_separation_and_query_label_not_used_for_fit(self):
+    def test_task_separation(self):
         _, batch = fixture("joint")
         z = torch.randn(8, 4, requires_grad=True)
         y, edge, q = batch[2], batch[3], batch[5]
@@ -100,6 +100,20 @@ class IsolationTest(unittest.TestCase):
         second = ridge_query_loss(z[4:], y[4:], second_edge, q[8:])
         self.assertTrue(torch.allclose(total, (first + second) / 2))
         total.backward()
+        self.assertTrue(torch.isfinite(z.grad).all())
+
+    def test_actual_30way_shapes(self):
+        ways, shots, queries, tasks = 30, 3, 4, 2
+        n = ways * (shots + queries) * tasks
+        y = torch.nn.functional.one_hot(torch.arange(ways).repeat_interleave(shots + queries).repeat(tasks), ways).float()
+        q = (torch.arange(shots + queries) >= shots).repeat(ways * tasks).repeat_interleave(ways)
+        starts = n + torch.arange(tasks).repeat_interleave(n // tasks) * ways
+        edge = torch.stack([torch.arange(n).repeat_interleave(ways),
+                            (starts[:, None] + torch.arange(ways)).flatten()])
+        z = torch.randn(n, 16, requires_grad=True)
+        loss = ridge_query_loss(z, y, edge, q)
+        loss.backward()
+        self.assertTrue(torch.isfinite(loss))
         self.assertTrue(torch.isfinite(z.grad).all())
 
     def test_reject_incompatible(self):
