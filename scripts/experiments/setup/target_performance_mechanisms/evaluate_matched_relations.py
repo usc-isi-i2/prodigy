@@ -53,7 +53,7 @@ def main():
         for key in ('local_y','mapping','episode_ids'):
             if not torch.equal(labels[key],old_labels[key]): raise ValueError('Task identities changed')
         protocol=json.loads((args.reference_root/stream/'protocol.json').read_text())
-        protocol.update(device='cpu',catalog='docs/graph_catalog.json',
+        protocol.update(device='-1',catalog='docs/graph_catalog.json',
             config='scripts/experiments/setup/final_core/training.yaml')
         all_ref=[json.loads(x) for x in (ref/'metrics.jsonl').read_text().splitlines()]
         arms=[r for r in all_ref if r['decoder']=='full_model' and
