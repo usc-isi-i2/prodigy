@@ -205,6 +205,10 @@ def get_params(argv=None):
                       help="Add support-derived class prototypes to label nodes before metagraph reasoning.")
     args.add_argument("--learned_relation_scorer", default=False, type=str2bool,
                       help="Add a learned query-label relation residual to cosine logits.")
+    args.add_argument("--transductive_refinement", default=False, type=str2bool)
+    args.add_argument("--transductive_threshold", default=0.8, type=float)
+    args.add_argument("--transductive_alpha", default=0.25, type=float)
+    args.add_argument("--transductive_iterations", default=1, type=int)
     args.add_argument("-not_freeze_learned_label_embedding", "--not_freeze_learned_label_embedding", default=False, type=str2bool)
     args.add_argument("-linear_probe", "--linear_probe", default=False, type=str2bool)
     args.add_argument("-fdf", "--fix_datasets_first", default=False,
