@@ -72,7 +72,14 @@ def run_episode(model, artifacts, device, *, atol=0.0, rtol=0.0):
     Uses the first layer of the single native MetaGNN block. The model must be
     built by the pinned runtime and have the nominated checkpoint loaded.
     """
-    parity = replay_native(model, artifacts, device, atol=atol, rtol=rtol)
+    native_failure = None
+    try:
+        parity = replay_native(model, artifacts, device, atol=atol, rtol=rtol)
+    except ValueError as error:
+        if not str(error).startswith("Native replay failed logit parity:"):
+            raise
+        native_failure = str(error)
+        parity = {"logits": artifacts["output"]["logits"]}
     meta = [layer for layer in model.layer_list if hasattr(layer, "gnn_layers")]
     if len(meta) != 1 or len(meta[0].gnn_layers) != 2:
         raise ValueError("Expected the nominated two-layer native metagraph")
@@ -80,7 +87,7 @@ def run_episode(model, artifacts, device, *, atol=0.0, rtol=0.0):
     arguments = tuple(value.clone().to(device) for value in artifacts["input"])
     state = artifacts["state"]
     native = trace_forward(model, arguments, state, projection)
-    if not torch.allclose(native["logits"].cpu(), parity["logits"], atol=atol, rtol=rtol):
+    if native_failure is not None or not torch.allclose(native["logits"].cpu(), parity["logits"], atol=atol, rtol=rtol):
         error = float((native["logits"].cpu() - parity["logits"]).abs().max())
         # Null-only diagnosis: do not compute interventions or relax acceptance.
         # Compare plain and instrumented forwards from the identical saved state.
@@ -96,7 +103,7 @@ def run_episode(model, artifacts, device, *, atol=0.0, rtol=0.0):
                 "plain_traced_max_abs": float((plain - traced).abs().max()),
                 "plain_prediction_flips": int((plain.argmax(-1) != reference.argmax(-1)).sum()),
                 "traced_prediction_flips": int((traced.argmax(-1) != reference.argmax(-1)).sum())})
-        failure = ValueError(f"Instrumentation changed native logits: max_abs_error={error}, "
+        failure = ValueError(f"{native_failure or 'Instrumentation changed native logits'}; traced max_abs_error={error}, "
                              f"atol={atol}, rtol={rtol}")
         failure.null_audit = nulls
         raise failure
