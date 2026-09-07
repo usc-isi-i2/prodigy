@@ -736,3 +736,20 @@ prediction counts show no collapsed class position: native8k counts range475..56
 against512 true query occurrences per slot. This does not prove assignment
 invariance. U1 has position-dependent accuracy too, so slot accuracy alone is
 not causal evidence of anchor effects.
+
+Runtime audit: the native initial and8k `learned_label_embedding.weight` tensors
+are bit-identical (shape1000x256, max difference0). The first assignment run,
+`publickg_anchor_assignment_20260907` at `e603a845`, failed its bit-exact U1
+check on episode0 and is retained as failed. Repeated unchanged forwards on
+that episode showed U1 drift up to7.6294e-6 and native-logit drift up to7.6294e-6,
+with zero prediction disagreements. Reversal U1 drift was4.7684e-6; thus exact
+equality of separately recomputed encoder outputs is not a valid runtime
+assumption on this GPU. No aggregate intervention result was accepted.
+
+Revised isolation protocol, before aggregate outcomes: for the reversed arm,
+validate natural pre-M data embeddings against factual U1 at existing public
+atol1e-4/rtol0, then explicitly replace those data rows with cached factual U1.
+Leave reversed label rows untouched. Require bit-exact captured U1 after this
+clamp and full model-state restoration. This tests changing label codes with
+representations literally fixed, rather than accepting uncontrolled numerical
+drift. Keep first32 episodes and the single reversal unchanged.

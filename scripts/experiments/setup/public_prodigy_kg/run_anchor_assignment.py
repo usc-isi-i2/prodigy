@@ -25,6 +25,36 @@ def assignment(table, reverse):
             table.copy_(original)
 
 
+@contextmanager
+def clamp_pre_data(model, reference):
+    """Validate natural pre-M numerical parity, then isolate label-row changes."""
+    import torch
+    meta = [m for m in model.layer_list if hasattr(m, "gnn_layers")][0]
+    audit = {"calls": 0, "natural_max_abs_drift": None}
+    def replace(_module, positional, kwargs):
+        x, boundary = kwargs["x"], kwargs["start_right"]
+        expected = reference.to(x)
+        actual = x[:boundary]
+        if actual.shape != expected.shape:
+            raise ValueError("Pre-metagraph reference shape differs")
+        drift = float((actual - expected).abs().max())
+        if not torch.allclose(actual, expected, atol=1e-4, rtol=0):
+            raise ValueError(f"Natural pre-metagraph drift exceeds numerical tolerance: {drift}")
+        audit.update(calls=audit["calls"] + 1, natural_max_abs_drift=drift)
+        new_x = x.clone()
+        new_x[:boundary] = expected
+        return positional, dict(kwargs, x=new_x)
+    # Registered before forward_checkpoint's observer: its capture sees clamped
+    # data rows and untouched current-condition label rows.
+    handle = meta.register_forward_pre_hook(replace, with_kwargs=True)
+    try:
+        yield audit
+        if audit["calls"] != 1:
+            raise ValueError("Expected exactly one pre-metagraph clamp")
+    finally:
+        handle.remove()
+
+
 def main():
     p = argparse.ArgumentParser(__doc__)
     for field in ("source", "checkpoint", "upstream", "output"):
@@ -52,6 +82,7 @@ def main():
         intervention="Reverse only first20 learned_label_embedding rows; input/output semantic columns unchanged",
         interpretation="Label-code assignment invariance, NOT graph-node permutation equivariance",
         native_parity_atol=1e-4, u1_parity="bit-exact", tuning=False)
+    plan["preM_isolation"]="Clamp reversed pre-M data rows to identity after validating natural numerical parity at1e-4rtol0; label rows untouched"
     print(json.dumps(plan,indent=2),flush=True)
     if not args.execute:
         return
@@ -90,7 +121,11 @@ def main():
             predictions,geometry={},{}
             for name,reverse in (("identity",False),("reverse",True)):
                 with assignment(table,reverse):
-                    yt,z,x=forward_checkpoint(model,artifact,"cuda:0")
+                    if reverse:
+                        with clamp_pre_data(model,geometry["identity"]) as clamp_audit:
+                            yt,z,x=forward_checkpoint(model,artifact,"cuda:0")
+                    else:
+                        yt,z,x=forward_checkpoint(model,artifact,"cuda:0")
                 if z.shape!=(80,20) or not torch.isfinite(z).all() or not torch.equal(yt,artifact["output"]["y_true"]):
                     raise ValueError("Invalid or unaligned native query output")
                 predictions[name]=z
@@ -104,7 +139,7 @@ def main():
                 if not torch.equal(value.cpu(),original[key]):
                     raise ValueError("Model state not restored: "+key)
             scores={name:episode_metrics(yt.argmax(1).numpy(),z.numpy()) for name,z in predictions.items()}
-            row=dict(ordinal=record["ordinal"],metrics=scores,
+            row=dict(ordinal=record["ordinal"],metrics=scores,preM_clamp=clamp_audit,
                 reverse_minus_identity={k:scores["reverse"][k]-scores["identity"][k] for k in scores["identity"]},
                 disagreements=int((predictions["identity"].argmax(1)!=predictions["reverse"].argmax(1)).sum()),
                 max_logit_change=float((predictions["identity"]-predictions["reverse"]).abs().max()),
