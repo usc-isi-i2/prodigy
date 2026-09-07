@@ -1,5 +1,10 @@
 # Target-performance mechanisms
 
+Portable code/reproduction status: [PORTABLE_REPRODUCTION.md](PORTABLE_REPRODUCTION.md).
+The standalone code archive, synthetic tests, 60 constructor/input-adapter
+checks and three-target smoke pass. Full extracted-package historical replay
+is running; this is not yet a completed full-reproduction claim.
+
 Latest completed reviewer controls: [FINDINGS_SUPPORT_DOSE.md](FINDINGS_SUPPORT_DOSE.md).
 All 1140 dose/saved-checkpoint cells pass. Increasing support suppression improves
 Hong Kong political ranking and worsens both sources' bot ranking monotonically
