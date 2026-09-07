@@ -17,7 +17,7 @@ from .paired_replay import restore_forward_state
 from .run_mechanism import install_online_experiment
 
 
-def test_pinned_metagraph(upstream):
+def test_pinned_metagraph(upstream, device="cpu"):
     sys.path.insert(0, str(Path(upstream).resolve()))
     from models.general_gnn import SingleLayerGeneralGNN
     from models.metaGNN import MetaGNN
@@ -54,13 +54,15 @@ def test_pinned_metagraph(upstream):
     edge_index = torch.stack((torch.arange(4).repeat_interleave(2), torch.tensor([4, 5] * 4)))
     edge_attr = torch.stack((query_mask.float(), (2 * labels.flatten() - 1) * ~query_mask), dim=1)
     args = (Batch.from_data_list(graphs), torch.randn(2, 8), labels, edge_index, edge_attr, query_mask)
+    model.to(device)
+    args = tuple(value.to(device) for value in args)
     state = capture_forward_state(model, torch)
     with torch.no_grad():
         y, logits, _ = model(*(value.clone() for value in args))
-    artifacts = {"input": args, "state": state,
-                 "output": {"y_true": y.clone(), "logits": logits.clone()}}
+    artifacts = {"input": tuple(value.clone().cpu() for value in args), "state": state,
+                 "output": {"y_true": y.clone().cpu(), "logits": logits.clone().cpu()}}
     before = capture_forward_state(model, torch)
-    result = run_episode(model, artifacts, "cpu")
+    result = run_episode(model, artifacts, device)
     assert result["parity"]["max_abs_error"] == 0
     assert set(result["arms"]) == {"native", "support_context_removed", "query_context_removed", "keys", "values", "joint"}
     for arm in result["arms"].values():
@@ -68,11 +70,11 @@ def test_pinned_metagraph(upstream):
             assert arm[field].shape == (2, 2)
             assert torch.isfinite(arm[field]).all()
     assert result["arms"]["native"]["query_max_abs_change"] == 0
-    assert torch.equal(result["arms"]["native"]["reference_only_logits"], logits)
+    assert torch.equal(result["arms"]["native"]["reference_only_logits"], logits.cpu())
     assert result["arms"]["support_context_removed"]["query_max_abs_change"] > 0
     assert torch.equal(before["torch_rng"], torch.get_rng_state())
     for name, value in model.named_buffers():
-        assert torch.equal(value, before["buffers"][name])
+        assert torch.equal(value.cpu(), before["buffers"][name])
     assert "decode" not in model.__dict__
     assert not model.layer_list[2].gnn_layers[0].mlp_kqv._forward_hooks
     stream_state = capture_forward_state(model, torch)
@@ -81,17 +83,17 @@ def test_pinned_metagraph(upstream):
     expected_state = capture_forward_state(model, torch)
     restore_forward_state(model, stream_state)
     with tempfile.TemporaryDirectory() as temporary:
-        install_online_experiment(model, Path(temporary), "cpu")
+        install_online_experiment(model, Path(temporary), device)
         with torch.no_grad():
             actual_stream = [model(*(value.clone() for value in args))[1].clone() for _ in range(2)]
         assert all(torch.equal(a, b) for a, b in zip(expected_stream, actual_stream))
         index = json.loads((Path(temporary) / "paired_episodes/index.json").read_text())
         assert len(index["records"]) == 2  # Recursive replay must not add episodes.
     for name, value in model.named_buffers():
-        assert torch.equal(value, expected_state["buffers"][name])
+        assert torch.equal(value.cpu(), expected_state["buffers"][name])
     assert torch.equal(torch.get_rng_state(), expected_state["torch_rng"])
     print("Pinned decoder/metagraph episode mechanism fixture passed")
 
 
 if __name__ == "__main__":
-    test_pinned_metagraph(sys.argv[1])
+    test_pinned_metagraph(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else "cpu")
