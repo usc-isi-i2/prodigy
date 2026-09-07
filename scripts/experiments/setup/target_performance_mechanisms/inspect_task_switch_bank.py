@@ -44,6 +44,7 @@ def main():
         if len(cache['batch_sha256']) != 32:
             raise ValueError('Expected complete 32-batch bank')
         seen, features, degree, identities = set(), [], [], []
+        zero_feature_ids = []
         for bi, digest in enumerate(cache['batch_sha256']):
             batch = torch.load(root / 'batches' / f'batch_{bi:03d}.pt',
                                map_location='cpu', weights_only=False)
@@ -71,11 +72,17 @@ def main():
                 if node in seen:
                     continue
                 seen.add(node)
-                features.append(g.x[centers[si]].numpy().copy())
+                feature = g.x[centers[si]].numpy().copy()
+                if not np.isfinite(feature).all():
+                    raise ValueError('Nonfinite center feature')
+                if np.linalg.norm(feature.astype(np.float64)) == 0:
+                    zero_feature_ids.append(node)
+                    continue
+                features.append(feature)
                 degree.append(int(counts[si]))
                 identities.append(dict(node=node, batch=bi, subgraph=si, batch_sha256=digest))
         banks[stream] = dict(features=np.stack(features), degree=np.array(degree),
-                             identities=identities)
+                             identities=identities, zero_feature_ids=zero_feature_ids)
     mean, direction, threshold, eigenvalues = fit_rule(banks['original']['features'])
     reports = {}
     manifests = {}
@@ -87,6 +94,7 @@ def main():
         cell = 2 * structural.astype(int) + content.astype(int)
         counts = np.bincount(cell, minlength=4)
         reports[stream] = dict(unique_centers=len(x), cell_counts=counts.tolist(),
+                               excluded_zero_feature_centers=len(bank['zero_feature_ids']),
                                feasible=bool((counts >= 11).all()),
                                content_threshold_ties=int((score == threshold).sum()))
         manifests[stream] = [dict(**identity, degree=int(deg), content_score=float(s),
@@ -98,6 +106,8 @@ def main():
                       ['git', 'rev-parse', 'HEAD'], text=True).strip())
     (args.output / 'summary.json').write_text(json.dumps(result, indent=2) + '\n')
     (args.output / 'private_manifest.json').write_text(json.dumps(manifests) + '\n')
+    (args.output / 'private_excluded.json').write_text(json.dumps({
+        s: b['zero_feature_ids'] for s, b in banks.items()}) + '\n')
     np.savez(args.output / 'private_rule.npz', mean=mean, direction=direction,
              threshold=threshold, label_table=label_table.numpy())
     print(json.dumps(result), flush=True)
