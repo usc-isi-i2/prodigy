@@ -58,7 +58,9 @@ def make_loader(split, policy):
 class MemberPolicyTests(unittest.TestCase):
     def test_legacy_member_draw_and_global_rng_unchanged(self):
         dataset = tiny_dataset()
-        task = NeighborTask(dataset.neighbor_sampler, 24, "inout")
+        task = NeighborTask(
+            dataset.neighbor_sampler, 24, "inout", member_policy="lowest_sorted"
+        )
         torch.manual_seed(918)
         expected = torch.unique(dataset.neighbor_sampler.random_walk(torch.full((70,), 2), "inout"))[:7].tolist()
         state = torch.get_rng_state().clone()
@@ -104,13 +106,13 @@ class MemberPolicyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing dedicated"):
             second.load_state_dict(old)
 
-    def test_eval_policy_is_always_historical(self):
+    def test_eval_policy_is_always_corrected_randomized(self):
         train = make_loader("train", "uniform_shuffled")
         validation = make_loader("val", "uniform_shuffled")
         test = make_loader("test", "uniform_shuffled")
         self.assertEqual(train.batch_sampler.task.member_policy, "uniform_shuffled")
         for loader in (validation, test):
-            self.assertEqual(loader.batch_sampler.task.member_policy, "lowest_sorted")
+            self.assertEqual(loader.batch_sampler.task.member_policy, "randomized")
             self.assertIsNone(loader.batch_sampler.task.member_generators)
 
     def test_consumed_record_preserves_anchor_and_set_controls(self):

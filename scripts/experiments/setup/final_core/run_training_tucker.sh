@@ -11,8 +11,10 @@ SLOTS_PER_GPU="${SLOTS_PER_GPU:-2}"
 SEEDS_TEXT="${SEEDS:-0 1 2}"
 RUN_STAMP="${RUN_STAMP:-20260807}"
 DRY_RUN="${DRY_RUN:-0}"
+SOURCE_COUNTS_TEXT="${SOURCE_COUNTS:-}"
 read -r -a GPU_IDS <<< "$GPUS_TEXT"
 read -r -a SEED_IDS <<< "$SEEDS_TEXT"
+read -r -a SOURCE_COUNT_IDS <<< "$SOURCE_COUNTS_TEXT"
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
 source "$(conda info --base)/etc/profile.d/conda.sh"
@@ -27,10 +29,18 @@ cd "$REPO_ROOT"
 [[ "$(($(wc -l < "$PLAN") - 1))" == 31 ]] || { echo "plan must contain 31 models" >&2; exit 2; }
 
 jobs=()
-while IFS=$'\t' read -r model_id _n_sources sources _aliases; do
+while IFS=$'\t' read -r model_id n_sources sources _aliases; do
   [[ "$model_id" == model_id ]] && continue
+  if (( ${#SOURCE_COUNT_IDS[@]} > 0 )); then
+    include=0
+    for wanted in "${SOURCE_COUNT_IDS[@]}"; do
+      [[ "$n_sources" == "$wanted" ]] && include=1
+    done
+    (( include == 1 )) || continue
+  fi
   for seed in "${SEED_IDS[@]}"; do jobs+=("${seed}:${model_id}:${sources}"); done
 done < "$PLAN"
+(( ${#jobs[@]} > 0 )) || { echo "source-count/seed filters selected no jobs" >&2; exit 2; }
 worker_count=$(( ${#GPU_IDS[@]} * SLOTS_PER_GPU ))
 
 worker() {
@@ -70,6 +80,7 @@ worker() {
   echo "commit=$(git rev-parse HEAD)"
   echo "branch=$(git rev-parse --abbrev-ref HEAD)"
   echo "seeds=$SEEDS_TEXT"
+  echo "source_counts=${SOURCE_COUNTS_TEXT:-all}"
   echo "gpus=$GPUS_TEXT"
   echo "slots_per_gpu=$SLOTS_PER_GPU"
   echo "started_utc=$(date -u +%FT%TZ)"

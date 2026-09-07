@@ -21,6 +21,7 @@ from models.model_eval_utils import accuracy
 from models.general_gnn import SingleLayerGeneralGNN
 from models.sentence_embedding import SentenceEmb
 from experiments.layers import get_module_list
+from experiments.training_role_counts import TrainingRoleCounter
 
 try:
     import yaml
@@ -128,7 +129,10 @@ def _save_config_to_wandb_files(parameter):
 
 
 class TrainerFS():
-    _RESUME_DEFAULTS = {"neighbor_matching_member_policy": "lowest_sorted", "neighbor_matching_member_seed": -1}
+    _RESUME_DEFAULTS = {
+        "neighbor_matching_member_policy": "randomized",
+        "neighbor_matching_member_seed": -1,
+    }
     _RESUME_CONTRACT_KEYS = (
         "seed", "dataset", "root", "graph_filename", "task_name",
         "edge_view", "target_edge_view", "feature_subset", "original_features",
@@ -534,6 +538,18 @@ class TrainerFS():
 
         # Data loader creation.
         self.train_dataloader, self.train_val_dataloader, self.val_dataloader, self.test_dataloader = self._build_dataloaders(dataset, self.dataset_name)
+        self.training_role_counter = None
+        if bool(self.parameter.get("track_training_user_roles", False)):
+            if self.parameter.get("task_name") != "neighbor_matching":
+                raise ValueError(
+                    "--track_training_user_roles currently supports only "
+                    "--task_name neighbor_matching."
+                )
+            self.training_role_counter = TrainingRoleCounter(dataset.graph.num_nodes)
+            self.training_role_graph_id = getattr(dataset.graph, "graph_id", None)
+            self.training_role_counts_path = os.path.join(
+                self.state_dir, "training_user_role_counts.csv"
+            )
         self.resume_step = 0
         if self.resume_training_checkpoint:
             self.load_training_checkpoint(self.resume_training_checkpoint)
@@ -620,7 +636,9 @@ class TrainerFS():
         kwargs["neighbor_matching_edge_split"] = self.parameter.get(
             "neighbor_matching_edge_split", False
         )
-        kwargs["neighbor_matching_member_policy"] = self.parameter.get("neighbor_matching_member_policy", "lowest_sorted")
+        kwargs["neighbor_matching_member_policy"] = self.parameter.get(
+            "neighbor_matching_member_policy", "randomized"
+        )
         kwargs["neighbor_matching_member_seed"] = self.parameter.get("neighbor_matching_member_seed", -1)
         kwargs["label_emb_texts"] = self.parameter.get("label_emb_texts", "")
         kwargs["midterm_lp_neg_ratio"] = self.parameter.get("midterm_lp_neg_ratio", 1)
@@ -1052,7 +1070,16 @@ class TrainerFS():
             "optimizer": self.optimizer.state_dict(),
             "rng": self._rng_state_dict(),
             "train_batch_sampler": None if sampler is None else sampler.state_dict(),
+            "training_role_counts": (
+                None
+                if getattr(self, "training_role_counter", None) is None
+                else self.training_role_counter.state_dict()
+            ),
         }
+        if getattr(self, "training_role_counter", None) is not None:
+            self.training_role_counter.write_csv(
+                self.training_role_counts_path, self.training_role_graph_id
+            )
         # Keep the historical weights-only file compact and evaluator-compatible.
         # Exact-resume state is a versioned sidecar at the same completed step.
         weights_path = os.path.join(self.ckpt_dir, f"state_dict_{step}.ckpt")
@@ -1121,6 +1148,14 @@ class TrainerFS():
         if sampler is None or sampler_state is None:
             raise ValueError(f"{path} has no restorable training BatchSampler state.")
         sampler.load_state_dict(sampler_state)
+        if getattr(self, "training_role_counter", None) is not None:
+            role_state = training.get("training_role_counts")
+            if role_state is None:
+                raise ValueError(
+                    "Role counting is enabled, but the resume checkpoint has no saved "
+                    "training role counts."
+                )
+            self.training_role_counter.load_state_dict(role_state)
         # DataLoader iterator construction itself consumes one Torch RNG draw even
         # with workers=0. Defer restoration until train() has created that iterator,
         # otherwise a resumed stream would be shifted by one draw.
@@ -2068,6 +2103,8 @@ class TrainerFS():
             if self.parameter.get("train_episode_audit", False):
                 from experiments.episode_audit import append_episode_audit
                 append_episode_audit(batch, steps_run, self.logging_dir)
+            if self.training_role_counter is not None:
+                self.training_role_counter.observe_batch(batch)
             batch = [i.to(self.device) for i in batch]
             raw_debug_graph = self._snapshot_debug_graph(batch)
             yt, yp, graph = self.model(*batch) # apply the model
@@ -2234,6 +2271,16 @@ class TrainerFS():
             else:
                 _log(f"[step {steps_run}] saving final checkpoint...")
                 self.save_checkpoint(steps_run)
+
+        if self.training_role_counter is not None:
+            self.training_role_counter.write_csv(
+                self.training_role_counts_path, self.training_role_graph_id
+            )
+            _log(
+                "Saved exact training user-role counts for "
+                f"{self.training_role_counter.steps} steps to "
+                f"{self.training_role_counts_path}"
+            )
 
         if bool(self.parameter.get("eval_after_train", False)):
             # steps actually completed, not the budget — an early-stopped run must not

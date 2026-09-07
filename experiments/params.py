@@ -262,6 +262,15 @@ def get_params(argv=None):
     args.add_argument("-shot", "--n_shots", default=3, type=int) # if not zeroshot, how many shots do we want in the training dataset?
     args.add_argument("-qry", "--n_query", default=24, type=int)
     args.add_argument(
+        "--track_training_user_roles",
+        default=False,
+        type=str2bool,
+        help=(
+            "For neighbor-matching training, write exact per-node anchor/support/query "
+            "exposure counts to the run state directory."
+        ),
+    )
+    args.add_argument(
         "--neighbor_sampling_strategy",
         default="strict",
         choices=["strict", "replacement"],
@@ -628,9 +637,19 @@ def get_params(argv=None):
             "extracting two-hop context."
         ),
     )
-    args.add_argument("--neighbor_matching_member_policy", default="lowest_sorted",
-                      choices=["lowest_sorted", "lowest_shuffled", "uniform_sorted", "uniform_shuffled"],
-                      help="Training-only member retention/role control for merged covid19_twitter-format NM.")
+    args.add_argument(
+        "--neighbor_matching_member_policy",
+        default="randomized",
+        choices=[
+            "randomized", "lowest_sorted", "lowest_shuffled",
+            "uniform_sorted", "uniform_shuffled",
+        ],
+        help=(
+            "Member retention/role policy for merged covid19_twitter-format NM. "
+            "'randomized' is the corrected default; the four explicit policies are "
+            "seeded mechanism controls."
+        ),
+    )
     args.add_argument("--neighbor_matching_member_seed", default=-1, type=int,
                       help="Nonnegative enables private NM walk/retention/role streams; -1 preserves historical global RNG.")
     args.add_argument("--train_episode_audit", default=False, type=str2bool,
@@ -811,7 +830,10 @@ def get_params(argv=None):
         "e4": "e4_multi",
     }
     params["task_name"] = task_aliases.get(params["task_name"], params["task_name"])
-    member_control = params["neighbor_matching_member_policy"] != "lowest_sorted" or params["neighbor_matching_member_seed"] >= 0
+    member_control = (
+        params["neighbor_matching_member_policy"] not in {"randomized", "lowest_sorted"}
+        or params["neighbor_matching_member_seed"] >= 0
+    )
     if member_control:
         if params["dataset"] != "covid19_twitter" or params["task_name"] != "neighbor_matching":
             raise ValueError("member-policy controls currently require covid19_twitter-format neighbor_matching")
