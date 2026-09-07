@@ -17,7 +17,7 @@ from scripts.experiments.setup.trace_schedule_scaling.make_plan import build_pla
 
 RAW_STAGES = ("raw_center", "raw_context", "raw_joint")
 TARGETS = (
-    "election2020", "ukr_rus_suspended", "twibot20", "cp_hk",
+    "election2020", "ukr_rus_suspended", "twibot20", "covid_political",
     "facebook_page_reference",
 )
 

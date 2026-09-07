@@ -9,7 +9,7 @@ training without its larger-mixture forgetting, and whether target-side U1 healt
 tracks schedule effects.
 
 Primary outcomes are fresh-stream held-out accuracy and ROC-AUC on Election-2020,
-Ukraine/Russia suspended, TwiBot-20, Hong Kong, and Facebook page-reference. The
+Ukraine/Russia suspended, TwiBot-20, COVID-political, and Facebook page-reference. The
 original stream is discovery data; it may select a conventional baseline but never
 supplies a reported fresh outcome. TRACE schedule routing uses only episode supports,
 intermediate predictions, and full-model predictions. The chance-level suspended

@@ -9,7 +9,7 @@ LOG_ROOT="${LOG_ROOT:-${REPO_ROOT}/log/trace_schedule_scaling}"
 MODEL_LIST="${MODEL_LIST:-${LOG_ROOT}/launch/model_list_${RUN_STAMP}.tsv}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-${LOG_ROOT}/replay_${RUN_STAMP}}"
 GPUS_TEXT="${GPUS:-0 1 2 3}"
-TARGETS_TEXT="${TARGETS:-election2020 ukr_rus_suspended twibot20 cp_hk facebook_page_reference}"
+TARGETS_TEXT="${TARGETS:-election2020 ukr_rus_suspended twibot20 covid_political facebook_page_reference}"
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
 source "$(conda info --base)/etc/profile.d/conda.sh"

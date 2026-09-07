@@ -41,7 +41,7 @@ python -m scripts.experiments.setup.trace_schedule_scaling.verify_training \
   --output log/trace_schedule_scaling/launch/verification_20260906v1.json
 ```
 
-After training completes, replay the terminal checkpoints on five held-out targets and
+After training completes, replay the terminal checkpoints on five downstream targets and
 two disjoint fixed episode streams:
 
 ```bash
