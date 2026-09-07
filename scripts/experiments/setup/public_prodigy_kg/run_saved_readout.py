@@ -59,6 +59,8 @@ def main():
     parser.add_argument("--gpu", type=int, choices=(2, 3), required=True)
     parser.add_argument("--execute", action="store_true")
     args = parser.parse_args()
+    for field in ("run", "checkpoint", "upstream", "output"):
+        setattr(args, field, getattr(args, field).resolve())
     protocol, records = inspect_run(args.run, args.checkpoint)
     verification = native.verify_upstream(args.upstream)
     plan = {"source_run": str(args.run.resolve()), "episodes": len(records),
@@ -74,6 +76,9 @@ def main():
     os.environ.update(CUDA_VISIBLE_DEVICES=str(args.gpu), WANDB_MODE="offline")
     native.runtime_versions()
     native.isolate_native_path(args.upstream.resolve())
+    # Upstream modules append relative entries to sys.path. Match native.execute
+    # so these resolve within upstream, never back into the wrapper checkout.
+    os.chdir(args.upstream)
     import torch
     import numpy as np
     from .readout_episode import run_episode
