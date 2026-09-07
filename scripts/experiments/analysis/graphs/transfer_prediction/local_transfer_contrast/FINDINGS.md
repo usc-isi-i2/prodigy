@@ -99,6 +99,37 @@ A target-query-supervised logistic router over all readout trajectories reaches
 discovery stream. It is a diagnostic upper bound, not a valid final method; the
 label-free consistency rules are the deployable evidence.
 
+## All-source, cross-target replication
+
+We next exported all nine singleton-source checkpoints for every target in the
+verified role-context replay. For each target, experts are ranked once by AUC on
+the discovery stream. On every validation query, **U1 health routing** selects
+the highest-ranked expert whose full prediction agrees with a support-fitted
+ridge readout at the pre-metagraph representation; if none qualifies, it uses
+the highest-ranked expert. Routing uses support labels and model outputs, never
+the validation query label.
+
+| Target | Best fixed | U1 health | Gain [episode-bootstrap 95% interval] | AUC fixed → health |
+|---|---:|---:|---:|---:|
+| COVID-political | .896 | .914 | +.019 [.013, .024] | .957 → .954 |
+| Election-2020 | .973 | .977 | +.004 [.000, .012] | .984 → .984 |
+| Facebook page-reference | .681 | .715 | +.034 [.019, .051] | .754 → .778 |
+| TwiBot-20 | .586 | .632 | +.047 [.035, .059] | .615 → .643 |
+| Ukraine/Russia suspended | .531 | .562 | +.031 [-.016, .078] | .506 → .548 |
+| **Macro mean** | **.733** | **.760** | **+.027** | **.763 → .781** |
+
+The method improves accuracy on all five targets. Four point estimates improve
+with nonnegative paired intervals; the small 256-query suspended target is
+directionally positive but inconclusive. NLL improves on the four substantive
+targets, including COVID where AUC falls by .003. The method routes away from
+the top expert on only 0.4%–32.4% of examples depending on target, so it behaves
+as a selective correction rather than an ensemble replacement.
+
+This replication also falsifies the literal raw-anchor method. Raw agreement is
+excellent on Facebook but harms COVID, Election, and TwiBot. The transferable
+principle is therefore **support-conditioned consistency at an appropriate
+intermediate depth**, not privileged status for raw features.
+
 ## Paper-level interpretation
 
 The working thesis is **pretraining transfer is governed by preservation of
@@ -113,20 +144,21 @@ single interpretation of earlier observations:
 - adding another graph can improve a target: it can restore or preserve a target
   decision direction absent from the original source.
 
-This unification is currently a hypothesis supported mechanistically on one
-target/source pair. The next decisive test is whether transfer-health statistics
-predict rankings across all available sources, targets, mixture schedules, and
-seeds. If they do, the method contribution is a support-anchored adaptive GFM
-that routes, fuses, or exits at the healthiest representation depth.
+The matched-example mechanism is currently established on one target/source
+pair, while the routing effect replicates across nine sources and five targets.
+The next decisive tests are checkpoint-seed replication and mixture-schedule
+trajectories. If health deteriorates under sequential merging and is preserved
+by interleaving, the method contribution becomes a support-conditioned adaptive
+GFM that routes, fuses, or exits at the healthiest representation depth—and the
+same measurement explains the earlier training-order result.
 
 ## Validity boundaries
 
 - Episode-bootstrap intervals quantify paired variation over the 128 sampled
   episodes; they are not checkpoint-seed confidence intervals.
-- The source pair was chosen for a large aggregate gap, so effect-size claims
-  need replication on other pairs.
+- The mechanistic source pair was chosen for a large aggregate gap. The routing
+  result now covers all nine available singleton sources but only seed-0 weights.
 - This localizes where errors arise but does not yet identify which source
   training examples or gradients cause the deformation.
 - Facebook is unusually favorable to raw features. Cross-target evaluation is
-  necessary before making a general method claim.
-
+  why raw anchoring is not the general method; U1 health is the cross-target rule.

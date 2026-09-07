@@ -21,7 +21,7 @@ def main():
     stage_names = ["Raw + support\nridge", "Encoder +\nsupport ridge", "Metagraph +\nsupport ridge", "Full model"]
 
     plt.rcParams.update({"font.size": 9, "axes.spines.top": False, "axes.spines.right": False})
-    fig, axes = plt.subplots(1, 2, figsize=(9.2, 3.4), gridspec_kw={"width_ratios": [1.08, 1]})
+    fig, axes = plt.subplots(1, 3, figsize=(13.2, 3.5), gridspec_kw={"width_ratios": [1.08, 1, 1]})
     x = np.arange(len(stages))
     for model, label in model_names.items():
         rows = fresh[fresh.model.eq(model)].set_index("decoder").loc[stages]
@@ -52,6 +52,28 @@ def main():
     axes[1].set_title("B. Transfer health enables label-free recovery", loc="left", weight="bold")
     for index, value in enumerate(rows.accuracy):
         axes[1].text(value + .004, index, f"{value:.3f}", va="center")
+
+    multi = pd.read_csv(DATA / "multi_health_results.csv")
+    multi = multi[multi.method.eq("u1_agreement")].copy()
+    target_labels = {
+        "covid_political": "COVID-pol.", "election2020": "Election",
+        "facebook_page_reference": "Facebook", "twibot20": "TwiBot-20",
+        "ukr_rus_suspended": "Suspended",
+    }
+    order = list(target_labels)
+    multi = multi.set_index("target").loc[order]
+    gain = 100 * multi.accuracy_gain_over_fixed_best
+    lower = gain - 100 * multi.episode_bootstrap_gain_ci_low
+    upper = 100 * multi.episode_bootstrap_gain_ci_high - gain
+    y = np.arange(len(multi))
+    axes[2].errorbar(gain, y, xerr=np.vstack((lower, upper)), fmt="o", color="#d4743c",
+                     ecolor="#59636e", capsize=3, markersize=6)
+    axes[2].axvline(0, color="#a8a8a8", linewidth=1)
+    axes[2].set_yticks(y, [target_labels[item] for item in order])
+    axes[2].invert_yaxis()
+    axes[2].set_xlabel("Accuracy gain (points)")
+    axes[2].set_title("C. U1 health routing replicates", loc="left", weight="bold")
+    axes[2].set_xlim(-2.8, 8.4)
     fig.tight_layout()
     for suffix in ("png", "pdf"):
         fig.savefig(FIGURES / f"local_transfer_contrast.{suffix}", dpi=220, bbox_inches="tight")

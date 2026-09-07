@@ -1,6 +1,7 @@
 # Aggregate data
 
-These tables were produced at revision `8e20077e` from the verified replay at:
+The pairwise tables were refreshed at revision `6ebed263` and the multi-source
+tables were produced at that revision from the verified replay at:
 
 `/dataMeR1/phil/gfm/prodigy-local-transfer-contrast/log/local_transfer_contrast/facebook_twibot_vs_election/`
 
