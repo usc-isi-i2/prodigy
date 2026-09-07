@@ -1,0 +1,123 @@
+{
+  "conditions": [
+    [
+      100,
+      100
+    ],
+    [
+      100,
+      900
+    ],
+    [
+      900,
+      100
+    ],
+    [
+      900,
+      900
+    ]
+  ],
+  "source": "covid_political",
+  "seed": 0,
+  "target": "twibot20",
+  "episodes": 128,
+  "ways": 2,
+  "shots": 10,
+  "queries_per_class": 12,
+  "cache": "/dataMeR1/phil/gfm/prodigy-encoder-solver-isolation/log/isolation_eval_20260907/original/twibot20/twibot20",
+  "checkpoint_sha256": {
+    "100": "f195fa0025ed3b2f6ceb3a4dc5711178961f4023d31f0a579bd83ddb9a2d90dc",
+    "900": "b74d7ee245e624e7fbba1be6852c8e4a0924b3063ed7c8987fc3398e1be7cdfa"
+  },
+  "cache_sha256": "36c59ed6f01b22925b60dc09544517a5094fa51eeb1963d1e96b02f6dbfe3fd9",
+  "mode": "eval",
+  "parity_atol": 1e-05,
+  "prediction": "Late predictor helps both encoders; late encoder hurts both predictors; E100I900 beats both native endpoints",
+  "scope": "Source-supervised GILT native-source adaptation, not full published multitask recipe",
+  "fitting": false,
+  "readouts": "Native; encoder support-centered ridge; raw text support-centered ridge; lambda1 scale1",
+  "upstream": "/dataMeR1/phil/gfm/upstream/inductnode",
+  "ownership": {
+    "encoder": [
+      "encoder.norms.0.weight",
+      "encoder.norms.0.bias",
+      "encoder.norms.1.weight",
+      "encoder.norms.1.bias",
+      "encoder.norms.2.weight",
+      "encoder.norms.2.bias",
+      "encoder.norms.3.weight",
+      "encoder.norms.3.bias",
+      "encoder.norms.4.weight",
+      "encoder.norms.4.bias",
+      "encoder.norms.5.weight",
+      "encoder.norms.5.bias"
+    ],
+    "predictor": [
+      "predictor.transformer_row.0.self_att.in_proj_weight",
+      "predictor.transformer_row.0.self_att.in_proj_bias",
+      "predictor.transformer_row.0.self_att.out_proj.weight",
+      "predictor.transformer_row.0.self_att.out_proj.bias",
+      "predictor.transformer_row.0.cross_att.in_proj_weight",
+      "predictor.transformer_row.0.cross_att.in_proj_bias",
+      "predictor.transformer_row.0.cross_att.out_proj.weight",
+      "predictor.transformer_row.0.cross_att.out_proj.bias",
+      "predictor.transformer_row.0.ffn.lins.0.weight",
+      "predictor.transformer_row.0.ffn.lins.0.bias",
+      "predictor.transformer_row.0.ffn.lins.1.weight",
+      "predictor.transformer_row.0.ffn.lins.1.bias",
+      "predictor.transformer_row.0.ffn.lins.4.weight",
+      "predictor.transformer_row.0.ffn.lins.4.bias",
+      "predictor.transformer_row.0.context_norm1.weight",
+      "predictor.transformer_row.0.context_norm1.bias",
+      "predictor.transformer_row.0.context_norm2.weight",
+      "predictor.transformer_row.0.context_norm2.bias",
+      "predictor.transformer_row.0.context_norm3.weight",
+      "predictor.transformer_row.0.context_norm3.bias",
+      "predictor.transformer_row.0.tar_norm1.weight",
+      "predictor.transformer_row.0.tar_norm1.bias",
+      "predictor.transformer_row.0.tar_norm2.weight",
+      "predictor.transformer_row.0.tar_norm2.bias",
+      "predictor.transformer_row.1.self_att.in_proj_weight",
+      "predictor.transformer_row.1.self_att.in_proj_bias",
+      "predictor.transformer_row.1.self_att.out_proj.weight",
+      "predictor.transformer_row.1.self_att.out_proj.bias",
+      "predictor.transformer_row.1.cross_att.in_proj_weight",
+      "predictor.transformer_row.1.cross_att.in_proj_bias",
+      "predictor.transformer_row.1.cross_att.out_proj.weight",
+      "predictor.transformer_row.1.cross_att.out_proj.bias",
+      "predictor.transformer_row.1.ffn.lins.0.weight",
+      "predictor.transformer_row.1.ffn.lins.0.bias",
+      "predictor.transformer_row.1.ffn.lins.1.weight",
+      "predictor.transformer_row.1.ffn.lins.1.bias",
+      "predictor.transformer_row.1.ffn.lins.4.weight",
+      "predictor.transformer_row.1.ffn.lins.4.bias",
+      "predictor.transformer_row.1.context_norm1.weight",
+      "predictor.transformer_row.1.context_norm1.bias",
+      "predictor.transformer_row.1.context_norm2.weight",
+      "predictor.transformer_row.1.context_norm2.bias",
+      "predictor.transformer_row.1.context_norm3.weight",
+      "predictor.transformer_row.1.context_norm3.bias",
+      "predictor.transformer_row.1.tar_norm1.weight",
+      "predictor.transformer_row.1.tar_norm1.bias",
+      "predictor.transformer_row.1.tar_norm2.weight",
+      "predictor.transformer_row.1.tar_norm2.bias",
+      "predictor.nc_head.target_input_norm.weight",
+      "predictor.nc_head.target_input_norm.bias",
+      "predictor.nc_head.context_input_norm.weight",
+      "predictor.nc_head.context_input_norm.bias",
+      "predictor.gc_head.target_input_norm.weight",
+      "predictor.gc_head.target_input_norm.bias",
+      "predictor.gc_head.context_input_norm.weight",
+      "predictor.gc_head.context_input_norm.bias"
+    ],
+    "fixed": [
+      "feature_projection"
+    ]
+  },
+  "commit": "9c5a456ec688850df2b1047351203d43b4284b3a",
+  "upstream_metadata": {
+    "repository": "https://github.com/yiming421/inductnode.git",
+    "commit": "ba46cf4ebd1931712854708c221eaba646641785",
+    "license": null
+  }
+}
