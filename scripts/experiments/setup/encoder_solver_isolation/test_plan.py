@@ -13,6 +13,7 @@ class PlanTest(unittest.TestCase):
             signatures=[]
             for arm in arms:
                 cmd=arm['command'].copy()
+                self.assertEqual(cmd[cmd.index('--checkpoint_steps')+1],'0,2500')
                 for flag in ('--prefix','--encoder_solver_objective'):
                     cmd[cmd.index(flag)+1]='VARYING'
                 signatures.append(cmd)

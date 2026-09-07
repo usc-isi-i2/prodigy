@@ -21,7 +21,7 @@ def commands(root, output, gpu, steps, seed):
                 '--config',str(root/'scripts/experiments/setup/trace_schedule_scaling/training.yaml'),
                 '--device',str(gpu),'--seed',str(seed),'--prefix',name,'--timestamp','isolation_v1',
                 '--state_dir',str(output/'state'),'--log_dir',str(output/'native_log'),
-                '--dataset_len_cap',str(steps),'--checkpoint_steps',str(steps),
+                '--dataset_len_cap',str(steps),'--checkpoint_steps',f'0,{steps}',
                 '--neighbor_sampling_source_subset',','.join(arm.sources),
                 '--neighbor_sampling_source_schedule',','.join(arm.segment_sources),
                 '--neighbor_sampling_source_schedule_steps',','.join(map(str,arm.segment_steps)),

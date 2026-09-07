@@ -48,4 +48,6 @@ checkpoint inventory. Ordinary inference must not recompute the training loss.
 `python -m scripts.experiments.setup.encoder_solver_isolation.verify --root <run>`
 checks complete checkpoints, objective metadata, exact per-source consumed
 examples across all eight arms, and reports isolated/ridge-only encoder tensor
-differences. It does not claim independently captured initialization equality.
+differences. New runs save step-zero weights and the verifier checks exact model
+initialization equality across all eight arms. These are mandatory for the full
+2500-step experiment; the initial legacy smoke did not capture them.

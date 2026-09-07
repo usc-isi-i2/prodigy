@@ -11,9 +11,20 @@ def verify(root):
     plan=json.loads((root/'plan.json').read_text())
     if len(plan)!=8 or done['arms']!=8:raise ValueError('eight completed arms required')
     records=[]; states={}; reference_sources=None
+    initial_reference=None; initial_count=0
     for entry in plan:
         name=entry['name']+'_isolation_v1'
         directory=root/'state'/name/'checkpoint'
+        initial_path=directory/'state_dict_0.ckpt'
+        if initial_path.exists():
+            initial=torch.load(initial_path,map_location='cpu',weights_only=True)['model']
+            if initial_reference is None:initial_reference=initial
+            if initial.keys()!=initial_reference.keys() or any(
+                not torch.equal(initial[k],initial_reference[k]) for k in initial
+            ):raise ValueError('initial model states differ')
+            initial_count+=1
+        elif done['steps']==2500:
+            raise ValueError('full experiment requires captured initial weights')
         training=torch.load(directory/f'training_state_{done["steps"]}.ckpt',map_location='cpu',weights_only=False)
         metadata=training['_training_checkpoint']
         if metadata['completed_steps']!=done['steps']:raise ValueError('wrong completed step')
@@ -44,7 +55,8 @@ def verify(root):
         parity.append(dict(schedule=schedule,exact=all(torch.equal(sa[k],sb[k]) for k in keys),
                            max_abs_error=max(errors.values()),tensor_count=len(keys)))
     return dict(arms=records,source_private_examples_exact=True,encoder_parity=parity,
-                note='GPU parity measured, not silently rounded; initialization not independently captured by this audit.')
+                initialization_exact=initial_count==8,initial_checkpoints=initial_count,
+                note='GPU parity measured, not silently rounded; legacy smoke may lack initial checkpoints.')
 
 
 if __name__=='__main__':
