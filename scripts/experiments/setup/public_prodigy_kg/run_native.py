@@ -14,6 +14,7 @@ import importlib
 import importlib.metadata
 import json
 import os
+import random
 from pathlib import Path
 import runpy
 import shlex
@@ -280,6 +281,21 @@ def install_sampler_compat(task_class, python_version=None) -> dict:
             "correction": "sample(set) -> sample(tuple(set)); no sorting, reseeding, RNG cloning, or population mutation"}
 
 
+def capture_forward_state(model, torch_module):
+    """Read-only snapshot; do not initialize CUDA just to inspect its RNG."""
+    import numpy as np
+    return {
+        "buffers": {name: value.detach().clone().cpu()
+                    for name, value in model.named_buffers()},
+        "training": {name: module.training for name, module in model.named_modules()},
+        "torch_rng": torch_module.get_rng_state().clone(),
+        "cuda_rng": ([state.clone() for state in torch_module.cuda.get_rng_state_all()]
+                     if torch_module.cuda.is_initialized() else None),
+        "python_rng": random.getstate(),
+        "numpy_rng": np.random.get_state(),
+    }
+
+
 def install_episode_capture(model, *, output: Path, torch_module) -> None:
     """Capture exact native eval inputs before in-place mutations, without reruns."""
     directory = output / "episode_capture"
@@ -291,12 +307,15 @@ def install_episode_capture(model, *, output: Path, torch_module) -> None:
             raise RuntimeError("Unexpected nested forward during native episode capture")
         ordinal = len(records)
         inputs = directory / f"batch_{ordinal:05d}.pt"
+        state_file = directory / f"state_{ordinal:05d}.pt"
+        torch_module.save(capture_forward_state(model, torch_module), state_file)
         # Native arguments are Data/Batch or tensors. Their clone().cpu() recursively
         # clones graph tensor attributes too; neither operation samples RNG.
         copies = tuple(value.clone().cpu() for value in arguments)
         torch_module.save(copies, inputs)
         pending.append({"ordinal": ordinal, "input_file": inputs.name,
-                        "input_sha256": file_sha256(inputs), "argument_count": len(copies)})
+                        "input_sha256": file_sha256(inputs), "argument_count": len(copies),
+                        "state_file": state_file.name, "state_sha256": file_sha256(state_file)})
         # Returning None leaves the actual forward arguments untouched.
 
     def post_forward(_module, _arguments, result):
@@ -309,10 +328,11 @@ def install_episode_capture(model, *, output: Path, torch_module) -> None:
         record.update(output_file=outputs.name, output_sha256=file_sha256(outputs))
         records.append(record)
         write_json(directory / "index.json", {
-            "schema_version": 1, "captured_batches": len(records), "records": records,
+            "schema_version": 2, "captured_batches": len(records), "records": records,
             "input_contract": "Full immutable CPU-cloned actual positional arguments, before upstream in-place graph edits",
             "output_contract": "Native returned y_true and logits from that same forward; no additional forward",
             "pairing": "Use saved tensors, not seed-based reconstruction; native BN is in train mode and evolves in ordinal order",
+            "state_contract": "Pre-forward buffers, per-module modes, and Python/NumPy/torch CPU/initialized-CUDA RNG; restore before each paired arm with the same checkpoint parameters",
         })
         # Returning None preserves the native result object.
 

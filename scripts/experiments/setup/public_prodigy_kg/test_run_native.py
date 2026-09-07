@@ -267,7 +267,8 @@ class NativeLauncherTests(unittest.TestCase):
         native.install_episode_capture(surface, output=output,
                                        torch_module=types.SimpleNamespace(save=save))
         arguments = (Value([1, 2]), Value([3]))
-        self.assertIsNone(surface.pre(surface, arguments))
+        with mock.patch.object(native, "capture_forward_state", return_value={"fixture": True}):
+            self.assertIsNone(surface.pre(surface, arguments))
         arguments[0].values[0] = 999  # Stand-in for native in-place graph mutation.
         result = (Value([0, 1]), Value([0.25, 0.75]), arguments[0])
         self.assertIsNone(surface.post(surface, arguments, result))
@@ -275,6 +276,8 @@ class NativeLauncherTests(unittest.TestCase):
         index = json.loads((output / "episode_capture/index.json").read_text())
         self.assertEqual(index["captured_batches"], 1)
         record = index["records"][0]
+        self.assertEqual(index["schema_version"], 2)
+        self.assertEqual(record["state_sha256"], native.file_sha256(output / "episode_capture" / record["state_file"]))
         captured_inputs = saved[str(output / "episode_capture" / record["input_file"])]
         captured_outputs = saved[str(output / "episode_capture" / record["output_file"])]
         self.assertEqual(captured_inputs[0].values, [1, 2])
