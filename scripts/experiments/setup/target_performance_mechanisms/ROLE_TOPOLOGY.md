@@ -2,13 +2,20 @@
 
 Bounded follow-up to the September 6 paper review. No new training, source
 selection or checkpoint search. Reuse all six existing HK/UKR original-sort
-controls (three initialization seeds) at step 2500. Evaluate covid-political,
-election2020 and twibot20, both cached episode streams, all 128 episodes.
+controls (three initialization seeds) at step 2500. Evaluate all five existing
+classification targets, both cached episode streams, all 128 episodes.
 
 The full design is query topology x support topology, each intact / removed /
 rewired. Each rewiring draw is shared across models and roles. Three draws give
 19 unique conditions per model/target/stream (four deterministic cells plus
-five rewiring-involving cells per draw), or 684 cells total.
+five rewiring-involving cells per draw), or 1,140 cells total.
+
+The two-batch covid-political smoke finished in four seconds on Tucker. Before
+the full run, the panel was expanded from CP/E20/T20 to all five existing targets:
+the completed historical factorial also contains the conditional role sign
+reversal on page classification. Retaining all targets avoids selecting only
+the promising nonpolitical case and adds little compute. No full follow-up
+outcomes were inspected when making this change.
 
 The null uses finite double-edge swaps within each sampled background subgraph.
 Every node's in- and out-degree is preserved. If a subgraph is fully reciprocal,
@@ -57,7 +64,7 @@ hashes are checked. Full numeric outputs are written after each target/stream;
 `test_role_topology` covers directed and reciprocal degree preservation,
 unrewirable/empty graphs, no new loops/duplicates, role scope, label blindness,
 all nine direct-forward comparisons, and nested deletion doses. The dose helper
-is tested but dose-response is not part of this initial 684-cell campaign.
+is tested but dose-response is not part of this initial 1,140-cell campaign.
 
 This follows known target results, not an untouched-domain confirmation. The
 three rewiring draws and the two episode streams are not new training seeds.

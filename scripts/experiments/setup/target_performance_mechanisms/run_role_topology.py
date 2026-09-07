@@ -33,7 +33,7 @@ def main():
     p.add_argument("--references", type=Path, required=True)
     p.add_argument("--original-roots", type=Path, nargs="+", required=True)
     p.add_argument("--fresh-roots", type=Path, nargs="+", required=True)
-    p.add_argument("--targets", nargs="+", default=["covid_political", "election2020", "twibot20"])
+    p.add_argument("--targets", nargs="+", default=["covid_political", "election2020", "facebook_page_reference", "twibot20", "ukr_rus_suspended"])
     p.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
     p.add_argument("--rewire-draws", type=int, default=3)
     p.add_argument("--swaps-per-edge", type=int, default=5)
@@ -46,7 +46,7 @@ def main():
         raise ValueError("new output, hidden GPUs and bounded CPU threads required")
     if not 1 <= args.max_batches <= 32 or not 1 <= args.rewire_draws <= 5 or args.swaps_per_edge < 1:
         raise ValueError("invalid replay or randomization budget")
-    if len(set(args.targets)) != len(args.targets) or not set(args.targets) <= {"covid_political", "election2020", "twibot20"}:
+    if len(set(args.targets)) != len(args.targets) or not set(args.targets) <= {"covid_political", "election2020", "facebook_page_reference", "twibot20", "ukr_rus_suspended"}:
         raise ValueError("use the declared nonredundant target panel")
     if len(set(args.seeds)) != len(args.seeds) or not set(args.seeds) <= {0, 1, 2}:
         raise ValueError("unknown/duplicate training seed")
