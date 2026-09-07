@@ -82,8 +82,24 @@ def run_episode(model, artifacts, device, *, atol=0.0, rtol=0.0):
     native = trace_forward(model, arguments, state, projection)
     if not torch.allclose(native["logits"].cpu(), parity["logits"], atol=atol, rtol=rtol):
         error = float((native["logits"].cpu() - parity["logits"]).abs().max())
-        raise ValueError(f"Instrumentation changed native logits: max_abs_error={error}, "
-                         f"atol={atol}, rtol={rtol}")
+        # Null-only diagnosis: do not compute interventions or relax acceptance.
+        # Compare plain and instrumented forwards from the identical saved state.
+        nulls = []
+        reference = parity["logits"]
+        for repeat in range(20):
+            with isolated_forward_state(model, state), torch.no_grad():
+                plain = model(*(value.clone() for value in arguments))[1].detach().cpu()
+            traced = trace_forward(model, arguments, state, projection)["logits"].cpu()
+            nulls.append({"repeat": repeat,
+                "plain_reference_max_abs": float((plain - reference).abs().max()),
+                "traced_reference_max_abs": float((traced - reference).abs().max()),
+                "plain_traced_max_abs": float((plain - traced).abs().max()),
+                "plain_prediction_flips": int((plain.argmax(-1) != reference.argmax(-1)).sum()),
+                "traced_prediction_flips": int((traced.argmax(-1) != reference.argmax(-1)).sum())})
+        failure = ValueError(f"Instrumentation changed native logits: max_abs_error={error}, "
+                             f"atol={atol}, rtol={rtol}")
+        failure.null_audit = nulls
+        raise failure
     queries = query_rows(arguments)
     support = torch.zeros(native["projection"].shape[0], dtype=torch.bool, device=device)
     if support.numel() != queries.numel() + arguments[1].shape[0]:

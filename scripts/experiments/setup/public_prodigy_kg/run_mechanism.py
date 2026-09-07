@@ -56,6 +56,7 @@ def install_online_experiment(model, output, device, *, atol=0.0, rtol=0.0):
             torch.save(artifacts, directory / "failed_native_capture.pt")
             native.write_json(directory / "failure.json", {
                 "ordinal": len(records), "error": repr(error),
+                "null_audit": getattr(error, "null_audit", None),
                 "accepted_intervention_result": False})
             raise
         finally:
