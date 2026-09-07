@@ -244,3 +244,49 @@ class-block ordering and are not promoted to evidence until the support-label
 mapping is verified. The class-free role shift and the completed readout scores
 motivate a bounded test of separate support/query centering, not a new claim of
 novelty or a declaration that all post-metagraph geometry is worse.
+
+### Completed fixed centering diagnostic
+
+Runtime `a918531b`; all 500 episodes complete in Tucker
+`log/publickg_role_centering_20260907`. The script reads actual native support
+labels, verifies native artifact hashes, and reproduces both uncentered ridge
+controls within 1e-5. Row-L2 normalization follows centering; lambda=1, no
+intercept, scale=1 throughout. No labels from queries enter the fitted readout.
+
+| Stage / centering | Accuracy | Macro-F1 | OVR AUC |
+|---|---:|---:|---:|
+| Native inference | .737950 | .721805 | .974829 |
+| Pre / none | .769050 | .744457 | .974552 |
+| Pre / support mean for both roles | .803475 | .787986 | .977813 |
+| Pre / separate role means | .807525 | .793128 | .977929 |
+| Post / none | .701350 | .671331 | .964031 |
+| Post / support mean for both roles | .319900 | .275742 | .957936 |
+| Post / separate role means | .721600 | .696859 | .958213 |
+
+The purely support-fitted pre-metagraph centered baseline exceeds native by
+6.5525 accuracy points and 6.6181 macro-F1 points. Accuracy wins/losses/ties are
+448/27/25 episodes. Its NLL is 2.673942 versus native .873646 at these fixed
+scales: not uniform probabilistic superiority. Separate means add only .405
+accuracy points before inference and use unlabeled query distribution.
+
+Post separate centering recovers 2.025 accuracy points, but remains 1.635 below
+native and 8.1875 below support-centered pre-metagraph ridge. A simple global
+role offset is insufficient to explain the loss of support-readout utility.
+Support-based centering helps before inference but catastrophically fails
+afterward, consistent with different support/query geometry. It does not alone
+prove the cause is role asymmetry rather than other learned transformations.
+
+This diagnostic was designed after inspecting this same stream. Treat gains as
+exploratory until replicated with a frozen rule on a new stream/checkpoint.
+Do not market centering as novel: SimpleShot already studies mean subtraction
+and L2 normalization (https://arxiv.org/abs/1911.04623), and Prototype
+Rectification studies feature shifting for support/query bias
+(https://arxiv.org/abs/1911.10713). The prospective contribution is explaining
+and avoiding inference-induced incompatibility of reusable representations,
+not renaming these existing readout ingredients.
+
+Advisor decision: retain support-centered pre-metagraph ridge as the stronger
+deployment baseline; stop trying global centering variants to rescue the final
+stage. Next, freeze this rule and test breadth/replication before more elaborate
+architectural proposals. A method must beat this baseline, not only native or
+TRACE, to earn a deployment contribution.
