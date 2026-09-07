@@ -253,9 +253,12 @@ class NeighborTask(TaskBase):
         if member_policy not in {"randomized", "lowest_sorted"} and self.member_sampling_seed < 0:
             raise ValueError("experimental member policies require a dedicated sampling seed")
         if self.member_sampling_seed >= 0 and (
-            sampling_strategy != "strict" or center_radii or not filter_min_degree or not confine_to_single_stratum
+            sampling_strategy != "strict" or center_radii or not filter_min_degree or strata is None
         ):
-            raise ValueError("dedicated member streams require strict, degree-filtered, source-confined, non-radius NM episodes")
+            raise ValueError(
+                "dedicated member streams require strict, degree-filtered, "
+                "graph-stratified, non-radius NM episodes"
+            )
         # Separate walk, retained-set and role RNGs make the factorial treatments
         # share anchors/walks, independent of context sampling and model RNG use.
         self.member_generators = None if self.member_sampling_seed < 0 else {

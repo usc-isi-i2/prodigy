@@ -115,6 +115,32 @@ class MemberPolicyTests(unittest.TestCase):
             self.assertEqual(loader.batch_sampler.task.member_policy, "randomized")
             self.assertIsNone(loader.batch_sampler.task.member_generators)
 
+    def test_corrected_member_policy_supports_naive_merged_source_pool(self):
+        dataset = tiny_dataset()
+        loader = get_covid19_twitter_dataloader(
+            dataset, split="train", node_split="", batch_size=1, n_way=2,
+            n_shot=3, n_query=4, batch_count=2, root="", bert=None,
+            num_workers=0, aug="", aug_test=False, split_labels=False,
+            train_cap=None, linear_probe=False, task_name="neighbor_matching",
+            neighbor_matching_edge_split=True,
+            neighbor_sampling_strata="graph_id_pool",
+            neighbor_sampling_source_subset="0,1",
+            neighbor_matching_member_policy="uniform_shuffled",
+            neighbor_matching_member_seed=801,
+        )
+        task = loader.batch_sampler.task
+        self.assertFalse(task.confine_to_single_stratum)
+        self.assertIsNotNone(task.member_generators)
+        self.assertEqual(len(task.strata), 1)
+        centers = [
+            center
+            for _ in range(12)
+            for center in loader.batch_sampler.sample()[0]
+        ]
+        self.assertTrue(all(0 <= center < 24 for center in centers))
+        self.assertTrue(any(center < 12 for center in centers))
+        self.assertTrue(any(center >= 12 for center in centers))
+
     def test_consumed_record_preserves_anchor_and_set_controls(self):
         batches = {p: next(iter(make_loader("train", p))) for p in POLICIES}
         records = {p: episode_record(batch, 1) for p, batch in batches.items()}
