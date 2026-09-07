@@ -262,8 +262,82 @@ def episode_iterator(entries, torch):
         yield torch.load(entry["input"], map_location="cpu"), torch.load(entry["output"], map_location="cpu")
 
 
+STATE_STAGES = {
+    "pre_meta_points": "layer_list[1].proj output: S2+UX point vectors before either metagraph layer",
+    "final_points": "layer_list[2] output point rows: after both native M layers, before Identity final_input_mlp",
+    "final_queries": "final_points rows selected by is_query in ascending point order",
+    "final_labels": "layer_list[2] output label rows: before Identity final_label_mlp and cosine normalization",
+    "ordering": "Point rows match input y_true_matrix; label rows match episode-local class columns 0..ways-1",
+}
+
+
+def final_state_payload(model, captured, arguments, info, y_true, logits, *, ordinal, arm):
+    """Immutable CPU observations from the existing forward; no extra inference."""
+    import torch
+    if not isinstance(model.final_input_mlp, torch.nn.Identity) or not isinstance(model.final_label_mlp, torch.nn.Identity):
+        raise ValueError("Final-state capture requires the native Identity final heads")
+    meta, pre_meta = captured["meta"], captured["descriptor"]
+    y, is_query, local_labels = arguments[2], info["is_query"], info["labels"]
+    points, ways = y.shape
+    if (meta.ndim != 2 or meta.shape[0] != points + ways
+            or pre_meta.shape != (points, meta.shape[1])
+            or is_query.dtype != torch.bool or is_query.shape != (points,)
+            or local_labels.shape != (points,) or info["ways"] != ways
+            or not torch.equal(local_labels.cpu(), y.argmax(-1).cpu())):
+        raise ValueError("Final-state point/label shape or local-class order mismatch")
+    expected_y = y[is_query.to(y.device)].detach().cpu()
+    if (not torch.equal(y_true.detach().cpu(), expected_y)
+            or logits.shape != expected_y.shape or model.logit_scale.ndim != 0):
+        raise ValueError("Final-state query row order or decoder shape mismatch")
+    def cpu(value):
+        return value.detach().cpu().clone()
+    # Every tensor owns its CPU storage: callbacks cannot alter inputs, model
+    # parameters, captured forward outputs, or the query-drift reference.
+    return {"schema_version": 1, "ordinal": ordinal, "arm": arm,
+            "stages": dict(STATE_STAGES), "pre_meta_points": cpu(pre_meta),
+            "final_points": cpu(meta[:points]), "final_labels": cpu(meta[points:]),
+            "final_queries": cpu(meta[:points][is_query.to(meta.device)]),
+            "is_query": cpu(is_query), "local_labels": cpu(local_labels),
+            "point_y_true": cpu(y), "query_y_true": cpu(y_true),
+            "query_point_indices": cpu(torch.where(is_query)[0]),
+            "class_indices": torch.arange(ways, dtype=torch.long, device="cpu"),
+            "query_logits": cpu(logits), "logit_scale": cpu(model.logit_scale),
+            "cosine_eps": model.cos.eps}
+
+
+def final_state_sink(output: Path, arm: str, torch_module):
+    """Persist private per-episode states and an ordered SHA256 index."""
+    if arm not in ("native", "support", "query"):
+        raise ValueError("Final-state files are limited to the three planned role arms")
+    directory = output / "final_states" / arm
+    directory.mkdir(parents=True, exist_ok=False)
+    records = []
+
+    def save(ordinal, payload):
+        if ordinal != len(records) or payload["ordinal"] != ordinal or payload["arm"] != arm:
+            raise ValueError("Final-state sink received an out-of-order/wrong-arm episode")
+        if any(value.device.type != "cpu" or value.requires_grad for value in payload.values()
+               if torch_module.is_tensor(value)):
+            raise ValueError("Only detached CPU final states may be serialized")
+        path = directory / f"episode_{ordinal:05d}.pt"
+        torch_module.save(payload, path)
+        records.append({"ordinal": ordinal, "file": path.name,
+                        "sha256": native.file_sha256(path),
+                        "points": payload["final_points"].shape[0],
+                        "queries": payload["final_queries"].shape[0],
+                        "ways": payload["final_labels"].shape[0],
+                        "embedding_dim": payload["final_points"].shape[1]})
+        native.write_json(directory / "index.json", {
+            "schema_version": 1, "arm": arm, "stages": STATE_STAGES,
+            "saved_episodes": len(records), "records": records,
+            "scope": "Private observations of the already-planned forward stream, not additional interventions or metrics",
+        })
+
+    return save
+
+
 def model_stream(model, state, episodes, *, device, helpers, rng, numpy,
-                 arm="native", collect_queries=False, query_reference=None, progress=None):
+                 arm="native", collect_queries=False, query_reference=None, progress=None, state_sink=None):
     """One ordered stream; tests may supply small synthetic streams, CLI cannot."""
     import torch
     model.load_state_dict(state, strict=True)
@@ -271,7 +345,10 @@ def model_stream(model, state, episodes, *, device, helpers, rng, numpy,
     restore_rng(rng, torch, numpy)
     captured = {}
     hooks = []
-    if arm == "untrained":
+    if state_sink is not None and (arm not in ("native", "support", "query")
+                                   or not (collect_queries or query_reference is not None)):
+        raise ValueError("State capture is only attached to an existing role-query capture stream")
+    if arm == "untrained" or state_sink is not None:
         hooks.append(model.layer_list[1].proj.register_forward_hook(
             lambda _m, _a, out: captured.update(descriptor=out.detach().clone())))
     if collect_queries or query_reference is not None:
@@ -307,6 +384,9 @@ def model_stream(model, state, episodes, *, device, helpers, rng, numpy,
                         delta = queries.double() - query_reference[ordinal].double()
                         drift.append({"mean_query_l2_change": float(delta.norm(dim=1).mean()),
                                       "max_abs_query_change": float(delta.abs().max())})
+                if state_sink is not None:
+                    state_sink(ordinal, final_state_payload(model, captured, arguments, info, y_true, logits,
+                                                           ordinal=ordinal, arm=arm))
                 if progress:
                     progress(ordinal + 1)
     finally:
@@ -376,8 +456,10 @@ def execute(plan):
         model.load_state_dict(initial, strict=True)
         rng = rng_snapshot(torch, numpy)
         def run(arm, state, **options):
+            sink = final_state_sink(output, arm, torch) if plan["phase"] == "roles" else None
             return model_stream(model, state, episode_iterator(bundle["entries"], torch),
                                 device=device, helpers=helpers, rng=rng, numpy=numpy, arm=arm,
+                                state_sink=sink,
                                 progress=lambda completed: native.write_json(output / "progress.json",
                                     {"arm": arm, "completed_episodes": completed, "total": EPISODES}), **options)
         baseline, query_states = run("native", checkpoint, collect_queries=plan["phase"] == "roles")
@@ -398,6 +480,12 @@ def execute(plan):
             result.update(support=support, query=query, quality_gate=quality["decision"],
                           decision=decision.decide_roles(baseline["episode_accuracy"], support["episode_accuracy"],
                                                          query["episode_accuracy"]))
+            result["final_states"] = {}
+            for arm in ("native", "support", "query"):
+                index_path = output / "final_states" / arm / "index.json"
+                result["final_states"][arm] = {"index": str(index_path),
+                    "sha256": native.file_sha256(index_path),
+                    "saved_episodes": read_json(index_path)["saved_episodes"]}
         native.write_json(output / (plan["phase"] + ".json"), result)
     except BaseException as error:
         native.write_json(output / "execution_status.json", {"status": "failed", "error": str(error),
@@ -436,6 +524,12 @@ def main(argv=None):
                          "stream_state": "Strict checkpoint/initial-state reload including BN; identical replay-start Python/NumPy/Torch/CUDA RNG state",
                          "rng_note": "Native initial RNG state was not captured. Allowed forward dropout is zero; exact native replay is independently required.",
                          "query_drift_stage": "Final MetaGNN output query rows, before identity final projection/cosine",
+                         "private_final_state_capture": ({
+                             "arms": ["native", "support", "query"], "stages": STATE_STAGES,
+                             "files": "final_states/<arm>/episode_<ordinal>.pt and SHA256 index.json",
+                             "contents": "Detached immutable CPU pre-M points, final-M points/queries/labels, local row/class metadata, native logits and logit_scale",
+                             "scope": "Observations of the same planned role forwards; no added forwards, arms, metrics, or gates",
+                         } if args.phase == "roles" else None),
                          "quality_gate": "Both native-minus-raw/untrained paired95% bootstrap lower bounds >0",
                          "role_gate": "Requires complete matching quality gate; support-minus-native lower>0 and query-minus-native upper<0",
                          "no_resampling": True, "no_other_checkpoints_or_modes": True}}

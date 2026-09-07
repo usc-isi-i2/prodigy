@@ -163,8 +163,24 @@ class CachedRunnerTests(unittest.TestCase):
         self.assertEqual(plan["gpu"], 3)
         self.assertEqual(plan["replay_gate"]["atol"], 1e-6)
         self.assertEqual(plan["replay_gate"]["rtol"], 1e-5)
+        self.assertIsNone(plan["protocol"]["private_final_state_capture"])
         execute.assert_not_called()
         self.assertFalse((self.base / "quality").exists())
+
+    def test_roles_dry_plan_declares_observation_only_states(self):
+        args = ["--phase", "roles", "--upstream", str(self.base / "upstream"),
+                "--native-eval", str(self.eval_run), "--train-run", str(self.train),
+                "--quality-run", str(self.base / "quality"), "--output", str(self.base / "roles")]
+        with mock.patch.object(runner.native, "verify_upstream", return_value={"clean": True}), \
+                mock.patch.object(runner, "execute") as execute, \
+                contextlib.redirect_stdout(io.StringIO()) as captured:
+            runner.main(args)
+        capture = json.loads(captured.getvalue())["protocol"]["private_final_state_capture"]
+        self.assertEqual(capture["arms"], ["native", "support", "query"])
+        self.assertEqual(capture["stages"], runner.STATE_STAGES)
+        self.assertIn("no added forwards", capture["scope"])
+        execute.assert_not_called()
+        self.assertFalse((self.base / "roles").exists())
 
     def test_real_upstream_synthetic_constructor_replay_and_roles(self):
         upstream = Path(os.environ.get("PRODIGY_TEST_UPSTREAM",
@@ -216,7 +232,7 @@ def synthetic_worker(upstream_path):
     else:
         raise AssertionError("Strict model-state loading did not reject a missing key")
     arguments = [make_episode(), make_episode()]
-    original_x = [args[0].x.clone() for args in arguments]
+    original_arguments = [runner.clone_arguments(args, "cpu") for args in arguments]
     rng = runner.rng_snapshot(torch, np)
     runner.restore_rng(rng, torch, np)
     references = []
@@ -231,7 +247,29 @@ def synthetic_worker(upstream_path):
         cosine_prototype_logits=helpers.cosine_prototype_logits)
     run = lambda arm, **kwargs: runner.model_stream(model, state, zip(arguments, references),
               device="cpu", helpers=small_helpers, rng=rng, numpy=np, arm=arm, **kwargs)
-    intact, queries = run("native", collect_queries=True)
+    # Independent observation of the same existing UX forwards checks the saved
+    # pre-M stage. There are no extra model forwards for state capture.
+    observed_ux = []
+    ux_handle = model.layer_list[1].proj.register_forward_hook(
+        lambda _module, _args, output: observed_ux.append(output.detach().cpu().clone()))
+    temporary_states = tempfile.TemporaryDirectory()
+    state_output = Path(temporary_states.name)
+    def capture_sink(arm):
+        writer = runner.final_state_sink(state_output, arm, torch)
+        def sink(ordinal, payload):
+            assert torch.equal(payload["pre_meta_points"], observed_ux[-1])
+            assert payload["stages"] == runner.STATE_STAGES
+            for value in payload.values():
+                if torch.is_tensor(value):
+                    assert value.device.type == "cpu" and not value.requires_grad
+            writer(ordinal, payload)
+            # Hostile callback mutation must not touch model params, source
+            # episode tensors, saved query-drift references, or the file.
+            for value in payload.values():
+                if torch.is_tensor(value):
+                    value.zero_()
+        return sink
+    intact, queries = run("native", collect_queries=True, state_sink=capture_sink("native"))
     assert intact["replay"]["passed"] and intact["replay"]["max_abs_error"] == 0
     for count in intact["batch_norm_final_counts"].values():
         assert count == 2
@@ -241,10 +279,59 @@ def synthetic_worker(upstream_path):
     untrained, _ = run("untrained")
     assert len(untrained["episode_accuracy"]) == 2 and untrained["weights_unchanged"]
     for arm in ("support", "query"):
-        result, _ = run(arm, query_reference=queries)
+        result, _ = run(arm, query_reference=queries, state_sink=capture_sink(arm))
         assert len(result["query_drift"]) == 2 and result["weights_unchanged"]
-    for args, before in zip(arguments, original_x):
-        assert torch.equal(args[0].x, before) and args[0].x.shape[1] == 770
+    ux_handle.remove()
+    for arm in ("native", "support", "query"):
+        directory = state_output / "final_states" / arm
+        index = runner.read_json(directory / "index.json")
+        assert index["saved_episodes"] == 2 and index["stages"] == runner.STATE_STAGES
+        for ordinal, record in enumerate(index["records"]):
+            path = directory / record["file"]
+            assert record["sha256"] == runner.native.file_sha256(path)
+            captured_state = torch.load(path, map_location="cpu")
+            assert captured_state["ordinal"] == ordinal and captured_state["arm"] == arm
+            assert captured_state["pre_meta_points"].shape == (14, 256)
+            assert captured_state["final_points"].shape == (14, 256)
+            assert captured_state["final_queries"].shape == (8, 256)
+            assert captured_state["final_labels"].shape == (2, 256)
+            assert torch.equal(captured_state["final_queries"],
+                               captured_state["final_points"][captured_state["is_query"]])
+            assert torch.equal(captured_state["query_point_indices"],
+                               torch.where(captured_state["is_query"])[0])
+            reconstructed = torch.nn.functional.cosine_similarity(
+                captured_state["final_queries"][:, None, :],
+                captured_state["final_labels"][None, :, :], dim=-1,
+                eps=captured_state["cosine_eps"]) * captured_state["logit_scale"].exp()
+            torch.testing.assert_close(reconstructed, captured_state["query_logits"], atol=1e-6, rtol=1e-5)
+            assert torch.equal(reconstructed.argmax(-1), captured_state["query_logits"].argmax(-1))
+            assert torch.equal(captured_state["query_y_true"], references[ordinal]["y_true"])
+            if arm == "native":
+                assert torch.equal(captured_state["query_logits"], references[ordinal]["logits"])
+                assert torch.equal(captured_state["final_queries"], queries[ordinal])
+    # Shape/order errors are rejected before a sink can label the state as valid.
+    sample = torch.load(state_output / "final_states/native/episode_00000.pt", map_location="cpu")
+    synthetic_capture = {"descriptor": sample["pre_meta_points"],
+                         "meta": torch.cat((sample["final_points"], sample["final_labels"]))}
+    info = helpers.validate_episode(arguments[0], expected_ways=2)
+    for bad_capture, bad_info in (
+        (dict(synthetic_capture, meta=synthetic_capture["meta"][:-1]), info),
+        (synthetic_capture, dict(info, labels=1 - info["labels"])),
+    ):
+        try:
+            runner.final_state_payload(model, bad_capture, arguments[0], bad_info,
+                                       sample["query_y_true"], sample["query_logits"], ordinal=0, arm="native")
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("Malformed final-state shape/order was accepted")
+    temporary_states.cleanup()
+    for args, before in zip(arguments, original_arguments):
+        assert args[0].x.shape[1] == 770
+        for key in before[0].keys:
+            assert torch.equal(args[0][key], before[0][key])
+        for actual, expected in zip(args[1:], before[1:]):
+            assert torch.equal(actual, expected)
     reference = references[0]
     perturbed = reference["logits"].clone()
     perturbed[0, 0] += 0.1
