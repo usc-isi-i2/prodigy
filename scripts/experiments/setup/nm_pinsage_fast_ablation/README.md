@@ -19,6 +19,9 @@ DRY_RUN=1 bash scripts/experiments/setup/nm_pinsage_fast_ablation/run_train_tuck
 SMOKE_STEPS=200 bash scripts/experiments/setup/nm_pinsage_fast_ablation/run_train_tucker.sh
 ```
 
+`GPUS` is a space-separated list and `MODELS_PER_GPU` controls concurrency. For
+example, `GPUS="0 1" MODELS_PER_GPU=4` runs all eight jobs while GPUs 2-3 are occupied.
+
 Use a fresh run directory for the full launch. On Tucker it belongs in a detached tmux
 session after checking `tmux ls`, GPU processes, RAM, and `/dev/shm`. Only GPUs 0-3 are
 allowed.
