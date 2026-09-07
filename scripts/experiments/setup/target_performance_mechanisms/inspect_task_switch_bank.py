@@ -52,8 +52,12 @@ def main():
             g = batch[0]
             if label_table is None:
                 label_table = batch[1][:2].clone()
-            if not torch.equal(batch[1], label_table.repeat(4, 1)):
-                raise ValueError('Label-token table differs across episodes')
+            # Existing binary episodes may permute the same two token vectors.
+            # The diagnostic will use the first table, fixed across both rules.
+            for table in batch[1].reshape(4, 2, -1):
+                if not (torch.equal(table, label_table) or
+                        torch.equal(table, label_table.flip(0))):
+                    raise ValueError('Label-token values differ, not just order')
             centers = g.ptr[:-1]
             ids = g.global_node_ids[centers]
             if not torch.equal(ids, g.center_node_idx):
