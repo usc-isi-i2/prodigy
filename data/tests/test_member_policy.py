@@ -135,7 +135,7 @@ class MemberPolicyTests(unittest.TestCase):
         centers = [
             center
             for _ in range(12)
-            for center in loader.batch_sampler.sample()[0]
+            for center in loader.batch_sampler.sample()[0][0]
         ]
         self.assertTrue(all(0 <= center < 24 for center in centers))
         self.assertTrue(any(center < 12 for center in centers))
