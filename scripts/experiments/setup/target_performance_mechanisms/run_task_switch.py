@@ -12,6 +12,7 @@ from .probe_cached_inputs import standardized_probe
 from .run_episode_cardinality import make_model
 from .verify_member_training import model_digest
 from .evaluate_matched_relations import metrics
+from .support_exceptions import exception_labels
 
 
 def load_bank(root, entries):
@@ -55,7 +56,11 @@ def main():
     p.add_argument('--reference-root', type=Path, required=True)
     p.add_argument('--bank-root', type=Path, required=True)
     p.add_argument('--output', type=Path, required=True)
+    p.add_argument('--support-exceptions', action='store_true')
+    p.add_argument('--clean-root', type=Path)
     args = p.parse_args()
+    if args.support_exceptions != (args.clean_root is not None):
+        raise ValueError('Exception mode requires the completed clean reference')
     if args.output.exists() or torch.cuda.is_available():
         raise ValueError('New output and hidden GPUs required')
     torch.set_num_threads(2)
@@ -74,6 +79,14 @@ def main():
                   native_early_structural_min=.60, native_late_content_min=.60,
                   pool_late_structural_min=.70, pool_structural_change_min=-.02),
         new_training=False, revision=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip())
+    if args.support_exceptions:
+        clean_done=json.loads((args.clean_root/'DONE.json').read_text())
+        if clean_done['rows']!=48 or len(clean_done['receipts'])!=4:
+            raise ValueError('Completed clean discovery required')
+        protocol.update(rules=['receive_edge','exceptions20','exceptions40'],
+            gate=dict(primary='exceptions40',late_minus_early_auc_max=-.03,required_streams=2),
+            exception_mask_seed='550000 + batch + 1000*(stream is fresh)',
+            exception_design='Nested1/2 flips per five supports within each joint rule cell; query labels unchanged')
     (args.output / 'protocol.json').write_text(json.dumps(protocol, indent=2)+'\n')
     rows, receipts = [], []
     for stream in ('original', 'fresh'):
@@ -88,6 +101,9 @@ def main():
             if degree != entry['degree'] or cell != entry['joint_cell'] or abs(score-entry['content_score'])>1e-10:
                 raise ValueError('Frozen task rule does not match retained graph')
         selections = episode_indices(entries, protocol['input_seeds'][stream])
+        if args.support_exceptions:
+            if not np.array_equal(selections,np.load(args.clean_root/stream/'private_selections.npy')):
+                raise ValueError('Clean episode identities changed')
         dest = args.output / stream
         dest.mkdir()
         np.save(dest / 'private_selections.npy', selections)
@@ -115,6 +131,8 @@ def main():
                 raise ValueError('Batch-dependent normalization is out of scope')
             old = torch.load(ref/'batches/batch_000.pt',map_location='cpu',weights_only=False)
             saved = torch.load(ref/(mid+'__baseline.pt'),map_location='cpu',weights_only=False)
+            clean_saved = (torch.load(args.clean_root/stream/(mid+'.pt'),map_location='cpu',weights_only=False)
+                           if args.support_exceptions else None)
             with torch.no_grad():
                 _, pred, _ = model(*clone_batch(old))
             if saved[0]['batch_sha256']!=batch_hash(old):
@@ -133,6 +151,12 @@ def main():
                     q = query_mask(base)
                     quantities = {'receive_edge':torch.tensor([float(entries[i]['degree']>0) for i in indices])[:,None],
                                   'content_feature':torch.tensor([entries[i]['content_score'] for i in indices],dtype=torch.float32)[:,None]}
+                    if args.support_exceptions:
+                        labels_by_rule={'receive_edge':cells//2}
+                        for count in (1,2):
+                            name=f'exceptions{count*20}'
+                            labels_by_rule[name],_=exception_labels(cells,count,550000+bi+1000*(stream=='fresh'))
+                            quantities[name]=quantities['receive_edge']
                     fixed_queries = None
                     outcomes = {}
                     for name, labels in labels_by_rule.items():
@@ -157,6 +181,12 @@ def main():
                             preds = {'full_model':pred,
                                      'S0_pool/ridge':episode_probe(trace['S0_pool'],altered,'ridge'),
                                      'scalar_rule/ridge':standardized_probe(quantities[name],altered)}
+                            if args.support_exceptions and name=='receive_edge':
+                                old_outcome=clean_saved[bi]['outcomes'][f'receive_edge/{polarity}']
+                                if old_outcome['batch_sha256']!=fingerprint:
+                                    raise ValueError('Clean task input changed')
+                                for decoder,value in preds.items():
+                                    torch.testing.assert_close(value,old_outcome['logits'][decoder],rtol=0,atol=0)
                             key = (name,polarity)
                             truths.setdefault(key,[]).append((labels ^ polarity)[q])
                             for decoder, logits in preds.items():
@@ -175,10 +205,11 @@ def main():
                 rows.append(dict(stream=stream,source='cp_hk',step=int(mid.rsplit('_step',1)[1]),
                                  rule=name,polarity=polarity,decoder=decoder,**metrics(torch.cat(logits),labels)))
             receipts.append(dict(stream=stream,model_id=mid,weights_sha256=record['weights_sha256'],
-                                 native_reference_exact=True,query_label_leak_checks=4,
-                                 fixed_query_comparisons=96,weights_unchanged=True))
+                                 native_reference_exact=True,query_label_leak_checks=2*len(protocol['rules']),
+                                 fixed_query_comparisons=32*(2*len(protocol['rules'])-1),weights_unchanged=True,
+                                 clean_all_batches_exact=args.support_exceptions))
             print(json.dumps(receipts[-1]),flush=True)
-    if len(rows)!=48 or len(receipts)!=4:
+    if len(rows)!=4*len(protocol['rules'])*2*3 or len(receipts)!=4:
         raise ValueError('Incomplete discovery grid')
     (args.output/'results.json').write_text(json.dumps(rows,indent=2)+'\n')
     (args.output/'DONE.json').write_text(json.dumps(dict(rows=len(rows),receipts=receipts),indent=2)+'\n')
