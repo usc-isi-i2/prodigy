@@ -192,11 +192,11 @@ the label-free health gate. TRACE removes that dependency:
 The threshold covers COVID-political, Election-2020, Facebook page-reference,
 and TwiBot-20 for every checkpoint seed, while rejecting Ukraine/Russia suspended
 for every seed. Covered-target competence is at least .629; suspended competence
-is .494--.501. This precisely detects the benchmark on which layer agreement is
+is .494–.501. This precisely detects the benchmark on which layer agreement is
 stable but uninformative.
 
 Against the stronger baseline that selects one fixed expert using labeled target
-discovery AUC, query-label-free TRACE improves covered-target macro accuracy from
+discovery AUC, hard query-label-free TRACE routing improves covered-target macro accuracy from
 .792 to .812 (+.021) and macro AUC from .834 to .835. Accuracy improves in 10/12
 target-seed cells and never degrades; Election is tied in two seeds. The effect is
 largest and fully seed-consistent on the three non-ceiling targets:
@@ -207,6 +207,40 @@ largest and fully seed-consistent on the three non-ceiling targets:
 | Election-2020 | .975 → .977 | +.001 | .000 to +.004 |
 | Facebook page-reference | .683 → .726 | +.043 | +.025 to +.059 |
 | TwiBot-20 | .608 → .626 | +.018 | +.002 to +.037 |
+
+Soft health fusion gives the stronger deployment result. Instead of choosing one
+eligible expert, it averages the production probabilities of every expert whose
+final decision agrees with its U1 support readout; if none agree, it averages all
+nine. The rule has no fitted weight, temperature, or query-label input.
+
+| Fresh supported-target macro | Accuracy | AUC |
+|---|---:|---:|
+| Labeled-discovery fixed expert | .792 | .834 |
+| Equal-probability nine-expert ensemble | .801 | .846 |
+| Hard TRACE router | .812 | .835 |
+| **TRACE health fusion** | **.825** | **.864** |
+
+Against the labeled-selected fixed expert, fusion gains +.0338 accuracy (10/12
+target-seed wins, two ties; crossed seed × target interval [+.0062, +.0710]) and
++.0308 AUC (10/12 wins; interval [−.0012, +.0740]). More importantly, ordinary
+ensembling controls the nine-model inference benefit. At identical inference cost,
+health fusion improves equal-probability ensembling by **+.0240 accuracy**
+([+.0081, +.0369]) and **+.0180 AUC** ([+.0006, +.0361]). The advantage over equal
+ensembling is positive for all three seeds on COVID, Facebook, and TwiBot accuracy,
+and for all three seeds on their AUC except the ceiling Election target.
+
+The second, independently sampled episode stream reproduces the same-cost result:
++.0212 accuracy ([+.0065, +.0344]; 9/12 wins and three ties) and +.0189 AUC
+([+.0015, +.0386]; 12/12 wins) over equal-probability ensembling. The fusion result
+therefore is not tied to the stream used for the primary fresh evaluation.
+
+Fusion is not acting as a sparse oracle. It retains 7.61 of nine experts per COVID
+query, 8.73 on Election, 7.13 on Facebook, and 6.44 on TwiBot on average. No expert
+passes the agreement gate for only .011% of TwiBot queries and none on the other
+supported targets. The gain comes from removing a small target-dependent set of
+representation-inconsistent predictions before averaging.
+
+![TRACE health fusion controls](figures/trace_health_fusion.png)
 
 For the rejected suspended target, the forced router would lose .042 accuracy on
 average. The abstention rule therefore is part of the result, not cosmetic

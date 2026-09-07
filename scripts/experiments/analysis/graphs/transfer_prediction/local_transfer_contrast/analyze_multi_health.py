@@ -62,6 +62,28 @@ def select_by_support_score(models, support_scores, healthy=None, tie_prior=None
     return selected
 
 
+def health_probability_fusion(record, models, healthy):
+    """Average production probabilities among support-consistent experts."""
+    probabilities = np.stack(
+        [
+            softmax(
+                to_numpy(
+                    record["models"][model]["logits"]["full_model"]
+                ).astype(np.float64)
+            )
+            for model in models
+        ]
+    )
+    weights = np.stack(
+        [to_numpy(healthy[model]).astype(np.float64) for model in models]
+    )
+    empty = weights.sum(axis=0) == 0
+    weights[:, empty] = 1.0
+    return (
+        probabilities * weights[:, :, None]
+    ).sum(axis=0) / weights.sum(axis=0)[:, None]
+
+
 def evaluate_selection(record, selected, temperatures, labels):
     logits = np.empty((len(selected), 2), dtype=np.float64)
     for name in np.unique(selected):

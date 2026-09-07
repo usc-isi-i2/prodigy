@@ -21,6 +21,7 @@ from scripts.experiments.analysis.graphs.transfer_prediction.local_transfer_cont
 )
 from scripts.experiments.analysis.graphs.transfer_prediction.local_transfer_contrast.analyze_multi_health import (
     SUPPORT_COMPETENCE_THRESHOLD,
+    health_probability_fusion,
     select_by_support_score,
 )
 from scripts.experiments.setup.trace_schedule_scaling.make_plan import build_plan
@@ -251,27 +252,6 @@ def selected_logits(record, selected):
     return logits
 
 
-def health_probability_fusion(record, model_ids, agreement):
-    """Fuse only experts that preserve their U1 support-induced decision."""
-    probabilities = np.stack(
-        [
-            softmax(to_numpy(record["models"][model_id]["logits"]["full_model"]))
-            for model_id in model_ids
-        ]
-    )
-    weights = np.stack(
-        [to_numpy(agreement[model_id]).astype(np.float64) for model_id in model_ids]
-    )
-    empty = weights.sum(axis=0) == 0
-    weights[:, empty] = 1.0
-    probabilities = (
-        probabilities * weights[:, :, None]
-    ).sum(axis=0) / weights.sum(axis=0)[:, None]
-    # evaluate_logits accepts logits; log probabilities reproduce the fused
-    # probabilities exactly after its softmax while retaining stable NLL.
-    return np.log(np.clip(probabilities, np.finfo(np.float64).tiny, 1.0))
-
-
 def selector_rows(discovery, validation, target):
     rows = []
     for rung in (2, 3, 4):
@@ -340,7 +320,15 @@ def selector_rows(discovery, validation, target):
                 )
             metrics = evaluate_logits(
                 validation,
-                health_probability_fusion(validation, model_ids, agreement),
+                np.log(
+                    np.clip(
+                        health_probability_fusion(
+                            validation, model_ids, agreement
+                        ),
+                        np.finfo(np.float64).tiny,
+                        1.0,
+                    )
+                ),
             )
             rows.append(
                 {

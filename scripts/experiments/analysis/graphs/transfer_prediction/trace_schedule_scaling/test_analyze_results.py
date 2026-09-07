@@ -68,9 +68,7 @@ def test_health_probability_fusion_masks_and_falls_back() -> None:
         "b": np.array([False, False]),
         "c": np.array([True, False]),
     }
-    fused = np.exp(
-        health_probability_fusion(record, ["a", "b", "c"], agreement)
-    )
+    fused = health_probability_fusion(record, ["a", "b", "c"], agreement)
     np.testing.assert_allclose(fused[0], [.7, .3])
     np.testing.assert_allclose(fused[1], [1.4 / 3, 1.6 / 3])
 
