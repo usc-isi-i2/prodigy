@@ -50,8 +50,29 @@ not reproduce the whole context-removal endpoint because the donor can also
 change non-support rows and residual paths. Report these differences rather than
 enforce an invalid equivalence. Final-class-reference substitution with native
 final queries remains necessary to separate the classifier and query effects.
-The end-to-end native intervention runner and final-reference substitution are
-not yet implemented.
+`episode_mechanism.py` runs all six arms and crosses final decoder inputs to
+measure reference-only and query-only changes. `run_mechanism.py` attaches this
+experiment to each native evaluation forward. Its recursive replays are excluded
+from the native episode stream and restore the model's post-native state. Each
+episode artifact saves exact native inputs/state/output and the paired results.
+The parent `execution_status.json` is the completion authority; a partial index
+does not prove all 500 episodes completed.
+
+Invoke the runner as a module (dry-run unless `--execute` is supplied):
+
+```bash
+python -m scripts.experiments.setup.public_prodigy_kg.run_mechanism \
+  --upstream /dataMeR1/phil/gfm/prodigy-public-upstream \
+  --root /dataMeR1/phil/data/prodigy_public_original \
+  --output /dataMeR1/phil/gfm/prodigy-publickg-paired-state/log/publickg_mechanism \
+  --checkpoint /dataMeR1/phil/gfm/prodigy-publickg-native/log/publickg_train_20260907/state/Wiki_PT_PRODIGY_native_train_seed0/checkpoint/state_dict_8000.ckpt \
+  --gpu 3
+```
+
+This implementation has passed a tiny fixture with the pinned upstream decoder
+and two-layer metagraph, including two consecutive native episodes with versus
+without online interventions. The background encoder/pooling in that fixture are
+test components. Full native GPU/data validation remains required.
 
 Light checks (no datasets or training):
 
@@ -59,6 +80,7 @@ Light checks (no datasets or training):
 python -m unittest scripts.experiments.setup.public_prodigy_kg.test_run_native -q
 python -m scripts.experiments.setup.public_prodigy_kg.test_forward_state
 python -m scripts.experiments.setup.public_prodigy_kg.test_role_interventions
+python -m scripts.experiments.setup.public_prodigy_kg.test_episode_mechanism /path/to/pinned/upstream
 ```
 
 The second command needs PyTorch and NumPy; use the `prodigy` environment.

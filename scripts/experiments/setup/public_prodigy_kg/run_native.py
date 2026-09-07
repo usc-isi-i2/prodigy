@@ -404,7 +404,7 @@ def install_observers(trainer_class, *, output: Path, phase: str, upstream: Path
     trainer_class.__init__, trainer_class.do_eval = observed_init, observed_eval
 
 
-def execute(plan: dict) -> None:
+def execute(plan: dict, observer_installer=None) -> None:
     upstream, root, output = map(Path, (plan["upstream"], plan["root"], plan["output"]))
     verification = verify_upstream(upstream)
     receipts = verify_receipts(root, plan["required_asset_receipts"])
@@ -434,7 +434,8 @@ def execute(plan: dict) -> None:
         write_json(output / "python_compatibility.json",
                    install_sampler_compat(dataloader_module.MulticlassTask))
         write_json(output / "upstream_imports.json", verify_imports(upstream))
-        install_observers(trainer.TrainerFS, output=output, phase=plan["phase"], upstream=upstream)
+        installer = observer_installer or install_observers
+        installer(trainer.TrainerFS, output=output, phase=plan["phase"], upstream=upstream)
         runpy.run_path(plan["command"][1], run_name="__main__")
     except BaseException as error:
         write_json(output / "execution_status.json", {
