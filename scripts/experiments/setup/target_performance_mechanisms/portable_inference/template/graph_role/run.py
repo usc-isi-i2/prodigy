@@ -3,6 +3,7 @@ import argparse
 import json
 from pathlib import Path
 import platform
+import re
 import sys
 import time
 
@@ -39,6 +40,9 @@ def run(args):
     models, datasets = manifest['models'], manifest['datasets']
     if not models or not datasets or len({m['id'] for m in models}) != len(models) or len({d['id'] for d in datasets}) != len(datasets):
         raise ValueError('Empty or duplicate model/input panel')
+    if any(not re.fullmatch(r'[A-Za-z0-9_-]+', m['id']) for m in models) or any(
+        not re.fullmatch(r'[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)?', d['id']) for d in datasets):
+        raise ValueError('Unsafe model/dataset identifier for output paths')
     if args.model_ids:
         if not set(args.model_ids) <= {m['id'] for m in models}:
             raise ValueError('Unknown requested model')
