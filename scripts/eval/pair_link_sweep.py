@@ -70,6 +70,13 @@ def main() -> int:
     ap.add_argument("--out-dir", required=True)
     ap.add_argument("--background-view", default="static_background")
     ap.add_argument("--holdout-view", default="static_holdout")
+    ap.add_argument(
+        "--edge-split",
+        help=(
+            "Canonical torch cache containing train_edges and validation_edges. "
+            "When supplied it overrides graph-embedded static edge views."
+        ),
+    )
     ap.add_argument("--negative-kinds", default="degree_matched,random,hard_2hop")
     ap.add_argument("--max-positives", type=int, default=2000)
     ap.add_argument("--n-hop", type=int, default=1)
@@ -114,6 +121,7 @@ def main() -> int:
         )
 
     import torch
+    from torch_geometric.data import Batch
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -189,8 +197,27 @@ def main() -> int:
     print(f"[{args.dataset}] loading graph artifact ...", flush=True)
     blob, graph = load_graph_blob(args.graph)
     n = int(graph.num_nodes)
-    bg_ei = np.asarray(_view_edge_index(blob, args.background_view))
-    ho_ei = np.asarray(_view_edge_index(blob, args.holdout_view))
+    if args.edge_split:
+        split = torch.load(args.edge_split, map_location="cpu", weights_only=False)
+        train_edges = torch.as_tensor(split["train_edges"]).long()
+        holdout_edges = torch.as_tensor(split["validation_edges"]).long()
+        if train_edges.ndim != 2 or holdout_edges.ndim != 2:
+            raise ValueError(f"malformed canonical edge split: {args.edge_split}")
+        # Message passing is undirected; prediction positives occur once.
+        bg_tensor = torch.cat((train_edges, train_edges.flip(0)), dim=1)
+        bg_ei, ho_ei = bg_tensor.numpy(), holdout_edges.numpy()
+        if isinstance(blob, dict):
+            blob = dict(blob)
+            views = dict(blob.get("edge_index_views", {}))
+            views[args.background_view] = bg_tensor
+            blob["edge_index_views"] = views
+        else:
+            views = dict(getattr(blob, "edge_index_views", {}) or {})
+            views[args.background_view] = bg_tensor
+            blob.edge_index_views = views
+    else:
+        bg_ei = np.asarray(_view_edge_index(blob, args.background_view))
+        ho_ei = np.asarray(_view_edge_index(blob, args.holdout_view))
     print(f"[{args.dataset}] nodes={n} bg_edges={bg_ei.shape[1]} "
           f"holdout_edges={ho_ei.shape[1]} ({time.time()-t0:.0f}s)", flush=True)
 
@@ -270,6 +297,24 @@ def main() -> int:
         node_limit=args.node_limit,
     )
 
+    # Sampling and PyG collation dominate PRODIGY inference on the largest
+    # graphs. The evaluation node set is identical for every checkpoint, so
+    # materialize immutable CPU batches once and clone them before each model
+    # mutates graph.x. This is the fixed-grid replay protocol used by the fast
+    # downstream evaluator.
+    cached_batches = None
+    if not args.export_examples:
+        cached_batches = []
+        cache_started = time.time()
+        node_list = all_nodes.tolist()
+        for start in range(0, len(node_list), args.batch_size):
+            chunk = node_list[start:start + args.batch_size]
+            cached_batches.append(Batch.from_data_list([dataset_obj[node] for node in chunk]))
+        print(
+            f"[{args.dataset}] cached {len(cached_batches)} CPU batches once "
+            f"({time.time()-cache_started:.0f}s)", flush=True,
+        )
+
     params = dict(ENCODER_DEFAULTS)
     params.update(emb_dim=args.emb_dim, input_dim=args.input_dim,
                   gnn_type=args.gnn_type, n_layer=args.n_layer, layers=args.layers)
@@ -284,6 +329,7 @@ def main() -> int:
                 device=args.device, batch_size=args.batch_size,
                 return_context=args.export_examples,
                 context_size=args.context_neighbors,
+                cached_batches=cached_batches,
             )
             if args.export_examples:
                 emb, contexts = embedded
