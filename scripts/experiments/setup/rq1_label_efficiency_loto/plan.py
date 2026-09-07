@@ -34,6 +34,7 @@ TARGETS = (
     TargetPlan("election2020", ("election2020",)),
     TargetPlan("ukr_rus_suspended", ("ukr_rus", "ukr_rus_suspended")),
     TargetPlan("twibot20", ("twibot20",)),
+    TargetPlan("facebook_page_category_top30", ("facebook_page_reference",)),
 )
 
 

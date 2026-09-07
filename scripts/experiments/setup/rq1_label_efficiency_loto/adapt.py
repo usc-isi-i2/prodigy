@@ -32,6 +32,38 @@ from scripts.experiments.setup.adaptation_efficiency.protocol import (
     stratified_node_splits,
 )
 from scripts.experiments.setup.adaptation_efficiency.targets import TARGETS, load_labels
+from scripts.experiments.setup.rq1_label_efficiency_loto.subgraph_cache import CompactCachedSubgraphDataset
+
+
+class MemoizedSubgraphDataset:
+    """Reuse a node's first sampled neighborhood within one adaptation cell.
+
+    Validation already resets the sampler RNG to the same seed on every pass, so
+    memoization is exactly equivalent there. Training intentionally changes from
+    repeated stochastic sampling to a fixed sampled neighborhood per center node;
+    this is recorded in every cell's metadata.
+    """
+
+    def __init__(self, dataset):
+        self.dataset = dataset
+        self.cache = {}
+        self.enabled = True
+        self.hits = 0
+        self.misses = 0
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, index):
+        index = int(index)
+        if not self.enabled:
+            return self.dataset[index]
+        if index not in self.cache:
+            self.cache[index] = self.dataset[index]
+            self.misses += 1
+        else:
+            self.hits += 1
+        return self.cache[index]
 
 
 def parse_args():
@@ -39,23 +71,35 @@ def parse_args():
     parser.add_argument("--target", choices=sorted(TARGETS), required=True)
     parser.add_argument("--arm", choices=("scratch", "pretrained"), required=True)
     parser.add_argument("--pretrained-checkpoint", type=Path)
-    parser.add_argument("--budget", type=int, choices=(1, 10, 100, 1000), required=True)
+    parser.add_argument("--budget", type=int, required=True)
     parser.add_argument("--seed", type=int, choices=(0, 1, 2), required=True)
+    parser.add_argument(
+        "--label-seed",
+        type=int,
+        help="Override only labeled-example selection; all model/data RNGs remain --seed.",
+    )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--max-updates", type=int, default=5000)
     parser.add_argument("--eval-every", type=int, default=100)
-    parser.add_argument("--patience", type=int, default=8)
+    parser.add_argument("--first-eval-update", type=int)
+    parser.add_argument("--patience", type=int, default=4)
     parser.add_argument("--min-updates", type=int, default=300)
     parser.add_argument("--min-delta", type=float, default=1e-4)
+    parser.add_argument("--separate-selection-and-stopping", action="store_true")
+    parser.add_argument("--protocol-version", default="cached-neighborhoods-patience4-v2")
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--eval-batch-size", type=int, default=256)
+    parser.add_argument("--subgraph-cache", type=Path)
     parser.add_argument("--val-per-class", type=int, default=1000)
     parser.add_argument("--encoder-lr", type=float, default=1e-4)
     parser.add_argument("--head-lr", type=float, default=1e-3)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
     parser.add_argument("--smoke", action="store_true")
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.budget <= 0:
+        parser.error("--budget must be positive")
+    return args
 
 
 def atomic_torch_save(value, path: Path) -> None:
@@ -80,8 +124,7 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def encode_graphs(model, graphs, device):
-    graph = Batch.from_data_list(graphs).to(device)
+def encode_batch(model, graph):
     supernode_idx = graph.supernode + graph.ptr[:-1]
     graph.x = model.initial_input_mlp(graph.x)
     if model.txt_dropout is not None:
@@ -123,6 +166,10 @@ def encode_graphs(model, graphs, device):
     return model.final_input_mlp(x_input)
 
 
+def encode_graphs(model, graphs, device):
+    return encode_batch(model, Batch.from_data_list(graphs).to(device))
+
+
 def balanced_batch(labels, selected, batch_size, seed):
     rng = np.random.default_rng(seed)
     classes = sorted(int(value) for value in np.unique(labels[selected]))
@@ -146,20 +193,32 @@ def fixed_eval_nodes(labels, split_nodes, per_class, seed):
     return np.concatenate(parts).astype(np.int64)
 
 
-@torch.no_grad()
-def evaluate(model, head, dataset, labels, nodes, *, device, batch_size, sampling_seed):
-    model.eval()
-    head.eval()
-    truth, scores, predictions = [], [], []
+def materialize_eval_batches(dataset, labels, nodes, *, device, batch_size, sampling_seed):
+    """Assemble fixed validation subgraphs once and retain device-ready batches."""
+    batches = []
     for batch_index, start in enumerate(range(0, len(nodes), batch_size)):
         random.seed(sampling_seed + batch_index)
         np.random.seed(sampling_seed + batch_index)
         torch.manual_seed(sampling_seed + batch_index)
         chunk = nodes[start : start + batch_size]
-        embeddings = encode_graphs(model, [dataset[int(node)] for node in chunk], device)
+        graph = Batch.from_data_list([dataset[int(node)] for node in chunk]).to(device)
+        truth = torch.as_tensor(labels[chunk], dtype=torch.long, device=device)
+        batches.append((graph, truth))
+    return batches
+
+
+@torch.no_grad()
+def evaluate_batches(model, head, batches):
+    model.eval()
+    head.eval()
+    truth, scores, predictions = [], [], []
+    for graph, batch_truth in batches:
+        # The encoder rewrites graph.x, so clone the already assembled device
+        # batch while retaining the expensive collation and transfer savings.
+        embeddings = encode_batch(model, graph.clone())
         logits = head(embeddings)
         probability = torch.softmax(logits, dim=1).cpu().numpy()
-        truth.extend(labels[chunk].tolist())
+        truth.extend(batch_truth.cpu().tolist())
         scores.extend(probability.tolist())
         predictions.extend(probability.argmax(1).tolist())
     truth = np.asarray(truth, dtype=np.int64)
@@ -173,17 +232,31 @@ def evaluate(model, head, dataset, labels, nodes, *, device, batch_size, samplin
         "roc_auc": float(auc),
         "accuracy": float(accuracy_score(truth, predictions)),
         "macro_f1": float(f1_score(truth, predictions, average="macro", zero_division=0)),
-        "nodes": int(len(nodes)),
+        "nodes": int(len(truth)),
     }
 
 
-def checkpoint_payload(model, head, optimizer, update, best_auc, bad_checks, metadata):
+@torch.no_grad()
+def evaluate(model, head, dataset, labels, nodes, *, device, batch_size, sampling_seed):
+    batches = materialize_eval_batches(
+        dataset,
+        labels,
+        nodes,
+        device=device,
+        batch_size=batch_size,
+        sampling_seed=sampling_seed,
+    )
+    return evaluate_batches(model, head, batches)
+
+
+def checkpoint_payload(model, head, optimizer, update, best_auc, progress_best_auc, bad_checks, metadata):
     return {
         "model": model.state_dict(),
         "head": head.state_dict(),
         "optimizer": optimizer.state_dict(),
         "update": int(update),
         "best_val_roc_auc": float(best_auc),
+        "progress_best_val_roc_auc": float(progress_best_auc),
         "bad_checks": int(bad_checks),
         "metadata": metadata,
     }
@@ -209,7 +282,8 @@ def main() -> int:
     blob, graph = load_graph_blob(str(target.graph))
     labels = load_labels(blob, target.label_key)
     splits = stratified_node_splits(labels, seed=0)
-    selected = sampled_labels(labels, splits["train"], budget=args.budget, seed=args.seed)
+    label_seed = args.seed if args.label_seed is None else args.label_seed
+    selected = sampled_labels(labels, splits["train"], budget=args.budget, seed=label_seed)
     val_nodes = fixed_eval_nodes(labels, splits["val"], args.val_per_class, seed=17000 + args.seed)
     test_nodes = splits["test"]
     if args.smoke:
@@ -221,7 +295,11 @@ def main() -> int:
         args.min_updates = 1
         args.batch_size = min(args.batch_size, 8)
         args.eval_batch_size = min(args.eval_batch_size, 8)
-    subgraphs = classification_subgraph_dataset(graph, 2, [9, 9], 101)
+    raw_subgraphs = classification_subgraph_dataset(graph, 2, [9, 9], 101)
+    if args.subgraph_cache:
+        subgraphs = CompactCachedSubgraphDataset(raw_subgraphs, args.subgraph_cache)
+    else:
+        subgraphs = MemoizedSubgraphDataset(raw_subgraphs)
     params = dict(ENCODER_DEFAULTS)
     if args.arm == "pretrained":
         model = load_frozen_encoder(str(args.pretrained_checkpoint), params, device=str(device))
@@ -244,6 +322,7 @@ def main() -> int:
         "arm": args.arm,
         "budget_per_class": args.budget,
         "seed": args.seed,
+        "label_seed": label_seed,
         "selected_nodes_fingerprint": fingerprint_indices(selected),
         "split_fingerprint": fingerprint_indices(splits["train"], splits["val"], splits["test"]),
         "selected_nodes": selected.tolist(),
@@ -254,16 +333,23 @@ def main() -> int:
         "weight_decay": args.weight_decay,
         "max_updates": args.max_updates,
         "eval_every": args.eval_every,
+        "first_eval_update": args.first_eval_update,
         "patience": args.patience,
         "min_delta": args.min_delta,
+        "separate_selection_and_stopping": args.separate_selection_and_stopping,
         "validation_nodes": int(len(val_nodes)),
         "test_nodes": int(len(test_nodes)),
+        "sampled_neighborhood_cache": "first_sample_per_center_node_in_memory",
+        "protocol_version": args.protocol_version,
+        "shared_compact_subgraph_cache": str(args.subgraph_cache or ""),
+        "validation_batch_cache": "fully_assembled_device_batches_v1",
     }
     atomic_json(metadata, args.output / "metadata.json")
     latest_path = args.output / "latest.pt"
     best_path = args.output / "best.pt"
     update = 0
     best_auc = float("-inf")
+    progress_best_auc = float("-inf")
     bad_checks = 0
     if latest_path.is_file():
         state = torch.load(latest_path, map_location=device, weights_only=False)
@@ -274,9 +360,18 @@ def main() -> int:
         optimizer.load_state_dict(state["optimizer"])
         update = int(state["update"])
         best_auc = float(state["best_val_roc_auc"])
+        progress_best_auc = float(state.get("progress_best_val_roc_auc", best_auc))
         bad_checks = int(state["bad_checks"])
         print(f"RESUME update={update} best_val={best_auc:.6f}", flush=True)
     trajectory_path = args.output / "trajectory.jsonl"
+    validation_batches = materialize_eval_batches(
+        subgraphs,
+        labels,
+        val_nodes,
+        device=device,
+        batch_size=args.eval_batch_size,
+        sampling_seed=3000000 + args.seed,
+    )
     started = time.time()
     stop_reason = "max_updates"
     while update < args.max_updates:
@@ -293,35 +388,40 @@ def main() -> int:
         loss = F.cross_entropy(head(embeddings), targets)
         loss.backward()
         optimizer.step()
-        if update % args.eval_every != 0 and update != args.max_updates:
+        if args.first_eval_update is None:
+            eval_due = update % args.eval_every == 0
+        else:
+            eval_due = update >= args.first_eval_update and (
+                update - args.first_eval_update
+            ) % args.eval_every == 0
+        if not eval_due and update != args.max_updates:
             continue
-        val = evaluate(
-            model,
-            head,
-            subgraphs,
-            labels,
-            val_nodes,
-            device=device,
-            batch_size=args.eval_batch_size,
-            sampling_seed=3000000 + args.seed,
-        )
-        improved = val["roc_auc"] > best_auc + args.min_delta
-        if improved:
+        val = evaluate_batches(model, head, validation_batches)
+        raw_improved = val["roc_auc"] > best_auc
+        if args.separate_selection_and_stopping:
+            meaningful_improved = val["roc_auc"] > progress_best_auc + args.min_delta
+        else:
+            meaningful_improved = val["roc_auc"] > best_auc + args.min_delta
+            raw_improved = meaningful_improved
+        if raw_improved:
             best_auc = val["roc_auc"]
+        if meaningful_improved:
+            progress_best_auc = val["roc_auc"]
             bad_checks = 0
         else:
             bad_checks += 1
         payload = checkpoint_payload(
-            model, head, optimizer, update, best_auc, bad_checks, metadata
+            model, head, optimizer, update, best_auc, progress_best_auc, bad_checks, metadata
         )
         atomic_torch_save(payload, latest_path)
-        if improved:
+        if raw_improved:
             atomic_torch_save(payload, best_path)
         row = {
             "update": update,
             "training_loss": float(loss.detach().cpu()),
             "val": val,
-            "improved": improved,
+            "improved": raw_improved,
+            "meaningful_improved": meaningful_improved,
             "best_val_roc_auc": best_auc,
             "bad_checks": bad_checks,
             "elapsed_seconds": time.time() - started,
@@ -336,6 +436,12 @@ def main() -> int:
     best = torch.load(best_path, map_location=device, weights_only=False)
     model.load_state_dict(best["model"])
     head.load_state_dict(best["head"])
+    del validation_batches
+    if device.type == "cuda":
+        torch.cuda.empty_cache()
+    # The test set is evaluated once, so retaining every test neighborhood only
+    # increases host RAM without enabling reuse.
+    subgraphs.enabled = False
     test = evaluate(
         model,
         head,
@@ -354,6 +460,8 @@ def main() -> int:
         "stop_reason": stop_reason,
         "test": test,
         "elapsed_seconds": time.time() - started,
+        "sample_cache_hits": int(subgraphs.hits),
+        "sample_cache_misses": int(subgraphs.misses),
     }
     atomic_json(result, result_path)
     print(json.dumps(result, sort_keys=True), flush=True)
