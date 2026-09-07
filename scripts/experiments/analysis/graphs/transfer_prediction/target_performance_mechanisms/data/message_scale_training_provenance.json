@@ -1,0 +1,36 @@
+{
+  "checked_utc": "2026-09-07",
+  "scope": "Read-only recorded training evidence; no new training or model forward.",
+  "three_seed_models": {
+    "training_revision": "75f0853f96272120a1e295dfbd38c04f2b71fe62",
+    "revision_receipt": "data/member_training_verified/pipeline.json",
+    "wandb_root": "/dataMeR1/phil/gfm/prodigy-mechanisms-train/wandb",
+    "records": [
+      {"job": "000", "source": "ukr_rus", "seed": 0, "run": "offline-run-20260905_225611-7q44yxmv"},
+      {"job": "004", "source": "ukr_rus", "seed": 1, "run": "offline-run-20260905_225610-0l9eawgw"},
+      {"job": "008", "source": "ukr_rus", "seed": 2, "run": "offline-run-20260906_001213-yiy4xzcs"},
+      {"job": "012", "source": "cp_hk", "seed": 0, "run": "offline-run-20260906_010700-6je65pwg"},
+      {"job": "016", "source": "cp_hk", "seed": 1, "run": "offline-run-20260906_011311-b3lc43rb"},
+      {"job": "020", "source": "cp_hk", "seed": 2, "run": "offline-run-20260906_015845-g1ba6az7"}
+    ],
+    "each_record_relative_file": "files/requirements.txt",
+    "each_record_contains": ["torch==2.0.1+cu118", "torch_geometric==2.3.1"],
+    "inference_from_records": "The recorded SAGE constructor calls MessagePassing.__init__ with no aggr argument, then assigns self.aggr. PyG 2.3.1 initializes aggr_module to the default add/sum and aggregate uses that cached module. These records support sum at training time, not a mean-trained model evaluated with sum.",
+    "limit": "Reconstructed from source revision and contemporaneous dependency records, not a serialized training operator or bit-exact training replay. Does not resolve every historical singleton independently."
+  },
+  "longer_trained_candidate": {
+    "source": "hongkong",
+    "training_revision": "0c67225c7630beb6fddcf1ad41e7fc61c968ab80",
+    "root": "/dataMeR1/phil/gfm/prodigy/state/cp_hk_twitter_nm_bio_02_07_2026_08_58_57",
+    "recorded_files": ["files/wandb-metadata.json", "files/effective_config.yaml", "files/requirements.txt", "files/output.log"],
+    "checkpoint": "checkpoint/state_dict_50000.ckpt",
+    "selection": "Source-validation accuracy; output.log records best step 50000, best val acc 0.5680.",
+    "saved_best_file": "state_dict",
+    "saved_best_and_step50000_model_sha256": "c392cb264a05ac9a21dd6d3afe4590d3a9e7e8f74079da3e2a89fe35668a6a21",
+    "recorded_training": {"layers": "S,U,M", "input_dim": 768, "emb_dim": 256, "n_hop": 1, "n_way": 3, "n_shots": 3, "n_query": 4, "batch_size": 1, "learning_rate": 0.001, "ignore_label_embeddings": true, "gnn_type": "sage", "no_bn_encoder": false, "no_bn_metagraph": false},
+    "recorded_dependencies": ["torch==2.0.1+cu118", "torch_geometric==2.3.1"],
+    "intervention_result": null,
+    "status": "Nominated only. No generality experiment launched. Preserve original model and protocol; do not silently adapt it to the recent final-core architecture/configuration."
+  },
+  "library_reference": "https://pytorch-geometric.readthedocs.io/en/2.3.1/_modules/torch_geometric/nn/conv/message_passing.html"
+}
