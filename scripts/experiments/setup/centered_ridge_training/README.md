@@ -55,5 +55,28 @@ that this strengthened direct objective does not reproduce the tested contextual
 training benefit. Neither outcome establishes universal necessity, a novel
 auxiliary-head principle, or an8+ contribution by itself.
 
-Exact commands follow after implementation and dry-run review. No full training
-or target evaluation has been launched at protocol creation.
+From the dedicated Tucker worktree, with `prodigy` activated:
+
+```bash
+python -m scripts.experiments.setup.centered_ridge_training.run \
+  --gpu 3 --steps 20 \
+  --output /dataMeR1/phil/gfm/prodigy-centered-ridge-training/log/centered_ridge_training_smoke
+```
+
+Dry-run is the default; add `--execute` after checking GPU availability. The full
+plan uses `--steps 2500` and a distinct output directory. Do not reuse an existing
+output or pull this worktree while either arm is running.
+
+After both smoke arms complete:
+
+```bash
+python -m scripts.experiments.setup.centered_ridge_training.verify \
+  --root /dataMeR1/phil/gfm/prodigy-centered-ridge-training/log/centered_ridge_training_smoke \
+  --reference /dataMeR1/phil/gfm/prodigy-encoder-solver-isolation/log/isolation_full_20260907
+```
+
+Repeat the audit with the full output directory after training. The smoke audit
+matches each source's consumed prefix, not the first20 global steps of a longer
+blocked schedule. It checks exact initial model tensors and a finite, positive,
+updated logit scale. Payload matching covers IDs, roles and sampled topology;
+do not describe it as a bytewise check of every input feature.
