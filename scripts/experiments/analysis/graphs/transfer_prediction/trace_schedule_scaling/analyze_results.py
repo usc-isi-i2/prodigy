@@ -251,6 +251,27 @@ def selected_logits(record, selected):
     return logits
 
 
+def health_probability_fusion(record, model_ids, agreement):
+    """Fuse only experts that preserve their U1 support-induced decision."""
+    probabilities = np.stack(
+        [
+            softmax(to_numpy(record["models"][model_id]["logits"]["full_model"]))
+            for model_id in model_ids
+        ]
+    )
+    weights = np.stack(
+        [to_numpy(agreement[model_id]).astype(np.float64) for model_id in model_ids]
+    )
+    empty = weights.sum(axis=0) == 0
+    weights[:, empty] = 1.0
+    probabilities = (
+        probabilities * weights[:, :, None]
+    ).sum(axis=0) / weights.sum(axis=0)[:, None]
+    # evaluate_logits accepts logits; log probabilities reproduce the fused
+    # probabilities exactly after its softmax while retaining stable NLL.
+    return np.log(np.clip(probabilities, np.finfo(np.float64).tiny, 1.0))
+
+
 def selector_rows(discovery, validation, target):
     rows = []
     for rung in (2, 3, 4):
@@ -317,7 +338,122 @@ def selector_rows(discovery, validation, target):
                         **metrics,
                     }
                 )
+            metrics = evaluate_logits(
+                validation,
+                health_probability_fusion(validation, model_ids, agreement),
+            )
+            rows.append(
+                {
+                    "target": target,
+                    "rung": rung,
+                    "seed": seed,
+                    "method": "trace_health_fusion",
+                    "uses_target_query_labels": False,
+                    "target_support_competence": target_competence,
+                    "target_supported_at_0_55": (
+                        target_competence >= SUPPORT_COMPETENCE_THRESHOLD
+                    ),
+                    "fraction_not_discovery_best": np.nan,
+                    "discovery_best_model": best,
+                    **metrics,
+                }
+            )
     return rows
+
+
+def selector_contrasts(selectors):
+    keys = ["target", "rung", "seed"]
+    baseline = selectors[
+        selectors.method.eq("discovery_auc_fixed")
+    ].set_index(keys)
+    rows = []
+    for method in sorted(
+        set(selectors.method) - {"discovery_auc_fixed"}
+    ):
+        changed = selectors[selectors.method.eq(method)].set_index(keys)
+        if set(changed.index) != set(baseline.index):
+            raise ValueError(f"selector cell set differs for {method}")
+        for key in baseline.index:
+            left = changed.loc[key]
+            right = baseline.loc[key]
+            rows.append(
+                dict(zip(keys, key))
+                | {
+                    "method": method,
+                    "reference": "discovery_auc_fixed",
+                    "target_supported_at_0_55": bool(
+                        left.target_supported_at_0_55
+                    ),
+                    **{
+                        f"delta_{metric}": float(left[metric] - right[metric])
+                        for metric in ("accuracy", "roc_auc", "nll")
+                    },
+                }
+            )
+    return pd.DataFrame(rows)
+
+
+def crossed_cell_bootstrap(frame, column, rng_seed, draws=10000):
+    """Resample target and training seed; average repeated rungs within each cell."""
+    targets = sorted(frame.target.unique())
+    seeds = sorted(frame.seed.unique())
+    cube = np.empty((len(targets), len(seeds)), dtype=np.float64)
+    rung_counts = set()
+    for target_index, target in enumerate(targets):
+        for seed_index, seed in enumerate(seeds):
+            values = frame[
+                frame.target.eq(target) & frame.seed.eq(seed)
+            ][column]
+            rung_counts.add(len(values))
+            cube[target_index, seed_index] = values.mean()
+    if rung_counts != {3}:
+        raise ValueError(f"selector bootstrap needs three rungs per cell, got {rung_counts}")
+    observed = float(cube.mean())
+    rng = np.random.default_rng(rng_seed)
+    samples = np.empty(draws, dtype=np.float64)
+    for index in range(draws):
+        target_indices = rng.integers(0, len(targets), len(targets))
+        seed_indices = rng.integers(0, len(seeds), len(seeds))
+        samples[index] = cube[target_indices][:, seed_indices].mean()
+    return observed, np.quantile(samples, (0.025, 0.975))
+
+
+def selector_gain_rows(contrasts, draws=10000):
+    rows = []
+    for scope, scoped in (
+        ("all_targets", contrasts),
+        (
+            "supported_targets",
+            contrasts[contrasts.target_supported_at_0_55],
+        ),
+    ):
+        for method_index, method in enumerate(sorted(scoped.method.unique())):
+            part = scoped[scoped.method.eq(method)]
+            for metric_index, metric in enumerate(("accuracy", "roc_auc")):
+                column = f"delta_{metric}"
+                value, interval = crossed_cell_bootstrap(
+                    part,
+                    column,
+                    9100 + 100 * method_index + metric_index
+                    + 1000 * (scope == "supported_targets"),
+                    draws=draws,
+                )
+                rows.append(
+                    {
+                        "scope": scope,
+                        "method": method,
+                        "reference": "discovery_auc_fixed",
+                        "metric": metric,
+                        "cells": len(part),
+                        "mean_delta": value,
+                        "cell_wins": int((part[column] > 0).sum()),
+                        "cell_ties": int((part[column] == 0).sum()),
+                        "cell_losses": int((part[column] < 0).sum()),
+                        "crossed_seed_target_bootstrap_low": float(interval[0]),
+                        "crossed_seed_target_bootstrap_high": float(interval[1]),
+                    }
+                )
+    return pd.DataFrame(rows)
 
 
 def replay_vs_conventional(cells):
@@ -400,6 +536,18 @@ def main() -> int:
     interactions = interaction_rows(contrasts)
     correlations = health_correlations(contrasts)
     selectors = pd.DataFrame(selections)
+    selector_contrast = selector_contrasts(selectors)
+    selector_gains = selector_gain_rows(selector_contrast)
+    selector_target_summary = selector_contrast.groupby(
+        ["target", "method", "reference"]
+    ).agg(
+        cells=("seed", "size"),
+        mean_delta_accuracy=("delta_accuracy", "mean"),
+        accuracy_wins=("delta_accuracy", lambda values: int((values > 0).sum())),
+        accuracy_ties=("delta_accuracy", lambda values: int((values == 0).sum())),
+        mean_delta_roc_auc=("delta_roc_auc", "mean"),
+        auc_wins=("delta_roc_auc", lambda values: int((values > 0).sum())),
+    ).reset_index()
     replay = replay_vs_conventional(cells)
     summary = cells.groupby(["stream", "rung", "schedule"]).agg(
         cells=("model_id", "size"),
@@ -445,6 +593,9 @@ def main() -> int:
         ("health_correlations.csv", correlations),
         ("selector_results.csv", selectors),
         ("selector_summary.csv", selector_summary),
+        ("selector_contrasts.csv", selector_contrast),
+        ("selector_gain_summary.csv", selector_gains),
+        ("selector_contrast_summary_by_target.csv", selector_target_summary),
         ("replay_vs_conventional.csv", replay),
         ("replay_vs_conventional_summary.csv", replay_summary),
     ):
@@ -468,6 +619,7 @@ def main() -> int:
     print("\nScaling interactions\n", interactions.to_string(index=False))
     print("\nReplay versus selected conventional schedule\n", replay_summary.to_string(index=False))
     print("\nSelectors\n", selector_summary.to_string(index=False))
+    print("\nSelector gains\n", selector_gains.to_string(index=False))
     return 0
 
 
