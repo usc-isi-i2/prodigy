@@ -54,6 +54,30 @@ agreement measures preserved geometry. Existing health–accuracy correlation do
 not identify the mechanism because both predictions move and shared errors can
 increase agreement.
 
+### Magnitude check: not every reversal is a near-tie
+
+Exploratory selected examples, four-source seed0, blocked minus interleaved:
+
+| Target/stream | Full accuracy delta | U1 accuracy delta | Full AUC delta | U1 AUC delta |
+|---|---:|---:|---:|---:|
+| TwiBot original | -.055664 | +.030924 | -.084510 | +.034226 |
+| TwiBot fresh | -.067708 | +.040039 | -.075277 | +.054716 |
+| Political original | +.046549 | -.037760 | +.011398 | -.011759 |
+| Political fresh | +.059570 | -.046549 | +.007261 | -.006477 |
+
+Macro-F1 reverses as well. On fresh TwiBot, blocked U1 accuracy .613281 falls
+to .527018 under full inference (314 corrected versus579 corrupted); interleaved
+U1 .573242 rises to .594727 (355 corrected versus289 corrupted). On fresh
+political, interleaved U1 .926432 falls to .821615 (28 corrected versus350
+corrupted), whereas blocked U1 .879883 becomes .881185 (119 versus115).
+
+Both streams show the same signs for these fixed checkpoints, but they are not
+independent training seeds. Across original and fresh combined,11 contrasts
+have opposite-sign full/U1 changes of at least one accuracy point on BOTH sides.
+The one-point count is an exploratory magnitude screen, not a prespecified test
+or statistical significance threshold. Do not use the strongest selected examples
+to imply all seeds or schedules reverse.
+
 Remaining publication requirement: show a consequential benefit from explicitly
 separating representation learning and learned task inference, beyond merely
 using the existing U1 ridge baseline. Differentiable ridge meta-learning is prior
