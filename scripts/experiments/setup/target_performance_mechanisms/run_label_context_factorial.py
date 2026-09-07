@@ -20,7 +20,10 @@ def write(path, obj):
 
 def main():
     p = argparse.ArgumentParser(__doc__)
-    p.add_argument('--long-root', type=Path, required=True)
+    p.add_argument('--phase', choices=('long_test', 'discovery'), default='long_test')
+    p.add_argument('--long-root', type=Path)
+    p.add_argument('--contrast-root', type=Path)
+    p.add_argument('--training-config', type=Path)
     p.add_argument('--output', type=Path, required=True)
     args = p.parse_args()
     if args.output.exists():
@@ -28,25 +31,38 @@ def main():
     if torch.cuda.is_available():
         raise ValueError('hide GPUs: CPU-only diagnostic')
     torch.set_num_threads(4)
-    args.phase = 'long_test'
-    protocol = json.loads((args.long_root / 'protocol.json').read_text())
-    if protocol['recorded_training_params']['ignore_label_embeddings'] is not True:
+    parent = args.long_root if args.phase == 'long_test' else args.contrast_root
+    if parent is None or (args.phase == 'discovery' and args.training_config is None):
+        raise ValueError('phase-specific parent and discovery training config required')
+    protocol = json.loads((parent / 'protocol.json').read_text())
+    training = (protocol['recorded_training_params'] if args.phase == 'long_test'
+                else json.loads(args.training_config.read_text()))
+    if training['ignore_label_embeddings'] is not True:
         raise ValueError('training must use label table')
+    table_count = int(training['n_way']) * int(training['batch_size'])
+    streams = ('original', 'fresh') if args.phase == 'long_test' else ('original',)
+    batches = 128 if args.phase == 'long_test' else 32
     args.output.mkdir(parents=True)
     write(args.output / 'protocol.json', {
         'revision': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
-        'parent': str(args.long_root), 'parent_sha256': hashlib.sha256(
-            (args.long_root / 'protocol.json').read_bytes()).hexdigest(),
-        'streams': ['original', 'fresh'], 'episodes_per_stream': 128,
+        'parent': str(parent), 'parent_sha256': hashlib.sha256(
+            (parent / 'protocol.json').read_bytes()).hexdigest(),
+        'phase': args.phase, 'training_table_count': table_count,
+        'training_config_sha256': hashlib.sha256(args.training_config.read_bytes()).hexdigest() if args.training_config else None,
+        'streams': streams, 'episodes_per_stream': 128,
         'factors': ['current/train_label_table', 'intact/suppressed'],
         'decision': 'Compare within-episode suppression AUC changes separately in both streams; no tuning.',
         'scope': 'Label initialization only, not restoration of full training protocol.'})
     rows = []
     try:
-        for stream in ('original', 'fresh'):
+        for stream in streams:
             model, labels, paths, expected, references, rec = load_cell(args, stream)
-            if len(paths) != 128:
-                raise ValueError('exactly 128 saved episodes required')
+            if len(paths) != batches or len(torch.unique(labels['episode_ids'])) != 128:
+                raise ValueError('exact saved batch/episode counts required')
+            if args.phase == 'discovery':
+                training_result = json.loads(args.training_config.with_name('result.json').read_text())
+                if training_result['status'] != 'complete' or Path(rec['checkpoint']).parent != Path(training_result['checkpoint_dir']):
+                    raise ValueError('training config does not identify selected checkpoint')
             values = {f'{mode}_{arm}': [] for mode in ('current', 'table')
                       for arm in ('intact', 'suppressed')}
             audits = []
@@ -57,7 +73,7 @@ def main():
                     raise ValueError('input digest differs')
                 count = labels['batch_counts'][bi]
                 for mode, variant in (('current', 'baseline'), ('table', 'train_label_table')):
-                    with label_interface_mode(model, variant, training_label_count=3) as audit:
+                    with label_interface_mode(model, variant, training_label_count=table_count) as audit:
                         intact = kv_forward(model, batch, alpha=1.)
                         removed = kv_forward(model, batch, alpha=0.)
                         q = intact[4]['query_mask']
@@ -66,7 +82,7 @@ def main():
                         if mode == 'table':
                             for result in (intact, removed):
                                 torch.testing.assert_close(result[4]['meta_input'][len(q):],
-                                    model.learned_label_embedding.weight[:2], rtol=0, atol=0)
+                                    model.learned_label_embedding.weight[:len(batch[1])], rtol=0, atol=0)
                         for j, (arm, result) in enumerate((('intact', intact), ('suppressed', removed))):
                             logits = result[0].detach().cpu()
                             if logits.shape != (count, 2) or not torch.isfinite(logits).all():
@@ -80,7 +96,7 @@ def main():
                 if batch_hash(batch) != expected[bi] or model_digest(model.state_dict()) != rec['weights_sha256']:
                     raise ValueError('inputs or weights changed')
                 offset += count
-                write(args.output / 'progress.json', {'stream': stream, 'episodes': bi+1})
+                write(args.output / 'progress.json', {'stream': stream, 'batches': bi+1, 'expected_batches': batches})
             saved = {k: torch.cat(v) for k, v in values.items()}
             torch.save({'logits': saved, 'labels': labels}, args.output / f'{stream}.pt')
             write(args.output / f'{stream}_audit.json', audits)
@@ -93,7 +109,7 @@ def main():
                     'accuracy': float((pred == y).mean()),
                     'global_positive_prediction_rate': float((global_pred == 1).mean())})
             write(args.output / 'metrics.json', rows)
-        write(args.output / 'DONE.json', {'streams': 2, 'episodes': 256, 'cells': len(rows)})
+        write(args.output / 'DONE.json', {'streams': len(streams), 'episodes': 128*len(streams), 'cells': len(rows)})
     except Exception as exc:
         write(args.output / 'FAILED.json', {'type': type(exc).__name__, 'message': str(exc)})
         raise
