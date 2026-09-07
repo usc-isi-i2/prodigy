@@ -74,12 +74,42 @@ and two-layer metagraph, including two consecutive native episodes with versus
 without online interventions. The background encoder/pooling in that fixture are
 test components. Full native GPU/data validation remains required.
 
+## Analysis and next scientific decision
+
+`summarize_mechanism.py --run RUN --output NEW_ANALYSIS_DIRECTORY` requires a
+completed run and all 500 consecutive, hash-verified episode artifacts. It emits
+episode accuracy, macro-F1, probability-based macro OVR AUC, and NLL for full,
+reference-only, and query-only outputs. The primary component contrast is values
+minus keys. The query audit retains every example and intervention, including
+corruptions; it is not a handpicked success gallery. Use episode/query identifiers
+to recover exact graph inputs from the corresponding saved artifact. Large query
+audits remain cluster artifacts rather than being forced into git.
+
+Episode-bootstrap intervals are conditional on this checkpoint and target, not
+confidence about generalization across training seeds or domains. Recurring
+entities can induce episode dependence. Do not pool unrelated local class
+columns, interpret crossed decoder contrasts as additive mediation, or mistake
+an AUC gain for an accuracy/F1 gain.
+
+Independent scientific assessment identifies **normalization-mediated episode
+coupling** as the strongest remaining alternative to a local-neighborhood-content
+explanation: removing support edges changes within-forward batch statistics,
+which also change support values. Restoring pre-forward buffers does not clamp
+those batch statistics. The nominated public test remains unchanged. If its
+value/reference effect is positive, the next experiment is a donor constructed
+using the actual native per-layer batch mean/variance, with the recipient left
+native. Do not replace this with running-statistic `eval()` normalization. If the
+effect survives, the local-context interpretation gains support; if it disappears,
+the explanation should shift to normalization-mediated coupling. Neither outcome
+by itself establishes a superior training protocol or architectural repair.
+
 Light checks (no datasets or training):
 
 ```bash
 python -m unittest scripts.experiments.setup.public_prodigy_kg.test_run_native -q
 python -m scripts.experiments.setup.public_prodigy_kg.test_forward_state
 python -m scripts.experiments.setup.public_prodigy_kg.test_role_interventions
+python -m scripts.experiments.setup.public_prodigy_kg.test_summary
 python -m scripts.experiments.setup.public_prodigy_kg.test_episode_mechanism /path/to/pinned/upstream
 ```
 
