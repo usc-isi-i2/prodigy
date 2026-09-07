@@ -7,7 +7,6 @@ torch.multiprocessing.set_sharing_strategy("file_system")
 
 import sys
 import os
-torch.autograd.set_detect_anomaly(True)
 
 def _log(msg):
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)

@@ -7,8 +7,8 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 GPUS="${GPUS:-0}"
 IFS=',' read -r -a GPU_ARR <<< "${GPUS}"
 for gpu in "${GPU_ARR[@]}"; do
-  [[ "${gpu}" =~ ^[01]$ ]] || {
-    echo "refusing GPU ${gpu}: this project currently owns only Tucker GPUs 0 and 1" >&2
+  [[ "${gpu}" =~ ^[0-3]$ ]] || {
+    echo "refusing GPU ${gpu}: this project currently owns only Tucker GPUs 0-3" >&2
     exit 2
   }
 done

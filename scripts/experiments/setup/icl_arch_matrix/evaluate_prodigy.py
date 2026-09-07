@@ -155,11 +155,16 @@ def parse_args():
     parser.add_argument("--run-stamp", default="20260810")
     parser.add_argument("--device", default="0")
     parser.add_argument("--model-ids", default="")
+    parser.add_argument(
+        "--model-list",
+        default="",
+        help="Optional TSV with model_id, checkpoint, and comma-separated sources.",
+    )
     parser.add_argument("--datasets", default="")
     parser.add_argument("--checkpoint-step", default=TRAIN_STEPS, type=int)
     parser.add_argument(
         "--checkpoint-layout",
-        choices=("architecture-matrix", "final-core", "saturation"),
+        choices=("architecture-matrix", "final-core", "saturation", "radius-finalcore"),
         default="architecture-matrix",
     )
     parser.add_argument("--training-seeds", default="0")
@@ -182,6 +187,30 @@ def parse_args():
     return parser.parse_args()
 
 
+def load_external_models(path: str | Path):
+    rows = []
+    with Path(path).open(encoding="utf-8") as handle:
+        header = handle.readline().rstrip("\n").split("\t")
+        if header != ["model_id", "checkpoint", "sources"]:
+            raise ValueError(f"unexpected model-list header: {header}")
+        for line_number, raw in enumerate(handle, start=2):
+            fields = raw.rstrip("\n").split("\t")
+            if len(fields) != 3:
+                raise ValueError(f"invalid model-list row {line_number}: {raw!r}")
+            model_id, checkpoint, sources = fields
+            rows.append(SimpleNamespace(
+                model_id=model_id,
+                checkpoint=Path(checkpoint),
+                sources=tuple(filter(None, sources.split(","))),
+            ))
+    if not rows:
+        raise ValueError(f"empty model list: {path}")
+    ids = [row.model_id for row in rows]
+    if len(ids) != len(set(ids)):
+        raise ValueError(f"duplicate model ids in {path}")
+    return rows
+
+
 def checkpoint_path(args, training_seed: int, model_id: str) -> Path:
     if args.checkpoint_layout == "architecture-matrix":
         return (
@@ -195,6 +224,13 @@ def checkpoint_path(args, training_seed: int, model_id: str) -> Path:
         return (
             Path(args.state_root)
             / f"finalcore_{model_id}_s{training_seed}_{args.run_stamp}"
+            / "checkpoint"
+            / f"state_dict_{args.checkpoint_step}.ckpt"
+        )
+    if args.checkpoint_layout == "radius-finalcore":
+        return (
+            Path(args.state_root)
+            / f"radiusfc_{model_id}_s{training_seed}_{args.run_stamp}"
             / "checkpoint"
             / f"state_dict_{args.checkpoint_step}.ckpt"
         )
@@ -286,12 +322,24 @@ def main() -> int:
     if args.random_init:
         if args.checkpoint_step != TRAIN_STEPS:
             raise ValueError("--checkpoint-step cannot be combined with --random-init")
-        if selected:
-            raise ValueError("--model-ids cannot be combined with --random-init")
+        if selected or args.model_list:
+            raise ValueError("--model-ids/--model-list cannot be combined with --random-init")
         models = [SimpleNamespace(model_id="random_init", sources=())]
+    elif args.model_list:
+        models = load_external_models(args.model_list)
+        if selected:
+            models = [model for model in models if model.model_id in selected]
+            present = {model.model_id for model in models}
+            if selected != present:
+                raise ValueError(f"unknown model ids: {sorted(selected - present)}")
     else:
-        models = [model for model in build_models() if not selected or model.model_id in selected]
-        if selected and selected != {model.model_id for model in models}:
+        if args.checkpoint_layout == "radius-finalcore":
+            if not selected:
+                raise ValueError("--model-ids is required for radius-finalcore checkpoints")
+            models = [SimpleNamespace(model_id=model_id, sources=()) for model_id in sorted(selected)]
+        else:
+            models = [model for model in build_models() if not selected or model.model_id in selected]
+        if args.checkpoint_layout != "radius-finalcore" and selected and selected != {model.model_id for model in models}:
             raise ValueError(f"unknown model ids: {sorted(selected - {m.model_id for m in models})}")
         if args.ladder_only:
             models = [model for model in models if model.model_id in ladder_model_ids()]
@@ -314,7 +362,9 @@ def main() -> int:
         raise ValueError(f"worker {args.worker_index} has no assigned jobs")
     if not args.random_init:
         for training_seed, model in jobs:
-            checkpoint = checkpoint_path(args, training_seed, model.model_id)
+            checkpoint = getattr(model, "checkpoint", None)
+            if checkpoint is None:
+                checkpoint = checkpoint_path(args, training_seed, model.model_id)
             if not checkpoint.is_file():
                 raise FileNotFoundError(checkpoint)
     result_path = Path(args.results)
@@ -366,7 +416,9 @@ def main() -> int:
                 checkpoint = None
                 checkpoint_step = 0 if args.random_init else args.checkpoint_step
                 if not args.random_init:
-                    checkpoint = checkpoint_path(args, training_seed, plan_model.model_id)
+                    checkpoint = getattr(plan_model, "checkpoint", None)
+                    if checkpoint is None:
+                        checkpoint = checkpoint_path(args, training_seed, plan_model.model_id)
                     if not checkpoint.is_file():
                         raise FileNotFoundError(checkpoint)
                 params = resolved_params(

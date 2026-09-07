@@ -61,7 +61,7 @@ held-out target only, using the repository's fixed split-derived episode stream.
 - `base_train.yaml` freezes the common 2k protocol.
 - `run_sweep.py` reuses one in-memory copy of the approximately 111 GB all-eight graph
   across many models, avoiding a graph reload for every 2k run.
-- `run_train_tucker.sh` optionally shards the plan across GPUs 0 and 1.
+- `run_train_tucker.sh` optionally shards the plan across owned GPUs 0-3.
 - `make_model_lists.py` resolves only complete `state_dict_2000.ckpt` files.
 - `eval_cls_tucker.sh` evaluates each model only on its held-out target and merges the
   results into the shared classification table.
@@ -83,8 +83,8 @@ DRY_RUN=1 GPUS="0" LIMIT=4 \
 ## Tucker execution
 
 Use a dedicated worktree and check `tmux ls` before changing it. The default uses only
-GPU 0 and loads the large merge once. Use `GPUS="0 1"` only after confirming host RAM
-can hold two copies; GPUs other than 0 and 1 are currently off limits.
+GPU 0 and loads the large merge once. Use multiple GPUs only after confirming host RAM
+can hold one graph copy per process; GPUs 0-3 are currently owned.
 
 If an owned GPU is busy, `wait_and_train_tucker.sh` waits for it to remain below
 1,000 MiB and 10% utilization for four consecutive 30-second polls before launching.

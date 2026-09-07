@@ -1,0 +1,41 @@
+{
+  "rows": 5100,
+  "full_model_cells": 300,
+  "underlying_training_runs": 15,
+  "training_seeds": [
+    0
+  ],
+  "checkpoint_rules": [
+    "common6000",
+    "source_val_selected"
+  ],
+  "all_cached_inputs_match": true,
+  "all_weights_match_inventory": true,
+  "selected_nm_hashes_and_steps_match": true,
+  "only_unseen_target_source": "twibot20",
+  "excluded_models": [
+    {
+      "model_id": "nmi_alignment_r8_s0",
+      "flags": [
+        "feature_standardized"
+      ],
+      "reason": "requires different forward preprocessing, parameters, or width"
+    },
+    {
+      "model_id": "nmi_sharing_r8_s0",
+      "flags": [
+        "source_affine"
+      ],
+      "reason": "requires different forward preprocessing, parameters, or width"
+    },
+    {
+      "model_id": "nmi_capacity_r8_s0",
+      "flags": [
+        "wide"
+      ],
+      "reason": "requires different forward preprocessing, parameters, or width"
+    }
+  ],
+  "classification_selected_methods_or_steps": false,
+  "paired_checkpoint_rules_kept_separate": true
+}

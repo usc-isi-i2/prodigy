@@ -1,0 +1,10 @@
+{
+  "revision": "030ea28c44b0aeaaa38128607ae792a96c8e2a24",
+  "arms": "scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/data/member_training_verified/arms.json",
+  "references": "scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/data/member_replay_cells.csv",
+  "new_training": false,
+  "selection": "All original-sort controls, both sources, all three seeds; no checkpoint selection.",
+  "expectation": "Check whether the historical seed-0 Hong Kong benefit from support-edge removal recurs across all three independent initialization seeds and both streams.",
+  "runtime_variability_caveat": "These earlier CPU-trained arms include execution variability; this test changes only fixed-model inputs.",
+  "intervention": "Remove only the support subgraphs' background edges; retain all query input and all sampled members/features."
+}

@@ -1,0 +1,53 @@
+         281155 function calls (279782 primitive calls) in 0.240 seconds
+
+   Ordered by: cumulative time
+   List reduced from 214 to 45 due to restriction <45>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+  680/470    0.002    0.000    0.202    0.000 profile_pipeline.py:106(timed)
+    244/1    0.001    0.000    0.200    0.200 dataset.py:67(__getitem__)
+        3    0.000    0.000    0.200    0.067 dataset.py:74(<genexpr>)
+     31/1    0.000    0.000    0.200    0.200 dataset.py:72(<listcomp>)
+        1    0.000    0.000    0.200    0.200 dataset.py:76(<dictcomp>)
+      210    0.011    0.000    0.172    0.001 dataset.py:23(get_subgraph)
+      210    0.001    0.000    0.145    0.001 sampler.py:111(sample_node)
+      210    0.012    0.000    0.144    0.001 sampler.py:24(sample_k_hop_subgraph)
+      210    0.002    0.000    0.091    0.000 coalesce.py:5(coalesce)
+     1254    0.001    0.000    0.086    0.000 _ops.py:497(__call__)
+      210    0.007    0.000    0.072    0.000 storage.py:436(coalesce)
+      204    0.000    0.000    0.059    0.000 segment_csr.py:35(segment_csr)
+      204    0.000    0.000    0.059    0.000 segment_csr.py:21(segment_min_csr)
+      204    0.005    0.000    0.058    0.000 {built-in method torch._ops.torch_scatter.segment_min_csr}
+      204    0.001    0.000    0.053    0.000 traceback.py:35(format_stack)
+        1    0.002    0.002    0.036    0.036 dataloader.py:923(__call__)
+      420    0.004    0.000    0.033    0.000 sample.py:27(sample_adj)
+     1686    0.032    0.000    0.032    0.000 {built-in method torch.cat}
+        1    0.000    0.000    0.030    0.030 batch.py:64(from_data_list)
+        1    0.000    0.000    0.030    0.030 collate.py:14(collate)
+      204    0.000    0.000    0.029    0.000 traceback.py:217(extract_stack)
+      204    0.000    0.000    0.028    0.000 traceback.py:372(extract)
+      204    0.008    0.000    0.028    0.000 traceback.py:394(_extract_from_extended_frame_gen)
+        9    0.000    0.000    0.028    0.003 collate.py:115(_collate)
+      210    0.004    0.000    0.025    0.000 dataset.py:49(add_pooling_supernode)
+      204    0.000    0.000    0.024    0.000 traceback.py:29(format_list)
+      420    0.023    0.000    0.023    0.000 {built-in method torch._ops.torch_sparse.sample_adj}
+      204    0.003    0.000    0.022    0.000 traceback.py:520(format)
+      834    0.013    0.000    0.021    0.000 storage.py:34(__init__)
+     4284    0.009    0.000    0.019    0.000 traceback.py:455(format_frame_summary)
+     2527    0.001    0.000    0.017    0.000 data.py:443(__setattr__)
+3578/2738    0.001    0.000    0.016    0.000 {built-in method builtins.setattr}
+     2953    0.003    0.000    0.015    0.000 storage.py:84(__setattr__)
+      211    0.001    0.000    0.013    0.000 data.py:407(__init__)
+    14741    0.007    0.000    0.012    0.000 {built-in method builtins.getattr}
+     5693    0.003    0.000    0.012    0.000 storage.py:67(_pop_cache)
+    21624    0.005    0.000    0.011    0.000 traceback.py:313(line)
+     3166    0.002    0.000    0.008    0.000 storage.py:106(__setitem__)
+     1632    0.001    0.000    0.006    0.000 linecache.py:52(checkcache)
+     7373    0.004    0.000    0.005    0.000 storage.py:74(__getattr__)
+     1632    0.005    0.000    0.005    0.000 {built-in method posix.stat}
+      420    0.001    0.000    0.005    0.000 tensor.py:16(__init__)
+      426    0.004    0.000    0.004    0.000 {built-in method torch.stack}
+     1074    0.004    0.000    0.004    0.000 {built-in method torch.tensor}
+     4488    0.002    0.000    0.004    0.000 linecache.py:26(getline)
+
+

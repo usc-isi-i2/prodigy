@@ -217,6 +217,7 @@ def evaluate_checkpoints_shared(
             device=trainer.device,
             get_loss_and_score=trainer.get_loss_and_acc,
             get_aux_loss=trainer.get_aux_loss,
+            compute_eval_metrics=trainer._compute_eval_metrics,
         )
         results = []
         for step in steps:

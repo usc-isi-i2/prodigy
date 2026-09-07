@@ -1,0 +1,116 @@
+{
+  "complete": true,
+  "arm": {
+    "model_id": "readouttrain_cp_hk_free_s1",
+    "source": "cp_hk",
+    "seed": 1,
+    "condition": "free",
+    "initial_sha256": "744597b4ca3e3e5b9e5e7c6ee36385db262d1349b88898a154da932d8991a2e5",
+    "final_sha256": "05696d5604bac279131abb1e98cdbe397d34e591e5a680069f451a0fc49f1332",
+    "checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_training_20260906/state/readouttrain_cp_hk_free_s1_20260906_040412_008/checkpoint/state_dict_2500.ckpt",
+    "final_walk_rng_sha256": "4e44ea84660e6a4854b5e3843645d2302b5d210e49d1016efc417295a0ae0924",
+    "verified_checkpoints": [
+      0,
+      100,
+      300,
+      900,
+      2500
+    ],
+    "training_constraint": {
+      "condition": "free",
+      "initial_model_sha256": "744597b4ca3e3e5b9e5e7c6ee36385db262d1349b88898a154da932d8991a2e5",
+      "initial_readout_sha256": "3a05296dbd8ddf6155b3ea8a630dff83578c950043460cdb9105fa4b0db3be3c",
+      "readout_keys": [
+        "layer_list.0.reset_mlp_c.bias",
+        "layer_list.0.reset_mlp_c.weight",
+        "layer_list.0.reset_mlp_m.bias",
+        "layer_list.0.reset_mlp_m.weight"
+      ],
+      "optimizer_parameter_names": [
+        [
+          "logit_scale",
+          "layer_list.0.module_list.0.lin_x.weight",
+          "layer_list.0.module_list.0.lin_x.bias",
+          "layer_list.0.module_list.0.lin_self_loops.weight",
+          "layer_list.0.module_list.0.lin_self_loops.bias",
+          "layer_list.0.module_list.0.mlp.0.weight",
+          "layer_list.0.module_list.0.mlp.0.bias",
+          "layer_list.0.module_list.0.mlp.2.weight",
+          "layer_list.0.module_list.0.mlp.2.bias",
+          "layer_list.0.module_list.0.bn.weight",
+          "layer_list.0.module_list.0.bn.bias",
+          "layer_list.0.reset_mlp.weight",
+          "layer_list.0.reset_mlp.bias",
+          "layer_list.0.reset_mlp_c.weight",
+          "layer_list.0.reset_mlp_c.bias",
+          "layer_list.0.reset_mlp_m.weight",
+          "layer_list.0.reset_mlp_m.bias",
+          "layer_list.2.gnn_layers.0.mlp_kqv.weight",
+          "layer_list.2.gnn_layers.0.mlp_kqv.bias",
+          "layer_list.2.gnn_layers.0.lin_edge.weight",
+          "layer_list.2.gnn_layers.0.lin_edge.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.0.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.0.bias",
+          "layer_list.2.gnn_layers.0.att_mlp.2.weight",
+          "layer_list.2.gnn_layers.0.att_mlp.2.bias",
+          "layer_list.2.gnn_layers.0.out_proj.weight",
+          "layer_list.2.gnn_layers.0.out_proj.bias",
+          "layer_list.2.gnn_layers.0.bn.weight",
+          "layer_list.2.gnn_layers.0.bn.bias",
+          "initial_label_mlp.weight",
+          "initial_label_mlp.bias"
+        ]
+      ],
+      "other_trainable_parameters_unchanged": true,
+      "steps_checked": 2500,
+      "inputs_hashed": 2500
+    },
+    "summary": {
+      "steps": 2500,
+      "episodes": 10000,
+      "member_positions": 2100000,
+      "unique_members": 24126,
+      "unique_anchors": 21034,
+      "effective_member_count": 74.60956172524492,
+      "cross_class_duplicate_fraction": 0.39516380952380975,
+      "context_nodes_mean": 67.41823,
+      "source_ids": {
+        "7": 10000
+      }
+    }
+  },
+  "inputs": [
+    {
+      "step": 1,
+      "batch_sha256": "3f38b2125e8a4830cddf41bd5f1f66024449d148e49e5f01ca8eea7614c02164"
+    },
+    {
+      "step": 2,
+      "batch_sha256": "a0dd2b0a8540275a85bdc71664574785e0c2e1d28834f7ad36d55741dc45d684"
+    },
+    {
+      "step": 3,
+      "batch_sha256": "5d08903ebb95031d5cb77bbcf7d15010234477a443ed3c75d9cf78c22665573c"
+    },
+    {
+      "step": 4,
+      "batch_sha256": "0efc3ba24aa1a94a11b551f355e8be4b1b74713c6b04f80046500b2bdce1556c"
+    }
+  ],
+  "full_prefix_hashes_verified": true,
+  "initial_checkpoint": "/dataMeR1/phil/gfm/prodigy-mechanisms-freeze/log/target_mechanisms/readout_constraint_training_20260906/state/readouttrain_cp_hk_free_s1_20260906_040412_008/checkpoint/training_state_0.ckpt",
+  "actual_trainer_reconstruction_bit_exact": true,
+  "reference_probe": {
+    "logits": "fa6adb5c1095c513d1829725fec3da8c20cfac37e4a49bbe523da7adf8a0e2e7",
+    "truth": "059307a66e48c1e11dfd20ef28b38c7adeead0dd55b6762017621b75ee47263d",
+    "pre": "0d930d3854005a0d92a54b0eac41fcd0e2d0a387c2501f1fc84f1817836e2840",
+    "pre_gradient": "47b89da216aaa513b4dcdbe8ac7d3341698d91a5126cedab4c919a3a6a032b02",
+    "post": "d1cc06c2fdc64ff320a746797eb374d9d0ad21939af9c008be1a7a2eece1e8a4",
+    "gradients": "17691c8ddd797d1c5e2fe005c8fffa58dff22d500f67608827250f73bf839902",
+    "buffers": "a99ac4d66dd25e4c9cb9c95da5bb52d5f11da072cae9507c2e414102eaa8f0f3"
+  },
+  "source_members_and_contexts_verified": true,
+  "prefix_not_full_training": true,
+  "finite_dispatch_prefix_with_normal_worker_exhaustion": true,
+  "params_path": "/dataMeR1/phil/gfm/prodigy-mechanisms-role/log/support_identity_inputs_v2_20260906/job_004/params.json"
+}

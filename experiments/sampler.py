@@ -143,6 +143,7 @@ class NeighborSampler:
         self,
         node_idx: Tensor,
         direction: str,
+        generator=None,
     ):
         """
         direction: "in", "out", "inout"
@@ -158,7 +159,7 @@ class NeighborSampler:
             row_start = row_start[mask]
             row_end = row_end[mask]
             widths = row_end - row_start
-            idx = (torch.rand(row_start.shape, device=row_start.device) * widths).long() + row_start
+            idx = (torch.rand(row_start.shape, device=row_start.device, generator=generator) * widths).long() + row_start
             next_node_idx = col[idx]
 
             if direction == "in":

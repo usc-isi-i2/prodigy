@@ -1,0 +1,21 @@
+{
+  "revision": "9b3993ddc00654bfc16fdacacf120e8bafcf24da",
+  "smoke": false,
+  "draws": 8,
+  "models": [
+    "memberctl_ukr_rus_lowest_sorted_s0",
+    "memberctl_ukr_rus_lowest_sorted_s1",
+    "memberctl_ukr_rus_lowest_sorted_s2",
+    "memberctl_cp_hk_lowest_sorted_s0",
+    "memberctl_cp_hk_lowest_sorted_s1",
+    "memberctl_cp_hk_lowest_sorted_s2"
+  ],
+  "data": "scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/data",
+  "new_training": false,
+  "selection": "Minimum ten-balanced-fold support-only held-out NLL; fixed ties; no target query input or label used.",
+  "primary": "Hong Kong political support sensitivity exceeds Ukraine in every seed/stream; support-CV selection improves Hong Kong political NLL against mean random-draw NLL in every seed/stream.",
+  "sampling": "Uniform eligible unique support center identity, then cached occurrence; no recipient-episode occurrences or recipient-query identities; no replacement within class.",
+  "limits": "Larger labeled candidate pool; not a benchmark-fair 10-shot remedy; existing studied streams, not independent unseen domains.",
+  "direct_parity_atol": 1e-05,
+  "threads": 4
+}

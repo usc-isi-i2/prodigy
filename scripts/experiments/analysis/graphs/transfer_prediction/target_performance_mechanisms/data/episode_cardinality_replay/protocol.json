@@ -1,0 +1,32 @@
+{
+  "revision": "b882d95ab6cc4522ed87eacc52def294ddb1a35e",
+  "variants": [
+    "baseline",
+    "count_joint_attention",
+    "count_way_attention",
+    "count_shot_attention",
+    "count_inverse_attention",
+    "count_joint_virtual",
+    "count_bias_only"
+  ],
+  "training_audit": "/dataMeR1/phil/gfm/prodigy-mechanisms-budget/log/target_mechanisms/mixture_budget_predictions_20260906/training_budget_audit.json",
+  "training_audit_sha256": "c461708b5294862cb33c4039dab7b4e633164da67ae1ef1cebeaecb351a588af",
+  "train_ways": 30,
+  "train_shots": 3,
+  "eval_ways": 2,
+  "eval_shots": 10,
+  "primary": "count_joint_attention vs baseline and inverse; positive mean foreign-donor AUC on Facebook and TwiBot, both streams",
+  "query_outcomes_used_for_intervention": false,
+  "new_training": false,
+  "new_encoder_passes": 0,
+  "new_distinct_negative_classes": false,
+  "independent_training_seeds": 1,
+  "original_roots": [
+    "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/specialist_cpu_20260906",
+    "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/specialist_cpu_tail_20260906"
+  ],
+  "fresh_roots": [
+    "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/fresh_stage_cpu_20260906"
+  ],
+  "threads": 8
+}

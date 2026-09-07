@@ -57,9 +57,15 @@ Setup and launch files remain in `../setup/<name>/`.
 - Structure/feature coupling: [`path_feature_coupling`](graphs/structure_features/path_feature_coupling/)
 - Dataset overlap: [`identity_overlap_audit`](graphs/overlap/identity_overlap_audit/)
 - Similarity as a transfer predictor: [`similarity_vs_transfer`](graphs/transfer_prediction/similarity_vs_transfer/), [`similarity_vs_transfer_v2`](graphs/transfer_prediction/similarity_vs_transfer_v2/)
+- Target-performance mechanisms: [fixed-query stage replay and source-sampler audit](graphs/transfer_prediction/target_performance_mechanisms/FINDINGS_REPLAY.md)
+- Local transfer contrast: [matched examples and support-anchored transfer health](graphs/transfer_prediction/local_transfer_contrast/FINDINGS.md)
+- TRACE schedule scaling: [order-only schedule intervention and bounded replay](graphs/transfer_prediction/trace_schedule_scaling/)
 
 ## Evaluation infrastructure
 
+- Ladder training throughput: [`ladder_sampling_profile`](evaluation/performance/ladder_sampling_profile/) profiles full-graph CPU preparation and GPU steps.
+
+- Frozen-encoder label and optimization efficiency: [`adaptation_efficiency`](evaluation/adaptation_efficiency/)
 - Prediction-level diagnostics: [`error_audit`](evaluation/error_audit/)
 - Static-link evaluator repair: [`static_link_prediction_repair`](evaluation/static_link_prediction_repair/)
 - Shared append-only task tables: [`node_classification`](evaluation/task_tables/node_classification/), [`node_regression`](evaluation/task_tables/node_regression/), [`static_link_prediction`](evaluation/task_tables/static_link_prediction/)
@@ -67,4 +73,5 @@ Setup and launch files remain in `../setup/<name>/`.
 ## Synthesis and archive
 
 - Cross-experiment syntheses: [`synthesis/cross_experiment`](synthesis/cross_experiment/)
+- Native-pretext result-matrix coverage: [`native_model_result_matrix`](synthesis/cross_experiment/native_model_result_matrix/)
 - Retired and superseded analyses: [`archive`](archive/)

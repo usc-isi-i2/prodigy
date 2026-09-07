@@ -1,7 +1,16 @@
 import torch
 import numpy as np
+from dataclasses import dataclass
 from torch.utils.data import Dataset
 from torch_geometric.data import Data
+
+
+@dataclass(frozen=True)
+class SeededNodeIndex:
+    """A node lookup with a private seed for stochastic context expansion."""
+
+    node_idx: int
+    sampling_seed: int
 
 class SubgraphDataset(Dataset):
     def __init__(self, graph, neighbor_sampler, offset=0, bidirectional=True, node_graph = False):
@@ -20,8 +29,16 @@ class SubgraphDataset(Dataset):
         ]
         assert not self.edge_attrs or not bidirectional
 
-    def get_subgraph(self, node_idx): # refactor as __item__, add supernode in here
-        node_list, edge_index, edge_id = self.neighbor_sampler.sample_node(node_idx)
+    def get_subgraph(self, node_idx, sampling_seed=None): # refactor as __item__, add supernode in here
+        if sampling_seed is None:
+            node_list, edge_index, edge_id = self.neighbor_sampler.sample_node(node_idx)
+        else:
+            # torch_sparse.sample_adj uses the process-wide CPU RNG and does not
+            # accept a Generator.  Isolate it so loader-worker assignment and the
+            # order in which sources are presented cannot change graph context.
+            with torch.random.fork_rng(devices=[]):
+                torch.manual_seed(int(sampling_seed))
+                node_list, edge_index, edge_id = self.neighbor_sampler.sample_node(node_idx)
         data = {}
         data['center_node_idx'] = node_idx
         # Preserve the full-graph ids of the nodes the sampler actually returned.
@@ -68,6 +85,10 @@ class SubgraphDataset(Dataset):
         """
         Returns the subgraph at index and adds the supernode
         """
+        if isinstance(index, SeededNodeIndex):
+            graph = self.get_subgraph(index.node_idx, index.sampling_seed)
+            self.add_pooling_supernode(graph)
+            return graph
         if isinstance(index, list):
             return [self.__getitem__(i) for i in index]
         elif isinstance(index, tuple):

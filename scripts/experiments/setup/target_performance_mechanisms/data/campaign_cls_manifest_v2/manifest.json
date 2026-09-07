@@ -1,0 +1,1474 @@
+{
+  "models": [
+    {
+      "model_id": "nmi_baseline_r8_s0__common6000",
+      "original_model_id": "nmi_baseline_r8_s0",
+      "checkpoint_role": "common6000",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_baseline_r8_s0_20260904_023439_000/checkpoint/state_dict_6000.ckpt",
+      "step": 6000,
+      "training_steps": 10000,
+      "flags": [],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": null,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_baseline_r8_s0__source_val_selected",
+      "original_model_id": "nmi_baseline_r8_s0",
+      "checkpoint_role": "source_val_selected",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_baseline_r8_s0_20260904_023439_000/checkpoint/state_dict_8000.ckpt",
+      "step": 8000,
+      "training_steps": 10000,
+      "flags": [],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": 0.8640791443572647,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_exposure_r8_s0__common6000",
+      "original_model_id": "nmi_exposure_r8_s0",
+      "checkpoint_role": "common6000",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_exposure_r8_s0_20260904_023439_001/checkpoint/state_dict_6000.ckpt",
+      "step": 6000,
+      "training_steps": 10000,
+      "flags": [
+        "proportional"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": null,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_exposure_r8_s0__source_val_selected",
+      "original_model_id": "nmi_exposure_r8_s0",
+      "checkpoint_role": "source_val_selected",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_exposure_r8_s0_20260904_023439_001/checkpoint/state_dict_10000.ckpt",
+      "step": 10000,
+      "training_steps": 10000,
+      "flags": [
+        "proportional"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": 0.8564818985160739,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_schedule_r8_s0__common6000",
+      "original_model_id": "nmi_schedule_r8_s0",
+      "checkpoint_role": "common6000",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_schedule_r8_s0_20260904_023439_002/checkpoint/state_dict_6000.ckpt",
+      "step": 6000,
+      "training_steps": 10000,
+      "flags": [
+        "blocked"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": null,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_schedule_r8_s0__source_val_selected",
+      "original_model_id": "nmi_schedule_r8_s0",
+      "checkpoint_role": "source_val_selected",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_schedule_r8_s0_20260904_023439_002/checkpoint/state_dict_6000.ckpt",
+      "step": 6000,
+      "training_steps": 10000,
+      "flags": [
+        "blocked"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": 0.8572614297099497,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_composition_r8_s0__common6000",
+      "original_model_id": "nmi_composition_r8_s0",
+      "checkpoint_role": "common6000",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_composition_r8_s0_20260904_023439_003/checkpoint/state_dict_6000.ckpt",
+      "step": 6000,
+      "training_steps": 10000,
+      "flags": [
+        "cross_graph"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": null,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_composition_r8_s0__source_val_selected",
+      "original_model_id": "nmi_composition_r8_s0",
+      "checkpoint_role": "source_val_selected",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_composition_r8_s0_20260904_023439_003/checkpoint/state_dict_8000.ckpt",
+      "step": 8000,
+      "training_steps": 10000,
+      "flags": [
+        "cross_graph"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": 0.8674792234925017,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_centers_r8_s0__common6000",
+      "original_model_id": "nmi_centers_r8_s0",
+      "checkpoint_role": "common6000",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_centers_r8_s0_20260904_023439_004/checkpoint/state_dict_6000.ckpt",
+      "step": 6000,
+      "training_steps": 8000,
+      "flags": [
+        "degree_balanced"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": null,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_centers_r8_s0__source_val_selected",
+      "original_model_id": "nmi_centers_r8_s0",
+      "checkpoint_role": "source_val_selected",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_centers_r8_s0_20260904_023439_004/checkpoint/state_dict_4000.ckpt",
+      "step": 4000,
+      "training_steps": 8000,
+      "flags": [
+        "degree_balanced"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": 0.860223669293283,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_eligibility_r8_s0__common6000",
+      "original_model_id": "nmi_eligibility_r8_s0",
+      "checkpoint_role": "common6000",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_eligibility_r8_s0_20260904_023439_005/checkpoint/state_dict_6000.ckpt",
+      "step": 6000,
+      "training_steps": 6000,
+      "flags": [
+        "low_degree"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": null,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_eligibility_r8_s0__source_val_selected",
+      "original_model_id": "nmi_eligibility_r8_s0",
+      "checkpoint_role": "source_val_selected",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_eligibility_r8_s0_20260904_023439_005/checkpoint/state_dict_2000.ckpt",
+      "step": 2000,
+      "training_steps": 6000,
+      "flags": [
+        "low_degree"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": 0.8518908095085758,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_positives_r8_s0__common6000",
+      "original_model_id": "nmi_positives_r8_s0",
+      "checkpoint_role": "common6000",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_positives_r8_s0_20260904_023439_006/checkpoint/state_dict_6000.ckpt",
+      "step": 6000,
+      "training_steps": 10000,
+      "flags": [
+        "uniform_positive"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": null,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_positives_r8_s0__source_val_selected",
+      "original_model_id": "nmi_positives_r8_s0",
+      "checkpoint_role": "source_val_selected",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_positives_r8_s0_20260904_023439_006/checkpoint/state_dict_10000.ckpt",
+      "step": 10000,
+      "training_steps": 10000,
+      "flags": [
+        "uniform_positive"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": 0.8646305654240751,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_negatives_r8_s0__common6000",
+      "original_model_id": "nmi_negatives_r8_s0",
+      "checkpoint_role": "common6000",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_negatives_r8_s0_20260904_023439_007/checkpoint/state_dict_6000.ckpt",
+      "step": 6000,
+      "training_steps": 10000,
+      "flags": [
+        "degree_hard"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": null,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_negatives_r8_s0__source_val_selected",
+      "original_model_id": "nmi_negatives_r8_s0",
+      "checkpoint_role": "source_val_selected",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_negatives_r8_s0_20260904_023439_007/checkpoint/state_dict_10000.ckpt",
+      "step": 10000,
+      "training_steps": 10000,
+      "flags": [
+        "degree_hard"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": 0.8621531870173311,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_context_r8_s0__common6000",
+      "original_model_id": "nmi_context_r8_s0",
+      "checkpoint_role": "common6000",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_context_r8_s0_20260904_023439_008/checkpoint/state_dict_6000.ckpt",
+      "step": 6000,
+      "training_steps": 10000,
+      "flags": [
+        "one_hop"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": null,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_context_r8_s0__source_val_selected",
+      "original_model_id": "nmi_context_r8_s0",
+      "checkpoint_role": "source_val_selected",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_context_r8_s0_20260904_023439_008/checkpoint/state_dict_8000.ckpt",
+      "step": 8000,
+      "training_steps": 10000,
+      "flags": [
+        "one_hop"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": 0.8473115942944055,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_optimization_r8_s0__common6000",
+      "original_model_id": "nmi_optimization_r8_s0",
+      "checkpoint_role": "common6000",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_optimization_r8_s0_20260904_023439_009/checkpoint/state_dict_6000.ckpt",
+      "step": 6000,
+      "training_steps": 10000,
+      "flags": [
+        "grad_normalized"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": null,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_optimization_r8_s0__source_val_selected",
+      "original_model_id": "nmi_optimization_r8_s0",
+      "checkpoint_role": "source_val_selected",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_optimization_r8_s0_20260904_023439_009/checkpoint/state_dict_10000.ckpt",
+      "step": 10000,
+      "training_steps": 10000,
+      "flags": [
+        "grad_normalized"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": 0.8631272063858209,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_objective_r8_s0__common6000",
+      "original_model_id": "nmi_objective_r8_s0",
+      "checkpoint_role": "common6000",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_objective_r8_s0_20260904_023439_013/checkpoint/state_dict_6000.ckpt",
+      "step": 6000,
+      "training_steps": 10000,
+      "flags": [
+        "aux_reconstruction"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": null,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_objective_r8_s0__source_val_selected",
+      "original_model_id": "nmi_objective_r8_s0",
+      "checkpoint_role": "source_val_selected",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_objective_r8_s0_20260904_023439_013/checkpoint/state_dict_10000.ckpt",
+      "step": 10000,
+      "training_steps": 10000,
+      "flags": [
+        "aux_reconstruction"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": 0.8684964410189925,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_region_adaptive_r8_s0__common6000",
+      "original_model_id": "nmi_region_adaptive_r8_s0",
+      "checkpoint_role": "common6000",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_region_adaptive_r8_s0_20260904_023439_014/checkpoint/state_dict_6000.ckpt",
+      "step": 6000,
+      "training_steps": 10000,
+      "flags": [
+        "region_adaptive"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": null,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_region_adaptive_r8_s0__source_val_selected",
+      "original_model_id": "nmi_region_adaptive_r8_s0",
+      "checkpoint_role": "source_val_selected",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_region_adaptive_r8_s0_20260904_023439_014/checkpoint/state_dict_6000.ckpt",
+      "step": 6000,
+      "training_steps": 10000,
+      "flags": [
+        "region_adaptive"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": 0.8582976417979975,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_coverage_r8_s0__common6000",
+      "original_model_id": "nmi_coverage_r8_s0",
+      "checkpoint_role": "common6000",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_coverage_r8_s0_20260904_023439_015/checkpoint/state_dict_6000.ckpt",
+      "step": 6000,
+      "training_steps": 10000,
+      "flags": [
+        "coverage_cycle"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": null,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_coverage_r8_s0__source_val_selected",
+      "original_model_id": "nmi_coverage_r8_s0",
+      "checkpoint_role": "source_val_selected",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_coverage_r8_s0_20260904_023439_015/checkpoint/state_dict_10000.ckpt",
+      "step": 10000,
+      "training_steps": 10000,
+      "flags": [
+        "coverage_cycle"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": 0.8629337880803252,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_budget_r8_s0__common6000",
+      "original_model_id": "nmi_budget_r8_s0",
+      "checkpoint_role": "common6000",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_budget_r8_s0_20260904_023439_016/checkpoint/state_dict_6000.ckpt",
+      "step": 6000,
+      "training_steps": 10000,
+      "flags": [
+        "per_source_budget"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": null,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_budget_r8_s0__source_val_selected",
+      "original_model_id": "nmi_budget_r8_s0",
+      "checkpoint_role": "source_val_selected",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_budget_r8_s0_20260904_023439_016/checkpoint/state_dict_10000.ckpt",
+      "step": 10000,
+      "training_steps": 10000,
+      "flags": [
+        "per_source_budget"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "6260524ef6a5833ea1628712e901904db5fb5b75",
+      "source_validation_auc": 0.8662558369252873,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_combined_r8_s0__common6000",
+      "original_model_id": "nmi_combined_r8_s0",
+      "checkpoint_role": "common6000",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-combined/log/production/train_selected_recipe_s0/state/nmi_combined_r8_s0_20260904_051010_000/checkpoint/state_dict_6000.ckpt",
+      "step": 6000,
+      "training_steps": 10000,
+      "flags": [
+        "aux_reconstruction"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "0fc562a1227133d3980ae99f5f920852ca7436b4",
+      "source_validation_auc": null,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    },
+    {
+      "model_id": "nmi_combined_r8_s0__source_val_selected",
+      "original_model_id": "nmi_combined_r8_s0",
+      "checkpoint_role": "source_val_selected",
+      "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-combined/log/production/train_selected_recipe_s0/state/nmi_combined_r8_s0_20260904_051010_000/checkpoint/state_dict_10000.ckpt",
+      "step": 10000,
+      "training_steps": 10000,
+      "flags": [
+        "aux_reconstruction"
+      ],
+      "sources": [
+        "ukr_rus",
+        "covid",
+        "midterm",
+        "covid_political",
+        "election2020",
+        "ukr_rus_suspended",
+        "cp_hk",
+        "facebook_page_reference"
+      ],
+      "seed": 0,
+      "training_revision": "0fc562a1227133d3980ae99f5f920852ca7436b4",
+      "source_validation_auc": 0.8675377681337554,
+      "actual_training_batch_size": 1,
+      "actual_learning_rate": 0.001,
+      "forward_params": {
+        "layers": "S,U,M",
+        "emb_dim": 256,
+        "input_dim": 768,
+        "gnn_type": "sage",
+        "attention_mask_scheme": "causal",
+        "dropout": 0.0,
+        "text_features_dropout": 0,
+        "reset_after_layer": null,
+        "skip_path": false,
+        "has_final_back": false,
+        "no_bn_metagraph": false,
+        "no_bn_encoder": false,
+        "meta_gnn_pos_only": false,
+        "zero_shot": false,
+        "zero_label_embeddings": false,
+        "ignore_label_embeddings": true
+      },
+      "classification_adaptation": {
+        "task_name": "classification",
+        "ignore_label_embeddings": false
+      }
+    }
+  ],
+  "excluded": [
+    {
+      "model_id": "nmi_alignment_r8_s0",
+      "flags": [
+        "feature_standardized"
+      ],
+      "reason": "requires different forward preprocessing, parameters, or width"
+    },
+    {
+      "model_id": "nmi_sharing_r8_s0",
+      "flags": [
+        "source_affine"
+      ],
+      "reason": "requires different forward preprocessing, parameters, or width"
+    },
+    {
+      "model_id": "nmi_capacity_r8_s0",
+      "flags": [
+        "wide"
+      ],
+      "reason": "requires different forward preprocessing, parameters, or width"
+    }
+  ],
+  "input_records": "/Users/philipp/projects/gfm/prodigy/.worktrees/nm-interventions-overnight/scripts/experiments/analysis/transfer/ablations/prodigy_nm/nm_interventions_overnight/data/model_records.json",
+  "input_sha256": "30c0d11f5726e7aa0b7235d383b4a8ae037777283f682a751e66120bb29a1abb",
+  "common_steps_and_episodes": 6000,
+  "training_seeds": [
+    0
+  ],
+  "new_training": false,
+  "selection_uses_downstream_cls": false,
+  "all_training_sources": 8,
+  "held_out_source": "twibot20",
+  "default_target_episode_contract": "existing 128-episode 2-way 10-shot CLS"
+}

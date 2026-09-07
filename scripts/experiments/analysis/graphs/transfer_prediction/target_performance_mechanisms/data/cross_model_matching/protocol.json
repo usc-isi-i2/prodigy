@@ -1,0 +1,18 @@
+{
+  "smoke": false,
+  "revision": "47b893358cb29db934e9116148c9d3359626b675",
+  "all_target_support_query_ids_and_labels_matched": true,
+  "ways": 2,
+  "shots_per_class": 10,
+  "episodes_per_target_stream": 128,
+  "shared_readout": "normalize nodes, average support by class, cosine",
+  "metric": "pooled query AUC with canonical global/local class mapping",
+  "samgpt_graph_context": "native full symmetrized target graph; three GCN layers",
+  "prodigy_graph_context": "existing sampled directed subgraphs with trained S/U pooling",
+  "training": "existing SAMGPT GraphCL seed39 step500 vs PRODIGY NM seed0 step2500",
+  "source_graph_views_matched": false,
+  "pure_architecture_causal_effect": false,
+  "calibration_temperatures_matched_for_full_prodigy": false,
+  "new_training": false,
+  "episode_streams_are_not_training_seed_replicas": true
+}

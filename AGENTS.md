@@ -17,10 +17,9 @@ Claude should read this via `CLAUDE.md`; Codex/GPT reads this file directly.
 
 - Reaching Tucker requires the USC VPN active, or being on USC wifi. If ssh to Tucker stalls, first check whether VPN is connected.
 - Use Tucker for training, eval, graph construction, embedding generation, and any GPU-heavy workflow.
-- We currently own only GPUs 0 and 1 on Tucker; do not touch any other GPUs. This is a temporary restriction and is expected to return to GPUs 0-3 in the future.
+- We currently own only GPUs 2 and 3 on Tucker. Use GPUs 2 and 3 for our jobs, and leave GPUs 0-1 and 4-7 untouched.
 - Long jobs run in tmux. The user generally kicks off big or long-running jobs.
 - Reading on Tucker is fine: inspect files, list dirs, check logs, and load graphs read-only.
-- For write operations on Tucker, such as launching training/eval, building artifacts, or moving/deleting files, prefer giving the exact command for the user to run unless they explicitly ask you to execute it.
 
 ## Laptop/Cluster Workflow
 
@@ -72,6 +71,22 @@ code cannot be mutated by someone else's `git pull`:
   branch.** Checkpoints land in whichever worktree ran the job (the main checkout alone
   holds ~17 GB). Evaluate from the same worktree that trained, or pass absolute paths;
   do not assume `state/<run_name>/` resolves just because you are on the right branch.
+
+## Fast multi-model training
+
+- Read `docs/fast_training.md` before high-throughput PRODIGY NM training. It
+  records implementation/validation status as well as exact commands.
+- `experiments/run_shared_graph.py` shares one full CPU graph between independent
+  source-restricted trainers. Use `--dry-run` and a total `--worker-budget`.
+- Eight models completed 200 steps each on Tucker GPU 2 with four workers each
+  at revision `677f50c`; this is smoke validation, not a concurrency optimum.
+- Anomaly debugging is off by default; `--detect_anomaly True` enables it. For one
+  model, 8–16 loader workers is a measured starting point. For many models, divide
+  a total worker budget instead of multiplying that count by every model.
+- Only GPUs 2 and 3 are owned. Long runs need their own worktree and tmux session;
+  existing cluster execution-authorization rules still apply.
+- Smoke runs are explicitly labelled and are not completed experiment results.
+  Exact training-state resume still requires zero workers.
 
 ## Environment
 

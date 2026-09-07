@@ -9,8 +9,8 @@ mkdir -p "${SCRIPT_DIR}/run_logs"
 read -r -a GPU_ARR <<< "${GPUS:-0}"
 [[ ${#GPU_ARR[@]} -gt 0 ]] || { echo "need at least one GPU" >&2; exit 2; }
 for gpu in "${GPU_ARR[@]}"; do
-  [[ "${gpu}" =~ ^[01]$ ]] || {
-    echo "refusing GPU ${gpu}: this project currently owns only Tucker GPUs 0 and 1" >&2
+  [[ "${gpu}" =~ ^[0-3]$ ]] || {
+    echo "refusing GPU ${gpu}: this project currently owns only Tucker GPUs 0-3" >&2
     exit 2
   }
 done

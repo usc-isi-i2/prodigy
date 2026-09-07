@@ -1,0 +1,39 @@
+{
+  "models": 81,
+  "prediction_cells": 810,
+  "comparisons": 1800,
+  "error_strata": 5400,
+  "complete_both_streams": true,
+  "terminal_reference_reproduced": true,
+  "training_configs_verified": true,
+  "primary_prediction_passed": false,
+  "primary_cells": [
+    {
+      "stream": "original",
+      "mixture_roc_auc": 0.7650985717773438,
+      "probability_ensemble_roc_auc": 0.737457275390625,
+      "ensemble_minus_mixture_auc": -0.02764129638671875
+    },
+    {
+      "stream": "fresh",
+      "mixture_roc_auc": 0.736846923828125,
+      "probability_ensemble_roc_auc": 0.7341232299804688,
+      "ensemble_minus_mixture_auc": -0.00272369384765625
+    }
+  ],
+  "no_target_checkpoint_selection": true,
+  "matched_flops": false,
+  "training_seeds": [
+    0
+  ],
+  "artifact_sha256": {
+    "DONE.json": "a54976f7d38ccd6a5c801b5a22ade42230291245aaa3639da74c0086476ba4d9",
+    "comparisons.json": "aac571fb81dac774fb2319fb5b5adf617b1235269a4e3956a82e6566478ecdd3",
+    "error_strata.json": "6b3088b7e76ccdbbeab2936ce199616b389d7b66f8545caa0c0d814cd1132142",
+    "input_inventory.json": "c71e0c48cfd5d067a2ee583f4b27251fe084626b8eb09da5321c0bf3111d723b",
+    "model_metrics.json": "92822b63e8d5dde0b98fdf0a1251933f68dcf19fd7f647d18764ea037380ecef",
+    "prediction_inventory.json": "e652edd9107d9b066526b1df508ab1efae8a46057f6d8753720a14c658d58f07",
+    "protocol.json": "b73d43b92e99a485ef27e173b7f365546b343c591de246f27ef4c61053343730",
+    "training_budget_audit.json": "c461708b5294862cb33c4039dab7b4e633164da67ae1ef1cebeaecb351a588af"
+  }
+}

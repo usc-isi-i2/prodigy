@@ -21,6 +21,7 @@ from models.model_eval_utils import accuracy
 from models.general_gnn import SingleLayerGeneralGNN
 from models.sentence_embedding import SentenceEmb
 from experiments.layers import get_module_list
+from experiments.training_role_counts import TrainingRoleCounter
 
 try:
     import yaml
@@ -128,20 +129,34 @@ def _save_config_to_wandb_files(parameter):
 
 
 class TrainerFS():
+    _RESUME_DEFAULTS = {
+        "neighbor_matching_member_policy": "randomized",
+        "neighbor_matching_member_seed": -1,
+    }
     _RESUME_CONTRACT_KEYS = (
         "seed", "dataset", "root", "graph_filename", "task_name",
         "edge_view", "target_edge_view", "feature_subset", "original_features",
         "emb_dim", "layers", "gnn_type", "n_layer", "dropout", "n_hop",
         "neighbor_sampling_hop_sizes", "neighbor_sampling_node_limit",
         "neighbor_matching_walk_hops", "neighbor_sampling_strategy",
+        "neighbor_matching_member_policy", "neighbor_matching_member_seed",
         "neighbor_sampling_strata", "neighbor_sampling_episode_source",
+        "neighbor_sampling_episode_source_weighting",
+        "neighbor_sampling_batch_source_mode", "neighbor_sampling_source_subset",
+        "neighbor_sampling_source_sequence", "neighbor_sampling_source_sequence_steps",
+        "neighbor_sampling_source_schedule", "neighbor_sampling_source_schedule_steps",
+        "neighbor_sampling_source_schedule_seed",
         "neighbor_sampling_cross_source_prob", "neighbor_sampling_center_radii",
         "neighbor_sampling_center_radius_weights", "n_way", "n_shots", "n_query",
         "batch_size", "learning_rate", "weight_decay", "dataset_len_cap", "epochs",
         "workers",
+        "encoder_solver_objective", "encoder_solver_effective",
     )
 
     def __init__(self, dataset, parameter):
+        from models.encoder_solver_objective import configure_objective
+        self.encoder_solver_objective = configure_objective(parameter)
+        torch.autograd.set_detect_anomaly(bool(parameter.get("detect_anomaly", False)))
         wandb.init(project="graph-clip", name=parameter["exp_name"], tags=parameter.get("tags") or None)
         _save_config_to_wandb_files(parameter)
         #wandb.run.log_code(".")
@@ -531,6 +546,18 @@ class TrainerFS():
 
         # Data loader creation.
         self.train_dataloader, self.train_val_dataloader, self.val_dataloader, self.test_dataloader = self._build_dataloaders(dataset, self.dataset_name)
+        self.training_role_counter = None
+        if bool(self.parameter.get("track_training_user_roles", False)):
+            if self.parameter.get("task_name") != "neighbor_matching":
+                raise ValueError(
+                    "--track_training_user_roles currently supports only "
+                    "--task_name neighbor_matching."
+                )
+            self.training_role_counter = TrainingRoleCounter(dataset.graph.num_nodes)
+            self.training_role_graph_id = getattr(dataset.graph, "graph_id", None)
+            self.training_role_counts_path = os.path.join(
+                self.state_dir, "training_user_role_counts.csv"
+            )
         self.resume_step = 0
         if self.resume_training_checkpoint:
             self.load_training_checkpoint(self.resume_training_checkpoint)
@@ -545,6 +572,8 @@ class TrainerFS():
         kwargs = {}
         kwargs["root"] = os.path.join(self.parameter["root"], dataset_name)
         kwargs["num_workers"] = self.parameter["workers"]
+        kwargs["detect_anomaly"] = self.parameter.get("detect_anomaly", False)
+        kwargs["loader_start_method"] = self.parameter.get("loader_start_method", "")
         kwargs["batch_size"] = self.parameter["batch_size"]
         kwargs["n_way"] = self.parameter["n_way"]
         kwargs["n_shot"] = self.parameter["n_shots"]
@@ -590,6 +619,15 @@ class TrainerFS():
         kwargs["neighbor_sampling_source_sequence_steps"] = self.parameter.get(
             "neighbor_sampling_source_sequence_steps", ""
         )
+        kwargs["neighbor_sampling_source_schedule"] = self.parameter.get(
+            "neighbor_sampling_source_schedule", ""
+        )
+        kwargs["neighbor_sampling_source_schedule_steps"] = self.parameter.get(
+            "neighbor_sampling_source_schedule_steps", ""
+        )
+        kwargs["neighbor_sampling_source_schedule_seed"] = self.parameter.get(
+            "neighbor_sampling_source_schedule_seed", -1
+        )
         # The blocked schedule validates against the full optimizer-step budget even though
         # each BatchSampler iterator covers one dataset_len_cap-sized epoch.
         kwargs["epochs"] = self.parameter["epochs"]
@@ -615,6 +653,10 @@ class TrainerFS():
         kwargs["neighbor_matching_edge_split"] = self.parameter.get(
             "neighbor_matching_edge_split", False
         )
+        kwargs["neighbor_matching_member_policy"] = self.parameter.get(
+            "neighbor_matching_member_policy", "randomized"
+        )
+        kwargs["neighbor_matching_member_seed"] = self.parameter.get("neighbor_matching_member_seed", -1)
         kwargs["label_emb_texts"] = self.parameter.get("label_emb_texts", "")
         kwargs["midterm_lp_neg_ratio"] = self.parameter.get("midterm_lp_neg_ratio", 1)
         kwargs["hard_negatives"] = self.parameter.get("hard_negatives", True)
@@ -762,6 +804,62 @@ class TrainerFS():
                 pass  # keep BCE for LP tasks or when pos/neg counts differ
 
         return loss, accuracy(y_true_matrix, y_pred_matrix, calc_roc=not self.is_multiway)[2]
+
+    def _log_source_gradient_diagnostics(self, y_true, y_pred, graph, step):
+        """Log how strongly each source steers a multi-episode optimizer update."""
+        interval = int(self.parameter.get("source_diagnostics_interval", 0) or 0)
+        if interval <= 0 or (step != 1 and step % interval != 0):
+            return
+        if not hasattr(graph, "task_id_per_query") or not hasattr(graph, "source_id_per_task"):
+            return
+
+        task_ids = graph.task_id_per_query
+        source_by_task = graph.source_id_per_task
+        if task_ids.numel() != y_true.shape[0]:
+            return
+        query_sources = source_by_task[task_ids]
+        source_losses = {}
+        for source_id_tensor in torch.unique(query_sources):
+            source_id = int(source_id_tensor)
+            if source_id < 0:
+                continue
+            mask = query_sources == source_id_tensor
+            source_losses[source_id] = self.get_loss_and_acc(y_true[mask], y_pred[mask])[0]
+        if not source_losses:
+            return
+
+        trainable = [parameter for parameter in self.model.parameters() if parameter.requires_grad]
+        gradients = {}
+        metrics = {}
+        for source_id, source_loss in source_losses.items():
+            grads = torch.autograd.grad(
+                source_loss, trainable, retain_graph=True, allow_unused=True
+            )
+            gradients[source_id] = grads
+            norm_sq = sum(
+                grad.detach().float().square().sum() for grad in grads if grad is not None
+            )
+            metrics[f"source_diagnostics/loss/source_{source_id}"] = _to_float(source_loss)
+            metrics[f"source_diagnostics/grad_norm/source_{source_id}"] = _to_float(norm_sq.sqrt())
+
+        source_ids = sorted(gradients)
+        for left_idx, left in enumerate(source_ids):
+            for right in source_ids[left_idx + 1:]:
+                dot = sum(
+                    grad_left.detach().float().mul(grad_right.detach().float()).sum()
+                    for grad_left, grad_right in zip(gradients[left], gradients[right])
+                    if grad_left is not None and grad_right is not None
+                )
+                left_norm = metrics[f"source_diagnostics/grad_norm/source_{left}"]
+                right_norm = metrics[f"source_diagnostics/grad_norm/source_{right}"]
+                denom = left_norm * right_norm
+                metrics[f"source_diagnostics/grad_cosine/source_{left}_vs_{right}"] = (
+                    _to_float(dot) / denom if denom > 0 else 0.0
+                )
+        # Keep a directly readable local record, independent of W&B availability.
+        with open(os.path.join(self.logging_dir, "source_diagnostics.jsonl"), "a", encoding="utf-8") as handle:
+            handle.write(json.dumps({"completed_steps": step, **metrics}) + "\n")
+        wandb.log(metrics, step=step - 1)
     
     def get_hits(self, y_true_matrix, y_pred_matrix, task_mask):
         # get HITS@10, HITS@5, HITS@1, MRR scores
@@ -959,7 +1057,7 @@ class TrainerFS():
 
     def _resume_parameter_contract(self):
         return {
-            key: _config_safe_value(self.parameter.get(key))
+            key: _config_safe_value(self.parameter.get(key, self._RESUME_DEFAULTS.get(key)))
             for key in self._RESUME_CONTRACT_KEYS
         }
 
@@ -989,7 +1087,16 @@ class TrainerFS():
             "optimizer": self.optimizer.state_dict(),
             "rng": self._rng_state_dict(),
             "train_batch_sampler": None if sampler is None else sampler.state_dict(),
+            "training_role_counts": (
+                None
+                if getattr(self, "training_role_counter", None) is None
+                else self.training_role_counter.state_dict()
+            ),
         }
+        if getattr(self, "training_role_counter", None) is not None:
+            self.training_role_counter.write_csv(
+                self.training_role_counts_path, self.training_role_graph_id
+            )
         # Keep the historical weights-only file compact and evaluator-compatible.
         # Exact-resume state is a versioned sidecar at the same completed step.
         weights_path = os.path.join(self.ckpt_dir, f"state_dict_{step}.ckpt")
@@ -1030,6 +1137,10 @@ class TrainerFS():
                 f"{path} was produced with DataLoader workers and is not exact-resumable."
             )
         saved_contract = training.get("parameter_contract")
+        if isinstance(saved_contract, dict):
+            # Old checkpoints precede the opt-in member controls. Their missing
+            # keys mean the historical policy/global RNG, never a new treatment.
+            saved_contract = {**self._RESUME_DEFAULTS, **saved_contract}
         current_contract = self._resume_parameter_contract()
         if saved_contract != current_contract:
             if not isinstance(saved_contract, dict):
@@ -1054,6 +1165,14 @@ class TrainerFS():
         if sampler is None or sampler_state is None:
             raise ValueError(f"{path} has no restorable training BatchSampler state.")
         sampler.load_state_dict(sampler_state)
+        if getattr(self, "training_role_counter", None) is not None:
+            role_state = training.get("training_role_counts")
+            if role_state is None:
+                raise ValueError(
+                    "Role counting is enabled, but the resume checkpoint has no saved "
+                    "training role counts."
+                )
+            self.training_role_counter.load_state_dict(role_state)
         # DataLoader iterator construction itself consumes one Torch RNG draw even
         # with workers=0. Defer restoration until train() has created that iterator,
         # otherwise a resumed stream would be shifted by one draw.
@@ -1998,9 +2117,18 @@ class TrainerFS():
                 train_dataloader_itr = iter(self.train_dataloader)
                 batch = next(train_dataloader_itr)
             t2 = time.time()
+            if self.parameter.get("train_episode_audit", False):
+                from experiments.episode_audit import append_episode_audit
+                append_episode_audit(batch, steps_run, self.logging_dir)
+            if self.training_role_counter is not None:
+                self.training_role_counter.observe_batch(batch)
             batch = [i.to(self.device) for i in batch]
             raw_debug_graph = self._snapshot_debug_graph(batch)
-            yt, yp, graph = self.model(*batch) # apply the model
+            self.model.encoder_solver_training = True
+            try:
+                yt, yp, graph = self.model(*batch) # apply the model
+            finally:
+                self.model.encoder_solver_training = False
             self._maybe_print_debug_example(
                 batch,
                 yt,
@@ -2024,6 +2152,15 @@ class TrainerFS():
                 aux_loss = self.get_aux_loss(graph)
                 weight = self.parameter["attr_regression_weight"]
                 total_loss = loss + aux_loss * weight
+                self._log_source_gradient_diagnostics(yt, yp, graph, steps_run)
+                if self.encoder_solver_objective != "native":
+                    ridge_loss = self.model.encoder_solver_ridge_loss
+                    if ridge_loss is None:
+                        raise RuntimeError("Missing training U1 ridge loss")
+                    total_loss = ridge_loss if self.encoder_solver_objective in {"ridge_only", "ridge_centered_scaled"} else total_loss + ridge_loss
+                    wandb.log({"train_ridge_loss": _to_float(ridge_loss), "train_native_loss": _to_float(loss)}, step=e)
+                    if self.encoder_solver_objective == "ridge_centered_scaled":
+                        wandb.log({"train_ridge_logit_scale": _to_float(self.model.logit_scale.exp())}, step=e)
             total_loss.backward()
             self.optimizer.step()
             # self.scheduler.step()
@@ -2049,6 +2186,9 @@ class TrainerFS():
                 load=f"{(t2-t1):.2f}s",
                 step=f"{(t3-t2):.2f}s",
             )
+            observer = getattr(self, "training_step_observer", None)
+            if observer is not None:
+                observer(steps_run)
             # Save checkpoints by COMPLETED step count. This used to test and name by the
             # pre-increment loop variable `e`, so `state_dict_2000` from an in-loop save
             # had actually run 2001 steps while the terminal save below counts honestly —
@@ -2160,6 +2300,16 @@ class TrainerFS():
             else:
                 _log(f"[step {steps_run}] saving final checkpoint...")
                 self.save_checkpoint(steps_run)
+
+        if self.training_role_counter is not None:
+            self.training_role_counter.write_csv(
+                self.training_role_counts_path, self.training_role_graph_id
+            )
+            _log(
+                "Saved exact training user-role counts for "
+                f"{self.training_role_counter.steps} steps to "
+                f"{self.training_role_counts_path}"
+            )
 
         if bool(self.parameter.get("eval_after_train", False)):
             # steps actually completed, not the budget — an early-stopped run must not

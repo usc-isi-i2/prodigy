@@ -88,6 +88,7 @@ def _apply_config_defaults(parser, config):
 
 def get_params(argv=None):
     args = argparse.ArgumentParser()
+    args.add_argument("--encoder_solver_objective", choices=["native", "joint", "isolated", "ridge_only", "ridge_centered_scaled"], default="native")
 
     args.add_argument("--config", default="", type=str, help="Optional YAML config. CLI args override config values.")
     args.add_argument("-root", "--root", default="./FSdatasets", type=str)
@@ -146,6 +147,16 @@ def get_params(argv=None):
     args.add_argument("-eval_step", "--eval_step", default=2000, type=int)
     args.add_argument("-ckpt_step", "--checkpoint_step", default=2000, type=int)
     args.add_argument(
+        "--source_diagnostics_interval",
+        default=0,
+        type=int,
+        help=(
+            "If positive, log per-source loss, gradient norm, and pairwise gradient "
+            "cosine every N optimizer steps for batches of source-confined episodes. "
+            "Disabled by default because the diagnostic requires extra backward passes."
+        ),
+    )
+    args.add_argument(
         "-ckpt_steps", "--checkpoint_steps", default="", type=str,
         help=(
             "Explicit checkpoint schedule as comma-separated step counts, e.g. "
@@ -168,6 +179,10 @@ def get_params(argv=None):
 
     args.add_argument("-verbose", "--verbose", default=False, type=str2bool)
 
+    args.add_argument("--detect_anomaly", default=False, type=str2bool,
+                      help="Enable expensive autograd anomaly debugging (off for normal training).")
+    args.add_argument("--loader_start_method", default="", choices=("", "spawn", "forkserver"),
+                      help="Optional CPU DataLoader process context; shared training uses spawn.")
     args.add_argument("-workers", "--workers", default=10, type=int)  # Number of workers per dataloader
     args.add_argument("-gpu", "--device", default=123, type=int)  # device 123 means CPU
 
@@ -248,6 +263,15 @@ def get_params(argv=None):
     args.add_argument("-shot", "--n_shots", default=3, type=int) # if not zeroshot, how many shots do we want in the training dataset?
     args.add_argument("-qry", "--n_query", default=24, type=int)
     args.add_argument(
+        "--track_training_user_roles",
+        default=False,
+        type=str2bool,
+        help=(
+            "For neighbor-matching training, write exact per-node anchor/support/query "
+            "exposure counts to the run state directory."
+        ),
+    )
+    args.add_argument(
         "--neighbor_sampling_strategy",
         default="strict",
         choices=["strict", "replacement"],
@@ -311,6 +335,36 @@ def get_params(argv=None):
         help=(
             "Comma-separated positive episode counts for the blocked source sequence. The counts "
             "must match the sequence length and sum to epochs * dataset_len_cap."
+        ),
+    )
+    args.add_argument(
+        "--neighbor_sampling_source_schedule",
+        default="",
+        type=str,
+        help=(
+            "Optional comma-separated source schedule whose names/ids may repeat. "
+            "Each entry is one contiguous segment and every active source must appear "
+            "at least once. Use with --neighbor_sampling_source_schedule_steps; mutually "
+            "exclusive with the one-block-per-source sequence options."
+        ),
+    )
+    args.add_argument(
+        "--neighbor_sampling_source_schedule_steps",
+        default="",
+        type=str,
+        help=(
+            "Positive episode counts for the repeated source-schedule segments. Counts "
+            "must sum to epochs * dataset_len_cap."
+        ),
+    )
+    args.add_argument(
+        "--neighbor_sampling_source_schedule_seed",
+        default=-1,
+        type=int,
+        help=(
+            "Nonnegative creates independent per-source Python and member-sampling "
+            "streams for an explicit schedule. This makes differently ordered schedules "
+            "consume the same episode multiset within each source."
         ),
     )
     args.add_argument(
@@ -614,6 +668,23 @@ def get_params(argv=None):
             "extracting two-hop context."
         ),
     )
+    args.add_argument(
+        "--neighbor_matching_member_policy",
+        default="randomized",
+        choices=[
+            "randomized", "lowest_sorted", "lowest_shuffled",
+            "uniform_sorted", "uniform_shuffled",
+        ],
+        help=(
+            "Member retention/role policy for merged covid19_twitter-format NM. "
+            "'randomized' is the corrected default; the four explicit policies are "
+            "seeded mechanism controls."
+        ),
+    )
+    args.add_argument("--neighbor_matching_member_seed", default=-1, type=int,
+                      help="Nonnegative enables private NM walk/retention/role streams; -1 preserves historical global RNG.")
+    args.add_argument("--train_episode_audit", default=False, type=str2bool,
+                      help="Record consumed training anchor/member IDs and role metadata for mechanism audits.")
     args.add_argument("--graph_filename", default="graph_data.pt", type=str)  # graph file to load from root
     args.add_argument(
         "--target_feature",
@@ -790,6 +861,29 @@ def get_params(argv=None):
         "e4": "e4_multi",
     }
     params["task_name"] = task_aliases.get(params["task_name"], params["task_name"])
+    member_control = (
+        params["neighbor_matching_member_policy"] not in {"randomized", "lowest_sorted"}
+        or params["neighbor_matching_member_seed"] >= 0
+    )
+    if member_control:
+        if params["dataset"] != "covid19_twitter" or params["task_name"] != "neighbor_matching":
+            raise ValueError("member-policy controls currently require covid19_twitter-format neighbor_matching")
+        if params["neighbor_matching_member_seed"] < 0:
+            raise ValueError("member-policy controls require a nonnegative dedicated sampling seed")
+        if params.get("neighbor_sampling_episode_source") != "graph_id" or not params.get("neighbor_matching_edge_split"):
+            raise ValueError("member-policy controls require source-confined split-aware NM")
+    if params["neighbor_sampling_source_schedule_seed"] >= 0:
+        if not str(params.get("neighbor_sampling_source_schedule") or "").strip():
+            raise ValueError(
+                "neighbor_sampling_source_schedule_seed requires an explicit source schedule"
+            )
+        if params["neighbor_matching_member_seed"] < 0:
+            raise ValueError(
+                "neighbor_sampling_source_schedule_seed requires a nonnegative "
+                "neighbor_matching_member_seed"
+            )
+    if params["train_episode_audit"] and params["task_name"] != "neighbor_matching":
+        raise ValueError("train_episode_audit currently supports NM only")
 
     # Feature-ablation intervention: compose the ablation aug into the eval path.
     # Meant for -eval_only True runs; if used during training it would also ablate

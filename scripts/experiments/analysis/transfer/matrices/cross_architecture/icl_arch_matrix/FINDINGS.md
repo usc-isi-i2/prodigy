@@ -37,6 +37,19 @@ At update 100, the best-included-specialist envelope is strong for VISION and GI
 
 Thus the primary 2,500-update PRODIGY composition result is not an architecture-free property at update 100: early-budget composition behavior differs across these systems. The later pilot contains only one source set, so it cannot establish that PRODIGY learns the full composition envelope later.
 
+The reconstructed nine-rung trajectories for all three registered source orders are
+shown in [`figures/prodigy_ladder_orders.png`](figures/prodigy_ladder_orders.png),
+[`figures/vision_ladder_orders.png`](figures/vision_ladder_orders.png), and
+[`figures/gilt_ladder_orders.png`](figures/gilt_ladder_orders.png). Rung 1 uses the
+appropriate single-source checkpoint, rungs 2--8 use the order-specific cumulative
+mixtures, and the shared `all9` checkpoint supplies rung 9.
+
+[`figures/joint_downstream_ladder_orders.png`](figures/joint_downstream_ladder_orders.png)
+places the matched PRODIGY/VISION/GILT ladders beside the separately run SAMGPT ladder.
+The shared panel is for qualitative comparison only: SAMGPT uses nine evaluation targets
+and a different training/evaluation protocol, whereas the other three systems share the
+same four fixed downstream episode streams.
+
 ## Random-initialization control
 
 One deterministic, untrained instance per architecture was evaluated on the exact same four episode streams. The model has no associated source set; it retains each architecture's native raw-feature transforms, random message passing, and support-label mechanism. The comparison with update 100 therefore measures the end-to-end effect of 100 pretraining updates, not gain over a raw-feature-only floor.

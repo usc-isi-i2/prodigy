@@ -169,6 +169,19 @@ predicting.** `cp_hk` is the lone topology sign-flip anomaly (high-reciprocity o
 *Caveat: N=20 directed pairs, descriptive not powered; a training-family confound
 motivates the interventional sweep.*
 
+The node-level follow-up shows that sampled neighborhood context amplifies this
+domain signal before learning: across all 28 graph pairs, a held-out linear domain
+classifier rises from 0.794 accuracy / proxy-A 1.175 on raw centers to 0.899 / 1.597
+on neighbor means and 0.907 / 1.629 on center+neighbor information. The latter is an
+information-level diagnostic of the two channels available to SAGE, not a literal
+1,536-dimensional model input. Label separability follows label homophily rather
+than source separability uniformly: node+neighbor ROC-AUC is 0.982 for Election
+ideology, 0.892 for COVID Political ideology, 0.700 for TwiBot bot status, and 0.554
+for Ukraine suspension. Ukraine Suspended's label assortativity is effectively zero
+(0.004), explaining why neighborhood averaging provides no label benefit even though
+it makes graph source easier to identify. See
+[`path_feature_coupling`](../../graphs/structure_features/path_feature_coupling/FINDINGS.md).
+
 ### B. NM merged-vs-single — the cross-source shortcut
 
 The motivating "inversion" (single-source beats merged cross-domain) **does not

@@ -1,0 +1,49 @@
+{
+  "revision": "b587a0466a976fdb2f9508bbf851fd3c719cbfb7",
+  "original_roots": [
+    "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/specialist_cpu_20260906",
+    "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/specialist_cpu_tail_20260906"
+  ],
+  "fresh_roots": [
+    "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/fresh_stage_cpu_20260906"
+  ],
+  "models": [
+    "ss_covid",
+    "ss_covid_political",
+    "ss_cp_hk",
+    "ss_election2020",
+    "ss_facebook_page_reference",
+    "ss_midterm",
+    "ss_twibot20",
+    "ss_ukr_rus",
+    "ss_ukr_rus_suspended"
+  ],
+  "targets": [
+    "covid_political",
+    "election2020",
+    "facebook_page_reference",
+    "twibot20",
+    "ukr_rus_suspended"
+  ],
+  "variants": [
+    "baseline",
+    "features_query",
+    "features_support",
+    "features_both",
+    "edges_query",
+    "edges_support",
+    "edges_both",
+    "center_zero_query"
+  ],
+  "motivation": "Exploratory extension of the first 24 outcome-selected qualitative cases to all queries and all singleton sources.",
+  "fixed_in_advance": "Report all targets/models/conditions, both streams; no best-condition selection. Decompose errors fixed and introduced, not fixes alone.",
+  "interventions": "2x2 query/support context-feature replacement and 2x2 query/support background-edge removal, plus query center zeroing.",
+  "prediction": "Ukraine COVID-Political dependence on query context should recur on both streams; other source/target benefits are exploratory.",
+  "cohort_definitions": "context zero/positive; center incoming versus outgoing count; raw center/context ridge argmax agreement among nonempty contexts. No labels define cohorts.",
+  "seeds": 1,
+  "new_training": false,
+  "query_input_unchanged_in_support_only_conditions": true,
+  "uncertainty": "Descriptive paired counts and two episode streams; no independence assumption across recurring nodes, episodes, source models, or streams.",
+  "parity_atol": 1e-05,
+  "threads": 4
+}

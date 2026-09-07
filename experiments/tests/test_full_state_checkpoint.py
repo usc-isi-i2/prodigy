@@ -48,6 +48,22 @@ def _one_optimizer_step(trainer):
 
 
 class FullStateCheckpointTest(unittest.TestCase):
+    def test_legacy_checkpoint_defaults_remain_resumable(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            trainer = _trainer(root)
+            trainer.save_checkpoint(0)
+            payload = torch.load(root / "training_state_0.ckpt", weights_only=False)
+            contract = payload["_training_checkpoint"]["parameter_contract"]
+            for key in TrainerFS._RESUME_DEFAULTS:
+                del contract[key]
+            legacy = root / "legacy.ckpt"
+            torch.save(payload, legacy)
+            trainer.load_training_checkpoint(str(legacy))
+            trainer.parameter["neighbor_matching_member_seed"] = 42
+            with self.assertRaisesRegex(ValueError, "parameter contract mismatch"):
+                trainer.load_training_checkpoint(str(legacy))
+
     def test_restores_optimizer_rng_and_episode_stream(self):
         with tempfile.TemporaryDirectory() as directory:
             tmp_path = Path(directory)

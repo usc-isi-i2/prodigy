@@ -14,6 +14,7 @@ CHECKPOINTS_TEXT="${CHECKPOINTS_TEXT:-20 60 100 300 900 2000}"
 CHECKPOINTS_WITH_ZERO="${CHECKPOINTS_WITH_ZERO:-0,20,60,100,300,900,2000}"
 SEEDS_TEXT="${SEEDS_TEXT:-0 1 2}"
 OFFSETS_TEXT="${OFFSETS_TEXT:-0 1 2}"
+GPUS_TEXT="${GPUS_TEXT:-0 1}"
 read -r -a CHECKPOINTS <<< "$CHECKPOINTS_TEXT"
 MODELS=(
   "ss_covid_political:covid_political"
@@ -25,7 +26,7 @@ MODELS=(
 read -r -a SEEDS <<< "$SEEDS_TEXT"
 read -r -a OFFSETS <<< "$OFFSETS_TEXT"
 ARCHITECTURES=(prodigy vision gilt)
-GPUS=(0 1)
+read -r -a GPUS <<< "$GPUS_TEXT"
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
 source "$(conda info --base)/etc/profile.d/conda.sh"

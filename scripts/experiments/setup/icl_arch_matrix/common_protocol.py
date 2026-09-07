@@ -332,21 +332,28 @@ def build_classification_loader(
     graph_path=None,
     workers: int = 0,
     eval_episode_seed_offset: int = 0,
+    split: str = "test",
+    batch_count: int = EVAL_EPISODES // EVAL_BATCH_SIZE,
+    batch_size: int = EVAL_BATCH_SIZE,
+    n_way: int = EVAL_N_WAY,
+    n_shot: int = EVAL_N_SHOT,
+    n_query: int | None = None,
+    random_query: bool | None = None,
 ):
-    """Build the exact deterministic test episodes shared by all architectures."""
+    """Build deterministic classification episodes from one declared node split."""
     if dataset is None:
         dataset, get_dataloader, graph_path = build_classification_dataset(
             dataset_name=dataset_name, data_root=data_root, target=target
         )
     return get_dataloader(
         dataset,
-        split="test",
+        split=split,
         node_split="",
-        batch_size=EVAL_BATCH_SIZE,
-        n_way=EVAL_N_WAY,
-        n_shot=EVAL_N_SHOT,
-        n_query=int(target["n_query"]),
-        batch_count=EVAL_EPISODES // EVAL_BATCH_SIZE,
+        batch_size=batch_size,
+        n_way=n_way,
+        n_shot=n_shot,
+        n_query=int(target["n_query"] if n_query is None else n_query),
+        batch_count=batch_count,
         root=str(graph_path.parent),
         bert=None,
         num_workers=workers,
@@ -356,7 +363,9 @@ def build_classification_loader(
         train_cap=None,
         linear_probe=False,
         task_name="classification",
-        eval_random_query=target["eval_random_query"],
+        eval_random_query=(
+            target["eval_random_query"] if random_query is None else random_query
+        ),
         eval_episode_seed_offset=eval_episode_seed_offset,
         seed=0,
     )

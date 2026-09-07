@@ -49,6 +49,7 @@ from fixed_test_plan import (  # noqa: E402
     CHECKPOINT_STEP,
     EPISODE_COUNT,
     PROTOCOL,
+    SEEDS,
     checkpoint_path,
     physical_jobs,
 )
@@ -598,12 +599,25 @@ def parse_targets(text: str) -> list[str]:
     return targets
 
 
+def parse_seeds(text: str) -> list[int]:
+    seeds = [int(part.strip()) for part in text.split(",") if part.strip()]
+    if not seeds:
+        raise ValueError("at least one training seed is required")
+    if len(seeds) != len(set(seeds)):
+        raise ValueError(f"duplicate seeds: {seeds}")
+    unknown = [seed for seed in seeds if seed not in SEEDS]
+    if unknown:
+        raise ValueError(f"unknown seeds {unknown}; expected a subset of {list(SEEDS)}")
+    return seeds
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--worker-index", required=True, type=int)
     parser.add_argument("--worker-count", required=True, type=int)
     parser.add_argument("--max-checkpoints", type=int)
     parser.add_argument("--specialists-only", action="store_true")
+    parser.add_argument("--seeds", default=",".join(map(str, SEEDS)))
     parser.add_argument("--targets", default=",".join(SOURCES))
     parser.add_argument("--batch-size", default=64, type=int)
     parser.add_argument("--episode-count", default=EPISODE_COUNT, type=int)
@@ -643,14 +657,17 @@ def main() -> int:
         flush=True,
     )
     targets = parse_targets(args.targets)
+    selected_seeds = parse_seeds(args.seeds)
     reference_fingerprints = load_reference_fingerprints(
         args.reference_fingerprints, tuple(SOURCES)
     )
     jobs = physical_jobs()
     if args.specialists_only:
         jobs = [job for job in jobs if job.model.model_id.startswith("ss_")]
-        if len(jobs) != 27:
-            raise AssertionError(f"expected 27 specialist checkpoints, got {len(jobs)}")
+    jobs = [job for job in jobs if job.seed in selected_seeds]
+    expected_jobs = (9 if args.specialists_only else 31) * len(selected_seeds)
+    if len(jobs) != expected_jobs:
+        raise AssertionError(f"expected {expected_jobs} checkpoints, got {len(jobs)}")
     assigned = [
         job for index, job in enumerate(jobs)
         if index % args.worker_count == args.worker_index

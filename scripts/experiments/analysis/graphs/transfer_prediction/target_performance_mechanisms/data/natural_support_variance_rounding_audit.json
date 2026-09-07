@@ -1,0 +1,12 @@
+{
+  "purpose": "Check the largest float32 cohort-variance partition residual against the same saved predictions in float64.",
+  "prediction_file": "/dataMeR1/phil/gfm/prodigy-mechanisms-role/log/natural_support_full_20260906/predictions/fresh/twibot20/memberctl_ukr_rus_lowest_sorted_s0.pt",
+  "calculation": "Compute the original float32 softmax probabilities, cast to float64, take population variance across eight support draws and mean over each unchanged context cohort.",
+  "largest_partition_residual_among_all_60_cells": 1.0749014719979577e-8,
+  "cohorts": [
+    {"cohort": "all", "saved_float32_mean": 0.08999864012002945, "recomputed_float64_mean": 0.0899986384310771},
+    {"cohort": "no_context", "saved_float32_mean": 0.0975482389330864, "recomputed_float64_mean": 0.09754824179231467},
+    {"cohort": "has_context", "saved_float32_mean": 0.08874990791082382, "recomputed_float64_mean": 0.08874991799651734}
+  ],
+  "consequence": "Use four float32 epsilons of relative tolerance for summary-reduction conservation; full-model forward parity checks and all raw results remain unchanged."
+}

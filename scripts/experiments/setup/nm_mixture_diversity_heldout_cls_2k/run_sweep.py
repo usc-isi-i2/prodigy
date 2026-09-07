@@ -86,8 +86,8 @@ def main() -> int:
     args = parser.parse_args()
 
     validate()
-    if args.device not in {0, 1}:
-        parser.error("this project currently owns only Tucker GPUs 0 and 1")
+    if args.device not in {0, 1, 2, 3}:
+        parser.error("this project currently owns only Tucker GPUs 0-3")
     if args.num_shards < 1 or not 0 <= args.shard_index < args.num_shards:
         parser.error("require 0 <= shard-index < num-shards")
     targets = csv_set(args.targets)

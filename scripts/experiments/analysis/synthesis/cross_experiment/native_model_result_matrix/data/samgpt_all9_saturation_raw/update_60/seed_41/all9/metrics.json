@@ -1,0 +1,149 @@
+{
+  "aliases": [
+    "ladder:A:9",
+    "ladder:B:9",
+    "ladder:C:9"
+  ],
+  "checkpoint": "/dataMeR1/phil/gfm/samgpt-final-core/log/final_core/seed_41/all9/final_20260807T185324Z/checkpoint_update_60.pt",
+  "checkpoint_sha256": "881f9ff8108763fd2ce2447aee4d9d117268b8a1f7dd21226c50b2bb0f6c3a8d",
+  "checkpoint_update": 60,
+  "complete": true,
+  "evaluation": {
+    "encoder": "frozen_base_gcn",
+    "episodes": 128,
+    "feature_projection": "shared_gaussian_random",
+    "feature_projection_seed": 39,
+    "graph_direction": "symmetrized",
+    "queries_per_class": 12,
+    "readout": "frozen_cosine_prototypes",
+    "shots_per_class": 10,
+    "split": "test",
+    "split_seed": 0,
+    "task": "node_label_classification"
+  },
+  "model_id": "all9",
+  "protocol": "final_core_frozen_cls_10shot_128episodes_v1",
+  "seed": 41,
+  "sources": [
+    "ukr_rus_twitter",
+    "covid19_twitter",
+    "midterm",
+    "covid_political",
+    "election2020",
+    "ukr_rus_suspended",
+    "twibot20",
+    "cp_hk_twitter",
+    "facebook_page_reference"
+  ],
+  "targets": {
+    "cora": {
+      "accuracy_mean": 0.6651785714285714,
+      "accuracy_std": 0.05090377154885598,
+      "classes": 7,
+      "episode_fingerprint": "6a5978a16a6f645fba85eda93a4f752cad8b31ac37675eb96b205edfdb2110ea",
+      "episodes": 128,
+      "graph": "/dataMeR1/phil/data/cora/graphs/citation_graph.pt",
+      "label_key": "y",
+      "labeled_nodes": 2708,
+      "roc_auc_mean": 0.9005223834325397,
+      "roc_auc_std": 0.020813570252788606
+    },
+    "covid_political": {
+      "accuracy_mean": 0.7099609375,
+      "accuracy_std": 0.1021159482086625,
+      "classes": 2,
+      "episode_fingerprint": "54248881fa59ff989afaca729296290e733f342abb0f762cf14485a83b9c8f6c",
+      "episodes": 128,
+      "graph": "/dataMeR1/phil/data/covid_political/graphs/retweet_graph.pt",
+      "label_key": "y",
+      "labeled_nodes": 78672,
+      "roc_auc_mean": 0.7924262152777777,
+      "roc_auc_std": 0.10691097170984817
+    },
+    "election2020": {
+      "accuracy_mean": 0.728515625,
+      "accuracy_std": 0.1354434785691817,
+      "classes": 2,
+      "episode_fingerprint": "7d1a1602c76fd6e40196190da4abc390c70e8bb570ac5531e7f97921a712563d",
+      "episodes": 128,
+      "graph": "/dataMeR1/phil/data/election2020/graphs/retweet_graph.pt",
+      "label_key": "y",
+      "labeled_nodes": 78932,
+      "roc_auc_mean": 0.8056098090277777,
+      "roc_auc_std": 0.11244448236749861
+    },
+    "facebook_admin_country_top30": {
+      "accuracy_mean": 0.21729600694444445,
+      "accuracy_std": 0.024786967436711837,
+      "classes": 30,
+      "episode_fingerprint": "236ea2a921973c62a81291ab9530bdf3f0387d557c687fe066f027009ededc0a",
+      "episodes": 128,
+      "graph": "/dataMeR1/phil/data/facebook_page_reference/graphs/page_reference_graph.pt",
+      "label_key": "node_classification_targets.admin_country_top30",
+      "labeled_nodes": 108200,
+      "roc_auc_mean": 0.7550580761594029,
+      "roc_auc_std": 0.014927745941266895
+    },
+    "facebook_page_category_top30": {
+      "accuracy_mean": 0.19127604166666667,
+      "accuracy_std": 0.018328939712534114,
+      "classes": 30,
+      "episode_fingerprint": "91f8db404ad7e12ff81855bb655f207e71bb4fbe44843382dfacaf453aa79972",
+      "episodes": 128,
+      "graph": "/dataMeR1/phil/data/facebook_page_reference/graphs/page_reference_graph.pt",
+      "label_key": "node_classification_targets.page_category_top30",
+      "labeled_nodes": 107613,
+      "roc_auc_mean": 0.7427836645913155,
+      "roc_auc_std": 0.013689782692871091
+    },
+    "facebook_verified": {
+      "accuracy_mean": 0.5276692708333333,
+      "accuracy_std": 0.10959009361975476,
+      "classes": 2,
+      "episode_fingerprint": "c05d74c7e846fa494470b952777ca592d1bc0848834db62ebb683e4788ba1468",
+      "episodes": 128,
+      "graph": "/dataMeR1/phil/data/facebook_page_reference/graphs/page_reference_graph.pt",
+      "label_key": "node_classification_targets.verified",
+      "labeled_nodes": 150000,
+      "roc_auc_mean": 0.5409071180555556,
+      "roc_auc_std": 0.13287286285015265
+    },
+    "pubmed": {
+      "accuracy_mean": 0.6610243055555556,
+      "accuracy_std": 0.07982246868367389,
+      "classes": 3,
+      "episode_fingerprint": "0fe1a91129de7c478bbb72f1d57f4e4d7baddf824edc783496ff5a1c96abd413",
+      "episodes": 128,
+      "graph": "/dataMeR1/phil/data/pubmed/graphs/citation_graph.pt",
+      "label_key": "y",
+      "labeled_nodes": 19717,
+      "roc_auc_mean": 0.8242730034722221,
+      "roc_auc_std": 0.054078940920923024
+    },
+    "twibot20": {
+      "accuracy_mean": 0.5934244791666666,
+      "accuracy_std": 0.10814213060100672,
+      "classes": 2,
+      "episode_fingerprint": "bc0781c86ffc58325b09def4f0d97b20aea574fb2ebf26ce208fc3dec982d17a",
+      "episodes": 128,
+      "graph": "/dataMeR1/phil/data/twibot20/graphs/retweet_graph.pt",
+      "label_key": "y",
+      "labeled_nodes": 11826,
+      "roc_auc_mean": 0.6761338975694444,
+      "roc_auc_std": 0.12681087411472092
+    },
+    "ukr_rus_suspended": {
+      "accuracy_mean": 0.5123697916666667,
+      "accuracy_std": 0.09460504291996286,
+      "classes": 2,
+      "episode_fingerprint": "19b9aa6c56890d8c9d263c2df35eb4df08220a1d37bdf3b5e9504a9ea5a13a77",
+      "episodes": 128,
+      "graph": "/dataMeR1/phil/data/ukr_rus_suspended/graphs/retweet_graph.pt",
+      "label_key": "y",
+      "labeled_nodes": 56438,
+      "roc_auc_mean": 0.5119086371527778,
+      "roc_auc_std": 0.12284792867471486
+    }
+  },
+  "training_repository_commit": "ce455edebd34a9cbc5672b0ec335aca2029d762e"
+}
