@@ -37,3 +37,21 @@ read; hydrated text stays in ignored experiment output rather than git.
 
 Analysis lives under
 `scripts/experiments/analysis/graphs/transfer_prediction/local_transfer_contrast/`.
+
+## Independent-checkpoint replication
+
+After constructing a 9-row singleton model list for each archived final-core
+checkpoint seed, launch one fixed-episode replay per seed and stream from separate
+tmux sessions:
+
+```bash
+bash scripts/experiments/setup/local_transfer_contrast/run_seed_replay_tucker.sh 1 original 0
+bash scripts/experiments/setup/local_transfer_contrast/run_seed_replay_tucker.sh 1 fresh 1
+bash scripts/experiments/setup/local_transfer_contrast/run_seed_replay_tucker.sh 2 original 2
+bash scripts/experiments/setup/local_transfer_contrast/run_seed_replay_tucker.sh 2 fresh 3
+```
+
+The target sampling seed remains zero for every checkpoint seed so the replication
+isolates training stochasticity. The fresh stream uses the same frozen 100003 offset
+as the seed-0 analysis. CUDA trace parity is explicitly guarded at `1e-5` because
+scatter reduction order can change logits at the low `1e-6` scale.
