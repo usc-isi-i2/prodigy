@@ -402,3 +402,174 @@ Decision: do not claim a successful cross-target stage-aware selector. Ranking
 reversals alone do not imply that validation on other domains predicts the best
 representation on a new target. The public readout/pretraining results remain
 supported; a model-selection framework is not established by this pilot.
+
+### Frozen rule applied to social models: completed breadth test
+
+Runtime `0a223848`, completed Tucker output
+`log/social_centered_readout_20260907`. Reused saved embeddings from all eight
+rung4 seed0 native/joint/isolated/ridge-only × blocked/interleaved models,
+five targets, two streams:80 prediction-export receipts and400 readout cells.
+Cached inputs were rehashed and uncentered ridge controls reproduced before
+scoring. Macro-F1/accuracy use production global-probability tie handling.
+
+Primary comparison: ordinary native-trained models, fresh fixed-four-target means.
+
+| Schedule / readout | Accuracy | Macro-F1 | AUC | NLL |
+|---|---:|---:|---:|---:|
+| Blocked / full | .786947 | .780686 | .830391 | .625001 |
+| Blocked / U1 | .802327 | .795349 | .846822 | .591297 |
+| Blocked / centered U1 | .808757 | .802451 | .860847 | .517886 |
+| Interleaved / full | .765788 | .759440 | .816190 | .780472 |
+| Interleaved / U1 | .803141 | .797719 | .840030 | .568712 |
+| Interleaved / centered U1 | .806559 | .800788 | .844000 | .520637 |
+
+Centered raw-feature means are .731364 accuracy/.721158 macro-F1/.790131 AUC,
+below both centered native-trained U1 means. Centered U1 minus full is positive
+for accuracy/F1/AUC and negative for NLL in both streams, both schedules, and
+both fixed4/all5 panels. Fresh fixed4 macro-F1 gains are2.1765 and4.1348 points;
+AUC gains3.0456 and2.7810 points. Unlike public20-way results, social NLL improves.
+
+Centering alone is not uniformly helpful over U1: on fresh twibot20 it improves
+blocked accuracy2.4089 points but reduces interleaved accuracy.5534 points;
+interleaved covid_political also declines. Do not describe per-cell dominance.
+Breadth is retrospective across existing social outcomes with a public-fixed
+rule, not new independent training seeds. The eight objective arms do not create
+eight independent validations of the native-training claim.
+
+Advisor synthesis: the fixed intermediate readout now has public fresh-stream
+replication, an exact-initialization control showing useful pretraining, and
+positive social panel breadth. This is a stronger baseline contribution than
+TRACE, but neither universal superiority nor a successful cross-target schedule-
+selection algorithm has been established.
+
+### Fresh-stream initialization and text controls: complete
+
+Runtime `8031c57c`, Tucker `log/publickg_pretraining_control_fresh_20260907`,
+500/500 episodes and `execution_status.json: complete`. Source is
+`publickg_readout_fresh_20260907`; index SHA256
+`60f9317ec226225b4e5a33c47ecc007dac2484573936ef851e087ab5c2778094`.
+Initialization SHA256 `83ed396209297c880097f96fe84f25f00ed90984ed0cc058670d42cb63bfc4f8`.
+Each source artifact was rehashed before reading embedded paired geometry.
+
+| Readout | Accuracy | Macro-F1 | OVR AUC | NLL |
+|---|---:|---:|---:|---:|
+| Native | .735350 | .719447 | .975168 | .873143 |
+| Trained / uncentered | .768150 | .744393 | .974447 | 2.823322 |
+| Trained / support-centered | .802800 | .787727 | .978340 | 2.674026 |
+| Initialization / uncentered | .720700 | .695678 | .961288 | 2.771032 |
+| Initialization / support-centered | .697775 | .674303 | .955725 | 2.717717 |
+| Endpoint text / uncentered | .714750 | .697192 | .957863 | 2.774713 |
+| Endpoint text / support-centered | .716100 | .698477 | .957220 | 2.761918 |
+
+Centered pretrained accuracy exceeds the stronger tested initialization control
+by 8.21 points and the stronger text control by 8.67 points. Native exceeds that
+text control by only 1.925 points. Centered pretrained macro-F1 exceeds the best
+initialization by 9.20485 points and best text by 8.92498 points. This supports
+useful GFM pretraining on the fresh episode stream, not another training seed.
+Public NLL remains worse than native, so the conclusion concerns classification
+and ranking utility, not calibration dominance.
+
+The recomputed uncentered readout accuracy differs by .000025 (one of 40000
+queries) from the online saved score .768125 despite the required 1e-5 logit
+parity check passing. Do not silently replace the original online result or call
+this bit-exact prediction replication. Centered and native aggregate results
+match the original fresh-stream report. The tiny uncentered discrepancy needs
+an example-level tie/numerical check before combining those rows in a final table.
+
+### Cardinality discriminator: the gap persists at training-matched 15-way
+
+Runtime `7bd7047a`; outputs `publickg_cardinality_15way_20260907` and
+`publickg_cardinality_20way_20260907` under the paired-state Tucker log root.
+Both completed 128 episodes. All 256 artifact hashes and ordinal sequences
+verified before aggregation. Fixed seed0 checkpoint step8000, 3shot/4query,
+200 candidate relations, sampler seed300455; centered rule unchanged.
+
+| Ways | Native accuracy | Centered accuracy | Native macro-F1 | Centered macro-F1 |
+|---|---:|---:|---:|---:|
+| 15 | .780208 | .834115 | .767356 | .822119 |
+| 20 | .743262 | .808301 | .727486 | .792750 |
+
+Accuracy gains are 5.390625 and 6.503906 points; macro-F1 gains 5.476352 and
+6.526418 points. Accuracy wins/losses/ties:105/13/10 and113/7/8 respectively.
+Native/centered OVR AUC:15-way .976186/.979762;20-way .974598/.979168.
+Native/centered NLL:15-way .746230/2.360683;20-way .876431/2.670160.
+
+The advantage survives matching training's 15-way cardinality: the 15-to-20
+mismatch is not sufficient to explain the observed gap. The ~1.11-point larger
+accuracy gap at20-way is descriptive, not a proven interaction. Cardinality
+also changes total examples and native BN context; examples across the two
+arms are not paired. This does not by itself prove domain-shift causation.
+
+Index SHA256:15-way `7dc942dddf1d587f075237cc0b38247ea5e90d65bdd6053f320ace53abb05b9e`;
+20-way `210e1e842a5d2ee2962416416cf3e1bde32c6f54990d52a4ce2a343a35ea9836`.
+
+### Native-win audit before proposing a router
+
+Read all native-trained cells in `social_centered_readout_20260907/summary.json`
+across five targets, two schedules, and both streams. No target/schedule has a
+positive native-minus-centered accuracy or macro-F1 contrast in both streams.
+The original blocked covid_political macro-F1 advantage is .2462 points but
+becomes -.2588 on fresh; blocked suspended .8000 becomes -.1987. These original
+wins also disappear against the better of centered and uncentered U1.
+Election2020 contains exact/near ties, not a substantial positive regime.
+This does not exclude predictable episode-level wins, but a stable task-level
+crossover is not established. Do not build or advertise a router on this evidence.
+
+Numerical audit closure: the one-query fresh uncentered recomputation discrepancy
+is episode401/query25, true class6. Online top scores: class2 .1757591665,
+class6 .1757584661; recomputed class6 .1757591963, class2 .1757589728.
+Maximum absolute logit difference is7.30157e-7, within the recorded tolerance.
+This is a near-tie flip, not different examples or an aggregate arithmetic error.
+Retain the original online metric when reporting that run.
+
+### Cora breadth: deployment improvement without positive representation transfer
+
+Completed runtime `f5db493d`, output `log/cora_readout_breadth_retry1_20260907`.
+Both strict checkpoint loads and all batch trace-parity checks passed.128
+seven-way/3shot/4query episodes per model;32 identical cached batches.
+All32 input and64 output file hashes verified;256 model-episode metric rows.
+Custom stratified test pool and transductive graph, not standard Cora benchmark.
+Initial failed loader attempt retained separately; no predictions preceded fix.
+
+| Checkpoint/readout | Accuracy | Macro-F1 | OVR AUC | NLL |
+|---|---:|---:|---:|---:|
+| Blocked/native | .407924 | .383682 | .773740 | 1.588211 |
+| Blocked/U1 uncentered | .402623 | .348499 | .763428 | 1.913780 |
+| Blocked/U1 centered | .438895 | .403355 | .766276 | 1.811580 |
+| Interleaved/native | .311384 | .292621 | .681106 | 1.818053 |
+| Interleaved/U1 uncentered | .322545 | .275823 | .689790 | 1.916137 |
+| Interleaved/U1 centered | .386719 | .352346 | .734956 | 1.841651 |
+| Raw uncentered (same both) | .573661 | .547938 | .849726 | 1.867020 |
+| Raw centered (same both) | .571150 | .547006 | .848331 | 1.822570 |
+
+Centered U1 gains3.0971/7.5335 accuracy points over native for blocked/interleaved,
+but raw uncentered exceeds centered U1 by13.4766/18.6942 points. Thus this task
+broadens the deployment-bypass observation, NOT the claim that useful GFM gains
+are hidden. Representation utility relative to text is poor here. Without a
+same-architecture initialization control, do not attribute that deficit solely
+to training rather than architecture. Blocked native also retains higher AUC
+than centered U1. This boundary must remain in the paper; do not search for a
+replacement favorable target or describe all metrics as improving.
+
+### Fixed-first-batch Cora example inspection
+
+Inspected the first five blocked-model queries in batch000 where raw uncentered
+is correct and centered U1 is wrong (query6,7,13,29,35). Mapped each episode's
+local class columns to graph labels using actual center IDs. Context counts
+use saved sampled real nodes, excluding the center and artificial supernodes;
+labels are used only for this retrospective diagnosis, never prediction.
+
+Query13/node2403, *Reasoning with Portions of Precedents*, is Case Based;
+raw is correct, while U1 and native predict Genetic Algorithms. All seven
+sampled context nodes are Case Based. Query35/node573, *Iterated Revision and
+Minimal Change of Conditional Beliefs*, is Probabilistic Methods; U1/native
+predict Theory despite all nine sampled context nodes being Probabilistic
+Methods. Query29/node544 is labeled Neural Networks; U1/native predict
+Probabilistic Methods despite12 of15 sampled context nodes being Neural Networks.
+Its statistical-decision-theory abstract also illustrates that dataset labels
+and textual topic intuition need not align cleanly.
+
+These examples contradict a universal wrong-neighborhood-majority explanation,
+not every form of harmful aggregation. They do not distinguish learned encoder
+distortion from support-set geometry and cannot establish population causation.
+No intervention or hyperparameter choice was selected from these examples.
