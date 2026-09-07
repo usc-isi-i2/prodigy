@@ -18,8 +18,14 @@ GRAPH = Path(
 )
 
 
-def validate(total_steps: int, rungs: tuple[int, ...], seeds: tuple[int, ...]) -> None:
-    arms = build_plan(total_steps=total_steps, rungs=rungs, seeds=seeds)
+def validate(
+    total_steps: int, replay_block: int,
+    rungs: tuple[int, ...], seeds: tuple[int, ...],
+) -> None:
+    arms = build_plan(
+        total_steps=total_steps, replay_block=replay_block,
+        rungs=rungs, seeds=seeds,
+    )
     expected = len(rungs) * len(seeds) * 3
     if len(arms) != expected or len({arm.model_id for arm in arms}) != expected:
         raise ValueError("plan is incomplete or has duplicate model ids")
@@ -37,13 +43,14 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--total-steps", type=int, default=2500)
+    parser.add_argument("--replay-block", type=int, default=100)
     parser.add_argument("--rungs", default="2,3,4")
     parser.add_argument("--seeds", default="0,1,2")
     parser.add_argument("--check-data", action="store_true")
     args = parser.parse_args()
     rungs = tuple(int(value) for value in args.rungs.split(","))
     seeds = tuple(int(value) for value in args.seeds.split(","))
-    validate(args.total_steps, rungs, seeds)
+    validate(args.total_steps, args.replay_block, rungs, seeds)
     config = yaml.safe_load(args.config.read_text())
     required = {
         "batch_size": 1,

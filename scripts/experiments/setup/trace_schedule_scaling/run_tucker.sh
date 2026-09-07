@@ -12,6 +12,7 @@ DRY_RUN="${DRY_RUN:-0}"
 case "$PHASE" in
   smoke)
     TOTAL_STEPS="${TOTAL_STEPS:-20}"
+    REPLAY_BLOCK="${REPLAY_BLOCK:-4}"
     RUNGS="${RUNGS:-2}"
     SEEDS="${SEEDS:-0}"
     RUN_STAMP="${RUN_STAMP:-20260906smoke}"
@@ -21,6 +22,7 @@ case "$PHASE" in
     ;;
   full)
     TOTAL_STEPS="${TOTAL_STEPS:-2500}"
+    REPLAY_BLOCK="${REPLAY_BLOCK:-100}"
     RUNGS="${RUNGS:-2,3,4}"
     SEEDS="${SEEDS:-0,1,2}"
     RUN_STAMP="${RUN_STAMP:-20260906v1}"
@@ -58,9 +60,10 @@ PLAN="$LOG_ROOT/launch/plan_${RUN_STAMP}.tsv"
 cd "$REPO_ROOT"
 "$PYTHON" -m scripts.experiments.setup.trace_schedule_scaling.validate_plan \
   --config "$CONFIG" \
-  --total-steps "$TOTAL_STEPS" --rungs "$RUNGS" --seeds "$SEEDS" --check-data
+  --total-steps "$TOTAL_STEPS" --replay-block "$REPLAY_BLOCK" \
+  --rungs "$RUNGS" --seeds "$SEEDS" --check-data
 "$PYTHON" -m scripts.experiments.setup.trace_schedule_scaling.make_plan \
-  --total-steps "$TOTAL_STEPS" \
+  --total-steps "$TOTAL_STEPS" --replay-block "$REPLAY_BLOCK" \
   --rungs "$RUNGS" --seeds "$SEEDS" > "$PLAN"
 
 jobs=()
@@ -119,6 +122,7 @@ worker() {
   echo "phase=$PHASE"
   echo "run_stamp=$RUN_STAMP"
   echo "total_steps=$TOTAL_STEPS"
+  echo "replay_block=$REPLAY_BLOCK"
   echo "rungs=$RUNGS"
   echo "seeds=$SEEDS"
   echo "gpus=$GPUS_TEXT"
