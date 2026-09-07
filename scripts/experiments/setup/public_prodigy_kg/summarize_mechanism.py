@@ -15,15 +15,18 @@ ARMS = ("native", "support_context_removed", "query_context_removed", "keys", "v
 VIEWS = ("logits", "reference_only_logits", "query_only_logits")
 
 
-def score_episode(ordinal, result):
+def score_episode(ordinal, result, *, atol=0.0, rtol=0.0):
     onehot = np.asarray(result["y_true"])
     if onehot.ndim != 2 or not np.isin(onehot, [0, 1]).all() or not (onehot.sum(1) == 1).all():
         raise ValueError("Expected native one-hot query labels")
     labels = onehot.argmax(1)
     if set(result["arms"]) != set(ARMS):
         raise ValueError("Incomplete or unrecognized arm inventory")
-    if result["parity"]["max_abs_error"] != 0 or result["parity"]["atol"] != 0 or result["parity"]["rtol"] != 0:
-        raise ValueError("Expected nominated exact native parity")
+    if result["parity"]["atol"] != atol or result["parity"]["rtol"] != rtol:
+        raise ValueError("Parity tolerance differs from nominated protocol")
+    reference_scale = float(np.abs(np.asarray(result["arms"]["native"]["logits"])).max())
+    if result["parity"]["max_abs_error"] > atol + rtol * reference_scale:
+        raise ValueError("Native replay error exceeds protocol tolerance")
     rows, examples = [], []
     native_prediction = np.asarray(result["arms"]["native"]["logits"]).argmax(1)
     for arm in ARMS:
@@ -103,7 +106,9 @@ def main():
             if path.resolve().parent != (args.run / "paired_episodes").resolve() or file_sha256(path) != record["sha256"]:
                 raise ValueError("Episode artifact path or hash mismatch")
             artifact = torch.load(path, map_location="cpu")
-            scored, examples = score_episode(record["ordinal"], artifact["mechanism"])
+            scored, examples = score_episode(record["ordinal"], artifact["mechanism"],
+                atol=protocol["paired_mechanism"]["parity_atol"],
+                rtol=protocol["paired_mechanism"]["parity_rtol"])
             rows.extend(scored)
             if writer is None:
                 writer = csv.DictWriter(stream, fieldnames=list(examples[0]))

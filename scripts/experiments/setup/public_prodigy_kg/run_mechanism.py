@@ -1,12 +1,13 @@
 """Native evaluation stream plus isolated, paired interventions; dry-run first."""
 import argparse
 import json
+from functools import partial
 from pathlib import Path
 
 from . import run_native as native
 
 
-def install_mechanism_observers(trainer_class, *, output, phase, upstream):
+def install_mechanism_observers(trainer_class, *, output, phase, upstream, atol=0.0, rtol=0.0):
     if phase != "eval":
         raise ValueError("Mechanism analysis is evaluation only")
     # Retain native metric/provenance observers, but replace disk capture with our
@@ -16,12 +17,12 @@ def install_mechanism_observers(trainer_class, *, output, phase, upstream):
 
     def observed_init(self, *args, **kwargs):
         original_init(self, *args, **kwargs)
-        install_online_experiment(self.model, output, self.device)
+        install_online_experiment(self.model, output, self.device, atol=atol, rtol=rtol)
 
     trainer_class.__init__ = observed_init
 
 
-def install_online_experiment(model, output, device):
+def install_online_experiment(model, output, device, *, atol=0.0, rtol=0.0):
     import torch
     from .episode_mechanism import run_episode
 
@@ -48,7 +49,7 @@ def install_online_experiment(model, output, device):
                                "logits": returned[1].detach().clone().cpu()}
         active = True
         try:
-            result = run_episode(model, artifacts, device)
+            result = run_episode(model, artifacts, device, atol=atol, rtol=rtol)
         finally:
             active = False
         filename = directory / f"episode_{len(records):05d}.pt"
@@ -71,10 +72,14 @@ def main():
     parser.add_argument("--gpu", type=int, choices=(2, 3), required=True)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--execute", action="store_true")
+    parser.add_argument("--parity-atol", type=float, default=0.0)
+    parser.add_argument("--parity-rtol", type=float, default=0.0)
     args = parser.parse_args()
     plan = native.build_plan(upstream=args.upstream, root=args.root, output=args.output,
                              checkpoint=args.checkpoint, gpu=args.gpu, seed=args.seed, phase="eval")
-    plan["paired_mechanism"] = {"primary_layer": 0, "parity_atol": 0, "parity_rtol": 0,
+    if args.parity_atol < 0 or args.parity_rtol < 0:
+        raise ValueError("Parity tolerances must be nonnegative")
+    plan["paired_mechanism"] = {"primary_layer": 0, "parity_atol": args.parity_atol, "parity_rtol": args.parity_rtol,
         "arms": ["native", "support_context_removed", "query_context_removed", "keys", "values", "joint"],
         "decoder_crosses": ["native_queries_changed_references", "changed_queries_native_references"],
         "target_tuning": False, "episode_count": 500}
@@ -82,7 +87,8 @@ def main():
     plan["upstream_verification"] = native.verify_upstream(args.upstream)
     print(json.dumps(plan, indent=2), flush=True)
     if args.execute:
-        native.execute(plan, observer_installer=install_mechanism_observers)
+        native.execute(plan, observer_installer=partial(install_mechanism_observers,
+                       atol=args.parity_atol, rtol=args.parity_rtol))
 
 
 if __name__ == "__main__":
