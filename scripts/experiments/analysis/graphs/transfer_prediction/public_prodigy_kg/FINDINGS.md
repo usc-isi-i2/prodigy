@@ -654,3 +654,85 @@ The nominated experiment would matter if native and intermediate evaluations
 give different conclusions about the returns to the *same* extra pretraining,
 and that divergence replicates. This is a candidate distinction, not an
 established novelty claim or a substitute for a fuller related-work comparison.
+
+### Trajectory outcome: nominated hidden-improvement prediction not supported
+
+Completed `log/publickg_trajectory_20260907` on Tucker paired-state at revision
+`40f56ccb`. Three fixed checkpoints x128 identical fresh-stream episodes. All384
+output hashes verified, and every8k native/centered-logit replay passed absolute
+1e-4 parity (rtol0). Each checkpoint retained its own buffers; captured inputs,
+RNG and native train modes were shared. Eight local tests passed before launch.
+
+| Nominal checkpoint | Native accuracy | Centered U1 accuracy | Native macro-F1 | U1 macro-F1 | Native AUC | U1 AUC |
+|---|---:|---:|---:|---:|---:|---:|
+| 2000 | .774023 | .818945 | .760251 | .805118 | .982320 | .982342 |
+| 4000 | .764941 | .813867 | .750337 | .799024 | .981483 | .981763 |
+| 8000 | .750391 | .818066 | .735312 | .804048 | .976462 | .980212 |
+
+Native NLL .715275/.732774/.846310; centered U1 NLL
+2.689355/2.674437/2.670065. The logits retain fixed scale1; probability quality
+is not equivalent to classification utility.
+
+2000-to8000 accuracy changes: native -2.363281 points, U1 -0.087891 points.
+4000-to8000: native -1.455078 points, U1 +0.419922 points. Do not cherry-pick
+the latter small recovery to claim additional training improves representations.
+The stronger nominated hidden-returns prediction is not supported: intermediate
+classification utility is approximately flat across the full interval rather
+than improving. Native predictions worsen more than the fixed intermediate
+readout. This is a candidate *divergence in deterioration*, not evidence of
+hidden scaling gains or destroyed information. The native/U1 accuracy gap grows
+from4.492188 to6.767578 points. Replication is needed before elevating even this
+narrower trajectory pattern. One seed, one target, recurring query entities;
+128 episodes do not constitute128 independent training replications.
+
+Decision: retain the trajectory as evidence limiting the paper's interpretation;
+do not add a claim that longer pretraining improves representations. Do not
+expand checkpoint search after seeing these outcomes. The fixed second-seed
+replication remains the next validation step, not another repair sweep.
+
+### Exact query-transition audit of the trajectory
+
+Read-only CPU comparison of all128 paired episodes (10,240 query occurrences),
+after re-verifying all384 output hashes, identical source receipts, and exact
+query-label order across checkpoints. Counts compare2000 to8000, not independent
+accounts or training replications:
+
+| Rule | Correct both | Wrong both | Corrected | Corrupted |
+|---|---:|---:|---:|---:|
+| Native | 6783 | 1413 | 901 | 1143 |
+| Centered U1 | 7725 | 1202 | 652 | 661 |
+
+The nearly flat U1 aggregate masks1313 correctness changes. Do not describe it
+as unchanged representations or invariant example-level behavior. Of1143 native
+regressions,587 have U1 correct at both checkpoints;329 also regress under U1.
+Of901 native recoveries,494 have U1 correct at both checkpoints. Thus a subset
+isolates a deployment-level discrepancy, but the aggregate does not causally
+localize drift to metagraph weights; encoder and solver are co-trained.
+
+First three lexicographically selected native-regressed/U1-correct-both examples:
+episode0 query28, local truth7, native7->4; episode0 query52, local truth13,
+native13->16; episode0 query63, local truth15, native15->17. U1 predicts the
+truth at both checkpoints in each. Local labels are episode-specific class
+indices, not semantic relation names. These are inspectable saved example
+identifiers, not a semantic explanation or a hand-picked success gallery.
+
+## Nominated label-code assignment check
+
+Code inspection confirms semantic label embeddings are ignored by the public
+recipe; a semantic-label-prior explanation is therefore inapplicable. The model
+instead indexes a fixed random embedding table by class position. The next
+bounded check uses the fixed8k checkpoint and first32 fresh episodes, reversing
+only table rows0..19. Inputs, support labels, graph edges and output columns
+remain unchanged. No search over assignments. Compare identity/reversal query
+disagreement, accuracy, macro-F1, AUC, NLL and logit changes. Require factual
+parity and unchanged U1 embeddings before interpretation.
+
+This tests label-code assignment invariance, not ordinary graph-node permutation
+equivariance (which would move features and edges together). Material dependence
+would identify an arbitrary nuisance input to native inference; improvement from
+one reversal alone would not establish systematic harm or a useful repair.
+Negligible dependence closes this branch. The fixed128-episode trajectory's
+prediction counts show no collapsed class position: native8k counts range475..569
+against512 true query occurrences per slot. This does not prove assignment
+invariance. U1 has position-dependent accuracy too, so slot accuracy alone is
+not causal evidence of anchor effects.
