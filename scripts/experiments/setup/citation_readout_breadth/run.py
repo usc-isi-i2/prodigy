@@ -41,6 +41,17 @@ def query_truth(y_true_onehot, labels, query):
     return y_true_onehot.argmax(1)
 
 
+def validate_features(graph):
+    """Allow all columns only for this verified embedding-only citation schema."""
+    x, names = graph["x"], graph["feature_names"]
+    if x.ndim != 2 or x.shape[1] != 768:
+        raise ValueError("Citation input must have exactly 768 embedding columns")
+    if list(names) != [f"gte_{i}" for i in range(768)]:
+        raise ValueError("Citation columns must be exactly ordered gte_0..gte_767")
+    if not torch.is_floating_point(x) or not torch.isfinite(x).all():
+        raise ValueError("Citation embeddings must be finite floating point")
+
+
 def plan(args):
     return dict(dataset="cora", ways=7, shots=3, queries_per_class=4,
                 batch_size=4, batches=32, episodes=128, episode_seed_offset=400009,
@@ -70,6 +81,7 @@ def execute(args, protocol):
     for path in (args.graph, args.blocked, args.interleaved):
         if not path.is_file():
             raise FileNotFoundError(path)
+    validate_features(torch.load(args.graph, map_location="cpu", weights_only=False))
     torch.set_num_threads(4)
     protocol["commit"] = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     protocol["sha256"] = {str(p.resolve()): file_sha256(p) for p in (args.graph, args.blocked, args.interleaved)}
@@ -83,10 +95,11 @@ def execute(args, protocol):
         target = dict(n_query=4, eval_random_query=False)
         params = resolved_params(options, "cora", target, args.graph, None, "citation_breadth", 2500)
         params.update(n_way=7, n_shots=3, n_query=4, batch_size=4,
-                      test_len_cap=32, val_len_cap=32, dataset_len_cap=32)
+                      test_len_cap=32, val_len_cap=32, dataset_len_cap=32,
+                      feature_subset="all")
         write_json(args.output / "effective_params.json", params)
         dataset = get_cora_dataset(root=str(args.graph.parent), graph_filename=args.graph.name,
-            n_hop=2, task_name="classification", feature_subset="emb_only", seed=0,
+            n_hop=2, task_name="classification", feature_subset="all", seed=0,
             neighbor_sampling_hop_sizes="9,9", neighbor_sampling_node_limit=101)
         torch.manual_seed(0)
         torch.cuda.manual_seed_all(0)

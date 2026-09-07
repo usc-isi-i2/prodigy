@@ -4,10 +4,20 @@ from types import SimpleNamespace
 
 import torch
 
-from .run import check_identities, plan, probe, query_truth
+from .run import check_identities, plan, probe, query_truth, validate_features
 
 
 class CitationReadoutTest(unittest.TestCase):
+    def test_embedding_only_schema(self):
+        graph = dict(x=torch.zeros(3, 768), feature_names=[f"gte_{i}" for i in range(768)])
+        validate_features(graph)
+        with self.assertRaises(ValueError):
+            validate_features(graph | {"x": torch.zeros(3, 769)})
+        with self.assertRaises(ValueError):
+            validate_features(graph | {"feature_names": graph["feature_names"][:-1] + ["label"]})
+        with self.assertRaises(ValueError):
+            validate_features(graph | {"feature_names": list(reversed(graph["feature_names"]))})
+
     def test_production_onehot_output_contract(self):
         labels = torch.eye(7).repeat(7, 1)
         query = torch.arange(49) >= 21
