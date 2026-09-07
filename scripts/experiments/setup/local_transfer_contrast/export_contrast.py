@@ -123,13 +123,16 @@ def load_stream(role_root, stream, target, model_ids, inventory):
         output["models"][model_id] = model
 
     # Raw stages are input properties and must be identical across checkpoints.
-    first_model, second_model = (output["models"][name] for name in model_ids)
+    first_model = output["models"][model_ids[0]]
     for stage in ("raw_center", "raw_context", "raw_joint"):
-        torch.testing.assert_close(
-            first_model["embeddings"][stage], second_model["embeddings"][stage], rtol=0, atol=0
-        )
+        reference = first_model["embeddings"][stage]
+        for model_id in model_ids[1:]:
+            torch.testing.assert_close(
+                reference, output["models"][model_id]["embeddings"][stage], rtol=0, atol=0
+            )
         output["input"]["embeddings"][stage] = first_model["embeddings"].pop(stage)
-        second_model["embeddings"].pop(stage)
+        for model_id in model_ids[1:]:
+            output["models"][model_id]["embeddings"].pop(stage)
     return output
 
 
@@ -140,6 +143,7 @@ def main():
     parser.add_argument("--target", default="facebook_page_reference")
     parser.add_argument("--model-b", default="ss_twibot20")
     parser.add_argument("--model-c", default="ss_election2020")
+    parser.add_argument("--models", help="comma-separated model IDs; overrides --model-b/--model-c")
     parser.add_argument("--streams", default="original,fresh")
     args = parser.parse_args()
     if args.output.exists():
@@ -151,7 +155,11 @@ def main():
     streams = tuple(part.strip() for part in args.streams.split(",") if part.strip())
     if set(streams) != {"original", "fresh"}:
         raise ValueError("original and fresh streams are required")
-    model_ids = (args.model_b, args.model_c)
+    model_ids = tuple(part.strip() for part in args.models.split(",") if part.strip()) if args.models else (
+        args.model_b, args.model_c,
+    )
+    if len(model_ids) < 2 or len(set(model_ids)) != len(model_ids):
+        raise ValueError("at least two distinct model IDs are required")
     args.output.mkdir(parents=True)
     outputs = []
     for stream in streams:
@@ -165,8 +173,7 @@ def main():
         "revision": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
         "source_replay": str(args.role_root),
         "target": args.target,
-        "model_b": args.model_b,
-        "model_c": args.model_c,
+        "model_ids": list(model_ids),
         "streams": list(streams),
         "selection_basis": "three-seed final-core transfer matrix before example-level inspection",
         "discovery_stream": "original",
