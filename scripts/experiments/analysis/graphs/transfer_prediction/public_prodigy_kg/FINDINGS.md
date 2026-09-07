@@ -216,3 +216,31 @@ post-metagraph example embeddings from the learned class references: ridge on
 post-metagraph support/query embeddings versus the same ridge before the
 metagraph, paired against native inference. This distinguishes representation
 damage from a poor learned readout without transplanting vectors across stages.
+
+### Completed before/after readout comparison
+
+Runtime `c0f74e18`, same 500 saved public episodes and checkpoint, completed at
+`log/publickg_stage_readout_20260907` on the dedicated Tucker public worktree.
+Native replay passed the existing tolerance. No new target tuning.
+
+| Readout | Accuracy | Macro-F1 | OVR AUC |
+|---|---:|---:|---:|
+| Native | .737950 | .721805 | .974829 |
+| Ridge before metagraph | .769050 | .744457 | .974552 |
+| Ridge after metagraph | .701350 | .671331 | .964031 |
+
+Post minus pre: -6.770 accuracy points and -7.313 macro-F1 points; post loses
+accuracy in 460 episodes, wins 22, ties 18. Thus replacing final class references
+with an ordinary support-fitted ridge is not a general repair. It does not
+follow that all information is destroyed: support representations are label-
+conditioned whereas queries are not, so cross-role alignment is a live alternative.
+
+Saved `geometry` contains actual pre-metagraph embeddings, actual decoder-input
+embeddings, and final class references for all examples, allowing role-shift
+analysis without another model run. A first descriptive pass finds strongly
+negative average cross-role cosine after inference, unlike the positive cosine
+before inference. Class-conditioned separation estimates from that pass assumed
+class-block ordering and are not promoted to evidence until the support-label
+mapping is verified. The class-free role shift and the completed readout scores
+motivate a bounded test of separate support/query centering, not a new claim of
+novelty or a declaration that all post-metagraph geometry is worse.
