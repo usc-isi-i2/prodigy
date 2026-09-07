@@ -29,12 +29,31 @@ tmux new-session -d -s tracesched \
   'export PATH="/home/mhchu/miniconda3/bin:$PATH"; PHASE=full GPUS="0 1 2 3" bash scripts/experiments/setup/trace_schedule_scaling/run_tucker.sh'
 ```
 
+Verify terminal checkpoints, saved contracts, exact source order, and per-source
+episode identity before evaluation:
+
+```bash
+python -m scripts.experiments.setup.trace_schedule_scaling.verify_training \
+  --state-root state/trace_schedule_scaling \
+  --log-root log/trace_schedule_scaling \
+  --run-stamp 20260906v1 \
+  --output log/trace_schedule_scaling/launch/verification_20260906v1.json
+```
+
 After training completes, replay the terminal checkpoints on five held-out targets and
 two disjoint fixed episode streams:
 
 ```bash
 tmux new-session -d -s tracesched-replay \
   'export PATH="/home/mhchu/miniconda3/bin:$PATH"; GPUS="0 1 2 3" bash scripts/experiments/setup/trace_schedule_scaling/run_replay_tucker.sh'
+```
+
+Convert the verified replay shards into one TRACE analysis record per target:
+
+```bash
+python -m scripts.experiments.setup.trace_schedule_scaling.export_replays \
+  --replay-root log/trace_schedule_scaling/replay_20260906v1 \
+  --output log/trace_schedule_scaling/analysis_inputs_20260906v1
 ```
 
 The primary estimand is paired target AUC/accuracy by schedule within rung and seed.
