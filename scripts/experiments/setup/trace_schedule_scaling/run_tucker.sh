@@ -37,6 +37,7 @@ conda activate prodigy
 export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 export WANDB_MODE="${WANDB_MODE:-offline}"
 export PYTHONDONTWRITEBYTECODE=1
+export PYTHONPATH="${REPO_ROOT}${PYTHONPATH:+:${PYTHONPATH}}"
 PYTHON="${PYTHON:-${CONDA_PREFIX}/bin/python}"
 
 read -r -a GPU_IDS <<< "$GPUS_TEXT"
@@ -55,9 +56,11 @@ done
 mkdir -p "$STATE_ROOT" "$LOG_ROOT/train" "$LOG_ROOT/launch"
 PLAN="$LOG_ROOT/launch/plan_${RUN_STAMP}.tsv"
 cd "$REPO_ROOT"
-"$PYTHON" "$SCRIPT_DIR/validate_plan.py" --config "$CONFIG" \
+"$PYTHON" -m scripts.experiments.setup.trace_schedule_scaling.validate_plan \
+  --config "$CONFIG" \
   --total-steps "$TOTAL_STEPS" --rungs "$RUNGS" --seeds "$SEEDS" --check-data
-"$PYTHON" "$SCRIPT_DIR/make_plan.py" --total-steps "$TOTAL_STEPS" \
+"$PYTHON" -m scripts.experiments.setup.trace_schedule_scaling.make_plan \
+  --total-steps "$TOTAL_STEPS" \
   --rungs "$RUNGS" --seeds "$SEEDS" > "$PLAN"
 
 jobs=()

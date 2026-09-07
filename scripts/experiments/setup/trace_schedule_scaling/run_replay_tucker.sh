@@ -17,6 +17,7 @@ conda activate prodigy
 export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 export WANDB_MODE="${WANDB_MODE:-offline}"
 export PYTHONDONTWRITEBYTECODE=1
+export PYTHONPATH="${REPO_ROOT}${PYTHONPATH:+:${PYTHONPATH}}"
 PYTHON="${PYTHON:-${CONDA_PREFIX}/bin/python}"
 
 read -r -a GPU_IDS <<< "$GPUS_TEXT"
