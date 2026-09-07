@@ -914,3 +914,18 @@ replication limits that mechanism claim; it must not be hidden by averaging
 seeds or by success of the endpoint result. The test remains conditional on
 this target/recipe and does not alone establish general graph-model behavior.
 No seed-one target results were available when this decision was written.
+
+## Local temporal evidence export
+
+The `data/publickg_{trajectory,crossover,normalization}_20260907/` folders retain
+unaltered Tucker `summary.json`, `protocol.json`, and `execution_status.json`.
+Summary hashes were compared against Tucker after copying. Run
+`verify_temporal_evidence.py` in this analysis folder to verify those pinned
+summary hashes, condition inventories,128 paired ordinals per condition, and all
+means recomputed from episode rows, and to print the paper's crossover and
+normalization tables. This check passed on the exported evidence.
+
+Scope is deliberately limited: the large saved prediction/representation tensors
+remain on Tucker. Their receipts were verified there before export; the local
+check does not rerun inference or treat recurring query occurrences as independent
+samples. The export provides auditable numerical evidence, not a new experiment.
