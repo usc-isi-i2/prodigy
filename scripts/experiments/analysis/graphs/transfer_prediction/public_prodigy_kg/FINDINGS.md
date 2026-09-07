@@ -356,3 +356,49 @@ matching and simple offsets do not recover pre-metagraph readout utility. The
 next paper-threatening alternative is that generic/random encoder features plus
 the stronger readout explain the gain, rather than useful pretraining. Test that
 before proposing another training architecture.
+
+### Saved-initialization / endpoint-text controls completed
+
+Runtime `01104df2`, 500 discovery episodes, completed Tucker output
+`log/publickg_pretraining_control_20260907`. Exact saved initialization from the
+same public training run, not a newly chosen random seed. Its own BN buffers
+are preserved; saved episode modes/RNG are restored, and extraction stops before
+the metagraph. Endpoint-text features concatenate actual head/tail 768d vectors;
+pooling-edge order is validated. All arms use the same ridge settings.
+
+| Features / centering | Accuracy | Macro-F1 | OVR AUC |
+|---|---:|---:|---:|
+| Trained / none | .769050 | .744457 | .974552 |
+| Trained / support | .803475 | .787986 | .977813 |
+| Initialization / none | .720000 | .694047 | .961539 |
+| Initialization / support | .700750 | .677272 | .955100 |
+| Endpoint text / none | .719850 | .701265 | .958658 |
+| Endpoint text / support | .721250 | .702946 | .958032 |
+
+Thus the centered trained encoder beats the better tested initialization rule
+by8.3475 accuracy points and the better tested endpoint-text rule by8.2225.
+Even without centering, trained features exceed initialization by4.905 points.
+Native's gain over centered endpoint text is only1.67 points. This supports
+useful GFM pretraining whose classification benefit is underexposed by native
+inference. It does not establish that pretraining always helps, and every arm
+uses pretrained text features. The control is one saved initialization/target.
+
+### Advisor's cross-target selection proposal tested, not supported
+
+Read-only pilot on the existing matched-schedule audit: for each of four targets,
+each rung2/3/4 and training seed0/1/2, select one of blocked/interleaved/replay100
+using mean original-stream AUC on the other three targets. Compare selection by
+full versus uncentered U1 AUC; evaluate BOTH selected models with U1 on the held-
+out target's fresh stream. Lexicographic schedule order breaks exact ties.
+This is retrospective and uses the existing uncentered readout, not the new rule.
+
+Among36 decisions,13 selections change. U1-based selection wins4, loses9, ties23;
+held-out mean U1 AUC is .838245 versus .842369 for full-based selection
+(delta -0.41235 points). Mean deltas are nonpositive on all four targets.
+Source: `/dataMeR1/phil/gfm/prodigy-schedule-stage-audit/log/stage_audit_20260907/cells.json`,
+SHA256 `39d3f563399fc3cfe517d6a3be16342aebe6ec919c01bce9976a2f42177fee54`.
+
+Decision: do not claim a successful cross-target stage-aware selector. Ranking
+reversals alone do not imply that validation on other domains predicts the best
+representation on a new target. The public readout/pretraining results remain
+supported; a model-selection framework is not established by this pilot.
