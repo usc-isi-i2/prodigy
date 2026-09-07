@@ -88,6 +88,7 @@ def _apply_config_defaults(parser, config):
 
 def get_params(argv=None):
     args = argparse.ArgumentParser()
+    args.add_argument("--encoder_solver_objective", choices=["native", "joint", "isolated", "ridge_only"], default="native")
 
     args.add_argument("--config", default="", type=str, help="Optional YAML config. CLI args override config values.")
     args.add_argument("-root", "--root", default="./FSdatasets", type=str)

@@ -6,6 +6,7 @@ import torch
 import torch_geometric as pyg
 import numpy as np
 from models.layer_classes import MetagraphLayer, SupernodeAggrLayer, SupernodeToBgGraphLayer, BackgroundGNNLayer
+from models.encoder_solver_objective import ridge_query_loss
 
 
 class SingleLayerGeneralGNN(torch.nn.Module):
@@ -27,6 +28,8 @@ class SingleLayerGeneralGNN(torch.nn.Module):
             self.params = params
         self.logit_scale = torch.nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
         self.txt_dropout = text_dropout
+        self.encoder_solver_training = False
+        self.encoder_solver_ridge_loss = None
         if self.params.get("task_name") == "regression":
             self.regression_head = torch.nn.Sequential(
                 torch.nn.Linear(params["emb_dim"], params["emb_dim"]),
@@ -85,6 +88,7 @@ class SingleLayerGeneralGNN(torch.nn.Module):
         :return: y_true_matrix, y_pred_matrix (for the query set only!)
         '''
         supernode_idx = graph.supernode + graph.ptr[:-1]
+        self.encoder_solver_ridge_loss = None
         #center_nodes = torch.zeros([graph.x.shape[0], 1]).to(graph.x.device)
         #center_nodes[graph.ptr[:-1]] = 1
         #graph.x = self.initial_input_mlp(torch.concat([graph.x, center_nodes], dim = 1))
@@ -119,6 +123,12 @@ class SingleLayerGeneralGNN(torch.nn.Module):
         #x_input = None
         for module in self.layer_list:
             if isinstance(module, MetagraphLayer):
+                mode = self.params.get("encoder_solver_objective", "native")
+                if self.encoder_solver_training and mode != "native":
+                    self.encoder_solver_ridge_loss = ridge_query_loss(
+                        x_input, y_true_matrix, metagraph_edge_index, query_set_mask)
+                    if mode in {"isolated", "ridge_only"}:
+                        x_input = x_input.detach()
                 if x_input is None:
                     raise Exception('MetagraphLayer must be preceded by a layer that produces supernode embeddings!')
                 x_input, new_x_label = self.forward_metagraph(module, x_input, x_label, metagraph_edge_index, metagraph_edge_attr, query_set_mask, input_seqs, query_seqs, query_seqs_gt)

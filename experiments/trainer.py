@@ -150,9 +150,12 @@ class TrainerFS():
         "neighbor_sampling_center_radius_weights", "n_way", "n_shots", "n_query",
         "batch_size", "learning_rate", "weight_decay", "dataset_len_cap", "epochs",
         "workers",
+        "encoder_solver_objective", "encoder_solver_effective",
     )
 
     def __init__(self, dataset, parameter):
+        from models.encoder_solver_objective import configure_objective
+        self.encoder_solver_objective = configure_objective(parameter)
         torch.autograd.set_detect_anomaly(bool(parameter.get("detect_anomaly", False)))
         wandb.init(project="graph-clip", name=parameter["exp_name"], tags=parameter.get("tags") or None)
         _save_config_to_wandb_files(parameter)
@@ -2121,7 +2124,11 @@ class TrainerFS():
                 self.training_role_counter.observe_batch(batch)
             batch = [i.to(self.device) for i in batch]
             raw_debug_graph = self._snapshot_debug_graph(batch)
-            yt, yp, graph = self.model(*batch) # apply the model
+            self.model.encoder_solver_training = True
+            try:
+                yt, yp, graph = self.model(*batch) # apply the model
+            finally:
+                self.model.encoder_solver_training = False
             self._maybe_print_debug_example(
                 batch,
                 yt,
@@ -2146,6 +2153,12 @@ class TrainerFS():
                 weight = self.parameter["attr_regression_weight"]
                 total_loss = loss + aux_loss * weight
                 self._log_source_gradient_diagnostics(yt, yp, graph, steps_run)
+                if self.encoder_solver_objective != "native":
+                    ridge_loss = self.model.encoder_solver_ridge_loss
+                    if ridge_loss is None:
+                        raise RuntimeError("Missing training U1 ridge loss")
+                    total_loss = ridge_loss if self.encoder_solver_objective == "ridge_only" else total_loss + ridge_loss
+                    wandb.log({"train_ridge_loss": _to_float(ridge_loss), "train_native_loss": _to_float(loss)}, step=e)
             total_loss.backward()
             self.optimizer.step()
             # self.scheduler.step()
