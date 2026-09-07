@@ -421,6 +421,58 @@ def decoder_audit(record, b, c, full_arrays, stream):
     return summary_rows, outcome_rows, transitions, raw_identity
 
 
+def heuristic_audit(record, b, c, arrays, stream):
+    """Evaluate fixed, direct-readout, and outcome-label-free expert choices."""
+    y = arrays["y"]
+    pred_b, pred_c = arrays["pred_b"], arrays["pred_c"]
+    disagree = pred_b != pred_c
+    logits = {
+        model: {decoder: to_numpy(value).astype(np.float64)
+                for decoder, value in record["models"][model]["logits"].items()}
+        for model in (b, c)
+    }
+    raw_logits = logits[b]["raw_joint/ridge"]
+    raw_pred = raw_logits.argmax(1)
+    u1_b = logits[b]["U1_pre_meta/ridge"].argmax(1)
+    u1_c = logits[c]["U1_pre_meta/ridge"].argmax(1)
+    learned_decoders = [name for name in logits[b] if not name.startswith("raw_")]
+    agreement_b = np.mean(np.column_stack([logits[b][name].argmax(1) == pred_b
+                                            for name in learned_decoders]), axis=1)
+    agreement_c = np.mean(np.column_stack([logits[c][name].argmax(1) == pred_c
+                                            for name in learned_decoders]), axis=1)
+    choices = {
+        "fixed_b": np.ones(len(y), dtype=bool),
+        "fixed_c": np.zeros(len(y), dtype=bool),
+        "raw_alignment_tie_b": np.where(disagree, pred_b == raw_pred, True),
+        "u1_alignment_tie_b": np.where(
+            disagree & ((pred_b == u1_b) != (pred_c == u1_c)), pred_b == u1_b, True,
+        ),
+        "learned_stage_consensus_tie_b": agreement_b >= agreement_c,
+        "calibrated_full_confidence": arrays["prob_b"].max(1) >= arrays["prob_c"].max(1),
+        "oracle_expert": arrays["correct_b"] | ~arrays["correct_c"],
+    }
+    rows = []
+    fixed_accuracy = float(arrays["correct_b"].mean())
+    for name, choose_b in choices.items():
+        metrics = routed_metrics(arrays, choose_b)
+        rows.append({
+            "stream": stream, "method": name, "uses_target_query_outcomes": name == "oracle_expert",
+            "uses_discovery_query_labels": name == "calibrated_full_confidence",
+            "n": len(y), **metrics, "accuracy_gain_over_fixed_b": metrics["accuracy"] - fixed_accuracy,
+            "fraction_choose_b": float(choose_b.mean()),
+        })
+    raw_probs = softmax(raw_logits)
+    rows.append({
+        "stream": stream, "method": "raw_joint_ridge_direct", "uses_target_query_outcomes": False,
+        "uses_discovery_query_labels": False, "n": len(y),
+        "accuracy": float(np.mean(raw_pred == y)), "auc": safe_auc(y, raw_probs[:, 1]),
+        "nll": float(log_loss(y, raw_probs, labels=[0, 1])),
+        "accuracy_gain_over_fixed_b": float(np.mean(raw_pred == y)) - fixed_accuracy,
+        "fraction_choose_b": np.nan,
+    })
+    return rows
+
+
 def write_json(path, value):
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
 
@@ -482,6 +534,10 @@ def main():
     pd.DataFrame(decoder_rows).to_csv(args.output / "decoder_summary.csv", index=False)
     pd.DataFrame(outcome_decoder_rows).to_csv(args.output / "outcome_decoder_summary.csv", index=False)
     pd.DataFrame(transition_rows).to_csv(args.output / "transition_summary.csv", index=False)
+    heuristic_rows = []
+    for stream, record in (("original", discovery), ("fresh", validation)):
+        heuristic_rows.extend(heuristic_audit(record, b, c, arrays[stream], stream))
+    pd.DataFrame(heuristic_rows).to_csv(args.output / "heuristic_results.csv", index=False)
 
     summary = {
         "target": discovery["target"], "model_b": b, "model_c": c,
@@ -500,7 +556,8 @@ def main():
     write_json(args.output / "DONE.json", {
         "complete": True, "artifacts": ["summary.json", "occurrences.csv", "cluster_summary.csv",
                                           "router_results.csv", "example_candidates.csv", "decoder_summary.csv",
-                                          "outcome_decoder_summary.csv", "transition_summary.csv"],
+                                          "outcome_decoder_summary.csv", "transition_summary.csv",
+                                          "heuristic_results.csv"],
     })
     print(json.dumps(summary, indent=2, sort_keys=True))
 
