@@ -996,6 +996,10 @@ Unmodified summaries/protocols/completion statuses are retained in the matching
 `data/publickg_*_seed1_20260907/` directories. `verify_temporal_evidence.py --seed 1`
 checks pinned summary hashes, full inventories, paired ordinals, and recomputes
 every reported mean. The control summary is retained separately; this temporal
-verifier does not re-score its logits. The independent-initialization replication
+verifier does not re-score its logits. A separate read-only CPU audit subsequently
+loaded all 500 control outputs, checked source linkage and query truth against the
+saved source episodes, re-scored every saved readout logit (including native), and
+reconciled every episode metric and summary mean to absolute tolerance 1e-12.
+The independent-initialization replication
 strengthens compensation as a within-family finding, not as a novel universal
 compatibility principle. Further scope remains unresolved.

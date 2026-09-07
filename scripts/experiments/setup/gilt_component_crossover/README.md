@@ -61,5 +61,23 @@ the full multitask pretraining recipe in the GILT paper.
 
 ## Execution status
 
-Runner and tests are being prepared. No crossover evaluation has been launched.
-Exact runnable commands will be added after dry-run and compatibility validation.
+Runner partition and failure-path tests pass locally. The actual predictor
+signature and cache metadata were checked read-only on Tucker. The fixed input
+fingerprint is `c52eedbda4ef0539387be507588f0477560fc57987270d62405daeda5fe6d92d`.
+
+From the dedicated Tucker checkout, with the `prodigy` environment active:
+
+```bash
+python -m scripts.experiments.setup.gilt_component_crossover.run \
+  --checkpoint-dir /dataMeR1/phil/gfm/prodigy-archnative/state/icl_arch_native_source_900_seed0/gilt/ss_covid_political_s0/checkpoint \
+  --cache /dataMeR1/phil/gfm/prodigy-encoder-solver-isolation/log/isolation_eval_20260907/original/twibot20/twibot20 \
+  --upstream /dataMeR1/phil/gfm/upstream/inductnode \
+  --output /dataMeR1/phil/gfm/prodigy-gilt-component/log/gilt_component_crossover_20260907 \
+  --gpu 3
+```
+
+This prints the plan and input hashes without evaluating. Append `--execute` only
+after dry-run validation and an idle-GPU check. An existing output is never
+overwritten. `execution_status.json` is the completion authority; inspect it
+before using any partial outputs. The runner also reports global-positive binary
+F1, without replacing the nominated macro-F1 measure.
