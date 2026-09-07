@@ -107,6 +107,18 @@ def main():
                     "edge_turnover": sum(r["changed_edges"] for r in subset) / total if total else None,
                     "successful_swaps": sum(r["accepted_swaps"] for r in subset)})
     write_csv(args.output / "topology_summary.csv", topology_summary)
+    descriptor_groups = {}
+    for r in read(args.input, "support_geometry"):
+        key = (r["target"], r["stream"], r["model_id"], r["source"], r["seed"], r["condition"], r["draw"])
+        descriptor_groups.setdefault(key, []).append(r)
+    descriptors = []
+    fields = ("support_unit_dispersion", "support_class_cosine", "support_movement_cosine", "learned_label_pair_cosine", "learned_label_movement_cosine")
+    for key, group in sorted(descriptor_groups.items()):
+        if len(group) != 128 or len({(r["batch"], r["episode"]) for r in group}) != 128:
+            raise ValueError("incomplete geometry episodes")
+        descriptors.append({**dict(zip(("target", "stream", "model_id", "source", "seed", "condition", "draw"), key)),
+                            "episodes": len(group), **{field: mean(r[field] for r in group) for field in fields}})
+    write_csv(args.output / "support_geometry.csv", descriptors)
     summary = []
     for target in protocol["targets"]:
         for source in ("cp_hk", "ukr_rus"):
