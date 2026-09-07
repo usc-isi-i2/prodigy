@@ -290,3 +290,33 @@ deployment baseline; stop trying global centering variants to rescue the final
 stage. Next, freeze this rule and test breadth/replication before more elaborate
 architectural proposals. A method must beat this baseline, not only native or
 TRACE, to earn a deployment contribution.
+
+### Frozen fresh-stream replication completed
+
+Runtime `628fec69`; Tucker output `log/publickg_readout_fresh_20260907` reports
+complete. Fixed rule nominated before this run: subtract the support mean from
+both roles, row-L2 normalize, ridge lambda=1, no intercept, scale=1. Test sampler
+seed explicitly changed from448 to100451; global seed0, checkpoint, data pools,
+500 episodes and parity tolerance remain fixed. All 500 saved episode hashes
+were checked after completion. First three episode entity-pair arrays and label
+embedding arrays differ from the corresponding discovery episodes. This verifies
+the sampler change, not disjoint entities or independent training.
+
+| Frozen readout | Accuracy | Macro-F1 | OVR AUC | NLL |
+|---|---:|---:|---:|---:|
+| Native | .735350 | .719447 | .975168 | .873143 |
+| Uncentered pre-metagraph ridge | .768125 | .744370 | .974447 | 2.823322 |
+| Support-centered pre-metagraph ridge | .802800 | .787727 | .978340 | 2.674026 |
+
+Centered-minus-native: +6.745 accuracy points, +6.828 macro-F1 points,
++0.3172 OVR AUC points. Accuracy wins/losses/ties:463/19/18. Uncentered ridge
+wins/losses/ties:365/89/46. Probability loss remains worse at the frozen scale.
+No new algorithm or independent training-seed/domain replication is claimed.
+The discovery gain survives a genuinely changed episode stream without tuning.
+
+Next causal distinction: cross-fit support embeddings in the query role, hiding
+each held-out support label during its representation pass. This addresses the
+strong alternative that self-label-conditioned support embeddings are unsuitable
+training examples for a query readout. Use discovery episodes for this mechanism
+test, not the just-completed frozen replication stream. No cross-fit outcome is
+available yet.
