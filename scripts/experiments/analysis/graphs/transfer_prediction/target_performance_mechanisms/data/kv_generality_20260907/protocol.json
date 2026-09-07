@@ -1,0 +1,32 @@
+{
+  "phase": "pair_test",
+  "revision": "65946f826be7cc5058942fe7a566669e2e9b2615",
+  "target": "twibot20",
+  "source": "ukr_rus",
+  "streams": [
+    "original",
+    "fresh"
+  ],
+  "conditions": [
+    "intact",
+    "removed",
+    "keys_only",
+    "values_only",
+    "joint_kv"
+  ],
+  "prediction_rule": "One-point practical discovery separation, never a significance claim.",
+  "new_training": false,
+  "discovery_selection": "Independent contribution review: Ukraine to TwiBot20, distinct source and target, known non-extreme suppression harm; K/V outcomes unseen.",
+  "frozen_prediction": {
+    "hypothesis": "values_carry_useful_context",
+    "prediction": "In EACH stream: value-only within-AUC delta <0 and <= key-only delta minus .01.",
+    "practical_separation_auc": 0.01,
+    "not_statistical_significance": true,
+    "nomination": "Independent contribution review: Ukraine to TwiBot20, distinct source and target, known non-extreme suppression harm; K/V outcomes unseen."
+  },
+  "primary_metric": "within_episode_auc",
+  "interpretation": "Transplant actual support K/V only. Joint endpoint must reproduce removal and queries remain fixed. Component ordering is not a variance partition or representativeness claim.",
+  "discovery_rule_details": {
+    "frozen_pair_rule": "In EACH stream: value-only within-AUC delta <0 and <= key-only delta minus .01."
+  }
+}

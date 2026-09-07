@@ -1,0 +1,117 @@
+{
+  "query_occurrences": 10240,
+  "condition_order": [
+    "E2000I2000",
+    "E2000I8000",
+    "E8000I2000",
+    "E8000I8000"
+  ],
+  "correctness_patterns": {
+    "1000": 147,
+    "1001": 32,
+    "1010": 29,
+    "1011": 165,
+    "1100": 746,
+    "1101": 318,
+    "1110": 221,
+    "1111": 6268,
+    "0000": 1129,
+    "0001": 154,
+    "0010": 101,
+    "0011": 486,
+    "0100": 169,
+    "0101": 59,
+    "0110": 14,
+    "0111": 202
+  },
+  "ridge_correct_both_patterns": {
+    "1000": 36,
+    "1001": 20,
+    "1010": 12,
+    "1011": 101,
+    "1100": 371,
+    "1101": 247,
+    "1110": 168,
+    "1111": 6054,
+    "0000": 132,
+    "0001": 52,
+    "0010": 25,
+    "0011": 248,
+    "0100": 58,
+    "0101": 35,
+    "0110": 7,
+    "0111": 159
+  },
+  "correct_counts": {
+    "E2000I2000": 7926,
+    "E2000I8000": 7997,
+    "E8000I2000": 7486,
+    "E8000I8000": 7684
+  },
+  "early_inference_encoder_damage": 1243,
+  "damage_repaired_by_late_inference": 350,
+  "damage_remaining_with_late_inference": 893,
+  "encoder_damage_under_both_inference_modules": 746,
+  "same_damage_with_ridge_correct_both": 371,
+  "late_inference_late_encoder_corrections": 563,
+  "late_inference_late_encoder_corruptions": 365,
+  "first_three_both_inference_damage_ridge_correct": [
+    {
+      "episode": 0,
+      "query": 28,
+      "truth_local": 7,
+      "predictions": [
+        7,
+        7,
+        17,
+        4
+      ],
+      "ridge_predictions": [
+        7,
+        7
+      ]
+    },
+    {
+      "episode": 0,
+      "query": 52,
+      "truth_local": 13,
+      "predictions": [
+        13,
+        13,
+        16,
+        16
+      ],
+      "ridge_predictions": [
+        13,
+        13
+      ]
+    },
+    {
+      "episode": 1,
+      "query": 15,
+      "truth_local": 3,
+      "predictions": [
+        3,
+        3,
+        12,
+        12
+      ],
+      "ridge_predictions": [
+        3,
+        3
+      ]
+    }
+  ],
+  "verification": {
+    "hashed_files": 768,
+    "episodes": 128,
+    "query_labels_source_hashes_match": true,
+    "diagonal_argmax_exact": true,
+    "diagonal_logit_atol": 0.0001
+  },
+  "summary_sha256": {
+    "crossover": "507e1169eb782be76223643ec3b81eb2ba8ca5a3faccf3d7cfb3805519f5d672",
+    "trajectory": "7881b468f089cc2f2dbe3453dd44a8dc6d2ac4e771bc0300a958948954f5bf3f"
+  },
+  "scope": "Post-hoc saved-prediction accounting; repeated occurrences, not independent accounts; not causal training-gradient mediation or semantic example verification"
+}

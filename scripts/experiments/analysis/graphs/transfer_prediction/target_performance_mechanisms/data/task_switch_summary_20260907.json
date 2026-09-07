@@ -1,0 +1,191 @@
+{
+  "means": [
+    {
+      "stream": "original",
+      "rule": "receive_edge",
+      "decoder": "full_model",
+      "early": {
+        "mean_episode_auc": 0.6594373914930556,
+        "accuracy": 0.6648763020833333
+      },
+      "late": {
+        "mean_episode_auc": 0.9093424479166667,
+        "accuracy": 0.8072916666666667
+      },
+      "auc_change": 0.24990505642361116
+    },
+    {
+      "stream": "original",
+      "rule": "receive_edge",
+      "decoder": "S0_pool/ridge",
+      "early": {
+        "mean_episode_auc": 0.8578559027777778,
+        "accuracy": 0.7379557291666666
+      },
+      "late": {
+        "mean_episode_auc": 0.9089626736111112,
+        "accuracy": 0.8177083333333334
+      },
+      "auc_change": 0.05110677083333337
+    },
+    {
+      "stream": "original",
+      "rule": "receive_edge",
+      "decoder": "scalar_rule/ridge",
+      "early": {
+        "mean_episode_auc": 1.0,
+        "accuracy": 1.0
+      },
+      "late": {
+        "mean_episode_auc": 1.0,
+        "accuracy": 1.0
+      },
+      "auc_change": 0.0
+    },
+    {
+      "stream": "original",
+      "rule": "content_feature",
+      "decoder": "full_model",
+      "early": {
+        "mean_episode_auc": 0.5010850694444444,
+        "accuracy": 0.49593098958333337
+      },
+      "late": {
+        "mean_episode_auc": 0.669704861111111,
+        "accuracy": 0.6173502604166667
+      },
+      "auc_change": 0.16861979166666663
+    },
+    {
+      "stream": "original",
+      "rule": "content_feature",
+      "decoder": "S0_pool/ridge",
+      "early": {
+        "mean_episode_auc": 0.5926106770833333,
+        "accuracy": 0.5712890625
+      },
+      "late": {
+        "mean_episode_auc": 0.6909722222222221,
+        "accuracy": 0.6370442708333334
+      },
+      "auc_change": 0.09836154513888884
+    },
+    {
+      "stream": "original",
+      "rule": "content_feature",
+      "decoder": "scalar_rule/ridge",
+      "early": {
+        "mean_episode_auc": 1.0,
+        "accuracy": 0.9632161458333334
+      },
+      "late": {
+        "mean_episode_auc": 1.0,
+        "accuracy": 0.9632161458333334
+      },
+      "auc_change": 0.0
+    },
+    {
+      "stream": "fresh",
+      "rule": "receive_edge",
+      "decoder": "full_model",
+      "early": {
+        "mean_episode_auc": 0.6350233289930556,
+        "accuracy": 0.6583658854166667
+      },
+      "late": {
+        "mean_episode_auc": 0.9167751736111112,
+        "accuracy": 0.8116861979166667
+      },
+      "auc_change": 0.2817518446180556
+    },
+    {
+      "stream": "fresh",
+      "rule": "receive_edge",
+      "decoder": "S0_pool/ridge",
+      "early": {
+        "mean_episode_auc": 0.8576388888888888,
+        "accuracy": 0.744140625
+      },
+      "late": {
+        "mean_episode_auc": 0.9236111111111112,
+        "accuracy": 0.8287760416666666
+      },
+      "auc_change": 0.06597222222222232
+    },
+    {
+      "stream": "fresh",
+      "rule": "receive_edge",
+      "decoder": "scalar_rule/ridge",
+      "early": {
+        "mean_episode_auc": 1.0,
+        "accuracy": 1.0
+      },
+      "late": {
+        "mean_episode_auc": 1.0,
+        "accuracy": 1.0
+      },
+      "auc_change": 0.0
+    },
+    {
+      "stream": "fresh",
+      "rule": "content_feature",
+      "decoder": "full_model",
+      "early": {
+        "mean_episode_auc": 0.4898546006944444,
+        "accuracy": 0.4925130208333333
+      },
+      "late": {
+        "mean_episode_auc": 0.6545681423611112,
+        "accuracy": 0.6048177083333334
+      },
+      "auc_change": 0.16471354166666674
+    },
+    {
+      "stream": "fresh",
+      "rule": "content_feature",
+      "decoder": "S0_pool/ridge",
+      "early": {
+        "mean_episode_auc": 0.5793728298611112,
+        "accuracy": 0.5651041666666666
+      },
+      "late": {
+        "mean_episode_auc": 0.6733940972222222,
+        "accuracy": 0.6194661458333334
+      },
+      "auc_change": 0.09402126736111105
+    },
+    {
+      "stream": "fresh",
+      "rule": "content_feature",
+      "decoder": "scalar_rule/ridge",
+      "early": {
+        "mean_episode_auc": 1.0,
+        "accuracy": 0.9720052083333334
+      },
+      "late": {
+        "mean_episode_auc": 1.0,
+        "accuracy": 0.9720052083333334
+      },
+      "auc_change": 0.0
+    }
+  ],
+  "gates": {
+    "original": {
+      "structural_decline": false,
+      "content_gain": true,
+      "early_structural_useful": true,
+      "late_content_useful": true,
+      "late_structural_decodable": true,
+      "structural_decodability_retained": true
+    },
+    "fresh": {
+      "structural_decline": false,
+      "content_gain": true,
+      "early_structural_useful": true,
+      "late_content_useful": true,
+      "late_structural_decodable": true,
+      "structural_decodability_retained": true
+    }
+  },
+  "passes": false
+}

@@ -13,6 +13,33 @@
   },
   "graphs": [
     {
+      "canonical_name": "twibot20_follow_matched",
+      "dataset_key": "twibot20_follow_matched",
+      "kind": "diagnostic",
+      "relative_path": "twibot20/graphs/follow_matched.pt",
+      "metadata_path": "twibot20/graphs/follow_matched.pt.meta.json",
+      "artifact_size_bytes": 515853610,
+      "artifact_size_gb": 0.51585361,
+      "statistics": {"nodes": 162990, "edges": 161550, "isolated_nodes": null},
+      "features": {"node_feature_dim": 768, "node_features": "Bit-exact reference retweet graph features and node order", "edge_features": ["follow_relation"]},
+      "labels": {"type": "binary node classification", "names": ["human", "bot"], "labeled_nodes": 11826, "class_counts": {"human": 5237, "bot": 6589}},
+      "tasks": {"supported": ["node_classification"], "unavailable": ["neighbor_matching", "static_link_prediction", "temporal_link_prediction"], "details": {"node_classification": "Matched-node diagnostic; episode reconstruction/evaluation not yet completed"}},
+      "construction": {
+        "script": "scripts/graph_construction/matched_follow_relations.py",
+        "code_revision": "ca35a6c3",
+        "direction": "follower_to_followed; friend as written, follow reversed",
+        "scope": "Induced matched-node graph, not untouched public benchmark",
+        "verified_original_sample_edges": {"friend": 605, "follow": 534},
+        "same_node_order_features_labels_splits": true,
+        "artifact_sha256": "87d88de9162e4ee2e0cfd8e183304f216d5da264ee1e7b31d8fe74f35c3b5b6b"
+      },
+      "source_data": [
+        {"role": "exact reference node payload", "path": "twibot20/graphs/retweet_graph.pt", "format": "PyTorch"},
+        {"role": "original converted relation table", "path": "twibot20/raw/Twibot-20/edge.csv", "format": "CSV"}
+      ],
+      "default_eval": false
+    },
+    {
       "canonical_name": "ukraine",
       "dataset_key": "ukr_rus_twitter",
       "kind": "source",

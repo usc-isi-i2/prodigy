@@ -1,0 +1,18 @@
+{
+  "revision": "246b73da1c3e53fd5691eec8df386c3dbcf18a87",
+  "paired_cells": 42,
+  "score_conditions": 6,
+  "targets": [
+    "covid_political",
+    "facebook_page_reference",
+    "twibot20"
+  ],
+  "batches": 32,
+  "threads": 4,
+  "smoke_only": false,
+  "scale_root": "/dataMeR1/phil/gfm/prodigy-message-scale/log/message_scale_full_20260907",
+  "dose_root": "/dataMeR1/phil/gfm/prodigy-role-topology/log/support_dose_full_20260907",
+  "new_training": false,
+  "design": "Intact versus zero support messages only. Six final checkpoints on CP/FB/BOT; Hong Kong step100 on FB connects the observed training-stage reversal. Fixed final queries; normalize final label vectors, form d=l1-l0, swap d orientation and strength at the score margin. Native logits must match prior saved values.",
+  "interpretation": "Final score counterfactuals, not target-fitted classifiers or necessarily realizable latent label pairs. Positive contrast scaling preserves episode ranks and binary decisions. Means across training seeds and episode streams; no IID inference."
+}
