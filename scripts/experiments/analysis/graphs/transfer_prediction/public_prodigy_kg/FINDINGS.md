@@ -1003,3 +1003,31 @@ reconciled every episode metric and summary mean to absolute tolerance 1e-12.
 The independent-initialization replication
 strengthens compensation as a within-family finding, not as a novel universal
 compatibility principle. Further scope remains unresolved.
+
+## Training utility versus deployment utility: existing isolation evidence
+
+Reanalysis of the completed `social_centered_readout_20260907` export uses the
+explicit fixed-four target names, not a newly selected panel. In the fresh stream,
+joint versus isolated training improves centered U1 macro-F1 by5.6047 points
+(blocked) and5.8203 points(interleaved), with AUC gains5.3032/5.1664 points.
+Accuracy,F1,AUC improve and NLL decreases on all four targets under both schedules.
+Joint versus isolated changes native-loss gradient access to U1 while retaining
+both losses, matched initialization and source episode exposure in the original
+pilot. This is evidence for benefit of that gradient path in the tested setup,
+not a claim that learned inference is intrinsically necessary for good features.
+
+Important alternative: the original ridge-training objective was uncentered,
+lambda1 and fixed logit scale1; deployment now uses support centering. Native
+training uses a learned cosine-logit scale initialized at1/0.07. A weakly scaled
+direct-training objective could account for the advantage. One strengthened
+comparator, fixed before outcomes on branch `codex/centered-ridge-training`,
+will train support-centered ridge with a learned positive scale, otherwise
+matching the existing pilot. Do not claim a new training/deployment framework
+from the old comparator until this ambiguity is addressed.
+
+The unchanged social summary and completion file are now retained in
+`data/social_centered_readout_20260907/`; summary SHA256
+`b87f9ddfd0d1a8fa2c7025f8ab4953aa099f3c345113ba50e93990f661891202`.
+This is retrospective analysis of one training seed and two reused target streams,
+not a new replication. GILT's failed compensation test remains a separate boundary;
+it does not establish this training-gradient mechanism.
