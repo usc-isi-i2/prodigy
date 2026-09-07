@@ -17,3 +17,7 @@ produced at revision `9df49785` from 270 fixed-input replay cells (nine sources 
 five targets × three checkpoint seeds × two episode streams). Raw query records,
 support embeddings, cached subgraphs, and logits remain in the ignored Tucker
 runtime directory `log/local_transfer_contrast/seed_replication/`.
+
+The `schedule_*.csv` tables were produced at revision `c7d307a2` from the six
+retained two-source schedule-pilot checkpoints. They are a secondary, one-seed
+intervention and are not pooled with the three-seed singleton analysis.

@@ -213,6 +213,29 @@ average. The abstention rule therefore is part of the result, not cosmetic
 filtering: support competence identifies when the model family lacks transferable
 signal and prevents TRACE from presenting a meaningless routing claim.
 
+## Schedule intervention: health tracks effects, not a universal winner
+
+The eight-source 40k ladder previously showed a strong schedule effect on its NM
+objective: sequential minus interleaved AUC averages -.044 across 64 paired cells,
+including -.070 on incumbent graphs, while the newest graph averages +.006. That
+pattern motivates a preservation account, but its terminal checkpoints are no
+longer retained on Tucker, so we cannot retroactively measure their U1 health.
+
+We instead replayed all six retained models from the independent 2,500-step,
+two-source schedule pilot (two source pairs, interleaving and both sequential
+orders) on the five fixed target streams. This smaller intervention does not show
+a universal interleaving advantage: sequential exposure raises COVID-political
+accuracy by .053 on average and slightly lowers Facebook/TwiBot accuracy. Across
+the 16 above-chance paired source-order/target cells, however, the change in U1
+health tracks the change in accuracy with rho=.459 (p=.073). This is useful
+directional evidence, not a confirmatory result.
+
+The correct conclusion is narrower and stronger than declaring one schedule
+universally best: TRACE measures the consequence of a training schedule for a
+particular target. Whether interleaving or a block helps depends on which evidence
+that update preserves. Confirming the eight-source forgetting mechanism requires
+rerunning or recovering its checkpoints.
+
 ## Paper-level interpretation
 
 The working thesis is **pretraining transfer is governed by preservation of
@@ -226,18 +249,18 @@ interpretation of earlier observations:
 - asymmetric transfer: source training deforms different target directions;
 - more graphs are not always better: additional updates can destroy useful
   directions even when they add data;
-- sequential mixtures underperform interleaving: long source blocks permit
-  source-specific destructive drift, while interleaving can regularize it;
+- the eight-source sequential ladder underperforms interleaving mainly on incumbent
+  graphs, consistent with destructive drift, while the short two-source pilot shows
+  that the direction is not universal;
 - adding another graph can improve a target: it can restore or preserve a target
   decision direction absent from the original source.
 
 The matched-example mechanism is established on one target/source pair, while
 health predictiveness and routing now replicate across nine sources, five targets,
-and three checkpoint seeds. The next decisive test is the mixture-schedule
-trajectory: if health deteriorates under sequential merging and is preserved by
-interleaving, TRACE connects the adaptive inference contribution directly to the
-earlier training-order finding and motivates a health-preserving pretraining
-regularizer.
+and three checkpoint seeds. The next decisive training-side test is a retained
+eight-source mixture-schedule trajectory. If health loss explains its incumbent
+forgetting, TRACE can motivate a health-preserving pretraining regularizer; until
+then, adaptive inference and transfer diagnosis are the supported contributions.
 
 ## Validity boundaries
 
@@ -253,3 +276,6 @@ regularizer.
   principled relative to binary chance but has not yet been varied.
 - Facebook is unusually favorable to raw features. Cross-target evaluation is
   why raw anchoring is not the general method; U1 health is the cross-target rule.
+- The short two-source schedule pilot has one training seed and only 20 paired
+  schedule/target contrasts. Its health-effect correlation is descriptive and does
+  not substitute for the unavailable eight-source checkpoint trajectory.
