@@ -201,6 +201,10 @@ def get_params(argv=None):
     args.add_argument("-layers", "--layers", default="S,U,M", type=str)  # default: GraphSAGE->Up->Metagraph (see experiments/layers.py for more info)
     args.add_argument("-ignore_label_embs", "--ignore_label_embeddings", default=True, type=str2bool)
     args.add_argument("-zero_lbl", "--zero_label_embeddings", default=False, type=str2bool)
+    args.add_argument("--support_label_prototypes", default=False, type=str2bool,
+                      help="Add support-derived class prototypes to label nodes before metagraph reasoning.")
+    args.add_argument("--learned_relation_scorer", default=False, type=str2bool,
+                      help="Add a learned query-label relation residual to cosine logits.")
     args.add_argument("-not_freeze_learned_label_embedding", "--not_freeze_learned_label_embedding", default=False, type=str2bool)
     args.add_argument("-linear_probe", "--linear_probe", default=False, type=str2bool)
     args.add_argument("-fdf", "--fix_datasets_first", default=False,
@@ -537,6 +541,18 @@ def get_params(argv=None):
         help="Feature augmentation applied to CONTRASTIVE (cl) episodes inside the nm_fp_cl "
         "rotation (two-view positives). NM episodes get no aug; FP episodes use "
         "fp_mask_ratio/fp_mask_strategy. Only used when task_name=nm_fp_cl.",
+    )
+    args.add_argument(
+        "--cls_nm_task_counts",
+        default="1,1",
+        type=str,
+        help="Episode rotation weights for paper-style supervised MT,NM training.",
+    )
+    args.add_argument(
+        "--cls_nm_n_way",
+        default=30,
+        type=int,
+        help="Number of ways for NM episodes in cls_nm; MT retains --n_way.",
     )
     # --- E4: multi-task objective (masked-feature-recon ⊕ directed-LP ⊕ structural) ---
     # Built on E2's encoder (sage_multi + directed3). MFR + structural share the

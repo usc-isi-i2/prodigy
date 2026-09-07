@@ -567,11 +567,14 @@ def build_command(
             str(args.eval_step),
             "--checkpoint_step",
             str(args.checkpoint_step),
-            "--midterm_label_downsample",
-            "50:50",
             "--prefix",
             prefix,
         ]
+        # The balanced binary-label shortcut is only valid for two-class graphs.
+        # Passing it to multiclass datasets (for example Facebook's 30 classes)
+        # makes the dataset reject the evaluation before any episodes are built.
+        if n_way == 2:
+            extra += ["--midterm_label_downsample", "50:50"]
         if args.pl_linear_probe and args.pl_train_cap > 0:
             extra += ["--train_cap", str(args.pl_train_cap)]
     else:

@@ -1,0 +1,24 @@
+task_name: neighbor_matching
+edge_view: default
+feature_subset: all
+original_features: true
+input_dim: 768
+emb_dim: 256
+gnn_type: sage
+n_layer: 1
+n_hop: 1
+n_way: 30
+n_shots: 3
+n_query: 4
+batch_size: 8
+dataset_len_cap: 900
+val_len_cap: 20
+test_len_cap: 20
+epochs: 1
+eval_step: 100000
+checkpoint_step: 300
+workers: 4
+device: 0
+seed: 0
+ignore_label_embeddings: false
+tags: [mt_transfer_pilot, NM, matched_30way, budget900]
