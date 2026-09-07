@@ -47,28 +47,47 @@ def endpoint_features(graph):
     return torch.cat((graph.x[head, :768], graph.x[tail, :768]), 1)
 
 
+def paired_result(payload, record, stage_run=None):
+    """Use embedded fresh-stream geometry or a receipt-matched legacy stage run."""
+    import torch
+    if stage_run is None:
+        result = payload["result"]
+    else:
+        stage = torch.load(stage_run / record["file"], map_location="cpu")
+        if stage["source_sha256"] != record["sha256"]:
+            raise ValueError("Stage artifact source mismatch")
+        result = stage["result"]
+    if len(result["tasks"]) != 1 or "pre" not in result["geometry"]:
+        raise ValueError("Expected single-task pre-metagraph geometry")
+    return payload["native_capture"], result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    for field in ("source", "stage-run", "initialization", "upstream", "output"):
+    for field in ("source", "initialization", "upstream", "output"):
         parser.add_argument("--" + field, type=Path, required=True)
+    parser.add_argument("--stage-run", type=Path,
+                        help="Legacy separate stage run; omit for embedded replication results")
     parser.add_argument("--gpu", type=int, choices=(2, 3), required=True)
     parser.add_argument("--execute", action="store_true")
     args = parser.parse_args()
     for key, value in vars(args).items():
         if isinstance(value, Path):
             setattr(args, key, value.resolve())
-    for root in (args.source, args.stage_run):
+    for root in (args.source,) + ((args.stage_run,) if args.stage_run else ()):
         if json.loads((root / "execution_status.json").read_text())["status"] != "complete":
             raise ValueError("Source runs must be complete")
-    stage_protocol = json.loads((args.stage_run / "protocol.json").read_text())
     index = args.source / "paired_episodes/index.json"
-    if native.file_sha256(index) != stage_protocol["source_index_sha256"]:
-        raise ValueError("Stage and native source differ")
+    if args.stage_run:
+        stage_protocol = json.loads((args.stage_run / "protocol.json").read_text())
+        if native.file_sha256(index) != stage_protocol["source_index_sha256"]:
+            raise ValueError("Stage and native source differ")
     records = json.loads(index.read_text())["records"]
     if len(records) != 500 or [r["ordinal"] for r in records] != list(range(500)):
-        raise ValueError("Expected complete 500 discovery episodes")
+        raise ValueError("Expected complete 500 paired episodes")
     native.verify_upstream(args.upstream)
-    plan = {"source": str(args.source), "stage_run": str(args.stage_run),
+    plan = {"source": str(args.source), "stage_run": str(args.stage_run) if args.stage_run else None,
+            "geometry_layout": "separate" if args.stage_run else "embedded",
             "initialization": str(args.initialization), "initialization_sha256": native.file_sha256(args.initialization),
             "source_index_sha256": native.file_sha256(index), "episodes": 500,
             "features": ["trained pre-metagraph", "saved-initialization pre-metagraph", "head-tail text concatenation"],
@@ -98,11 +117,7 @@ def main():
             path = args.source / "paired_episodes" / record["file"]
             if path.resolve().parent != (args.source / "paired_episodes").resolve() or native.file_sha256(path) != record["sha256"]:
                 raise ValueError("Source artifact receipt failed")
-            artifact = torch.load(path, map_location="cpu")["native_capture"]
-            stage = torch.load(args.stage_run / record["file"], map_location="cpu")
-            if stage["source_sha256"] != record["sha256"]:
-                raise ValueError("Stage artifact source mismatch")
-            result = stage["result"]
+            artifact, result = paired_result(torch.load(path, map_location="cpu"), record, args.stage_run)
             group = result["tasks"][0]
             s, q = group["support_rows"], group["query_rows"]
             labels = artifact["input"][2]

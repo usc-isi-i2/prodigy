@@ -1,11 +1,28 @@
 import unittest
 from types import SimpleNamespace
 import torch
-from .pretraining_control import extract_pre, endpoint_features
+from .pretraining_control import extract_pre, endpoint_features, paired_result
+import tempfile
+from pathlib import Path
 from .run_native import capture_forward_state
 
 
 class ControlTests(unittest.TestCase):
+    def test_embedded_and_legacy_pairing(self):
+        result = {"tasks": [{}], "geometry": {"pre": torch.ones(3, 2)}}
+        payload = {"native_capture": {"marker": 1}, "result": result}
+        record = {"file": "episode.pt", "sha256": "receipt"}
+        artifact, actual = paired_result(payload, record)
+        self.assertIs(actual, result)
+        self.assertEqual(artifact["marker"], 1)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            torch.save({"source_sha256": "receipt", "result": result}, root / record["file"])
+            _, legacy = paired_result(payload, record, root)
+            torch.testing.assert_close(legacy["geometry"]["pre"], actual["geometry"]["pre"])
+            with self.assertRaisesRegex(ValueError, "source mismatch"):
+                paired_result(payload, dict(record, sha256="wrong"), root)
+
     def test_initialization_buffers_and_early_stop(self):
         class Meta(torch.nn.Module):
             def __init__(self):
