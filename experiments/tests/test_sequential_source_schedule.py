@@ -9,6 +9,7 @@ from torch_geometric.data import Data
 from data.covid19_twitter import (
     get_covid19_twitter_dataloader,
     parse_source_sequence_steps,
+    resolve_source_schedule,
     resolve_source_sequence,
 )
 from data.dataloader import BatchSampler, NeighborTask, ParamSampler
@@ -18,6 +19,20 @@ class IdentityWalkSampler:
     def random_walk(self, node_idx, direction):
         del direction
         return node_idx
+
+
+class SeededWalkSampler:
+    class WholeAdj:
+        @staticmethod
+        def csr():
+            return torch.arange(0, 301, 10), torch.arange(300) % 30, None
+
+    whole_adj = WholeAdj()
+
+    def random_walk(self, node_idx, direction, generator=None):
+        del direction
+        offsets = torch.randint(1, 30, node_idx.shape, generator=generator)
+        return (node_idx + offsets) % 30
 
 
 class TinyMergedDataset:
@@ -70,6 +85,47 @@ def test_blocked_schedule_is_contiguous_and_exhausts_loudly() -> None:
         sampled_stratum(task, rng)
 
 
+def test_repeated_schedule_revisits_strata_exactly() -> None:
+    task = NeighborTask(
+        IdentityWalkSampler(),
+        size=30,
+        direction="inout",
+        strata=[range(0, 10), range(10, 20), range(20, 30)],
+        confine_to_single_stratum=True,
+        stratum_schedule=[1, 2, 0, 1, 2, 0],
+        stratum_schedule_steps=[1, 2, 1, 1, 1, 2],
+    )
+    rng = random.Random(7)
+    assert [sampled_stratum(task, rng) for _ in range(8)] == [1, 2, 2, 0, 1, 2, 0, 0]
+
+
+def test_reordered_schedules_consume_identical_per_source_examples() -> None:
+    def build(schedule):
+        return NeighborTask(
+            SeededWalkSampler(),
+            size=20,
+            direction="inout",
+            strata=[range(0, 10), range(10, 20)],
+            confine_to_single_stratum=True,
+            stratum_schedule=schedule,
+            stratum_schedule_steps=[1] * len(schedule),
+            filter_min_degree=True,
+            member_policy="uniform_shuffled",
+            member_sampling_seed=71,
+            source_schedule_seed=91,
+        )
+
+    by_source = []
+    for schedule in ([0, 0, 1, 1], [0, 1, 0, 1]):
+        task = build(schedule)
+        streams = {0: [], 1: []}
+        rng = random.Random(5)
+        for source in schedule:
+            streams[source].append(task.sample(2, 3, 1, 2, rng))
+        by_source.append(streams)
+    assert by_source[0] == by_source[1]
+
+
 def test_schedule_rejects_cross_source_mixing() -> None:
     with pytest.raises(ValueError, match="cross_source_prob=0"):
         NeighborTask(
@@ -90,6 +146,15 @@ def test_source_sequence_preserves_order_and_rejects_duplicates_or_omissions() -
         resolve_source_sequence("ukr_rus,covid,covid", [0, 1, 2], names)
     with pytest.raises(ValueError, match="every active source"):
         resolve_source_sequence("ukr_rus,covid", [0, 1, 2], names)
+
+
+def test_source_schedule_allows_repeats_but_requires_complete_coverage() -> None:
+    names = ["ukr_rus", "covid", "midterm"]
+    assert resolve_source_schedule(
+        "covid,ukr_rus,covid,midterm", [0, 1, 2], names
+    ) == [1, 0, 1, 2]
+    with pytest.raises(ValueError, match="at least once"):
+        resolve_source_schedule("ukr_rus,covid,ukr_rus", [0, 1, 2], names)
 
 
 def test_source_sequence_steps_must_match_full_budget() -> None:
@@ -204,3 +269,33 @@ def test_train_loader_validates_full_multi_epoch_budget() -> None:
             neighbor_sampling_source_sequence="ukr_rus,covid",
             neighbor_sampling_source_sequence_steps="1,2",
         )
+
+
+def test_train_loader_maps_repeated_graph_ids_to_local_strata() -> None:
+    loader = get_covid19_twitter_dataloader(
+        TinyMergedDataset(),
+        split="train",
+        node_split="",
+        batch_size=1,
+        n_way=2,
+        n_shot=0,
+        n_query=1,
+        batch_count=4,
+        root="",
+        bert=None,
+        num_workers=0,
+        aug="",
+        aug_test=False,
+        split_labels=False,
+        train_cap=None,
+        linear_probe=False,
+        task_name="neighbor_matching",
+        epochs=1,
+        neighbor_sampling_episode_source="graph_id",
+        neighbor_sampling_source_subset="ukr_rus,covid",
+        neighbor_sampling_source_schedule="covid,ukr_rus,covid,ukr_rus",
+        neighbor_sampling_source_schedule_steps="1,1,1,1",
+    )
+    task = loader.batch_sampler.task
+    assert task.stratum_schedule == [1, 0, 1, 0]
+    assert task.stratum_schedule_steps == [1, 1, 1, 1]

@@ -141,6 +141,11 @@ class TrainerFS():
         "neighbor_matching_walk_hops", "neighbor_sampling_strategy",
         "neighbor_matching_member_policy", "neighbor_matching_member_seed",
         "neighbor_sampling_strata", "neighbor_sampling_episode_source",
+        "neighbor_sampling_episode_source_weighting",
+        "neighbor_sampling_batch_source_mode", "neighbor_sampling_source_subset",
+        "neighbor_sampling_source_sequence", "neighbor_sampling_source_sequence_steps",
+        "neighbor_sampling_source_schedule", "neighbor_sampling_source_schedule_steps",
+        "neighbor_sampling_source_schedule_seed",
         "neighbor_sampling_cross_source_prob", "neighbor_sampling_center_radii",
         "neighbor_sampling_center_radius_weights", "n_way", "n_shots", "n_query",
         "batch_size", "learning_rate", "weight_decay", "dataset_len_cap", "epochs",
@@ -610,6 +615,15 @@ class TrainerFS():
         )
         kwargs["neighbor_sampling_source_sequence_steps"] = self.parameter.get(
             "neighbor_sampling_source_sequence_steps", ""
+        )
+        kwargs["neighbor_sampling_source_schedule"] = self.parameter.get(
+            "neighbor_sampling_source_schedule", ""
+        )
+        kwargs["neighbor_sampling_source_schedule_steps"] = self.parameter.get(
+            "neighbor_sampling_source_schedule_steps", ""
+        )
+        kwargs["neighbor_sampling_source_schedule_seed"] = self.parameter.get(
+            "neighbor_sampling_source_schedule_seed", -1
         )
         # The blocked schedule validates against the full optimizer-step budget even though
         # each BatchSampler iterator covers one dataset_len_cap-sized epoch.

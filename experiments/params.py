@@ -337,6 +337,36 @@ def get_params(argv=None):
         ),
     )
     args.add_argument(
+        "--neighbor_sampling_source_schedule",
+        default="",
+        type=str,
+        help=(
+            "Optional comma-separated source schedule whose names/ids may repeat. "
+            "Each entry is one contiguous segment and every active source must appear "
+            "at least once. Use with --neighbor_sampling_source_schedule_steps; mutually "
+            "exclusive with the one-block-per-source sequence options."
+        ),
+    )
+    args.add_argument(
+        "--neighbor_sampling_source_schedule_steps",
+        default="",
+        type=str,
+        help=(
+            "Positive episode counts for the repeated source-schedule segments. Counts "
+            "must sum to epochs * dataset_len_cap."
+        ),
+    )
+    args.add_argument(
+        "--neighbor_sampling_source_schedule_seed",
+        default=-1,
+        type=int,
+        help=(
+            "Nonnegative creates independent per-source Python and member-sampling "
+            "streams for an explicit schedule. This makes differently ordered schedules "
+            "consume the same episode multiset within each source."
+        ),
+    )
+    args.add_argument(
         "--neighbor_sampling_episode_source_weighting",
         default="proportional",
         choices=["proportional", "balanced"],
@@ -841,6 +871,16 @@ def get_params(argv=None):
             raise ValueError("member-policy controls require a nonnegative dedicated sampling seed")
         if params.get("neighbor_sampling_episode_source") != "graph_id" or not params.get("neighbor_matching_edge_split"):
             raise ValueError("member-policy controls require source-confined split-aware NM")
+    if params["neighbor_sampling_source_schedule_seed"] >= 0:
+        if not str(params.get("neighbor_sampling_source_schedule") or "").strip():
+            raise ValueError(
+                "neighbor_sampling_source_schedule_seed requires an explicit source schedule"
+            )
+        if params["neighbor_matching_member_seed"] < 0:
+            raise ValueError(
+                "neighbor_sampling_source_schedule_seed requires a nonnegative "
+                "neighbor_matching_member_seed"
+            )
     if params["train_episode_audit"] and params["task_name"] != "neighbor_matching":
         raise ValueError("train_episode_audit currently supports NM only")
 

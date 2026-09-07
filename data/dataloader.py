@@ -8,7 +8,6 @@ from torch.utils.data import DataLoader, Sampler
 from torch.nn.utils.rnn import pad_sequence
 from torch_geometric.data import Batch
 from itertools import chain
-import random
 from .augment import Identity
 import math
 
@@ -224,13 +223,14 @@ class ContrastiveTask(TaskBase):
 class NeighborTask(TaskBase):
     def __init__(self, neighbor_sampler, size, direction, sampling_strategy="strict", strata=None,
                  confine_to_single_stratum=False, stratum_weighting="proportional",
-                 cross_source_prob=0.0, stratum_schedule_steps=None,
+                 cross_source_prob=0.0, stratum_schedule=None,
+                 stratum_schedule_steps=None,
                  filter_min_degree=False, batch_source_mode="independent",
                  center_radii=None, center_radius_weights=None,
                  center_region_fanout=64, center_region_node_limit=4096,
                  center_region_candidate_limit=512, center_region_sampler=None,
                  center_max_attempts=200, member_policy="randomized",
-                 member_sampling_seed=-1):
+                 member_sampling_seed=-1, source_schedule_seed=-1):
         self.neighbor_sampler = neighbor_sampler
         self.center_region_sampler = center_region_sampler or neighbor_sampler
         self.size = size
@@ -261,6 +261,9 @@ class NeighborTask(TaskBase):
             key: torch.Generator().manual_seed(self.member_sampling_seed + offset)
             for key, offset in (("walk", 0), ("retention", 1), ("roles", 2))
         }
+        self.source_schedule_seed = int(source_schedule_seed)
+        self.source_rngs = None
+        self.source_member_generators = None
         self.filter_min_degree = bool(filter_min_degree)
         self._eligible_cache = {}
         self.center_radii = None
@@ -383,6 +386,7 @@ class NeighborTask(TaskBase):
                     "episode remains within one source."
                 )
         self.stratum_schedule_steps = None
+        self.stratum_schedule = None
         self.stratum_schedule_boundaries = None
         self.scheduled_episode = 0
         if stratum_schedule_steps is not None:
@@ -401,21 +405,58 @@ class NeighborTask(TaskBase):
                     "schedule: every complete batch already contains every active source."
                 )
             steps = [int(step) for step in stratum_schedule_steps]
-            if len(steps) != len(self.strata):
+            schedule = (
+                list(range(len(self.strata)))
+                if stratum_schedule is None else [int(index) for index in stratum_schedule]
+            )
+            if len(steps) != len(schedule):
                 raise ValueError(
-                    "stratum_schedule_steps must have one count per stratum: "
-                    f"steps={steps}, strata={len(self.strata)}."
+                    "stratum_schedule_steps must have one count per schedule segment: "
+                    f"steps={steps}, schedule={schedule}."
+                )
+            invalid = [index for index in schedule if not 0 <= index < len(self.strata)]
+            if invalid:
+                raise ValueError(
+                    f"stratum_schedule contains invalid stratum indices {invalid}."
+                )
+            missing = sorted(set(range(len(self.strata))) - set(schedule))
+            if missing:
+                raise ValueError(
+                    "stratum_schedule must expose every active stratum at least once; "
+                    f"missing {missing}."
                 )
             if any(step <= 0 for step in steps):
                 raise ValueError(
                     f"stratum_schedule_steps must be positive, got {steps}."
                 )
             self.stratum_schedule_steps = steps
+            self.stratum_schedule = schedule
             running = 0
             self.stratum_schedule_boundaries = []
             for step in steps:
                 running += step
                 self.stratum_schedule_boundaries.append(running)
+            if self.source_schedule_seed >= 0:
+                if self.member_generators is None:
+                    raise ValueError(
+                        "source_schedule_seed requires a nonnegative member_sampling_seed "
+                        "so all per-source episode randomness is isolated."
+                    )
+                self.source_rngs = [
+                    random.Random(self.source_schedule_seed + 1_000_003 * index)
+                    for index in range(len(self.strata))
+                ]
+                self.source_member_generators = [
+                    {
+                        key: torch.Generator().manual_seed(
+                            self.member_sampling_seed + 10_000 * index + offset
+                        )
+                        for key, offset in (("walk", 0), ("retention", 1), ("roles", 2))
+                    }
+                    for index in range(len(self.strata))
+                ]
+        elif self.source_schedule_seed >= 0:
+            raise ValueError("source_schedule_seed requires an explicit source schedule.")
 
     @staticmethod
     def _balanced_counts(total, num_groups):
@@ -425,9 +466,12 @@ class NeighborTask(TaskBase):
             counts[i] += 1
         return counts
 
-    def _sample_center_members(self, center, num_member, rng):
+    def _sample_center_members(self, center, num_member, rng, member_generators=None):
         node_idx = torch.ones(num_member * 10, dtype=torch.long) * center
-        streams = getattr(self, "member_generators", None)
+        streams = (
+            getattr(self, "member_generators", None)
+            if member_generators is None else member_generators
+        )
         kwargs = {} if streams is None else {"generator": streams["walk"]}
         node_idx = self.neighbor_sampler.random_walk(node_idx, self.direction, **kwargs)
         if node_idx.numel() == 0:
@@ -458,21 +502,57 @@ class NeighborTask(TaskBase):
             return sampled[:num_member]
         return None
 
+    @staticmethod
+    def _generator_states(generators):
+        if generators is None:
+            return None
+        return {
+            key: generator.get_state() for key, generator in generators.items()
+        }
+
     def sampling_state_dict(self):
-        return {"member_policy": self.member_policy,
-                "member_sampling_seed": self.member_sampling_seed,
-                "generators": None if self.member_generators is None else {
-                    key: generator.get_state() for key, generator in self.member_generators.items()}}
+        return {
+            "member_policy": self.member_policy,
+            "member_sampling_seed": self.member_sampling_seed,
+            "source_schedule_seed": self.source_schedule_seed,
+            "generators": self._generator_states(self.member_generators),
+            "source_rngs": None if self.source_rngs is None else [
+                rng.getstate() for rng in self.source_rngs
+            ],
+            "source_member_generators": (
+                None if self.source_member_generators is None else [
+                    self._generator_states(generators)
+                    for generators in self.source_member_generators
+                ]
+            ),
+        }
 
     def load_sampling_state_dict(self, state):
         if (state["member_policy"], state["member_sampling_seed"]) != (self.member_policy, self.member_sampling_seed):
             raise ValueError("cannot restore a different member policy or sampling seed")
+        if state.get("source_schedule_seed", -1) != self.source_schedule_seed:
+            raise ValueError("cannot restore a different source schedule seed")
         saved = state["generators"]
         if (saved is None) != (self.member_generators is None):
             raise ValueError("incompatible dedicated member streams")
         if saved is not None:
             for key, generator in self.member_generators.items():
                 generator.set_state(saved[key].cpu())
+        saved_source_rngs = state.get("source_rngs")
+        if (saved_source_rngs is None) != (self.source_rngs is None):
+            raise ValueError("incompatible per-source Python RNG streams")
+        if saved_source_rngs is not None:
+            for rng, saved_rng in zip(self.source_rngs, saved_source_rngs):
+                rng.setstate(saved_rng)
+        saved_source_generators = state.get("source_member_generators")
+        if (saved_source_generators is None) != (self.source_member_generators is None):
+            raise ValueError("incompatible per-source member RNG streams")
+        if saved_source_generators is not None:
+            for generators, saved_generators in zip(
+                self.source_member_generators, saved_source_generators
+            ):
+                for key, generator in generators.items():
+                    generator.set_state(saved_generators[key].cpu())
 
     def _sample_center_members_disjoint(self, center, num_member, forbidden, rng):
         """Sample unique positives while preventing cross-label target collisions."""
@@ -701,7 +781,9 @@ class NeighborTask(TaskBase):
             )
         return task
 
-    def _sample_from_stratum(self, num_label, num_member, rng, stratum_idx):
+    def _sample_from_stratum(
+        self, num_label, num_member, rng, stratum_idx, member_generators=None
+    ):
         """Draw one complete episode from an explicitly selected source stratum."""
         candidates = self._eligible_candidates(
             self.strata[stratum_idx], num_member, ("stratum", stratum_idx)
@@ -716,7 +798,9 @@ class NeighborTask(TaskBase):
             center = int(rng.choice(candidates))
             if center in used:
                 continue
-            members = self._sample_center_members(center, num_member, rng)
+            members = self._sample_center_members(
+                center, num_member, rng, member_generators=member_generators
+            )
             if members is None:
                 continue
             task[center] = members
@@ -733,21 +817,34 @@ class NeighborTask(TaskBase):
         # Pick ONE stratum (source) proportional to its size, then draw the whole
         # episode from it so every center/negative shares a source.
         if self.stratum_schedule_boundaries is not None:
-            stratum_idx = bisect_right(
+            segment_idx = bisect_right(
                 self.stratum_schedule_boundaries, self.scheduled_episode
             )
-            if stratum_idx >= len(self.strata):
+            if segment_idx >= len(self.stratum_schedule):
                 raise RuntimeError(
-                    "Blocked source schedule exhausted after "
+                    "Source schedule exhausted after "
                     f"{self.stratum_schedule_boundaries[-1]} episodes; the trainer requested "
                     f"episode {self.scheduled_episode + 1}."
                 )
+            stratum_idx = self.stratum_schedule[segment_idx]
             self.scheduled_episode += 1
+            sample_rng = (
+                rng if self.source_rngs is None else self.source_rngs[stratum_idx]
+            )
+            member_generators = (
+                None if self.source_member_generators is None
+                else self.source_member_generators[stratum_idx]
+            )
         else:
             stratum_idx = rng.choices(
                 range(len(self.strata)), weights=self.stratum_weights, k=1
             )[0]
-        return self._sample_from_stratum(num_label, num_member, rng, stratum_idx)
+            sample_rng = rng
+            member_generators = None
+        return self._sample_from_stratum(
+            num_label, num_member, sample_rng, stratum_idx,
+            member_generators=member_generators,
+        )
 
     def sample_batch(self, batch_param, rng):
         """Return a source-complete batch, or None for ordinary independent sampling.
