@@ -44,7 +44,9 @@ python -m scripts.experiments.setup.trace_schedule_scaling.verify_training \
 ```
 
 After training completes, replay the terminal checkpoints on five downstream targets and
-two disjoint fixed episode streams:
+two disjoint fixed episode streams. The launcher uses the replay harness's explicit
+`1e-5` traced/plain CUDA-logit tolerance; cached batch hashes and episode fingerprints
+remain exact. Override it with `TRACE_PARITY_ATOL` only for a numerical audit.
 
 ```bash
 tmux new-session -d -s tracesched-replay \

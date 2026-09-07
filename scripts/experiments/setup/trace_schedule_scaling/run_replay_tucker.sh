@@ -10,6 +10,7 @@ MODEL_LIST="${MODEL_LIST:-${LOG_ROOT}/launch/model_list_${RUN_STAMP}.tsv}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-${LOG_ROOT}/replay_${RUN_STAMP}}"
 GPUS_TEXT="${GPUS:-0 1 2 3}"
 TARGETS_TEXT="${TARGETS:-election2020 ukr_rus_suspended twibot20 covid_political facebook_page_reference}"
+TRACE_PARITY_ATOL="${TRACE_PARITY_ATOL:-1e-5}"
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
 source "$(conda info --base)/etc/profile.d/conda.sh"
@@ -55,6 +56,7 @@ worker() {
           --model-list "$MODEL_LIST" --output "$output" --datasets "$target" \
           --variants baseline --device "$gpu" --threads 4 --batch-count 32 \
           --save-embeddings --training-label-count 30 \
+          --trace-parity-atol "$TRACE_PARITY_ATOL" \
           --eval-episode-seed-offset "$offset" > "$log" 2>&1
         [[ -f "$output/DONE" ]] || { echo "incomplete replay $output" >&2; return 1; }
         echo "[gpu $gpu] DONE replay $stream/$target utc=$(date -u +%FT%TZ)"
