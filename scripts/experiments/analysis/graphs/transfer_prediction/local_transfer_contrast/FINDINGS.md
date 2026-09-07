@@ -217,24 +217,36 @@ signal and prevents TRACE from presenting a meaningless routing claim.
 
 The eight-source 40k ladder previously showed a strong schedule effect on its NM
 objective: sequential minus interleaved AUC averages -.044 across 64 paired cells,
-including -.070 on incumbent graphs, while the newest graph averages +.006. That
-pattern motivates a preservation account, but its terminal checkpoints are no
-longer retained on Tucker, so we cannot retroactively measure their U1 health.
+including -.070 on incumbent graphs, while the newest graph averages +.006. A
+separate retained two-source pilot instead showed target-dependent effects. We
+therefore ran a controlled three-seed study at two, three, and four sources rather
+than promote either pattern into a universal schedule rule.
 
-We instead replayed all six retained models from the independent 2,500-step,
-two-source schedule pilot (two source pairs, interleaving and both sequential
-orders) on the five fixed target streams. This smaller intervention does not show
-a universal interleaving advantage: sequential exposure raises COVID-political
-accuracy by .053 on average and slightly lowers Facebook/TwiBot accuracy. Across
-the 16 above-chance paired source-order/target cells, however, the change in U1
-health tracks the change in accuracy with rho=.459 (p=.073). This is useful
-directional evidence, not a confirmatory result.
+The 27 new models hold total updates, exact source exposure, anchors, members,
+support/query roles, sampled context nodes, and context edges fixed across blocked,
+100-episode replay, and one-episode interleaving. The predeclared pair-to-many
+interaction does not replicate: on the fresh support-competent targets it is
+-.0001 accuracy (crossed seed × target 95% interval [-.0151, .0119]) and -.0014
+AUC ([-.0190, .0167]). Thus source count alone is not a universal switch that
+makes blocked training fail; the historical result may require its longer horizon,
+eight-source scale, budget, order, or sampler.
 
-The correct conclusion is narrower and stronger than declaring one schedule
-universally best: TRACE measures the consequence of a training schedule for a
-particular target. Whether interleaving or a block helps depends on which evidence
-that update preserves. Confirming the eight-source forgetting mechanism requires
-rerunning or recovering its checkpoints.
+The mechanistic result does replicate. Across 72 above-chance schedule contrasts,
+the change in U1 agreement tracks the change in accuracy at rho=.585
+([.159, .826]) on the fresh stream. The independent original stream gives
+rho=.548 ([.101, .897]). Schedule changes that preserve target support geometry
+better tend to change target accuracy in the same direction even when their
+training examples are exact-matched.
+
+This also enables an untuned deployment rule. TRACE health fusion averages the
+probabilities of schedule checkpoints whose final prediction agrees with their U1
+support readout, falling back to all three if none agree. On four supported targets
+it improves a stronger labeled-discovery-selected fixed checkpoint from .7851 to
+.7989 accuracy (+.0138, crossed interval [+.0036, +.0237]) and from .8296 to
+.8333 AUC (+.0037, interval [-.0019, +.0113]). The accuracy gain appears in 27/36
+cells, with six ties and three losses. The .55 support-competence gate rejects the
+chance-level suspended target in all nine cells. Full details are in
+`../trace_schedule_scaling/FINDINGS.md`.
 
 ## Paper-level interpretation
 
@@ -256,11 +268,11 @@ interpretation of earlier observations:
   decision direction absent from the original source.
 
 The matched-example mechanism is established on one target/source pair, while
-health predictiveness and routing now replicate across nine sources, five targets,
-and three checkpoint seeds. The next decisive training-side test is a retained
-eight-source mixture-schedule trajectory. If health loss explains its incumbent
-forgetting, TRACE can motivate a health-preserving pretraining regularizer; until
-then, adaptive inference and transfer diagnosis are the supported contributions.
+health predictiveness and routing replicate across nine sources, five targets,
+three checkpoint seeds, and an exact-matched schedule intervention. The evidence
+supports transfer diagnosis, abstention, and adaptive inference. A retained
+eight-source trajectory and a health-preserving training regularizer remain the
+next scaling tests rather than prerequisites for the present mechanism claim.
 
 ## Validity boundaries
 
@@ -276,6 +288,6 @@ then, adaptive inference and transfer diagnosis are the supported contributions.
   principled relative to binary chance but has not yet been varied.
 - Facebook is unusually favorable to raw features. Cross-target evaluation is
   why raw anchoring is not the general method; U1 health is the cross-target rule.
-- The short two-source schedule pilot has one training seed and only 20 paired
-  schedule/target contrasts. Its health-effect correlation is descriptive and does
-  not substitute for the unavailable eight-source checkpoint trajectory.
+- The controlled schedule study reaches four sources and 2,500 updates; it limits
+  the generality of the old eight-source/40k effect but does not reproduce that
+  scale or optimization horizon.

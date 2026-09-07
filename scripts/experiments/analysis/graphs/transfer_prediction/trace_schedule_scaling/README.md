@@ -1,6 +1,7 @@
 # TRACE schedule scaling analysis
 
-Status: training in progress.
+Status: complete. See `FINDINGS.md` for the interpretation and `data/` for the
+audited result tables and protocol receipts.
 
 This leaf tests the predeclared transition from two-source sequential gains to
 larger-mixture forgetting under an order-only intervention. It also tests whether a
@@ -28,3 +29,21 @@ treated as independent checkpoint seeds.
 The analysis retains both cell-level paired contrasts and a target/rung table with
 three-seed means, spreads, and win counts; cross-target averages never replace the
 per-target schedule effects.
+
+TRACE health fusion is the untuned deployment rule: average probabilities among
+checkpoints whose final prediction agrees with their U1 support readout, with an equal
+average fallback when no checkpoint agrees. Its comparator is a single checkpoint
+selected by labeled original-stream AUC for each target/rung/seed. Method uncertainty
+uses the same crossed target × seed bootstrap and averages the three repeated rungs
+within each resampled cell.
+
+Rebuild the paper-oriented result figure locally with:
+
+```bash
+MPLBACKEND=Agg /opt/homebrew/bin/python3.11 \
+  scripts/experiments/analysis/graphs/transfer_prediction/trace_schedule_scaling/plot_results.py
+```
+
+The figure preserves individual target × seed schedule contrasts in panel a, shows the
+fresh-stream health relationship in panel b, and reports target-level plus crossed-macro
+fusion gains in panel c.
