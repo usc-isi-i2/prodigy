@@ -8,3 +8,6 @@ tables were produced at that revision from the verified replay at:
 Only aggregate tables are tracked. `occurrences.csv`, `example_candidates.csv`,
 the exported tensors, and hydrated example text/identifiers remain in ignored
 Tucker experiment output.
+
+The health-predictiveness tables were produced at revision `979ef545` from the
+same all-source exports.

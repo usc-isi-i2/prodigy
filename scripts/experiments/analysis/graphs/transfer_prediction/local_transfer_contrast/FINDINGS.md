@@ -130,6 +130,42 @@ excellent on Facebook but harms COVID, Election, and TwiBot. The transferable
 principle is therefore **support-conditioned consistency at an appropriate
 intermediate depth**, not privileged status for raw features.
 
+## Transfer health predicts which sources work
+
+U1 agreement is useful beyond routing. Across the 45 singleton-source × target
+cells, target-centered U1 agreement strongly correlates with transfer on the
+fresh stream: Spearman rho is .740 for accuracy (p=6.1e-9) and .756 for AUC
+(p=2.0e-9). The relationship appears independently on every substantive target:
+
+| Target | rho with accuracy | rho with AUC |
+|---|---:|---:|
+| COVID-political | 1.000 | .950 |
+| Election-2020 | .889 | .765 |
+| Facebook page-reference | .733 | .733 |
+| TwiBot-20 | .583 | .650 |
+| Ukraine/Russia suspended | -.332 | .050 |
+
+The exception is informative: on the suspended benchmark, all sources are near
+chance, so agreement can reflect stable but uninformative computation. Transfer
+health should therefore be combined with minimum support-readout competence,
+not interpreted as quality in isolation.
+
+As a global label-free source selector, choosing the model with highest fresh
+U1 agreement improves accuracy over discovery-AUC selection on COVID, Election,
+and Facebook, ties it on TwiBot, and fails on the chance-level suspended target.
+Across the four substantive targets the mean gain is +.007 accuracy; mean AUC is
+essentially unchanged because COVID accuracy improves while its AUC falls.
+Health is already a strong ranking signal, but not yet a complete source selector.
+
+This also sharpens the descriptive UKR/COVID observation. Across targets, the
+Ukraine checkpoint has the highest mean accuracy/AUC and high U1 preservation
+(.868); COVID has the highest mean preservation (.879) and is also strong. The
+Facebook-source checkpoint has both low preservation (.669) and weak transfer.
+Graph size or collection window may help create these weights, but neither is
+the proximal explanation of their predictions: the measurable model-target
+interaction is whether source training preserves a support-decodable decision
+through final inference.
+
 ## Paper-level interpretation
 
 The working thesis is **pretraining transfer is governed by preservation of
@@ -160,5 +196,7 @@ same measurement explains the earlier training-order result.
   result now covers all nine available singleton sources but only seed-0 weights.
 - This localizes where errors arise but does not yet identify which source
   training examples or gradients cause the deformation.
+- Agreement is not sufficient when the intermediate readout is itself at chance;
+  the health score needs a competence term on low-signal targets.
 - Facebook is unusually favorable to raw features. Cross-target evaluation is
   why raw anchoring is not the general method; U1 health is the cross-target rule.
