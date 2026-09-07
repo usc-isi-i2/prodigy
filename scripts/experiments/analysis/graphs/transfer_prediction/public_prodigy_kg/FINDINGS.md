@@ -929,3 +929,73 @@ Scope is deliberately limited: the large saved prediction/representation tensors
 remain on Tucker. Their receipts were verified there before export; the local
 check does not rerun inference or treat recurring query occurrences as independent
 samples. The export provides auditable numerical evidence, not a new experiment.
+
+## Compatibility-related novelty boundary
+
+Primary sources checked2026-09-07:
+[Luo et al., ICML2023](https://proceedings.mlr.press/v202/luo23e.html) study
+training/adaptation rankings with an uncertainty-aware partial order. Our
+batch-statistics early/late comparison is not a counterexample: early U1 is
+slightly better, not worse, and near equality is not a ranking reversal. Their
+finite empirical finding should not be described as a universal theorem we
+refute. The running-statistics result is also insufficient by itself to support
+such a claim without matched uncertainty and scope.
+
+[Bansal et al.](https://arxiv.org/abs/2106.07682) already use model stitching with
+a fitted intermediate adapter to study functional compatibility.
+[Shen et al., CVPR2020](https://openaccess.thecvf.com/content_CVPR_2020/html/Shen_Towards_Backward-Compatible_Representation_Learning_CVPR_2020_paper.html)
+already motivate compatibility separately from standalone embedding quality.
+Our no-adapter crossover is a scoped diagnostic, not an invented methodology.
+Any contribution claim must rest on the measured graph in-context transfer
+phenomenon and attribution, not merely restating that probe utility and
+compatibility differ. Related work has been added to the working draft.
+
+## Second-initialization replication (2026-09-07, complete)
+
+The fixed `state_dict_8000.ckpt` (8,001 updates) has SHA256
+`c55cff7152e850c92feb0d1aec4af066e5a7477da6f32ef23f1b39ba6c6b93ae`.
+The five-stage evaluator ran at `0e68737d`, independently of the live training
+checkout. All 500 saved inputs and query truths match seed zero exactly, verified
+by `verify_replication_inputs.py` at `5fda4243` after correcting its original
+tensor-only assumption to include PyG graph fields. The correction affected only
+the read-only audit, not either evaluation. Both source indexes' file hashes passed.
+
+The complete 500-episode control summary reports native/U1 centered accuracy
+72.3825/78.3425 and macro-F1 70.7873/76.5821 percent. U1 improves accuracy by
+5.9600 points and macro-F1 by 5.7948 points. It exceeds the stronger tested
+initialization readout (72.6675 accuracy) by 5.6750 points and the stronger text
+readout (71.6100) by 6.7325 points. Native exceeds that text control by only
+0.7725 points. Native NLL remains better; discrimination gains are not calibration
+dominance. These are two training initializations on the same target episodes,
+not 1,000 independent episodes or a second target.
+
+The 128-episode temporal native decline is smaller than seed zero: 73.7988 to
+73.4082 accuracy (-0.3906 points), with U1 79.8926 to 79.6094 (-0.2832).
+Nevertheless, the prospectively nominated crossover direction replicates:
+
+| Encoder checkpoint | Inference checkpoint | Accuracy | Macro-F1 | AUC |
+|---|---|---:|---:|---:|
+| 2k | 2k | 73.7988 | 71.9813 | 97.7051 |
+| 2k | 8k | 75.3516 | 73.9050 | 97.9652 |
+| 8k | 2k | 71.7090 | 69.8362 | 97.3411 |
+| 8k | 8k | 73.4082 | 71.6627 | 97.5898 |
+
+Later inference improves both encoders (+1.5527/+1.6992 accuracy points); the
+later encoder hurts both inference modules (-2.0898/-1.9434 points). Macro-F1,
+AUC, and NLL have the same directional pattern. Thus opposing component effects
+nearly cancel in the second seed. The earlier-encoder/later-inference composition
+beats both native endpoints in both seeds but remains below the strong U1 readout;
+this is not a validated selection algorithm or a superior deployment method.
+
+Running-statistics normalization also retains a late U1/native accuracy gap
+(79.3164 versus 69.8730), but the component crossover still has only the native
+batch-statistics protocol. Do not generalize its attribution across modes.
+
+All 384 trajectory, 512 crossover, and 256 normalization output hashes passed.
+Unmodified summaries/protocols/completion statuses are retained in the matching
+`data/publickg_*_seed1_20260907/` directories. `verify_temporal_evidence.py --seed 1`
+checks pinned summary hashes, full inventories, paired ordinals, and recomputes
+every reported mean. The control summary is retained separately; this temporal
+verifier does not re-score its logits. The independent-initialization replication
+strengthens compensation as a within-family finding, not as a novel universal
+compatibility principle. Further scope remains unresolved.

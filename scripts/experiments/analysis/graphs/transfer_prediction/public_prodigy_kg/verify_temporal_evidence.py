@@ -1,9 +1,10 @@
-"""Verify exported seed-zero summaries and print paper tables, without mutation.
+"""Verify exported initialization-specific summaries and print paper tables.
 
 Prediction tensors remain on Tucker. Their hashes were checked before export;
 this script checks local summary identity, inventory and aggregation, not the
 underlying model execution or independent-sample statistical inference.
 """
+import argparse
 import hashlib
 import json
 import math
@@ -14,12 +15,17 @@ RUNS = {
     "crossover": ("publickg_crossover_20260907",512,"507e1169eb782be76223643ec3b81eb2ba8ca5a3faccf3d7cfb3805519f5d672"),
     "normalization": ("publickg_normalization_20260907",256,"7eb3cee78da8f38c47975a29108d3d0f3e68d1a6a6c295568e4401344285b552"),
 }
+SEED1_RUNS = {
+    "trajectory": ("publickg_trajectory_seed1_20260907",384,"ed540a037da01d56828e4e5d850e8fe26a3ca516adb21f6240858459584d2aa0"),
+    "crossover": ("publickg_crossover_seed1_20260907",512,"22c68738f422d2815f8661f5ef2039ce6004dbd79c3edb138673654d07ecfdb9"),
+    "normalization": ("publickg_normalization_seed1_20260907",256,"3827e707ff2c6b27df2a6e536ef69d7228477644f77f09caace86930312dd394"),
+}
 
 
-def verify(root):
+def verify(root, runs=RUNS):
     result = {}
     source_hashes = set()
-    for kind,(name,count,digest) in RUNS.items():
+    for kind,(name,count,digest) in runs.items():
         directory = root/name
         payload = (directory/"summary.json").read_bytes()
         if hashlib.sha256(payload).hexdigest()!=digest:
@@ -57,7 +63,10 @@ def verify(root):
 
 
 def main():
-    evidence = verify(Path(__file__).parent/"data")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--seed", type=int, choices=(0,1), default=0)
+    args = parser.parse_args()
+    evidence = verify(Path(__file__).parent/"data", RUNS if args.seed==0 else SEED1_RUNS)
     print("Verified: summary hashes, complete conditions, paired ordinals and every reported mean.")
     print("\n| Encoder | Inference | Accuracy | Macro-F1 | AUC |")
     print("|---|---|---:|---:|---:|")
