@@ -24,14 +24,41 @@ trusted local PyTorch artifacts, not a format for loading untrusted downloads.
 
 Native inference retains training-mode batch normalization. Do not insert an
 `eval()` call. The replay runs without gradients, matching native evaluation.
-These helpers do not yet implement the KG support-neighborhood donor or K/V
-interventions, and CPU fixture parity is not evidence of native GPU parity.
+CPU fixture parity is not evidence of native GPU parity.
+
+## Public role intervention
+
+`role_interventions.py` implements the support-background-edge-removal donor and
+single-layer support K/V projection transplants. It preserves sampled nodes,
+relation endpoints, head/tail features, pooling edges and episode labels. Query
+background-edge removal is available as a role comparison. The modified Batch
+is for direct forward use, not `to_data_list()` (its original slice metadata is
+not rebuilt). Unrecognized background-edge payloads fail closed.
+
+Before observing public target outcomes, nominate the **first metagraph layer**
+for the primary K-only, V-only and joint support transplants. This is the layer
+whose support inputs directly receive the graph encoder's outputs, matching the
+discovery intervention's location. Capture each donor from the same immutable
+episode and pre-forward state. The support mask must include false entries for
+every label row. Do not use the second layer as a replacement primary endpoint
+if the first layer's result is unfavorable.
+
+Unlike the discovery model, native train-mode BN and two metagraph layers can
+change queries. A value-only transplant fixes its local projection's Q/K blocks,
+not all downstream attention or query representations. Joint support K/V need
+not reproduce the whole context-removal endpoint because the donor can also
+change non-support rows and residual paths. Report these differences rather than
+enforce an invalid equivalence. Final-class-reference substitution with native
+final queries remains necessary to separate the classifier and query effects.
+The end-to-end native intervention runner and final-reference substitution are
+not yet implemented.
 
 Light checks (no datasets or training):
 
 ```bash
 python -m unittest scripts.experiments.setup.public_prodigy_kg.test_run_native -q
 python -m scripts.experiments.setup.public_prodigy_kg.test_forward_state
+python -m scripts.experiments.setup.public_prodigy_kg.test_role_interventions
 ```
 
 The second command needs PyTorch and NumPy; use the `prodigy` environment.
