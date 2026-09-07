@@ -801,3 +801,68 @@ components prevent attribution; close without alignment searches. Compare
 accuracy/macro-F1 as well as AUC/NLL, do not call probability-only changes a
 classification rescue. This is a discovery test; second-seed replication remains
 necessary for a general temporal claim.
+
+### Crossover outcome: encoder changes hurt native readout; inference changes help
+
+`publickg_crossover_20260907` completed at `99524810`. All512 output hashes
+verified; both128-episode diagonal conditions reproduce trajectory predictions
+at1e-4 absolute tolerance; each encoder's U1 is held bit-exact across inference
+conditions. Assembled model-state restoration passed. No alignment or fitting.
+
+| Encoder | Inference | Accuracy | Macro-F1 | OVR AUC | NLL |
+|---|---|---:|---:|---:|---:|
+| 2000 | 2000 | .774023 | .760251 | .982320 | .715275 |
+| 2000 | 8000 | .780957 | .768567 | .982486 | .703857 |
+| 8000 | 2000 | .731055 | .714448 | .973400 | .898459 |
+| 8000 | 8000 | .750391 | .735312 | .976462 | .846310 |
+
+The nominated early-inference-rescue prediction is contradicted, not merely
+inconclusive. Late inference improves both encoders: +0.693359 accuracy points
+with the early encoder and +1.933594 with the late encoder. Late encoder features
+reduce accuracy under both inference modules: -4.296875 points under early
+inference and -3.056641 under late inference. Macro-F1, AUC and NLL agree in
+direction. Meanwhile the fixed support-fitted U1 readout is .818945 early versus
+.818066 late. The best native combination is early encoder plus late inference,
+not either complete checkpoint; this is an observed test-set comparison, not a
+validated checkpoint-selection/deployment algorithm.
+
+Interpretation: the native training-time regression cannot be attributed to the
+inference component simply deteriorating. Conditional crossover effects locate
+the adverse change in the encoder outputs *as consumed by these native inference
+modules*, while inference changes partly compensate. An approximately preserved
+support-fitted readout does not guarantee preserved utility for a learned
+inference rule. Conversely, worse native predictions do not demonstrate erased
+classification information. This is readout-dependent transfer deterioration,
+not a proof of information invariance or a complete geometric explanation.
+
+Scope: one seed, one target, two prespecified checkpoints; public native
+training-mode BN is preserved, so normalization-mediated effects remain possible.
+Do not claim an architecture-independent mechanism. The strong original
+prediction was rejected, and the observed opposite pattern needs replication
+before elevating it to the paper's central explanation.
+
+## Nominated normalization sensitivity check
+
+Pinned upstream `trainer.py` confirms a meaningful protocol difference:
+standalone `eval_only` exits after an initial `do_eval` whose `model.eval()`
+call is commented out, while periodic validation during training explicitly
+calls `model.eval()`. Both encoder and metagraph use standard BatchNorm1d with
+running statistics. Public results faithfully preserve the standalone path,
+but this does not rule out a normalization-mediated explanation.
+
+Fix checkpoint2000/8000 and first128 fresh episodes. Compare the existing
+batch-statistics protocol with ONLY BatchNorm modules switched to frozen running
+statistics. Use each checkpoint's own buffers, shared inputs/RNG and unchanged
+remaining module modes. No recalibration, fitting, or running-stat transfer.
+Evaluate native and centered U1 readouts under each condition; unlike the
+crossover, U1 may change when encoder normalization changes and must not be
+clamped to the original condition. Require original-condition trajectory parity
+and full state restoration. Record both outcomes regardless of which is better.
+This tests dependence on a concrete released evaluation choice, not a new
+deployment method or a reason to silently replace the original protocol.
+
+Read-only checkpoint audit confirms all four BatchNorm buffers have trained
+statistics: `num_batches_tracked` is2021 at2k and8021 at8k; every running variance
+is finite and strictly positive. Therefore the frozen-statistics comparison
+does not substitute uninitialized buffers. It still tests source-estimated
+statistics under target shift, not a universally preferred normalization rule.
