@@ -17,6 +17,8 @@ validation_checkpoints="$validation_training/state/Wiki_PT_PRODIGY_native_train_
 validation_source="$validation_repo/log/publickg_readout_seed1_$validation_tag"
 validation_controls="$validation_repo/log/publickg_controls_seed1_$validation_tag"
 validation_trajectory="$validation_repo/log/publickg_trajectory_seed1_$validation_tag"
+validation_crossover="$validation_repo/log/publickg_crossover_seed1_$validation_tag"
+validation_normalization="$validation_repo/log/publickg_normalization_seed1_$validation_tag"
 
 validation_run() {
   printf '%q ' "$@"
@@ -30,7 +32,7 @@ if [[ "$validation_execute" == '--execute' ]]; then
     test -f "$validation_checkpoints/state_dict_$validation_step.ckpt"
   done
   test -f "$validation_training/initial_model.ckpt"
-  for validation_output in "$validation_source" "$validation_controls" "$validation_trajectory"; do
+  for validation_output in "$validation_source" "$validation_controls" "$validation_trajectory" "$validation_crossover" "$validation_normalization"; do
     if [[ -e "$validation_output" ]]; then
       echo "Refusing to overwrite: $validation_output" >&2
       exit 1
@@ -55,3 +57,11 @@ validation_run python -m scripts.experiments.setup.public_prodigy_kg.pretraining
 validation_run python -m scripts.experiments.setup.public_prodigy_kg.run_trajectory \
   --source "$validation_source" --checkpoint-dir "$validation_checkpoints" \
   --upstream "$validation_upstream" --output "$validation_trajectory" --gpu "$validation_gpu"
+validation_run python -m scripts.experiments.setup.public_prodigy_kg.run_checkpoint_crossover \
+  --source "$validation_source" --checkpoint-dir "$validation_checkpoints" \
+  --trajectory "$validation_trajectory" --upstream "$validation_upstream" \
+  --output "$validation_crossover" --gpu "$validation_gpu" --replication
+validation_run python -m scripts.experiments.setup.public_prodigy_kg.run_normalization_sensitivity \
+  --source "$validation_source" --checkpoint-dir "$validation_checkpoints" \
+  --trajectory "$validation_trajectory" --upstream "$validation_upstream" \
+  --output "$validation_normalization" --gpu "$validation_gpu"

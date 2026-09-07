@@ -46,6 +46,8 @@ def main():
         p.add_argument("--"+field,type=Path,required=True)
     p.add_argument("--gpu",type=int,choices=(2,3),default=3)
     p.add_argument("--execute",action="store_true")
+    p.add_argument("--replication",action="store_true",
+                   help="Test the observed seed-zero direction, without changing conditions")
     args=p.parse_args()
     for key,value in vars(args).items():
         if isinstance(value,Path):
@@ -71,7 +73,9 @@ def main():
         trajectory_summary_sha256=native.file_sha256(args.trajectory/"summary.json"),
         checkpoint_sha256=hashes,upstream=native.verify_upstream(args.upstream),
         ownership=dict(encoder=list(ENCODER),inference=list(INFERENCE)+["logit_scale"]),
-        prediction="Early inference improves late encoder and late inference hurts early encoder; both crossovers bad means incompatibility, inconclusive",
+        prediction=("Late inference improves both encoders and late encoder hurts both inference modules"
+                    if args.replication else "Early inference improves late encoder and late inference hurts early encoder; both crossovers bad means incompatibility, inconclusive"),
+        analysis_role="fixed second-initialization replication" if args.replication else "discovery",
         intervention="All conditions clamp preM data rows to corresponding saved trajectory U1 after natural parity1e-4; label rows unchanged",
         fitting=False,parity_atol=1e-4)
     print(json.dumps(plan,indent=2),flush=True)

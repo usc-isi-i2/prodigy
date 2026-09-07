@@ -866,3 +866,51 @@ statistics: `num_batches_tracked` is2021 at2k and8021 at8k; every running varian
 is finite and strictly positive. Therefore the frozen-statistics comparison
 does not substitute uninitialized buffers. It still tests source-estimated
 statistics under target shift, not a universally preferred normalization rule.
+
+### Normalization outcome: gap persists with checkpoint statistics
+
+`publickg_normalization_20260907` completed at `98ba23d1`. All256 output hashes
+verified, representing2 checkpoints x128 episodes x2 normalization conditions.
+Original batch-statistics native/U1/ridge parity passed; all model-state and
+mode-restoration checks passed. Seven tests passed before deployment.
+
+| Checkpoint | Statistics | Native accuracy | U1 accuracy | Native macro-F1 | U1 macro-F1 |
+|---|---|---:|---:|---:|---:|
+| 2000 | Batch | .774023 | .818945 | .760251 | .805118 |
+| 8000 | Batch | .750391 | .818066 | .735312 | .804048 |
+| 2000 | Running | .756543 | .797461 | .742332 | .782454 |
+| 8000 | Running | .701953 | .808301 | .682405 | .792527 |
+
+Running-statistics native AUC/NLL:2k .976989/1.062894,8k .969246/1.187936.
+Running-statistics U1 AUC/NLL:2k .978278/2.696895,8k .979023/2.680427.
+The8k U1-minus-native accuracy gap is10.634766 points with running statistics,
+versus6.767578 with batch statistics. Switching to checkpoint running statistics
+therefore does not explain away the native/readout gap. Under running statistics,
+native accuracy declines5.458984 points while U1 improves1.083984 points across
+the nominated interval. Keep both protocols visible; do not replace the primary
+batch-statistics trajectory or cherry-pick this protocol to resurrect the failed
+original hidden-improvement hypothesis.
+
+This broad qualitative pattern survives the normalization choice. The temporal
+component crossover itself has still only been established under batch
+statistics: this diagonal-only comparison does not prove encoder/inference
+crossing effects persist with running statistics. It also does not rule out
+other normalization-mediated mechanisms or justify target-based mode selection.
+
+## Second-initialization replication decision, before its target outcomes
+
+The seed-one pipeline now includes the fixed2k/4k/8k trajectory,2x2 crossover,
+and normalization sensitivity after the500-episode8k readout and exact-initial
+controls. Conditions and rules match seed zero; no additional target or repair
+search. The crossover replication prediction is the observed seed-zero direction:
+late inference helps both encoders and late encoder hurts both native inference
+modules. This differs from the original rejected discovery prediction and is
+recorded explicitly with `--replication` in the new protocol. Do not retrospectively
+describe the seed-zero direction as predicted.
+
+Classify outcomes separately: endpoint pretraining/readout gains may replicate
+even if temporal decline or component effects do not. A failed component
+replication limits that mechanism claim; it must not be hidden by averaging
+seeds or by success of the endpoint result. The test remains conditional on
+this target/recipe and does not alone establish general graph-model behavior.
+No seed-one target results were available when this decision was written.
