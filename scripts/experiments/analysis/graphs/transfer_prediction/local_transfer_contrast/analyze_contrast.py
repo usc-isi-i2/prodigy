@@ -331,6 +331,62 @@ def example_candidates(frame, per_group=12):
     return pd.concat(selections, ignore_index=True) if selections else pd.DataFrame()
 
 
+def decoder_audit(record, b, c, full_arrays, stream):
+    """Localize fixed-checkpoint differences across common auxiliary readouts."""
+    y = full_arrays["y"]
+    outcome = np.select(
+        [full_arrays["correct_b"] & full_arrays["correct_c"],
+         full_arrays["correct_b"] & ~full_arrays["correct_c"],
+         ~full_arrays["correct_b"] & full_arrays["correct_c"]],
+        ["both_correct", "b_only", "c_only"], default="both_wrong",
+    )
+    summary_rows, outcome_rows = [], []
+    predictions = {}
+    for model in (b, c):
+        predictions[model] = {}
+        for decoder, tensor in record["models"][model]["logits"].items():
+            logits = to_numpy(tensor).astype(np.float64)
+            pred = logits.argmax(1)
+            predictions[model][decoder] = pred
+            summary_rows.append({
+                "stream": stream, "model": model, "decoder": decoder, "n": len(y),
+                "accuracy": float(np.mean(pred == y)),
+                "auc": safe_auc(y, softmax(logits)[:, 1]),
+            })
+            for group in ("both_correct", "b_only", "c_only", "both_wrong"):
+                mask = outcome == group
+                outcome_rows.append({
+                    "stream": stream, "model": model, "decoder": decoder,
+                    "full_model_outcome": group, "n": int(mask.sum()),
+                    "conditional_accuracy": float(np.mean(pred[mask] == y)),
+                })
+    transitions = []
+    for model in (b, c):
+        raw = predictions[model]["raw_joint/ridge"] == y
+        encoded = predictions[model]["U1_pre_meta/ridge"] == y
+        full = predictions[model]["full_model"] == y
+        for group in ("all", "both_correct", "b_only", "c_only", "both_wrong"):
+            mask = np.ones(len(y), dtype=bool) if group == "all" else outcome == group
+            transitions.append({
+                "stream": stream, "model": model, "full_model_outcome": group,
+                "n": int(mask.sum()), "raw_joint_ridge_accuracy": float(raw[mask].mean()),
+                "u1_ridge_accuracy": float(encoded[mask].mean()),
+                "full_accuracy": float(full[mask].mean()),
+                "encoder_repairs_rate": float(np.mean(~raw[mask] & encoded[mask])),
+                "encoder_breaks_rate": float(np.mean(raw[mask] & ~encoded[mask])),
+                "inference_repairs_rate": float(np.mean(~encoded[mask] & full[mask])),
+                "inference_breaks_rate": float(np.mean(encoded[mask] & ~full[mask])),
+            })
+    raw_identity = {}
+    for decoder in record["models"][b]["logits"]:
+        if decoder.startswith("raw_"):
+            raw_identity[decoder] = bool(np.array_equal(
+                to_numpy(record["models"][b]["logits"][decoder]),
+                to_numpy(record["models"][c]["logits"][decoder]),
+            ))
+    return summary_rows, outcome_rows, transitions, raw_identity
+
+
 def write_json(path, value):
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
 
@@ -380,11 +436,23 @@ def main():
     pd.DataFrame(router_records).to_csv(args.output / "router_results.csv", index=False)
     example_candidates(frames["original"]).to_csv(args.output / "example_candidates.csv", index=False)
 
+    decoder_rows, outcome_decoder_rows, transition_rows, identities = [], [], [], {}
+    for stream, record in (("original", discovery), ("fresh", validation)):
+        result = decoder_audit(record, b, c, arrays[stream], stream)
+        decoder_rows.extend(result[0])
+        outcome_decoder_rows.extend(result[1])
+        transition_rows.extend(result[2])
+        identities[stream] = result[3]
+    pd.DataFrame(decoder_rows).to_csv(args.output / "decoder_summary.csv", index=False)
+    pd.DataFrame(outcome_decoder_rows).to_csv(args.output / "outcome_decoder_summary.csv", index=False)
+    pd.DataFrame(transition_rows).to_csv(args.output / "transition_summary.csv", index=False)
+
     summary = {
         "target": discovery["target"], "model_b": b, "model_c": c,
         "discovery_stream": "original", "validation_stream": "fresh",
         "temperatures_fitted_on_original": temperatures,
         "streams": {name: stream_summary(value) for name, value in arrays.items()},
+        "raw_decoder_logits_bit_identical_between_models": identities,
         "interpretation_constraints": [
             "raw cross-model losses are not comparable without calibration",
             "fresh episodes are a held-out episode stream, not a training seed or held-out domain",
@@ -395,7 +463,8 @@ def main():
     write_json(args.output / "summary.json", summary)
     write_json(args.output / "DONE.json", {
         "complete": True, "artifacts": ["summary.json", "occurrences.csv", "cluster_summary.csv",
-                                          "router_results.csv", "example_candidates.csv"],
+                                          "router_results.csv", "example_candidates.csv", "decoder_summary.csv",
+                                          "outcome_decoder_summary.csv", "transition_summary.csv"],
     })
     print(json.dumps(summary, indent=2, sort_keys=True))
 

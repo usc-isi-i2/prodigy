@@ -104,10 +104,19 @@ def extract(args):
             "dataset_label_mapping": [graph["label_names"][label] for label in mapping],
             "outcome": row["outcome"],
             "predictions": {
-                "b": {"predicted_local_label": int(row["pred_b"]), "correct": row["correct_b"] == "True",
-                      "calibrated_true_loss": float(row["loss_b_cal"]), "calibrated_prob1": float(row["prob1_b_cal"])},
-                "c": {"predicted_local_label": int(row["pred_c"]), "correct": row["correct_c"] == "True",
-                      "calibrated_true_loss": float(row["loss_c_cal"]), "calibrated_prob1": float(row["prob1_c_cal"])},
+                name: {
+                    "decoders": {
+                        decoder: {
+                            "predicted_local_label": int(logits[occurrence].argmax()),
+                            "correct": int(logits[occurrence].argmax()) == local_label,
+                            "logits": list(map(float, logits[occurrence].tolist())),
+                        }
+                        for decoder, logits in export["models"][name]["logits"].items()
+                    },
+                    "calibrated_true_loss": float(row[f"loss_{suffix}_cal"]),
+                    "calibrated_prob1": float(row[f"prob1_{suffix}_cal"]),
+                }
+                for name, suffix in zip(export["models"], ("b", "c"))
             },
             "query_context": [node_record(item) for item in context.tolist()],
             "sampled_edges_graph_rows": edges,
