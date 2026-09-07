@@ -24,3 +24,7 @@ bootstrap over training seeds and target datasets. The all-target interaction is
 primary; an explicitly labeled secondary view excludes the support-incompetent,
 chance-level suspended target. Episode streams are fixed across models; they are not
 treated as independent checkpoint seeds.
+
+The analysis retains both cell-level paired contrasts and a target/rung table with
+three-seed means, spreads, and win counts; cross-target averages never replace the
+per-target schedule effects.

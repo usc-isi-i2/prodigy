@@ -382,6 +382,21 @@ def main() -> int:
     if len(cells) != 270 or cells.weights_sha256.nunique() != 27:
         raise ValueError("expected 27 distinct models x five targets x two streams")
     contrasts = paired_contrasts(cells)
+    contrast_summary = contrasts.groupby(
+        ["stream", "target", "rung", "schedule", "reference"]
+    ).agg(
+        seeds=("seed", "nunique"),
+        mean_delta_accuracy=("delta_accuracy", "mean"),
+        std_delta_accuracy=("delta_accuracy", "std"),
+        accuracy_seed_wins=(
+            "delta_accuracy", lambda values: int((values > 0).sum())
+        ),
+        mean_delta_roc_auc=("delta_roc_auc", "mean"),
+        std_delta_roc_auc=("delta_roc_auc", "std"),
+        auc_seed_wins=("delta_roc_auc", lambda values: int((values > 0).sum())),
+        mean_delta_u1_agreement=("delta_u1_agreement", "mean"),
+        mean_delta_support_competence=("delta_support_competence", "mean"),
+    ).reset_index()
     interactions = interaction_rows(contrasts)
     correlations = health_correlations(contrasts)
     selectors = pd.DataFrame(selections)
@@ -424,6 +439,7 @@ def main() -> int:
     for filename, frame in (
         ("cells.csv", cells),
         ("paired_contrasts.csv", contrasts),
+        ("contrast_summary_by_target.csv", contrast_summary),
         ("schedule_summary.csv", summary),
         ("scaling_interactions.csv", interactions),
         ("health_correlations.csv", correlations),
