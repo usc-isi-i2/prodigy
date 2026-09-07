@@ -128,3 +128,20 @@ python -m scripts.experiments.setup.public_prodigy_kg.test_episode_mechanism /pa
 ```
 
 The second command needs PyTorch and NumPy; use the `prodigy` environment.
+# Full-graph numerical replay decision (2026-09-07)
+
+The initial `atol=1e-5, rtol=0` fixture-based tolerance failed on public
+episode ordinal 8. A plain uninstrumented replay also failed at
+1.33514404296875e-5, so instrumentation is not the sole source of variation.
+The preserved `publickg_mechanism_nullboth/paired_episodes/failure.json`
+contains 20 paired plain/instrumented null forwards from the identical state:
+both reference-error maxima were 1.1444091796875e-5, paired differences reached
+1.33514404296875e-5, and all 40 forwards retained every predicted class.
+
+Use explicit `--parity-atol 0.0001 --parity-rtol 0` for the next full run.
+This is a revised numerical tolerance based on actual full-graph null evidence,
+not the original preregistered value or a tuning decision based on intervention
+performance. It does not establish bit-exactness or bound every future episode.
+Keep the per-episode checks and retain all failed runs. The run still stops if
+this tolerance is exceeded. No aggregate intervention outcomes were inspected
+to make this decision.
