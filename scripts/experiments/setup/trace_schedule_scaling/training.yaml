@@ -38,8 +38,8 @@ neighbor_sampling_batch_source_mode: independent
 neighbor_sampling_cross_source_prob: 0.0
 neighbor_matching_member_policy: uniform_shuffled
 
-# Save every consumed example and its support/query roles. Together with isolated
-# per-source RNG streams, this proves that schedule arms differ only in order.
+# Save every consumed example and its support/query roles. Source-private seeds also
+# fix each stochastic k-hop context, proving schedule arms differ only in order.
 # Graph-wide dense role arrays are deliberately disabled: on this tens-of-millions-
 # node merge they would add large dense tensors to every full-state checkpoint.
 train_episode_audit: true

@@ -45,6 +45,7 @@ def episode_payload(row: dict) -> dict:
         for key in (
             "anchor_ids", "member_ids", "query_roles", "context_node_counts",
             "source_ids", "anchor_sha256", "member_order_sha256", "member_set_sha256",
+            "context_node_order_sha256", "context_edge_sha256",
         )
     }
 

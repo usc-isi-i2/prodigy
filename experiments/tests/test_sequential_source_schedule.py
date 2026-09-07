@@ -13,6 +13,8 @@ from data.covid19_twitter import (
     resolve_source_sequence,
 )
 from data.dataloader import BatchSampler, NeighborTask, ParamSampler
+from data.dataset import SeededNodeIndex
+from experiments.tests.test_shared_graph_training import tiny_dataset
 
 
 class IdentityWalkSampler:
@@ -124,6 +126,51 @@ def test_reordered_schedules_consume_identical_per_source_examples() -> None:
             streams[source].append(task.sample(2, 3, 1, 2, rng))
         by_source.append(streams)
     assert by_source[0] == by_source[1]
+    assert all(
+        isinstance(member, SeededNodeIndex)
+        for episode in by_source[0].values()
+        for task in episode
+        for members in task.values()
+        for member in members
+    )
+
+
+def test_reordered_schedules_expand_to_identical_full_contexts() -> None:
+    def collect(schedule):
+        dataset = tiny_dataset()
+        task = NeighborTask(
+            dataset.neighbor_sampler,
+            size=24,
+            direction="inout",
+            strata=[range(0, 12), range(12, 24)],
+            confine_to_single_stratum=True,
+            stratum_schedule=schedule,
+            stratum_schedule_steps=[1] * len(schedule),
+            filter_min_degree=True,
+            member_policy="uniform_shuffled",
+            member_sampling_seed=71,
+            source_schedule_seed=91,
+        )
+        streams = {0: [], 1: []}
+        rng = random.Random(5)
+        for source in schedule:
+            episode = task.sample(2, 3, 1, 2, rng)
+            contexts = []
+            for members in episode.values():
+                for member in members:
+                    graph = dataset[member]
+                    contexts.append(
+                        (graph.global_node_ids.tolist(), graph.edge_index.tolist())
+                    )
+            streams[source].append(contexts)
+        return streams
+
+    torch.manual_seed(1234)
+    state = torch.get_rng_state().clone()
+    blocked = collect([0, 0, 1, 1])
+    assert torch.equal(state, torch.get_rng_state())
+    interleaved = collect([0, 1, 0, 1])
+    assert blocked == interleaved
 
 
 def test_schedule_rejects_cross_source_mixing() -> None:

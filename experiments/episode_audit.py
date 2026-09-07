@@ -40,7 +40,9 @@ def episode_record(batch, step):
             "query_roles": role_grid[0, 0].int().tolist(), "context_node_counts": nodes.tolist(),
             "source_ids": graph.source_id_per_task.tolist(),
             "anchor_sha256": digest(anchors), "member_order_sha256": digest(members),
-            "member_set_sha256": digest(members.sort(-1).values)}
+            "member_set_sha256": digest(members.sort(-1).values),
+            "context_node_order_sha256": digest(graph.global_node_ids),
+            "context_edge_sha256": digest(graph.edge_index)}
 
 
 def append_episode_audit(batch, step, logging_dir):

@@ -10,8 +10,9 @@ three-seed comparison of:
 
 Within every rung and seed, all three arms consume exactly the same per-source episode
 multiset. Independent per-source Python and Torch RNG streams make schedule order the
-only data intervention. Seed-wise rotations vary which source comes last. Exact
-consumed anchors, members, support/query roles, and source IDs are retained. Dense
+only data intervention, including stochastic k-hop context expansion in loader
+workers. Seed-wise rotations vary which source comes last. Exact consumed anchors,
+members, support/query roles, source IDs, context-node order, and context edges are retained. Dense
 graph-wide role counters are disabled because they would bloat every checkpoint on
 the tens-of-millions-node merge; the consumed-episode record is both smaller and more exact for
 this comparison.
@@ -30,7 +31,7 @@ tmux new-session -d -s tracesched \
 ```
 
 Verify terminal checkpoints, saved contracts, exact source order, and per-source
-episode identity before evaluation:
+full-graph episode identity before evaluation:
 
 ```bash
 python -m scripts.experiments.setup.trace_schedule_scaling.verify_training \

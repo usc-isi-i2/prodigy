@@ -9,6 +9,7 @@ from torch.nn.utils.rnn import pad_sequence
 from torch_geometric.data import Batch
 from itertools import chain
 from .augment import Identity
+from .dataset import SeededNodeIndex
 import math
 
 class TaskBase:
@@ -451,7 +452,9 @@ class NeighborTask(TaskBase):
                         key: torch.Generator().manual_seed(
                             self.member_sampling_seed + 10_000 * index + offset
                         )
-                        for key, offset in (("walk", 0), ("retention", 1), ("roles", 2))
+                        for key, offset in (
+                            ("walk", 0), ("retention", 1), ("roles", 2), ("context", 3)
+                        )
                     }
                     for index in range(len(self.strata))
                 ]
@@ -811,6 +814,23 @@ class NeighborTask(TaskBase):
                 f"({len(candidates)} nodes), needed {num_label}. Try "
                 "neighbor_sampling_strategy='replacement' or lower n_way."
             )
+        if member_generators is not None and "context" in member_generators:
+            # The dataset expands each member into a stochastic k-hop context in
+            # worker processes. Attach seeds drawn from the source-private stream
+            # so identical per-source episodes have identical full graph inputs,
+            # irrespective of schedule or loader-worker assignment.
+            for center, members in task.items():
+                seeds = torch.randint(
+                    0,
+                    torch.iinfo(torch.int64).max,
+                    (len(members),),
+                    generator=member_generators["context"],
+                    dtype=torch.int64,
+                ).tolist()
+                task[center] = [
+                    SeededNodeIndex(int(member), int(seed))
+                    for member, seed in zip(members, seeds)
+                ]
         return task
 
     def _sample_confined(self, num_label, num_member, rng):
