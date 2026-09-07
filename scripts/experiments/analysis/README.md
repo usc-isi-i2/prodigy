@@ -58,6 +58,9 @@ Setup and launch files remain in `../setup/<name>/`.
 - Target-performance mechanisms: [fixed-query stage replay and source-sampler audit](graphs/transfer_prediction/target_performance_mechanisms/FINDINGS_REPLAY.md)
 - Role-topology follow-up: [degree-preserving rewiring, second-target repair and aggregation audit](graphs/transfer_prediction/target_performance_mechanisms/FINDINGS_ROLE_TOPOLOGY.md)
 - Message-content follow-up: [background-message presence versus content and cached input degree/label audit](graphs/transfer_prediction/target_performance_mechanisms/FINDINGS_MESSAGE_CONTENT.md)
+- Class-reference decision: [within-episode ranking, final contrast orientation/strength, and the nominated 50k test](graphs/transfer_prediction/target_performance_mechanisms/FINDINGS_CLASS_REFERENCE_DECISION.md)
+- Support-value mechanism: [actual key/value swaps, the successful 50k component prediction, and the class-preference counterexample](graphs/transfer_prediction/target_performance_mechanisms/FINDINGS_CLASS_REFERENCE_KV.md)
+- Score accounting and examples: [contrast compression, surviving class preference, and the label-interface boundary](graphs/transfer_prediction/target_performance_mechanisms/FINDINGS_CLASS_REFERENCE_ACCOUNTING.md)
 
 ## Evaluation infrastructure
 

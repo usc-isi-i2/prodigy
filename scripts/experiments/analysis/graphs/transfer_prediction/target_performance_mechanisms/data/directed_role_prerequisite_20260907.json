@@ -1,0 +1,14 @@
+{
+  "purpose": "No-forward feasibility check before the proposed directed-role reversal intervention",
+  "code_revision": "47bbec0e5dfa73a009633585f27a579eecde4dc1",
+  "helper": "scripts.experiments.setup.target_performance_mechanisms.probe_cached_inputs.standardized_probe",
+  "input_root": "/dataMeR1/phil/gfm/prodigy-mechanisms-corrected/log/target_mechanisms/corrected_sampler_replay_20260906",
+  "signed_role_definition": "sampled center in_degree minus out_degree; no log transform",
+  "incoming_outgoing_definition": "log1p sampled center degree",
+  "fitting": "episode support-only scaling and fixed ridge; query labels used only for AUC",
+  "new_model_forwards": 0,
+  "rows": [
+    {"stream": "original", "episodes": 128, "mean_episode_auc": {"incoming": 0.718777126736111, "outgoing": 0.57666015625, "signed_role": 0.7141655815972221}, "signed_minus_incoming": -0.004611545138888888, "cache_hashes_verified": true},
+    {"stream": "fresh", "episodes": 128, "mean_episode_auc": {"incoming": 0.7162543402777779, "outgoing": 0.5932345920138888, "signed_role": 0.7242838541666667}, "signed_minus_incoming": 0.008029513888888883, "cache_hashes_verified": true}
+  ]
+}

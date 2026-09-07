@@ -1,0 +1,109 @@
+{
+  "revision": "14d909e89f07c7adc16b2dc9962333fb7198dbc4",
+  "reference_replay": "/dataMeR1/phil/gfm/prodigy-role-topology/log/role_topology_full_20260907",
+  "targets": [
+    "covid_political",
+    "election2020",
+    "facebook_page_reference",
+    "twibot20",
+    "ukr_rus_suspended"
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "models": [
+    "memberctl_cp_hk_lowest_sorted_s0",
+    "memberctl_cp_hk_lowest_sorted_s1",
+    "memberctl_cp_hk_lowest_sorted_s2",
+    "memberctl_ukr_rus_lowest_sorted_s0",
+    "memberctl_ukr_rus_lowest_sorted_s1",
+    "memberctl_ukr_rus_lowest_sorted_s2"
+  ],
+  "conditions": [
+    {
+      "name": "scale_0",
+      "alpha": 0.0
+    },
+    {
+      "name": "scale_1e-06",
+      "alpha": 1e-06
+    },
+    {
+      "name": "scale_0.0001",
+      "alpha": 0.0001
+    },
+    {
+      "name": "scale_0.01",
+      "alpha": 0.01
+    },
+    {
+      "name": "scale_0.1",
+      "alpha": 0.1
+    },
+    {
+      "name": "scale_0.3",
+      "alpha": 0.3
+    },
+    {
+      "name": "scale_1",
+      "alpha": 1.0
+    },
+    {
+      "name": "bias_0.01",
+      "alpha": 0.01,
+      "bias_only": true
+    },
+    {
+      "name": "bias_1",
+      "alpha": 1.0,
+      "bias_only": true
+    },
+    {
+      "name": "no_bn_0",
+      "alpha": 0.0,
+      "bypass_bn": true
+    },
+    {
+      "name": "no_bn_1",
+      "alpha": 1.0,
+      "bypass_bn": true
+    },
+    {
+      "name": "post_relu_norm_only",
+      "stage": "post_relu",
+      "kind": "norm_only"
+    },
+    {
+      "name": "post_relu_direction_only",
+      "stage": "post_relu",
+      "kind": "direction_only"
+    },
+    {
+      "name": "pre_meta_norm_only",
+      "stage": "pre_meta",
+      "kind": "norm_only"
+    },
+    {
+      "name": "pre_meta_direction_only",
+      "stage": "pre_meta",
+      "kind": "direction_only"
+    }
+  ],
+  "batches": 32,
+  "expected_cells": 900,
+  "partial_replay": false,
+  "new_training": false,
+  "environment": {
+    "torch": "2.0.1+cu118",
+    "torch_geometric": "2.3.1",
+    "threads": 4,
+    "device": "cpu"
+  },
+  "scope": "Support-only interventions on the original six final checkpoints and fixed inputs. Exploratory response to reviewer, not independent confirmation or an outcome-selected remedy.",
+  "scale": "Multiply projected W x + b before aggregation and message MLP; MLP(0), self projections and saved frozen BN remain at alpha=0.",
+  "norm_swaps": "Paired intact/zero per-vector norm/direction swaps after node ReLU before pooling, and before the metagraph. Zero directions remain zero; unassignable nonzero norms are counted.",
+  "bn_control": "Bypass only background BatchNorm on support nodes, retaining its saved tensors unchanged. Not retraining or normalization-free inference elsewhere.",
+  "geometry": "Occurrence-weighted stage norms/directions, connected/isolated support receivers and query controls. No IID claims. No labels used for interventions."
+}

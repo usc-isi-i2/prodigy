@@ -19,6 +19,7 @@ def main():
     p=argparse.ArgumentParser(__doc__)
     p.add_argument('--input',type=Path,required=True)
     p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--swap-targets',nargs='+',default=['covid_political','facebook_page_reference','twibot20'])
     args=p.parse_args()
     cells=pd.read_csv(args.input/'cells.csv'); g=pd.read_csv(args.input/'geometry.csv')
     grid=pd.read_csv(args.input/'nine_source_map.csv')
@@ -27,7 +28,7 @@ def main():
                          'axes.titleweight':'bold','xtick.labelsize':7,'ytick.labelsize':7})
     fig=plt.figure(figsize=(8,5.05),facecolor='white')
     ax=fig.add_axes([.075,.645,.34,.285]); geo=fig.add_axes([.075,.36,.34,.205])
-    heat=fig.add_axes([.615,.405,.35,.525]); bar=fig.add_axes([.095,.07,.86,.17])
+    heat=fig.add_axes([.615,.405,.35,.525]); bar=fig.add_axes([.095,.09,.86,.15])
     cp=cells[(cells.target=='covid_political') & cells.condition.str.startswith('scale_')].copy()
     cp['alpha']=cp.condition.str.removeprefix('scale_').astype(float)
     colors={'cp_hk':'#c45827','ukr_rus':'#27768b'}
@@ -51,7 +52,7 @@ def main():
     geo.plot(x,st.norm_ratio_intact-1,lw=1.3,ls='--',marker='s',ms=2.2,color='#688238',label='norm ratio - 1')
     geo.axhline(0,lw=.5,color='#747b85');geo.set_ylabel('Change before metagraph')
     geo.set_xlabel('Support-message multiplier (0 shown separately)')
-    geo.legend(frameon=False,fontsize=6.5,loc='upper right')
+    geo.legend(frameon=True,facecolor='white',edgecolor='none',framealpha=.85,fontsize=6.5,loc='upper right')
     heat.set_title('B  Nine-source support-removal map',loc='left',pad=8)
     mean=grid.groupby(['source','target']).support_delta_points.mean().unstack().reindex(index=SOURCES,columns=TARGETS)
     image=heat.imshow(mean,aspect='auto',cmap='RdBu',norm=TwoSlopeNorm(vmin=-11,vcenter=0,vmax=11))
@@ -68,10 +69,10 @@ def main():
     for spine in heat.spines.values():spine.set_visible(False)
     cb=fig.add_axes([.615,.34,.35,.014]);colorbar=fig.colorbar(image,cax=cb,orientation='horizontal',ticks=[-10,0,10])
     colorbar.ax.tick_params(labelsize=6,length=2,pad=2)
-    colorbar.set_label('AUC points: suppression hurts < 0 < helps',fontsize=6.7,labelpad=1)
-    fig.text(.615,.283,'Means of 2 streams; * signs disagree.\nOutlined: source is also target. One seed/source.',fontsize=6.7,linespacing=1.4)
-    bar.set_title('C  Direction carries the effect; norms alone do not (Hong Kong)',loc='left',pad=7)
-    selected=['covid_political','facebook_page_reference','twibot20']
+    fig.text(.615,.276,'AUC points: blue helps / red hurts. * Signs differ.\nOutline: source = target; 2-stream means, 1 seed/source.',fontsize=6.3,linespacing=1.3)
+    bar.set_title('C  Hong Kong: pre-metagraph swaps',loc='left',pad=7)
+    selected=args.swap_targets
+    if not set(selected)<=set(TARGETS):raise ValueError('unknown swap target')
     conditions=[('pre_meta_norm_only','Change norms only','#688238',-.2),
                 ('pre_meta_direction_only','Change directions only','#5d4890',0.),
                 ('scale_0','Remove messages','#7a7c85',.2)]
@@ -82,12 +83,13 @@ def main():
             if len(values)!=6:raise ValueError('complete six seed/stream cells required')
             means.append(values.mean());mins.append(values.min());maxs.append(values.max())
         means=np.asarray(means)
-        bar.errorbar(np.arange(3)+offset,means,yerr=[means-np.asarray(mins),np.asarray(maxs)-means],
+        bar.errorbar(np.arange(len(selected))+offset,means,yerr=[means-np.asarray(mins),np.asarray(maxs)-means],
                      fmt='o',color=color,ms=4,elinewidth=1,capsize=2,label=label)
     bar.axhline(0,color='#555e6a',lw=.7);bar.grid(axis='y',alpha=.18)
-    bar.set_xticks(range(3),['covid-political','facebook-page-reference','twibot20'])
-    bar.set_ylabel('AUC points');bar.set_xlim(-.6,2.6)
-    bar.legend(frameon=False,ncol=3,fontsize=6.5,loc='upper center',bbox_to_anchor=(.5,-.23),columnspacing=1.5)
+    labels={'covid_political':'covid-political','facebook_page_reference':'facebook-page-reference','twibot20':'twibot20'}
+    bar.set_xticks(range(len(selected)),[labels.get(t,t) for t in selected])
+    bar.set_ylabel('AUC points');bar.set_xlim(-.6,len(selected)-.4)
+    bar.legend(frameon=False,ncol=3,fontsize=6.5,loc='upper center',bbox_to_anchor=(.5,-.20),columnspacing=1.5)
     args.output.parent.mkdir(parents=True,exist_ok=True)
     fig.savefig(args.output,dpi=240,facecolor='white')
     plt.close(fig)

@@ -1,0 +1,162 @@
+[
+  {
+    "stream": "original",
+    "episode_count": 128,
+    "value_harmed_episodes": 106,
+    "value_helped_episodes": 16,
+    "value_tied_episodes": 6,
+    "delta_auc_quantiles_points": [
+      -39.583333333333336,
+      -9.20138888888889,
+      -4.861111111111105,
+      -1.3888888888888882,
+      9.722222222222221
+    ],
+    "value_mean_points": -6.418185763888888,
+    "value_mean_without_worst_episode": -6.1570428696412955,
+    "key_helped_episodes": 74,
+    "key_harmed_episodes": 33,
+    "pair_counts": {
+      "total": 18432,
+      "value_hurt": 1722,
+      "value_help": 539,
+      "key_hurt": 267,
+      "key_help": 486,
+      "value_hurt_key_help": 0,
+      "value_hurt_key_unchanged": 1635
+    },
+    "accuracy_transitions": {
+      "keys_only": {
+        "lost_correct": 47,
+        "gained_correct": 75
+      },
+      "values_only": {
+        "lost_correct": 259,
+        "gained_correct": 114
+      }
+    },
+    "changed_prediction_overlap": {
+      "value": 373,
+      "key": 122,
+      "both": 27
+    },
+    "median_harmed_episode": {
+      "episode": 111,
+      "delta_values": -0.05555555555555558,
+      "delta_keys": 0.027777777777777735,
+      "aucs": {
+        "intact": 0.4305555555555556,
+        "removed": 0.375,
+        "keys_only": 0.4583333333333333,
+        "values_only": 0.375,
+        "joint_kv": 0.375
+      }
+    },
+    "examples": [
+      {
+        "query_offset": 2664,
+        "episode": 111,
+        "local_label": 0,
+        "margins": {
+          "intact": -0.9076180458068848,
+          "removed": 0.18096351623535156,
+          "keys_only": -0.8795022964477539,
+          "values_only": 0.21905231475830078,
+          "joint_kv": 0.18096351623535156
+        }
+      }
+    ]
+  },
+  {
+    "stream": "fresh",
+    "episode_count": 128,
+    "value_harmed_episodes": 95,
+    "value_helped_episodes": 25,
+    "value_tied_episodes": 8,
+    "delta_auc_quantiles_points": [
+      -25,
+      -9.722222222222221,
+      -4.1666666666666625,
+      0,
+      7.638888888888884
+    ],
+    "value_mean_points": -4.975043402777778,
+    "value_mean_without_worst_episode": -4.817366579177602,
+    "key_helped_episodes": 73,
+    "key_harmed_episodes": 36,
+    "pair_counts": {
+      "total": 18432,
+      "value_hurt": 1542,
+      "value_help": 625,
+      "key_hurt": 324,
+      "key_help": 495,
+      "value_hurt_key_help": 0,
+      "value_hurt_key_unchanged": 1450
+    },
+    "accuracy_transitions": {
+      "keys_only": {
+        "lost_correct": 64,
+        "gained_correct": 76
+      },
+      "values_only": {
+        "lost_correct": 222,
+        "gained_correct": 124
+      }
+    },
+    "changed_prediction_overlap": {
+      "value": 346,
+      "key": 140,
+      "both": 28
+    },
+    "median_harmed_episode": {
+      "episode": 47,
+      "delta_values": -0.0625,
+      "delta_keys": 0.03472222222222221,
+      "aucs": {
+        "intact": 0.6458333333333334,
+        "removed": 0.5902777777777778,
+        "keys_only": 0.6805555555555556,
+        "values_only": 0.5833333333333334,
+        "joint_kv": 0.5902777777777778
+      }
+    },
+    "examples": [
+      {
+        "query_offset": 1129,
+        "episode": 47,
+        "local_label": 0,
+        "margins": {
+          "intact": -0.28597593307495117,
+          "removed": 0.33699703216552734,
+          "keys_only": 0.11228179931640625,
+          "values_only": 0.15195941925048828,
+          "joint_kv": 0.33699703216552734
+        }
+      },
+      {
+        "query_offset": 1131,
+        "episode": 47,
+        "local_label": 0,
+        "margins": {
+          "intact": -0.18460845947265625,
+          "removed": 0.0876469612121582,
+          "keys_only": -0.2853546142578125,
+          "values_only": 0.1329975128173828,
+          "joint_kv": 0.0876469612121582
+        }
+      },
+      {
+        "query_offset": 1147,
+        "episode": 47,
+        "local_label": 1,
+        "margins": {
+          "intact": 0.4972991943359375,
+          "removed": -0.26491641998291016,
+          "keys_only": 0.8600311279296875,
+          "values_only": -0.36244773864746094,
+          "joint_kv": -0.26491641998291016
+        }
+      }
+    ]
+  }
+]

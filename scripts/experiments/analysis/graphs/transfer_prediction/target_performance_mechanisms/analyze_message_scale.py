@@ -47,6 +47,9 @@ def source_evidence(data):
     if len(ep)!=11520:raise ValueError('missing cached geometry')
     g=ep.groupby(['source','target','stream'])[DESCRIPTORS].mean().reset_index()
     joined=grid.merge(g,on=['source','target','stream'],validate='one_to_one')
+    sensitivity=pd.DataFrame(json.loads((data/'cached_support_geometry_20260907/sensitivity.json').read_text())['rows'])
+    joined=joined.merge(sensitivity[['source','target','stream','mean_probability_total_variation']],
+                        on=['source','target','stream'],validate='one_to_one')
     if len(joined)!=90:raise ValueError('incomplete nine-source map')
     correlations=[]
     for target,tgroup in joined.groupby('target'):
@@ -54,7 +57,7 @@ def source_evidence(data):
             group=tgroup[tgroup.stream==stream] if stream!='stream_mean' else tgroup.groupby('source').mean(numeric_only=True).reset_index()
             for scope in ['all_nine','excluding_hong_kong']:
                 s=group if scope=='all_nine' else group[group.source!='cp_hk']
-                for feature in DESCRIPTORS:
+                for feature in DESCRIPTORS+['mean_probability_total_variation']:
                     correlations.append({'target':target,'stream':stream,'scope':scope,'sources':len(s),'descriptor':feature,
                         'spearman':s[feature].corr(s.support_delta_points,method='spearman'),
                         'status':'exploratory; all outcomes already observed; not independent confirmation'})
@@ -66,25 +69,35 @@ def main():
     p.add_argument('--input',type=Path,required=True)
     p.add_argument('--data',type=Path,default=Path(__file__).parent/'data')
     p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--complete-targets',nargs='+',help='Explicit complete blocks of a still-running full replay; never partial seeds, streams or conditions.')
     args=p.parse_args()
     read=lambda n:json.loads((args.input/f'{n}.json').read_text())
-    protocol,done,receipts=map(read,['protocol','DONE','receipts'])
-    if done['partial_replay'] or protocol['partial_replay'] or not done['all_inputs_weights_and_operators_unchanged'] or not done['historical_endpoint_metrics_match']:
-        raise ValueError('complete and verified full replay required')
+    protocol,receipts=map(read,['protocol','receipts'])
+    done=read('DONE') if (args.input/'DONE.json').exists() else None
+    if protocol['partial_replay']:raise ValueError('original full replay required')
+    if args.complete_targets:
+        targets=args.complete_targets
+        if len(set(targets))!=len(targets) or not set(targets)<=set(protocol['targets']):raise ValueError('invalid block selection')
+    else:
+        targets=protocol['targets']
+        if not done or done['partial_replay'] or not done['all_inputs_weights_and_operators_unchanged'] or not done['historical_endpoint_metrics_match'] or done['cells']!=900:
+            raise ValueError('complete and verified full replay required')
     cells=pd.DataFrame(read('metrics'))
-    panel={(t,s,m) for t in protocol['targets'] for s in ('original','fresh') for m in protocol['models']}
+    cells=cells[cells.target.isin(targets)].copy()
+    receipts=[r for r in receipts if r['target'] in targets]
+    panel={(t,s,m) for t in targets for s in ('original','fresh') for m in protocol['models']}
     expected={(*k,c['name']) for k in panel for c in protocol['conditions']}
-    if set(map(tuple,cells[KEY+['condition']].to_numpy()))!=expected or len(cells)!=900 or done['cells']!=900:
+    if set(map(tuple,cells[KEY+['condition']].to_numpy()))!=expected or len(cells)!=len(targets)*180:
         raise ValueError('incomplete metric panel')
-    if len(receipts)!=60 or {(r['target'],r['stream'],r['model_id']) for r in receipts}!=panel:
+    if len(receipts)!=len(panel) or {(r['target'],r['stream'],r['model_id']) for r in receipts}!=panel:
         raise ValueError('incomplete receipts')
     for r in receipts:
         if r['batches']!=32 or r['query_checks']!=960 or not r['input_weights_and_operator_unchanged'] or not r['historical_endpoint_metrics_match'] or r['historical_endpoint_max_logit_error']>1e-5:
             raise ValueError('failed replay receipt')
-    paths=sorted((args.input/'geometry').glob('*.json'))
-    if len(paths)!=10:raise ValueError('incomplete stage geometry')
+    paths=[args.input/'geometry'/f'{target}__{stream}.json' for target in sorted(targets) for stream in ('original','fresh')]
+    if not all(path.exists() for path in paths):raise ValueError('incomplete stage geometry')
     geometry=geometry_means([r for path in paths for r in json.loads(path.read_text())])
-    if len(geometry)!=27900 or not (geometry.groupby(KEY+['condition']).size()==31).all():raise ValueError('incomplete stage/cohort panel')
+    if len(geometry)!=len(cells)*31 or not (geometry.groupby(KEY+['condition']).size()==31).all():raise ValueError('incomplete stage/cohort panel')
     if not np.isfinite(cells[METRICS].to_numpy()).all():raise ValueError('nonfinite metrics')
     paired=pair_scores(cells)
     summary=paired.groupby(['target','source','condition']).agg(
@@ -96,8 +109,11 @@ def main():
     for name,table in [('cells',paired),('source_summary',summary),('geometry',geometry),
                        ('nine_source_map',historical),('geometry_associations',correlations)]:
         table.to_csv(args.output/f'{name}.csv',index=False)
-    files=[args.input/f'{n}.json' for n in ('protocol','DONE','metrics','receipts')]+paths
+    files=[args.input/f'{n}.json' for n in ('protocol','metrics','receipts')]+paths
+    if done:files.append(args.input/'DONE.json')
     validation={'cells':len(cells),'geometry_cells':len(geometry),'query_checks':sum(r['query_checks'] for r in receipts),
+        'completed_targets':targets,'completed_block_snapshot':args.complete_targets is not None,
+        'full_run_complete':done is not None and done.get('cells')==900,
         'historical_endpoint_max_logit_error':max(r['historical_endpoint_max_logit_error'] for r in receipts),
         'unassignable_radial_norms':sum(v['nonzero_norm_unassignable'] for r in receipts for v in r['radial_swaps'].values()),
         'runtime_revision':protocol['revision'],'all_queries_unchanged':True,

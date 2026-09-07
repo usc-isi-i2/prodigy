@@ -1,0 +1,28 @@
+{
+  "phase": "discovery",
+  "revision": "5ffbfa2b3205ae8ac4d430daaa83060d6a92f34f",
+  "target": "covid_political",
+  "source": "cp_hk",
+  "streams": [
+    "original"
+  ],
+  "conditions": [
+    "intact",
+    "removed",
+    "keys_only",
+    "values_only",
+    "joint_kv"
+  ],
+  "prediction_rule": "One-point practical discovery separation, never a significance claim.",
+  "new_training": false,
+  "discovery_selection": "Initial HK seed0 step2500, political original128 episodes, selected before new K/V outcomes.",
+  "frozen_prediction": null,
+  "primary_metric": "within_episode_auc",
+  "interpretation": "Transplant actual support K/V only. Joint endpoint must reproduce removal and queries remain fixed. Component ordering is not a variance partition or representativeness claim.",
+  "discovery_rule_details": {
+    "practical_separation_auc": 0.01,
+    "component": "Positive singleton exceeds other singleton by at least .01 within-AUC.",
+    "joint": "Both singleton deltas nonpositive while joint delta positive.",
+    "otherwise": "Ambiguous; stop without testing a forced prediction."
+  }
+}
