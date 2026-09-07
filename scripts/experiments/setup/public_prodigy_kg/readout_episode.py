@@ -1,5 +1,6 @@
 """Support-only ridge at the actual input to the first metagraph block."""
 import torch
+from contextlib import nullcontext
 from torch.nn import functional as F
 
 from .paired_replay import replay_native
@@ -64,7 +65,8 @@ def ridge_tasks(embeddings, labels, edges, query_mask, *, ridge=1.0):
     return output, tasks
 
 
-def run_episode(model, artifacts, device, *, atol=0.0, rtol=0.0):
+def run_episode(model, artifacts, device, *, atol=0.0, rtol=0.0, compare_post=False):
+    from .episode_mechanism import capture_decoder
     modules = [module for module in model.layer_list if hasattr(module, "gnn_layers")]
     if not modules:
         raise ValueError("No metagraph block found")
@@ -75,7 +77,8 @@ def run_episode(model, artifacts, device, *, atol=0.0, rtol=0.0):
 
     handle = modules[0].register_forward_pre_hook(before, with_kwargs=True)
     try:
-        native = replay_native(model, artifacts, device, atol=atol, rtol=rtol)
+        with capture_decoder(model) if compare_post else nullcontext() as decoded:
+            native = replay_native(model, artifacts, device, atol=atol, rtol=rtol)
     finally:
         handle.remove()
     if len(captured) != 1:
@@ -86,7 +89,17 @@ def run_episode(model, artifacts, device, *, atol=0.0, rtol=0.0):
                                    arguments[3].to(device), arguments[5].to(device))
     if logits.shape != native["logits"].shape:
         raise ValueError("Readout and native query/class inventories differ")
-    return {"native": native, "ridge_logits": logits.cpu(), "tasks": tasks,
+    result = {"native": native, "ridge_logits": logits.cpu(), "tasks": tasks,
             "protocol": {"ridge_lambda": 1.0, "row_l2_normalization": True,
                          "intercept": False, "logit_scale": 1.0,
                          "stage": "input to first metagraph block"}}
+    if compare_post:
+        with torch.no_grad():
+            post, _ = ridge_tasks(decoded[0]["input_x"], arguments[2].to(device),
+                                  arguments[3].to(device), arguments[5].to(device))
+        result["post_ridge_logits"] = post.cpu()
+        result["geometry"] = {"pre": captured[0].cpu(),
+                              "post": decoded[0]["input_x"].cpu(),
+                              "references": decoded[0]["label_x"].cpu()}
+        result["protocol"]["post_stage"] = "actual input embeddings consumed by native decoder"
+    return result

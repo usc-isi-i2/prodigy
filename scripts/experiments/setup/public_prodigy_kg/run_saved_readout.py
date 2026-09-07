@@ -58,6 +58,7 @@ def main():
         parser.add_argument("--" + field, type=Path, required=True)
     parser.add_argument("--gpu", type=int, choices=(2, 3), required=True)
     parser.add_argument("--execute", action="store_true")
+    parser.add_argument("--compare-post", action="store_true")
     args = parser.parse_args()
     for field in ("run", "checkpoint", "upstream", "output"):
         setattr(args, field, getattr(args, field).resolve())
@@ -67,7 +68,7 @@ def main():
             "checkpoint_sha256": protocol["checkpoint_sha256"], "upstream": verification,
             "source_protocol_sha256": native.file_sha256(args.run / "protocol.json"),
             "source_index_sha256": native.file_sha256(args.run / "paired_episodes/index.json"),
-            "physical_gpu": args.gpu, "dry_run": not args.execute,
+            "physical_gpu": args.gpu, "dry_run": not args.execute, "compare_post": args.compare_post,
             "parity": protocol["paired_mechanism"],
             "readout": "row-L2 ridge, lambda=1, no intercept, scale=1, support labels only"}
     print(json.dumps(plan, indent=2), flush=True)
@@ -93,6 +94,7 @@ def main():
     args.output.mkdir(parents=True, exist_ok=False)
     native.write_json(args.output / "protocol.json", plan)
     native_predictions, ridge_predictions, metrics = {}, {}, []
+    post_predictions = {}
     try:
         for record in records:
             path = args.run / "paired_episodes" / record["file"]
@@ -101,7 +103,7 @@ def main():
             artifact = torch.load(path, map_location="cpu")["native_capture"]
             result = run_episode(model, artifact, "cuda:0",
                 atol=protocol["paired_mechanism"]["parity_atol"],
-                rtol=protocol["paired_mechanism"]["parity_rtol"])
+                rtol=protocol["paired_mechanism"]["parity_rtol"], compare_post=args.compare_post)
             if len(result["tasks"]) != 1 or result["native"]["logits"].shape != (80, 20):
                 raise ValueError("Episode differs from nominated task/query inventory")
             scored = []
@@ -115,6 +117,12 @@ def main():
                 key = (record["ordinal"], task)
                 native_predictions[key], ridge_predictions[key] = (labels, full), (labels, ridge)
                 score = score_task(labels, full, ridge)
+                if args.compare_post:
+                    post = result["post_ridge_logits"][q].numpy()
+                    post_predictions[key] = (labels, post)
+                    post_score = score_task(labels, full, post)
+                    score["post_comparison"] = post_score
+                    score["metrics"]["post_ridge"] = post_score["metrics"]["ridge"]
                 scored.append(score)
                 metrics.append(score["metrics"])
             torch.save({"source_sha256": record["sha256"], "result": result, "scores": scored},
@@ -122,9 +130,12 @@ def main():
             print(f"Scored saved episode {record['ordinal'] + 1}/{len(records)}", flush=True)
         summary = {"episodes": len(records), "tasks": len(metrics),
                    "means": {arm: {metric: float(np.mean([m[arm][metric] for m in metrics]))
-                                    for metric in metrics[0][arm]} for arm in ("native", "ridge")},
+                                    for metric in metrics[0][arm]} for arm in metrics[0]},
                    "paired_deltas": paired_summary(native_predictions, ridge_predictions),
                    "uncertainty_scope": "Conditional on this checkpoint and target; recurring entities can induce dependence."}
+        if args.compare_post:
+            summary["post_minus_native"] = paired_summary(native_predictions, post_predictions)
+            summary["post_minus_pre"] = paired_summary(ridge_predictions, post_predictions)
         native.write_json(args.output / "summary.json", summary)
     except BaseException as error:
         native.write_json(args.output / "execution_status.json", {"status": "failed", "error": repr(error)})

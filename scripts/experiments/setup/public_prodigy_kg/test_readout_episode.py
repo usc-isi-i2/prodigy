@@ -69,7 +69,10 @@ class ReadoutTests(unittest.TestCase):
             def forward(self, x, unused, y, edges, attrs, query):
                 z = self.layer_list[0](x=x, start_right=len(x))
                 q = query.reshape(len(x), 2)[:, 0]
-                return y[q], z[q], x
+                return y[q], self.decode(z, unused, edges)[q], x
+
+            def decode(self, input_x, label_x, edges, edgelist_bipartite=False):
+                return input_x
 
         model = Model()
         x, y, edges, query = fixture(2, 1)
@@ -88,6 +91,13 @@ class ReadoutTests(unittest.TestCase):
         self.assertTrue(torch.equal(before["torch_rng"], after["torch_rng"]))
         self.assertEqual(before["training"], after["training"])
         self.assertFalse(model.layer_list[0]._forward_pre_hooks)
+        result_post = run_episode(model, artifacts, "cpu", compare_post=True)
+        expected_post, _ = ridge_tasks(result_post["geometry"]["post"], y, edges, query)
+        torch.testing.assert_close(result_post["post_ridge_logits"], expected_post)
+        torch.testing.assert_close(result_post["ridge_logits"], result["ridge_logits"])
+        self.assertNotIn("decode", model.__dict__)
+        for name, value in model.named_buffers():
+            self.assertTrue(torch.equal(value.cpu(), before["buffers"][name]))
 
 
 if __name__ == "__main__":
