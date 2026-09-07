@@ -355,10 +355,12 @@ def decoder_audit(record, b, c, full_arrays, stream):
             })
             for group in ("both_correct", "b_only", "c_only", "both_wrong"):
                 mask = outcome == group
+                if not mask.any():
+                    continue
                 outcome_rows.append({
                     "stream": stream, "model": model, "decoder": decoder,
                     "full_model_outcome": group, "n": int(mask.sum()),
-                    "conditional_accuracy": float(np.mean(pred[mask] == y)),
+                    "conditional_accuracy": float(np.mean(pred[mask] == y[mask])),
                 })
     transitions = []
     for model in (b, c):
@@ -367,6 +369,8 @@ def decoder_audit(record, b, c, full_arrays, stream):
         full = predictions[model]["full_model"] == y
         for group in ("all", "both_correct", "b_only", "c_only", "both_wrong"):
             mask = np.ones(len(y), dtype=bool) if group == "all" else outcome == group
+            if not mask.any():
+                continue
             transitions.append({
                 "stream": stream, "model": model, "full_model_outcome": group,
                 "n": int(mask.sum()), "raw_joint_ridge_accuracy": float(raw[mask].mean()),
