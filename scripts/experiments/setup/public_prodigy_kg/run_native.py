@@ -404,6 +404,23 @@ def install_observers(trainer_class, *, output: Path, phase: str, upstream: Path
     trainer_class.__init__, trainer_class.do_eval = observed_init, observed_eval
 
 
+def isolate_native_path(upstream: Path) -> dict:
+    """Exclude the wrapper repo from top-level native namespace resolution.
+
+    Module invocation inserts cwd into sys.path; file invocation does not. Keep
+    already-imported wrapper packages resolvable without exposing the wrapper's
+    separate models/data/experiments trees as native namespace candidates.
+    """
+    wrapper_root = Path(__file__).resolve().parents[4]
+    for name, module in list(sys.modules.items()):
+        if (name == "scripts" or name.startswith("scripts.")) and hasattr(module, "__path__"):
+            module.__path__ = list(module.__path__)
+    removed = [entry for entry in sys.path if Path(entry or os.getcwd()).resolve() == wrapper_root]
+    sys.path[:] = [entry for entry in sys.path if entry not in removed]
+    sys.path.insert(0, str(upstream))
+    return {"removed_wrapper_root_entries": removed, "native_root": str(upstream)}
+
+
 def execute(plan: dict, observer_installer=None) -> None:
     upstream, root, output = map(Path, (plan["upstream"], plan["root"], plan["output"]))
     verification = verify_upstream(upstream)
@@ -425,7 +442,7 @@ def execute(plan: dict, observer_installer=None) -> None:
     os.environ.update(plan["environment"])
     sys.dont_write_bytecode = True
     verify_imports(upstream)
-    sys.path.insert(0, str(upstream))
+    write_json(output / "import_path_isolation.json", isolate_native_path(upstream))
     os.chdir(upstream)
     sys.argv = plan["command"][1:]
     try:

@@ -35,6 +35,17 @@ FIXTURE_EVAL = (
 
 
 class NativeLauncherTests(unittest.TestCase):
+    def test_module_launcher_excludes_wrapper_native_namespaces(self):
+        wrapper = str(Path(native.__file__).resolve().parents[4])
+        upstream = Path("/private/tmp/pinned-native-fixture")
+        with mock.patch.object(sys, "path", [wrapper, "/unrelated/site-packages"]):
+            receipt = native.isolate_native_path(upstream)
+            self.assertEqual(sys.path, [str(upstream), "/unrelated/site-packages"])
+            self.assertEqual(receipt["removed_wrapper_root_entries"], [wrapper])
+            package = sys.modules["scripts.experiments.setup.public_prodigy_kg"]
+            self.assertIsInstance(package.__path__, list)
+            self.assertTrue(any("public_prodigy_kg" in p for p in package.__path__))
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
