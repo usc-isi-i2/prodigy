@@ -25,6 +25,23 @@ def common_params():
 
 
 class CachedRunnerTests(unittest.TestCase):
+    def test_accuracy_amendment_preserves_failed_logit_verdict(self):
+        row = dict(passed=False, labels_equal=True, argmax_equal=True,
+                   finite=True, shape_dtype_equal=True)
+        replay = dict(passed=False, atol=runner.REPLAY_ATOL, rtol=runner.REPLAY_RTOL,
+                      per_episode=[dict(row) for _ in range(500)])
+        original = copy.deepcopy(replay)
+        self.assertFalse(runner.replay_accepted(replay))
+        self.assertTrue(runner.replay_accepted(replay, "accuracy-equivalence-20260907"))
+        self.assertEqual(replay, original)
+        for key in ("labels_equal", "argmax_equal", "finite", "shape_dtype_equal"):
+            bad = copy.deepcopy(replay)
+            bad["per_episode"][0][key] = False
+            self.assertFalse(runner.replay_accepted(bad, "accuracy-equivalence-20260907"))
+        self.assertFalse(runner.replay_accepted(dict(replay, per_episode=replay["per_episode"][:-1]),
+                                               "accuracy-equivalence-20260907"))
+        self.assertFalse(runner.replay_accepted(dict(replay, atol=1e-2), "accuracy-equivalence-20260907"))
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
@@ -133,6 +150,21 @@ class CachedRunnerTests(unittest.TestCase):
                       raw=dict(episode_accuracy=raw), untrained=dict(episode_accuracy=untrained))
         self.write(quality / "quality.json", result)
         self.assertTrue(runner.validate_quality_gate(quality, {"id": "same"})["decision"]["gate_passed"])
+        amended = copy.deepcopy(result)
+        amended["replay_policy"] = "accuracy-equivalence-20260907"
+        amended["replay"]["passed"] = False
+        amended["replay"]["per_episode"] = [dict(passed=False, labels_equal=True,
+            argmax_equal=True, finite=True, shape_dtype_equal=True) for _ in range(500)]
+        amended["native"]["replay"] = amended["replay"]
+        self.write(quality / "quality.json", amended)
+        with self.assertRaises(ValueError):
+            runner.validate_quality_gate(quality, {"id": "same"})
+        self.assertTrue(runner.validate_quality_gate(quality, {"id": "same"},
+            "accuracy-equivalence-20260907")["decision"]["gate_passed"])
+        amended["replay"]["per_episode"][17]["argmax_equal"] = False
+        self.write(quality / "quality.json", amended)
+        with self.assertRaises(ValueError):
+            runner.validate_quality_gate(quality, {"id": "same"}, "accuracy-equivalence-20260907")
         for changed in (dict(result, replay={"passed": False}), dict(result, decision={"gate_passed": False}),
                         dict(result, completed_episodes=499), dict(result, identity={"id": "other"}),
                         dict(result, raw=dict(episode_accuracy=[0.9] * 500)),

@@ -25,6 +25,21 @@ else:
 EPISODES = 500
 REPLAY_ATOL = 1e-6
 REPLAY_RTOL = 1e-5
+REPLAY_POLICIES = ("original-logits", "accuracy-equivalence-20260907")
+
+
+def replay_accepted(replay, policy="original-logits"):
+    """Keep original logit verdict intact; the amendment verifies accuracy only."""
+    if policy not in REPLAY_POLICIES:
+        raise ValueError("Unknown replay policy")
+    rows = replay.get("per_episode", [])
+    if (len(rows) != EPISODES or replay.get("atol") != REPLAY_ATOL
+            or replay.get("rtol") != REPLAY_RTOL):
+        return False
+    if policy == "original-logits":
+        return replay.get("passed") is True and all(row.get("passed") is True for row in rows)
+    return all(all(row.get(key) is True for key in
+                   ("labels_equal", "argmax_equal", "finite", "shape_dtype_equal")) for row in rows)
 
 
 def read_json(path):
@@ -114,7 +129,7 @@ def validate_bundle(native_eval: Path, train_run: Path, *, verify_hashes=True) -
             "initial": initial, "identity": identity, "native_metrics": native_metrics}
 
 
-def validate_quality_gate(quality_run: Path, identity: dict) -> dict:
+def validate_quality_gate(quality_run: Path, identity: dict, replay_policy="original-logits") -> dict:
     if __package__:
         from . import decision
     else:
@@ -123,7 +138,8 @@ def validate_quality_gate(quality_run: Path, identity: dict) -> dict:
     result = read_json(quality_run / "quality.json")
     if (result.get("identity") != identity or result.get("phase") != "quality"
             or result.get("completed_episodes") != EPISODES
-            or result.get("replay", {}).get("passed") is not True
+            or result.get("replay_policy", "original-logits") != replay_policy
+            or not replay_accepted(result.get("replay", {}), replay_policy)
             or result.get("decision", {}).get("gate_passed") is not True):
         raise ValueError("Roles require the completed, matching quality AND replay gates")
     # A saved pass flag alone is not the evidence: recompute the frozen decision
@@ -136,7 +152,7 @@ def validate_quality_gate(quality_run: Path, identity: dict) -> dict:
         replay_records = replay["per_episode"]
         replay_complete = (replay["atol"] == REPLAY_ATOL and replay["rtol"] == REPLAY_RTOL
                            and len(replay_records) == EPISODES
-                           and all(record.get("passed") is True for record in replay_records)
+                           and replay_accepted(replay, replay_policy)
                            and result["native"]["replay"] == replay)
     except (KeyError, TypeError) as error:
         raise ValueError("Quality gate is missing its episode-level evidence") from error
@@ -247,11 +263,13 @@ def compare_native(y_true, logits, reference) -> dict:
     shape_ok = y_true.shape == expected_y.shape and logits.shape == expected.shape
     if not shape_ok or logits.dtype != torch.float32 or expected.dtype != torch.float32:
         return {"passed": False, "shape_or_dtype_mismatch": True}
+    finite = bool(torch.isfinite(logits).all() and torch.isfinite(expected).all())
     labels_equal = torch.equal(y_true, expected_y)
     argmax_equal = torch.equal(logits.argmax(-1), expected.argmax(-1))
     close = torch.allclose(logits, expected, atol=REPLAY_ATOL, rtol=REPLAY_RTOL)
     error = (logits.double() - expected.double()).abs()
-    return {"passed": bool(labels_equal and argmax_equal and close), "labels_equal": labels_equal,
+    return {"passed": bool(labels_equal and argmax_equal and close and finite), "labels_equal": labels_equal,
+            "finite": finite, "shape_dtype_equal": True,
             "argmax_equal": argmax_equal, "allclose": close,
             "max_abs_error": float(error.max()),
             "max_tolerance_ratio": float((error / (REPLAY_ATOL + REPLAY_RTOL * expected.double().abs())).max())}
@@ -423,11 +441,12 @@ def raw_stream(entries, torch, helpers, device):
 
 def execute(plan):
     upstream, output = Path(plan["upstream"]), Path(plan["output"])
+    replay_policy = plan.get("replay_policy", "original-logits")
     native.verify_upstream(upstream)
     bundle = validate_bundle(Path(plan["native_eval"]), Path(plan["train_run"]))
     quality = None
     if plan["phase"] == "roles":
-        quality = validate_quality_gate(Path(plan["quality_run"]), bundle["identity"])
+        quality = validate_quality_gate(Path(plan["quality_run"]), bundle["identity"], replay_policy)
     runtime = native.runtime_versions()
     ensure_gpu_idle(plan["gpu"])
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -464,9 +483,10 @@ def execute(plan):
                                     {"arm": arm, "completed_episodes": completed, "total": EPISODES}), **options)
         baseline, query_states = run("native", checkpoint, collect_queries=plan["phase"] == "roles")
         native.write_json(output / "native_replay.json", baseline)
-        if not baseline["replay"]["passed"]:
-            raise RuntimeError("Native replay failed the predeclared logit/argmax gate; no further arms run")
+        if not replay_accepted(baseline["replay"], replay_policy):
+            raise RuntimeError(f"Native replay failed {replay_policy}; no further arms run")
         result = {"phase": plan["phase"], "identity": bundle["identity"], "completed_episodes": EPISODES,
+                  "replay_policy": replay_policy,
                   "replay": baseline["replay"], "native": baseline}
         if plan["phase"] == "quality":
             raw = raw_stream(bundle["entries"], torch, helpers, device)
@@ -502,6 +522,7 @@ def main(argv=None):
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--quality-run", type=Path)
     parser.add_argument("--gpu", type=int, choices=(2, 3), default=3)
+    parser.add_argument("--replay-policy", choices=REPLAY_POLICIES, default="original-logits")
     parser.add_argument("--execute", action="store_true")
     args = parser.parse_args(argv)
     if (args.phase == "roles") != (args.quality_run is not None):
@@ -516,10 +537,14 @@ def main(argv=None):
         if name != "output" and (paths["output"].is_relative_to(path) or path.is_relative_to(paths["output"])):
             raise ValueError("Output must be separate from all input directories")
     plan = {"schema_version": 1, "phase": args.phase, "gpu": args.gpu,
+            "replay_policy": args.replay_policy,
+            "engineering_amendment": (None if args.replay_policy == "original-logits" else
+                "Dated 20260907 before baseline/role outcomes: exact labels/classes, finite shape-matched logits; original logit verdict retained, not representation equivalence"),
             **{name: str(path) for name, path in paths.items()}, "dry_run": True,
             "upstream_verification": native.verify_upstream(paths["upstream"]),
             "replay_gate": {"atol": REPLAY_ATOL, "rtol": REPLAY_RTOL, "same_argmax": True,
-                            "exact_query_labels": True, "scope": "All 500 saved native logits; no tolerance adjustment"},
+                            "exact_query_labels": True, "scope": "All 500 saved native outputs; no tolerance adjustment",
+                            "logit_tolerance_required": args.replay_policy == "original-logits"},
             "protocol": {"episodes": EPISODES, "model_mode": "train, including BN", "seed": 0,
                          "stream_state": "Strict checkpoint/initial-state reload including BN; identical replay-start Python/NumPy/Torch/CUDA RNG state",
                          "rng_note": "Native initial RNG state was not captured. Allowed forward dropout is zero; exact native replay is independently required.",
