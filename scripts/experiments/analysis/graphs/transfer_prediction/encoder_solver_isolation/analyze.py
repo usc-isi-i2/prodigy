@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score, accuracy_score
 
 from scripts.experiments.setup.encoder_solver_isolation.eval_plan import TARGETS
 from scripts.experiments.setup.target_performance_mechanisms.analyze_mixture_predictions import input_labels, evaluate_logits
@@ -22,7 +22,14 @@ def metrics(logits, labels):
     if labels['use_global']:
         rows = torch.arange(len(truth))
         truth = labels['mapping'][rows, truth]
-        pred = labels['mapping'][rows, pred]
+        # Production takes argmax AFTER global probability mapping. Mapping a
+        # local argmax is not equivalent at ties (including softmax rounding).
+        probs = torch.softmax(logits, dim=1)
+        global_probs = torch.zeros_like(probs)
+        global_probs.scatter_add_(1, labels['mapping'], probs)
+        pred = global_probs.argmax(1)
+    result['accuracy'] = float(accuracy_score(truth.numpy(), pred.numpy()))
+    result['f1'] = float(f1_score(truth.numpy(), pred.numpy(), zero_division=0))
     result['macro_f1'] = float(f1_score(truth.numpy(), pred.numpy(), labels=[0, 1], average='macro', zero_division=0))
     return result
 

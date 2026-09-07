@@ -4,6 +4,14 @@ from .analyze import metrics, summarize, TARGETS, STREAMS, DECODERS, METRICS
 
 
 class AnalysisTests(unittest.TestCase):
+    def test_global_probability_ties_follow_production_class_order(self):
+        labels = dict(local_y=torch.tensor([0, 1, 0, 1]),
+                      mapping=torch.tensor([[1, 0]] * 4), use_global=True)
+        result = metrics(torch.zeros(4, 2), labels)
+        self.assertEqual(result['accuracy'], .5)
+        self.assertEqual(result['f1'], 0.)
+        self.assertAlmostEqual(result['macro_f1'], 1 / 3)
+
     def test_global_mapping_and_distinct_f1(self):
         # Locally every prediction is class 0. Swapped episodes must be mapped
         # before pooling semantic-class metrics, not after computing local F1.
