@@ -66,13 +66,27 @@ python -m scripts.experiments.setup.public_prodigy_kg.run_mechanism \
   --root /dataMeR1/phil/data/prodigy_public_original \
   --output /dataMeR1/phil/gfm/prodigy-publickg-paired-state/log/publickg_mechanism \
   --checkpoint /dataMeR1/phil/gfm/prodigy-publickg-native/log/publickg_train_20260907/state/Wiki_PT_PRODIGY_native_train_seed0/checkpoint/state_dict_8000.ckpt \
-  --gpu 3
+  --gpu 3 --parity-atol 0.00001
 ```
 
 This implementation has passed a tiny fixture with the pinned upstream decoder
 and two-layer metagraph, including two consecutive native episodes with versus
 without online interventions. The background encoder/pooling in that fixture are
 test components. Full native GPU/data validation remains required.
+
+### GPU null validation before target outcomes
+
+On Tucker GPU 3, revision `d3730b57` failed bitwise replay in the tiny fixture
+with a maximum absolute logit difference of `4.76837158203125e-07`. At revision
+`2f93dda0`, 20 native null replays had the same maximum error, and the complete
+two-episode online intervention fixture passed with `atol=1e-5, rtol=0`.
+The CPU fixture remained bit-exact over 20 replays. Accordingly, the nominated
+public GPU command explicitly uses `--parity-atol 0.00001`; this is a numerical
+logit tolerance, not a performance threshold. CLI defaults remain exact. The
+full-data run must still pass its per-episode gate; the tiny fixture does not
+establish a universal bound on GPU error. Preserve the observed per-episode
+error and nominated tolerances in all reports. Native-stream equivalence on
+GPU is numerical within this tolerance, not a bitwise claim.
 
 ## Analysis and next scientific decision
 
