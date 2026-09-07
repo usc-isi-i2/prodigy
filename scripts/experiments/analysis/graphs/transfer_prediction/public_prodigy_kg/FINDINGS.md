@@ -320,3 +320,39 @@ strong alternative that self-label-conditioned support embeddings are unsuitable
 training examples for a query readout. Use discovery episodes for this mechanism
 test, not the just-completed frozen replication stream. No cross-fit outcome is
 available yet.
+
+### Query-role cross-fit pilot completed: partial recovery, no deployment advance
+
+Runtime `914a1235`; all first64 discovery episodes complete at Tucker
+`log/publickg_crossfit_20260907`. Three passes hide one support per class,
+zero its label-bearing edge value and label row, set its query role, and clear
+unused sequence inputs. Only pinned non-sequence MetaGNN is allowed. Each
+pass restores captured native buffers/modes/RNG. Held support embeddings replace
+their native versions; original query embeddings remain unchanged. Native
+logit parity checked before every episode. Actual source hashes retained.
+
+| Readout on the same64 episodes | Accuracy | Macro-F1 | OVR AUC |
+|---|---:|---:|---:|
+| Native | .751758 | .735109 | .977927 |
+| Pre ridge | .779883 | .754228 | .976958 |
+| Pre support-centered ridge | .815625 | .799545 | .980867 |
+| Post ridge | .712695 | .682049 | .967630 |
+| Post support-centered ridge | .341797 | .296781 | .962839 |
+| Cross-fit post ridge | .741211 | .715731 | .967231 |
+| Cross-fit post support-centered ridge | .742578 | .718252 | .966802 |
+
+Cross-fit post gains2.8516 accuracy points versus ordinary post ridge but remains
+1.0547 points below native and7.4414 below centered pre ridge. AUC does not
+recover. The catastrophic post-centering result is largely relieved by role-
+matched support encoding, consistent with a role mismatch contribution. The
+test changes support conditioning from three to two labeled examples per class,
+so do not interpret it as a clean additive mediation estimate. It is a first64
+discovery pilot, not independent evidence of a general causal law.
+
+Advisor decision: this is not a competitive cross-fit deployment method. Do not
+expand it to the frozen fresh stream or search more centering variants. Retain
+the bounded mechanistic conclusion: role mismatch contributes, but tested role
+matching and simple offsets do not recover pre-metagraph readout utility. The
+next paper-threatening alternative is that generic/random encoder features plus
+the stronger readout explain the gain, rather than useful pretraining. Test that
+before proposing another training architecture.
