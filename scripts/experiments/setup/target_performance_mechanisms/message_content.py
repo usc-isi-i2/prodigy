@@ -23,32 +23,43 @@ def aggregation_audit(model):
 
 
 @contextmanager
-def message_control(model, graph, condition):
+def message_control(model, graph, condition, *, node_mask=None):
     assert_background_attributes_unused(model)
     if condition not in ("intact", "actual_mean", "no_message_bias", "bias_only", "mean_message", "zero_messages"):
         raise ValueError("unknown message-content control")
     if model.training or len(model.layer_list[0].module_list) != 1:
         raise ValueError("single frozen S layer required")
     layer = model.layer_list[0].module_list[0]
+    if node_mask is not None and (node_mask.shape != (len(graph.x),) or node_mask.dtype != torch.bool):
+        raise ValueError("one Boolean selector per graph node required")
     original_aggregate = layer.aggr_module
     handles = []
     try:
         if condition == "actual_mean":
-            layer.aggr_module = MeanAggregation().eval()
+            if node_mask is None:
+                layer.aggr_module = MeanAggregation().eval()
+            else:
+                mean = MeanAggregation().eval()
+                def select_mean(module, args, kwargs, output):
+                    changed = mean(*args, **kwargs)
+                    return torch.where(node_mask[:, None], changed, output)
+                handles.append(layer.aggr_module.register_forward_hook(select_mean, with_kwargs=True))
         elif condition != "intact":
             def intervene(module, args, values):
                 if condition == "zero_messages":
-                    return torch.zeros_like(values)
-                if condition == "no_message_bias":
-                    return values - module.bias
-                if condition == "bias_only":
-                    return module.bias.expand_as(values)
-                real = graph.global_node_ids >= 0
-                group = graph.batch
-                count = torch.bincount(group[real], minlength=len(graph.ptr)-1).clamp_min(1)
-                total = values.new_zeros((len(count), values.shape[1]))
-                total.index_add_(0, group[real], values[real])
-                return (total / count[:, None])[group]
+                    changed = torch.zeros_like(values)
+                elif condition == "no_message_bias":
+                    changed = values - module.bias
+                elif condition == "bias_only":
+                    changed = module.bias.expand_as(values)
+                else:
+                    real = graph.global_node_ids >= 0
+                    group = graph.batch
+                    count = torch.bincount(group[real], minlength=len(graph.ptr)-1).clamp_min(1)
+                    total = values.new_zeros((len(count), values.shape[1]))
+                    total.index_add_(0, group[real], values[real])
+                    changed = (total / count[:, None])[group]
+                return changed if node_mask is None else torch.where(node_mask[:, None], changed, values)
             handles.append(layer.lin_x.register_forward_hook(intervene))
         yield
     finally:

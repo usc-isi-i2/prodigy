@@ -6,6 +6,8 @@ from .test_role_topology import cycle_fixture
 from .role_topology import encode, topology_batch
 from .message_content import aggregation_audit, message_control
 from .verify_member_training import model_digest
+from .role_context import query_mask
+from .episode_cardinality import cached_meta_forward
 
 
 class MessageContentTest(unittest.TestCase):
@@ -49,6 +51,22 @@ class MessageContentTest(unittest.TestCase):
             with message_control(self.model, self.batch[0], "actual_mean"):
                 raise RuntimeError("test")
         self.assertEqual(before, aggregation_audit(self.model))
+
+    def test_direct_role_controls_match_factored_encoder_outputs(self):
+        q = query_mask(self.batch)
+        with torch.no_grad():
+            original, _ = encode(self.model, self.batch)
+            for condition in ("actual_mean", "no_message_bias", "bias_only", "mean_message", "zero_messages"):
+                with message_control(self.model, self.batch[0], condition):
+                    changed, _ = encode(self.model, self.batch)
+                for role in ("support", "query"):
+                    selected = ~q if role == "support" else q
+                    with message_control(self.model, self.batch[0], condition, node_mask=selected[self.batch[0].batch]):
+                        direct_pre, direct_logits = encode(self.model, self.batch)
+                    torch.testing.assert_close(direct_pre[~selected], original[~selected], rtol=0, atol=0)
+                    mixed = torch.where(selected[:, None], changed, original)
+                    _, factored = cached_meta_forward(self.model, self.batch, mixed)
+                    torch.testing.assert_close(factored, direct_logits, rtol=0, atol=1e-6)
 
 
 if __name__ == "__main__":
