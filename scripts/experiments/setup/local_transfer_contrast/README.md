@@ -1,0 +1,33 @@
+# Local transfer contrast
+
+This experiment compares two fixed single-source PRODIGY checkpoints on exactly
+the same target query occurrences. The discovery triple was selected from the
+three-seed final-core matrix before inspecting example-level outcomes:
+
+- target A: `facebook_page_reference` (150,000 nodes);
+- strong source B: `twibot20` (162,990 nodes);
+- weak source C: `election2020` (78,932 nodes).
+
+The exporter reuses the completed role-context replay. It verifies cached batch,
+label, query-order, raw-input, baseline-logit, and model-weight identities before
+writing query-level inputs. It runs no training or model forward passes.
+
+On Tucker, from an isolated checkout of this branch:
+
+```bash
+export PATH="/home/mhchu/miniconda3/bin:$PATH"
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate prodigy
+export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
+export WANDB_MODE=offline
+python -m scripts.experiments.setup.local_transfer_contrast.export_contrast \
+  --role-root /dataMeR1/phil/gfm/prodigy-mechanisms-role/log/role_context_20260906 \
+  --output log/local_transfer_contrast/facebook_twibot_vs_election
+```
+
+The original episode stream is for exploratory discovery. The fresh stream is
+reserved for validation of frozen clusters and routers. Both streams reuse the
+same target domain and checkpoints; they are not independent training seeds.
+
+Analysis lives under
+`scripts/experiments/analysis/graphs/transfer_prediction/local_transfer_contrast/`.
