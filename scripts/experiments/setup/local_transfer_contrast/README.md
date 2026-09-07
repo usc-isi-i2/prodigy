@@ -29,5 +29,11 @@ The original episode stream is for exploratory discovery. The fresh stream is
 reserved for validation of frozen clusters and routers. Both streams reuse the
 same target domain and checkpoints; they are not independent training seeds.
 
+Selected loss extremes can be reconstructed from the exact cached episodes and
+then joined to the exact description text that produced each stored embedding.
+Run `inspect_examples.py extract` in `prodigy`, then `inspect_examples.py
+hydrate` in `bio-embeddings-v001`. The selection is saved before any text is
+read; hydrated text stays in ignored experiment output rather than git.
+
 Analysis lives under
 `scripts/experiments/analysis/graphs/transfer_prediction/local_transfer_contrast/`.
