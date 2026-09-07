@@ -55,3 +55,8 @@ The target sampling seed remains zero for every checkpoint seed so the replicati
 isolates training stochasticity. The fresh stream uses the same frozen 100003 offset
 as the seed-0 analysis. CUDA trace parity is explicitly guarded at `1e-5` because
 scatter reduction order can change logits at the low `1e-6` scale.
+
+Once both streams finish, `export_seed_replays.py` verifies their input tensors
+against the seed-0 caches and emits the same `original.pt`/`fresh.pt` contract used
+by the health and routing analyses. Query-level exports remain ignored runtime
+artifacts; only aggregate statistics belong in git.
