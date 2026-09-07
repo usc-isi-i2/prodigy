@@ -122,6 +122,11 @@ class RoleTopologyTest(unittest.TestCase):
         b[0].edge_attr[0] = 2
         with self.assertRaises(ValueError):
             topology_batch(b, "rewired", seed=1)
+        # The general fixture uses edge_attr_dim=1; production uses None.
+        with self.assertRaises(ValueError):
+            assert_background_attributes_unused(model)
+        for layer in model.layer_list[0].module_list:
+            layer.lin_edge_attr = None
         assert_background_attributes_unused(model)
         allowed, _ = topology_batch(b, "rewired", seed=1, edge_attributes_unused=True)
         torch.testing.assert_close(allowed[0].edge_attr, b[0].edge_attr, rtol=0, atol=0)
