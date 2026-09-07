@@ -1,0 +1,59 @@
+{
+  "verification": {
+    "arms": [
+      {
+        "model": "r4_blocked_s0_ridge_centered_scaled_isolation_v1",
+        "steps": 2500,
+        "initialization_exact": true,
+        "source_payload_prefix_exact": true,
+        "source_counts": {
+          "0": 625,
+          "1": 625,
+          "2": 625,
+          "3": 625
+        },
+        "positive_scale": 36.42862319946289,
+        "checkpoint_sha256": "a24f72ad6a4634de449cfab47adc02fff7cb732a66771b3e49f86a4f00a67f63"
+      },
+      {
+        "model": "r4_interleaved_s0_ridge_centered_scaled_isolation_v1",
+        "steps": 2500,
+        "initialization_exact": true,
+        "source_payload_prefix_exact": true,
+        "source_counts": {
+          "0": 625,
+          "1": 625,
+          "2": 625,
+          "3": 625
+        },
+        "positive_scale": 22.014404296875,
+        "checkpoint_sha256": "298e63881c1ab7e912f6cc37df833642b9d51a74106d1ddcf597dbcac7a54a29"
+      }
+    ],
+    "scope": "Payload audit covers IDs, roles and sampled topology, not every feature byte"
+  },
+  "training_root": "/dataMeR1/phil/gfm/prodigy-centered-ridge-training/log/centered_ridge_training_full_20260907",
+  "reference": "/dataMeR1/phil/gfm/prodigy-encoder-solver-isolation/log/isolation_full_20260907",
+  "replay_root": "/dataMeR1/phil/gfm/prodigy-encoder-solver-isolation/log/isolation_eval_20260907",
+  "code_revision": "7e111c20b98a3696826bb9edc0652908f76764fa",
+  "stream_offsets": {
+    "original": 0,
+    "fresh": 100003
+  },
+  "ridge_lambda": 1,
+  "support_centering": true,
+  "checkpoint_sha256": {
+    "blocked": "a24f72ad6a4634de449cfab47adc02fff7cb732a66771b3e49f86a4f00a67f63",
+    "interleaved": "298e63881c1ab7e912f6cc37df833642b9d51a74106d1ddcf597dbcac7a54a29"
+  },
+  "old_checkpoint_sha256": "3b244646e0026c7611a937c664c88f397c7c635e4fa5d2579bfc5771b56bbc35",
+  "deployment_scale": 1,
+  "full_model": "Diagnostic only; native solver not trained by this objective",
+  "targets": [
+    "election2020",
+    "ukr_rus_suspended",
+    "twibot20",
+    "covid_political",
+    "facebook_page_reference"
+  ]
+}
