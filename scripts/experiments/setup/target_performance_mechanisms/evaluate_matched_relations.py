@@ -53,7 +53,10 @@ def main():
         for key in ('local_y','mapping','episode_ids'):
             if not torch.equal(labels[key],old_labels[key]): raise ValueError('Task identities changed')
         protocol=json.loads((args.reference_root/stream/'protocol.json').read_text())
-        protocol.update(device='-1',catalog='docs/graph_catalog.json',
+        # Legacy parameter parsing always constructs a CUDA device string. This
+        # model-only factory does not transfer tensors to that device: follow the
+        # established cached-replay convention, hide GPUs and assert CPU tensors.
+        protocol.update(device='0',catalog='docs/graph_catalog.json',
             config='scripts/experiments/setup/final_core/training.yaml')
         all_ref=[json.loads(x) for x in (ref/'metrics.jsonl').read_text().splitlines()]
         arms=[r for r in all_ref if r['decoder']=='full_model' and
@@ -66,6 +69,8 @@ def main():
             state=torch.load(record['checkpoint'],map_location='cpu',weights_only=True)['model']
             if model_digest(state)!=record['weights_sha256']: raise ValueError('Checkpoint changed')
             model=make_model(protocol,'twibot20',labels['cache']['graph_path'],first[0].x.shape[1],state)
+            if any(t.device.type != 'cpu' for t in list(model.parameters())+list(model.buffers())):
+                raise ValueError('CPU-only model construction required')
             assert_background_attributes_unused(model)
             saved=torch.load(ref/(mid+'__baseline.pt'),map_location='cpu',weights_only=False)
             with torch.no_grad():
