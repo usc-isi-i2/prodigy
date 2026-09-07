@@ -1,5 +1,6 @@
 """Validate the complete extracted-package replay against historical metric cells."""
 import argparse
+import csv
 import hashlib
 import json
 import math
@@ -8,6 +9,27 @@ from pathlib import Path
 TARGETS = {'covid_political', 'election2020', 'facebook_page_reference', 'twibot20', 'ukr_rus_suspended'}
 SOURCES = {'cp_hk', 'ukr_rus'}
 METRICS = ('roc_auc', 'accuracy', 'f1', 'nll')
+
+
+def reference_paths(leaf):
+    return {'topology':leaf/'role_topology_20260907/cells.csv',
+            'message':leaf/'message_content_20260907/cells.csv',
+            'dose':leaf/'support_dose_20260907/metrics.json'}
+
+
+def load_references(paths):
+    refs={}
+    for kind,path in paths.items():
+        if path.suffix == '.json':
+            refs[kind]=json.loads(path.read_text())
+        else:
+            with path.open(newline='') as handle:
+                refs[kind]=list(csv.DictReader(handle))
+            for row in refs[kind]:
+                for key in METRICS: row[key]=float(row[key])
+                for key in ('seed','draw'):
+                    if key in row: row[key]=int(row[key])
+    return refs
 
 
 def expected_conditions():
@@ -49,7 +71,8 @@ def validate(protocol, done, rows, receipts, exported, references):
             raise ValueError('Missing role/query checks')
         if not r['input_and_model_unchanged'] or not r['operator_restored']:
             raise ValueError('Failed immutable-state receipt')
-        if r['max_logit_error'] is None or r['max_logit_error'] > 1e-5 or r['max_metric_error'] is None or r['max_metric_error'] > 1e-6:
+        if any(r[key] is None or not math.isfinite(r[key]) or r[key] < 0 or r[key] > limit
+               for key, limit in (('max_logit_error', 1e-5), ('max_metric_error', 1e-6))):
             raise ValueError('Historical prediction or metric discrepancy')
     if (exported['datasets'],exported['models'],exported['batches']) != (10,6,320):
         raise ValueError('Incomplete tensor export')
@@ -110,9 +133,11 @@ def main():
     read=lambda path:json.loads(path.read_text())
     files={n:a.input/'full'/(n+'.json') for n in ('protocol','DONE','metrics','receipts')}
     files['export_receipt']=a.input/'export_receipt.json'
-    refs={k:read(leaf/f/'metrics.json') for k,f in [('topology','role_topology_20260907'),('message','message_content_20260907'),('dose','support_dose_20260907')]}
+    ref_files=reference_paths(leaf)
+    refs=load_references(ref_files)
     result=validate(*[read(files[n]) for n in ('protocol','DONE','metrics','receipts','export_receipt')],refs)
     result['source_sha256']={n:hashlib.sha256(f.read_bytes()).hexdigest() for n,f in files.items()}
+    result['canonical_reference_sha256']={n:hashlib.sha256(f.read_bytes()).hexdigest() for n,f in ref_files.items()}
     a.output.mkdir(parents=True,exist_ok=True)
     (a.output/'validation.json').write_text(json.dumps(result,indent=2,allow_nan=False)+'\n')
     print(json.dumps(result,indent=2))

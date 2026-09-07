@@ -1,7 +1,8 @@
 import copy
 import unittest
+from pathlib import Path
 
-from .analyze_portable_inference import TARGETS, SOURCES, expected_conditions, validate
+from .analyze_portable_inference import TARGETS, SOURCES, expected_conditions, validate, reference_paths, load_references
 
 
 def fixture():
@@ -37,6 +38,12 @@ def fixture():
 
 
 class PortableValidation(unittest.TestCase):
+    def test_canonical_evidence_files_load(self):
+        refs=load_references(reference_paths(Path(__file__).resolve().parent/'data'))
+        self.assertEqual({k:len(v) for k,v in refs.items()}, {'topology':1140,'message':960,'dose':1140})
+        for rows in refs.values():
+            self.assertTrue(all(isinstance(r['seed'],int) and isinstance(r['roc_auc'],float) for r in rows))
+
     def test_complete_grid(self):
         result=validate(*fixture())
         self.assertEqual(result['canonical_reference_cells'],2580)
@@ -67,6 +74,12 @@ class PortableValidation(unittest.TestCase):
         with self.assertRaises(ValueError): validate(*args)
         args=fixture(); next(r for r in args[2] if r['condition']=='prototype/raw')['roc_auc']=float('nan')
         with self.assertRaises(ValueError): validate(*args)
+
+    def test_nonfinite_or_negative_receipt_error_rejected(self):
+        for key in ('max_logit_error', 'max_metric_error'):
+            for value in (float('nan'), float('inf'), -1.):
+                args=fixture(); args[3][0][key]=value
+                with self.assertRaises(ValueError): validate(*args)
 
 
 if __name__=='__main__':unittest.main()

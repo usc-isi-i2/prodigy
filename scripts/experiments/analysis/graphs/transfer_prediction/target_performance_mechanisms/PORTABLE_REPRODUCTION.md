@@ -1,7 +1,9 @@
-# Portable inference reproduction: code candidate complete, full replay running
+# Portable inference reproduction: complete final-checkpoint replay
 
-7 September 2026, 03:23 UTC progress checkpoint. Do not interpret this file as
-the completed full replay; require the live run's terminal receipt first.
+7 September 2026. The extracted-package run completed in 2,965.24 seconds on
+four CPU threads. Its terminal receipt and all 2,700 metric cells passed the
+independent canonical-evidence validator. This is completed frozen inference,
+not an end-to-end training or public-data release claim.
 
 ## Completed
 
@@ -15,8 +17,9 @@ the completed full replay; require the live run's terminal receipt first.
 - Nine synthetic tests pass from extracted archives on local Python 3.10 and
   Tucker Python 3.11. They exercise all 45 conditions, 37 direct/factored role
   checks, query-label invariance, mask/degree contracts, tensor serialization
-  and restoration after exceptions. Four independent full-grid analysis tests
-  reject partial, missing, duplicate, mismatched and nonfinite result panels.
+  and restoration after exceptions. Six independent analysis tests check the
+  real canonical CSV/JSON loaders and reject partial, missing, duplicate,
+  mismatched and nonfinite result panels or invalid numerical-error receipts.
 - The private adapter exports all 320 fixed batches and six final checkpoints,
   with all 60 model/target/stream first-batch constructor/encoding/logit
   comparisons bit-exact to the research implementation. Account identifiers
@@ -34,17 +37,18 @@ Code manifest SHA-256:
 Local archive: `output/inference/graph_role_inference_code.zip` in this worktree.
 The compact completed receipts are `data/portable_inference_20260907/`.
 
-## Running full verification
+## Completed full verification
 
 Runtime revision `0054731a`, pinned detached on Tucker in
 `/dataMeR1/phil/gfm/prodigy-role-topology`.
 The extracted runtime and all private inputs are outside that Git checkout:
 `/dataMeR1/phil/gfm/inference-reproduction-20260907/`.
-Tmux: `mechanism-portable-inference`; pane PID 3937440, Python PID 3938570.
-The Python process was confirmed live; the latest inspected log had four full
-model/input comparisons complete, all historical logits and metrics exact.
+The job ran in tmux `mechanism-portable-inference`; Python PID 3938570 exited
+after writing `full/DONE.json`. No restart or runtime checkout mutation was
+needed. All 60 model/input comparisons passed. Maximum historical logit error
+and maximum canonical AUC/accuracy/F1/NLL error are both **0.0**.
 
-The full target is six update-2500 checkpoints, all five targets, both streams,
+The completed grid is six update-2500 checkpoints, all five targets, both streams,
 32 batches per stream, 45 conditions: 2700 metric cells. Historical references
 cover 2580 cells (43 conditions per model/input); 120 raw/encoder prototype
 cells are additional diagnostics. The run does not repeat training or select
@@ -52,18 +56,28 @@ new interventions; it verifies numerical portability of existing results.
 The compatible architecture can load other steps, but this declared validation
 does not claim the complete five-step panel or historical nine-source map.
 
-The runtime checks every input file and model tensor digest, frozen-state and
+The runtime checked every input file and model tensor digest, frozen-state and
 operator restoration, query invariance and historical predictions. It also
-checks that imported inference modules come from the extracted package, not
+checked that imported inference modules came from the extracted package, not
 the research checkout. The source library's actual sum aggregation is retained;
 actual mean remains a named intervention. No production model code was fixed.
 
-Do not restart on an observation timeout, and do not checkout/pull in the pinned
-worktree while its job is live. Read `full/DONE.json` and the live process/logs.
-After completion, retrieve `full/{protocol,DONE,metrics,receipts}.json` and
-`private_inputs/export_receipt.json`, then run `analyze_portable_inference`
-as a module. It independently compares all 2580 historical metric cells to
-the canonical topology/message/dose evidence and checks complete coverage.
+All four terminal JSONs are retained in `data/portable_inference_20260907/full/`;
+`validation.json` records their hashes and the three canonical reference-file
+hashes. The independent comparison uses the topology/message `cells.csv` files
+and dose `metrics.json`, not regenerated references from the new package. The
+first analysis invocation exposed an incorrect JSON filename assumption for
+the two CSV panels; it was corrected and covered by a real-file loader test.
+The frozen runtime and its outputs were unchanged.
+
+The final receipts contain 17,280 exact pre-metagraph query checks, 26,880 exact
+post-metagraph checks and 2,220 direct/factored role checks. Raw prototype
+metrics also agree across all source checkpoints for each fixed input stream.
+To revalidate the saved completed evidence from the worktree:
+
+```bash
+/opt/homebrew/bin/python3.11 -m scripts.experiments.analysis.graphs.transfer_prediction.target_performance_mechanisms.analyze_portable_inference --input scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/data/portable_inference_20260907 --output scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/data/portable_inference_20260907
+```
 
 ## Remaining publication scope
 
@@ -72,8 +86,12 @@ contains no repository-level license file; upstream code licensing and derived
 data rights need resolution before publication. The code package's attribution
 notice preserves that distinction. Portable frozen inference is narrower than
 training, graph reconstruction from raw platform records, or public access to
-private model inputs. The manuscript is unchanged until the full validation
-supports a precise reproducibility claim.
+private model inputs. The paper's reproducibility update can now report this
+completed final-checkpoint panel, without describing it as training or raw-graph
+reproduction. The original [PRODIGY repository](https://github.com/snap-stanford/prodigy)
+was also inspected on 7 September 2026; its visible root listing supplied no
+repository-level license file. This observation is not a legal determination or
+a basis for inventing a license grant.
 
 Branch: `codex/role-topology-interactions`.
 Local worktree: `/Users/philipp/projects/gfm/prodigy/.worktrees/role-topology`.
