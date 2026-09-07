@@ -17,6 +17,8 @@ from .analyze_contrast import (
     validate_pair,
 )
 
+SUPPORT_COMPETENCE_THRESHOLD = 0.55
+
 
 def auc(labels, scores):
     return float(roc_auc_score(labels, scores))
@@ -104,12 +106,16 @@ def analyze_target(path, target_name):
     }
     selections = {"fixed_best": np.full(len(y), best, dtype=object)}
     selections.update({name: select_first_healthy(ranking, values) for name, values in health.items()})
+    target_support_competence = np.nan
+    target_supported = True
     if all("support_health" in validation["models"][model] for model in models):
         u1_rate = {model: float(health["u1_agreement"][model].mean()) for model in models}
         support_scores = {
             model: to_numpy(validation["models"][model]["support_health"]["u1_loo_prototype_accuracy"])
             for model in models
         }
+        target_support_competence = max(float(score.mean()) for score in support_scores.values())
+        target_supported = target_support_competence >= SUPPORT_COMPETENCE_THRESHOLD
         selections["support_loo"] = select_by_support_score(
             models, support_scores, tie_prior=u1_rate,
         )
@@ -145,6 +151,8 @@ def analyze_target(path, target_name):
             "accuracy_gain_over_fixed_best": float(correct.mean() - fixed_correct.mean()),
             "episode_bootstrap_gain_ci_low": low, "episode_bootstrap_gain_ci_high": high,
             "fraction_not_best": float(np.mean(selected != best)),
+            "target_support_competence": target_support_competence,
+            "target_supported_at_0_55": target_supported,
             "selection_counts": json.dumps(counts.to_dict(), sort_keys=True),
         })
     return rows, ranking, discovery_auc

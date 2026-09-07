@@ -67,6 +67,21 @@ def main():
         seeds_non_degraded=("accuracy_gain_over_fixed_best", lambda x: int((x >= 0).sum())),
     ).reset_index()
     replication.to_csv(args.output / "multi_health_replication.csv", index=False)
+    support_covered = non_oracle[
+        non_oracle.method.eq("support_loo_u1_agreement") & non_oracle.target_supported_at_0_55
+    ]
+    support_covered.groupby("seed").agg(
+        covered_targets=("target", "nunique"),
+        mean_accuracy=("accuracy", "mean"), mean_auc=("auc", "mean"),
+        mean_accuracy_gain=("accuracy_gain_over_fixed_best", "mean"),
+        targets_improved=("accuracy_gain_over_fixed_best", lambda x: int((x > 0).sum())),
+        targets_non_degraded=("accuracy_gain_over_fixed_best", lambda x: int((x >= 0).sum())),
+        minimum_support_competence=("target_support_competence", "min"),
+    ).reset_index().to_csv(args.output / "support_only_covered_seed_macro.csv", index=False)
+    non_oracle[non_oracle.method.eq("support_loo_u1_agreement")][[
+        "seed", "target", "target_support_competence", "target_supported_at_0_55",
+        "accuracy", "auc", "accuracy_gain_over_fixed_best",
+    ]].to_csv(args.output / "support_only_scope.csv", index=False)
 
     pooled = pd.DataFrame([
         centered_correlation(health, stream, metric)
