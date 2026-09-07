@@ -573,3 +573,84 @@ These examples contradict a universal wrong-neighborhood-majority explanation,
 not every form of harmful aggregation. They do not distinguish learned encoder
 distortion from support-set geometry and cannot establish population causation.
 No intervention or hyperparameter choice was selected from these examples.
+
+### Context sensitivity: factual associations help both targets
+
+Completed `context_sensitivity_retry1_20260907`, runtime6022c435. The initial
+attempt completed Cora but failed on second-target logger configuration; retained
+separately, not used for effect selection. The retry completed both32-batch arms,
+128episodes each, with256 metric rows and64 output hashes verified. Strict
+checkpoint loading and factual saved-U1/native parity passed for every batch.
+Within-episode permutation preserved center/synthetic features and non-feature
+inputs; shuffled real background features only. Same blocked2500 checkpoint.
+
+| Target | Factual centered-U1 accuracy | Shuffled accuracy | Change (points) |
+|---|---:|---:|---:|
+| Cora | .438895 | .193359 | -24.5536 |
+| covid_political | .864583 | .607096 | -25.7487 |
+
+Macro-F1 changes: -22.4066/-26.3443 points respectively. OVR AUC changes:
+-19.5905/-23.8571 points; NLL increases .115450/.164034. Raw centered accuracy
+is .571150/.754557, respectively. These are episodewise metrics; social macro-F1
+and AUC should not be equated with earlier pooled-global panel summaries.
+
+Decision: reject the nominated hypothesis of context disruption helping Cora
+while harming the positive-transfer target. Factual feature-neighborhood
+associations are useful relative to shuffled ones on both, even though Cora's
+learned representation remains below text. This does not prove factual graph
+processing beats a no-context encoder; shuffling induces unnatural context.
+Do not promote context scrambling as a repair or claim a demonstrated
+target-adaptive context rule. The observed Cora representation deficit is not
+explained by this proposed intervention, and the opposite-sign branch is closed.
+
+## Exploratory support-validation safeguard (2026-09-07)
+
+Read-only CPU diagnostic on the completed `cora_readout_breadth_retry1_20260907`
+saved batches and embeddings. For each episode, leave out each support example,
+refit support-centered ridge on the remaining supports, and select raw versus
+U1 by mean held-out support accuracy (ties select raw). Query labels enter only
+the final accuracy evaluation. All folds retain every class. No tuning performed.
+
+| Model | Fixed raw accuracy | Fixed U1 accuracy | Selected accuracy | Raw selected |
+|---|---:|---:|---:|---:|
+| Blocked | .571150 | .438895 | .562779 | 118/128 |
+| Interleaved | .571150 | .386719 | .565290 | 122/128 |
+
+Mean support-CV accuracy: raw .511905; U1 blocked .356027, interleaved .291295.
+This retrospective check recovers much of the fixed-text advantage but does not
+beat fixed text. It is a deployment baseline, not a new contribution or an
+explanation of representation damage. Only accuracy was computed in this quick
+diagnostic; do not imply corresponding F1/AUC gains. Results are console-derived,
+not yet a packaged, receipt-verified experiment artifact.
+
+## Next nominated test: hidden returns to additional pretraining
+
+Before inspecting intermediate checkpoint target results, nominate saved public
+seed-zero checkpoints `state_dict_2000`, `state_dict_4000`, `state_dict_8000`
+(2001, 4001, 8001 optimizer updates under the native loop). All three files were
+verified present under the native training output's `state/` directory.
+Use the first 128 episodes of the existing fresh 500-episode stream identically
+for each checkpoint; retain the fixed support-centered U1 rule and native
+normalization protocol. No checkpoint selection or readout tuning. Compare the
+2001-to-8001 and 4001-to-8001 changes, not only endpoint gaps. The already observed
+8001-update endpoint means this is a discovery test, not a wholly unseen panel.
+
+Prediction: additional training improves U1 utility after native performance
+stalls or declines. If both improve similarly with a constant gap, do not claim
+hidden training returns; if both saturate, close this direction. Report accuracy,
+macro-F1, AUC and NLL separately. A positive seed-zero pattern must be tested at
+the same nominated checkpoints on seed one; do not select its checkpoints based
+on target outcomes. Seed one is still running and supplies no target result yet.
+
+Novelty guardrail (primary-source abstracts checked 2026-09-07):
+[Kumar et al., ICLR 2022](https://arxiv.org/abs/2202.10054) already demonstrate
+linear probing outperforming fine-tuning under shift and explain feature
+distortion from parameter updates. Our frozen inference comparison does not
+perform target-side parameter updates, so their mechanism cannot simply be
+claimed as ours. [Yang et al.](https://arxiv.org/abs/2404.01204) already study
+downstream capability trajectories across language-model pretraining checkpoints.
+Neither a probe advantage nor plotting intermediate checkpoints is novel alone.
+The nominated experiment would matter if native and intermediate evaluations
+give different conclusions about the returns to the *same* extra pretraining,
+and that divergence replicates. This is a candidate distinction, not an
+established novelty claim or a substitute for a fuller related-work comparison.
