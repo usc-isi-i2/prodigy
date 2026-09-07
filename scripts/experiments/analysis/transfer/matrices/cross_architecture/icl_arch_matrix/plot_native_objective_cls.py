@@ -16,8 +16,8 @@ import numpy as np
 ARCHITECTURES = ("prodigy", "vision", "gilt")
 STEPS = (0, 20, 60, 100, 300, 900)
 TARGETS = (
-    ("covid_political", "COVID political"),
-    ("election2020", "Election 2020"),
+    ("covid_political", "T-18"),
+    ("election2020", "T-20"),
     ("ukr_rus_suspended", "UKR/RUS suspended"),
     ("twibot20", "TwiBot-20"),
     ("facebook_page_reference", "Facebook pages"),
@@ -28,6 +28,7 @@ PROTOCOLS = {
     "gilt": "native_source_classification",
 }
 COLORS = {"prodigy": "#4477AA", "vision": "#228833", "gilt": "#CC6677"}
+TARGET_COLORS = ("#4477AA", "#EE6677", "#228833", "#CCBB44", "#AA3377")
 
 
 def parse_args() -> argparse.Namespace:
@@ -61,6 +62,8 @@ def load_native(root: Path) -> list[dict]:
             if not line.strip():
                 continue
             row = json.loads(line)
+            if row["architecture"] == "prodigy":
+                continue
             if row["architecture"] not in {"vision", "gilt"}:
                 raise ValueError(f"unexpected architecture in {path}: {row['architecture']}")
             row["result_file"] = str(path)
@@ -163,30 +166,60 @@ def plot_by_target(rows: list[dict], architecture: str, output_root: Path) -> No
     positions = np.arange(len(STEPS))
     curves = {target: trajectory(rows, architecture, target) for target, _ in TARGETS}
     y_limits = padded_limits([value for curve in curves.values() for value in curve])
-    fig, axes = plt.subplots(1, len(TARGETS), figsize=(18, 3.55), sharey=True)
-    for index, (axis, (target, title)) in enumerate(zip(axes, TARGETS)):
+    if architecture != "prodigy":
+        fig, axes = plt.subplots(1, len(TARGETS), figsize=(18, 3.55), sharey=True)
+        for index, (axis, (target, label)) in enumerate(zip(axes, TARGETS)):
+            axis.plot(
+                positions,
+                curves[target],
+                color=COLORS[architecture],
+                marker="o",
+                markersize=4.5,
+                linewidth=2.2,
+            )
+            axis.set_title(label)
+            axis.set_xticks(positions, [str(step) for step in STEPS])
+            axis.set_xlabel("Training checkpoint")
+            axis.set_ylim(*y_limits)
+            axis.grid(axis="y", alpha=0.25)
+            if index == 0:
+                axis.set_ylabel("Classification ROC-AUC")
+        title = {
+            "vision": "VISION native feature-similarity pretraining",
+            "gilt": "GILT source-confined native classification pretraining",
+        }[architecture]
+        fig.suptitle(f"{title}: target classification (mean over source models)", y=0.99)
+        fig.tight_layout(rect=(0, 0, 1, 0.92))
+        stem = output_root / f"{architecture}_native_objective_cls_by_target_900_seed0"
+        fig.savefig(stem.with_suffix(".png"), dpi=200, bbox_inches="tight")
+        fig.savefig(stem.with_suffix(".pdf"), bbox_inches="tight")
+        plt.close(fig)
+        return
+
+    fig, axis = plt.subplots(figsize=(8.4, 5.2))
+    for (target, label), color in zip(TARGETS, TARGET_COLORS):
         axis.plot(
             positions,
             curves[target],
-            color=COLORS[architecture],
+            color=color,
             marker="o",
             markersize=4.5,
             linewidth=2.2,
+            label=label,
         )
-        axis.set_title(title)
-        axis.set_xticks(positions, [str(step) for step in STEPS])
-        axis.set_xlabel("Training checkpoint")
-        axis.set_ylim(*y_limits)
-        axis.grid(axis="y", alpha=0.25)
-        if index == 0:
-            axis.set_ylabel("Classification ROC-AUC")
+    axis.set_xticks(positions, [str(step) for step in STEPS])
+    axis.set_xlabel("Training checkpoint")
+    axis.set_ylabel("Classification ROC-AUC")
+    axis.set_ylim(*y_limits)
+    axis.grid(axis="y", alpha=0.25)
+    axis.legend(frameon=False, ncol=2)
     title = {
         "prodigy": "PRODIGY native NM pretraining",
         "vision": "VISION native feature-similarity pretraining",
         "gilt": "GILT source-confined native classification pretraining",
     }[architecture]
-    fig.suptitle(f"{title}: target classification (mean over source models)", y=0.99)
-    fig.tight_layout(rect=(0, 0, 1, 0.92))
+    axis.set_title(f"{title}: target classification\n(mean over source models)")
+    fig.tight_layout()
     stem = output_root / f"{architecture}_native_objective_cls_by_target_900_seed0"
     fig.savefig(stem.with_suffix(".png"), dpi=200, bbox_inches="tight")
     fig.savefig(stem.with_suffix(".pdf"), bbox_inches="tight")

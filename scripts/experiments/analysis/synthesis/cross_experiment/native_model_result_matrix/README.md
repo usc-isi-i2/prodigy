@@ -40,7 +40,8 @@ pairwise link-prediction implementation, not the invalid PRODIGY evaluator.
   result JSONL files; `analyze_vision_saturation.py` validates their exact
   episode fingerprints and produces the summary and trajectory figure.
 - `data/samgpt_all9_saturation_raw/` retains the three-seed all-nine
-  20/60/180/500 GraphCL checkpoint evaluations;
+  0/20/60/180/500 GraphCL checkpoint evaluations, including exact seed-matched
+  initialization controls;
   `analyze_samgpt_saturation.py` validates and plots all nine downstream targets.
 - `data/graphsage_pilot_v1_trajectory_manifest.csv` registers the exact
   reconstructed native link-prediction prefix. It is provenance, not a credited

@@ -55,6 +55,7 @@ Setup and launch files remain in `../setup/<name>/`.
 - Structure/feature coupling: [`path_feature_coupling`](graphs/structure_features/path_feature_coupling/)
 - Dataset overlap: [`identity_overlap_audit`](graphs/overlap/identity_overlap_audit/)
 - Similarity as a transfer predictor: [`similarity_vs_transfer`](graphs/transfer_prediction/similarity_vs_transfer/), [`similarity_vs_transfer_v2`](graphs/transfer_prediction/similarity_vs_transfer_v2/)
+- Target-performance mechanisms and completed singleton/pair/LOO audit: [`target_performance_mechanisms`](graphs/transfer_prediction/target_performance_mechanisms/)
 
 ## Evaluation infrastructure
 
@@ -66,5 +67,6 @@ Setup and launch files remain in `../setup/<name>/`.
 ## Synthesis and archive
 
 - Cross-experiment syntheses: [`synthesis/cross_experiment`](synthesis/cross_experiment/)
+- Exploratory cross-experiment plot suite: [`new_plot_suite`](synthesis/cross_experiment/new_plot_suite/)
 - Native-pretext result-matrix coverage: [`native_model_result_matrix`](synthesis/cross_experiment/native_model_result_matrix/)
 - Retired and superseded analyses: [`archive`](archive/)

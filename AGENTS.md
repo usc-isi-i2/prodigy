@@ -17,7 +17,7 @@ Claude should read this via `CLAUDE.md`; Codex/GPT reads this file directly.
 
 - Reaching Tucker requires the USC VPN active, or being on USC wifi. If ssh to Tucker stalls, first check whether VPN is connected.
 - Use Tucker for training, eval, graph construction, embedding generation, and any GPU-heavy workflow.
-- We currently own only GPUs 2 and 3 on Tucker. Use GPUs 2 and 3 for our jobs, and leave GPUs 0-1 and 4-7 untouched.
+- We currently own GPUs 0, 1, 2, and 3 on Tucker. Use GPUs 0-3 for our jobs, and leave GPUs 4-7 untouched.
 - Long jobs run in tmux. The user generally kicks off big or long-running jobs.
 - Reading on Tucker is fine: inspect files, list dirs, check logs, and load graphs read-only.
 - For write operations on Tucker, such as launching training/eval, building artifacts, or moving/deleting files, prefer giving the exact command for the user to run unless they explicitly ask you to execute it.
@@ -73,6 +73,21 @@ code cannot be mutated by someone else's `git pull`:
   holds ~17 GB). Evaluate from the same worktree that trained, or pass absolute paths;
   do not assume `state/<run_name>/` resolves just because you are on the right branch.
 
+## Fast multi-model training workflow
+
+- A reusable shared-graph PRODIGY NM launcher is pushed on branch
+  `codex/ladder-sampling-profile`, worktree
+  `/Users/philipp/projects/gfm/prodigy-profile`. Read that worktree's
+  `docs/fast_training.md` for exact commands and current validation status.
+- The implementation disables anomaly debugging by default and provides
+  `experiments/run_shared_graph.py` with a total CPU-worker budget, source-restricted
+  independent trainers, and one shared CPU graph. At revision `677f50c`, 22 tests
+  passed and eight models completed 200 steps each on Tucker GPU 2 with four
+  loader workers each. This is smoke validation, not a concurrency optimum.
+- Tucker has the implementation in `/dataMeR1/phil/gfm/prodigy-profile`.
+  Do not assume it is merged into this checkout; use the branch/worktree above.
+  Use only owned GPUs 0-3 and retain the existing worktree/tmux/authorization rules.
+
 ## Environment
 
 - Use the `prodigy` conda environment for training and evaluation commands.
@@ -86,6 +101,12 @@ conda activate prodigy
 export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 ```
 
+- Use `WANDB_MODE=offline` by default for training and evaluation runs on Tucker.
+  This preserves complete local metric histories without depending on cluster network
+  access or W&B authentication; sync selected runs later with `wandb sync`. W&B is
+  supplementary rather than canonical: always retain checkpoints, effective configs,
+  protocol metadata, validation-selected metrics, and final result artifacts in the
+  experiment's local state/log directories.
 - **Why the `PATH` export is required — common failure, read this before launching.** Non-interactive shells and `bash -lc` login shells source `~/.bash_profile`, not the `~/.bashrc` where conda-init lives, so `conda` is not on `PATH`. Sourcing `conda.sh` in a *wrapper* does **not** fix a launcher script run as `bash train_arm_tucker.sh`: the child process does not inherit the `conda` shell function. Exporting conda's `bin` onto `PATH` lets the child script run its own `conda info --base` / `conda activate`. Symptom when missing: `conda: command not found` and `/etc/profile.d/conda.sh: No such file or directory`, and detached tmux jobs that exit immediately (log created, session gone).
 - When launching a heavy job in detached tmux, put the export **inside** the tmux command so the child inherits it:
 
@@ -94,6 +115,11 @@ tmux new-session -d -s <name> 'export PATH="/home/mhchu/miniconda3/bin:$PATH"; b
 ```
 
 - For local plotting/notebooks, use the Homebrew Python 3.11 at `/opt/homebrew/bin/python3.11` (not a conda env); it has numpy/pandas/matplotlib.
+- For non-interactive local plotting and plotting tests, set `MPLBACKEND=Agg` in the
+  command environment (for example, `MPLBACKEND=Agg /opt/homebrew/bin/python3.11
+  ...`). The default macOS Matplotlib backend can abort background processes and show
+  a "Python quit unexpectedly" popup. Do not set this globally for interactive
+  notebooks; scope it to automated scripts and tests.
 - For local model-code checks, use the local `prodigy` env, but do not run training locally.
 - Avoid other local conda envs unless the user explicitly asks.
 - LibreOffice is not installed locally; `soffice`/`libreoffice` are unavailable for converting or rendering documents (.pptx/.xlsx/.docx/.pdf).

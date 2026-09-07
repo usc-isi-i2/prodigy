@@ -1,0 +1,85 @@
+order,rung,target,target_entry_rung,sources,mixture_auc,mixture_value_origin,best_constituent,best_constituent_auc,mixture_minus_best
+A,1,ukr_rus_twitter,2,covid,0.9264,single_source_reconstruction,covid19_twitter,0.9264,0.0
+A,1,midterm,3,covid,0.8842,single_source_reconstruction,covid19_twitter,0.8842,0.0
+A,2,midterm,3,covid ukr_rus,0.885,observed_same_source_set,covid19_twitter,0.8842,0.0008000000000000229
+A,1,covid_political,4,covid,0.8498,single_source_reconstruction,covid19_twitter,0.8498,0.0
+A,2,covid_political,4,covid ukr_rus,0.843,observed_same_source_set,covid19_twitter,0.8498,-0.006800000000000028
+A,3,covid_political,4,covid ukr_rus midterm,0.83,observed_same_source_set,covid19_twitter,0.8498,-0.01980000000000004
+A,1,election2020,5,covid,0.8345,single_source_reconstruction,covid19_twitter,0.8345,0.0
+A,2,election2020,5,covid ukr_rus,0.828,observed_same_source_set,covid19_twitter,0.8345,-0.006500000000000061
+A,3,election2020,5,covid ukr_rus midterm,0.815,observed_same_source_set,covid19_twitter,0.8345,-0.019500000000000073
+A,4,election2020,5,covid ukr_rus midterm covid_political,0.8297,observed_same_source_set,covid19_twitter,0.8345,-0.0048000000000000265
+A,1,ukr_rus_suspended,6,covid,0.7861,single_source_reconstruction,covid19_twitter,0.7861,0.0
+A,2,ukr_rus_suspended,6,covid ukr_rus,0.775,observed_same_source_set,ukr_rus_twitter,0.7894,-0.014399999999999968
+A,3,ukr_rus_suspended,6,covid ukr_rus midterm,0.777,observed_same_source_set,ukr_rus_twitter,0.7894,-0.012399999999999967
+A,4,ukr_rus_suspended,6,covid ukr_rus midterm covid_political,0.7768,observed_same_source_set,ukr_rus_twitter,0.7894,-0.012599999999999945
+A,5,ukr_rus_suspended,6,covid ukr_rus midterm covid_political election2020,0.7693,observed_same_source_set,ukr_rus_twitter,0.7894,-0.020100000000000007
+A,1,twibot20,7,covid,0.9258,single_source_reconstruction,covid19_twitter,0.9258,0.0
+A,2,twibot20,7,covid ukr_rus,0.925,observed_same_source_set,covid19_twitter,0.9258,-0.0007999999999999119
+A,3,twibot20,7,covid ukr_rus midterm,0.927,observed_same_source_set,covid19_twitter,0.9258,0.0012000000000000899
+A,4,twibot20,7,covid ukr_rus midterm covid_political,0.9234,observed_same_source_set,covid19_twitter,0.9258,-0.0023999999999999577
+A,5,twibot20,7,covid ukr_rus midterm covid_political election2020,0.9254,observed_same_source_set,covid19_twitter,0.9258,-0.00039999999999995595
+A,6,twibot20,7,covid ukr_rus midterm covid_political election2020 ukr_rus_suspended,0.9242,observed_same_source_set,covid19_twitter,0.9258,-0.0015999999999999348
+A,1,cp_hk_twitter,8,covid,0.7196,single_source_reconstruction,covid19_twitter,0.7196,0.0
+A,2,cp_hk_twitter,8,covid ukr_rus,0.726,observed_same_source_set,covid19_twitter,0.7196,0.006399999999999961
+A,3,cp_hk_twitter,8,covid ukr_rus midterm,0.72,observed_same_source_set,covid19_twitter,0.7196,0.00039999999999995595
+A,4,cp_hk_twitter,8,covid ukr_rus midterm covid_political,0.7235,observed_same_source_set,covid19_twitter,0.7196,0.0039000000000000146
+A,5,cp_hk_twitter,8,covid ukr_rus midterm covid_political election2020,0.7261,observed_same_source_set,covid19_twitter,0.7196,0.00649999999999995
+A,6,cp_hk_twitter,8,covid ukr_rus midterm covid_political election2020 ukr_rus_suspended,0.7239,observed_same_source_set,covid19_twitter,0.7196,0.0042999999999999705
+A,7,cp_hk_twitter,8,covid ukr_rus midterm covid_political election2020 ukr_rus_suspended twibot20,0.7267,observed_same_source_set,covid19_twitter,0.7196,0.007099999999999995
+B,1,covid19_twitter,2,ukr_rus,0.973,single_source_reconstruction,ukr_rus_twitter,0.973,0.0
+B,1,midterm,4,ukr_rus,0.8811,single_source_reconstruction,ukr_rus_twitter,0.8811,0.0
+B,2,midterm,4,ukr_rus covid,0.885,observed_same_source_set,covid19_twitter,0.8842,0.0008000000000000229
+B,3,midterm,4,ukr_rus covid twibot20,0.8828455995530013,observed_same_source_set,covid19_twitter,0.8842,-0.0013544004469986382
+B,1,covid_political,7,ukr_rus,0.8394,single_source_reconstruction,ukr_rus_twitter,0.8394,0.0
+B,2,covid_political,7,ukr_rus covid,0.843,observed_same_source_set,covid19_twitter,0.8498,-0.006800000000000028
+B,3,covid_political,7,ukr_rus covid twibot20,0.8481246410600255,observed_same_source_set,covid19_twitter,0.8498,-0.0016753589399745028
+B,4,covid_political,7,ukr_rus covid twibot20 midterm,0.8419349837324395,observed_same_source_set,covid19_twitter,0.8498,-0.007865016267560532
+B,5,covid_political,7,ukr_rus covid twibot20 midterm ukr_rus_suspended,0.8518825089559386,observed_same_source_set,covid19_twitter,0.8498,0.0020825089559386445
+B,6,covid_political,7,ukr_rus covid twibot20 midterm ukr_rus_suspended cp_hk,0.8455864786079182,observed_same_source_set,covid19_twitter,0.8498,-0.004213521392081754
+B,1,election2020,8,ukr_rus,0.8262,single_source_reconstruction,ukr_rus_twitter,0.8262,0.0
+B,2,election2020,8,ukr_rus covid,0.828,observed_same_source_set,covid19_twitter,0.8345,-0.006500000000000061
+B,3,election2020,8,ukr_rus covid twibot20,0.8262687172413794,observed_same_source_set,covid19_twitter,0.8345,-0.008231282758620617
+B,4,election2020,8,ukr_rus covid twibot20 midterm,0.8226825218390805,observed_same_source_set,covid19_twitter,0.8345,-0.011817478160919492
+B,5,election2020,8,ukr_rus covid twibot20 midterm ukr_rus_suspended,0.8316414873563218,observed_same_source_set,covid19_twitter,0.8345,-0.0028585126436782016
+B,6,election2020,8,ukr_rus covid twibot20 midterm ukr_rus_suspended cp_hk,0.827781832183908,observed_same_source_set,covid19_twitter,0.8345,-0.006718167816092024
+B,7,election2020,8,ukr_rus covid twibot20 midterm ukr_rus_suspended cp_hk covid_political,0.8400826022988507,observed_same_source_set,covid19_twitter,0.8345,0.0055826022988506585
+B,1,ukr_rus_suspended,5,ukr_rus,0.7894,single_source_reconstruction,ukr_rus_twitter,0.7894,0.0
+B,2,ukr_rus_suspended,5,ukr_rus covid,0.775,observed_same_source_set,ukr_rus_twitter,0.7894,-0.014399999999999968
+B,3,ukr_rus_suspended,5,ukr_rus covid twibot20,0.7623589471264366,observed_same_source_set,ukr_rus_twitter,0.7894,-0.027041052873563398
+B,4,ukr_rus_suspended,5,ukr_rus covid twibot20 midterm,0.7756944183908047,observed_same_source_set,ukr_rus_twitter,0.7894,-0.013705581609195328
+B,1,twibot20,3,ukr_rus,0.9218,single_source_reconstruction,ukr_rus_twitter,0.9218,0.0
+B,2,twibot20,3,ukr_rus covid,0.925,observed_same_source_set,covid19_twitter,0.9258,-0.0007999999999999119
+B,1,cp_hk_twitter,6,ukr_rus,0.714,single_source_reconstruction,ukr_rus_twitter,0.714,0.0
+B,2,cp_hk_twitter,6,ukr_rus covid,0.726,observed_same_source_set,covid19_twitter,0.7196,0.006399999999999961
+B,3,cp_hk_twitter,6,ukr_rus covid twibot20,0.7316832084770114,observed_same_source_set,covid19_twitter,0.7196,0.012083208477011387
+B,4,cp_hk_twitter,6,ukr_rus covid twibot20 midterm,0.720369180172414,observed_same_source_set,covid19_twitter,0.7196,0.0007691801724140079
+B,5,cp_hk_twitter,6,ukr_rus covid twibot20 midterm ukr_rus_suspended,0.7183858511494251,observed_same_source_set,covid19_twitter,0.7196,-0.0012141488505749143
+C,1,ukr_rus_twitter,7,covid_political,0.6301,single_source_reconstruction,covid_political,0.6301,0.0
+C,2,ukr_rus_twitter,7,covid_political election2020,0.6479949551245211,observed_same_source_set,covid_political,0.6301,0.017894955124521106
+C,3,ukr_rus_twitter,7,covid_political election2020 cp_hk,0.7467859874361431,observed_same_source_set,cp_hk_twitter,0.6808,0.06598598743614315
+C,4,ukr_rus_twitter,7,covid_political election2020 cp_hk ukr_rus_suspended,0.8250104927522349,observed_same_source_set,ukr_rus_suspended,0.7695,0.05551049275223496
+C,5,ukr_rus_twitter,7,covid_political election2020 cp_hk ukr_rus_suspended midterm,0.8651577229885058,observed_same_source_set,midterm,0.797,0.06815772298850575
+C,6,ukr_rus_twitter,7,covid_political election2020 cp_hk ukr_rus_suspended midterm twibot20,0.8894939903256703,observed_same_source_set,twibot20,0.8688,0.02069399032567032
+C,1,covid19_twitter,8,covid_political,0.6985,single_source_reconstruction,covid_political,0.6985,0.0
+C,2,covid19_twitter,8,covid_political election2020,0.7322287988825033,observed_same_source_set,covid_political,0.6985,0.03372879888250324
+C,3,covid19_twitter,8,covid_political election2020 cp_hk,0.832790019476373,observed_same_source_set,cp_hk_twitter,0.7579,0.07489001947637297
+C,4,covid19_twitter,8,covid_political election2020 cp_hk ukr_rus_suspended,0.8927544834610472,observed_same_source_set,ukr_rus_suspended,0.8307,0.06205448346104725
+C,5,covid19_twitter,8,covid_political election2020 cp_hk ukr_rus_suspended midterm,0.9308379506226054,observed_same_source_set,midterm,0.879,0.05183795062260543
+C,6,covid19_twitter,8,covid_political election2020 cp_hk ukr_rus_suspended midterm twibot20,0.9559441030970623,observed_same_source_set,twibot20,0.9473,0.008644103097062317
+C,7,covid19_twitter,8,covid_political election2020 cp_hk ukr_rus_suspended midterm twibot20 ukr_rus,0.968881610823755,observed_same_source_set,ukr_rus_twitter,0.973,-0.004118389176244963
+C,1,midterm,5,covid_political,0.6878,single_source_reconstruction,covid_political,0.6878,0.0
+C,2,midterm,5,covid_political election2020,0.7521999042943807,observed_same_source_set,covid_political,0.6878,0.0643999042943807
+C,3,midterm,5,covid_political election2020 cp_hk,0.8069119819604087,observed_same_source_set,cp_hk_twitter,0.7629,0.044011981960408675
+C,4,midterm,5,covid_political election2020 cp_hk ukr_rus_suspended,0.8213368669859517,observed_same_source_set,cp_hk_twitter,0.7629,0.05843686698595163
+C,1,election2020,2,covid_political,0.7833,single_source_reconstruction,covid_political,0.7833,0.0
+C,1,ukr_rus_suspended,4,covid_political,0.551,single_source_reconstruction,covid_political,0.551,0.0
+C,2,ukr_rus_suspended,4,covid_political election2020,0.579886075862069,observed_same_source_set,election2020,0.5627,0.017186075862068995
+C,3,ukr_rus_suspended,4,covid_political election2020 cp_hk,0.6518217747126436,observed_same_source_set,cp_hk_twitter,0.6025,0.04932177471264354
+C,1,twibot20,6,covid_political,0.7374,single_source_reconstruction,covid_political,0.7374,0.0
+C,2,twibot20,6,covid_political election2020,0.7747346551564493,observed_same_source_set,covid_political,0.7374,0.03733465515644929
+C,3,twibot20,6,covid_political election2020 cp_hk,0.8181850680555556,observed_same_source_set,cp_hk_twitter,0.7378,0.08038506805555556
+C,4,twibot20,6,covid_political election2020 cp_hk ukr_rus_suspended,0.8540511916028097,observed_same_source_set,ukr_rus_suspended,0.7647,0.08935119160280969
+C,5,twibot20,6,covid_political election2020 cp_hk ukr_rus_suspended midterm,0.8906968706577267,observed_same_source_set,midterm,0.8613,0.02939687065772678
+C,1,cp_hk_twitter,3,covid_political,0.5444,single_source_reconstruction,covid_political,0.5444,0.0
+C,2,cp_hk_twitter,3,covid_political election2020,0.5653788771551724,observed_same_source_set,election2020,0.5475,0.017878877155172446

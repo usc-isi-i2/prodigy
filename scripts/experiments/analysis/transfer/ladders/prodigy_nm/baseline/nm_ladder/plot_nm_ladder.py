@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 """NM interpolation-ladder figure (complete 8-rung ladder).
 
-Per-graph NM AUC (3-shot, 30-way, matched step 40k) as the SSL pre-training graph
-grows ONE SOURCE AT A TIME: ukr -> +covid -> +midterm -> +covid_political ->
-+election2020 -> +ukr_rus_suspended -> +twibot20 -> +cp_hk (= all 8). Each of the 8
-single-source eval graphs is one trajectory; color encodes distribution state
-relative to the current training merge -- blue = in-training (in-distribution),
-gray dashed = held-out (out-of-distribution). A line turns blue at the rung its
-graph enters the merge (the interpolation event); the vertical step there is the
-OOD->ID delta. With one graph entering per rung, the entry markers trace a diagonal
-cascade across the ladder.
+Per-graph held-out NM AUC (3-shot, 30-way, matched step 40k) as the SSL
+pre-training graph grows ONE SOURCE AT A TIME: ukr -> +covid -> +midterm ->
++covid_political -> +election2020 -> +ukr_rus_suspended -> +twibot20 -> +cp_hk
+(= all 8). Each target has its own color and its trajectory stops immediately
+before that target enters the pre-training mixture. The UKR target is omitted
+because it is already present at rung 1 and therefore has no held-out observation.
 
 Data: nm_ladder_full.csv (within_balanced rows) from the same folder
 experiment; searched next to this script and in the experiment folder, with an
@@ -22,13 +19,19 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-# palette (dataviz reference instance)
-BLUE = "#2a78d6"   # in-distribution / in training
-GRAY = "#8f8d87"   # out-of-distribution / held out
+# colorblind-friendly target palette
+COLORS = {
+    "covid19_twitter": "#2a78d6",
+    "midterm": "#e68613",
+    "covid_political": "#2a9d65",
+    "election2020": "#d34e4e",
+    "ukr_rus_suspended": "#8b63c7",
+    "twibot20": "#c79a17",
+    "cp_hk_twitter": "#66717e",
+}
 INK = "#0b0b0b"
 MUTED = "#898781"
 GRID = "#e1e0d9"
@@ -96,24 +99,6 @@ def load():
     return {key: [table[rg][key] for rg in RUNGS] for key, _l, _e in GRAPHS}
 
 
-def declutter(items, gap, lo, hi):
-    """items: list of dicts with 'y_true'; set 'y_lbl' spread >= gap, clamped [lo,hi]."""
-    items = sorted(items, key=lambda d: d["y_true"])
-    for it in items:
-        it["y_lbl"] = it["y_true"]
-    for i in range(1, len(items)):  # push up
-        if items[i]["y_lbl"] - items[i - 1]["y_lbl"] < gap:
-            items[i]["y_lbl"] = items[i - 1]["y_lbl"] + gap
-    if items[-1]["y_lbl"] > hi:      # overflowed top -> pull the stack down
-        items[-1]["y_lbl"] = hi
-        for i in range(len(items) - 2, -1, -1):
-            if items[i + 1]["y_lbl"] - items[i]["y_lbl"] < gap:
-                items[i]["y_lbl"] = items[i + 1]["y_lbl"] - gap
-    for it in items:
-        it["y_lbl"] = min(max(it["y_lbl"], lo), hi)
-    return items
-
-
 def main():
     series = load()
     x = list(range(len(RUNGS)))  # 0..7
@@ -125,54 +110,46 @@ def main():
     })
     fig, ax = plt.subplots(figsize=(10.6, 5.9), dpi=200)
 
-    # per-graph trajectories
-    label_items = []  # right-edge direct labels (identity + entry delta)
+    # Plot only the observations for which the evaluation target is still held out.
+    # UKR enters at rung 1, so it has no held-out point and is intentionally absent.
     for key, label, entry in GRAPHS:
+        if entry == 1:
+            continue
         y = series[key]
-        e = entry - 1  # entry index
-        for i in range(len(x) - 1):
-            in_dist_right = (i + 1) >= e
-            ax.plot(
-                [x[i], x[i + 1]], [y[i], y[i + 1]],
-                color=BLUE if in_dist_right else GRAY,
-                lw=1.9 if in_dist_right else 1.5,
-                ls="-" if in_dist_right else (0, (4, 2)),
-                zorder=3, solid_capstyle="round",
-            )
-        for i in range(len(x)):
-            in_dist = i >= e
-            if i == e and entry > 1:  # entry marker (just added): emphasized ring
-                ax.scatter([x[i]], [y[i]], s=95, facecolor=BLUE, edgecolor="white",
-                           linewidth=1.6, zorder=6)
-            else:
-                ax.scatter([x[i]], [y[i]], s=24,
-                           facecolor=BLUE if in_dist else "white",
-                           edgecolor=BLUE if in_dist else GRAY,
-                           linewidth=1.4, zorder=5)
-        d = y[e] - y[e - 1] if entry > 1 else 0.0
-        text = f"{label}   +{d:.2f}" if d >= 0.03 else label
-        label_items.append({"y_true": y[-1], "text": text, "big": d >= 0.03})
-
-    # aggregate: mean over the fixed 8-graph set (no composition confound)
-    mean = [sum(series[k][i] for k, _, _ in GRAPHS) / len(GRAPHS) for i in range(len(x))]
-    ax.plot(x, mean, color=INK, lw=2.8, zorder=8, marker="s", ms=6,
-            markerfacecolor=INK, markeredgecolor="white", markeredgewidth=1.2)
-    ax.annotate("mean (all 8)", xy=(x[0] - 0.06, mean[0]), ha="right", va="center",
-                fontsize=9, color=INK, fontweight="bold")
-
-    # decluttered right-edge direct labels (identity via label, not color) + leaders
-    xr = x[-1]
-    for it in declutter(label_items, gap=0.019, lo=0.712, hi=0.992):
-        ax.plot([xr + 0.06, xr + 0.28], [it["y_true"], it["y_lbl"]],
-                color=MUTED, lw=0.6, zorder=2)
-        ax.annotate(it["text"], xy=(xr + 0.34, it["y_lbl"]), ha="left", va="center",
-                    fontsize=9.3, color=BLUE, fontweight="bold")
+        heldout_x = x[: entry - 1]
+        heldout_y = y[: entry - 1]
+        color = COLORS[key]
+        ax.plot(
+            heldout_x,
+            heldout_y,
+            color=color,
+            lw=2.2,
+            marker="o",
+            ms=5.5,
+            markerfacecolor="white",
+            markeredgecolor=color,
+            markeredgewidth=1.5,
+            zorder=3,
+            solid_capstyle="round",
+        )
+        ax.annotate(
+            label,
+            xy=(heldout_x[-1], heldout_y[-1]),
+            xytext=(7, 0),
+            textcoords="offset points",
+            ha="left",
+            va="center",
+            fontsize=8.8,
+            color=color,
+            fontweight="bold",
+            zorder=5,
+        )
 
     # axes / chrome
-    ax.set_xlim(-0.62, 8.75)
+    ax.set_xlim(-0.35, 6.75)
     ax.set_ylim(0.70, 1.0)
-    ax.set_xticks(x)
-    ax.set_xticklabels(XTICKS, fontsize=9.2)
+    ax.set_xticks(x[:-1])
+    ax.set_xticklabels(XTICKS[:-1], fontsize=9.2)
     ax.set_xlabel("SSL pre-training graph  (one source added per rung, merge grows to the right)",
                   fontsize=10.5, color=INK)
     ax.set_ylabel("NM AUC  (3-shot, 30-way)", fontsize=10.5, color=INK)
@@ -185,24 +162,11 @@ def main():
     ax.grid(axis="y", color=GRID, lw=0.8, zorder=0)
     ax.set_axisbelow(True)
 
-    ax.set_title("Interpolation ladder: each graph jumps to in-distribution when it "
-                 "enters SSL pre-training",
+    ax.set_title("Held-out NM transfer does not improve as unrelated sources are added",
                  fontsize=12.5, color=INK, fontweight="bold", loc="left", pad=26)
     ax.text(0.0, 1.02, "NM  3-shot / 30-way  ·  matched step 40k  ·  within-balanced "
-            "sampling  ·  +d = out-of-dist. gain at entry rung",
+            "sampling  ·  each line ends before its target enters pre-training",
             transform=ax.transAxes, ha="left", va="bottom", fontsize=9, color=MUTED)
-
-    legend_handles = [
-        Line2D([0], [0], color=BLUE, lw=1.9, marker="o", markerfacecolor=BLUE,
-               markeredgecolor="white", ms=7, label="in training (in-dist.)"),
-        Line2D([0], [0], color=GRAY, lw=1.5, ls=(0, (4, 2)), marker="o",
-               markerfacecolor="white", markeredgecolor=GRAY, ms=7,
-               label="held out (out-of-dist.)"),
-        Line2D([0], [0], color=INK, lw=2.8, marker="s", markerfacecolor=INK,
-               markeredgecolor="white", ms=7, label="mean (all 8 graphs)"),
-    ]
-    ax.legend(handles=legend_handles, loc="lower right", frameon=False,
-              fontsize=9, handlelength=2.4, borderaxespad=0.6)
 
     fig.tight_layout()
     for ext in ("pdf", "png"):
@@ -210,14 +174,12 @@ def main():
         fig.savefig(out, bbox_inches="tight")
         print("wrote", out)
 
-    # console summary of entry deltas
-    print("\nOOD->ID entry delta (AUC at entry rung minus previous rung):")
+    # Console summary of the final observed held-out value for each target.
+    print("\nFinal held-out NM AUC before target entry:")
     for key, label, entry in GRAPHS:
         if entry > 1:
             y = series[key]
-            print(f"  {label:14s} enters rung {entry}: {y[entry-2]:.3f} -> "
-                  f"{y[entry-1]:.3f}  (+{y[entry-1]-y[entry-2]:.3f})")
-    print(f"\nmean(all 8) by rung: " + ", ".join(f"{m:.3f}" for m in mean))
+            print(f"  {label:14s} before rung {entry}: {y[entry-2]:.3f}")
 
 
 if __name__ == "__main__":
