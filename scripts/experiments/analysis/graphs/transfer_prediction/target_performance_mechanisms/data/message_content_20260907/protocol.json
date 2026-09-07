@@ -1,0 +1,106 @@
+{
+  "revision": "ca3fab25ece49ad610ab2607b6e3bdbb3e2166c9",
+  "reference_replay": "/dataMeR1/phil/gfm/prodigy-role-topology/log/role_topology_full_20260907",
+  "reference_revision": "9e93f59c4202f1210ee536abf865ac2e39815b70",
+  "targets": [
+    "covid_political",
+    "election2020",
+    "facebook_page_reference",
+    "twibot20",
+    "ukr_rus_suspended"
+  ],
+  "models": [
+    "memberctl_cp_hk_lowest_sorted_s0",
+    "memberctl_cp_hk_lowest_sorted_s1",
+    "memberctl_cp_hk_lowest_sorted_s2",
+    "memberctl_ukr_rus_lowest_sorted_s0",
+    "memberctl_ukr_rus_lowest_sorted_s1",
+    "memberctl_ukr_rus_lowest_sorted_s2"
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "conditions": [
+    [
+      "intact",
+      "both"
+    ],
+    [
+      "actual_mean",
+      "query"
+    ],
+    [
+      "actual_mean",
+      "support"
+    ],
+    [
+      "actual_mean",
+      "both"
+    ],
+    [
+      "no_message_bias",
+      "query"
+    ],
+    [
+      "no_message_bias",
+      "support"
+    ],
+    [
+      "no_message_bias",
+      "both"
+    ],
+    [
+      "bias_only",
+      "query"
+    ],
+    [
+      "bias_only",
+      "support"
+    ],
+    [
+      "bias_only",
+      "both"
+    ],
+    [
+      "mean_message",
+      "query"
+    ],
+    [
+      "mean_message",
+      "support"
+    ],
+    [
+      "mean_message",
+      "both"
+    ],
+    [
+      "zero_messages",
+      "query"
+    ],
+    [
+      "zero_messages",
+      "support"
+    ],
+    [
+      "zero_messages",
+      "both"
+    ]
+  ],
+  "batches": 32,
+  "threads": 4,
+  "smoke_only": false,
+  "new_training": false,
+  "torch": "2.0.1+cu118",
+  "torch_geometric": "2.3.1",
+  "motivation": "After the completed degree-preserving null showed tiny effects, inspect actual mean versus sum aggregation and affine versus feature-dependent messages. This is an exploratory follow-up, not a preregistered confirmation.",
+  "controls": {
+    "actual_mean": "Use real MeanAggregation for the fixed checkpoint, leaving all weights and connections fixed.",
+    "no_message_bias": "Subtract only the message projection's affine bias before aggregation, retaining its feature term.",
+    "bias_only": "Remove the feature-dependent message term, retaining the same learned affine bias per edge.",
+    "mean_message": "Every sender emits the mean projected feature over its sampled subgraph's real nodes; retain original receiver degrees and all node-specific self projections.",
+    "zero_messages": "Zero every background message; must reproduce existing edge-removal metrics for each role."
+  },
+  "reporting": "All targets, seeds and role conditions; no target-selected rule. Query labels enter only metric evaluation. Different randomization streams are not training replications."
+}

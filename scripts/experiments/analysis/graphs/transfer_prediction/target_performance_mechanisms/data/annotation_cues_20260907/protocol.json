@@ -1,0 +1,107 @@
+{
+  "revision": "b38fbe274719760dbd805d97b12d9442eeb5d456",
+  "source_url": "https://arxiv.org/pdf/2207.08349v4",
+  "source_table": 3,
+  "published_cues": [
+    "Resist",
+    "FBR",
+    "TheResistance",
+    "Resistance",
+    "Biden2020",
+    "VoteBlue",
+    "VoteBlueNoMatterWho",
+    "Bernie2020",
+    "BlueWave",
+    "BackTheBlue",
+    "NotMyPresident",
+    "NeverTrump",
+    "Resister",
+    "VoteBlue2020",
+    "ImpeachTrump",
+    "BlueWave2020",
+    "YangGang",
+    "MAGA",
+    "KAG",
+    "Trump2020",
+    "WWG1WGA",
+    "QAnon",
+    "Trump",
+    "KAG2020",
+    "Conservative",
+    "BuildTheWall",
+    "AmericaFirst",
+    "TheGreatAwakening",
+    "TrumpTrain"
+  ],
+  "detectors": [
+    "original_hashtag",
+    "original_or_cleaned_surface"
+  ],
+  "subsets": [
+    "all",
+    "query_center_absent",
+    "query_center_present",
+    "query_subgraph_absent",
+    "query_subgraph_present",
+    "supports_absent",
+    "supports_present",
+    "all_input_absent"
+  ],
+  "target": "covid_political",
+  "streams": [
+    "original",
+    "fresh"
+  ],
+  "models": [
+    "memberctl_cp_hk_lowest_sorted_s0",
+    "memberctl_cp_hk_lowest_sorted_s1",
+    "memberctl_cp_hk_lowest_sorted_s2",
+    "memberctl_ukr_rus_lowest_sorted_s0",
+    "memberctl_ukr_rus_lowest_sorted_s1",
+    "memberctl_ukr_rus_lowest_sorted_s2"
+  ],
+  "conditions": [
+    [
+      "intact",
+      "intact",
+      0
+    ],
+    [
+      "intact",
+      "removed",
+      0
+    ],
+    [
+      "removed",
+      "intact",
+      0
+    ],
+    [
+      "removed",
+      "removed",
+      0
+    ],
+    [
+      "intact",
+      "rewired",
+      0
+    ],
+    [
+      "intact",
+      "rewired",
+      1
+    ],
+    [
+      "intact",
+      "rewired",
+      2
+    ]
+  ],
+  "topology": "/dataMeR1/phil/gfm/prodigy-role-topology/log/role_topology_full_20260907",
+  "threads": 2,
+  "design": "Fixed published vocabulary and all declared strata before examining outcome associations. Original hashtag detector and broader original-or-cleaned whole-token detector with digit-deleted aliases. No political polarity assigned. Raw prototype uses unchanged episode supports.",
+  "limitation": "Cue absence is not independently labeled, leakage-free, or news-heuristic-free. Original-profile match is provenance, not label-generator reconstruction. All input absent includes selected query subgraph plus all support subgraphs, not other queries. Strata overlap, are observational and reuse three seeds/two streams. No significance or fresh-target claim.",
+  "new_forward_pass": false,
+  "new_training": false,
+  "private_raw_export": false
+}

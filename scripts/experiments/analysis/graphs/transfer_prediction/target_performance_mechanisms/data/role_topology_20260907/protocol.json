@@ -1,0 +1,144 @@
+{
+  "revision": "9e93f59c4202f1210ee536abf865ac2e39815b70",
+  "targets": [
+    "covid_political",
+    "election2020",
+    "facebook_page_reference",
+    "twibot20",
+    "ukr_rus_suspended"
+  ],
+  "models": [
+    "memberctl_cp_hk_lowest_sorted_s0",
+    "memberctl_cp_hk_lowest_sorted_s1",
+    "memberctl_cp_hk_lowest_sorted_s2",
+    "memberctl_ukr_rus_lowest_sorted_s0",
+    "memberctl_ukr_rus_lowest_sorted_s1",
+    "memberctl_ukr_rus_lowest_sorted_s2"
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "conditions": [
+    [
+      "intact",
+      "intact",
+      0
+    ],
+    [
+      "intact",
+      "removed",
+      0
+    ],
+    [
+      "intact",
+      "rewired",
+      0
+    ],
+    [
+      "removed",
+      "intact",
+      0
+    ],
+    [
+      "removed",
+      "removed",
+      0
+    ],
+    [
+      "removed",
+      "rewired",
+      0
+    ],
+    [
+      "rewired",
+      "intact",
+      0
+    ],
+    [
+      "rewired",
+      "removed",
+      0
+    ],
+    [
+      "rewired",
+      "rewired",
+      0
+    ],
+    [
+      "intact",
+      "rewired",
+      1
+    ],
+    [
+      "removed",
+      "rewired",
+      1
+    ],
+    [
+      "rewired",
+      "intact",
+      1
+    ],
+    [
+      "rewired",
+      "removed",
+      1
+    ],
+    [
+      "rewired",
+      "rewired",
+      1
+    ],
+    [
+      "intact",
+      "rewired",
+      2
+    ],
+    [
+      "removed",
+      "rewired",
+      2
+    ],
+    [
+      "rewired",
+      "intact",
+      2
+    ],
+    [
+      "rewired",
+      "removed",
+      2
+    ],
+    [
+      "rewired",
+      "rewired",
+      2
+    ]
+  ],
+  "batches": 32,
+  "rewire_draws": 3,
+  "swaps_per_edge": 5,
+  "threads": 4,
+  "arms": "scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/data/member_training_verified/arms.json",
+  "references": "scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/data/member_replay_cells.csv",
+  "cache_roots": {
+    "covid_political/original": "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/specialist_cpu_20260906",
+    "covid_political/fresh": "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/fresh_stage_cpu_20260906",
+    "election2020/original": "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/specialist_cpu_20260906",
+    "election2020/fresh": "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/fresh_stage_cpu_20260906",
+    "facebook_page_reference/original": "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/specialist_cpu_20260906",
+    "facebook_page_reference/fresh": "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/fresh_stage_cpu_20260906",
+    "twibot20/original": "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/specialist_cpu_20260906",
+    "twibot20/fresh": "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/fresh_stage_cpu_20260906",
+    "ukr_rus_suspended/original": "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/specialist_cpu_tail_20260906",
+    "ukr_rus_suspended/fresh": "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/fresh_stage_cpu_20260906"
+  },
+  "smoke_only": false,
+  "checkpoint_step": 2500,
+  "new_training": false,
+  "design": "Within each cached subgraph, simple degree-preserving double-edge swaps; reciprocal graphs preserve reciprocal pairs, loops remain fixed. Five attempted-success targets per movable edge, at most twenty attempts per requested swap. Report accepted swaps and final edge turnover, including rigid graphs. Not uniform sampling or a pure homophily intervention.",
+  "primary": "All four intact/removed role conditions and all nine role x intact/removed/rewired combinations, every selected seed/target/stream. Quantify conditional role effects; no outcome-selected null draw.",
+  "interpretation": "AUC interaction is an interaction on the reported performance scale, not proof of nonadditive logits. Report accuracy and NLL too. Target selection uses earlier exploratory results; no untouched-target or significance claim."
+}

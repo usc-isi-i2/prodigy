@@ -14,6 +14,7 @@ Setup and launch files remain in `../setup/<name>/`.
   - Downstream transfer: [`nm_single_source_downstream`](transfer/matrices/prodigy_nm/downstream/nm_single_source_downstream/)
   - Identity-disjoint control: [`entity_disjoint_eval`](transfer/matrices/prodigy_nm/identity_disjoint/entity_disjoint_eval/)
 - **Architecture-controlled NM:** [`icl_arch_matrix`](transfer/matrices/cross_architecture/icl_arch_matrix/) compares PRODIGY, VISION, and GILT.
+- **Component-compensation scope:** [`gilt_component_crossover`](graphs/transfer_prediction/gilt_component_crossover/) records the predeclared GILT test and its failure to replicate the PRODIGY direction.
 - **Native-objective architectures:** [`final_core`](transfer/matrices/cross_model/final_core/) compares PRODIGY/NM and SAMGPT/GraphCL.
 
 ### Ladders
@@ -62,6 +63,8 @@ Setup and launch files remain in `../setup/<name>/`.
 - Target-performance mechanisms: [fixed-query stage replay and source-sampler audit](graphs/transfer_prediction/target_performance_mechanisms/FINDINGS_REPLAY.md)
 - Local transfer contrast: [matched examples and support-anchored transfer health](graphs/transfer_prediction/local_transfer_contrast/FINDINGS.md)
 - TRACE schedule scaling: [order-only schedule intervention and bounded replay](graphs/transfer_prediction/trace_schedule_scaling/)
+- Role-topology follow-up: [degree-preserving rewiring, second-target repair and aggregation audit](graphs/transfer_prediction/target_performance_mechanisms/FINDINGS_ROLE_TOPOLOGY.md)
+- Message-content follow-up: [background-message presence versus content and cached input degree/label audit](graphs/transfer_prediction/target_performance_mechanisms/FINDINGS_MESSAGE_CONTENT.md)
 
 ## Evaluation infrastructure
 

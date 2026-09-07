@@ -1,5 +1,25 @@
 # Target-performance mechanisms
 
+Published-cue follow-up: [FINDINGS_ANNOTATION_CUES.md](FINDINGS_ANNOTATION_CUES.md).
+All 78,672 political rows recover their original profiles by a unique complete-row
+join. Hongkong support suppression improves AUC in all six controls even when
+the query's entire sampled subgraph lacks the published cues: +8.04 to +15.79
+points under the broader detector. Every episode still has cue-bearing supports;
+this is not annotation decontamination. All 1,376 declared audit cells are retained.
+
+Portable code/reproduction status: [PORTABLE_REPRODUCTION.md](PORTABLE_REPRODUCTION.md).
+The standalone code archive, synthetic tests, 60 constructor/input-adapter
+checks and three-target smoke pass. Full extracted-package historical replay
+is running; this is not yet a completed full-reproduction claim.
+
+Latest completed reviewer controls: [FINDINGS_SUPPORT_DOSE.md](FINDINGS_SUPPORT_DOSE.md).
+All 1140 dose/saved-checkpoint cells pass. Increasing support suppression improves
+Hong Kong political ranking and worsens both sources' bot ranking monotonically
+in all 18 individual curves per source/target; page intervention signs reverse
+between steps 100 and 2500. `analyze_support_dose` validates all saved-step,
+query-invariance and endpoint receipts; `plot_support_dose` shows every target.
+This closes the dose/checkpoint follow-ups in the earlier message-content findings.
+
 Completed practical follow-up: [FINDINGS_READOUT_SELECTION.md](FINDINGS_READOUT_SELECTION.md).
 The same twenty supports select a readout that beats every fixed rule's
 three-target panel mean in both families and both streams; it does not beat

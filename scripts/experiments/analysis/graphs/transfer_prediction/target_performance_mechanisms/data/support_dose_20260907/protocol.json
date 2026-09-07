@@ -1,0 +1,142 @@
+{
+  "revision": "e664d220abfeb23fb7872a207997fbe52172b30c",
+  "reference_replay": "/dataMeR1/phil/gfm/prodigy-role-topology/log/role_topology_full_20260907",
+  "reference_revision": "9e93f59c4202f1210ee536abf865ac2e39815b70",
+  "targets": [
+    "covid_political",
+    "election2020",
+    "facebook_page_reference",
+    "twibot20",
+    "ukr_rus_suspended"
+  ],
+  "models": [
+    "memberctl_cp_hk_lowest_sorted_s0",
+    "memberctl_cp_hk_lowest_sorted_s1",
+    "memberctl_cp_hk_lowest_sorted_s2",
+    "memberctl_ukr_rus_lowest_sorted_s0",
+    "memberctl_ukr_rus_lowest_sorted_s1",
+    "memberctl_ukr_rus_lowest_sorted_s2"
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "steps": [
+    0,
+    100,
+    300,
+    900,
+    2500
+  ],
+  "conditions_by_step": {
+    "0": [
+      [
+        0,
+        0
+      ],
+      [
+        100,
+        0
+      ]
+    ],
+    "100": [
+      [
+        0,
+        0
+      ],
+      [
+        100,
+        0
+      ]
+    ],
+    "300": [
+      [
+        0,
+        0
+      ],
+      [
+        100,
+        0
+      ]
+    ],
+    "900": [
+      [
+        0,
+        0
+      ],
+      [
+        100,
+        0
+      ]
+    ],
+    "2500": [
+      [
+        0,
+        0
+      ],
+      [
+        100,
+        0
+      ],
+      [
+        25,
+        0
+      ],
+      [
+        50,
+        0
+      ],
+      [
+        75,
+        0
+      ],
+      [
+        25,
+        1
+      ],
+      [
+        50,
+        1
+      ],
+      [
+        75,
+        1
+      ],
+      [
+        25,
+        2
+      ],
+      [
+        50,
+        2
+      ],
+      [
+        75,
+        2
+      ]
+    ]
+  },
+  "batches": 32,
+  "draws": 3,
+  "threads": 4,
+  "smoke_only": false,
+  "new_training": false,
+  "planned_cells": 1140,
+  "torch": "2.0.1+cu118",
+  "torch_geometric": "2.3.1",
+  "cache_roots": {
+    "covid_political/original": "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/specialist_cpu_20260906",
+    "covid_political/fresh": "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/fresh_stage_cpu_20260906",
+    "election2020/original": "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/specialist_cpu_20260906",
+    "election2020/fresh": "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/fresh_stage_cpu_20260906",
+    "facebook_page_reference/original": "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/specialist_cpu_20260906",
+    "facebook_page_reference/fresh": "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/fresh_stage_cpu_20260906",
+    "twibot20/original": "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/specialist_cpu_20260906",
+    "twibot20/fresh": "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/fresh_stage_cpu_20260906",
+    "ukr_rus_suspended/original": "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/specialist_cpu_tail_20260906",
+    "ukr_rus_suspended/fresh": "/dataMeR1/phil/gfm/prodigy-mechanisms/log/target_mechanisms/fresh_stage_cpu_20260906"
+  },
+  "design": "At every saved step evaluate intact and support-only complete removal. At step 2500 add 25/50/75 percent suppression in three nested draws. Fixed queries, original node membership/features/pooling. Within each subgraph, uniform random permutation of directed edges or reciprocal pairs, self loops as singleton units, round-half-up deletion counts. All masks shared across checkpoints; report actual edge fractions and unchanged empty subgraphs.",
+  "reporting": "Exploratory follow-up prompted by the review; no query-selected dose, checkpoint or target. Initialization, streams and mask draws are distinguished. Curves do not imply significance or an automatic deployment rule."
+}
