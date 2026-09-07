@@ -56,6 +56,7 @@ Setup and launch files remain in `../setup/<name>/`.
 - Dataset overlap: [`identity_overlap_audit`](graphs/overlap/identity_overlap_audit/)
 - Similarity as a transfer predictor: [`similarity_vs_transfer`](graphs/transfer_prediction/similarity_vs_transfer/), [`similarity_vs_transfer_v2`](graphs/transfer_prediction/similarity_vs_transfer_v2/)
 - Target-performance mechanisms: [fixed-query stage replay and source-sampler audit](graphs/transfer_prediction/target_performance_mechanisms/FINDINGS_REPLAY.md)
+- Local transfer contrast: [matched examples and support-anchored transfer health](graphs/transfer_prediction/local_transfer_contrast/FINDINGS.md)
 
 ## Evaluation infrastructure
 
