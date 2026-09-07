@@ -51,6 +51,10 @@ bash scripts/experiments/setup/local_transfer_contrast/run_seed_replay_tucker.sh
 bash scripts/experiments/setup/local_transfer_contrast/run_seed_replay_tucker.sh 2 fresh 3
 ```
 
+The same launcher accepts seed 0. We rerun it under the identical current
+code/hardware path when an older cache is not tensor-identical; this avoids mixing
+different sampled neighborhoods into a checkpoint-seed comparison.
+
 The target sampling seed remains zero for every checkpoint seed so the replication
 isolates training stochasticity. The fresh stream uses the same frozen 100003 offset
 as the seed-0 analysis. CUDA trace parity is explicitly guarded at `1e-5` because

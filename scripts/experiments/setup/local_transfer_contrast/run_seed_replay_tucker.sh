@@ -2,14 +2,14 @@
 set -euo pipefail
 
 if [[ $# -ne 3 ]]; then
-  echo "usage: $0 <checkpoint-seed:1|2> <stream:original|fresh> <owned-gpu:0..3>" >&2
+  echo "usage: $0 <checkpoint-seed:0|1|2> <stream:original|fresh> <owned-gpu:0..3>" >&2
   exit 2
 fi
 
 seed="$1"
 stream="$2"
 device="$3"
-if [[ ! "$seed" =~ ^[12]$ ]] || [[ ! "$stream" =~ ^(original|fresh)$ ]] || [[ ! "$device" =~ ^[0-3]$ ]]; then
+if [[ ! "$seed" =~ ^[012]$ ]] || [[ ! "$stream" =~ ^(original|fresh)$ ]] || [[ ! "$device" =~ ^[0-3]$ ]]; then
   echo "invalid seed, stream, or device" >&2
   exit 2
 fi

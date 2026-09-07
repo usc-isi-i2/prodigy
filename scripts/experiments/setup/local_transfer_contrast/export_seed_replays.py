@@ -95,7 +95,7 @@ def load_stream(root, target, stream, seed, reference_roots, raw_parity_atol):
 
 def main():
     parser = argparse.ArgumentParser(__doc__)
-    parser.add_argument("--seed", type=int, choices=(1, 2), required=True)
+    parser.add_argument("--seed", type=int, choices=(0, 1, 2), required=True)
     parser.add_argument("--original-root", type=Path, required=True)
     parser.add_argument("--fresh-root", type=Path, required=True)
     parser.add_argument("--reference-original-roots", type=Path, nargs="+", required=True)
