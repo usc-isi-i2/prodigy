@@ -81,7 +81,9 @@ def run_episode(model, artifacts, device, *, atol=0.0, rtol=0.0):
     state = artifacts["state"]
     native = trace_forward(model, arguments, state, projection)
     if not torch.allclose(native["logits"].cpu(), parity["logits"], atol=atol, rtol=rtol):
-        raise ValueError("Instrumentation changed native logits")
+        error = float((native["logits"].cpu() - parity["logits"]).abs().max())
+        raise ValueError(f"Instrumentation changed native logits: max_abs_error={error}, "
+                         f"atol={atol}, rtol={rtol}")
     queries = query_rows(arguments)
     support = torch.zeros(native["projection"].shape[0], dtype=torch.bool, device=device)
     if support.numel() != queries.numel() + arguments[1].shape[0]:

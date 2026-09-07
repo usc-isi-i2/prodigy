@@ -50,6 +50,14 @@ def install_online_experiment(model, output, device, *, atol=0.0, rtol=0.0):
         active = True
         try:
             result = run_episode(model, artifacts, device, atol=atol, rtol=rtol)
+        except Exception as error:
+            # Preserve the exact failing input/state for diagnosis, not as an
+            # accepted intervention episode or a completed stream record.
+            torch.save(artifacts, directory / "failed_native_capture.pt")
+            native.write_json(directory / "failure.json", {
+                "ordinal": len(records), "error": repr(error),
+                "accepted_intervention_result": False})
+            raise
         finally:
             active = False
         filename = directory / f"episode_{len(records):05d}.pt"
