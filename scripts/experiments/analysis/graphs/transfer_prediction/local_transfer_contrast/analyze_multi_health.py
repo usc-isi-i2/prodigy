@@ -9,6 +9,7 @@ import torch
 from sklearn.metrics import accuracy_score, log_loss, roc_auc_score
 
 from .analyze_contrast import (
+    auc_inputs,
     fit_temperature,
     grouped_bootstrap_difference,
     softmax,
@@ -62,8 +63,8 @@ def analyze_target(path, target_name):
         for model in models
     }
     discovery_auc = {
-        model: auc(y_discovery, softmax(to_numpy(
-            discovery["models"][model]["logits"]["full_model"]))[:, 1])
+        model: auc(*auc_inputs(discovery, softmax(to_numpy(
+            discovery["models"][model]["logits"]["full_model"]))))
         for model in models
     }
     ranking = sorted(models, key=discovery_auc.get, reverse=True)
@@ -97,13 +98,14 @@ def analyze_target(path, target_name):
     rows = []
     for index, (method, selected) in enumerate(selections.items()):
         predictions, probabilities = evaluate_selection(validation, selected, temperatures, y)
+        auc_y, auc_score = auc_inputs(validation, probabilities)
         correct = predictions == y
         low, high = grouped_bootstrap_difference(correct, fixed_correct, groups, 101 + index)
         counts = pd.Series(selected).value_counts()
         rows.append({
             "target": target_name, "method": method, "n": len(y), "best_model_from_discovery": best,
             "uses_validation_query_labels": method == "oracle_expert",
-            "accuracy": float(accuracy_score(y, predictions)), "auc": auc(y, probabilities[:, 1]),
+            "accuracy": float(accuracy_score(y, predictions)), "auc": auc(auc_y, auc_score),
             "nll": float(log_loss(y, probabilities, labels=[0, 1])),
             "accuracy_gain_over_fixed_best": float(correct.mean() - fixed_correct.mean()),
             "episode_bootstrap_gain_ci_low": low, "episode_bootstrap_gain_ci_high": high,

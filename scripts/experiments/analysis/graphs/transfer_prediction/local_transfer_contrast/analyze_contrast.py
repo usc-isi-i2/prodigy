@@ -48,6 +48,18 @@ def per_example_ce(logits, labels, temperature=1.0):
     return -np.log(np.clip(probs[np.arange(len(labels)), labels], 1e-12, 1.0))
 
 
+def auc_inputs(record, probabilities):
+    labels = record["labels"]
+    local_y = to_numpy(labels["local_y"]).astype(int)
+    if labels["use_global"]:
+        mapping = to_numpy(labels["mapping"]).astype(int)
+        rows = np.arange(len(local_y))
+        global_y = mapping[rows, local_y]
+        positive_column = (mapping == 1).argmax(1)
+        return global_y, probabilities[rows, positive_column]
+    return local_y, probabilities[:, 1]
+
+
 def fit_temperature(logits, labels):
     result = minimize_scalar(
         lambda log_t: per_example_ce(logits, labels, np.exp(log_t)).mean(),
@@ -114,6 +126,8 @@ def core_arrays(record, b, c, temperatures):
     loss_c = per_example_ce(logits_c, y, temperatures[c])
     prob_b = softmax(logits_b / temperatures[b])
     prob_c = softmax(logits_c / temperatures[c])
+    auc_y, auc_score_b = auc_inputs(record, prob_b)
+    _, auc_score_c = auc_inputs(record, prob_c)
     return {
         "y": y, "logits_b": logits_b, "logits_c": logits_c,
         "pred_b": pred_b, "pred_c": pred_c,
@@ -121,6 +135,7 @@ def core_arrays(record, b, c, temperatures):
         "loss_b_raw": loss_b_raw, "loss_c_raw": loss_c_raw,
         "loss_b": loss_b, "loss_c": loss_c,
         "prob_b": prob_b, "prob_c": prob_c,
+        "auc_y": auc_y, "auc_score_b": auc_score_b, "auc_score_c": auc_score_c,
     }
 
 
@@ -130,8 +145,8 @@ def stream_summary(arrays):
     result = {
         "n": int(len(y)),
         "accuracy_b": float(cb.mean()), "accuracy_c": float(cc.mean()),
-        "auc_b": safe_auc(y, arrays["prob_b"][:, 1]),
-        "auc_c": safe_auc(y, arrays["prob_c"][:, 1]),
+        "auc_b": safe_auc(arrays.get("auc_y", y), arrays.get("auc_score_b", arrays["prob_b"][:, 1])),
+        "auc_c": safe_auc(arrays.get("auc_y", y), arrays.get("auc_score_c", arrays["prob_c"][:, 1])),
         "n_b_only": int(np.sum(cb & ~cc)), "n_c_only": int(np.sum(cc & ~cb)),
         "n_both_correct": int(np.sum(cb & cc)), "n_both_wrong": int(np.sum(~cb & ~cc)),
         "disagreement_rate": float(np.mean(cb != cc)),
@@ -275,11 +290,15 @@ def global_ids(frame):
 
 def routed_metrics(arrays, choose_b):
     predictions = np.where(choose_b, arrays["pred_b"], arrays["pred_c"])
-    prob1 = np.where(choose_b, arrays["prob_b"][:, 1], arrays["prob_c"][:, 1])
     selected_prob = np.where(choose_b[:, None], arrays["prob_b"], arrays["prob_c"])
+    if "auc_y" in arrays:
+        score = np.where(choose_b, arrays["auc_score_b"], arrays["auc_score_c"])
+        auc_y = arrays["auc_y"]
+    else:
+        score, auc_y = selected_prob[:, 1], arrays["y"]
     return {
         "accuracy": float(accuracy_score(arrays["y"], predictions)),
-        "auc": safe_auc(arrays["y"], prob1),
+        "auc": safe_auc(auc_y, score),
         "nll": float(log_loss(arrays["y"], selected_prob, labels=[0, 1])),
     }
 
@@ -383,7 +402,7 @@ def decoder_audit(record, b, c, full_arrays, stream):
             summary_rows.append({
                 "stream": stream, "model": model, "decoder": decoder, "n": len(y),
                 "accuracy": float(np.mean(pred == y)),
-                "auc": safe_auc(y, softmax(logits)[:, 1]),
+                "auc": safe_auc(*auc_inputs(record, softmax(logits))),
             })
             for group in ("both_correct", "b_only", "c_only", "both_wrong"):
                 mask = outcome == group
@@ -482,13 +501,14 @@ def heuristic_audit(record, b, c, arrays, stream):
             "fraction_choose_b": float(choose_b.mean()),
         })
     raw_probs = softmax(raw_logits)
+    raw_auc_y, raw_auc_score = auc_inputs(record, raw_probs)
     ci_low, ci_high = grouped_bootstrap_difference(
         raw_pred == y, arrays["correct_b"], groups, RANDOM_STATE + len(choices),
     )
     rows.append({
         "stream": stream, "method": "raw_joint_ridge_direct", "uses_target_query_outcomes": False,
         "uses_discovery_query_labels": False, "n": len(y),
-        "accuracy": float(np.mean(raw_pred == y)), "auc": safe_auc(y, raw_probs[:, 1]),
+        "accuracy": float(np.mean(raw_pred == y)), "auc": safe_auc(raw_auc_y, raw_auc_score),
         "nll": float(log_loss(y, raw_probs, labels=[0, 1])),
         "accuracy_gain_over_fixed_b": float(np.mean(raw_pred == y)) - fixed_accuracy,
         "episode_bootstrap_gain_ci_low": ci_low, "episode_bootstrap_gain_ci_high": ci_high,

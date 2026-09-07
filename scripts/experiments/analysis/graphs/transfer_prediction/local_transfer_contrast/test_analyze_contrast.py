@@ -2,12 +2,25 @@ import numpy as np
 import torch
 
 from scripts.experiments.analysis.graphs.transfer_prediction.local_transfer_contrast.analyze_contrast import (
+    auc_inputs,
     decoder_audit,
     fit_temperature,
     grouped_bootstrap_difference,
     per_example_ce,
     stream_summary,
 )
+
+
+def test_auc_inputs_tracks_global_positive_column_when_episode_order_swaps():
+    record = {"labels": {
+        "local_y": torch.tensor([0, 0, 1, 1]),
+        "mapping": torch.tensor([[0, 1], [1, 0], [1, 0], [0, 1]]),
+        "use_global": True,
+    }}
+    probabilities = np.array([[.9, .1], [.9, .1], [.2, .8], [.2, .8]])
+    labels, scores = auc_inputs(record, probabilities)
+    assert labels.tolist() == [0, 1, 0, 1]
+    assert scores.tolist() == [.1, .9, .2, .8]
 
 
 def test_temperature_reduces_discovery_nll():
@@ -44,7 +57,9 @@ def test_decoder_audit_conditions_on_masked_labels():
     y = np.array([0, 1, 0, 1])
     logits_b = torch.tensor([[2., 0.], [0., 2.], [2., 0.], [2., 0.]])
     logits_c = torch.tensor([[2., 0.], [2., 0.], [0., 2.], [0., 2.]])
-    record = {"models": {}}
+    record = {"models": {}, "labels": {
+        "local_y": torch.tensor(y), "mapping": torch.tensor([[0, 1]] * len(y)), "use_global": False,
+    }}
     for name, logits in (("b", logits_b), ("c", logits_c)):
         record["models"][name] = {"logits": {
             "full_model": logits, "raw_joint/ridge": logits_b,
