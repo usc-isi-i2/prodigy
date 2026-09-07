@@ -11,3 +11,9 @@ Tucker experiment output.
 
 The health-predictiveness tables were produced at revision `979ef545` from the
 same all-source exports.
+
+The `*_all_seeds.csv`, `*_replication.csv`, and `support_only_*.csv` tables were
+produced at revision `9df49785` from 270 fixed-input replay cells (nine sources ×
+five targets × three checkpoint seeds × two episode streams). Raw query records,
+support embeddings, cached subgraphs, and logits remain in the ignored Tucker
+runtime directory `log/local_transfer_contrast/seed_replication/`.

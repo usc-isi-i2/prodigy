@@ -78,12 +78,14 @@ For each, one source encoder flips the correct raw decision while the other
 preserves it. Hydrated text and identifiers remain in ignored Tucker output and
 are not committed.
 
-## Framework seed: support-anchored transfer health
+## Framework: TRACE
 
-The localization supplies an actionable signal. At inference time, fit a cheap
-readout from the episode support set at the raw input and optionally at each
-intermediate layer. Treat agreement with the raw support-induced decision and
-stability along the readout trajectory as a transfer-health measurement.
+The localization supplies an actionable signal. We call the resulting framework
+**TRACE: Transfer Readout Agreement and Competence Estimation**. At inference
+time, TRACE fits cheap support-set readouts at intermediate layers and asks two
+questions: can the representation recover held-out supports, and does the final
+model preserve its support-induced query decision? The first measures competence;
+the second measures source-target stability.
 
 A label-free two-expert rule already works: when the fixed experts disagree,
 choose the one that agrees with the raw support-fitted readout; otherwise retain
@@ -130,12 +132,18 @@ excellent on Facebook but harms COVID, Election, and TwiBot. The transferable
 principle is therefore **support-conditioned consistency at an appropriate
 intermediate depth**, not privileged status for raw features.
 
-## Transfer health predicts which sources work
+## Transfer health predicts which sources work across checkpoint seeds
 
-U1 agreement is useful beyond routing. Across the 45 singleton-source × target
-cells, target-centered U1 agreement strongly correlates with transfer on the
-fresh stream: Spearman rho is .740 for accuracy (p=6.1e-9) and .756 for AUC
-(p=2.0e-9). The relationship appears independently on every substantive target:
+We reran all nine singleton sources on all five targets for all three independently
+trained final-core checkpoint seeds. Target episodes and sampled subgraph tensors
+are fixed exactly across checkpoint seeds. Across the resulting 135 fresh
+source-target-seed cells, target-and-seed-centered U1 agreement strongly correlates
+with transfer: Spearman rho is .710 for accuracy (p=5.5e-22) and .698 for AUC
+(p=5.0e-21). The discovery stream independently gives rho=.738/.722. Thus the
+relationship is not a single-checkpoint artifact.
+
+On the seed-0 slice, the relationship appears independently on every substantive
+target:
 
 | Target | rho with accuracy | rho with AUC |
 |---|---:|---:|
@@ -150,27 +158,70 @@ chance, so agreement can reflect stable but uninformative computation. Transfer
 health should therefore be combined with minimum support-readout competence,
 not interpreted as quality in isolation.
 
-As a global label-free source selector, choosing the model with highest fresh
+As a global query-label-free source selector, choosing the model with highest fresh
 U1 agreement improves accuracy over discovery-AUC selection on COVID, Election,
 and Facebook, ties it on TwiBot, and fails on the chance-level suspended target.
 Across the four substantive targets the mean gain is +.007 accuracy; mean AUC is
 essentially unchanged because COVID accuracy improves while its AUC falls.
 Health is already a strong ranking signal, but not yet a complete source selector.
 
-This also sharpens the descriptive UKR/COVID observation. Across targets, the
-Ukraine checkpoint has the highest mean accuracy/AUC and high U1 preservation
-(.868); COVID has the highest mean preservation (.879) and is also strong. The
-Facebook-source checkpoint has both low preservation (.669) and weak transfer.
+This also sharpens the descriptive UKR/COVID observation. Averaged over target
+and checkpoint seed, the Ukraine source has the highest fresh mean accuracy/AUC
+(.730/.764) and the highest mean U1 preservation (.877); COVID is also strong
+(.716/.754, preservation .875). The Facebook-source checkpoints have both low
+preservation (.683) and weak transfer (.632/.669).
 Graph size or collection window may help create these weights, but neither is
 the proximal explanation of their predictions: the measurable model-target
 interaction is whether source training preserves a support-decodable decision
 through final inference.
 
+## Query-label-free routing and an honest scope test
+
+The initial U1 router uses a target discovery split to rank experts before applying
+the label-free health gate. TRACE removes that dependency:
+
+1. For each expert and episode, compute leave-one-support-out prototype accuracy
+   at U1. This uses only the 20 labeled supports already supplied to the model.
+2. For each query, retain experts whose full prediction agrees with their
+   support-fitted U1 prediction.
+3. Among retained experts, select the one with the highest episode support
+   competence; break ties by mean unlabeled target agreement.
+4. Abstain on the target if no expert's mean support competence exceeds .55,
+   a fixed chance+.05 threshold.
+
+The threshold covers COVID-political, Election-2020, Facebook page-reference,
+and TwiBot-20 for every checkpoint seed, while rejecting Ukraine/Russia suspended
+for every seed. Covered-target competence is at least .629; suspended competence
+is .494--.501. This precisely detects the benchmark on which layer agreement is
+stable but uninformative.
+
+Against the stronger baseline that selects one fixed expert using labeled target
+discovery AUC, query-label-free TRACE improves covered-target macro accuracy from
+.792 to .812 (+.021) and macro AUC from .834 to .835. Accuracy improves in 10/12
+target-seed cells and never degrades; Election is tied in two seeds. The effect is
+largest and fully seed-consistent on the three non-ceiling targets:
+
+| Target | Fixed → TRACE accuracy | Mean gain | Seed range |
+|---|---:|---:|---:|
+| COVID-political | .900 → .921 | +.021 | +.014 to +.027 |
+| Election-2020 | .975 → .977 | +.001 | .000 to +.004 |
+| Facebook page-reference | .683 → .726 | +.043 | +.025 to +.059 |
+| TwiBot-20 | .608 → .626 | +.018 | +.002 to +.037 |
+
+For the rejected suspended target, the forced router would lose .042 accuracy on
+average. The abstention rule therefore is part of the result, not cosmetic
+filtering: support competence identifies when the model family lacks transferable
+signal and prevents TRACE from presenting a meaningless routing claim.
+
 ## Paper-level interpretation
 
 The working thesis is **pretraining transfer is governed by preservation of
-target support geometry, not global graph similarity alone**. This gives a
-single interpretation of earlier observations:
+target support geometry, not global graph similarity alone**. This follows the
+productive pattern used by data-active graph pretraining work: turn the failure
+of naive scaling into a measurable model-data interaction and then use that
+measurement to control computation. Here the interaction is representation
+survival rather than graph size or predictive uncertainty. It gives a single
+interpretation of earlier observations:
 
 - asymmetric transfer: source training deforms different target directions;
 - more graphs are not always better: additional updates can destroy useful
@@ -180,23 +231,25 @@ single interpretation of earlier observations:
 - adding another graph can improve a target: it can restore or preserve a target
   decision direction absent from the original source.
 
-The matched-example mechanism is currently established on one target/source
-pair, while the routing effect replicates across nine sources and five targets.
-The next decisive tests are checkpoint-seed replication and mixture-schedule
-trajectories. If health deteriorates under sequential merging and is preserved
-by interleaving, the method contribution becomes a support-conditioned adaptive
-GFM that routes, fuses, or exits at the healthiest representation depth—and the
-same measurement explains the earlier training-order result.
+The matched-example mechanism is established on one target/source pair, while
+health predictiveness and routing now replicate across nine sources, five targets,
+and three checkpoint seeds. The next decisive test is the mixture-schedule
+trajectory: if health deteriorates under sequential merging and is preserved by
+interleaving, TRACE connects the adaptive inference contribution directly to the
+earlier training-order finding and motivates a health-preserving pretraining
+regularizer.
 
 ## Validity boundaries
 
 - Episode-bootstrap intervals quantify paired variation over the 128 sampled
   episodes; they are not checkpoint-seed confidence intervals.
-- The mechanistic source pair was chosen for a large aggregate gap. The routing
-  result now covers all nine available singleton sources but only seed-0 weights.
+- The mechanistic source pair was chosen for a large aggregate gap. Predictiveness
+  and routing cover all nine singleton sources and three checkpoint seeds, but the
+  layer-by-layer matched-example localization is still one target/source contrast.
 - This localizes where errors arise but does not yet identify which source
   training examples or gradients cause the deformation.
 - Agreement is not sufficient when the intermediate readout is itself at chance;
-  the health score needs a competence term on low-signal targets.
+  TRACE's competence threshold abstains in this setting. The .55 threshold is
+  principled relative to binary chance but has not yet been varied.
 - Facebook is unusually favorable to raw features. Cross-target evaluation is
   why raw anchoring is not the general method; U1 health is the cross-target rule.
