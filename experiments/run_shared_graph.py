@@ -29,7 +29,8 @@ neighbor_sampling_source_sequence neighbor_sampling_source_sequence_steps
 neighbor_sampling_episode_source_weighting neighbor_sampling_cross_source_prob
 neighbor_sampling_batch_source_mode pretrained_model_run resume_training_checkpoint
 source_gradient_diagnostics_every source_gradient_diagnostics_max_sources
-neighbor_matching_member_policy neighbor_matching_member_seed train_episode_audit'''.split())
+neighbor_matching_member_policy neighbor_matching_member_seed train_episode_audit
+campaign_flags campaign_protocol campaign_eval_interval campaign_min_delta campaign_val_per_source campaign_holdout'''.split())
 
 
 def validate_configs(params):
@@ -186,6 +187,9 @@ def train_one(dataset, params, job_dir, threads):
                 raise RuntimeError('Trainer did not receive shared graph storage')
             seed_everything(params)
             torch.autograd.set_detect_anomaly(params['detect_anomaly'])
+            if params.get('campaign_protocol'):
+                from experiments.nm_campaign import prepare_model_dataset
+                dataset = prepare_model_dataset(dataset, params)
             trainer = TrainerFS(dataset, params)
             first_timed = None
             last_timed = None

@@ -17,7 +17,7 @@ Claude should read this via `CLAUDE.md`; Codex/GPT reads this file directly.
 
 - Reaching Tucker requires the USC VPN active, or being on USC wifi. If ssh to Tucker stalls, first check whether VPN is connected.
 - Use Tucker for training, eval, graph construction, embedding generation, and any GPU-heavy workflow.
-- We currently own only GPUs 2 and 3 on Tucker. Use GPUs 2 and 3 for our jobs, and leave GPUs 0-1 and 4-7 untouched.
+- We currently own GPUs 0, 1, 2, and 3 on Tucker. Use GPUs 0-3 for our jobs, and leave GPUs 4-7 untouched.
 - Long jobs run in tmux. The user generally kicks off big or long-running jobs.
 - Reading on Tucker is fine: inspect files, list dirs, check logs, and load graphs read-only.
 
@@ -83,7 +83,7 @@ code cannot be mutated by someone else's `git pull`:
 - Anomaly debugging is off by default; `--detect_anomaly True` enables it. For one
   model, 8–16 loader workers is a measured starting point. For many models, divide
   a total worker budget instead of multiplying that count by every model.
-- Only GPUs 2 and 3 are owned. Long runs need their own worktree and tmux session;
+- Only GPUs 0, 1, 2 and 3 are owned. Long runs need their own worktree and tmux session;
   existing cluster execution-authorization rules still apply.
 - Smoke runs are explicitly labelled and are not completed experiment results.
   Exact training-state resume still requires zero workers.

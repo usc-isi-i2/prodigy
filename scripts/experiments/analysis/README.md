@@ -28,6 +28,8 @@ Setup and launch files remain in `../setup/<name>/`.
 
 ### Ablations by model
 
+- Source-held-out NM intervention campaign: [`nm_interventions_overnight` results](transfer/ablations/prodigy_nm/nm_interventions_overnight/RESULTS.md) — 144 trained models and 1,296 audited NM cells, including the frozen recipe repetitions.
+
 - Context hops: [`nm_ladder_nhop2`](transfer/ablations/prodigy_nm/context_depth/nm_ladder_nhop2/)
 - Per-source exposure: [`nm_ladder_fixed_exposure_nhop2`](transfer/ablations/prodigy_nm/source_exposure/nm_ladder_fixed_exposure_nhop2/)
 - Labeled-source diversity: [`labeled_mixture_diversity_cls500`](transfer/ablations/prodigy_nm/source_diversity/labeled_mixture_diversity_cls500/)
