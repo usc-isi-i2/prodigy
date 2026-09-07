@@ -254,6 +254,9 @@ def parse_args():
     p.add_argument("--reference-tsv", default="")
     p.add_argument("--auc-parity-atol", type=float, default=1e-6,
                    help="Explicit CPU/GPU AUC tie-order tolerance; accuracy/F1 remain at 1e-6.")
+    p.add_argument("--trace-parity-atol", type=float, default=0.0,
+                   help="Tolerance for traced versus plain forward logits; keep 0 on CPU, "
+                        "allow a small explicit tolerance for nondeterministic CUDA scatter.")
     p.add_argument("--variants", default="baseline")
     p.add_argument("--device", default="3")
     p.add_argument("--batch-count", type=int, default=32)
@@ -286,6 +289,8 @@ def main():
         raise ValueError("batch count must be 1..32; 32 is the full 128-episode protocol")
     if not 0 <= args.auc_parity_atol <= 1e-5:
         raise ValueError("AUC parity tolerance must be in [0, 1e-5]")
+    if not 0 <= args.trace_parity_atol <= 1e-4:
+        raise ValueError("trace parity tolerance must be in [0, 1e-4]")
     print(json.dumps({"models": [m.model_id for m in models], "targets": names,
                       "variants": variants, "episodes": args.batch_count * 4}), flush=True)
     if args.dry_run:
@@ -363,7 +368,9 @@ def main():
                             with trace_stages(trainer.model, batch[0]) as traces:
                                 yt, yp, _ = trainer.model(*batch)
                             if index == 0:
-                                torch.testing.assert_close(plain, yp, rtol=0, atol=0)
+                                torch.testing.assert_close(
+                                    plain, yp, rtol=0, atol=args.trace_parity_atol,
+                                )
                             predictions = {"full_model": yp}
                             if variant == "baseline":
                                 for stage, x in (raw_embeddings | traces).items():
