@@ -223,6 +223,25 @@ def prediction_features(arrays):
     ])
 
 
+def readout_features(record):
+    columns = []
+    for model in sorted(record["models"]):
+        for decoder in sorted(record["models"][model]["logits"]):
+            logits = to_numpy(record["models"][model]["logits"][decoder]).astype(np.float64)
+            difference = logits[:, 1] - logits[:, 0]
+            columns.extend((difference, np.abs(difference)))
+    return np.column_stack(columns)
+
+
+def task_features(record, width):
+    mapping = to_numpy(record["labels"]["mapping"]).astype(int)
+    result = np.zeros((len(mapping), 2 * width), dtype=np.float64)
+    rows = np.arange(len(mapping))
+    result[rows, mapping[:, 0]] = 1.0
+    result[rows, width + mapping[:, 1]] = 1.0
+    return result
+
+
 def route_features(record, arrays, view):
     if view == "metadata":
         return metadata_features(record)[0]
@@ -230,6 +249,8 @@ def route_features(record, arrays, view):
         return to_numpy(record["input"]["embeddings"][view]).astype(np.float64)
     if view == "prediction_state":
         return prediction_features(arrays)
+    if view == "readout_state":
+        return readout_features(record)
     raise KeyError(view)
 
 
@@ -263,8 +284,17 @@ def routed_metrics(arrays, choose_b):
 
 def evaluate_router(view, discovery_record, validation_record, discovery_arrays, validation_arrays,
                     discovery_frame, validation_frame):
-    x_train = route_features(discovery_record, discovery_arrays, view)
-    x_test = route_features(validation_record, validation_arrays, view)
+    if view in ("task_identity", "task_and_readout_state"):
+        width = int(max(to_numpy(discovery_record["labels"]["mapping"]).max(),
+                        to_numpy(validation_record["labels"]["mapping"]).max()) + 1)
+        x_train = task_features(discovery_record, width)
+        x_test = task_features(validation_record, width)
+        if view == "task_and_readout_state":
+            x_train = np.column_stack((x_train, readout_features(discovery_record)))
+            x_test = np.column_stack((x_test, readout_features(validation_record)))
+    else:
+        x_train = route_features(discovery_record, discovery_arrays, view)
+        x_test = route_features(validation_record, validation_arrays, view)
     disagree_train = discovery_arrays["correct_b"] != discovery_arrays["correct_c"]
     disagree_test = validation_arrays["correct_b"] != validation_arrays["correct_c"]
     winner_train = discovery_arrays["correct_b"][disagree_train].astype(int)
@@ -434,7 +464,9 @@ def main():
     pd.DataFrame(cluster_records).to_csv(args.output / "cluster_summary.csv", index=False)
 
     router_records = []
-    for view in ("metadata",) + RAW_VIEWS + ("prediction_state",):
+    for view in ("metadata",) + RAW_VIEWS + (
+        "prediction_state", "task_identity", "readout_state", "task_and_readout_state",
+    ):
         router_records.extend(evaluate_router(view, discovery, validation, arrays["original"], arrays["fresh"],
                                               frames["original"], frames["fresh"]))
     pd.DataFrame(router_records).to_csv(args.output / "router_results.csv", index=False)
