@@ -602,6 +602,11 @@ def get_params(argv=None):
     )
 
     args.add_argument("-n_hop", "--n_hop", default=1, type=int)  # number of hops for subgraph extraction
+    args.add_argument("--neighbor_sampling_method", default="uniform", choices=("uniform", "pinsage"))
+    args.add_argument("--pinsage_num_walks", default=64, type=int)
+    args.add_argument("--pinsage_walk_length", default=2, type=int)
+    args.add_argument("--pinsage_restart_prob", default=0.0, type=float)
+    args.add_argument("--pinsage_topk", default=100, type=int)
     args.add_argument(
         "--neighbor_sampling_hop_sizes",
         default="",

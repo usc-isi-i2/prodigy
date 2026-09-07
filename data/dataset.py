@@ -21,7 +21,12 @@ class SubgraphDataset(Dataset):
         assert not self.edge_attrs or not bidirectional
 
     def get_subgraph(self, node_idx): # refactor as __item__, add supernode in here
-        node_list, edge_index, edge_id = self.neighbor_sampler.sample_node(node_idx)
+        sampled = self.neighbor_sampler.sample_node(node_idx)
+        pinsage_weight = None
+        if len(sampled) == 4:
+            node_list, edge_index, edge_id, pinsage_weight = sampled
+        else:
+            node_list, edge_index, edge_id = sampled
         data = {}
         data['center_node_idx'] = node_idx
         # Preserve the full-graph ids of the nodes the sampler actually returned.
@@ -35,8 +40,11 @@ class SubgraphDataset(Dataset):
         data['num_nodes'] = len(node_list)
         for key in self.node_attrs:
             data[key] = self.graph[key][node_list]
-        for key in self.edge_attrs:
-            data[key] = self.graph[key][edge_id]
+        if pinsage_weight is None:
+            for key in self.edge_attrs:
+                data[key] = self.graph[key][edge_id]
+        else:
+            data['pinsage_edge_weight'] = pinsage_weight
         if self.bidirectional:
             num_edges = edge_index.size(1)
             data['edge_index'] = torch.cat([edge_index, edge_index.flip(0)], dim=1)

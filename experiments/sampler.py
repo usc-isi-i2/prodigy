@@ -97,6 +97,11 @@ class NeighborSampler:
         limit: int = 2000,
         hop_sizes: Optional[List[int]] = None,
         walk_hops: Optional[int] = None,
+        method: str = "uniform",
+        pinsage_num_walks: int = 64,
+        pinsage_walk_length: int = 2,
+        pinsage_restart_prob: float = 0.0,
+        pinsage_topk: int = 100,
     ):
         self.num_hops = num_hops
         self.size = size
@@ -105,10 +110,23 @@ class NeighborSampler:
         self.walk_hops = num_hops if walk_hops is None else int(walk_hops)
         if self.walk_hops <= 0:
             raise ValueError(f"walk_hops must be positive, got {self.walk_hops}")
+        self.method = str(method).lower()
+        if self.method not in {"uniform", "pinsage"}:
+            raise ValueError(f"Unknown neighbor sampling method: {method}")
+        self.pinsage_num_walks = int(pinsage_num_walks)
+        self.pinsage_walk_length = int(pinsage_walk_length)
+        self.pinsage_restart_prob = float(pinsage_restart_prob)
+        self.pinsage_topk = int(pinsage_topk)
+        if self.pinsage_num_walks <= 0 or self.pinsage_walk_length <= 0 or self.pinsage_topk <= 0:
+            raise ValueError("PinSAGE walk counts, length, and top-k must be positive")
+        if not 0.0 <= self.pinsage_restart_prob < 1.0:
+            raise ValueError("pinsage_restart_prob must be in [0, 1)")
         self.whole_adj = preprocess(graph.edge_index, graph.num_nodes)
         self.whole_adj.share_memory_()
 
     def sample_node(self, node_idx):
+        if getattr(self, "method", "uniform") == "pinsage":
+            return self.sample_pinsage_node(node_idx)
         return sample_k_hop_subgraph(
             node_idx,
             num_hops=self.num_hops,
@@ -117,6 +135,66 @@ class NeighborSampler:
             limit=self.limit,
             hop_sizes=self.hop_sizes,
         )
+
+    def sample_pinsage_node(self, node_idx):
+        """Return a one-layer PinSAGE importance neighborhood.
+
+        Random-walk visit counts approximate target-personalized PageRank.  The
+        selected distinct nodes are connected to the target by virtual weighted
+        edges; walks themselves never become model tokens.  This matches the
+        importance-pooling operation in PinSAGE and is intentionally separate
+        from the random walk used to form NM positive pairs.
+        """
+        if isinstance(node_idx, Tensor):
+            roots = node_idx.reshape(-1).long()
+        elif isinstance(node_idx, (list, tuple)):
+            roots = torch.tensor(node_idx, dtype=torch.long)
+        else:
+            roots = torch.tensor([int(node_idx)], dtype=torch.long)
+        if roots.numel() != 1:
+            raise ValueError("PinSAGE subgraph sampling currently requires one center node")
+        root = roots[0]
+        rowptr, col, _ = self.whole_adj.csr()
+        walkers = root.repeat(self.pinsage_num_walks)
+        visits = []
+        for _ in range(self.pinsage_walk_length):
+            if self.pinsage_restart_prob:
+                restart = torch.rand(walkers.numel()) < self.pinsage_restart_prob
+                walkers = torch.where(restart, root, walkers)
+            starts = rowptr[walkers]
+            ends = rowptr[walkers + 1]
+            live = starts < ends
+            if not live.any():
+                break
+            walkers = walkers[live]
+            starts = starts[live]
+            ends = ends[live]
+            offsets = (torch.rand(walkers.numel()) * (ends - starts)).long()
+            walkers = col[starts + offsets]
+            visits.append(walkers)
+        if not visits:
+            empty_edges = torch.empty((2, 0), dtype=torch.long)
+            return root.reshape(1), empty_edges, torch.empty(0, dtype=torch.long), torch.empty(0)
+
+        visited = torch.cat(visits)
+        visited = visited[visited != root]
+        if visited.numel() == 0:
+            empty_edges = torch.empty((2, 0), dtype=torch.long)
+            return root.reshape(1), empty_edges, torch.empty(0, dtype=torch.long), torch.empty(0)
+        nodes, counts = torch.unique(visited, return_counts=True)
+        # Stable deterministic tie-break by global node id after descending count.
+        order = sorted(range(nodes.numel()), key=lambda k: (-int(counts[k]), int(nodes[k])))
+        keep = torch.tensor(order[: min(self.pinsage_topk, self.limit - 1)], dtype=torch.long)
+        nodes, counts = nodes[keep], counts[keep].float()
+        weights = counts / counts.sum()
+        node_ids = torch.cat([root.reshape(1), nodes])
+        edge_index = torch.stack(
+            [torch.arange(1, node_ids.numel(), dtype=torch.long),
+             torch.zeros(node_ids.numel() - 1, dtype=torch.long)]
+        )
+        # Virtual PPR edges have no corresponding original-graph edge id.
+        edge_ids = torch.full((edge_index.size(1),), -1, dtype=torch.long)
+        return node_ids, edge_index, edge_ids, weights
     
     def sample_edge(
         self,
@@ -235,6 +313,11 @@ def sampler_kwargs_from_config(kwargs, num_hops: int):
         ),
         "limit": limit,
         "walk_hops": walk_hops or None,
+        "method": kwargs.get("neighbor_sampling_method", "uniform"),
+        "pinsage_num_walks": int(kwargs.get("pinsage_num_walks", 64)),
+        "pinsage_walk_length": int(kwargs.get("pinsage_walk_length", 2)),
+        "pinsage_restart_prob": float(kwargs.get("pinsage_restart_prob", 0.0)),
+        "pinsage_topk": int(kwargs.get("pinsage_topk", 100)),
     }
 
 

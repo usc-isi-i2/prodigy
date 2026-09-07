@@ -27,7 +27,8 @@ class MultiLayerGNN(torch.nn.Module, BackgroundGNNLayer):
         self.reset_mlp_m = torch.nn.Linear((3 if multi_readout else 1) * emb_dim, emb_dim)
         
 
-    def forward(self, x_orig, x, edge_index, edge_attr, supernode_edge_index=None, center_node_index = None, batch = None):
+    def forward(self, x_orig, x, edge_index, edge_attr, supernode_edge_index=None, center_node_index = None, batch = None,
+                edge_weight=None):
         '''
         If supernode_edge_index is not None, it will also pass messages on the supernode edges.
         :param x:
@@ -48,7 +49,10 @@ class MultiLayerGNN(torch.nn.Module, BackgroundGNNLayer):
                 x = self.reset_mlp(torch.cat([x_orig, condition], 1))
                 x = self.act(x)
 
-            x = module(x=x, edge_index=edge_index, edge_attr=edge_attr)
+            if module.__class__.__name__ == "PinSAGEConv":
+                x = module(x=x, edge_index=edge_index, edge_attr=edge_attr, edge_weight=edge_weight)
+            else:
+                x = module(x=x, edge_index=edge_index, edge_attr=edge_attr)
             x = self.act(x)
 
             # if orig_x.shape[1] == x.shape[1]:
@@ -96,4 +100,3 @@ class MultiLayerBipartiteGNN(torch.nn.Module):
             if self.transpose:
                 curr_transpose = not curr_transpose
         return x
-

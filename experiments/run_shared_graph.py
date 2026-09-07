@@ -25,6 +25,8 @@ loader_start_method epochs dataset_len_cap val_len_cap test_len_cap eval_step
 checkpoint_step checkpoint_steps state_dir log_dir tags print_step n_way n_shots
 n_query n_way_upper n_shots_upper n_query_upper batch_size learning_rate weight_decay
 emb_dim layers gnn_type n_layer dropout neighbor_sampling_source_subset
+neighbor_sampling_method pinsage_num_walks pinsage_walk_length
+pinsage_restart_prob pinsage_topk
 neighbor_sampling_source_sequence neighbor_sampling_source_sequence_steps
 neighbor_sampling_episode_source_weighting neighbor_sampling_cross_source_prob
 neighbor_sampling_batch_source_mode pretrained_model_run resume_training_checkpoint
@@ -256,7 +258,7 @@ def main():
     own, overrides = argv[:split], argv[split+1:]
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--configs', nargs='+', required=True)
-    parser.add_argument('--gpus', nargs='+', type=int, choices=(2, 3), default=[2])
+    parser.add_argument('--gpus', nargs='+', type=int, choices=(0, 1, 2, 3), default=[2])
     parser.add_argument('--models-per-gpu', type=int, default=2)
     parser.add_argument('--worker-budget', type=int, default=32)
     parser.add_argument('--workers-per-model', type=int)
