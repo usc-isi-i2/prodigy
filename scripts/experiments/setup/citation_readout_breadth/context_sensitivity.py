@@ -62,6 +62,10 @@ def main():
     try:
         rows, receipts = [], []
         for target, root in (("cora", args.cora), ("covid_political", args.social)):
+            # TrainerFS opens an offline W&B run; targets have distinct configs.
+            # Close only this process's prior run before constructing the next.
+            import wandb
+            wandb.finish()
             cache = json.loads((root / "cache.json").read_text())
             if target == "cora":
                 params = json.loads((root / "effective_params.json").read_text())
