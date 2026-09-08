@@ -14,6 +14,7 @@ CLS_DIR="${RUN_ROOT}/classification_evaluation"
 GPUS_TEXT="${GPUS:-0 1 2 3}"
 MODELS_PER_GPU="${MODELS_PER_GPU:-5}"
 WORKER_BUDGET="${WORKER_BUDGET:-80}"
+CLS_WORKERS_PER_GPU="${CLS_WORKERS_PER_GPU:-2}"
 SEEDS_TEXT="${SEEDS:-0 1 2}"
 REFERENCE_RESULTS="${REFERENCE_RESULTS:-${REPO_ROOT}/scripts/experiments/analysis/transfer/matrices/cross_model/final_core/data/classification_ladder/classification_long.tsv}"
 PHASE="${PHASE:-all}"
@@ -66,12 +67,15 @@ model_list="$CLS_DIR/models.tsv"
   --run-dir "$TRAIN_DIR" --output "$model_list" --exclude-wide
 pids=()
 read -r -a gpu_ids <<< "$GPUS_TEXT"
-worker_count="${#gpu_ids[@]}"
-(( worker_count > 0 )) || { echo "no evaluation GPUs supplied" >&2; exit 2; }
+gpu_count="${#gpu_ids[@]}"
+(( gpu_count > 0 )) || { echo "no evaluation GPUs supplied" >&2; exit 2; }
+(( CLS_WORKERS_PER_GPU > 0 )) || { echo "CLS_WORKERS_PER_GPU must be positive" >&2; exit 2; }
+worker_count=$((gpu_count * CLS_WORKERS_PER_GPU))
 for worker in $(seq 0 $((worker_count - 1))); do
   result="$CLS_DIR/results/worker_${worker}.jsonl"
   queue_log="$CLS_DIR/queue/worker_${worker}.log"
-  CUDA_VISIBLE_DEVICES="${gpu_ids[$worker]}" "${CONDA_PREFIX}/bin/python" -u \
+  physical_gpu="${gpu_ids[$((worker % gpu_count))]}"
+  CUDA_VISIBLE_DEVICES="$physical_gpu" "${CONDA_PREFIX}/bin/python" -u \
     -m scripts.experiments.setup.icl_arch_matrix.evaluate_prodigy \
     --config scripts/experiments/setup/final_core/training.yaml \
     --state-root "$CLS_DIR/unused_managed_state" \
