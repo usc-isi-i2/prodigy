@@ -17,8 +17,10 @@ def classify(d):
     out = np.full(len(d), "native_correct", dtype=object)
     out[error & d.encoded_correct] = "prem_top1_final_loss"
     remain = error & ~d.encoded_correct
-    raw = d.full_mean_strict_win.fillna(False).astype(bool)
-    overlap = d.node_jaccard_strict_win.fillna(False).astype(bool)
+    raw = (d.full_mean_all_valid.astype(bool) &
+           d.full_mean_strict_win.fillna(False).astype(bool))
+    overlap = (d.node_jaccard_all_valid.astype(bool) &
+               d.node_jaccard_strict_win.fillna(False).astype(bool))
     out[remain & raw & overlap] = "prem_loss_raw_and_overlap_signal"
     out[remain & ~raw & overlap] = "prem_loss_overlap_only_signal"
     out[remain & raw & ~overlap] = "prem_loss_raw_only_signal"
@@ -67,8 +69,10 @@ def main():
     transitions = (d.groupby(["encoded_correct", "native_correct"]).size()
         .rename("count").reset_index())
     transitions["fraction"] = transitions["count"]/len(d)
-    overlap = d.node_jaccard_strict_win.fillna(False).astype(bool)
-    raw = d.full_mean_strict_win.fillna(False).astype(bool)
+    overlap = (d.node_jaccard_all_valid.astype(bool) &
+               d.node_jaccard_strict_win.fillna(False).astype(bool))
+    raw = (d.full_mean_all_valid.astype(bool) &
+           d.full_mean_strict_win.fillna(False).astype(bool))
     signal = pd.DataFrame({
         "population": ["all", "native_errors"],
         "n": [len(d), len(errors)],
@@ -83,7 +87,7 @@ def main():
         "schema": 1, "model": a.model, "rows": len(d), "errors": len(errors),
         "accuracy": float(d.native_correct.mean()), "distinct_queries": int(d["query"].nunique()),
         "distinct_error_queries": int(errors["query"].nunique()),
-        "taxonomy": "Mutually exclusive descriptive hierarchy: pre-M top1 lost by final decision; otherwise pre-M misses split by strict raw-full-mean and sampled-node-Jaccard true-class wins.",
+        "taxonomy": "Mutually exclusive descriptive hierarchy: pre-M top1 lost by final decision; otherwise pre-M misses split by strict raw-full-mean and sampled-node-Jaccard true-class wins. A raw win requires all 30 class scores to be defined.",
         "categories_among_errors": counts(errors),
         "node_weighted_categories_among_errors": node_weighted,
         "distinct_query_coverage": distinct,
