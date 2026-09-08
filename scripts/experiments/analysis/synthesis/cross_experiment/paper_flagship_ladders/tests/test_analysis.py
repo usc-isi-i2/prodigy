@@ -14,6 +14,7 @@ from scripts.experiments.analysis.synthesis.cross_experiment.paper_flagship_ladd
     scientific_decision,
     seed_summary,
     target_diagnostics,
+    validate_cross_task_models,
     validate_grid,
 )
 
@@ -149,6 +150,31 @@ def test_source_set_must_match_registered_rung():
             CAPACITY_ARMS,
             expected_episodes=512,
         )
+
+
+def test_cross_task_model_state_must_match():
+    rows = []
+    for arm in ARMS:
+        for rung in RUNGS:
+            for seed in SEEDS:
+                rows.append(
+                    {
+                        "model_id": f"nmi_{arm}_r{rung}_s{seed}",
+                        "checkpoint_sha256": "a" * 64,
+                        "checkpoint_step": 2000,
+                        "training_revision": "deadbeef",
+                        "sources": ",".join(SOURCE_ORDER[:rung]),
+                    }
+                )
+    nm = pd.DataFrame(rows)
+    cls = pd.DataFrame(rows)
+    paired = validate_cross_task_models(nm, cls)
+    assert len(paired) == len(ARMS) * len(RUNGS) * len(SEEDS)
+
+    cls = cls.copy()
+    cls.loc[cls.model_id.eq("nmi_objective_r8_s2"), "checkpoint_sha256"] = "b" * 64
+    with pytest.raises(ValueError, match="cross-task checkpoint_sha256 mismatch"):
+        validate_cross_task_models(nm, cls)
 
 
 def complete_per_seed(winner="baseline"):

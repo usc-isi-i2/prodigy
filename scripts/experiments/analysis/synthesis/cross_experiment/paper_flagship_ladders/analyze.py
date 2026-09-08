@@ -193,6 +193,58 @@ def validate_grid(
         )
 
 
+def validate_cross_task_models(nm: pd.DataFrame, cls: pd.DataFrame) -> pd.DataFrame:
+    """Require NM and classification to evaluate the same frozen model states."""
+    fields = (
+        "checkpoint_sha256", "checkpoint_step", "training_revision", "sources"
+    )
+
+    def one_row_per_model(frame: pd.DataFrame, task: str) -> pd.DataFrame:
+        for field in fields:
+            drift = frame.groupby("model_id")[field].nunique()
+            if not (drift == 1).all():
+                raise ValueError(
+                    f"{task} per-model {field} drift: "
+                    f"{drift[drift != 1].head(10).to_dict()}"
+                )
+        result = frame[["model_id", *fields]].drop_duplicates("model_id").copy()
+        result["sources"] = result.sources.map(lambda value: ",".join(source_tuple(value)))
+        return result
+
+    nm_models = one_row_per_model(nm, "NM")
+    cls_models = one_row_per_model(cls, "CLS")
+    expected_models = len(ARMS) * len(RUNGS) * len(SEEDS)
+    if len(nm_models) != expected_models or len(cls_models) != expected_models:
+        raise ValueError(
+            "cross-task physical-model coverage mismatch: "
+            f"NM={len(nm_models)} CLS={len(cls_models)} expected={expected_models}"
+        )
+    paired = nm_models.merge(
+        cls_models,
+        on="model_id",
+        suffixes=("_nm", "_cls"),
+        validate="one_to_one",
+    )
+    if len(paired) != expected_models:
+        missing_nm = sorted(set(cls_models.model_id) - set(nm_models.model_id))
+        missing_cls = sorted(set(nm_models.model_id) - set(cls_models.model_id))
+        raise ValueError(
+            f"cross-task model-id mismatch: missing_nm={missing_nm[:10]} "
+            f"missing_cls={missing_cls[:10]}"
+        )
+    for field in fields:
+        mismatch = paired[f"{field}_nm"].astype(str).ne(
+            paired[f"{field}_cls"].astype(str)
+        )
+        if mismatch.any():
+            bad = paired.loc[
+                mismatch,
+                ["model_id", f"{field}_nm", f"{field}_cls"],
+            ].head(10).to_dict("records")
+            raise ValueError(f"cross-task {field} mismatch: {bad}")
+    return paired
+
+
 def per_seed_metrics(nm: pd.DataFrame, cls: pd.DataFrame) -> pd.DataFrame:
     rows = []
     for (arm, rung, seed), group in nm.groupby(["arm", "rung", "training_seed"]):
@@ -602,6 +654,7 @@ def main() -> None:
         cls = cls.rename(columns={"dataset": "target", "episode_fingerprint": "fingerprint"})
     cls = annotate_models(cls)
     validate_grid(cls, CLS_TARGETS, "CLS", expected_episodes=128)
+    cross_task_models = validate_cross_task_models(nm, cls)
     metrics = per_seed_metrics(nm, cls)
     summary = seed_summary(metrics)
     decisions = decision_table(metrics)
@@ -620,6 +673,7 @@ def main() -> None:
     nm.to_csv(data_dir / "nm_cells.csv", index=False)
     capacity_nm.to_csv(data_dir / "capacity_nm_cells.csv", index=False)
     cls.to_csv(data_dir / "classification_cells.csv", index=False)
+    cross_task_models.to_csv(data_dir / "cross_task_model_provenance.csv", index=False)
     metrics.to_csv(data_dir / "ladder_per_seed.csv", index=False)
     summary.to_csv(data_dir / "ladder_seed_summary.csv", index=False)
     decisions.to_csv(data_dir / "design_decisions.csv", index=False)
@@ -638,6 +692,9 @@ def main() -> None:
         "nm_cells": len(nm),
         "classification_cells": len(cls),
         "capacity_nm_cells": len(capacity_nm),
+        "cross_task_physical_models": len(cross_task_models),
+        "target_effect_cells": len(target_per_seed),
+        "endpoint_target_rows": len(endpoint_targets),
         "training_seeds": list(SEEDS),
         "scientific_decision": scientific_conclusion,
         "claim_rule": (

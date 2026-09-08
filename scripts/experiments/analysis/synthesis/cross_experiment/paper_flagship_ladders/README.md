@@ -25,6 +25,10 @@ Target-level endpoint effects are paired within training seed and retained in
 `data/endpoint_target_robustness.csv`. A macro-level winner is rejected if its
 worst target regresses from the matched baseline by more than the same 0.001
 practical margin; this prevents a mean gain from hiding a material target loss.
+The analysis also requires all 120 primary physical model IDs to have identical
+checkpoint hashes, selected steps, training revisions, and source sets between
+NM and classification; the audited join is preserved as
+`data/cross_task_model_provenance.csv`.
 The wide-capacity comparison is rendered separately so it does not crowd or
 retroactively redefine the five-design primary figure.
 
