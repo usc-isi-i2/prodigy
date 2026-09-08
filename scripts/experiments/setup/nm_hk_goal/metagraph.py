@@ -3,6 +3,25 @@ import torch
 from torch_geometric.utils import softmax
 
 
+def radial_value_donors(original, replacement, rows, dim):
+    """Keep actual projected-value direction or radius at its original endpoint.
+
+    The radius/direction factorial need not be additive after aggregation or
+    normalization. It is a controlled tensor intervention, not a support rule.
+    """
+    if original.ndim != 2 or original.shape != replacement.shape or original.shape[1] != 3 * dim:
+        raise ValueError('Actual Q/K/V layout required')
+    a = original[list(rows), 2 * dim:]
+    b = replacement[list(rows), 2 * dim:]
+    ra, rb = a.norm(dim=1, keepdim=True), b.norm(dim=1, keepdim=True)
+    if (ra <= 1e-12).any() or (rb <= 1e-12).any():
+        raise ValueError('Cannot separate direction of a zero projected value')
+    direction, radius = original.clone(), original.clone()
+    direction[list(rows), 2 * dim:] = b / rb * ra
+    radius[list(rows), 2 * dim:] = a / ra * rb
+    return direction, radius
+
+
 @torch.no_grad()
 def replay(model, args, changed_rows=(), key_donor=None, value_donor=None):
     pre, labels, edges, attrs, roles = args

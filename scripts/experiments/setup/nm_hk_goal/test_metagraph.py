@@ -4,7 +4,7 @@ import torch
 
 from models.general_gnn import SingleLayerGeneralGNN
 from models.metaGNN import MetaGNN
-from .metagraph import replay, compact_trace
+from .metagraph import replay, compact_trace, radial_value_donors
 
 
 def fixture():
@@ -75,6 +75,16 @@ class MetagraphTest(unittest.TestCase):
         for module in [layer, layer.mlp_kqv, layer.att_mlp, layer.bn]:
             self.assertEqual(len(module._forward_hooks), 0)
             self.assertEqual(len(module._forward_pre_hooks), 0)
+
+    def test_radial_factorial_changes_only_intended_value_geometry(self):
+        # Two orthogonal directions with different lengths, and an untouched row.
+        a = torch.tensor([[7., 8., 9., 10., 2., 0.], [9., 10., 11., 12., 0., 4.]])
+        b = torch.tensor([[11., 12., 13., 14., 0., 3.], [13., 14., 15., 16., 5., 0.]])
+        direction, radius = radial_value_donors(a, b, [0], 2)
+        torch.testing.assert_close(direction, torch.tensor([[7., 8., 9., 10., 0., 2.], [9., 10., 11., 12., 0., 4.]]))
+        torch.testing.assert_close(radius, torch.tensor([[7., 8., 9., 10., 3., 0.], [9., 10., 11., 12., 0., 4.]]))
+        with self.assertRaises(ValueError):
+            radial_value_donors(a, b * 0, [0], 2)
 
 
 if __name__ == '__main__':

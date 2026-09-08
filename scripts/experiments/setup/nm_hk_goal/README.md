@@ -41,6 +41,24 @@ successful remedy.
 Initial setup estimate: 30–60 minutes. CPU compute estimate: 5–15 minutes.
 New graph loading, sampling and encoding are unnecessary for this first stage.
 
+## Narrow follow-up selected after the first K/V result
+
+The completed K/V test (`af8d8596`, CPU, 50.18 seconds) found that value-only
+reproduces all 25 nearest rescues and 51/54 nearest breakages. Key-only reproduces
+none of those rescues and 19/54 breakages. Before choosing a repair, separate
+actual projected support-value radius and direction, holding original attention
+fixed. For each of the three ordered support slots, use replacement direction
+with original radius, or original direction with replacement radius. Preserve
+all other rows and blocks. These are diagnostic donor interventions; original
+support radii are not available to a general replacement policy.
+
+No additive causal percentage or proof of nonlinearity follows from an
+interaction between these hybrids. Even an affine map admits a radial/directional
+interaction. This one additional distinction guides a bounded repair; it is not
+an open-ended component sweep. Setup estimate 10–20 minutes, CPU compute 1–2
+minutes, no GPU. The first failed start stopped before inference because the
+effective config path was wrong; its log is retained and excluded from results.
+
 Runtime branch: `codex/nm-hk-goal-20260908`; local worktree
 `/private/tmp/prodigy-nm-hk-goal`. Transfer source via private git and use a new
 Tucker worktree. All paths, methods and thread counts must be explicit/overridable.

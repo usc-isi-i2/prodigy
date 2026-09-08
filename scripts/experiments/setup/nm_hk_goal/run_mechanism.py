@@ -22,7 +22,7 @@ import torch
 from scripts.experiments.setup.nm_hk_support_extremes.run import MetadataOnly
 from scripts.experiments.setup.nm_hk_mechanism.run import build_model, metrics
 from scripts.experiments.setup.nm_support_resampling.run import digest_state
-from scripts.experiments.setup.nm_hk_goal.metagraph import replay, compact_trace
+from scripts.experiments.setup.nm_hk_goal.metagraph import replay, compact_trace, radial_value_donors
 
 
 def digest(path):
@@ -82,6 +82,7 @@ def main():
     p.add_argument('--device', default='cpu')
     p.add_argument('--threads', type=int, default=2)
     p.add_argument('--methods', nargs='+', default=['nearest'])
+    p.add_argument('--value-factorial', action='store_true')
     p.add_argument('--priority-sessions', nargs='*', default=['paper-three-seed-fast', 'paper-flagship-wait'])
     p.add_argument('--dry-run', action='store_true')
     a = p.parse_args()
@@ -147,6 +148,13 @@ def main():
                         assert float((capture['labels'] - full_a['labels']).abs().max()) < 1e-5
                         assert float((z[capture['query_mask']] - full[capture['query_mask']]).abs().max()) < 1e-4
                     runs.append((label, z, capture))
+                if a.value_factorial:
+                    directions, norms = radial_value_donors(base_a['native_kqv'], donor, slots, args[0].shape[1])
+                    for label, v in [('value_directions', directions), ('value_norms', norms)]:
+                        z, capture = replay(model, args, changed_rows=slots, value_donor=v)
+                        assert torch.equal(capture['queries'], base_a['queries'])
+                        assert torch.equal(capture['attention'], base_a['attention'])
+                        runs.append((label, z, capture))
                 for label, z, capture in runs:
                     trace = compact_trace(capture, c['local'], c['truth'], float(model.logit_scale.exp()))
                     assert float((sum(trace['terms'].values()) - z[c['local']].cpu()).abs().max()) < 1e-4
@@ -159,6 +167,7 @@ def main():
                     row['true_positive_attention'] = float(trace['attention_mass']['positive'][c['truth']].mean())
                     row['true_negative_attention'] = float(trace['attention_mass']['negative'][c['truth']].mean())
                     row['true_label_norm'] = float(trace['labels'][c['truth']].norm())
+                    row['support_value_norm_mean'] = float(capture['used_kqv'][slots, 2 * args[0].shape[1]:].norm(dim=1).mean())
                     row['max_accounting_error'] = trace['max_accounting_error']
                     results.append(row)
                     traces[c['case'], method, key[2], label] = trace
@@ -176,6 +185,7 @@ def main():
         original_cache_sha256=receipts['original']['cache_sha256'], bank_sha256=receipts['extremes']['candidate_bank_sha256'],
         effective_config_path=str(a.config), effective_config_sha256=digest(a.config),
         model_state_sha256=before, unchanged_model=True, methods=a.methods, rows=len(frame),
+        value_factorial=a.value_factorial,
         csv_sha256=digest(a.out / 'results_private.csv'), traces_sha256=digest(a.out / 'traces_private.pt'),
         parity=audits, graph_loading=False, encoding=False, training=False)
     (a.out / 'receipt.json').write_text(json.dumps(report, indent=2) + '\n')
