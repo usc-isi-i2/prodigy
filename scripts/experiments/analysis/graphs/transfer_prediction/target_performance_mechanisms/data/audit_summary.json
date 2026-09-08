@@ -1,0 +1,96 @@
+{
+  "classification": {
+    "roc_auc": {
+      "singletons": {
+        "cells": 45,
+        "target_share": 0.8896609672813418,
+        "model_share": 0.0438920962025572,
+        "interaction_plus_noise_share": 0.06644693651610109,
+        "interaction_rmse": 0.047190323769264915,
+        "note": "In-sample sums of squares; interaction includes training/evaluation noise. Not an out-of-target forecast or causal partition."
+      },
+      "all_models": {
+        "cells": 270,
+        "target_share": 0.9534157435750797,
+        "model_share": 0.01694983788360213,
+        "interaction_plus_noise_share": 0.02963441854131829,
+        "interaction_rmse": 0.031827741239171384,
+        "note": "In-sample sums of squares; interaction includes training/evaluation noise. Not an out-of-target forecast or causal partition."
+      }
+    },
+    "accuracy": {
+      "singletons": {
+        "cells": 45,
+        "target_share": 0.8831438860707423,
+        "model_share": 0.0469644191704845,
+        "interaction_plus_noise_share": 0.06989169475877294,
+        "interaction_rmse": 0.045977832852623496,
+        "note": "In-sample sums of squares; interaction includes training/evaluation noise. Not an out-of-target forecast or causal partition."
+      },
+      "all_models": {
+        "cells": 270,
+        "target_share": 0.9424964213728231,
+        "model_share": 0.019988492494015173,
+        "interaction_plus_noise_share": 0.037515086133162207,
+        "interaction_rmse": 0.034334945699986345,
+        "note": "In-sample sums of squares; interaction includes training/evaluation noise. Not an out-of-target forecast or causal partition."
+      }
+    }
+  },
+  "neighbor_matching": {
+    "roc_auc": {
+      "singletons": {
+        "cells": 81,
+        "target_share": 0.3498063993043548,
+        "model_share": 0.33128876484096287,
+        "interaction_plus_noise_share": 0.31890483585468177,
+        "interaction_rmse": 0.04438107138182875,
+        "note": "In-sample sums of squares; interaction includes training/evaluation noise. Not an out-of-target forecast or causal partition."
+      }
+    },
+    "accuracy": {
+      "singletons": {
+        "cells": 81,
+        "target_share": 0.4354760480421657,
+        "model_share": 0.24044370713568053,
+        "interaction_plus_noise_share": 0.3240802448221541,
+        "interaction_rmse": 0.060575555455159,
+        "note": "In-sample sums of squares; interaction includes training/evaluation noise. Not an out-of-target forecast or causal partition."
+      }
+    }
+  },
+  "scope": {
+    "classification_cells": 270,
+    "nm_cells": 414,
+    "training_seeds": [
+      0
+    ],
+    "classification_query_counts": {
+      "covid_political": 3072,
+      "election2020": 256,
+      "facebook_page_reference": 1024,
+      "twibot20": 3072,
+      "ukr_rus_suspended": 256
+    },
+    "caveats": [
+      "No new training or evaluation",
+      "No p-values from matrix cells",
+      "LOO NM has only the omitted target, not a full 9x9 grid",
+      "No all-nine CLS reference imported; LOO results are not all-nine minus source effects",
+      "Fingerprint agreement does not prove identical sampled context subgraphs for CLS",
+      "Historical graph metrics are not sampler-weighted measurements",
+      "Singleton and new mixture training revisions differ; nominal recipe is matched"
+    ]
+  },
+  "input_sha256": {
+    "/Users/philipp/projects/gfm/prodigy/scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/data/raw/classification_long.completeness.json": "5b3df1b0cfa457126b9ca5606d7e734633e178e5eac4d2cd086209991b0a987b",
+    "/Users/philipp/projects/gfm/prodigy/scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/data/raw/classification_long.tsv": "d6bcfe6eebbae54d61b533711a1eae6737c89dd29a14048aedf4ddab244feb67",
+    "/Users/philipp/projects/gfm/prodigy/scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/data/raw/classification_model_list.tsv": "b34a020908d6eab1b1cdf372c3ad1400d0bff70c92ba44e5ef3c61073d1e7b38",
+    "/Users/philipp/projects/gfm/prodigy/scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/data/raw/pair_nm_long.tsv": "82c254712fdad9223c643a39a4632ce7504da875f51a334ed50c0fd16b43201b",
+    "/Users/philipp/projects/gfm/prodigy/scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/data/raw/loo_nm_long.tsv": "f244735927d9425a65283e68c0f9efc5b4e7483f07088672f8166d4d216c1789",
+    "/Users/philipp/projects/gfm/prodigy/scripts/experiments/analysis/graphs/transfer_prediction/target_performance_mechanisms/data/raw/classification_provenance.txt": "20f15c519565856c89ba3cae6b682ecccd49d888338183650c535af0721b8c53",
+    "/Users/philipp/projects/gfm/prodigy/scripts/experiments/analysis/graphs/transfer_prediction/similarity_vs_transfer_v2/data/final_core_auc/specialist_cells_three_seed.csv": "d62bcd6c0694c9fd18dfb59e9977bff131f617fdef2a5ff5c1b24294ea7e6b86",
+    "/Users/philipp/projects/gfm/prodigy/scripts/experiments/analysis/graphs/structure/graph_divergence/data/graph_divergence_data.json": "e71f2435485e9ea6b507bf77a53dde3f2c8d6e583df6d3bb9e112c497cdcc239",
+    "/Users/philipp/projects/gfm/prodigy/scripts/experiments/analysis/graphs/transfer_prediction/similarity_vs_transfer_v2/data/extended_predictors.json": "0a2da8ba2780e6650dfb7881212d470fb78985600fc40a4bb6c4840adf8c43aa"
+  }
+}

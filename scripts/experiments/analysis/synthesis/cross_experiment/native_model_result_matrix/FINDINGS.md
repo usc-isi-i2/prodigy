@@ -102,14 +102,18 @@ same-graph diagonal is strongest or close to strongest for its target; the
 diagonal accuracies range from 0.2724 (Election) to 0.5270 (Facebook). This
 reuses every checkpoint and never inspects downstream labels.
 
-SAMGPT's all-nine native GraphCL trajectory is also complete: 108/108 logical
-cells (3 seeds × 4 checkpoints × 9 targets), again with one fixed episode
-fingerprint per target. The nine-target mean ROC-AUC is 0.7428 at 20 updates,
-0.7239 at 60, 0.7131 at 180, and 0.7127 at 500. The largest 500-minus-20
-changes are Election 2020 −0.1869 and COVID Political −0.0644; TwiBot-20
-improves +0.0180 and Ukraine Suspended +0.0138. Thus the terminal 500-update
-checkpoint is the fixed-compute comparison endpoint, but it is not the
-downstream-optimal checkpoint. The full curves must accompany terminal results.
+SAMGPT's all-nine native GraphCL trajectory is also complete: 135/135 logical
+cells (3 seeds × 5 checkpoints × 9 targets), again with one fixed episode
+fingerprint per target. The zero-update checkpoints are exact seed-matched model
+initializations; seed 39 additionally matches an independently saved epoch-zero
+checkpoint tensor-for-tensor (`max_abs_diff=0`). The nine-target mean ROC-AUC is
+0.7525 at initialization, 0.7428 at 20 updates, 0.7239 at 60, 0.7131 at 180,
+and 0.7127 at 500. The terminal-minus-initialization change is −0.0398 overall,
+driven especially by Election 2020 (−0.2318) and COVID Political (−0.0844),
+while Ukraine Suspended (+0.0165), Facebook verified (+0.0102), and TwiBot-20
+(+0.0030) improve. Thus GraphCL training does not improve SAMGPT downstream CLS
+on average in this fixed-compute panel; the direction remains target-dependent,
+and the full curves must accompany the terminal result.
 
 The unified adaptation result is complete. It freezes each
 encoder and evaluates budgets 0/1/10/100 examples per class at updates
@@ -144,6 +148,17 @@ initialization, 0.6087 at step 100, and 0.6299 at step 2,000. The terminal gain
 over initialization is only +0.0047, and the target-specific curves differ, so
 the result does not support a general monotonic benefit from more pilot-v1
 pretraining. This trajectory uses one native training seed.
+
+Separately, the cross-graph figure's standalone GraphSAGE `matrix_s0` family now
+has a matched all-nine social-source mixture at its fixed 2,500-update endpoint.
+This is the same link-prediction architecture, optimizer, sampling, seed, and
+ten-labels-per-class probe used by the existing GraphSAGE matrix cells; it is
+not the distinct 2,000-update `social-gfm` pilot-v1 checkpoint used in the
+adaptation analysis. Its downstream ROC-AUC is 0.8774 on COVID Political,
+0.9795 on Election 2020, 0.7904 on Facebook Pages, 0.5516 on TwiBot-20, and
+0.5120 on UKR/RUS Suspended, for an unweighted five-target mean of 0.7422. The
+all-nine bottom row is therefore complete, while the four source-only
+GraphSAGE specialist rows remain untrained.
 
 ## Compute-regime boundary
 

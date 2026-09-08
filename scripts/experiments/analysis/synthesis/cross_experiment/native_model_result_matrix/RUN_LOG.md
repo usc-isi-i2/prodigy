@@ -110,6 +110,12 @@
   `2026-08-25T09:43:10Z`; GPU 2 completed at `2026-08-25T09:43:51Z`.
   The result has 12 files and 108/108 logical cells with one episode fingerprint
   per target.
+- Added exact seed-matched SAMGPT initialization controls for seeds 39/40/41.
+  Seed 39 was verified tensor-identical to an independently saved epoch-zero
+  checkpoint (`76/76` tensors, `max_abs_diff=0`). CPU-only evaluation completed
+  serially at `2026-08-25T16:45:14Z` with eight-thread limits, low scheduling
+  priority, and exit status 0. The extended trajectory has 15 files and 135/135
+  logical cells; no GPU was used for these three new evaluations.
 - GPUs 0, 1, and 4–7 were never selected by a launched command.
 
 ## Adaptation implementation and checks
@@ -139,3 +145,24 @@ The matched adaptation export is retained under
 `scripts/experiments/analysis/evaluation/adaptation_efficiency/data/`; the
 VISION mixture export is retained under this analysis folder's
 `data/vision_native_mixture_raw/`.
+
+## GraphSAGE all-nine matrix row — 2026-08-31
+
+- Audited the standalone GraphSAGE `matrix_s0` protocol before launch: one-layer
+  768→256 GraphSAGE, source-confined edge-pair prediction, five negatives per
+  positive, uniform source rotation, seed 0, AdamW at 0.001, and a fixed
+  2,500-update endpoint. Downstream evaluation uses the unchanged seed-0
+  ten-labels-per-class logistic probe.
+- Added the all-nine launcher on branch `codex/social-source-completion` at
+  commit `f0d0916ec76df254fdb11671c9a304d4e4a937f1` in local worktree
+  `/Users/philipp/projects/gfm/mixture-scaling` and Tucker worktree
+  `/dataMeR1/phil/gfm/mixture-scaling-socialsrc`.
+- Trained `matrix_all9_social_w256_existing_s0` on physical Tucker GPU 2 only.
+  The fixed step-2,500 checkpoint completed with all nine source identities and
+  seed 0 recorded in its metadata. GPUs 0–1 and 3–7 were not selected.
+- Evaluated the same checkpoint on COVID Political, Election 2020, Facebook
+  Pages, TwiBot-20, and UKR/RUS Suspended. The launcher validated 5/5 result
+  files and wrote its completion marker at `2026-08-31T22:59:52Z`.
+- Collected the five validated cells into
+  `data/graphsage_social_all9_cls.csv`, regenerated the expanded cross-graph
+  matrix, and visually checked the new GraphSAGE bottom row.

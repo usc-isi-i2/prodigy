@@ -1,0 +1,39 @@
+model,objective,config_type,config_id,label,n_sources,order,rung,sources,checkpoint_step,target_count,mean_roc_auc
+SAMGPT,GraphCL,single source,ss:covid_political,COVID political,1,,1,covid_political,500,5,0.6695931384531981
+SAMGPT,GraphCL,single source,ss:covid_twitter,COVID Twitter,1,,1,covid_twitter,500,5,0.6618441940054278
+SAMGPT,GraphCL,single source,ss:cp_hk_twitter,CP/HK Twitter,1,,1,cp_hk_twitter,500,5,0.6677380397077213
+SAMGPT,GraphCL,single source,ss:election2020,Election2020,1,,1,election2020,500,5,0.6625465457375479
+SAMGPT,GraphCL,single source,ss:facebook_page_reference,Facebook pages,1,,1,facebook_page_reference,500,5,0.7036552642913209
+SAMGPT,GraphCL,single source,ss:midterm,Midterm,1,,1,midterm,500,5,0.6602150453816783
+SAMGPT,GraphCL,single source,ss:twibot20,TwiBot20,1,,1,twibot20,500,5,0.6656381684194072
+SAMGPT,GraphCL,single source,ss:ukr_rus_suspended,UKR/RUS suspended,1,,1,ukr_rus_suspended,500,5,0.6982412791181087
+SAMGPT,GraphCL,single source,ss:ukr_rus_twitter,UKR/RUS Twitter,1,,1,ukr_rus_twitter,500,5,0.6635840384206045
+VISION,feature similarity,single source,ss:covid_political,COVID political,1,,1,covid_political,900,5,0.7607186116275944
+VISION,feature similarity,single source,ss:election2020,Election2020,1,,1,election2020,900,5,0.7450984583455063
+VISION,feature similarity,single source,ss:facebook_page_reference,Facebook pages,1,,1,facebook_page_reference,900,5,0.7658829330636403
+VISION,feature similarity,single source,ss:twibot20,TwiBot20,1,,1,twibot20,900,5,0.7694049202585299
+VISION,feature similarity,single source,ss:ukr_rus_suspended,UKR/RUS suspended,1,,1,ukr_rus_suspended,900,5,0.7558008269209997
+VISION,feature similarity,single source,ss:ukr_rus_twitter,UKR/RUS Twitter,1,,1,ukr_rus_twitter,900,5,0.7581464679355973
+PRODIGY,neighbor matching,single source,ss:ukr_rus_twitter,UKR/RUS Twitter,1,A,1,ukr_rus_twitter,2500,5,0.763090463332188
+PRODIGY,neighbor matching,single source,ss:ukr_rus_suspended,UKR/RUS suspended,1,B,1,ukr_rus_suspended,2500,5,0.6869036921748408
+PRODIGY,neighbor matching,single source,ss:twibot20,TwiBot20,1,C,1,twibot20,2500,5,0.7626653129671827
+PRODIGY,neighbor matching,mixture,covid_political|covid_twitter|cp_hk_twitter|election2020|facebook_page_reference|midterm|twibot20|ukr_rus_suspended|ukr_rus_twitter,9 graphs,9,A,9,"ukr_rus_twitter,covid_twitter,midterm,covid_political,election2020,ukr_rus_suspended,twibot20,cp_hk_twitter,facebook_page_reference",2500,5,0.7611799499134959
+PRODIGY,neighbor matching,mixture,covid_political|covid_twitter|cp_hk_twitter|election2020|midterm|twibot20|ukr_rus_suspended|ukr_rus_twitter,8 graphs,8,A,8,"ukr_rus_twitter,covid_twitter,midterm,covid_political,election2020,ukr_rus_suspended,twibot20,cp_hk_twitter",2500,5,0.7522406919502918
+PRODIGY,neighbor matching,mixture,covid_political|covid_twitter|election2020|midterm|twibot20|ukr_rus_suspended|ukr_rus_twitter,7 graphs,7,A,7,"ukr_rus_twitter,covid_twitter,midterm,covid_political,election2020,ukr_rus_suspended,twibot20",2500,5,0.7608558278024933
+PRODIGY,neighbor matching,mixture,covid_political|covid_twitter|election2020|midterm|ukr_rus_suspended|ukr_rus_twitter,6 graphs,6,A,6,"ukr_rus_twitter,covid_twitter,midterm,covid_political,election2020,ukr_rus_suspended",2500,5,0.7520589710753641
+PRODIGY,neighbor matching,mixture,covid_political|covid_twitter|election2020|midterm|ukr_rus_twitter,5 graphs,5,A,5,"ukr_rus_twitter,covid_twitter,midterm,covid_political,election2020",2500,5,0.7528326199378497
+PRODIGY,neighbor matching,mixture,covid_political|covid_twitter|midterm|ukr_rus_twitter,4 graphs,4,A,4,"ukr_rus_twitter,covid_twitter,midterm,covid_political",2500,5,0.7449791331350067
+PRODIGY,neighbor matching,mixture,covid_twitter|midterm|ukr_rus_twitter,3 graphs,3,A,3,"ukr_rus_twitter,covid_twitter,midterm",2500,5,0.743641507184064
+PRODIGY,neighbor matching,mixture,covid_twitter|ukr_rus_twitter,2 graphs,2,A,2,"ukr_rus_twitter,covid_twitter",2500,5,0.7555045940257885
+SAMGPT,GraphCL,mixture,covid_political|covid_twitter|cp_hk_twitter|election2020|facebook_page_reference|midterm|twibot20|ukr_rus_suspended|ukr_rus_twitter,9 graphs,9,A,9,"ukr_rus_twitter,covid_twitter,midterm,covid_political,election2020,ukr_rus_suspended,twibot20,cp_hk_twitter,facebook_page_reference",500,5,0.685514075554092
+SAMGPT,GraphCL,mixture,covid_political|covid_twitter|cp_hk_twitter|election2020|midterm|twibot20|ukr_rus_suspended|ukr_rus_twitter,8 graphs,8,A,8,"ukr_rus_twitter,covid_twitter,midterm,covid_political,election2020,ukr_rus_suspended,twibot20,cp_hk_twitter",500,5,0.6774834038420605
+SAMGPT,GraphCL,mixture,covid_political|covid_twitter|election2020|midterm|twibot20|ukr_rus_suspended|ukr_rus_twitter,7 graphs,7,A,7,"ukr_rus_twitter,covid_twitter,midterm,covid_political,election2020,ukr_rus_suspended,twibot20",500,5,0.6746340717625852
+SAMGPT,GraphCL,mixture,covid_political|covid_twitter|election2020|midterm|ukr_rus_suspended|ukr_rus_twitter,6 graphs,6,A,6,"ukr_rus_twitter,covid_twitter,midterm,covid_political,election2020,ukr_rus_suspended",500,5,0.6745844599763198
+SAMGPT,GraphCL,mixture,covid_political|covid_twitter|election2020|midterm|ukr_rus_twitter,5 graphs,5,A,5,"ukr_rus_twitter,covid_twitter,midterm,covid_political,election2020",500,5,0.656218915462697
+SAMGPT,GraphCL,mixture,covid_political|covid_twitter|midterm|ukr_rus_twitter,4 graphs,4,A,4,"ukr_rus_twitter,covid_twitter,midterm,covid_political",500,5,0.6559710186681833
+SAMGPT,GraphCL,mixture,covid_twitter|midterm|ukr_rus_twitter,3 graphs,3,A,3,"ukr_rus_twitter,covid_twitter,midterm",500,5,0.6626953457588336
+SAMGPT,GraphCL,mixture,covid_twitter|ukr_rus_twitter,2 graphs,2,A,2,"ukr_rus_twitter,covid_twitter",500,5,0.6607333655944019
+VISION,feature similarity,mixture,covid_political|covid_twitter|cp_hk_twitter|election2020|facebook_page_reference|midterm|twibot20|ukr_rus_suspended|ukr_rus_twitter,9 graphs,9,A,9,"ukr_rus_twitter,covid_twitter,midterm,covid_political,election2020,ukr_rus_suspended,twibot20,cp_hk_twitter,facebook_page_reference",2500,5,0.7581178301508468
+VISION,feature similarity,mixture,covid_political|covid_twitter|election2020|midterm|twibot20|ukr_rus_suspended|ukr_rus_twitter,7 graphs,7,A,7,"ukr_rus_twitter,covid_twitter,midterm,covid_political,election2020,ukr_rus_suspended,twibot20",2500,5,0.7572027871345769
+VISION,feature similarity,mixture,covid_political|covid_twitter|election2020|midterm|ukr_rus_twitter,5 graphs,5,A,5,"ukr_rus_twitter,covid_twitter,midterm,covid_political,election2020",2500,5,0.7502070799745828
+VISION,feature similarity,mixture,covid_twitter|midterm|ukr_rus_twitter,3 graphs,3,A,3,"ukr_rus_twitter,covid_twitter,midterm",2500,5,0.7697064946702004

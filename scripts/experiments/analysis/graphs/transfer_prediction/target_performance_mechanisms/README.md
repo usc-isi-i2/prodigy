@@ -1,5 +1,12 @@
 # Target-performance mechanisms
 
+The study began with a complete seed-0 singleton, pair, and leave-one-out lattice
+audit collected on 2026-09-06 UTC. Its retained inputs include 270 classification
+cells, 324 pair-NM cells, nine leave-one-out cells, the matching singleton results,
+graph descriptors, input hashes, and sampler/checkpoint audits under `data/`.
+Those comparisons are descriptive rather than equal-exposure causal estimates;
+the later controls documented below extend rather than replace that initial audit.
+
 Published-cue follow-up: [FINDINGS_ANNOTATION_CUES.md](FINDINGS_ANNOTATION_CUES.md).
 All 78,672 political rows recover their original profiles by a unique complete-row
 join. Hongkong support suppression improves AUC in all six controls even when

@@ -12,10 +12,11 @@ without duplicating artifacts.
 
 - PRODIGY: [`pretrain_saturation.png`](../../../transfer/ablations/prodigy_nm/saturation/pretrain_saturation/figures/pretrain_saturation.png)
 - PRODIGY final-core: [`classification_auc_trajectories.png`](../../../transfer/ablations/prodigy_nm/center_sampling/nm_all9_radius_finalcore/figures/classification_auc_trajectories.png)
-- SAMGPT earlier one-seed checkpoint summary: [`samgpt_downstream_saturation.png`](../figures/samgpt_downstream_saturation.png)
+- SAMGPT earlier one-seed checkpoint summary, now including the shared exact seed-39 update-0 initialization: [`samgpt_downstream_saturation.png`](../figures/samgpt_downstream_saturation.png)
 - SAMGPT final-core all-nine:
   [`samgpt_all9_saturation.png`](figures/samgpt_all9_saturation.png) and
-  [`samgpt_all9_saturation.pdf`](figures/samgpt_all9_saturation.pdf)
+  [`samgpt_all9_saturation.pdf`](figures/samgpt_all9_saturation.pdf) (includes
+  exact seed-matched step-0 controls)
 - VISION: [`vision_all9_saturation.png`](figures/vision_all9_saturation.png) and
   [`vision_all9_saturation.pdf`](figures/vision_all9_saturation.pdf)
 - GraphSAGE narrow TwiBot full-label trajectory:

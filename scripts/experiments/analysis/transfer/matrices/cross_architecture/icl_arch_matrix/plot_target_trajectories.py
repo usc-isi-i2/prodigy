@@ -13,13 +13,9 @@ import numpy as np
 
 
 ARCHITECTURES = ("prodigy", "vision", "gilt")
-STEPS = (0, 20, 60, 100, 300, 900)
+STEPS = (0, 100, 300, 900)
 TARGETS = (
     ("covid_political", "COVID political"),
-    ("election2020", "Election 2020"),
-    ("ukr_rus_suspended", "UKR/RUS suspended"),
-    ("twibot20", "TwiBot-20"),
-    ("facebook_page_reference", "Facebook pages"),
 )
 
 
@@ -60,7 +56,6 @@ def trajectory(
 
 
 def plot_architecture(rows: list[dict[str, str]], architecture: str, output_root: Path) -> None:
-    positions = np.arange(len(STEPS))
     trajectories = {
         (target, task): trajectory(rows, architecture, target, task)
         for target, _ in TARGETS
@@ -70,24 +65,27 @@ def plot_architecture(rows: list[dict[str, str]], architecture: str, output_root
     lo, hi = min(all_values), max(all_values)
     pad = max(0.02, (hi - lo) * 0.08)
 
-    fig, axes = plt.subplots(1, len(TARGETS), figsize=(18, 3.9), sharey=True)
+    fig, axes_grid = plt.subplots(
+        1, len(TARGETS), figsize=(5.5 * len(TARGETS), 4.2), sharey=True, squeeze=False
+    )
+    axes = axes_grid[0]
     for index, (axis, (target, title)) in enumerate(zip(axes, TARGETS)):
         axis.plot(
-            positions,
+            STEPS,
             trajectories[(target, "neighbor_matching")],
             linewidth=2.3,
             color="#4477AA",
             label="Native/self NM AUC",
         )
         axis.plot(
-            positions,
+            STEPS,
             trajectories[(target, "classification")],
             linewidth=2.3,
             color="#EE6677",
             label="Target CLS AUC (mean over sources)",
         )
         axis.set_title(title)
-        axis.set_xticks(positions, [str(step) for step in STEPS])
+        axis.set_xticks(STEPS)
         axis.set_xlabel("Training checkpoint")
         axis.grid(axis="y", alpha=0.25)
         axis.set_ylim(max(0, lo - pad), min(1, hi + pad))

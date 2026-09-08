@@ -1,0 +1,39 @@
+{
+  "selector_source_sha256": "b371bf5453b1936a8ece0f7979d9850789b8d2d489a96e79782e3ec4de58a732",
+  "torch_version": "2.0.1",
+  "original_selected_nodes": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "relabeled_selected_nodes_mapped_back": [
+    9,
+    8,
+    7,
+    6,
+    5,
+    4,
+    3
+  ],
+  "selected_set_equal": false,
+  "original_support_nodes": [
+    0,
+    1,
+    2
+  ],
+  "original_query_nodes": [
+    3,
+    4,
+    5,
+    6
+  ],
+  "interpretation": "Unique endpoints are sorted and the lowest seven are retained; the collator assigns the first three to support. Node renumbering changes selection and role. This reproduces a sampler property, not its impact on real graph performance.",
+  "production_files": [
+    "data/dataloader.py:NeighborTask._sample_center_members",
+    "data/dataloader.py:Collator.process_one_task"
+  ]
+}

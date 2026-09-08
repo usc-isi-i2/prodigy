@@ -18,8 +18,9 @@ combined with the single-source specialists from `../../nm_single_source_matrix/
 
 ## Reading the main ones
 
-- `nm_ladder_trajectory` — per-graph AUC across the 8 rungs; each graph steps up when
-  it enters training.
+- `nm_ladder_trajectory` — held-out NM AUC only. Each target has its own color and its
+  line stops immediately before that target enters the pre-training mixture; there is
+  no aggregate mean or in-training segment.
 - `nm_ladder_gain_retention` — one-panel, two-claim summary: incumbents hold (~.92–.96)
   while each newcomer jumps from its out-of-distribution level to its in-training level
   (ukr_susp +.16, cp_hk +.14 largest; covid/twibot20 ~flat — they already transfer).

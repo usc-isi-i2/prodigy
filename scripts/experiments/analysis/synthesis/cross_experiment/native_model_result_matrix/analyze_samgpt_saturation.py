@@ -13,7 +13,7 @@ import pandas as pd
 
 
 ROOT = Path(__file__).resolve().parent
-UPDATES = (20, 60, 180, 500)
+UPDATES = (0, 20, 60, 180, 500)
 SEEDS = (39, 40, 41)
 TARGETS = (
     "covid_political",
@@ -47,6 +47,12 @@ def load_cells(root: Path) -> pd.DataFrame:
             continue
         seed = int(value["seed"])
         update = int(value["checkpoint_update"])
+        if update == 0:
+            control = value.get("initialization_control", {})
+            if control.get("kind") != "exact_seed_matched_initialization":
+                raise ValueError(f"SAMGPT step-0 provenance missing in {path}")
+            if seed == 39 and not control.get("seed39_independent_epoch0_tensor_match"):
+                raise ValueError("SAMGPT seed-39 step 0 is not independently verified")
         for target, metrics in value["targets"].items():
             rows.append(
                 {
@@ -99,14 +105,13 @@ def plot(summary: pd.DataFrame, output: Path) -> None:
     fig, axes = plt.subplots(3, 3, figsize=(11.6, 8.5), sharex=True, sharey=True, constrained_layout=True)
     for axis, target in zip(axes.flat, TARGETS, strict=True):
         rows = summary[summary.target.eq(target)].sort_values("checkpoint_update")
-        x = rows.checkpoint_update.to_numpy(dtype=float)
+        x = np.arange(len(UPDATES), dtype=float)
         mean = rows.roc_auc_mean.to_numpy(dtype=float)
         std = rows.roc_auc_sample_std.fillna(0).to_numpy(dtype=float)
         axis.plot(x, mean, color="#2a9d8f", marker="o", linewidth=2)
         axis.fill_between(x, mean - std, mean + std, color="#2a9d8f", alpha=0.18)
         axis.set_title(LABELS[target], fontsize=10)
-        axis.set_xscale("log")
-        axis.set_xticks(UPDATES, [str(value) for value in UPDATES])
+        axis.set_xticks(x, [str(value) for value in UPDATES])
         axis.set_ylim(0.45, 1.0)
         axis.grid(axis="y", alpha=0.22)
         for spine in ("top", "right"):

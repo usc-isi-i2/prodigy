@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plot SAMGPT downstream ROC-AUC across pretraining updates."""
+"""Plot SAMGPT downstream ROC-AUC from exact initialization onward."""
 
 from __future__ import annotations
 
@@ -15,19 +15,22 @@ import matplotlib.pyplot as plt
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = next(p for p in HERE.parents if (p / "AGENTS.md").is_file())
 FIGURE_ROOT = HERE / "figures"
+COVID_TRAJECTORY = REPO_ROOT / "scripts/experiments/analysis/transfer/ablations/samgpt_graphcl/saturation/samgpt_covid_saturation/data/validation_trajectory.csv"
 
 SERIES = (
     (
         "COVID only",
-        REPO_ROOT / "scripts/experiments/analysis/transfer/ablations/samgpt_graphcl/saturation/samgpt_covid_saturation/data/validation_trajectory.csv",
+        COVID_TRAJECTORY,
         "#2a78d6",
         "o",
+        False,
     ),
     (
         "Five-source mixture",
         REPO_ROOT / "scripts/experiments/analysis/transfer/ablations/samgpt_graphcl/saturation/samgpt_c5_saturation/data/validation_trajectory.csv",
         "#d85a30",
         "s",
+        True,
     ),
 )
 
@@ -49,11 +52,22 @@ def load(path: Path) -> tuple[list[int], list[float]]:
     )
 
 
+def exact_initialization_auc() -> float:
+    updates, auc = load(COVID_TRAJECTORY)
+    if not updates or updates[0] != 0:
+        raise ValueError(f"expected exact update-0 row in {COVID_TRAJECTORY}")
+    return auc[0]
+
+
 def main() -> None:
     fig, ax = plt.subplots(figsize=(7.2, 4.35))
+    initialization_auc = exact_initialization_auc()
 
-    for label, path, color, marker in SERIES:
+    for label, path, color, marker, prepend_initialization in SERIES:
         updates, auc = load(path)
+        if prepend_initialization:
+            updates = [0, *updates]
+            auc = [initialization_auc, *auc]
         ax.plot(
             updates,
             auc,
@@ -64,6 +78,18 @@ def main() -> None:
             label=label,
             zorder=3,
         )
+
+    ax.scatter(
+        [0],
+        [initialization_auc],
+        marker="D",
+        s=45,
+        facecolor="white",
+        edgecolor="#333333",
+        linewidth=1.2,
+        label="Shared exact initialization",
+        zorder=5,
+    )
 
     ax.axvspan(0, 1000, color="#8f8d87", alpha=0.08, linewidth=0)
     ax.text(
@@ -77,7 +103,7 @@ def main() -> None:
     )
 
     ax.set_title(
-        "SAMGPT downstream performance saturates early",
+        "SAMGPT transfer improves early, then saturates",
         loc="left",
         fontsize=14,
         fontweight="medium",
@@ -86,7 +112,7 @@ def main() -> None:
     ax.text(
         0,
         1.01,
-        "TwiBot-20 validation ROC-AUC · 500 fixed episodes · one training seed",
+        "TwiBot-20 validation ROC-AUC · 500 fixed episodes · seed 39 · shared exact update 0",
         transform=ax.transAxes,
         ha="left",
         va="bottom",
