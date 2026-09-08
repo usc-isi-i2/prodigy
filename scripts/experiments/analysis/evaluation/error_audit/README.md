@@ -7,6 +7,12 @@ and to the exact bio-selection policy used at graph construction.  It writes:
 - `report.html`: balanced diagnostic cards;
 - `summary.json`: record/group/profile coverage counts.
 
+## Findings
+
+- [Ukraine versus Hong Kong on COVID Political](FINDINGS_COVID_POLITICAL_SOURCE_PAIR.md):
+  paired FP/FN cohorts across two fixed evaluation streams, with private
+  node/profile evidence retained on Tucker.
+
 For the current Parquet Twitter graphs:
 
 ```bash
