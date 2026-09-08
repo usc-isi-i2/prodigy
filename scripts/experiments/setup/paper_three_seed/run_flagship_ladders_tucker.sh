@@ -10,7 +10,7 @@ GPUS_TEXT="${GPUS:-0 2 3}"
 MODELS_PER_GPU="${MODELS_PER_GPU:-6}"
 WORKER_BUDGET="${WORKER_BUDGET:-72}"
 RUN_STAMP="${RUN_STAMP:-20260908}"
-RUN_ROOT="${REPO_ROOT}/log/paper_flagship_ladders/${RUN_STAMP}"
+RUN_ROOT="${RUN_ROOT:-${REPO_ROOT}/log/paper_flagship_ladders/${RUN_STAMP}}"
 ARMS_TEXT="${ARMS:-baseline objective exposure schedule composition capacity}"
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
