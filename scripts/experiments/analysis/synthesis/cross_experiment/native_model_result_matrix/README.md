@@ -60,6 +60,13 @@ pairwise link-prediction implementation, not the invalid PRODIGY evaluator.
   validate the completed 13-source-set, three-order native VISION design:
   260 physical model/checkpoint/target cells at seed 0, expanded to 300 ladder
   cells, with both full-checkpoint and terminal-target figures.
+- `analyze_vision_mixture_three_seed.py` is the registered replication analysis.
+  It joins the seed-matched all-nine controls, requires exactly 780 physical
+  model/checkpoint/target/seed cells (900 after order expansion), verifies the
+  fixed episode fingerprints and source registry, and plots the across-seed mean
+  with min--max training-seed envelopes. The seed-1 and seed-2 raw directories
+  are populated only after the active Tucker replicas pass their completion
+  markers; the original seed-0 outputs remain immutable.
 - `data/vision_native_cross_ssl_raw/` and `analyze_vision_cross_ssl.py` retain
   and validate the separate 5×5 native feature-similarity pseudo-task matrix,
   including all five checkpoints and the terminal-matrix/full-trajectory
