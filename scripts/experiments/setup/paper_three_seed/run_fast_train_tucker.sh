@@ -53,7 +53,6 @@ for seed in $SEEDS_TEXT; do
     --n_hop 1 --neighbor_sampling_hop_sizes '' \
     --neighbor_sampling_node_limit 2000 --neighbor_matching_walk_hops 0
   run_shared_family "$seed" ladder_2hop
-  run_shared_family "$seed" ladder_gatv2
   run_shared_family "$seed" fixed_exposure_2hop
 done
 
