@@ -66,7 +66,7 @@ def stats(df):
                 gap=float((u-h).mean()), both_wrong=float(((u==0)&(h==0)).mean()),
                 both_correct=float(((u==1)&(h==1)).mean()),
                 ukr_only=float(((u==1)&(h==0)).mean()), hk_only=float(((u==0)&(h==1)).mean()),
-                wrong_set_jaccard=float(((u==0)&(h==0)).sum()/max(1,((u==0)|(h==0)).sum())),
+                wrong_set_jaccard=(float(((u==0)&(h==0)).sum()/((u==0)|(h==0)).sum()) if ((u==0)|(h==0)).any() else None),
                 either_model_oracle=float(((u==1)|(h==1)).mean()),
                 query_zero_fraction=float(df.query_zero.mean()),
                 query_degree_median=float(df.query_degree.median()))
@@ -233,13 +233,16 @@ def analyze(args):
         zero_query_nodes=int((~qvalid).sum()),dimensions=x.shape[1],
         algorithm="MiniBatchKMeans on L2-normalized GTE; fit validation unique nodes only",
         primary_k=8,bio_selection="latest observed overall for Ukraine; staged row-aligned profile for Hong Kong"),
-        baseline={},geometry={},runs={})
+        baseline={},geometry={},error_severity={},runs={})
     for split in ["val","test"]:
         part = df[df.split==split]
         result["baseline"][split] = stats(part)
         result["baseline"][split]["distinct_episodes"] = int(part.episode.nunique())
         result["baseline"][split]["queries_per_episode"] = sorted(int(n) for n in part.groupby("episode").size().unique())
         result["geometry"][split] = {c:{key:distribution(z[key]) for key in relcols} for c,z in part.groupby("cohort")}
+        result["error_severity"][split] = {c:{key:distribution(z[key]) for key in
+            ["ukr_true_rank","hk_true_rank","ukr_true_probability","hk_true_probability"]}
+            for c,z in part.groupby("cohort")}
     primary = None
     representative_ids = set()
     rep_records = []

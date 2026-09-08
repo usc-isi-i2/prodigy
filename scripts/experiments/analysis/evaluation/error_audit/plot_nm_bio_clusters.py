@@ -25,6 +25,7 @@ def main():
     ap.add_argument("--data-dir", type=Path, default=ROOT/"data")
     ap.add_argument("--figure-dir", type=Path, default=ROOT/"figures")
     ap.add_argument("--cluster-labels", type=Path)
+    ap.add_argument("--title-prefix", default="")
     args = ap.parse_args()
     args.figure_dir.mkdir(parents=True, exist_ok=True)
     labels = json.loads(args.cluster_labels.read_text()) if args.cluster_labels else LABELS
@@ -44,7 +45,7 @@ def main():
         ax.set_xlabel("Test query accuracy (%)");ax.set_title(target.capitalize()+" target")
         ax.grid(axis="x",alpha=.2)
     axes[0].legend(loc="lower left",bbox_to_anchor=(0,1.07),frameon=False,ncol=2)
-    fig.suptitle("NM bio clusters: model differences depend on the query group",fontsize=15)
+    fig.suptitle(args.title_prefix+"NM bio clusters: model differences depend on the query group",fontsize=15)
     fig.tight_layout(rect=[0,.03,1,.94]);fig.text(.02,.012,"Fixed validation-fitted clusters; occurrence-weighted test scores. Semantic labels are descriptive and boundaries overlap.")
     fig.savefig(args.figure_dir/"nm_bio_cluster_accuracy.png",dpi=180,bbox_inches="tight");plt.close(fig)
 
@@ -67,7 +68,7 @@ def main():
         ax.set_xlabel("Test occurrences per query node")
         ax.set_ylabel("Accuracy within frequency bin (%)");ax.set_ylim(0,65);ax.grid(alpha=.2)
     axes[0,0].legend(frameon=False,ncol=2,loc="lower left",bbox_to_anchor=(0,1.08))
-    fig.suptitle("Repeated query nodes change the apparent transfer result",fontsize=15)
+    fig.suptitle(args.title_prefix+"Repeated query nodes change the apparent transfer result",fontsize=15)
     fig.tight_layout(rect=[0,0,1,.94]);fig.savefig(args.figure_dir/"nm_query_weighting.png",dpi=180,bbox_inches="tight");plt.close(fig)
 
     fig,axes=plt.subplots(1,2,figsize=(11,4.8),sharex=True)
@@ -83,7 +84,7 @@ def main():
         ax.bxp(boxes,vert=False,showfliers=False)
         ax.axvline(0,color=".6",lw=1);ax.invert_yaxis();ax.set_title(target.capitalize()+" target")
         ax.set_xlabel("Query-to-support GTE cosine margin\n(true class minus predicted class)")
-    fig.suptitle("Wrong and true NM classes often have similar bio semantics",fontsize=14)
+    fig.suptitle(args.title_prefix+"Wrong and true NM classes often have similar bio semantics",fontsize=14)
     fig.tight_layout(rect=[0,.06,1,.93]);fig.text(.05,.02,"Median, interquartile range, and 10–90% interval; exclude comparisons involving zero vectors. Not model logits.")
     fig.savefig(args.figure_dir/"nm_support_cosine_margins.png",dpi=180,bbox_inches="tight");plt.close(fig)
 
