@@ -23,3 +23,11 @@ downstream evaluations, and the optimized core evaluation to pass their exact
 coverage gates. It then acquires only Tucker GPUs 0--3 after a stability check,
 trains the shared-graph batch, and evaluates all 972 cells. An existing output
 root is never overwritten.
+
+The production defaults use 14 models per GPU and a total 224-loader-worker
+budget. This is the same per-device concurrency already measured while the
+two-hop remainder and mechanism campaigns shared GPUs 0, 2, and 3: about
+24 GiB on each 80 GiB GPU, with four loader workers per model and substantial
+host-memory headroom. For 108 pair models this changes the shared-graph training
+from four waves at the earlier eight-per-GPU setting to two waves. Both values
+remain explicit environment overrides.
