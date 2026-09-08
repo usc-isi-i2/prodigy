@@ -340,6 +340,11 @@ def resolved_params(
         "--workers", "0",
         "--override_log", "True",
     ]
+    if config is not None and config == args.plan_config:
+        argv.extend([
+            "--neighbor_matching_member_policy", args.plan_member_policy,
+            "--neighbor_matching_member_seed", str(args.plan_member_seed),
+        ])
     params = get_params(argv)
     params["exp_name"] = (
         f"fixedgrid_w{args.worker_index}_{model_id}_s{seed}_{args.evaluation_run_stamp}"
@@ -629,6 +634,8 @@ def parse_args() -> argparse.Namespace:
         "--plan-config", type=Path,
         help="Optional config used only to create the frozen episode identities.",
     )
+    parser.add_argument("--plan-member-policy", default="randomized")
+    parser.add_argument("--plan-member-seed", default=-1, type=int)
     parser.add_argument("--training-state-root", required=True, type=Path)
     parser.add_argument("--training-run-stamp", default="20260807")
     parser.add_argument("--evaluation-state-root", required=True, type=Path)

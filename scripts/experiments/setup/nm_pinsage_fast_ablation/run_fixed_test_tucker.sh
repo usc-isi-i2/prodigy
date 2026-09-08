@@ -54,6 +54,7 @@ for ((worker=0; worker<workers; worker++)); do
     --seeds 0 --targets "$TARGETS" --batch-size 32 --episode-count 512 \
     --config "$SCRIPT_DIR/configs/train_covid_pinsage_s0.yaml" \
     --plan-config "$FINAL_CORE_DIR/training.yaml" \
+    --plan-member-policy lowest_sorted --plan-member-seed -1 \
     --training-state-root "$STATE_ROOT" --evaluation-state-root "$OUT_ROOT/state" \
     --evaluation-log-root "$OUT_ROOT/internal" --results-root "$OUT_ROOT/results" \
     --evaluation-run-stamp "$RUN_ID" --ready-dir "$OUT_ROOT/ready" \
