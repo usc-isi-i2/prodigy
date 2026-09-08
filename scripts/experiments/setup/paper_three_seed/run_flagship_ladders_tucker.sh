@@ -11,7 +11,7 @@ MODELS_PER_GPU="${MODELS_PER_GPU:-6}"
 WORKER_BUDGET="${WORKER_BUDGET:-72}"
 RUN_STAMP="${RUN_STAMP:-20260908}"
 RUN_ROOT="${REPO_ROOT}/log/paper_flagship_ladders/${RUN_STAMP}"
-ARMS_TEXT="${ARMS:-baseline objective exposure schedule composition}"
+ARMS_TEXT="${ARMS:-baseline objective exposure schedule composition capacity}"
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
 source "$(conda info --base)/etc/profile.d/conda.sh"
@@ -23,14 +23,20 @@ cd "$REPO_ROOT"
 mkdir -p "$RUN_ROOT"
 
 configs=()
+arm_count=0
 for arm in $ARMS_TEXT; do
+  arm_count=$((arm_count + 1))
   for rung in {1..8}; do
     config="$CAMPAIGN_ROOT/${arm}_r${rung}_s0.yaml"
     [[ -f "$config" ]] || { echo "missing $config" >&2; exit 2; }
     configs+=("$config")
   done
 done
-[[ ${#configs[@]} -eq 40 ]] || { echo "expected 40 flagship configs" >&2; exit 2; }
+expected_configs=$((arm_count * 8))
+[[ ${#configs[@]} -eq "$expected_configs" ]] || {
+  echo "expected $expected_configs flagship configs" >&2
+  exit 2
+}
 
 run_dir="$RUN_ROOT/seeds_$(tr ' ' '-' <<< "$SEEDS_TEXT")"
 if [[ -f "$run_dir/status.json" ]] && grep -q '"status": "complete"' "$run_dir/status.json"; then

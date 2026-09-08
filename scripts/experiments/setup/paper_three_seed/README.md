@@ -32,14 +32,16 @@ remains the fallback for the eight standalone specialist graphs, the GATv2 ladde
 `run_flagship_ladders_tucker.sh` adds seeds 1 and 2 for the five matched
 intervention ladders needed by the main figure: baseline, auxiliary objective,
 size-proportional exposure, blocked scheduling, and cross-graph episode classes.
-All forty conditions per seed share one graph load. This is the inferentially
-matched comparison for the flagship; historical ladders remain context rather
-than being pooled across protocols.
+It also replicates the eight-rung wide-capacity diagnostic from the presentation.
+All 48 conditions per seed share one graph load. The five main curves are the
+inferentially matched flagship comparison; capacity remains a secondary mechanism
+test and historical ladders remain context rather than being pooled across
+protocols.
 
 `finish_core_then_flagship_tucker.sh` is the production orchestrator. It preserves
 the already-running seed-1 batch, replaces the reload-heavy remainder with one
-shared two-hop load and one shared one-hop load, then trains the 80 flagship
-replicas. It follows training with 512 fixed 30-way NM episodes on all nine receiver
+shared two-hop load and one shared one-hop load, then trains 96 flagship and
+capacity replicas. It follows training with 512 fixed 30-way NM episodes on all nine receiver
 graphs and the repository's published 128-episode 2-way/10-shot classification
 stream on five labeled targets. The classification phase joins the original seed-0
 ladder to seeds 1 and 2, fingerprints every checkpoint and episode stream, and
