@@ -14,6 +14,7 @@ SEED0_RUN="${SEED0_RUN:-/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/
 ONEHOP_STATUS="${SHARED_ROOT}/paper_three_seed_remainder/${RUN_STAMP}/onehop_seed_2/status.json"
 TWOHOP_STATUS="${SHARED_ROOT}/paper_three_seed_remainder/${RUN_STAMP}/twohop_seeds_1-2/status.json"
 STATUS_FILE="${REPO_ROOT}/log/paper_flagship_recovery_${RUN_STAMP}.json"
+MECHANISM_TRAIN_COMPLETE="${MECHANISM_TRAIN_COMPLETE:-/dataMeR1/phil/gfm/prodigy-paper-mechanism/log/paper_mechanism_sweeps/${RUN_STAMP}/training_complete_utc.txt}"
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
 source "$(conda info --base)/etc/profile.d/conda.sh"
@@ -41,6 +42,15 @@ PY
 trap 'write_status failed "corrected flagship recovery failed"' ERR
 write_status waiting "waiting for the old remainder orchestrator to exit"
 while tmux has-session -t paper-optimized-queue 2>/dev/null; do sleep 30; done
+
+# The mechanism queue may deliberately refill the six-per-GPU slots released
+# by the one-hop overlap. If the old remainder exits unexpectedly early, do not
+# start the flagship until that bounded 10k-update training phase releases 0/2/3.
+while tmux has-session -t paper-mechanism-sweeps 2>/dev/null \
+    && [[ ! -f "$MECHANISM_TRAIN_COMPLETE" ]]; do
+  write_status waiting "old remainder exited; waiting for overlapped mechanism training"
+  sleep 30
+done
 
 "${CONDA_PREFIX}/bin/python" - "$ONEHOP_STATUS" 18 "$TWOHOP_STATUS" 46 <<'PY'
 import json, sys

@@ -31,10 +31,13 @@ tmux new-session -d -s paper-mechanism-sweeps \
 ```
 
 `run_tucker.sh` also accepts `PHASE=train` and `PHASE=eval`.  The production
-`wait_and_run_tucker.sh` uses that split to train the 18 physical models on GPU 1
-as soon as the VISION queue releases it, concurrently with flagship work on GPUs
-0, 2, and 3.  It then waits for the flagship and core audits, requires two minutes
-of stable idle state on all four owned GPUs, and resumes the exact NM and
-classification evaluations.  The evaluation phase validates the complete
-18-job ledger and all 90 checkpoints before scoring.  Neither phase touches
-GPUs 4--7.
+`wait_and_run_tucker.sh` uses that split to refill the six model slots per GPU
+released when the separate seed-2 one-hop batch finishes.  This restores the
+already measured envelope of 14 concurrent trainers on each of GPUs 0, 2, and 3
+while the old remainder finishes.  If that window has already closed, it waits
+for VISION and uses GPU 1 instead.  The flagship recovery explicitly waits for
+this bounded 10k-update training phase if the old remainder exits early.  The
+mechanism evaluator then waits for the flagship, core, and VISION audits,
+requires two minutes of stable idle state on all four owned GPUs, and resumes
+the exact NM and classification evaluations.  It validates the complete 18-job
+ledger and all 90 checkpoints before scoring.  Neither phase touches GPUs 4--7.
