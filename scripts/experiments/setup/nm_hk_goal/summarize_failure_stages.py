@@ -52,7 +52,7 @@ def main():
     d["native_correct"] = d.native_correct.astype(bool)
     d["encoded_correct"] = d.encoded_correct.astype(bool)
     d["category"] = classify(d)
-    d["query_frequency"] = d.groupby("query").query.transform("size")
+    d["query_frequency"] = d.groupby("query")["query"].transform("size")
     d["query_repeated_in_episode"] = d.duplicated(["episode", "query"], keep=False)
     errors = d[~d.native_correct].copy()
     assert len(errors) == 50464
@@ -63,7 +63,7 @@ def main():
         per_node = errors.assign(hit=errors.category.eq(c)).groupby("query").hit.mean()
         node_weighted[c] = float(per_node.mean())
         distinct[c] = {"queries_with_at_least_one": int(errors.loc[errors.category.eq(c), "query"].nunique()),
-                       "fraction_of_error_queries": float(errors.loc[errors.category.eq(c), "query"].nunique()/errors.query.nunique())}
+                       "fraction_of_error_queries": float(errors.loc[errors.category.eq(c), "query"].nunique()/errors["query"].nunique())}
     transitions = (d.groupby(["encoded_correct", "native_correct"]).size()
         .rename("count").reset_index())
     transitions["fraction"] = transitions["count"]/len(d)
@@ -81,8 +81,8 @@ def main():
     by_episode = errors.groupby("episode").category.value_counts().unstack(fill_value=0)
     result = {
         "schema": 1, "model": a.model, "rows": len(d), "errors": len(errors),
-        "accuracy": float(d.native_correct.mean()), "distinct_queries": int(d.query.nunique()),
-        "distinct_error_queries": int(errors.query.nunique()),
+        "accuracy": float(d.native_correct.mean()), "distinct_queries": int(d["query"].nunique()),
+        "distinct_error_queries": int(errors["query"].nunique()),
         "taxonomy": "Mutually exclusive descriptive hierarchy: pre-M top1 lost by final decision; otherwise pre-M misses split by strict raw-full-mean and sampled-node-Jaccard true-class wins.",
         "categories_among_errors": counts(errors),
         "node_weighted_categories_among_errors": node_weighted,
