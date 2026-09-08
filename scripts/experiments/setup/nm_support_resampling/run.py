@@ -19,6 +19,15 @@ def digest_state(model):
         h.update(k.encode()); h.update(v.detach().cpu().contiguous().numpy().tobytes())
     return h.hexdigest()
 
+def align_scalar_attributes(replacement, reference):
+    """PyG unbatching promotes scalar metadata to one-element tensors."""
+    replacement=replacement.clone()
+    for key,value in reference:
+        if key in replacement and isinstance(value,torch.Tensor) and not isinstance(replacement[key],torch.Tensor):
+            assert value.numel()==1 and isinstance(replacement[key],(int,float,bool)),key
+            replacement[key]=torch.tensor(replacement[key],dtype=value.dtype).reshape(value.shape)
+    return replacement
+
 def encode(model, graphs, device):
     g=graphs.clone().to(device)
     g.x=model.initial_input_mlp(g.x)
@@ -226,7 +235,7 @@ def main():
                     if c["case"]==0 and s["draw"]==0:
                         # Independent whole-batch witness for both conditions.
                         original=cache[c["batch"]];ds=original[0].to_data_list()
-                        for slot,g in zip(c["slots"],graphs[s["start"]:s["start"]+3]):ds[slot]=g.clone()
+                        for slot,g in zip(c["slots"],graphs[s["start"]:s["start"]+3]):ds[slot]=align_scalar_attributes(g,ds[slot])
                         bg=Batch.from_data_list(ds)
                         for k,v in original[0]:
                             if k not in original[0]._slice_dict and k not in ("batch","ptr"):
