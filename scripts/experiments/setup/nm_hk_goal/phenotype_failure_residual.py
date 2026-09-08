@@ -41,8 +41,7 @@ def main():
     keys = ["episode", "sample", "query", "anchor"]
     extra = ["query_degree", "query_nodes", "query_edges", "query_zero_fraction",
              "true_support_nodes_mean", "true_shared_nodes", "query_center_in_true_support",
-             "query_center_in_any_rival_support", "full_mean_all_valid",
-             "full_mean_margin", "node_jaccard_margin"]
+             "query_center_in_any_rival_support", "full_mean_all_valid"]
     d = c.merge(g[keys+extra], on=keys, validate="one_to_one")
     keep = keys+["native_correct", "native_prediction", "native_rank", "native_margin",
                  "encoded_correct", "encoded_prediction", "encoded_rank", "encoded_margin"]
