@@ -127,7 +127,12 @@ def prodigy_embeddings(args, x_cpu, train_edges, nodes):
     from scripts.experiments.setup.nm_hk_mechanism.run import build_model
     from scripts.experiments.setup.nm_support_resampling.run import digest_state
     from scripts.eval.pair_link_eval import embed_nodes
-    params = json.loads(args.config.read_text())
+    import yaml
+    params = yaml.safe_load(args.config.read_text())['params']
+    assert params['edge_view'] == 'static_train' and params['neighbor_matching_edge_split']
+    assert params['neighbor_sampling_source_subset'] == 'cp_hk'
+    assert params['task_name'] == 'neighbor_matching'
+    params['device'] = args.device
     assert params['n_hop'] == 2
     model = build_model(params, args.checkpoint, args.device)
     before = digest_state(model)
@@ -171,7 +176,7 @@ def main():
     p.add_argument('--self-test', action='store_true')
     p.add_argument('--features', type=Path, default=Path('/dataMeR1/phil/data/cp_hk_twitter/graphs/retweet_graph.pt'))
     p.add_argument('--views', type=Path, default=Path('/dataMeR1/phil/gfm/error_audit/nm_hk_support_extremes_20260908/hk_canonical_views_private.pt'))
-    p.add_argument('--config', type=Path, default=Path('/dataMeR1/phil/gfm/error_audit/nm_hk_mechanism_20260908/effective_config.json'))
+    p.add_argument('--config', type=Path, default=Path('/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/wandb/run-20260807_133711-3pn08pge/files/effective_config.yaml'))
     p.add_argument('--checkpoint', type=Path, default=Path('/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_cp_hk_s0_20260807/checkpoint/state_dict_2500.ckpt'))
     args = p.parse_args()
     torch.set_num_threads(args.threads)
@@ -198,7 +203,9 @@ def main():
     write_json(args.out/'protocol.json', protocol)
     started = time.monotonic()
     phases = {}
-    hashes = dict(views=file_hash(args.views), checkpoint=file_hash(args.checkpoint), features=file_hash(args.features))
+    hashes = dict(views=file_hash(args.views), checkpoint=file_hash(args.checkpoint), features=file_hash(args.features),
+                  checkpoint_training_config=file_hash(args.config))
+    (args.out/'checkpoint_training_config.yaml').write_text(args.config.read_text())
     assert hashes['views'] == 'b46d5953aff4ba7602fa4e573f4fc1e2d1efa365a4966a40c90780b7bbd43c40'
     assert hashes['checkpoint'] == 'c664ff20d14d4fbba03ccdc9a459d67f243195e1cdbf74d3a135931bd6d2cf0d'
     from scripts.experiments.setup.nm_source_stage_audit.run import map_features
