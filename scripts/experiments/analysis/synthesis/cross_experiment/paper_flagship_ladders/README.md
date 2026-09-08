@@ -8,12 +8,16 @@ fixed evaluation grids before producing any figure:
   nine fixed receiver graphs, with 512 episodes per cell;
 - 600 downstream classification cells: the same models on five fixed labeled
   targets, with 128 2-way/10-shot episodes per cell.
+- 432 secondary capacity cells: standard and wide encoders × eight rungs × three
+  seeds × nine NM receivers.
 
 The flagship plot uses the same receiver panel at every rung. Lines are the mean
 over matched training seeds, and shaded regions are the observed seed range. The
 included-source, future-source, and permanent TwiBot-20 holdout views are retained
 in `data/ladder_per_seed.csv` for the retention/extrapolation diagnosis but are not
 substituted for the fixed-panel primary curves.
+The wide-capacity comparison is rendered separately so it does not crowd or
+retroactively redefine the five-design primary figure.
 
 Run after the Tucker campaign has completed and its result directories have been
 copied locally:

@@ -1,9 +1,12 @@
 import pandas as pd
+import pytest
 
 from scripts.experiments.analysis.synthesis.cross_experiment.paper_flagship_ladders.analyze import (
     ARMS,
+    CAPACITY_ARMS,
     RUNGS,
     SEEDS,
+    capacity_per_seed,
     seed_summary,
 )
 
@@ -32,3 +35,25 @@ def test_seed_summary_uses_observed_seed_range():
     assert row["min"] == 0.5
     assert row["max"] == 0.502
     assert row["mean"] == 0.501
+
+
+def test_capacity_per_seed_keeps_fixed_target_macro_separate():
+    rows = []
+    for arm_index, arm in enumerate(CAPACITY_ARMS):
+        for rung in RUNGS:
+            for seed in SEEDS:
+                for target in range(9):
+                    rows.append(
+                        {
+                            "arm": arm,
+                            "rung": rung,
+                            "training_seed": seed,
+                            "roc_auc": 0.5 + 0.01 * arm_index + 0.001 * target,
+                        }
+                    )
+    result = capacity_per_seed(pd.DataFrame(rows))
+    assert len(result) == 2 * 8 * 3
+    wide = result[
+        (result.arm == "capacity") & (result.rung == 8) & (result.training_seed == 2)
+    ].iloc[0]
+    assert wide.nm_fixed_panel == pytest.approx(0.514)

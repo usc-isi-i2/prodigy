@@ -23,6 +23,7 @@ SEED0_NM = (
     "nm_interventions_overnight/data/nm_results.csv"
 )
 ARMS = ("baseline", "objective", "exposure", "schedule", "composition")
+CAPACITY_ARMS = ("baseline", "capacity")
 RUNGS = tuple(range(1, 9))
 SEEDS = (0, 1, 2)
 NM_TARGETS = (
@@ -34,7 +35,7 @@ CLS_TARGETS = (
     "ukr_rus_suspended",
 )
 MODEL_RE = re.compile(
-    r"^nmi_(?P<arm>baseline|objective|exposure|schedule|composition)_"
+    r"^nmi_(?P<arm>baseline|objective|exposure|schedule|composition|capacity)_"
     r"r(?P<rung>[1-8])_s(?P<seed>[0-2])$"
 )
 DISPLAY = {
@@ -94,11 +95,16 @@ def load_nm(seed0_path: Path, replicate_root: Path) -> pd.DataFrame:
     return frame
 
 
-def validate_grid(frame: pd.DataFrame, targets: tuple[str, ...], task: str) -> None:
+def validate_grid(
+    frame: pd.DataFrame,
+    targets: tuple[str, ...],
+    task: str,
+    arms: tuple[str, ...] = ARMS,
+) -> None:
     keys = list(zip(frame.arm, frame.rung, frame.training_seed, frame.target))
     expected = {
         (arm, rung, seed, target)
-        for arm in ARMS for rung in RUNGS for seed in SEEDS for target in targets
+        for arm in arms for rung in RUNGS for seed in SEEDS for target in targets
     }
     observed = set(keys)
     duplicates = sorted({key for key in keys if keys.count(key) > 1})
@@ -226,10 +232,60 @@ def plot_flagship(summary: pd.DataFrame, output: Path) -> None:
     plt.close(fig)
 
 
+def capacity_per_seed(frame: pd.DataFrame) -> pd.DataFrame:
+    rows = []
+    for (arm, rung, seed), group in frame.groupby(["arm", "rung", "training_seed"]):
+        rows.append(
+            {
+                "arm": arm,
+                "rung": int(rung),
+                "training_seed": int(seed),
+                "nm_fixed_panel": group.roc_auc.mean(),
+            }
+        )
+    result = pd.DataFrame(rows)
+    expected = len(CAPACITY_ARMS) * len(RUNGS) * len(SEEDS)
+    if len(result) != expected:
+        raise ValueError(f"capacity per-seed coverage mismatch: {len(result)} != {expected}")
+    return result
+
+
+def plot_capacity(summary: pd.DataFrame, output: Path) -> None:
+    colors = {"baseline": COLORS["baseline"], "capacity": "#D62828"}
+    labels = {"baseline": DISPLAY["baseline"], "capacity": "Wide encoder"}
+    fig, ax = plt.subplots(figsize=(3.8, 3.0))
+    for arm in CAPACITY_ARMS:
+        curve = summary[(summary.arm == arm) & (summary.metric == "nm_fixed_panel")].sort_values("rung")
+        x = curve.rung.to_numpy(float)
+        ax.fill_between(
+            x, curve["min"].to_numpy(float), curve["max"].to_numpy(float),
+            color=colors[arm], alpha=0.13, linewidth=0,
+        )
+        ax.plot(x, curve["mean"], color=colors[arm], marker="o", markersize=3,
+                linewidth=2, label=labels[arm])
+    ax.set(
+        xlabel="Number of pretraining graphs",
+        ylabel="Mean ROC–AUC on 9 fixed NM receivers",
+        title="Capacity diagnostic",
+        xticks=RUNGS,
+    )
+    ax.grid(alpha=0.22, linewidth=0.6)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.legend(frameon=False)
+    fig.tight_layout()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output, dpi=300, bbox_inches="tight")
+    fig.savefig(output.with_suffix(".pdf"), bbox_inches="tight")
+    plt.close(fig)
+
+
 def main() -> None:
     args = parse_args()
-    nm = load_nm(args.seed0_nm, args.replicate_nm_root)
+    all_nm = load_nm(args.seed0_nm, args.replicate_nm_root)
+    nm = all_nm[all_nm.arm.isin(ARMS)].copy()
+    capacity_nm = all_nm[all_nm.arm.isin(CAPACITY_ARMS)].copy()
     validate_grid(nm, NM_TARGETS, "NM")
+    validate_grid(capacity_nm, NM_TARGETS, "capacity NM", CAPACITY_ARMS)
     cls = pd.read_csv(args.classification, sep="\t")
     if "target" not in cls:
         cls = cls.rename(columns={"dataset": "target", "episode_fingerprint": "fingerprint"})
@@ -237,16 +293,22 @@ def main() -> None:
     metrics = per_seed_metrics(nm, cls)
     summary = seed_summary(metrics)
     decisions = decision_table(metrics)
+    capacity_metrics = capacity_per_seed(capacity_nm)
+    capacity_summary = seed_summary(capacity_metrics)
 
     data_dir = args.output_root / "data"
     figure_dir = args.output_root / "figures"
     data_dir.mkdir(parents=True, exist_ok=True)
     nm.to_csv(data_dir / "nm_cells.csv", index=False)
+    capacity_nm.to_csv(data_dir / "capacity_nm_cells.csv", index=False)
     cls.to_csv(data_dir / "classification_cells.csv", index=False)
     metrics.to_csv(data_dir / "ladder_per_seed.csv", index=False)
     summary.to_csv(data_dir / "ladder_seed_summary.csv", index=False)
     decisions.to_csv(data_dir / "design_decisions.csv", index=False)
+    capacity_metrics.to_csv(data_dir / "capacity_per_seed.csv", index=False)
+    capacity_summary.to_csv(data_dir / "capacity_seed_summary.csv", index=False)
     plot_flagship(summary, figure_dir / "flagship_ladders.png")
+    plot_capacity(capacity_summary, figure_dir / "capacity_ladder.png")
 
     endpoint = decisions[decisions.rung == 8]
     winners = {
@@ -257,6 +319,7 @@ def main() -> None:
         "status": "complete",
         "nm_cells": len(nm),
         "classification_cells": len(cls),
+        "capacity_nm_cells": len(capacity_nm),
         "training_seeds": list(SEEDS),
         "winners_at_rung8": winners,
         "claim_rule": (
