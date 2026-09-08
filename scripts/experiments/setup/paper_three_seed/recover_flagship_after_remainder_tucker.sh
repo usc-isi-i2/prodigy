@@ -73,7 +73,7 @@ validate_gpu_list() {
   read -r -a values <<< "$text"
   (( ${#values[@]} >= minimum )) || return 1
   for gpu in "${values[@]}"; do
-    [[ "$gpu" =~ ^[0-3]$ ]] || return 1
+    [[ "$gpu" =~ ^[23]$ ]] || return 1
     [[ -z "${seen[$gpu]:-}" ]] || return 1
     seen[$gpu]=1
   done
@@ -101,21 +101,7 @@ choose_training_gpus() {
     echo "$TRAIN_GPUS"
     return
   fi
-  while true; do
-    if gpu_idle 0; then
-      echo "0 2 3"
-      return
-    fi
-    if ! tmux has-session -t vision-mixture-seeds 2>/dev/null && gpu_idle 1; then
-      echo "1 2 3"
-      return
-    fi
-    # The primary producers have released 2--3 at this point. Starting four
-    # two-GPU waves is faster than idling them behind a long VISION tail merely
-    # to obtain a third device.
-    echo "2 3"
-    return
-  done
+  echo "2 3"
 }
 
 choose_evaluation_gpus() {
@@ -125,15 +111,11 @@ choose_evaluation_gpus() {
     return
   fi
   while true; do
-    local available=() gpu
-    for gpu in 0 1 2 3; do
-      if gpu_idle "$gpu"; then available+=("$gpu"); fi
-    done
-    if (( ${#available[@]} >= 2 )); then
-      echo "${available[*]}"
+    if gpu_idle 2 && gpu_idle 3; then
+      echo "2 3"
       return
     fi
-    write_status waiting "waiting for at least two idle owned evaluation GPUs"
+    write_status waiting "waiting for campaign GPUs 2 and 3"
     sleep 30
   done
 }
@@ -184,8 +166,7 @@ if [[ ! -e "$REPLICATE_RUN" ]]; then
     bash "$SCRIPT_DIR/run_flagship_ladders_tucker.sh"
 fi
 
-# Evaluation uses every idle owned device with a two-device minimum. Starting
-# on 2--3 is faster than waiting through the longer VISION tail for device 1.
+# The campaign is deliberately restricted to GPUs 2--3.
 eval_gpus="$(choose_evaluation_gpus)"
 wait_for_stable_gpus "$eval_gpus"
 

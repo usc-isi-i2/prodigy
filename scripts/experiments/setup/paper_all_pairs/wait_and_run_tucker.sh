@@ -82,14 +82,16 @@ select_eval_gpus() {
     read -r -a supplied <<< "$GPUS_TEXT"
     (( ${#supplied[@]} >= 2 )) || { echo "pair evaluation requires at least two GPUs" >&2; return 1; }
     for gpu in "${supplied[@]}"; do
-      [[ "$gpu" =~ ^[0-3]$ ]] || { echo "refusing non-owned GPU $gpu" >&2; return 1; }
+      [[ "$gpu" =~ ^[23]$ ]] || { echo "refusing GPU $gpu: this campaign is restricted to 2-3" >&2; return 1; }
     done
+    [[ "${supplied[*]}" == "2 3" || "${supplied[*]}" == "3 2" ]] \
+      || { echo "pair evaluation requires exactly GPUs 2 and 3" >&2; return 1; }
     echo "$GPUS_TEXT"
     return
   fi
   while true; do
     available=()
-    for gpu in 0 1 2 3; do
+    for gpu in 2 3; do
       values="$(nvidia-smi -i "$gpu" --query-gpu=memory.used,utilization.gpu \
         --format=csv,noheader,nounits | tr -d ' ')"
       IFS=, read -r used util <<< "$values"
@@ -106,7 +108,7 @@ select_eval_gpus() {
 while [[ ! -f "$MECHANISM_TRAIN_COMPLETE" ]]; do sleep 30; done
 if [[ ! -f "$TRAIN_COMPLETE" ]]; then
   if tmux has-session -t paper-optimized-queue 2>/dev/null; then
-    PHASE=train GPUS="0 2 3" MODELS_PER_GPU=10 WORKER_BUDGET=120 \
+    PHASE=train GPUS="2 3" MODELS_PER_GPU=10 WORKER_BUDGET=80 \
       bash "$SCRIPT_DIR/run_tucker.sh"
   else
     while [[ ! -f "$MECHANISM_COMPLETE" ]]; do sleep 30; done
