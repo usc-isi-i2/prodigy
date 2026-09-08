@@ -39,6 +39,8 @@ Kong test, the Hong Kong specialist wins 464 episodes, ties 10, and loses 26.
 Validation reproduces both counts almost exactly: 500/500 Ukraine wins, and
 464 Hong Kong wins, 9 ties, and 27 losses on Hong Kong.
 
+![Neighbor-matching paired outcomes](figures/nm_source_pair_outcomes.png)
+
 ## Failure overlap distributions
 
 ### Ukraine target
@@ -144,4 +146,3 @@ The TSV contains 240,001 lines including its header, occupies approximately
 Evaluation ran in Tucker worktree
 `/dataMeR1/phil/gfm/prodigy-mechanisms-crossmatch` on branch
 `codex/target-mechanisms-crossmatch-runtime` at revision `992354e9`.
-

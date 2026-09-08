@@ -29,6 +29,8 @@ remain on Tucker and are not committed.
 
 The disagreement is highly asymmetric and replicates across episode streams.
 
+![Classification failure distributions](figures/covid_political_fpfn_distributions.png)
+
 | Paired outcome | Original | Fresh |
 |---|---:|---:|
 | Both correct | 1,914 | 1,989 |

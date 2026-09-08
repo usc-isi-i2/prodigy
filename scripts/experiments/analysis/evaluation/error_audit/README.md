@@ -9,6 +9,9 @@ and to the exact bio-selection policy used at graph construction.  It writes:
 
 ## Findings
 
+- [Consolidated source-paired error-audit report](SOURCE_PAIR_ERROR_AUDIT_REPORT.md):
+  the complete cross-task synthesis, figures, caveats, and actionable next
+  analyses.
 - [Ukraine versus Hong Kong on COVID Political](FINDINGS_COVID_POLITICAL_SOURCE_PAIR.md):
   paired FP/FN cohorts across two fixed evaluation streams, with private
   node/profile evidence retained on Tucker.
