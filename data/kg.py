@@ -263,7 +263,17 @@ def get_kg_dataloader(dataset, task_name, split, node_split, batch_size, n_way, 
         label_meta["nt"] = torch.zeros(1, 768).expand(num_nodes, -1)
     else:
         raise ValueError(f"Unknown task for KG: {task_name}")
-    dataloader = DataLoader(dataset, batch_sampler=sampler, num_workers=num_workers, collate_fn=KGCollator(label_meta, aug=aug, is_multiway=is_multiway))
+    dataloader = DataLoader(
+        dataset,
+        batch_sampler=sampler,
+        num_workers=num_workers,
+        collate_fn=KGCollator(
+            label_meta,
+            aug=aug,
+            is_multiway=is_multiway,
+            add_endpoint_flags=not kwargs.get("kg_social_checkpoint_adapter", False),
+        ),
+    )
     return dataloader
 
 

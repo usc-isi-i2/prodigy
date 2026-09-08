@@ -291,8 +291,9 @@ class TrainerFS():
                                               
         edge_attr_dim = None
         if self.dataset_name in ["NELL", "ConceptNet", "FB15K-237", "Wiki", "WikiKG90M"]:
-            edge_attr_dim = bert_dim
-            self.parameter["input_dim"] = bert_dim + 2  # add 2 to flag head and tail nodes
+            social_adapter = self.parameter.get("kg_social_checkpoint_adapter", False)
+            edge_attr_dim = None if social_adapter else bert_dim
+            self.parameter["input_dim"] = bert_dim if social_adapter else bert_dim + 2
             if self.parameter["task_name"] == "neighbor_matching":
                 edge_attr_dim = bert_dim
             if self.parameter["task_name"] == "sn_neighbor_matching":

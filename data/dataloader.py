@@ -1335,8 +1335,10 @@ class Collator:
 
 
 class KGCollator(Collator):
-    def __init__(self, label_meta, aug=Identity(), is_multiway=True):
+    def __init__(self, label_meta, aug=Identity(), is_multiway=True,
+                 add_endpoint_flags=True):
         super(KGCollator, self).__init__(label_meta, aug, is_multiway)
+        self.add_endpoint_flags = add_endpoint_flags
 
     def process_one_task(self, task, batch_param):
         label_map = list(task)
@@ -1366,6 +1368,8 @@ class KGCollator(Collator):
             query_mask.extend([True] * (len(augmented) - batch_param.n_shot))
             labels.extend([label_map_reverse[label]] * len(augmented)) # label_map_reverse[label] is the index of label in label_map
         for data in all_graphs:
+            if not self.add_endpoint_flags:
+                continue
             data.x = torch.cat([data.x, torch.zeros(data.x.shape[0], 2)], dim=1)
             data.x[0, -1] = 1.
             data.x[1, -2] = 1.  # flag the head and tail nodes

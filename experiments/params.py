@@ -693,6 +693,17 @@ def get_params(argv=None):
     )
 
     args.add_argument("-kg_emb", "--kg_emb_model", default="", type=str)   #  "TransE", "ComplEx", etc.
+    args.add_argument(
+        "--kg_social_checkpoint_adapter",
+        default=False,
+        type=str2bool,
+        help=(
+            "Evaluate a 768d non-KG PRODIGY checkpoint on a KG classification task. "
+            "Keeps the checkpoint's S,U,M architecture, omits KG head/tail input flags, "
+            "and disables KG edge-feature modules. Intended for explicit cross-domain "
+            "adapter experiments only."
+        ),
+    )
     args.add_argument("-pretrained", "--pretrained_model_run", default="", type=str)
     #  Name of WanDB run to pull the best model from.
     args.add_argument(
