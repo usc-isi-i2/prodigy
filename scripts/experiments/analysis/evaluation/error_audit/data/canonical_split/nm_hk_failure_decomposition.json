@@ -1,0 +1,270 @@
+{
+  "schema": 1,
+  "model": "hk",
+  "rows": 61440,
+  "errors": 50464,
+  "accuracy": 0.17864583333333334,
+  "distinct_queries": 6233,
+  "distinct_error_queries": 4987,
+  "taxonomy": "Mutually exclusive descriptive hierarchy: pre-M top1 lost by final decision; otherwise pre-M misses split by strict raw-full-mean and sampled-node-Jaccard true-class wins. A raw win requires all 30 class scores to be defined.",
+  "categories_among_errors": {
+    "unseparated_by_measured_input_summaries": {
+      "count": 43960,
+      "fraction": 0.8711160431198478
+    },
+    "prem_top1_final_loss": {
+      "count": 3135,
+      "fraction": 0.06212349397590362
+    },
+    "prem_loss_overlap_only_signal": {
+      "count": 2038,
+      "fraction": 0.040385225110970195
+    },
+    "prem_loss_raw_only_signal": {
+      "count": 1181,
+      "fraction": 0.02340282181357007
+    },
+    "prem_loss_raw_and_overlap_signal": {
+      "count": 150,
+      "fraction": 0.002972415979708307
+    }
+  },
+  "node_weighted_categories_among_errors": {
+    "prem_loss_overlap_only_signal": 0.025570914371382487,
+    "unseparated_by_measured_input_summaries": 0.7913827017545729,
+    "prem_top1_final_loss": 0.14549278645797267,
+    "prem_loss_raw_only_signal": 0.035300889107480145,
+    "prem_loss_raw_and_overlap_signal": 0.002252708308591748
+  },
+  "distinct_query_coverage": {
+    "prem_loss_overlap_only_signal": {
+      "queries_with_at_least_one": 612,
+      "fraction_of_error_queries": 0.12271906958091036
+    },
+    "unseparated_by_measured_input_summaries": {
+      "queries_with_at_least_one": 4360,
+      "fraction_of_error_queries": 0.8742731100862242
+    },
+    "prem_top1_final_loss": {
+      "queries_with_at_least_one": 1463,
+      "fraction_of_error_queries": 0.29336274313214356
+    },
+    "prem_loss_raw_only_signal": {
+      "queries_with_at_least_one": 668,
+      "fraction_of_error_queries": 0.13394826549027472
+    },
+    "prem_loss_raw_and_overlap_signal": {
+      "queries_with_at_least_one": 107,
+      "fraction_of_error_queries": 0.021455785041106876
+    }
+  },
+  "stage_transitions": [
+    {
+      "encoded_correct": false,
+      "native_correct": false,
+      "count": 47329,
+      "fraction": 0.7703287760416667
+    },
+    {
+      "encoded_correct": false,
+      "native_correct": true,
+      "count": 6139,
+      "fraction": 0.09991861979166666
+    },
+    {
+      "encoded_correct": true,
+      "native_correct": false,
+      "count": 3135,
+      "fraction": 0.051025390625
+    },
+    {
+      "encoded_correct": true,
+      "native_correct": true,
+      "count": 4837,
+      "fraction": 0.07872721354166666
+    }
+  ],
+  "measured_input_signal": [
+    {
+      "population": "all",
+      "n": 61440,
+      "raw_full_strict": 2525,
+      "overlap_strict": 3655,
+      "either_strict": 5781
+    },
+    {
+      "population": "native_errors",
+      "n": 50464,
+      "raw_full_strict": 1573,
+      "overlap_strict": 2410,
+      "either_strict": 3814
+    }
+  ],
+  "repetition": {
+    "error_occurrences_from_queries_repeated_in_same_episode": 12590,
+    "fraction": 0.2494847812301839,
+    "category_counts_repeated_in_episode": {
+      "unseparated_by_measured_input_summaries": {
+        "count": 11294,
+        "fraction": 0.8970611596505162
+      },
+      "prem_loss_overlap_only_signal": {
+        "count": 541,
+        "fraction": 0.042970611596505164
+      },
+      "prem_top1_final_loss": {
+        "count": 473,
+        "fraction": 0.037569499602859414
+      },
+      "prem_loss_raw_only_signal": {
+        "count": 239,
+        "fraction": 0.01898332009531374
+      },
+      "prem_loss_raw_and_overlap_signal": {
+        "count": 43,
+        "fraction": 0.003415409054805401
+      }
+    },
+    "by_global_query_frequency": {
+      "1": {
+        "n": 1368,
+        "categories": {
+          "unseparated_by_measured_input_summaries": {
+            "count": 1047,
+            "fraction": 0.7653508771929824
+          },
+          "prem_top1_final_loss": {
+            "count": 236,
+            "fraction": 0.17251461988304093
+          },
+          "prem_loss_raw_only_signal": {
+            "count": 56,
+            "fraction": 0.04093567251461988
+          },
+          "prem_loss_overlap_only_signal": {
+            "count": 27,
+            "fraction": 0.019736842105263157
+          },
+          "prem_loss_raw_and_overlap_signal": {
+            "count": 2,
+            "fraction": 0.0014619883040935672
+          }
+        }
+      },
+      "2-4": {
+        "n": 4841,
+        "categories": {
+          "unseparated_by_measured_input_summaries": {
+            "count": 3881,
+            "fraction": 0.8016938649039455
+          },
+          "prem_top1_final_loss": {
+            "count": 677,
+            "fraction": 0.13984713902086346
+          },
+          "prem_loss_raw_only_signal": {
+            "count": 163,
+            "fraction": 0.033670729188184256
+          },
+          "prem_loss_overlap_only_signal": {
+            "count": 113,
+            "fraction": 0.02334228465193142
+          },
+          "prem_loss_raw_and_overlap_signal": {
+            "count": 7,
+            "fraction": 0.0014459822350753977
+          }
+        }
+      },
+      "5-19": {
+        "n": 6931,
+        "categories": {
+          "unseparated_by_measured_input_summaries": {
+            "count": 5893,
+            "fraction": 0.8502380608858751
+          },
+          "prem_top1_final_loss": {
+            "count": 607,
+            "fraction": 0.08757755013706536
+          },
+          "prem_loss_raw_only_signal": {
+            "count": 221,
+            "fraction": 0.03188573077477998
+          },
+          "prem_loss_overlap_only_signal": {
+            "count": 194,
+            "fraction": 0.02799018900591545
+          },
+          "prem_loss_raw_and_overlap_signal": {
+            "count": 16,
+            "fraction": 0.002308469196364161
+          }
+        }
+      },
+      "20+ ": {
+        "n": 37324,
+        "categories": {
+          "unseparated_by_measured_input_summaries": {
+            "count": 33139,
+            "fraction": 0.8878737541528239
+          },
+          "prem_loss_overlap_only_signal": {
+            "count": 1704,
+            "fraction": 0.045654270710534774
+          },
+          "prem_top1_final_loss": {
+            "count": 1615,
+            "fraction": 0.04326974600793056
+          },
+          "prem_loss_raw_only_signal": {
+            "count": 741,
+            "fraction": 0.019853177580109314
+          },
+          "prem_loss_raw_and_overlap_signal": {
+            "count": 125,
+            "fraction": 0.003349051548601436
+          }
+        }
+      }
+    }
+  },
+  "episode_variation": {
+    "prem_loss_overlap_only_signal": {
+      "min": 0,
+      "median": 4.0,
+      "max": 11
+    },
+    "prem_loss_raw_and_overlap_signal": {
+      "min": 0,
+      "median": 0.0,
+      "max": 3
+    },
+    "prem_loss_raw_only_signal": {
+      "min": 0,
+      "median": 0.0,
+      "max": 12
+    },
+    "prem_top1_final_loss": {
+      "min": 0,
+      "median": 6.0,
+      "max": 17
+    },
+    "unseparated_by_measured_input_summaries": {
+      "min": 66,
+      "median": 85.0,
+      "max": 101
+    }
+  },
+  "sources": {
+    "geometry": "/dataMeR1/phil/gfm/error_audit/nm_complete_inputs_20260908_v2/cp_hk/query_geometry_private.csv",
+    "geometry_sha256": "32fffb2e54d7470e26b87bf255b58424c6ec93206b6874cb1d6ca62bddca1c25",
+    "stages": "/dataMeR1/phil/gfm/error_audit/nm_source_stage_20260908_v4/cp_hk/stage_predictions_private.csv",
+    "stages_sha256": "f6a7b63a8de19161858a45dbc604b8857500068d183a3dcd38cb7b36366ad4dd"
+  },
+  "interpretation_limits": [
+    "The categories describe observed stage rankings and are not causal percentages.",
+    "Raw neighborhood mean is lossy; its failure does not establish absence of input evidence.",
+    "Sampled-node Jaccard uses global identities that the model does not receive explicitly.",
+    "Occurrences, repeated nodes, and 512 episodes are not independent trained-model replications."
+  ]
+}
