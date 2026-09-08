@@ -73,6 +73,36 @@ def distribution(s):
                 quantiles={str(p):float(s.quantile(p)) for p in [.1,.25,.5,.75,.9]} if len(s) else {})
 
 
+def summarize_weighting(args):
+    """Reuse saved rows: audit query repetition and validation-selected routing."""
+    out = args.out_dir/args.target
+    df = pd.read_parquet(out/"paired_cluster_queries_private.parquet")
+    summary = {"splits": {}}
+    val_gap = df[df.split=="val"].groupby("cluster").delta.mean()
+    route_ukr = set(int(c) for c,gap in val_gap.items() if gap>0)
+    summary["routing_ukr_clusters_selected_on_val"] = sorted(route_ukr)
+    for split in ["val", "test"]:
+        sub = df[df.split==split].copy()
+        pernode = sub.groupby("query").agg(occurrences=("delta","size"),
+            ukr_accuracy=("ukr_correct","mean"),hk_accuracy=("hk_correct","mean"),
+            degree=("query_degree","first"))
+        pernode["frequency_bin"] = pd.cut(pernode.occurrences,[0,1,4,19,float("inf")],labels=["1","2-4","5-19","20+"])
+        sub["frequency_bin"] = sub["query"].map(pernode.frequency_bin)
+        selected = np.where(sub.cluster.isin(route_ukr),sub.ukr_correct,sub.hk_correct)
+        s=dict(node_weighted_ukr_accuracy=float(pernode.ukr_accuracy.mean()),
+            node_weighted_hk_accuracy=float(pernode.hk_accuracy.mean()),
+            cluster_router_accuracy=float(selected.mean()),
+            top_one_percent_nodes_occurrence_share=float(pernode.occurrences.nlargest(max(1,int(np.ceil(len(pernode)*.01)))).sum()/len(sub)),
+            max_occurrences_per_query=int(pernode.occurrences.max()),
+            frequency_groups={})
+        for group,z in sub.groupby("frequency_bin",observed=True):
+            s["frequency_groups"][str(group)] = stats(z)
+        s["novel_vs_val"] = stats(sub[~sub["query"].isin(df.loc[df.split=="val","query"])])
+        summary["splits"][split] = s
+    (out/"nm_query_weighting_summary.json").write_text(json.dumps(summary,indent=2))
+    print(json.dumps(summary,indent=2))
+
+
 def bootstrap(df, seed):
     ep = df.groupby("episode").delta.agg(["sum", "size"]).to_numpy()
     rng = np.random.default_rng(seed)
@@ -290,7 +320,11 @@ if __name__=="__main__":
     ap.add_argument("--seed",type=int,default=7)
     ap.add_argument("--fit-cap",type=int,default=20000)
     ap.add_argument("--threads",type=int,default=4)
+    ap.add_argument("--summarize-weighting",action="store_true")
     args=ap.parse_args()
     torch.set_num_threads(args.threads)
     with threadpool_limits(limits=args.threads):
-        analyze(args)
+        if args.summarize_weighting:
+            summarize_weighting(args)
+        else:
+            analyze(args)
