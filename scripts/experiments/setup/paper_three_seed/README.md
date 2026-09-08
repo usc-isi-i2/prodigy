@@ -52,3 +52,14 @@ After training completes, the queue evaluates all checkpoints on the nine fixed
 NM receiver episode sets. One-hop GraphSAGE, GATv2, and two-hop GraphSAGE are
 evaluated separately so that each checkpoint is reconstructed with the matching
 architecture and sampler.
+
+For the optimized shared-run layout, launch `run_fast_core_eval_tucker.sh` in a
+separate detached worktree. It waits for the 18 seed-1 one-hop, 18 seed-2
+one-hop, and 46 two-hop/fixed-exposure jobs plus the flagship queue's GPU release.
+It then reconstructs each terminal model from its recorded effective config and
+evaluates one fixed 512-episode panel in a single shared graph load. The audit
+requires exactly 82 models x 9 targets = 738 cells, one episode fingerprint per
+target, unique family-qualified model IDs, finite metrics, exact checkpoint
+steps, checkpoint hashes, and training revisions. This adapter is required
+because the optimized runs deliberately do not use the legacy deterministic
+`state/paper3seed_*` paths.
