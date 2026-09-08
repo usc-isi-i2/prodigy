@@ -704,6 +704,15 @@ def get_params(argv=None):
             "adapter experiments only."
         ),
     )
+    args.add_argument(
+        "--kg_social_adapter_endpoint_flags",
+        default=False,
+        type=str2bool,
+        help=(
+            "With --kg_social_checkpoint_adapter, replace the final two text "
+            "embedding dimensions with KG head/tail flags, keeping a 768d input."
+        ),
+    )
     args.add_argument("-pretrained", "--pretrained_model_run", default="", type=str)
     #  Name of WanDB run to pull the best model from.
     args.add_argument(

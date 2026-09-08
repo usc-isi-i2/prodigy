@@ -7,6 +7,7 @@ CKPT_ROOT="${CKPT_ROOT:-/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/pro
 OUT_ROOT="${OUT_ROOT:-$REPO_ROOT/log/social_to_fb15k_adapter}"
 PYTHON="${PYTHON:-python}"
 GPUS="${GPUS:-0,1,2,3}"
+ENDPOINT_FLAGS="${ENDPOINT_FLAGS:-False}"
 
 export WANDB_MODE="${WANDB_MODE:-offline}"
 mkdir -p "$OUT_ROOT"
@@ -37,13 +38,14 @@ run_model() {
     --task_name multiway_classification --eval_only True \
     --pretrained_model_run "$checkpoint" \
     --kg_social_checkpoint_adapter True \
+    --kg_social_adapter_endpoint_flags "$ENDPOINT_FLAGS" \
     --layers S,U,M --input_dim 768 --emb_dim 256 --gnn_type sage \
     --n_way 20 --n_shots 3 --n_query 4 --batch_size 1 \
     --dataset_len_cap 1 --val_len_cap 1 --test_len_cap 500 \
     --workers 7 --device "$gpu" --seed 0 \
     --no_split_labels True --label_set "${label_set[@]}" \
     --ignore_label_embeddings True --n_hop 1 \
-    --prefix "social_fb15k_${name}" \
+    --prefix "social_fb15k_${name}_endpoint${ENDPOINT_FLAGS}" \
     --log_dir "$OUT_ROOT/log" --state_dir "$OUT_ROOT/state" \
     > "$OUT_ROOT/${name}.log" 2>&1
 }

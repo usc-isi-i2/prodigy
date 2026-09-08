@@ -687,6 +687,9 @@ class TrainerFS():
         kwargs["kg_social_checkpoint_adapter"] = self.parameter.get(
             "kg_social_checkpoint_adapter", False
         )
+        kwargs["kg_social_adapter_endpoint_flags"] = self.parameter.get(
+            "kg_social_adapter_endpoint_flags", False
+        )
         if self.parameter["all_test"]:
             kwargs["all_test"] = True
         if self.parameter["label_set"]:

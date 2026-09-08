@@ -272,6 +272,9 @@ def get_kg_dataloader(dataset, task_name, split, node_split, batch_size, n_way, 
             aug=aug,
             is_multiway=is_multiway,
             add_endpoint_flags=not kwargs.get("kg_social_checkpoint_adapter", False),
+            replace_text_dims_with_endpoint_flags=kwargs.get(
+                "kg_social_adapter_endpoint_flags", False
+            ),
         ),
     )
     return dataloader

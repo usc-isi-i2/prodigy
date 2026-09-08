@@ -1336,9 +1336,11 @@ class Collator:
 
 class KGCollator(Collator):
     def __init__(self, label_meta, aug=Identity(), is_multiway=True,
-                 add_endpoint_flags=True):
+                 add_endpoint_flags=True,
+                 replace_text_dims_with_endpoint_flags=False):
         super(KGCollator, self).__init__(label_meta, aug, is_multiway)
         self.add_endpoint_flags = add_endpoint_flags
+        self.replace_text_dims_with_endpoint_flags = replace_text_dims_with_endpoint_flags
 
     def process_one_task(self, task, batch_param):
         label_map = list(task)
@@ -1368,6 +1370,18 @@ class KGCollator(Collator):
             query_mask.extend([True] * (len(augmented) - batch_param.n_shot))
             labels.extend([label_map_reverse[label]] * len(augmented)) # label_map_reverse[label] is the index of label in label_map
         for data in all_graphs:
+            if self.replace_text_dims_with_endpoint_flags:
+                data.x = torch.cat([data.x[:, :-2], torch.zeros(data.x.shape[0], 2)], dim=1)
+                data.x[0, -1] = 1.
+                data.x[1, -2] = 1.
+                if hasattr(data, "x_orig"):
+                    data.x_orig = torch.cat([
+                        data.x_orig[:, :-2],
+                        torch.zeros(data.x_orig.shape[0], 2),
+                    ], dim=1)
+                    data.x_orig[0, -1] = 1.
+                    data.x_orig[1, -2] = 1.
+                continue
             if not self.add_endpoint_flags:
                 continue
             data.x = torch.cat([data.x, torch.zeros(data.x.shape[0], 2)], dim=1)
