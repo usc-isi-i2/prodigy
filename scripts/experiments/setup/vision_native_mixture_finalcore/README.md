@@ -14,7 +14,7 @@ fixed downstream CLS episode streams. The three orders provide composition
 replication at each mixture size; this is a fixed-compute study, not a
 convergence-trained comparison.
 
-Run from an isolated Tucker worktree on owned GPUs 2 and 3:
+Run from an isolated Tucker worktree on any two owned GPUs 0--3:
 
 ```bash
 tmux new-session -d -s vision-native-mixture \
@@ -25,5 +25,9 @@ tmux new-session -d -s vision-native-mixture \
 ```
 
 Outputs are worktree-local under `state/vision_native_mixture_finalcore/` and
-`log/vision_native_mixture_finalcore/`. The launcher refuses GPUs other than 2
-or 3 and preserves every checkpoint's downstream trajectory.
+`log/vision_native_mixture_finalcore/`. The launcher refuses GPUs outside the
+owned 0--3 set and preserves every checkpoint's downstream trajectory.
+
+Set `SEED`, `STATE_ROOT`, and `LOG_ROOT` explicitly for additional training-seed
+replicas. The 12 non-all-nine source sets are trained and evaluated in each run;
+the registered seed-matched all-nine checkpoint is joined during analysis.

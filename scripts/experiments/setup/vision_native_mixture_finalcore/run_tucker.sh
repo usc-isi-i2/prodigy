@@ -12,8 +12,8 @@ GPU_A="${GPU_A:-2}"
 GPU_B="${GPU_B:-3}"
 SEED="${SEED:-0}"
 for gpu in "$GPU_A" "$GPU_B"; do
-  [[ "$gpu" =~ ^[23]$ ]] || {
-    echo "refusing GPU $gpu: only Tucker GPUs 2 and 3 are authorized" >&2
+  [[ "$gpu" =~ ^[0-3]$ ]] || {
+    echo "refusing GPU $gpu: only owned Tucker GPUs 0-3 are authorized" >&2
     exit 2
   }
 done
@@ -51,7 +51,7 @@ mapfile -t PLAN_ROWS < <(
   echo "rungs=1,3,5,7,9"
   echo "unique_models=13"
   echo "new_models=12"
-  echo "reused_all9=/dataMeR1/phil/gfm/prodigy-vision-all9/state/vision_all9_finalcore/vision/all9_s0"
+  echo "all9_alias=excluded_from_this_12-model launch; use the registered seed-matched all9 checkpoint"
   echo "optimizer_updates=2500"
   echo "checkpoint_steps=100,300,900,2500"
   echo "training_seed=$SEED"
