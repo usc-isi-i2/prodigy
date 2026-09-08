@@ -816,6 +816,7 @@ def main() -> int:
             target=targets[0],
             checkpoint=first_checkpoint,
         )
+        inference_params["exp_name"] += "_inference"
         sampler = dataset.neighbor_sampler
         for key in (
             "neighbor_sampling_method", "pinsage_num_walks", "pinsage_walk_length",
