@@ -15,7 +15,7 @@ PinSAGE uses 64 two-step walks from each episode center. Repeated visits are red
 counts; up to 100 distinct nodes become tokens, and normalized counts weight the messages
 into the center. The NM-positive random walk remains a separate one-hop operation.
 
-Run a dry plan and a bounded smoke before the 40k launch:
+Run a dry plan and a bounded smoke before the full 2,500-update launch:
 
 ```bash
 DRY_RUN=1 bash scripts/experiments/setup/nm_pinsage_fast_ablation/run_train_tucker.sh
@@ -23,13 +23,14 @@ SMOKE_STEPS=200 bash scripts/experiments/setup/nm_pinsage_fast_ablation/run_trai
 ```
 
 `GPUS` is a space-separated list and `MODELS_PER_GPU` controls concurrency. For
-example, `GPUS="0 1" MODELS_PER_GPU=4` runs all eight jobs while GPUs 2-3 are occupied.
+example, `GPUS="0 1" MODELS_PER_GPU=4` runs eight jobs concurrently and queues the
+remaining jobs while GPUs 2-3 are occupied.
 
 Use a fresh run directory for the full 2,500-update launch. On Tucker it belongs in a detached tmux
 session after checking `tmux ls`, GPU processes, RAM, and `/dev/shm`. Only GPUs 0-3 are
 allowed.
 
-After all eight terminal checkpoints exist, run the paired 10-shot classification
+After all 24 terminal checkpoints exist, run the paired 10-shot classification
 evaluation on the four labeled targets with matching inference samplers:
 
 ```bash
