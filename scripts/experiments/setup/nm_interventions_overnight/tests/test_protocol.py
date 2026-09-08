@@ -21,10 +21,10 @@ class ProtocolTests(unittest.TestCase):
         cls.dataset=SubgraphDataset(graph,cls.sampler,bidirectional=False)
         cls.dataset.source_node_pools={i:torch.arange(i*40,(i+1)*40) for i in range(3)}
 
-    def task(self, flags):
+    def task(self, flags, cross_source_prob=0.0):
         return CampaignNeighborTask(self.sampler,120,'inout',strata=[np.arange(40),np.arange(40,80)],
             confine_to_single_stratum=True,stratum_weighting='balanced',filter_min_degree=True,
-            flags=flags,adaptive_weights=torch.ones(16))
+            cross_source_prob=cross_source_prob,flags=flags,adaptive_weights=torch.ones(16))
 
     def test_every_sampler_excludes_holdout(self):
         for flags in ['', 'proportional','blocked','cross_graph','degree_balanced','uniform_positive','degree_hard','region_adaptive','coverage_cycle']:
@@ -41,6 +41,24 @@ class ProtocolTests(unittest.TestCase):
     def test_mixed_draw_uses_both_sources(self):
         ep=self.task('cross_graph').sample(30,7,3,4,random.Random(3))
         self.assertEqual({c//40 for c in ep},{0,1})
+
+    def test_partial_cross_graph_probability_preserves_episode_locality(self):
+        within=self.task('',cross_source_prob=0.0);mixed=self.task('',cross_source_prob=1.0)
+        rng_within=random.Random(3);rng_mixed=random.Random(3)
+        for _ in range(20):
+            local=within.sample(10,7,3,4,rng_within)
+            self.assertEqual(len({c//40 for c in local}),1)
+            cross=mixed.sample(30,7,3,4,rng_mixed)
+            self.assertEqual({c//40 for c in cross},{0,1})
+
+    def test_partial_cross_graph_mixed_branch_is_source_balanced(self):
+        task=self.task('',cross_source_prob=1.0);rng=random.Random(11)
+        counts=np.zeros(2,dtype=int)
+        for _ in range(200):
+            episode=task.sample(30,7,3,4,rng)
+            for center in episode:
+                counts[center//40]+=1
+        self.assertLess(abs(int(counts[0])-int(counts[1])),300)
 
     def test_block_length(self):
         task=self.task('blocked');rng=random.Random(9)

@@ -129,7 +129,15 @@ class CampaignNeighborTask(NeighborTask):
         raise RuntimeError('Campaign center sampler exhausted attempts')
 
     def sample(self, num_label, num_member, num_shot, num_query, rng):
-        if 'cross_graph' in self.flags:
+        # The generic NeighborTask interpolation draws its mixed branch from the
+        # union of active nodes, which makes source exposure proportional to graph
+        # size.  The campaign instead holds balanced source exposure fixed while
+        # changing only the probability that an episode spans sources.
+        partial_cross_graph = self.cross_source_prob > 0.0
+        use_cross_graph = 'cross_graph' in self.flags
+        if partial_cross_graph:
+            use_cross_graph = rng.random() < self.cross_source_prob
+        if use_cross_graph:
             # Balanced source choice per class; unlike the historical global fallback,
             # this can never draw a held-out source or change to size-proportional exposure.
             task = {}
@@ -140,6 +148,10 @@ class CampaignNeighborTask(NeighborTask):
                 if len(task) == num_label:
                     return task
             raise RuntimeError('Mixed-source sampler exhausted attempts')
+        if partial_cross_graph:
+            # Avoid NeighborTask.sample here: it would perform a second Bernoulli
+            # draw and use the size-proportional global-candidate branch.
+            return self._sample_confined(num_label, num_member, rng)
         if 'blocked' in self.flags:
             idx = (self.counter // 64) % len(self.strata)
             self.counter += 1

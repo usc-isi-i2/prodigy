@@ -85,6 +85,7 @@ Setup and launch files remain in `../setup/<name>/`.
 
 - Paper-vision downstream evidence and RQ1/RQ2 metrics: [`paper_vision_evidence`](synthesis/cross_experiment/paper_vision_evidence/)
 - Matched three-seed paper figure: [`paper_flagship_ladders`](synthesis/cross_experiment/paper_flagship_ladders/)
+- Matched ratio, data-scale, and capacity sweep: [`paper_mechanism_sweeps`](synthesis/cross_experiment/paper_mechanism_sweeps/)
 - Cross-experiment syntheses: [`synthesis/cross_experiment`](synthesis/cross_experiment/)
 - Native-pretext result-matrix coverage: [`native_model_result_matrix`](synthesis/cross_experiment/native_model_result_matrix/)
 - Retired and superseded analyses: [`archive`](archive/)
