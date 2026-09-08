@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import gc
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -100,10 +102,15 @@ def load_reference_fingerprints(path: str | None) -> dict[str, str]:
     if not path:
         return {}
     fingerprints: dict[str, set[str]] = {}
-    for line_number, line in enumerate(Path(path).read_text(encoding="utf-8").splitlines(), 1):
-        if not line.strip():
-            continue
-        row = json.loads(line)
+    text = Path(path).read_text(encoding="utf-8")
+    lines = [line for line in text.splitlines() if line.strip()]
+    if not lines:
+        raise ValueError(f"empty reference results: {path}")
+    if lines[0].lstrip().startswith("{"):
+        rows = [json.loads(line) for line in lines]
+    else:
+        rows = list(csv.DictReader(lines, delimiter="\t"))
+    for line_number, row in enumerate(rows, 1):
         try:
             fingerprints.setdefault(row["dataset"], set()).add(row["episode_fingerprint"])
         except KeyError as error:
@@ -118,7 +125,7 @@ def load_existing_results(
     path: Path,
     *,
     expected_keys: set[tuple[int, str, str]],
-    checkpoint_step: int,
+    checkpoint_steps: dict[str, int],
     baseline: str,
 ) -> tuple[set[tuple[int, str, str]], dict[str, str]]:
     completed: set[tuple[int, str, str]] = set()
@@ -132,7 +139,8 @@ def load_existing_results(
             raise ValueError(f"unexpected existing result {key} in {path}:{line_number}")
         if key in completed:
             raise ValueError(f"duplicate existing result {key} in {path}:{line_number}")
-        if int(row.get("checkpoint_step", -1)) != checkpoint_step:
+        expected_step = checkpoint_steps[row["model_id"]]
+        if int(row.get("checkpoint_step", -1)) != expected_step:
             raise ValueError(f"wrong checkpoint step in {path}:{line_number}")
         if row.get("baseline") != baseline or int(row.get("episodes", -1)) != EVAL_EPISODES:
             raise ValueError(f"wrong protocol in {path}:{line_number}")
@@ -206,24 +214,54 @@ def load_external_models(path: str | Path):
     rows = []
     with Path(path).open(encoding="utf-8") as handle:
         header = handle.readline().rstrip("\n").split("\t")
-        if header != ["model_id", "checkpoint", "sources"]:
+        valid_headers = (
+            ["model_id", "checkpoint", "sources"],
+            ["model_id", "checkpoint", "sources", "training_seed", "checkpoint_step"],
+            [
+                "model_id", "checkpoint", "sources", "training_seed", "checkpoint_step",
+                "training_revision", "checkpoint_sha256",
+            ],
+        )
+        if header not in valid_headers:
             raise ValueError(f"unexpected model-list header: {header}")
         for line_number, raw in enumerate(handle, start=2):
             fields = raw.rstrip("\n").split("\t")
-            if len(fields) != 3:
+            if len(fields) != len(header):
                 raise ValueError(f"invalid model-list row {line_number}: {raw!r}")
-            model_id, checkpoint, sources = fields
-            rows.append(SimpleNamespace(
+            model_id, checkpoint, sources = fields[:3]
+            row = dict(
                 model_id=model_id,
                 checkpoint=Path(checkpoint),
                 sources=tuple(filter(None, sources.split(","))),
-            ))
+            )
+            if len(fields) >= 5:
+                row.update(training_seed=int(fields[3]), checkpoint_step=int(fields[4]))
+            if len(fields) == 7:
+                row.update(training_revision=fields[5], checkpoint_sha256=fields[6])
+            rows.append(SimpleNamespace(**row))
     if not rows:
         raise ValueError(f"empty model list: {path}")
     ids = [row.model_id for row in rows]
     if len(ids) != len(set(ids)):
         raise ValueError(f"duplicate model ids in {path}")
     return rows
+
+
+def checkpoint_step_for(args, model) -> int:
+    return int(getattr(model, "checkpoint_step", args.checkpoint_step))
+
+
+def verify_external_checkpoint(model) -> None:
+    expected = getattr(model, "checkpoint_sha256", "")
+    if not expected:
+        return
+    with model.checkpoint.open("rb") as handle:
+        observed = hashlib.file_digest(handle, "sha256").hexdigest()
+    if observed != expected:
+        raise ValueError(
+            f"checkpoint checksum mismatch for {model.model_id}: "
+            f"expected {expected}, observed {observed}"
+        )
 
 
 def checkpoint_path(args, training_seed: int, model_id: str) -> Path:
@@ -386,11 +424,17 @@ def main() -> int:
         raise ValueError("a custom checkpoint must have exactly one --training-seeds value")
     if not 0 <= args.worker_index < args.worker_count:
         raise ValueError("worker-index must be in [0, worker-count)")
-    jobs = [
-        (training_seed, model)
-        for training_seed in training_seeds
-        for model in models
-    ]
+    embedded_seeds = [getattr(model, "training_seed", None) for model in models]
+    if any(seed is not None for seed in embedded_seeds):
+        if not all(seed is not None for seed in embedded_seeds):
+            raise ValueError("external model list must provide training_seed for every row or no rows")
+        jobs = [(int(model.training_seed), model) for model in models]
+    else:
+        jobs = [
+            (training_seed, model)
+            for training_seed in training_seeds
+            for model in models
+        ]
     jobs = [job for index, job in enumerate(jobs) if index % args.worker_count == args.worker_index]
     if not jobs:
         raise ValueError(f"worker {args.worker_index} has no assigned jobs")
@@ -401,6 +445,7 @@ def main() -> int:
                 checkpoint = checkpoint_path(args, training_seed, model.model_id)
             if not checkpoint.is_file():
                 raise FileNotFoundError(checkpoint)
+            verify_external_checkpoint(model)
     result_path = Path(args.results)
     if result_path.exists() and not args.resume:
         raise FileExistsError(f"refusing to overwrite results: {result_path}")
@@ -422,13 +467,17 @@ def main() -> int:
         for training_seed, model in jobs
         for dataset_name in targets
     }
+    checkpoint_steps = {
+        model.model_id: 0 if args.random_init else checkpoint_step_for(args, model)
+        for _, model in jobs
+    }
     completed: set[tuple[int, str, str]] = set()
     expected_fingerprints: dict[str, str] = {}
     if result_path.exists():
         completed, expected_fingerprints = load_existing_results(
             result_path,
             expected_keys=expected_keys,
-            checkpoint_step=0 if args.random_init else args.checkpoint_step,
+            checkpoint_steps=checkpoint_steps,
             baseline="random_init" if args.random_init else "pretrained",
         )
         for dataset_name, observed in expected_fingerprints.items():
@@ -448,7 +497,7 @@ def main() -> int:
                     print(f"SKIP seed={training_seed} model={plan_model.model_id} dataset={dataset_name}")
                     continue
                 checkpoint = None
-                checkpoint_step = 0 if args.random_init else args.checkpoint_step
+                checkpoint_step = 0 if args.random_init else checkpoint_step_for(args, plan_model)
                 if not args.random_init:
                     checkpoint = getattr(plan_model, "checkpoint", None)
                     if checkpoint is None:
@@ -504,6 +553,9 @@ def main() -> int:
                         "evaluation_seed": 0,
                         "eval_episode_seed_offset": args.eval_episode_seed_offset,
                         "checkpoint_step": checkpoint_step,
+                        "checkpoint": "" if checkpoint is None else str(checkpoint),
+                        "checkpoint_sha256": getattr(plan_model, "checkpoint_sha256", ""),
+                        "training_revision": getattr(plan_model, "training_revision", ""),
                         "baseline": "random_init" if args.random_init else "pretrained",
                         "task": "classification",
                         "dataset": dataset_name,

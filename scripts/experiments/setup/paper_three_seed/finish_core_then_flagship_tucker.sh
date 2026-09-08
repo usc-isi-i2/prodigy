@@ -56,3 +56,9 @@ python -u scripts/experiments/setup/nm_interventions_overnight/evaluate.py \
   --run-dirs "$PWD/log/paper_flagship_ladders/20260908/seeds_1-2" \
   --output "$PWD/log/paper_flagship_ladders/20260908/nm_evaluation" \
   --gpus 0 1 2 3 --workers-per-gpu 2 --episodes 512
+
+# Reuse the repository's audited 128-episode, 2-way/10-shot classification stream.
+# The external model list joins the original seed-0 intervention ladder with the
+# two replicas and records each validation-selected checkpoint's actual step/hash.
+WORKERS=4 RUN_STAMP=20260908 \
+  bash "$(dirname "$0")/run_flagship_cls_tucker.sh"

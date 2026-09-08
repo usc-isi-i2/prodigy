@@ -36,7 +36,17 @@ All forty conditions per seed share one graph load. This is the inferentially
 matched comparison for the flagship; historical ladders remain context rather
 than being pooled across protocols.
 
-After training completes, the queue evaluates all checkpoints on the eight fixed
+`finish_core_then_flagship_tucker.sh` is the production orchestrator. It preserves
+the already-running seed-1 batch, replaces the reload-heavy remainder with one
+shared two-hop load and one shared one-hop load, then trains the 80 flagship
+replicas. It follows training with 512 fixed 30-way NM episodes on all nine receiver
+graphs and the repository's published 128-episode 2-way/10-shot classification
+stream on five labeled targets. The classification phase joins the original seed-0
+ladder to seeds 1 and 2, fingerprints every checkpoint and episode stream, and
+writes `classification_evaluation/classification_long.tsv` only after validating all
+600 cells.
+
+After training completes, the queue evaluates all checkpoints on the nine fixed
 NM receiver episode sets. One-hop GraphSAGE, GATv2, and two-hop GraphSAGE are
 evaluated separately so that each checkpoint is reconstructed with the matching
 architecture and sampler.
