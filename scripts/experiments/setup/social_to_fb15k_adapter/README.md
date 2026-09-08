@@ -15,7 +15,8 @@ otherwise native.
 
 Run on Tucker in a dedicated worktree and tmux session. The launcher uses owned
 GPUs 0-3, one checkpoint per GPU, and writes only beneath
-`log/social_to_fb15k_adapter/`.
+`log/social_to_fb15k_adapter/`. Set `GPUS=0,1` (or another comma-separated
+subset of owned GPUs 0-3) to run models sequentially across only those devices.
 
 ```bash
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
