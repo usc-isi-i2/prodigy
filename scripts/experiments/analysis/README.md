@@ -10,6 +10,7 @@ Setup and launch files remain in `../setup/<name>/`.
 
 - **PRODIGY / neighbor matching**
   - Single-source transfer: [`nm_single_source_matrix`](transfer/matrices/prodigy_nm/single_source/nm_single_source_matrix/), [`nm_single_source_matrix_facebook`](transfer/matrices/prodigy_nm/single_source/nm_single_source_matrix_facebook/)
+  - Social-versus-citation pilot: [`social_specificity_pilot`](transfer/matrices/prodigy_nm/single_source/social_specificity_pilot/)
   - Merged versus single: [`nm_transfer_matrix`](transfer/matrices/prodigy_nm/merged_vs_single/nm_transfer_matrix/), [`nm_covid_midterm`](transfer/matrices/prodigy_nm/merged_vs_single/nm_covid_midterm/)
   - Downstream transfer: [`nm_single_source_downstream`](transfer/matrices/prodigy_nm/downstream/nm_single_source_downstream/)
   - Identity-disjoint control: [`entity_disjoint_eval`](transfer/matrices/prodigy_nm/identity_disjoint/entity_disjoint_eval/)
