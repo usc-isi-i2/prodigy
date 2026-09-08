@@ -4,6 +4,7 @@ set -euo pipefail
 
 LIVE_STATUS="${LIVE_STATUS:-/dataMeR1/phil/gfm/prodigy-paper-fast/log/paper_three_seed_fast/20260908/seed1_ladder_1hop/status.json}"
 LIVE_SESSION="${LIVE_SESSION:-paper-three-seed-fast}"
+PAPER_GPUS="${PAPER_GPUS:-0 2 3}"
 
 while true; do
   if [[ -f "$LIVE_STATUS" ]]; then
@@ -28,8 +29,9 @@ while tmux has-session -t gg-ladder-official 2>/dev/null; do sleep 30; done
 
 stable=0
 while (( stable < 4 )); do
+  gpu_csv="$(tr ' ' ',' <<< "$PAPER_GPUS")"
   if nvidia-smi --query-gpu=memory.used,utilization.gpu \
-      --format=csv,noheader,nounits -i 0,1,2,3 |
+      --format=csv,noheader,nounits -i "$gpu_csv" |
       awk -F, '{gsub(/ /,"",$1); gsub(/ /,"",$2); if ($1>1000 || $2>10) bad=1} END{exit bad}'; then
     stable=$((stable + 1))
   else
@@ -39,11 +41,26 @@ while (( stable < 4 )); do
 done
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
-GPUS="0 1 2 3" MODELS_PER_GPU=8 WORKER_BUDGET=128 RUN_STAMP=20260908 \
+GPUS="$PAPER_GPUS" MODELS_PER_GPU=8 WORKER_BUDGET=96 RUN_STAMP=20260908 \
   bash "$(dirname "$0")/run_fast_remainder_tucker.sh"
 
-SEEDS="1 2" GPUS="0 1 2 3" MODELS_PER_GPU=8 WORKER_BUDGET=128 RUN_STAMP=20260908 \
+SEEDS="1 2" GPUS="$PAPER_GPUS" MODELS_PER_GPU=8 WORKER_BUDGET=96 RUN_STAMP=20260908 \
   bash "$(dirname "$0")/run_flagship_ladders_tucker.sh"
+
+# VISION replicas occupy GPU 1 independently while PRODIGY uses 0/2/3.  Wait for
+# that architecture sweep only when all four devices are needed for evaluation.
+while tmux has-session -t vision-mixture-seeds 2>/dev/null; do sleep 30; done
+stable=0
+while (( stable < 4 )); do
+  if nvidia-smi --query-gpu=memory.used,utilization.gpu \
+      --format=csv,noheader,nounits -i 0,1,2,3 |
+      awk -F, '{gsub(/ /,"",$1); gsub(/ /,"",$2); if ($1>1000 || $2>10) bad=1} END{exit bad}'; then
+    stable=$((stable + 1))
+  else
+    stable=0
+  fi
+  sleep 30
+done
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
 source "$(conda info --base)/etc/profile.d/conda.sh"
