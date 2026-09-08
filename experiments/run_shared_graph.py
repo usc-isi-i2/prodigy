@@ -9,6 +9,7 @@ import copy
 import json
 import os
 from pathlib import Path
+import re
 import signal
 import subprocess
 import sys
@@ -272,6 +273,8 @@ def make_plan(args, overrides):
         p = get_params(['--config', str(Path(config).resolve()), *overrides])
         if seed is not None:
             p['seed'] = seed
+            base = re.sub(r'_s\d+$', '', p['prefix'])
+            p['prefix'] = f'{base}_s{seed}'
         if args.smoke_steps and p.get('neighbor_sampling_source_sequence'):
             raise ValueError('Smoke mode requires interleaved configs; do not truncate a blocked-source schedule')
         p.update(device=torch.device(f'cuda:{args.gpus[index % len(args.gpus)]}'),

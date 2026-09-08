@@ -145,6 +145,7 @@ class SharedGraphTests(unittest.TestCase):
         plan, workers = make_plan(args, [])
         assert workers == 4
         assert [p['seed'] for p in plan] == [1, 1, 2, 2]
+        assert all(p['prefix'].endswith(f"_s{p['seed']}") for p in plan)
         assert len({p['exp_name'] for p in plan}) == 4
 
 
