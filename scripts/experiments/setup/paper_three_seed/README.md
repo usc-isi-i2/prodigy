@@ -24,7 +24,7 @@ tmux new-session -d -s prodigy-paper-seeds \
 
 For the multi-source conditions, prefer `run_fast_train_tucker.sh`. It uses the
 validated shared-graph launcher, defaults to the currently idle GPUs 0, 2, and 3,
-eight model slots per GPU, and a total loader-worker budget of 72. It runs each
+six model slots per GPU, and a total loader-worker budget of 72. It runs each
 compatible context family as a separate shared-memory batch. The legacy queue
 remains the fallback for the eight standalone specialist graphs, the GATv2 ladder
 (whose configs load separate source artifacts), and exact historical output naming.
