@@ -89,11 +89,18 @@ def summarize_weighting(args):
         pernode["frequency_bin"] = pd.cut(pernode.occurrences,[0,1,4,19,float("inf")],labels=["1","2-4","5-19","20+"])
         sub["frequency_bin"] = sub["query"].map(pernode.frequency_bin)
         selected = np.where(sub.cluster.isin(route_ukr),sub.ukr_correct,sub.hk_correct)
+        anchors_per_query = sub.groupby(["episode","query"]).anchor.nunique().rename("distinct_anchors")
+        sub = sub.join(anchors_per_query,on=["episode","query"])
+        center_consistent_max = sub.groupby(["episode","query","anchor"]).size().groupby(level=[0,1]).max().sum()/len(sub)
         s=dict(node_weighted_ukr_accuracy=float(pernode.ukr_accuracy.mean()),
             node_weighted_hk_accuracy=float(pernode.hk_accuracy.mean()),
             cluster_router_accuracy=float(selected.mean()),
             top_one_percent_nodes_occurrence_share=float(pernode.occurrences.nlargest(max(1,int(np.ceil(len(pernode)*.01)))).sum()/len(sub)),
             max_occurrences_per_query=int(pernode.occurrences.max()),
+            multi_anchor_query_occurrence_fraction=float((sub.distinct_anchors>1).mean()),
+            max_anchors_for_same_query_in_episode=int(anchors_per_query.max()),
+            center_consistent_oracle_accuracy=float(center_consistent_max),
+            anchor_ambiguity_groups={str(amb):stats(z) for amb,z in sub.groupby(sub.distinct_anchors>1)},
             frequency_groups={})
         for group,z in sub.groupby("frequency_bin",observed=True):
             s["frequency_groups"][str(group)] = stats(z)
