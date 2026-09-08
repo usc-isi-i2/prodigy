@@ -39,7 +39,7 @@ fi
 
 EVALUATION_BLOCKERS=(
   paper-optimized-queue paper-onehop-seed2-overlap paper-optimized-relauncher
-  paper-flagship-recovery paper-core-fast-eval vision-mixture-seeds
+  paper-flagship-recovery paper-core-fast-eval
 )
 for session in "${EVALUATION_BLOCKERS[@]}"; do
   while tmux has-session -t "$session" 2>/dev/null; do sleep 30; done
@@ -54,7 +54,7 @@ if [[ -z "$GPUS_TEXT" ]]; then
       IFS=, read -r used util <<< "$values"
       if (( used < 1000 && util < 10 )); then available+=("$gpu"); fi
     done
-    if (( ${#available[@]} >= 3 )); then
+    if (( ${#available[@]} >= 2 )); then
       GPUS_TEXT="${available[*]}"
       break
     fi
@@ -62,7 +62,7 @@ if [[ -z "$GPUS_TEXT" ]]; then
   done
 fi
 read -r -a gpu_ids <<< "$GPUS_TEXT"
-(( ${#gpu_ids[@]} >= 3 )) || { echo "mechanism evaluation requires at least three GPUs" >&2; exit 2; }
+(( ${#gpu_ids[@]} >= 2 )) || { echo "mechanism evaluation requires at least two GPUs" >&2; exit 2; }
 for gpu in "${gpu_ids[@]}"; do
   [[ "$gpu" =~ ^[0-3]$ ]] || { echo "refusing non-owned GPU $gpu" >&2; exit 2; }
 done
