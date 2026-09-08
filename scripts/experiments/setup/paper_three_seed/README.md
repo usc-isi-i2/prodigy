@@ -22,6 +22,13 @@ tmux new-session -d -s prodigy-paper-seeds \
   'export PATH="/home/mhchu/miniconda3/bin:$PATH"; SEEDS="1 2" GPUS="0 1 2 3" bash scripts/experiments/setup/paper_three_seed/run_queue_tucker.sh > log/paper_three_seed/queue.log 2>&1'
 ```
 
+For the multi-source conditions, prefer `run_fast_train_tucker.sh`. It uses the
+validated shared-graph launcher, defaults to the currently idle GPUs 0, 2, and 3,
+eight model slots per GPU, and a total loader-worker budget of 72. It runs each
+compatible architecture/context family as a separate shared-memory batch. The
+legacy queue remains the fallback for the eight standalone specialist graphs and
+for exact historical output naming.
+
 After training completes, the queue evaluates all checkpoints on the eight fixed
 NM receiver episode sets. One-hop GraphSAGE, GATv2, and two-hop GraphSAGE are
 evaluated separately so that each checkpoint is reconstructed with the matching
