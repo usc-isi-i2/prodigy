@@ -41,12 +41,17 @@ def pack(batch, features, path):
     # immutable backing graph. Keep PyG boundaries and metadata without conversion.
     graph = batch[0].clone()
     expected = batch[0].x
-    del graph.x
+    # Keep the key in its original insertion position: the canonical hash walks
+    # PyG tensor attributes in that order. A zero-row placeholder stores no data.
+    graph.x = expected.new_empty((0, expected.shape[1]))
     packed = {'schema': 1, 'batch': (graph, *batch[1:]),
               'feature_lookup': 'backing_graph.x[global_node_ids], -1 is zero supernode'}
     torch.save(packed, path)
     recovered = restore(torch.load(path, map_location='cpu', weights_only=False), features)
     assert torch.equal(expected, recovered[0].x)
+    original_hash, recovered_hash = hashlib.sha256(), hashlib.sha256()
+    update_hash(original_hash, batch); update_hash(recovered_hash, recovered)
+    assert original_hash.hexdigest() == recovered_hash.hexdigest(), 'compact input round-trip changed tensors/order'
     return recovered
 
 
