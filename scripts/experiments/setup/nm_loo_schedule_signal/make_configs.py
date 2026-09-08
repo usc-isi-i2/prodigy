@@ -75,6 +75,7 @@ def main() -> None:
                     "neighbor_sampling_source_schedule": ",".join(names),
                     "neighbor_sampling_source_schedule_steps": ",".join(map(str, steps)),
                     "neighbor_sampling_source_schedule_seed": seed,
+                    "neighbor_matching_member_seed": seed,
                     "neighbor_sampling_episode_source_weighting": "balanced" if exposure == "uniform" else "proportional",
                     "tags": ["nm_loo_schedule_signal", "holdout_ukr_rus", exposure, f"k_{block}", f"seed_{seed}"],
                 })
