@@ -82,6 +82,7 @@ Setup and launch files remain in `../setup/<name>/`.
 
 ## Synthesis and archive
 
+- Paper-vision downstream evidence and RQ1/RQ2 metrics: [`paper_vision_evidence`](synthesis/cross_experiment/paper_vision_evidence/)
 - Cross-experiment syntheses: [`synthesis/cross_experiment`](synthesis/cross_experiment/)
 - Native-pretext result-matrix coverage: [`native_model_result_matrix`](synthesis/cross_experiment/native_model_result_matrix/)
 - Retired and superseded analyses: [`archive`](archive/)
