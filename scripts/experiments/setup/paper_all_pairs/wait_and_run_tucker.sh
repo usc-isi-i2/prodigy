@@ -6,7 +6,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FLAGSHIP_ROOT="${FLAGSHIP_ROOT:-/dataMeR1/phil/gfm/prodigy-paper-remainder-opt/log/paper_flagship_ladders/20260908}"
 CORE_ROOT="${CORE_ROOT:-/dataMeR1/phil/gfm/prodigy-paper-remainder-opt/log/paper_three_seed_remainder/20260908/core_nm_evaluation}"
-GPUS_TEXT="${GPUS:-0 1 2 3}"
+GPUS_TEXT="${GPUS:-}"
 RUN_STAMP="${RUN_STAMP:-20260908}"
 RUN_ROOT="${RUN_ROOT:-${SCRIPT_DIR}/../../../../log/paper_all_pairs/${RUN_STAMP}}"
 TRAIN_COMPLETE="${RUN_ROOT}/training_complete_utc.txt"
@@ -77,6 +77,32 @@ wait_for_stable_gpus() {
   done
 }
 
+select_eval_gpus() {
+  if [[ -n "$GPUS_TEXT" ]]; then
+    read -r -a supplied <<< "$GPUS_TEXT"
+    (( ${#supplied[@]} >= 3 )) || { echo "pair evaluation requires at least three GPUs" >&2; return 1; }
+    for gpu in "${supplied[@]}"; do
+      [[ "$gpu" =~ ^[0-3]$ ]] || { echo "refusing non-owned GPU $gpu" >&2; return 1; }
+    done
+    echo "$GPUS_TEXT"
+    return
+  fi
+  while true; do
+    available=()
+    for gpu in 0 1 2 3; do
+      values="$(nvidia-smi -i "$gpu" --query-gpu=memory.used,utilization.gpu \
+        --format=csv,noheader,nounits | tr -d ' ')"
+      IFS=, read -r used util <<< "$values"
+      if (( used < 1000 && util < 10 )); then available+=("$gpu"); fi
+    done
+    if (( ${#available[@]} >= 3 )); then
+      echo "${available[*]}"
+      return
+    fi
+    sleep 30
+  done
+}
+
 while [[ ! -f "$MECHANISM_TRAIN_COMPLETE" ]]; do sleep 30; done
 if [[ ! -f "$TRAIN_COMPLETE" ]]; then
   if tmux has-session -t paper-optimized-queue 2>/dev/null; then
@@ -85,13 +111,17 @@ if [[ ! -f "$TRAIN_COMPLETE" ]]; then
   else
     while [[ ! -f "$MECHANISM_COMPLETE" ]]; do sleep 30; done
     wait_for_primary
-    wait_for_stable_gpus "$GPUS_TEXT"
-    PHASE=train GPUS="$GPUS_TEXT" MODELS_PER_GPU=14 WORKER_BUDGET=224 \
+    selected_gpus="$(select_eval_gpus)"
+    read -r -a selected_gpu_ids <<< "$selected_gpus"
+    wait_for_stable_gpus "$selected_gpus"
+    PHASE=train GPUS="$selected_gpus" MODELS_PER_GPU=14 \
+      WORKER_BUDGET="$((${#selected_gpu_ids[@]} * 56))" \
       bash "$SCRIPT_DIR/run_tucker.sh"
   fi
 fi
 
 while [[ ! -f "$MECHANISM_COMPLETE" ]]; do sleep 30; done
 wait_for_primary
-wait_for_stable_gpus "$GPUS_TEXT"
-PHASE=eval GPUS="$GPUS_TEXT" exec bash "$SCRIPT_DIR/run_tucker.sh"
+selected_gpus="$(select_eval_gpus)"
+wait_for_stable_gpus "$selected_gpus"
+PHASE=eval GPUS="$selected_gpus" exec bash "$SCRIPT_DIR/run_tucker.sh"

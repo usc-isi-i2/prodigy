@@ -11,7 +11,7 @@ SEED2_ONEHOP="${SEED2_ONEHOP:-${REMAINDER_ROOT}/onehop_seed_2}"
 TWOHOP="${TWOHOP:-${REMAINDER_ROOT}/twohop_seeds_1-2}"
 OUTPUT="${OUTPUT:-${REMAINDER_ROOT}/core_nm_evaluation}"
 WAIT_SESSION="${WAIT_SESSION:-paper-optimized-queue}"
-GPUS_TEXT="${GPUS:-0 1 2 3}"
+GPUS_TEXT="${GPUS:-}"
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
 source "$(conda info --base)/etc/profile.d/conda.sh"
@@ -43,6 +43,28 @@ wait_complete "$SEED2_ONEHOP" 18
 wait_complete "$TWOHOP" 46
 
 while tmux has-session -t "$WAIT_SESSION" 2>/dev/null; do sleep 60; done
+
+if [[ -z "$GPUS_TEXT" ]]; then
+  while true; do
+    available=()
+    for gpu in 0 1 2 3; do
+      values="$(nvidia-smi -i "$gpu" --query-gpu=memory.used,utilization.gpu \
+        --format=csv,noheader,nounits | tr -d ' ')"
+      IFS=, read -r used util <<< "$values"
+      if (( used < 1000 && util < 10 )); then available+=("$gpu"); fi
+    done
+    if (( ${#available[@]} >= 3 )); then
+      GPUS_TEXT="${available[*]}"
+      break
+    fi
+    sleep 30
+  done
+fi
+read -r -a gpu_ids <<< "$GPUS_TEXT"
+(( ${#gpu_ids[@]} >= 3 )) || { echo "core evaluation requires at least three GPUs" >&2; exit 2; }
+for gpu in "${gpu_ids[@]}"; do
+  [[ "$gpu" =~ ^[0-3]$ ]] || { echo "refusing non-owned GPU $gpu" >&2; exit 2; }
+done
 stable=0
 while (( stable < 4 )); do
   gpu_csv="$(tr ' ' ',' <<< "$GPUS_TEXT")"
