@@ -31,3 +31,10 @@ owned 0--3 set and preserves every checkpoint's downstream trajectory.
 Set `SEED`, `STATE_ROOT`, and `LOG_ROOT` explicitly for additional training-seed
 replicas. The 12 non-all-nine source sets are trained and evaluated in each run;
 the registered seed-matched all-nine checkpoint is joined during analysis.
+
+After the two replica roots contain `COMPLETE`, run
+`postprocess_three_seed_tucker.sh` from a separate idle worktree. It waits rather
+than reading partial results, preserves the 48 five-target JSONL files from each
+new seed, requires all 780 physical cells, and renders the VISION and
+PRODIGY/VISION/SAMGPT three-seed ladder figures. It writes no checkpoint and uses
+no GPU.
