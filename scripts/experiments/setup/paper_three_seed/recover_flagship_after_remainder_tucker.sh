@@ -89,7 +89,7 @@ if [[ ! -e "$REPLICATE_RUN" ]]; then
     sleep 30
   done
   write_status training "launching corrected three-seed flagship replicas"
-  RUN_ROOT="$FLAGSHIP_ROOT" SEEDS="1 2" GPUS="0 2 3" MODELS_PER_GPU=8 WORKER_BUDGET=96 \
+  RUN_ROOT="$FLAGSHIP_ROOT" SEEDS="1 2" GPUS="0 2 3" MODELS_PER_GPU=14 WORKER_BUDGET=168 \
     bash "$SCRIPT_DIR/run_flagship_ladders_tucker.sh"
 fi
 

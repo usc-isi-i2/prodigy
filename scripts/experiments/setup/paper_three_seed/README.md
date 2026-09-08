@@ -48,6 +48,13 @@ ladder to seeds 1 and 2, fingerprints every checkpoint and episode stream, and
 writes `classification_evaluation/classification_long.tsv` only after validating all
 600 cells.
 
+The corrected recovery path uses 14 flagship models per GPU with a total
+168-loader-worker budget on GPUs 0, 2, and 3. This matches the live, error-free
+concurrency measured when eight remainder trainers and six mechanism trainers
+shared each device (about 24 GiB used on an 80 GiB GPU). It reduces the 96-model
+replication from four training waves to three while retaining four loader workers
+per model; both values remain explicit at the recovery call site.
+
 After training completes, the queue evaluates all checkpoints on the nine fixed
 NM receiver episode sets. One-hop GraphSAGE, GATv2, and two-hop GraphSAGE are
 evaluated separately so that each checkpoint is reconstructed with the matching
