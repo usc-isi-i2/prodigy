@@ -34,7 +34,12 @@ Code archive SHA-256:
 `9eab3ff790a906d037354742be2d19e1c65f3273009a8c7e3402f6a85839951b`.
 Code manifest SHA-256:
 `d19c2d76ca1905d3ead4d6aaee98195b31a7fd29704695e2d78151f7af4a5c77`.
-Local archive: `output/inference/graph_role_inference_code.zip` in this worktree.
+The original worktree copy was consolidated on 7 September 2026. Verified
+byte-identical archive copies now live at
+`/Users/philipp/projects/gfm/prodigy-private-artifacts/portable-inference/graph_role_inference_code.zip`
+on the laptop and
+`/dataMeR1/phil/gfm/private-artifacts/portable-inference/graph_role_inference_code.zip`
+on Tucker. Both match the SHA-256 above.
 The compact completed receipts are `data/portable_inference_20260907/`.
 
 ## Completed full verification
