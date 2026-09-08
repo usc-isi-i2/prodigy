@@ -229,8 +229,6 @@ def load_external_models(path: str | Path):
 def checkpoint_path(args, training_seed: int, model_id: str) -> Path:
     if args.checkpoint_path:
         return Path(args.checkpoint_path)
-    if args.checkpoint_path:
-        return Path(args.checkpoint_path)
     if args.checkpoint_layout == "architecture-matrix":
         return (
             Path(args.state_root)
