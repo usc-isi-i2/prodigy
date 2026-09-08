@@ -300,11 +300,19 @@ class SingleLayerGeneralGNN(torch.nn.Module):
                 else:
                     graph.x = new_graph_x
             elif isinstance(module, BackgroundGNNLayer):
-                new_graph_x = module.forward(x_orig, graph.x, graph.edge_index.long(),
-                                             graph.edge_attr if "edge_attr" in graph else None,
-                                             graph.edge_index_supernode, graph.ptr[:-1], graph.batch,
-                                             edge_weight=(graph.pinsage_edge_weight
-                                                          if "pinsage_edge_weight" in graph else None))
+                background_kwargs = {}
+                if "pinsage_edge_weight" in graph:
+                    background_kwargs["edge_weight"] = graph.pinsage_edge_weight
+                new_graph_x = module.forward(
+                    x_orig,
+                    graph.x,
+                    graph.edge_index.long(),
+                    graph.edge_attr if "edge_attr" in graph else None,
+                    graph.edge_index_supernode,
+                    graph.ptr[:-1],
+                    graph.batch,
+                    **background_kwargs,
+                )
                 if self.params["skip_path"] and new_graph_x.shape == graph.x.shape:
                     graph.x = graph.x + new_graph_x
                 else:
