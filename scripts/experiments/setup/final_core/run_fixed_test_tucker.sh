@@ -143,6 +143,7 @@ launch_workers() {
          --evaluation-run-stamp "${RUN_ID}_${kind}_bs${batch_size}"
          --ready-dir "$ready_dir" --expected-workers "$WORKER_COUNT"
          --min-host-reserve-gib "$MIN_HOST_RESERVE_GIB")
+    [[ "$kind" == production ]] && cmd+=(--partition-by targets)
     if [[ "$kind" == smoke ]]; then
       cmd+=(--max-checkpoints "$SMOKE_MAX_CHECKPOINTS")
     fi

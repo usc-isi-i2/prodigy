@@ -13,6 +13,7 @@ from evaluate_fixed_grid import (  # noqa: E402
     ReplayLoader,
     assert_cpu_batches,
     load_checkpoint_strict,
+    partition_items,
 )
 
 
@@ -25,6 +26,13 @@ class FakeGraph:
 
     def to_dict(self):
         return {"x": self.x}
+
+
+def test_target_partition_is_disjoint_complete_and_ordered():
+    targets = list("abcdefghi")
+    shards = [partition_items(targets, worker, 3) for worker in range(3)]
+    assert shards == [["a", "d", "g"], ["b", "e", "h"], ["c", "f", "i"]]
+    assert sorted(item for shard in shards for item in shard) == targets
 
 
 def test_replay_clones_every_mutable_tensor():

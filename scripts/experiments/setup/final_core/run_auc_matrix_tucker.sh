@@ -131,6 +131,7 @@ launch_workers() {
          --evaluation-run-stamp "${RUN_ID}_${kind}_bs${BATCH_SIZE}"
          --ready-dir "$ready_dir" --expected-workers "$WORKER_COUNT"
          --min-host-reserve-gib "$MIN_HOST_RESERVE_GIB")
+    [[ "$kind" == production ]] && cmd+=(--partition-by targets)
     [[ -n "$REFERENCE_FINGERPRINTS" ]] && cmd+=(--reference-fingerprints "$REFERENCE_FINGERPRINTS")
     [[ "$kind" == smoke ]] && cmd+=(--max-checkpoints 1)
     echo "LAUNCH kind=$kind worker=$worker gpu=$gpu targets=$targets"
