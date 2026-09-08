@@ -80,7 +80,7 @@ wait_for_stable_gpus() {
 select_eval_gpus() {
   if [[ -n "$GPUS_TEXT" ]]; then
     read -r -a supplied <<< "$GPUS_TEXT"
-    (( ${#supplied[@]} >= 3 )) || { echo "pair evaluation requires at least three GPUs" >&2; return 1; }
+    (( ${#supplied[@]} >= 2 )) || { echo "pair evaluation requires at least two GPUs" >&2; return 1; }
     for gpu in "${supplied[@]}"; do
       [[ "$gpu" =~ ^[0-3]$ ]] || { echo "refusing non-owned GPU $gpu" >&2; return 1; }
     done
@@ -95,7 +95,7 @@ select_eval_gpus() {
       IFS=, read -r used util <<< "$values"
       if (( used < 1000 && util < 10 )); then available+=("$gpu"); fi
     done
-    if (( ${#available[@]} >= 3 )); then
+    if (( ${#available[@]} >= 2 )); then
       echo "${available[*]}"
       return
     fi
