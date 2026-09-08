@@ -44,3 +44,15 @@ GPUS="0 1 2 3" MODELS_PER_GPU=8 WORKER_BUDGET=128 RUN_STAMP=20260908 \
 
 SEEDS="1 2" GPUS="0 1 2 3" MODELS_PER_GPU=8 WORKER_BUDGET=128 RUN_STAMP=20260908 \
   bash "$(dirname "$0")/run_flagship_ladders_tucker.sh"
+
+export PATH="/home/mhchu/miniconda3/bin:$PATH"
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate prodigy
+export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
+export WANDB_MODE=offline
+export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
+unset CUDA_VISIBLE_DEVICES || true
+python -u scripts/experiments/setup/nm_interventions_overnight/evaluate.py \
+  --run-dirs "$PWD/log/paper_flagship_ladders/20260908/seeds_1-2" \
+  --output "$PWD/log/paper_flagship_ladders/20260908/nm_evaluation" \
+  --gpus 0 1 2 3 --workers-per-gpu 2 --episodes 512
