@@ -1,5 +1,8 @@
 # Social checkpoints on the FB15K-237 downstream task
 
+Tracked results and interpretation are in
+[`../../analysis/transfer/matrices/prodigy_nm/downstream/social_to_fb15k_adapter/FINDINGS.md`](../../analysis/transfer/matrices/prodigy_nm/downstream/social_to_fb15k_adapter/FINDINGS.md).
+
 This adapter evaluates four existing seed-0, step-2,500 social-graph PRODIGY
 specialists on the original paper's FB15K-237 20-way, 3-shot relation-type
 classification task. The selected sources are Ukraine/Russia, COVID, TwiBot-20,
