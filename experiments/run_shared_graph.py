@@ -99,6 +99,31 @@ def shared_storage_report(dataset):
     }.items()}
 
 
+def configure_job_samplers(dataset, params):
+    """Apply run-specific sampling policy without rebuilding the shared CSR graph."""
+    expected = 'pinsage' if params['gnn_type'] == 'pinsage' else 'uniform'
+    method = params.get('neighbor_sampling_method', 'uniform')
+    if method != expected:
+        raise ValueError(
+            f"gnn_type={params['gnn_type']} requires neighbor_sampling_method={expected}, got {method}"
+        )
+    sampler_fields = (
+        'method', 'pinsage_num_walks', 'pinsage_walk_length',
+        'pinsage_restart_prob', 'pinsage_topk',
+    )
+    configured = 0
+    for value in vars(dataset).values():
+        if not hasattr(value, 'whole_adj'):
+            continue
+        value.method = method
+        for field in sampler_fields[1:]:
+            setattr(value, field, params[field])
+        configured += 1
+    if configured == 0:
+        raise RuntimeError('Shared dataset contains no configurable neighbor sampler')
+    return dataset
+
+
 def write_json(path, value):
     path = Path(path)
     temp = path.with_suffix(path.suffix + '.tmp')
@@ -187,6 +212,7 @@ def train_one(dataset, params, job_dir, threads):
         try:
             if not all(result['shared_storage'].values()):
                 raise RuntimeError('Trainer did not receive shared graph storage')
+            configure_job_samplers(dataset, params)
             seed_everything(params)
             torch.autograd.set_detect_anomaly(params['detect_anomaly'])
             if params.get('campaign_protocol'):
