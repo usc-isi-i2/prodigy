@@ -418,8 +418,9 @@ def get_covid19_twitter_dataloader(
         )
         strata = None
         confine_to_single_stratum = False
-        # Two graph_id-based modes (mutually exclusive in practice):
+        # Three graph_id-based modes (mutually exclusive in practice):
         #   neighbor_sampling_strata="graph_id"          -> balance sources WITHIN each episode
+        #   neighbor_sampling_strata="graph_id_pool"     -> naive node-proportional source union
         #   neighbor_sampling_episode_source="graph_id"  -> confine each episode to ONE source
         strata_mode = kwargs.get("neighbor_sampling_strata", "")
         episode_source = kwargs.get("neighbor_sampling_episode_source", "")
@@ -437,7 +438,7 @@ def get_covid19_twitter_dataloader(
         )
         sequence_steps = None
         stratum_schedule = None
-        if strata_mode == "graph_id" or episode_source == "graph_id":
+        if strata_mode in {"graph_id", "graph_id_pool"} or episode_source == "graph_id":
             if not hasattr(graph, "graph_id"):
                 raise ValueError("graph_id neighbor sampling requires graph.graph_id metadata.")
             graph_ids = graph.graph_id.detach().cpu().numpy()
@@ -523,15 +524,33 @@ def get_covid19_twitter_dataloader(
                     "neighbor_sampling_source_schedule_steps was set without "
                     "neighbor_sampling_source_schedule."
                 )
-            strata = ([shared_pools[graph_id].numpy() for graph_id in stratum_ids]
-                      if shared_pools is not None else
-                      [np.where(graph_ids == graph_id)[0].tolist() for graph_id in stratum_ids])
+            source_strata = (
+                [shared_pools[graph_id].numpy() for graph_id in stratum_ids]
+                if shared_pools is not None else
+                [np.where(graph_ids == graph_id)[0] for graph_id in stratum_ids]
+            )
+            # A one-stratum union exercises the ordinary merged-graph sampling rule:
+            # every eligible node in the selected graphs has equal probability, so
+            # source exposure is proportional to source size and pseudo-classes may
+            # freely mix sources.  Keeping this as an explicit mode avoids silently
+            # including sources outside neighbor_sampling_source_subset.
+            strata = (
+                [np.concatenate(source_strata)]
+                if strata_mode == "graph_id_pool" and episode_source != "graph_id"
+                else source_strata
+            )
             confine_to_single_stratum = episode_source == "graph_id"
             summary = ", ".join(
                 f"{source_names[graph_id] if graph_id < len(source_names) else graph_id}:{len(stratum)}"
-                for graph_id, stratum in zip(stratum_ids, strata)
+                for graph_id, stratum in zip(stratum_ids, source_strata)
             )
-            mode = "confine-to-one-source" if confine_to_single_stratum else "balance-within-episode"
+            mode = (
+                "confine-to-one-source"
+                if confine_to_single_stratum else
+                "node-proportional-source-pool"
+                if strata_mode == "graph_id_pool" else
+                "balance-within-episode"
+            )
             scope = f" [subset {len(stratum_ids)}/{source_count} sources]" if subset else ""
             print(f"Neighbor sampling graph_id strata ({mode}){scope}: {summary}", flush=True)
             if batch_source_mode == "complete":

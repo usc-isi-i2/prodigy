@@ -334,10 +334,12 @@ def get_params(argv=None):
     args.add_argument(
         "--neighbor_sampling_strata",
         default="",
-        choices=["", "graph_id"],
+        choices=["", "graph_id", "graph_id_pool"],
         help=(
             "Optional strata used for neighbor-matching center-node sampling. "
-            "'graph_id' balances centers across disjoint merged source graphs."
+            "'graph_id' balances centers across disjoint merged source graphs; "
+            "'graph_id_pool' samples naively from the node-proportional union of "
+            "the selected source graphs."
         ),
     )
     args.add_argument(
@@ -938,8 +940,12 @@ def get_params(argv=None):
             raise ValueError("member-policy controls currently require covid19_twitter-format neighbor_matching")
         if params["neighbor_matching_member_seed"] < 0:
             raise ValueError("member-policy controls require a nonnegative dedicated sampling seed")
-        if params.get("neighbor_sampling_episode_source") != "graph_id" or not params.get("neighbor_matching_edge_split"):
-            raise ValueError("member-policy controls require source-confined split-aware NM")
+        graph_restricted = (
+            params.get("neighbor_sampling_episode_source") == "graph_id"
+            or params.get("neighbor_sampling_strata") in {"graph_id", "graph_id_pool"}
+        )
+        if not graph_restricted or not params.get("neighbor_matching_edge_split"):
+            raise ValueError("member-policy controls require graph-restricted split-aware NM")
     if params["neighbor_sampling_source_schedule_seed"] >= 0:
         if not str(params.get("neighbor_sampling_source_schedule") or "").strip():
             raise ValueError(
