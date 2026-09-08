@@ -132,12 +132,14 @@ def discover(groups: list[tuple[str, Path]]) -> list[dict]:
     return jobs
 
 
-def completed_cell(path: Path, job: dict, target: str, episodes: int) -> bool:
+def completed_cell(path: Path, job: dict, target: str, episodes: int,
+                   protocol: str | None = None) -> bool:
+    protocol = PROTOCOL if protocol is None else protocol
     if not path.is_file():
         return False
     old = json.loads(path.read_text(encoding="utf-8"))
     expected = {
-        "protocol": PROTOCOL,
+        "protocol": protocol,
         "model_id": job["model_id"],
         "family": job["family"],
         "arm": job["arm"],
@@ -159,7 +161,10 @@ def completed_cell(path: Path, job: dict, target: str, episodes: int) -> bool:
 
 
 def worker(dataset, jobs: list[dict], eval_params: dict, output: str, worker_id: int,
-           episodes: int, invocation_id: str) -> None:
+           episodes: int, invocation_id: str, protocol: str | None = None,
+           targets: tuple[str, ...] | None = None) -> None:
+    protocol = PROTOCOL if protocol is None else protocol
+    targets = TARGETS if targets is None else targets
     os.setsid()
     import torch
     from experiments.nm_campaign import atomic_json, evaluate, materialize
@@ -176,11 +181,11 @@ def worker(dataset, jobs: list[dict], eval_params: dict, output: str, worker_id:
     record = {"invocation_id": invocation_id, "pid": os.getpid(), "started": time.time()}
     atomic_json(output_path / f"worker_{worker_id}_status.json", {"status": "running", **record})
     try:
-        for target in TARGETS:
+        for target in targets:
             pending = [
                 job for job in jobs
                 if not completed_cell(output_path / "cells" / job["model_id"] / f"{target}.json",
-                                      job, target, episodes)
+                                      job, target, episodes, protocol)
             ]
             if not pending:
                 continue
@@ -189,7 +194,7 @@ def worker(dataset, jobs: list[dict], eval_params: dict, output: str, worker_id:
                 model = model_from_params(job["params"], job["checkpoint"], device)
                 metrics = evaluate(model, batches, device)
                 payload = {
-                    "protocol": PROTOCOL,
+                    "protocol": protocol,
                     "model_id": job["model_id"],
                     "family": job["family"],
                     "arm": job["arm"],
@@ -222,8 +227,12 @@ def worker(dataset, jobs: list[dict], eval_params: dict, output: str, worker_id:
         raise
 
 
-def audit_cells(output: Path, jobs: list[dict], episodes: int) -> dict:
-    expected = {(job["model_id"], target) for job in jobs for target in TARGETS}
+def audit_cells(output: Path, jobs: list[dict], episodes: int,
+                protocol: str | None = None,
+                targets: tuple[str, ...] | None = None) -> dict:
+    protocol = PROTOCOL if protocol is None else protocol
+    targets = TARGETS if targets is None else targets
+    expected = {(job["model_id"], target) for job in jobs for target in targets}
     rows = []
     for path in sorted((output / "cells").glob("*/*.json")):
         row = json.loads(path.read_text(encoding="utf-8"))
@@ -235,21 +244,21 @@ def audit_cells(output: Path, jobs: list[dict], episodes: int) -> dict:
     if observed != expected:
         raise ValueError(f"core evaluation coverage mismatch: missing={len(expected-observed)} extra={len(observed-expected)}")
     for row in rows:
-        if row.get("protocol") != PROTOCOL or row.get("episodes") != episodes:
+        if row.get("protocol") != protocol or row.get("episodes") != episodes:
             raise ValueError("core evaluation protocol drift")
         if not all(math.isfinite(float(row[key])) for key in ("roc_auc", "accuracy", "loss")):
             raise ValueError("non-finite core evaluation cell")
     fingerprints = {}
-    for target in TARGETS:
+    for target in targets:
         values = {row["fingerprint"] for row in rows if row["target"] == target}
         if len(values) != 1:
             raise ValueError(f"episode fingerprint drift for {target}: {len(values)}")
         fingerprints[target] = next(iter(values))
     return {
         "status": "complete",
-        "protocol": PROTOCOL,
+        "protocol": protocol,
         "models": len(jobs),
-        "targets": len(TARGETS),
+        "targets": len(targets),
         "cells": len(rows),
         "episodes_per_cell": episodes,
         "training_seeds": sorted({job["seed"] for job in jobs}),
@@ -319,7 +328,7 @@ def main() -> None:
             process = context.Process(
                 target=worker,
                 args=(dataset, selected, eval_params, str(args.output), index,
-                      args.episodes, invocation_id),
+                      args.episodes, invocation_id, PROTOCOL, TARGETS),
             )
             start_on_gpu(process, gpu)
             processes.append(process)
@@ -328,7 +337,7 @@ def main() -> None:
         failures = [process.exitcode for process in processes if process.exitcode != 0]
         if failures:
             raise RuntimeError(f"core evaluation worker failures: {failures}")
-        audit = audit_cells(args.output, jobs, args.episodes)
+        audit = audit_cells(args.output, jobs, args.episodes, PROTOCOL, TARGETS)
         atomic_json(args.output / "audit.json", audit)
         atomic_json(args.output / "status.json", {"status": "complete", "started": started,
                                                     "completed": time.time(), "invocation_id": invocation_id,
