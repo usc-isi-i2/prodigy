@@ -59,6 +59,8 @@ done
   --run-group "onehop=$SEED1_ONEHOP" \
   --run-group "onehop=$SEED2_ONEHOP" \
   --run-group "twohop=$TWOHOP" \
-  --output "$OUTPUT" --gpus $GPUS_TEXT --workers-per-gpu 2 \
+  --output "$OUTPUT" \
+  --eval-config scripts/experiments/setup/final_core/training.yaml \
+  --gpus $GPUS_TEXT --workers-per-gpu 2 \
   --episodes 512 --expected-models 82
 date -u +%Y-%m-%dT%H:%M:%SZ > "$OUTPUT/complete_utc.txt"

@@ -18,6 +18,7 @@ import traceback
 
 ROOT = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(ROOT))
+DEFAULT_EVAL_CONFIG = ROOT / "scripts/experiments/setup/final_core/training.yaml"
 
 from scripts.experiments.setup.nm_interventions_overnight.plan import TARGETS
 from scripts.experiments.setup.paper_three_seed.make_plan import build_plan
@@ -157,8 +158,8 @@ def completed_cell(path: Path, job: dict, target: str, episodes: int) -> bool:
     return True
 
 
-def worker(dataset, jobs: list[dict], output: str, worker_id: int, episodes: int,
-           invocation_id: str) -> None:
+def worker(dataset, jobs: list[dict], eval_params: dict, output: str, worker_id: int,
+           episodes: int, invocation_id: str) -> None:
     os.setsid()
     import torch
     from experiments.nm_campaign import atomic_json, evaluate, materialize
@@ -183,7 +184,7 @@ def worker(dataset, jobs: list[dict], output: str, worker_id: int, episodes: int
             ]
             if not pending:
                 continue
-            batches, fingerprint = materialize(dataset, pending[0]["params"], target, "test", episodes)
+            batches, fingerprint = materialize(dataset, eval_params, target, "test", episodes)
             for job in pending:
                 model = model_from_params(job["params"], job["checkpoint"], device)
                 metrics = evaluate(model, batches, device)
@@ -262,6 +263,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-group", action="append", type=parse_run_group, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--eval-config", type=Path, default=DEFAULT_EVAL_CONFIG)
     parser.add_argument("--gpus", nargs="+", type=int, choices=range(4), default=[0, 1, 2, 3])
     parser.add_argument("--workers-per-gpu", type=int, default=2)
     parser.add_argument("--episodes", type=int, default=512)
@@ -279,11 +281,13 @@ def main() -> None:
 
     import torch
     from experiments.nm_campaign import atomic_json
+    from experiments.params import get_params
     from experiments.run_shared_graph import prepare_shared_dataset, start_on_gpu
     from experiments.run_single_experiment import load_dataset
 
     args.output.mkdir(parents=True, exist_ok=True)
     invocation_id = f"{time.time_ns()}_{os.getpid()}"
+    eval_params = get_params(["--config", str(args.eval_config.resolve())])
     atomic_json(args.output / "plan.json", {
         "invocation_id": invocation_id,
         "models": [job["model_id"] for job in jobs],
@@ -291,6 +295,8 @@ def main() -> None:
         "episodes": args.episodes,
         "gpus": args.gpus,
         "workers_per_gpu": args.workers_per_gpu,
+        "eval_config": str(args.eval_config.resolve()),
+        "eval_graph_filename": eval_params["graph_filename"],
         "evaluation_revision": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
     })
     started = time.time()
@@ -298,7 +304,10 @@ def main() -> None:
                                                 "invocation_id": invocation_id})
     torch.set_num_threads(4)
     torch.autograd.set_detect_anomaly(False)
-    dataset = prepare_shared_dataset(load_dataset(jobs[0]["params"]))
+    dataset = prepare_shared_dataset(load_dataset(eval_params))
+    missing_targets = sorted(set(TARGETS) - set(dataset.graph.source_graph_names))
+    if missing_targets:
+        raise ValueError(f"evaluation graph lacks registered targets: {missing_targets}")
     slots = [gpu for gpu in args.gpus for _ in range(args.workers_per_gpu)]
     context = torch.multiprocessing.get_context("spawn")
     processes = []
@@ -309,7 +318,8 @@ def main() -> None:
                 continue
             process = context.Process(
                 target=worker,
-                args=(dataset, selected, str(args.output), index, args.episodes, invocation_id),
+                args=(dataset, selected, eval_params, str(args.output), index,
+                      args.episodes, invocation_id),
             )
             start_on_gpu(process, gpu)
             processes.append(process)

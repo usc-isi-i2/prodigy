@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from scripts.experiments.setup.paper_three_seed.evaluate_fast_core import (
+    DEFAULT_EVAL_CONFIG,
     GROUP_COUNTS,
     audit_cells,
     parse_run_group,
@@ -21,6 +22,11 @@ def test_repo_relative_config_survives_different_worktree_roots():
 def test_group_registries_match_the_registered_plan():
     assert len(plan_registry("onehop")) == 18
     assert len(plan_registry("twohop")) == 23
+
+
+def test_default_receiver_graph_is_the_registered_all_nine_panel():
+    text = DEFAULT_EVAL_CONFIG.read_text(encoding="utf-8")
+    assert "ukr_rus_covid_midterm_all9_facebook_final_core_split_seed0.pt" in text
 
 
 def test_parse_run_group_rejects_unknown_kind(tmp_path):

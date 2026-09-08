@@ -57,7 +57,10 @@ For the optimized shared-run layout, launch `run_fast_core_eval_tucker.sh` in a
 separate detached worktree. It waits for the 18 seed-1 one-hop, 18 seed-2
 one-hop, and 46 two-hop/fixed-exposure jobs plus the flagship queue's GPU release.
 It then reconstructs each terminal model from its recorded effective config and
-evaluates one fixed 512-episode panel in a single shared graph load. The audit
+evaluates one fixed 512-episode panel from the registered all-nine final-core
+graph in a single shared graph load. The separate evaluation graph is required
+because the core models trained on all8 while the paper panel includes Facebook.
+The audit
 requires exactly 82 models x 9 targets = 738 cells, one episode fingerprint per
 target, unique family-qualified model IDs, finite metrics, exact checkpoint
 steps, checkpoint hashes, and training revisions. This adapter is required
