@@ -39,8 +39,10 @@ def main():
     args=p.parse_args();args.out.mkdir(parents=True,exist_ok=False)
     torch.set_num_threads(2);torch.set_num_interop_threads(1)
     receipt=json.loads((args.inputs/'receipt.json').read_text());assert receipt['complete']
-    # Memory-map the immutable source; access only the required feature rows.
-    raw=torch.load(receipt['feature_artifact'],map_location='cpu',mmap=True,weights_only=False)
+    # Tucker's prodigy PyTorch predates mmap loading. Use its standard read-only
+    # loader, then access only required feature rows; no adjacency is constructed.
+    print('Loading backing feature artifact',flush=True)
+    raw=torch.load(receipt['feature_artifact'],map_location='cpu',weights_only=False)
     features=raw['x'];assert list(features.shape)==receipt['feature_shape']
     results=pd.read_csv(args.intervention/'results_private.csv')
     assert len(results)==8000 and not results.duplicated(['target','model','case','condition','draw']).any()
