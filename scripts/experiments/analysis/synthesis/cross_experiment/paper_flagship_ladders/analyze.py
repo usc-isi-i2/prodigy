@@ -101,6 +101,8 @@ def validate_grid(
     targets: tuple[str, ...],
     task: str,
     arms: tuple[str, ...] = ARMS,
+    *,
+    expected_episodes: int,
 ) -> None:
     keys = list(zip(frame.arm, frame.rung, frame.training_seed, frame.target))
     expected = {
@@ -121,9 +123,12 @@ def validate_grid(
     drift = frame.groupby("target").fingerprint.nunique()
     if not (drift == 1).all():
         raise ValueError(f"{task} episode fingerprint drift: {drift[drift != 1].to_dict()}")
-    expected_episodes = 512 if task == "NM" else 128
     if not (pd.to_numeric(frame.episodes) == expected_episodes).all():
-        raise ValueError(f"{task} episode count drift")
+        observed_episodes = sorted(pd.to_numeric(frame.episodes).unique().tolist())
+        raise ValueError(
+            f"{task} episode count drift: expected={expected_episodes} "
+            f"observed={observed_episodes}"
+        )
 
 
 def per_seed_metrics(nm: pd.DataFrame, cls: pd.DataFrame) -> pd.DataFrame:
@@ -401,12 +406,18 @@ def main() -> None:
     all_nm = load_nm(args.seed0_nm, args.replicate_nm_root)
     nm = all_nm[all_nm.arm.isin(ARMS)].copy()
     capacity_nm = all_nm[all_nm.arm.isin(CAPACITY_ARMS)].copy()
-    validate_grid(nm, NM_TARGETS, "NM")
-    validate_grid(capacity_nm, NM_TARGETS, "capacity NM", CAPACITY_ARMS)
+    validate_grid(nm, NM_TARGETS, "NM", expected_episodes=512)
+    validate_grid(
+        capacity_nm,
+        NM_TARGETS,
+        "capacity NM",
+        CAPACITY_ARMS,
+        expected_episodes=512,
+    )
     cls = pd.read_csv(args.classification, sep="\t")
     if "target" not in cls:
         cls = cls.rename(columns={"dataset": "target", "episode_fingerprint": "fingerprint"})
-    validate_grid(cls, CLS_TARGETS, "CLS")
+    validate_grid(cls, CLS_TARGETS, "CLS", expected_episodes=128)
     metrics = per_seed_metrics(nm, cls)
     summary = seed_summary(metrics)
     decisions = decision_table(metrics)

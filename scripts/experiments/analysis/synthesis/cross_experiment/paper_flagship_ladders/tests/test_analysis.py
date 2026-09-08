@@ -11,6 +11,7 @@ from scripts.experiments.analysis.synthesis.cross_experiment.paper_flagship_ladd
     ladder_area_summary,
     scientific_decision,
     seed_summary,
+    validate_grid,
 )
 
 
@@ -60,6 +61,41 @@ def test_capacity_per_seed_keeps_fixed_target_macro_separate():
         (result.arm == "capacity") & (result.rung == 8) & (result.training_seed == 2)
     ].iloc[0]
     assert wide.nm_fixed_panel == pytest.approx(0.514)
+
+
+def test_capacity_grid_uses_nm_episode_count_not_task_label_heuristics():
+    rows = []
+    for arm in CAPACITY_ARMS:
+        for rung in RUNGS:
+            for seed in SEEDS:
+                for target in ("a", "b"):
+                    rows.append(
+                        {
+                            "arm": arm,
+                            "rung": rung,
+                            "training_seed": seed,
+                            "target": target,
+                            "roc_auc": 0.5,
+                            "fingerprint": f"fixed-{target}",
+                            "episodes": 512,
+                        }
+                    )
+    frame = pd.DataFrame(rows)
+    validate_grid(
+        frame,
+        ("a", "b"),
+        "capacity NM",
+        CAPACITY_ARMS,
+        expected_episodes=512,
+    )
+    with pytest.raises(ValueError, match="expected=128"):
+        validate_grid(
+            frame,
+            ("a", "b"),
+            "capacity NM",
+            CAPACITY_ARMS,
+            expected_episodes=128,
+        )
 
 
 def complete_per_seed(winner="baseline"):
