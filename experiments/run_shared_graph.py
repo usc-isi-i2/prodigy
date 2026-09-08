@@ -152,7 +152,9 @@ def prepare_interrupted_recovery(run_dir, requested_params, revision):
     stored = plan.get('jobs')
     if not isinstance(stored, list) or len(stored) != len(requested_params):
         raise ValueError('Recovery request does not match the original job count')
-    ignored = {'device', 'exp_name'}
+    # These fields only name/place a physical attempt.  They do not alter the
+    # model, optimizer, data stream, or campaign treatment.
+    ignored = {'device', 'exp_name', 'timestamp'}
     for index, (old, new) in enumerate(zip(stored, requested_params)):
         old_scientific = {k: v for k, v in old.items() if k not in ignored}
         new_scientific = {k: v for k, v in new.items() if k not in ignored}

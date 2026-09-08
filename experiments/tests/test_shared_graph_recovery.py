@@ -20,6 +20,7 @@ def job(index: int) -> dict:
         "workers": 4,
         "device": f"cuda:{index % 2}",
         "exp_name": f"model_{index}_original",
+        "timestamp": "original-attempt",
     }
 
 
@@ -37,7 +38,10 @@ def test_recovery_reuses_terminal_and_archives_only_interrupted(tmp_path: Path) 
     write_json(tmp_path / "job_001" / "result.json", {"status": "training", "pid": 999_999_999})
     (tmp_path / "job_001" / "console.log").write_text("partial", encoding="utf-8")
 
-    requested = [dict(row, device="cuda:3", exp_name="fresh") for row in jobs]
+    requested = [
+        dict(row, device="cuda:3", exp_name="fresh", timestamp="recovery-attempt")
+        for row in jobs
+    ]
     plan, pending, reused = prepare_interrupted_recovery(tmp_path, requested, "recovery-rev")
 
     assert reused == [{"job": 0, "exitcode": 0, "reused_terminal": True}]
