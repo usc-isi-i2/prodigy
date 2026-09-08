@@ -48,11 +48,13 @@ from experiments.trainer import TrainerFS, _to_float  # noqa: E402
 from fixed_test_plan import (  # noqa: E402
     CHECKPOINT_STEP,
     EPISODE_COUNT,
+    PhysicalJob,
     PROTOCOL,
     SEEDS,
     checkpoint_path,
     physical_jobs,
 )
+from core_plan import CoreModel  # noqa: E402
 
 
 FIXED_EVAL_SEED = 271828
@@ -633,6 +635,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--barrier-timeout-seconds", default=1800, type=int)
     parser.add_argument("--min-host-reserve-gib", default=256.0, type=float)
     parser.add_argument("--reference-fingerprints", type=Path)
+    parser.add_argument(
+        "--job-manifest", type=Path,
+        help="Optional JSON list of custom model_id/seed/sources/checkpoint jobs.",
+    )
     args = parser.parse_args()
     if not 0 <= args.worker_index < args.worker_count:
         parser.error("worker-index must be in [0, worker-count)")
@@ -642,6 +648,34 @@ def parse_args() -> argparse.Namespace:
         parser.error("batch-size must be a positive divisor of 512")
     args.batch_count = EPISODE_COUNT // args.batch_size
     return args
+
+
+def selected_jobs(args: argparse.Namespace):
+    """Return the frozen final-core jobs or an explicitly checkpointed custom set."""
+    if args.job_manifest is None:
+        return physical_jobs(), {}
+    rows = json.loads(args.job_manifest.read_text(encoding="utf-8"))
+    jobs = []
+    checkpoints = {}
+    for row in rows:
+        model = CoreModel(
+            str(row["model_id"]), tuple(row["sources"]), tuple(row.get("aliases", ()))
+        )
+        job = PhysicalJob(int(row["seed"]), model)
+        key = (job.seed, job.model.model_id)
+        if key in checkpoints:
+            raise ValueError(f"duplicate custom job {key}")
+        jobs.append(job)
+        checkpoints[key] = Path(row["checkpoint"])
+    if not jobs:
+        raise ValueError("job manifest is empty")
+    return jobs, checkpoints
+
+
+def selected_checkpoint(args: argparse.Namespace, job, checkpoints: dict) -> Path:
+    if checkpoints:
+        return checkpoints[(job.seed, job.model.model_id)]
+    return checkpoint_path(args.training_state_root, job, args.training_run_stamp)
 
 
 def main() -> int:
@@ -661,12 +695,12 @@ def main() -> int:
     reference_fingerprints = load_reference_fingerprints(
         args.reference_fingerprints, tuple(SOURCES)
     )
-    jobs = physical_jobs()
+    jobs, custom_checkpoints = selected_jobs(args)
     if args.specialists_only:
         jobs = [job for job in jobs if job.model.model_id.startswith("ss_")]
     jobs = [job for job in jobs if job.seed in selected_seeds]
     expected_jobs = (9 if args.specialists_only else 31) * len(selected_seeds)
-    if len(jobs) != expected_jobs:
+    if args.job_manifest is None and len(jobs) != expected_jobs:
         raise AssertionError(f"expected {expected_jobs} checkpoints, got {len(jobs)}")
     assigned = [
         job for index, job in enumerate(jobs)
@@ -677,14 +711,12 @@ def main() -> int:
     if not assigned:
         raise ValueError(f"worker {args.worker_index} has no assigned checkpoints")
     for job in assigned:
-        checkpoint = checkpoint_path(args.training_state_root, job, args.training_run_stamp)
+        checkpoint = selected_checkpoint(args, job, custom_checkpoints)
         if not checkpoint.is_file():
             raise FileNotFoundError(checkpoint)
 
     first_job = assigned[0]
-    first_checkpoint = checkpoint_path(
-        args.training_state_root, first_job, args.training_run_stamp
-    )
+    first_checkpoint = selected_checkpoint(args, first_job, custom_checkpoints)
     base_params = resolved_params(
         args,
         seed=0,
@@ -756,9 +788,7 @@ def main() -> int:
         pending: list[tuple[Any, Path, Path]] = []
         existing_observed_fingerprints: set[str] = set()
         for job in assigned:
-            checkpoint = checkpoint_path(
-                args.training_state_root, job, args.training_run_stamp
-            )
+            checkpoint = selected_checkpoint(args, job, custom_checkpoints)
             result_path = (
                 args.results_root
                 / f"seed_{job.seed}"

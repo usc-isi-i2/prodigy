@@ -37,3 +37,11 @@ evaluation on the four labeled targets with matching inference samplers:
 TRAIN_RUN_DIR=/dataMeR1/phil/gfm/prodigy-pinsage/log/pinsage_fast_<timestamp> \
   bash scripts/experiments/setup/nm_pinsage_fast_ablation/run_classification_eval_tucker.sh
 ```
+
+For the held-out NM comparison against final core, evaluate the four completed seed-0
+PinSAGE checkpoints on the frozen 512-episode test streams. The evaluator verifies both
+published episode fingerprints before accepting a result:
+
+```bash
+GPUS="0 1 2 3" bash scripts/experiments/setup/nm_pinsage_fast_ablation/run_fixed_test_tucker.sh
+```
