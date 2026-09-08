@@ -1,0 +1,30 @@
+# Matched paper flagship ladders
+
+This analysis joins the original seed-0 source-held-out intervention campaign to
+the matched seed-1/2 replicas from `setup/paper_three_seed`. It requires complete
+fixed evaluation grids before producing any figure:
+
+- 1,080 NM cells: five designs × eight source-count rungs × three training seeds ×
+  nine fixed receiver graphs, with 512 episodes per cell;
+- 600 downstream classification cells: the same models on five fixed labeled
+  targets, with 128 2-way/10-shot episodes per cell.
+
+The flagship plot uses the same receiver panel at every rung. Lines are the mean
+over matched training seeds, and shaded regions are the observed seed range. The
+included-source, future-source, and permanent TwiBot-20 holdout views are retained
+in `data/ladder_per_seed.csv` for the retention/extrapolation diagnosis but are not
+substituted for the fixed-panel primary curves.
+
+Run after the Tucker campaign has completed and its result directories have been
+copied locally:
+
+```bash
+/opt/homebrew/bin/python3.11 analyze.py \
+  --replicate-nm-root /path/to/nm_evaluation/cells \
+  --classification /path/to/classification_long.tsv
+```
+
+The audit deliberately permits a universal design claim only if the balanced,
+interleaved, graph-local design leads both fixed panels and no alternative beats it
+on all three seeds for either panel. Otherwise the paper reports a target-dependent
+or Pareto result.
