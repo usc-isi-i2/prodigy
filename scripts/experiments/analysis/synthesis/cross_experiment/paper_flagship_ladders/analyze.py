@@ -197,6 +197,98 @@ def decision_table(per_seed: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def ladder_area_per_seed(per_seed: pd.DataFrame) -> pd.DataFrame:
+    """Summarize the entire eight-rung curve without pooling training seeds."""
+    metrics = (
+        "nm_fixed_panel", "cls_fixed_panel", "nm_included",
+        "nm_future_sources", "nm_heldout_twibot",
+    )
+    rows = []
+    for (arm, seed), group in per_seed.groupby(["arm", "training_seed"]):
+        ordered = group.sort_values("rung")
+        if tuple(ordered.rung) != RUNGS:
+            raise ValueError(f"incomplete ladder for area: arm={arm} seed={seed}")
+        for metric in metrics:
+            values = ordered[metric].to_numpy(float)
+            finite = np.isfinite(values)
+            if not finite.all():
+                # The future-source set is empty at the final rung by definition.
+                values = values[finite]
+            if len(values) < 2:
+                raise ValueError(f"insufficient finite ladder points for {arm}/{seed}/{metric}")
+            normalized_area = float((values[0] / 2 + values[1:-1].sum() + values[-1] / 2) / (len(values) - 1))
+            rows.append(
+                {
+                    "arm": arm,
+                    "training_seed": int(seed),
+                    "metric": metric,
+                    "normalized_ladder_area": normalized_area,
+                    "rungs_in_area": int(len(values)),
+                }
+            )
+    result = pd.DataFrame(rows)
+    expected = len(ARMS) * len(SEEDS) * len(metrics)
+    if len(result) != expected:
+        raise ValueError(f"ladder-area coverage mismatch: {len(result)} != {expected}")
+    return result
+
+
+def ladder_area_summary(per_seed_area: pd.DataFrame) -> pd.DataFrame:
+    baseline = per_seed_area[per_seed_area.arm.eq("baseline")][
+        ["training_seed", "metric", "normalized_ladder_area"]
+    ].rename(columns={"normalized_ladder_area": "baseline_area"})
+    paired = per_seed_area.merge(
+        baseline, on=["training_seed", "metric"], validate="many_to_one"
+    )
+    paired["delta_vs_baseline"] = paired.normalized_ladder_area - paired.baseline_area
+    return (
+        paired.groupby(["metric", "arm"], as_index=False)
+        .agg(
+            training_seeds=("training_seed", "nunique"),
+            mean=("normalized_ladder_area", "mean"),
+            min=("normalized_ladder_area", "min"),
+            max=("normalized_ladder_area", "max"),
+            sd=("normalized_ladder_area", "std"),
+            delta_vs_baseline_mean=("delta_vs_baseline", "mean"),
+            seed_wins_vs_baseline=("delta_vs_baseline", lambda values: int((values > 0).sum())),
+        )
+    )
+
+
+def scientific_decision(per_seed: pd.DataFrame, area_summary: pd.DataFrame) -> dict:
+    fixed_metrics = ("nm_fixed_panel", "cls_fixed_panel")
+    endpoint = per_seed[per_seed.rung.eq(max(RUNGS))]
+    endpoint_winners = {}
+    area_winners = {}
+    alternatives_sweep_baseline = {}
+    for metric in fixed_metrics:
+        endpoint_wide = endpoint.pivot(index="training_seed", columns="arm", values=metric)
+        endpoint_winners[metric] = endpoint_wide.mean().idxmax()
+        metric_area = area_summary[area_summary.metric.eq(metric)]
+        area_winners[metric] = metric_area.loc[metric_area["mean"].idxmax(), "arm"]
+        alternatives_sweep_baseline[metric] = sorted(
+            arm for arm in ARMS if arm != "baseline" and (endpoint_wide[arm] > endpoint_wide.baseline).all()
+        )
+
+    baseline_is_universal = (
+        all(winner == "baseline" for winner in endpoint_winners.values())
+        and all(winner == "baseline" for winner in area_winners.values())
+        and not any(alternatives_sweep_baseline.values())
+    )
+    return {
+        "headline": "balanced_interleaved_graph_local_universal_winner"
+        if baseline_is_universal else "target_dependent_or_pareto_tradeoff",
+        "endpoint_winners": endpoint_winners,
+        "whole_ladder_area_winners": area_winners,
+        "alternatives_beating_baseline_all_three_seeds_at_endpoint": alternatives_sweep_baseline,
+        "universal_baseline_gate_passed": baseline_is_universal,
+        "whole_ladder_estimand": (
+            "Normalized trapezoidal area over rungs 1-8, computed within each training seed; "
+            "future-source area uses its seven finite rungs."
+        ),
+    }
+
+
 def plot_flagship(summary: pd.DataFrame, output: Path) -> None:
     plt.rcParams.update({"font.size": 8.5, "axes.titleweight": "bold"})
     fig, axes = plt.subplots(1, 2, figsize=(7.35, 3.05), sharex=True)
@@ -293,6 +385,9 @@ def main() -> None:
     metrics = per_seed_metrics(nm, cls)
     summary = seed_summary(metrics)
     decisions = decision_table(metrics)
+    area_per_seed = ladder_area_per_seed(metrics)
+    area_summary = ladder_area_summary(area_per_seed)
+    scientific_conclusion = scientific_decision(metrics, area_summary)
     capacity_metrics = capacity_per_seed(capacity_nm)
     capacity_summary = seed_summary(capacity_metrics)
 
@@ -305,27 +400,25 @@ def main() -> None:
     metrics.to_csv(data_dir / "ladder_per_seed.csv", index=False)
     summary.to_csv(data_dir / "ladder_seed_summary.csv", index=False)
     decisions.to_csv(data_dir / "design_decisions.csv", index=False)
+    area_per_seed.to_csv(data_dir / "ladder_area_per_seed.csv", index=False)
+    area_summary.to_csv(data_dir / "ladder_area_summary.csv", index=False)
     capacity_metrics.to_csv(data_dir / "capacity_per_seed.csv", index=False)
     capacity_summary.to_csv(data_dir / "capacity_seed_summary.csv", index=False)
     plot_flagship(summary, figure_dir / "flagship_ladders.png")
     plot_capacity(capacity_summary, figure_dir / "capacity_ladder.png")
 
-    endpoint = decisions[decisions.rung == 8]
-    winners = {
-        metric: group.loc[group.winner_by_mean, "arm"].item()
-        for metric, group in endpoint.groupby("metric")
-    }
     payload = {
         "status": "complete",
         "nm_cells": len(nm),
         "classification_cells": len(cls),
         "capacity_nm_cells": len(capacity_nm),
         "training_seeds": list(SEEDS),
-        "winners_at_rung8": winners,
+        "scientific_decision": scientific_conclusion,
         "claim_rule": (
             "Treat the balanced/interleaved/graph-local design as a universal winner only if it "
-            "has the highest mean on both fixed panels and no alternative wins all three seeds "
-            "on either panel; otherwise report a target-dependent or Pareto tradeoff."
+            "has the highest mean endpoint and whole-ladder area on both fixed panels and no "
+            "alternative wins all three seeds at either endpoint; otherwise report a "
+            "target-dependent or Pareto tradeoff."
         ),
     }
     (data_dir / "audit.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")

@@ -16,6 +16,10 @@ over matched training seeds, and shaded regions are the observed seed range. The
 included-source, future-source, and permanent TwiBot-20 holdout views are retained
 in `data/ladder_per_seed.csv` for the retention/extrapolation diagnosis but are not
 substituted for the fixed-panel primary curves.
+The headline decision uses both the final rung and a normalized trapezoidal area
+over the whole eight-rung curve, always calculated inside each training seed.
+`data/ladder_area_per_seed.csv` preserves the replication unit and
+`data/ladder_area_summary.csv` records paired effects against the baseline.
 The wide-capacity comparison is rendered separately so it does not crowd or
 retroactively redefine the five-design primary figure.
 
@@ -29,6 +33,6 @@ copied locally:
 ```
 
 The audit deliberately permits a universal design claim only if the balanced,
-interleaved, graph-local design leads both fixed panels and no alternative beats it
-on all three seeds for either panel. Otherwise the paper reports a target-dependent
-or Pareto result.
+interleaved, graph-local design leads both the endpoint and whole-curve area on
+both fixed panels, and no alternative beats its endpoint in all three seeds for
+either panel. Otherwise the paper reports a target-dependent or Pareto result.
