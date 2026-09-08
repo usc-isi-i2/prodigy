@@ -15,6 +15,7 @@ ONEHOP_STATUS="${SHARED_ROOT}/paper_three_seed_remainder/${RUN_STAMP}/onehop_see
 TWOHOP_STATUS="${SHARED_ROOT}/paper_three_seed_remainder/${RUN_STAMP}/twohop_seeds_1-2/status.json"
 STATUS_FILE="${REPO_ROOT}/log/paper_flagship_recovery_${RUN_STAMP}.json"
 MECHANISM_TRAIN_COMPLETE="${MECHANISM_TRAIN_COMPLETE:-/dataMeR1/phil/gfm/prodigy-paper-mechanism/log/paper_mechanism_sweeps/${RUN_STAMP}/training_complete_utc.txt}"
+ALL_PAIRS_TRAIN_COMPLETE="${ALL_PAIRS_TRAIN_COMPLETE:-/dataMeR1/phil/gfm/prodigy-paper-all-pairs/log/paper_all_pairs/${RUN_STAMP}/training_complete_utc.txt}"
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
 source "$(conda info --base)/etc/profile.d/conda.sh"
@@ -49,6 +50,11 @@ while tmux has-session -t paper-optimized-queue 2>/dev/null; do sleep 30; done
 while tmux has-session -t paper-mechanism-sweeps 2>/dev/null \
     && [[ ! -f "$MECHANISM_TRAIN_COMPLETE" ]]; do
   write_status waiting "old remainder exited; waiting for overlapped mechanism training"
+  sleep 30
+done
+while tmux has-session -t paper-all-pairs-after-mechanism 2>/dev/null \
+    && [[ ! -f "$ALL_PAIRS_TRAIN_COMPLETE" ]]; do
+  write_status waiting "old remainder exited; waiting for overlapped all-pairs training"
   sleep 30
 done
 

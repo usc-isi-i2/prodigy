@@ -18,11 +18,14 @@ The complete pair panel permits three checks that the nested ladders cannot:
 - estimate which donors complement one another without selecting an order from
   the observed receiver matrix.
 
-`wait_and_run_tucker.sh` waits for the flagship training, flagship native and
-downstream evaluations, and the optimized core evaluation to pass their exact
-coverage gates. It then acquires only Tucker GPUs 0--3 after a stability check,
-trains the shared-graph batch, and evaluates all 972 cells. An existing output
-root is never overwritten.
+`run_tucker.sh` accepts `PHASE=train` and `PHASE=eval`. In production,
+`wait_and_run_tucker.sh` starts the 108-model training phase six per GPU in the
+slots released by mechanism training while the long fixed-exposure tail is
+still running. The flagship recovery waits for this bounded training phase if
+the old remainder exits early. Pair evaluation remains behind the flagship
+native/downstream results, optimized core audit, and completed mechanism audit;
+it acquires only Tucker GPUs 0--3 after a stability check and evaluates all 972
+cells. An existing output root is never overwritten.
 
 The production defaults use 14 models per GPU and a total 224-loader-worker
 budget. This is the same per-device concurrency already measured while the

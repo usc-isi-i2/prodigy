@@ -1,17 +1,24 @@
 #!/usr/bin/env bash
-# Wait for both GPU paper queues to pass their exact audits, then use GPUs 0-3.
+# Overlap pair training with the long fixed-exposure tail, then keep pair
+# evaluation behind the primary and mechanism audits.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FLAGSHIP_ROOT="${FLAGSHIP_ROOT:-/dataMeR1/phil/gfm/prodigy-paper-remainder-opt/log/paper_flagship_ladders/20260908}"
 CORE_ROOT="${CORE_ROOT:-/dataMeR1/phil/gfm/prodigy-paper-remainder-opt/log/paper_three_seed_remainder/20260908/core_nm_evaluation}"
 GPUS_TEXT="${GPUS:-0 1 2 3}"
+RUN_STAMP="${RUN_STAMP:-20260908}"
+RUN_ROOT="${RUN_ROOT:-${SCRIPT_DIR}/../../../../log/paper_all_pairs/${RUN_STAMP}}"
+TRAIN_COMPLETE="${RUN_ROOT}/training_complete_utc.txt"
+MECHANISM_TRAIN_COMPLETE="${MECHANISM_TRAIN_COMPLETE:-/dataMeR1/phil/gfm/prodigy-paper-mechanism/log/paper_mechanism_sweeps/${RUN_STAMP}/training_complete_utc.txt}"
+MECHANISM_COMPLETE="${MECHANISM_COMPLETE:-/dataMeR1/phil/gfm/prodigy-paper-mechanism/log/paper_mechanism_sweeps/${RUN_STAMP}/complete_utc.txt}"
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate prodigy
 
-while true; do
+wait_for_primary() {
+  while true; do
   if "${CONDA_PREFIX}/bin/python" - "$FLAGSHIP_ROOT" "$CORE_ROOT" <<'PY'
 import csv
 import json
@@ -49,22 +56,42 @@ core_status = json.load(open(core / "status.json", encoding="utf-8"))
 if core_status.get("status") != "complete" or core_status.get("audit", {}).get("cells") != 738:
     raise SystemExit(1)
 PY
-  then
-    break
-  fi
-  sleep 60
-done
+    then
+      break
+    fi
+    sleep 60
+  done
+}
 
-stable=0
-while (( stable < 4 )); do
-  gpu_csv="$(tr ' ' ',' <<< "$GPUS_TEXT")"
-  if nvidia-smi --query-gpu=memory.used,utilization.gpu --format=csv,noheader,nounits -i "$gpu_csv" |
-      awk -F, '{gsub(/ /,"",$1); gsub(/ /,"",$2); if ($1>1000 || $2>10) bad=1} END{exit bad}'; then
-    stable=$((stable + 1))
+wait_for_stable_gpus() {
+  local stable=0 gpu_csv
+  while (( stable < 4 )); do
+    gpu_csv="$(tr ' ' ',' <<< "$1")"
+    if nvidia-smi --query-gpu=memory.used,utilization.gpu --format=csv,noheader,nounits -i "$gpu_csv" |
+        awk -F, '{gsub(/ /,"",$1); gsub(/ /,"",$2); if ($1>1000 || $2>10) bad=1} END{exit bad}'; then
+      stable=$((stable + 1))
+    else
+      stable=0
+    fi
+    sleep 30
+  done
+}
+
+while [[ ! -f "$MECHANISM_TRAIN_COMPLETE" ]]; do sleep 30; done
+if [[ ! -f "$TRAIN_COMPLETE" ]]; then
+  if tmux has-session -t paper-optimized-queue 2>/dev/null; then
+    PHASE=train GPUS="0 2 3" MODELS_PER_GPU=6 WORKER_BUDGET=72 \
+      bash "$SCRIPT_DIR/run_tucker.sh"
   else
-    stable=0
+    while [[ ! -f "$MECHANISM_COMPLETE" ]]; do sleep 30; done
+    wait_for_primary
+    wait_for_stable_gpus "$GPUS_TEXT"
+    PHASE=train GPUS="$GPUS_TEXT" MODELS_PER_GPU=14 WORKER_BUDGET=224 \
+      bash "$SCRIPT_DIR/run_tucker.sh"
   fi
-  sleep 30
-done
+fi
 
-GPUS="$GPUS_TEXT" exec bash "$SCRIPT_DIR/run_tucker.sh"
+while [[ ! -f "$MECHANISM_COMPLETE" ]]; do sleep 30; done
+wait_for_primary
+wait_for_stable_gpus "$GPUS_TEXT"
+PHASE=eval GPUS="$GPUS_TEXT" exec bash "$SCRIPT_DIR/run_tucker.sh"
