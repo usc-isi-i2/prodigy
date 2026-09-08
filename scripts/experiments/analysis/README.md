@@ -78,6 +78,7 @@ Setup and launch files remain in `../setup/<name>/`.
 - Frozen-encoder label and optimization efficiency: [`adaptation_efficiency`](evaluation/adaptation_efficiency/)
 - Prediction-level diagnostics: [`error_audit`](evaluation/error_audit/)
 - Static-link evaluator repair: [`static_link_prediction_repair`](evaluation/static_link_prediction_repair/)
+- Same-pair small-graph LP baseline pilot: [`hk_lp_baselines`](evaluation/lp_baselines/hk_lp_baselines/FINDINGS.md)
 - Shared append-only task tables: [`node_classification`](evaluation/task_tables/node_classification/), [`node_regression`](evaluation/task_tables/node_regression/), [`static_link_prediction`](evaluation/task_tables/static_link_prediction/)
 
 ## Synthesis and archive

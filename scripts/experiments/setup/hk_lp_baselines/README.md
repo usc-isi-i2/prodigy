@@ -14,7 +14,8 @@ test endpoint pairs. No supports or metagraph are used at LP inference.
   **all three** graph views and unique across train/validation/test.
 - Randomly orient each positive before corruption; replace one endpoint with
   a node in its same log2 training-degree bin. Degree-zero has its own bin.
-  Record infeasible positive proposals, with no uniform-negative fallback.
+  Record positive proposals whose bounded 200-attempt negative search fails,
+  with no uniform-negative fallback.
 - MLP and plain GraphSAGE share 100,000 sampled training positives/nonedges and
   the exact batch index stream: 2,500 updates, 256 positives and their 256 matched
   negatives per update; AdamW lr .002, weight decay .001, initialization seed 0.
