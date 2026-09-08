@@ -97,7 +97,7 @@ wait_for_stable_gpus() {
 
 choose_training_gpus() {
   if [[ -n "$TRAIN_GPUS" ]]; then
-    validate_gpu_list "$TRAIN_GPUS" 3 || return 1
+    validate_gpu_list "$TRAIN_GPUS" 2 || return 1
     echo "$TRAIN_GPUS"
     return
   fi
@@ -110,8 +110,11 @@ choose_training_gpus() {
       echo "1 2 3"
       return
     fi
-    write_status waiting "waiting for either GPU 0 or post-VISION GPU 1"
-    sleep 30
+    # The primary producers have released 2--3 at this point. Starting four
+    # two-GPU waves is faster than idling them behind a long VISION tail merely
+    # to obtain a third device.
+    echo "2 3"
+    return
   done
 }
 
