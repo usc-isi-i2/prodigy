@@ -104,3 +104,27 @@ as a successful model improvement before evaluation.
 Runtime branch: `codex/nm-hk-goal-20260908`; local worktree
 `/private/tmp/prodigy-nm-hk-goal`. Transfer source via private git and use a new
 Tucker worktree. All paths, methods and thread counts must be explicit/overridable.
+
+## Frozen overlap-aware evaluation and inference diagnostic
+
+Rescore the unchanged full canonical HK stream as candidate-set link prediction:
+candidate anchors joined to a query by a cached held-out test edge are all valid.
+Report assigned-anchor accuracy alongside multi-positive top-1, Hits@K, MRR, the
+number of valid candidates, and the uniquely answerable subset. This changes no
+prediction and is the corrected evaluation for the LP interpretation.
+
+Then replay only the native HK metagraph from cached pre-M embeddings. Primary
+intervention: remove a negative support-to-label message iff that support center
+and candidate anchor have a known **training-view** edge. Do not change positive
+messages, query messages, embeddings, candidate sets, checkpoint, or decoder.
+Secondary upper bound may use all cached train/validation/test views, clearly
+labelled nondeployable. No query outcome or query adjacency selects a removed
+edge. Compare assigned-anchor and multi-positive outcomes to the unchanged
+canonical prediction, including recoveries and broken successes on all 61,440
+queries and uniquely answerable cases. Preserve a complete private row table.
+
+This tests a forward-pass consequence of contradictory negative relations; it
+cannot undo gradients or representations learned under the original objective.
+A null or harmful result does not disprove training-time gradient conflict.
+Setup estimate 30–45 minutes; CPU estimate 1–3 minutes with two low-priority
+threads. No graph loading, encoding, sampling, training, or GPU allocation.
