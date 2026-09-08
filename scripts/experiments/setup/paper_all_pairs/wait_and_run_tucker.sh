@@ -80,7 +80,7 @@ wait_for_stable_gpus() {
 while [[ ! -f "$MECHANISM_TRAIN_COMPLETE" ]]; do sleep 30; done
 if [[ ! -f "$TRAIN_COMPLETE" ]]; then
   if tmux has-session -t paper-optimized-queue 2>/dev/null; then
-    PHASE=train GPUS="0 2 3" MODELS_PER_GPU=6 WORKER_BUDGET=72 \
+    PHASE=train GPUS="0 2 3" MODELS_PER_GPU=10 WORKER_BUDGET=120 \
       bash "$SCRIPT_DIR/run_tucker.sh"
   else
     while [[ ! -f "$MECHANISM_COMPLETE" ]]; do sleep 30; done

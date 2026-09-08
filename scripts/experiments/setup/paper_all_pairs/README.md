@@ -19,9 +19,11 @@ The complete pair panel permits three checks that the nested ladders cannot:
   the observed receiver matrix.
 
 `run_tucker.sh` accepts `PHASE=train` and `PHASE=eval`. In production,
-`wait_and_run_tucker.sh` starts the 108-model training phase six per GPU in the
-slots released by mechanism training while the long fixed-exposure tail is
-still running. The flagship recovery waits for this bounded training phase if
+`wait_and_run_tucker.sh` starts the 108-model training phase ten per GPU after
+mechanism training while the long fixed-exposure tail finishes. At the live
+handoff only 13 primary jobs remained, so this keeps total trainer concurrency
+near the already measured 14-per-device envelope while reducing the pair panel
+from six waves to four. The flagship recovery waits for this bounded phase if
 the old remainder exits early. Pair evaluation remains behind the flagship
 native/downstream results, optimized core audit, and completed mechanism audit;
 it acquires only Tucker GPUs 0--3 after a stability check and evaluates all 972
