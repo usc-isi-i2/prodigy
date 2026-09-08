@@ -66,3 +66,11 @@ target, unique family-qualified model IDs, finite metrics, exact checkpoint
 steps, checkpoint hashes, and training revisions. This adapter is required
 because the optimized runs deliberately do not use the legacy deterministic
 `state/paper3seed_*` paths.
+
+Launch `postprocess_flagship_tucker.sh` from a separate, current-revision
+worktree before the training queue finishes. It waits for the exact 864-cell
+seed-1/2 NM grid and 600-cell three-seed classification table, checks their
+cardinalities and basic metric contracts, and then runs the preregistered
+whole-ladder/endpoint decision plus the two-panel seed-band figure. This keeps
+postprocessing code current without changing a live training or evaluation
+worktree.
