@@ -684,6 +684,9 @@ class TrainerFS():
         kwargs["classification_support_seed"] = self.parameter.get(
             "classification_support_seed", 0
         )
+        kwargs["kg_social_checkpoint_adapter"] = self.parameter.get(
+            "kg_social_checkpoint_adapter", False
+        )
         if self.parameter["all_test"]:
             kwargs["all_test"] = True
         if self.parameter["label_set"]:
