@@ -120,7 +120,7 @@ choose_training_gpus() {
 
 choose_evaluation_gpus() {
   if [[ -n "$EVAL_GPUS" ]]; then
-    validate_gpu_list "$EVAL_GPUS" 3 || return 1
+    validate_gpu_list "$EVAL_GPUS" 2 || return 1
     echo "$EVAL_GPUS"
     return
   fi
@@ -129,11 +129,11 @@ choose_evaluation_gpus() {
     for gpu in 0 1 2 3; do
       if gpu_idle "$gpu"; then available+=("$gpu"); fi
     done
-    if (( ${#available[@]} >= 3 )); then
+    if (( ${#available[@]} >= 2 )); then
       echo "${available[*]}"
       return
     fi
-    write_status waiting "waiting for at least three idle owned evaluation GPUs"
+    write_status waiting "waiting for at least two idle owned evaluation GPUs"
     sleep 30
   done
 }
@@ -184,9 +184,8 @@ if [[ ! -e "$REPLICATE_RUN" ]]; then
     bash "$SCRIPT_DIR/run_flagship_ladders_tucker.sh"
 fi
 
-# Evaluation waits for VISION, then uses every idle owned device with a
-# three-device minimum. This avoids blocking on an unrelated user of GPU 0.
-while tmux has-session -t vision-mixture-seeds 2>/dev/null; do sleep 30; done
+# Evaluation uses every idle owned device with a two-device minimum. Starting
+# on 2--3 is faster than waiting through the longer VISION tail for device 1.
 eval_gpus="$(choose_evaluation_gpus)"
 wait_for_stable_gpus "$eval_gpus"
 

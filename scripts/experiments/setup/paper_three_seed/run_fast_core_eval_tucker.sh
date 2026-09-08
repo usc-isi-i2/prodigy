@@ -53,7 +53,7 @@ if [[ -z "$GPUS_TEXT" ]]; then
       IFS=, read -r used util <<< "$values"
       if (( used < 1000 && util < 10 )); then available+=("$gpu"); fi
     done
-    if (( ${#available[@]} >= 3 )); then
+    if (( ${#available[@]} >= 2 )); then
       GPUS_TEXT="${available[*]}"
       break
     fi
@@ -61,7 +61,7 @@ if [[ -z "$GPUS_TEXT" ]]; then
   done
 fi
 read -r -a gpu_ids <<< "$GPUS_TEXT"
-(( ${#gpu_ids[@]} >= 3 )) || { echo "core evaluation requires at least three GPUs" >&2; exit 2; }
+(( ${#gpu_ids[@]} >= 2 )) || { echo "core evaluation requires at least two GPUs" >&2; exit 2; }
 for gpu in "${gpu_ids[@]}"; do
   [[ "$gpu" =~ ^[0-3]$ ]] || { echo "refusing non-owned GPU $gpu" >&2; exit 2; }
 done
