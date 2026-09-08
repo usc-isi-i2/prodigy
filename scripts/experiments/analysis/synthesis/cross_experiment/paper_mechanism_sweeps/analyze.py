@@ -282,6 +282,8 @@ def main() -> None:
     data_dir = args.output / "data"
     figure_dir = args.output / "figures"
     data_dir.mkdir(parents=True, exist_ok=True)
+    nm.to_csv(data_dir / "nm_cells.csv", index=False)
+    cls.to_csv(data_dir / "classification_cells.csv", index=False)
     per_seed.to_csv(data_dir / "macro_per_seed.csv", index=False)
     summary.to_csv(data_dir / "macro_summary.csv", index=False)
     effects.to_csv(data_dir / "target_effects_per_seed.csv", index=False)

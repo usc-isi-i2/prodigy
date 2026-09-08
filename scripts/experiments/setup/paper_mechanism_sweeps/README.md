@@ -20,7 +20,8 @@ width; it must not be presented as downstream capacity evidence.
 Exact expected coverage is 18 training jobs, 90 physical checkpoint models, 810 NM
 cells, and 375 classification cells. Training seeds are the replication unit. Fixed
 episode fingerprints make arm comparisons paired but do not create evaluation-seed
-replicates.
+replicates. The analysis bundle retains both complete long-form cell tables in
+addition to derived summaries, decisions, provenance joins, and figures.
 
 On Tucker, from a dedicated worktree and with GPUs 0-3 idle, the whole campaign
 can still be run in one process:
