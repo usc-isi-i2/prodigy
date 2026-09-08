@@ -267,6 +267,40 @@ stance-confusion/text-label-conflict candidates belong to **CLS**.
 
 ## Scope and remaining work
 
+### Paired support intervention (8 September)
+
+The [bounded support-resampling test](FINDINGS_NM_SUPPORT_RESAMPLING.md) is now
+complete. Among 100 selected native-model failures per target, at least one of
+five alternative valid support triples rescues 38 Ukraine and 27 HK cases,
+versus 19 and 5 under same-support-ID context resampling. Average failed-case
+accuracy is 21.6%/12.2% with alternatives versus 8.4%/1.8% with fresh contexts.
+However, alternatives retain only 64.0%/32.6% accuracy on matched originally
+correct controls. This establishes support-set dependence on selected fixed
+query–anchor cases, not a successful random-replacement rule or an explanation
+of how source training creates that dependence. Original inputs and label vectors
+are preserved; all four model–target cells and 8,000 trial rows pass verification.
+
+### Query/support/episode follow-up (8 September)
+
+The [difficulty audit](FINDINGS_NM_DIFFICULTY.md) finds persistent query difficulty
+and excess all-four-query failures within anchor classes on both targets, relative
+to within-query outcome permutations. Support identities selected on validation
+retain test error associations, but matching both query and anchor is too sparse
+on Ukraine and substantially weakens the native-HK contrast. Harmful supports
+are not causally established. Extra full-episode error dispersion is clearer on
+Ukraine than HK. That audit uses saved predictions only; the separate bounded
+support/context intervention is reported above.
+
+### Degree follow-up (8 September)
+
+The [degree audit](FINDINGS_NM_DEGREE.md) now reports correctness by full-source
+incident degree, with occurrence and node weighting and separate single-anchor
+strata. The degree association survives removal of within-episode multiple-anchor
+occurrences, but is not monotonic in every bin. In particular, the highest HK
+degree bin contains only 12 observed query nodes and changes substantially under
+node weighting. These descriptive results do not isolate degree from repetition
+or explain the source-training mechanism.
+
 This is one checkpoint seed per source, not training-seed replication. Clustering
 and validation-selected routing are exploratory and need independent confirmation.
 Sorted-ID membership biases remain. Node-weighted scores average observed queries,
@@ -285,8 +319,9 @@ by repeated-query frequency and within-episode anchor ambiguity. Keep the same
 realized episodes for paired context/support ablations. This can distinguish
 recoverable ranking/support failures from ambiguous memberships before changing
 training or adding a router. Separately, audit actual pretraining node exposure;
-validation-node reuse is not a substitute for that measurement. Neither proposed
-inquiry has been run by this correction.
+validation-node reuse is not a substitute for that measurement. The bounded
+support-resampling follow-up above tests intervention sensitivity; systematic
+support-dispersion/context explanation and pretraining exposure remain open.
 
 ### Verification and reproducibility
 
