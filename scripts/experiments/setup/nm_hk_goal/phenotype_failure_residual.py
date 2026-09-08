@@ -88,6 +88,21 @@ def main():
     hard = (residual.hk_predicted_edge_split.eq("absent") &
             residual.source_outcome.str.startswith("both_wrong") &
             residual.hk_query_behavior.eq("always_wrong") & residual.hk_native_rank.gt(10))
+    populations = {"native_correct": d[d.hk_native_correct],
+        "localized_errors": errors[~errors.category.eq("unseparated_by_measured_input_summaries")],
+        "residual_errors": residual}
+    comparison = {}
+    for name,z in populations.items():
+        comparison[name] = {"n": len(z),
+            "median_query_degree": float(z.query_degree.median()),
+            "median_query_occurrences": float(z.occurrences.median()),
+            "mean_query_nodes": float(z.query_nodes.mean()),
+            "mean_fraction_zero_nodes_in_query_subgraph": float(z.query_zero_fraction.mean()),
+            "raw_30way_undefined_fraction": float((~z.full_mean_all_valid.astype(bool)).mean()),
+            "query_center_in_rival_support_fraction": float(z.query_center_in_any_rival_support.mean()),
+            "all_four_class_wrong_fraction": float(z.hk_class_correct_of_four.eq(0).mean()),
+            "query_always_wrong_fraction": float(z.hk_query_behavior.eq("always_wrong").mean()),
+            "foreign_final_correct_fraction": float(z.ukr_native_correct.mean())}
     result = {
         "schema": 1, "all_rows": len(d), "native_errors": len(errors), "residual": len(residual),
         "residual_fraction_errors": float(len(residual)/len(errors)),
@@ -110,6 +125,7 @@ def main():
             "count": int(hard.sum()), "fraction_residual": float(hard.mean()),
             "distinct_queries": int(residual.loc[hard, "query"].nunique()),
         },
+        "population_comparison": comparison,
         "medians": {col: float(residual[col].median()) for col in
             ["query_degree", "occurrences", "query_nodes", "query_edges", "query_zero_fraction",
              "true_support_nodes_mean", "true_shared_nodes", "hk_native_rank"]},
