@@ -42,3 +42,9 @@ mechanism evaluator then waits for the flagship, core, and VISION audits,
 requires two minutes of stable idle state on all four owned GPUs, and resumes
 the exact NM and classification evaluations.  It validates the complete 18-job
 ledger and all 90 checkpoints before scoring.  Neither phase touches GPUs 4--7.
+
+`postprocess_raw_tucker.sh` is intended for a separate pinned worktree. It waits
+for the production completion marker, reruns only the deterministic analysis,
+and writes a revision-named immutable bundle under the run root. The script
+requires the 810/375 raw cell tables and 75-row cross-task provenance table in
+addition to the analysis audit.
