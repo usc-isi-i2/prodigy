@@ -131,6 +131,21 @@ def get_params(argv=None):
     args.add_argument("--test_during_training", default=True, type=str2bool)
     args.add_argument("--test_only_at_best_after_train", default=False, type=str2bool)
     args.add_argument("--eval_by_completed_steps", default=False, type=str2bool)
+    args.add_argument("--classification_support_from_train", default=False, type=str2bool)
+    args.add_argument("--classification_support_cap", default=None, type=int)
+    args.add_argument("--classification_support_seed", default=0, type=int)
+    args.add_argument(
+        "--classification_selection_metric",
+        default="accuracy",
+        choices=["accuracy", "roc_auc"],
+        help="Metric used for classification checkpoint selection and early stopping.",
+    )
+    args.add_argument(
+        "--eval_test_during_train",
+        default=True,
+        type=str2bool,
+        help="Evaluate test at every validation check. Disable for strict test-once protocols.",
+    )
     args.add_argument("--reset_after_layer", default=None, nargs='+', type=int)
     args.add_argument("-original_features", "--original_features", default=False, type=str2bool)
     args.add_argument("-override_log", "--override_log", default=False, type=str2bool)

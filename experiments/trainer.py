@@ -674,6 +674,15 @@ class TrainerFS():
             "eval_episode_seed_offset", 0
         )
         kwargs["eval_random_query"] = self.parameter.get("eval_random_query", False)
+        kwargs["classification_support_from_train"] = self.parameter.get(
+            "classification_support_from_train", False
+        )
+        kwargs["classification_support_cap"] = self.parameter.get(
+            "classification_support_cap"
+        )
+        kwargs["classification_support_seed"] = self.parameter.get(
+            "classification_support_seed", 0
+        )
         if self.parameter["all_test"]:
             kwargs["all_test"] = True
         if self.parameter["label_set"]:
@@ -2036,6 +2045,7 @@ class TrainerFS():
         # initialization
         best_step = 0
         best_val = float("-inf")
+        patience_best_val = float("-inf")
         test_acc_on_best_val = 0
         best_test_acc = float("-inf")
         other_metrics_on_best = {}
@@ -2046,7 +2056,9 @@ class TrainerFS():
         separate_selection = bool(
             self.parameter.get("separate_selection_and_stopping", False)
         )
-        test_during_training = bool(self.parameter.get("test_during_training", True))
+        test_during_training = bool(self.parameter.get("test_during_training", True)) and bool(
+            self.parameter.get("eval_test_during_train", True)
+        )
         test_only_at_best = bool(
             self.parameter.get("test_only_at_best_after_train", False)
         )
@@ -2236,30 +2248,41 @@ class TrainerFS():
                     self.model.eval()
                     val_loss, val_acc, val_acc_std, val_aux_loss, ranks = self.do_eval(self.val_dataloader, split_name="val", step=eval_label)
 
-                raw_improved = _to_float(val_acc) > _to_float(best_val)
+                selection_value = val_acc
+                selection_name = self._score_label()
+                if (
+                    self.parameter.get("task_name") == "classification"
+                    and self.parameter.get("classification_selection_metric", "accuracy") == "roc_auc"
+                ):
+                    selection_name = "roc_auc"
+                    selection_value = self._last_eval_metrics.get("roc_auc")
+                    if selection_value is None:
+                        raise RuntimeError("classification ROC-AUC was not produced during validation")
+
+                raw_improved = _to_float(selection_value) > _to_float(best_val)
                 if separate_selection and raw_improved:
-                    best_val = val_acc
+                    best_val = selection_value
                     best_step = eval_label
                     self.save_checkpoint(best_step)  # save every raw validation best
                 if separate_selection:
                     meaningful_improved = (
-                        _to_float(val_acc) > _to_float(progress_best) + min_delta
+                        _to_float(selection_value) > _to_float(progress_best) + min_delta
                     )
                 else:
                     # Preserve the historical protocol exactly for canonical runs:
                     # ties reset patience and selection/stopping use one criterion.
-                    meaningful_improved = _to_float(val_acc) >= _to_float(best_val)
+                    meaningful_improved = _to_float(selection_value) >= _to_float(best_val)
                     if meaningful_improved:
-                        best_val = val_acc
+                        best_val = selection_value
                         best_step = eval_label
                         self.save_checkpoint(best_step)
                 if meaningful_improved:
-                    progress_best = val_acc
+                    progress_best = selection_value
                     bad_counts = 0
                 else:
                     bad_counts += 1
                     pbar.write(
-                        f"[{time.strftime('%H:%M:%S')}] [step {eval_label}] val {self._score_label()} "
+                        f"[{time.strftime('%H:%M:%S')}] [step {eval_label}] val {selection_name} "
                         f"did not improve by {min_delta:g} "
                         f"({bad_counts} checks without meaningful improvement)"
                     )
@@ -2420,17 +2443,24 @@ class TrainerFS():
                     other_metrics_on_best = ranks
             best_test_acc = max(best_test_acc, test_acc)
         _log("Training finished")
+        selection_summary_name = self._score_label()
+        if (
+            self.parameter.get("task_name") == "classification"
+            and self.parameter.get("classification_selection_metric", "accuracy") == "roc_auc"
+        ):
+            selection_summary_name = "roc_auc"
         print(f"  best step:             {best_step}", flush=True)
-        print(f"  best val {self._score_label()}:          {_to_float(best_val):.4f}", flush=True)
-        print(f"  best test {self._score_label()}:         {_to_float(best_test_acc):.4f}", flush=True)
-        print(f"  test {self._score_label()} @ best val:   {_to_float(test_acc_on_best_val):.4f}", flush=True)
+        print(f"  best val {selection_summary_name}:          {_to_float(best_val):.4f}", flush=True)
         wandb.run.summary["best_step"] = best_step
-        wandb.run.summary[f"best_test_{self._score_label()}"] = best_test_acc
-        wandb.run.summary[f"test_{self._score_label()}_on_best_val"] = test_acc_on_best_val
-        wandb.run.summary[f"final_validation_{self._score_label()}"] = best_val
-        if other_metrics_on_best is not None:
-              for key in other_metrics_on_best:
-                  wandb.run.summary["final_test_" + key] = other_metrics_on_best[key]
+        wandb.run.summary[f"final_validation_{selection_summary_name}"] = best_val
+        if self.parameter.get("eval_test_during_train", True):
+            print(f"  best test {self._score_label()}:         {_to_float(best_test_acc):.4f}", flush=True)
+            print(f"  test {self._score_label()} @ best val:   {_to_float(test_acc_on_best_val):.4f}", flush=True)
+            wandb.run.summary[f"best_test_{self._score_label()}"] = best_test_acc
+            wandb.run.summary[f"test_{self._score_label()}_on_best_val"] = test_acc_on_best_val
+            if other_metrics_on_best is not None:
+                  for key in other_metrics_on_best:
+                      wandb.run.summary["final_test_" + key] = other_metrics_on_best[key]
         # `best_step` is still 0 when no validation eval ever recorded one (eval_step above
         # the budget, or a very short run). Step 0 is now a real file whenever
         # --checkpoint_steps asks for the random-init anchor, so copying "the best
@@ -2534,6 +2564,7 @@ class TrainerFS():
         acc_batch_std = np.std(acc_all)
         aux_loss_global = sum(all_aux_loss) / len(all_aux_loss)
         self._log_eval_metrics(eval_metrics, split_name=split_name, step=step)
+        self._last_eval_metrics = dict(eval_metrics)
         self._log_eval_scores(
             loss_global,
             acc_global,
