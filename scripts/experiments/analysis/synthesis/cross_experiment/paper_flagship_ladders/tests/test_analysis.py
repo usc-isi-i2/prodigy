@@ -100,12 +100,25 @@ def test_scientific_gate_requires_endpoint_and_whole_curve_on_both_panels():
     baseline = complete_per_seed("baseline")
     baseline_area = ladder_area_summary(ladder_area_per_seed(baseline))
     decision = scientific_decision(baseline, baseline_area)
-    assert decision["universal_baseline_gate_passed"]
-    assert decision["headline"] == "balanced_interleaved_graph_local_universal_winner"
+    assert decision["universal_winner_gate_passed"]
+    assert decision["universal_winner"] == "baseline"
+    assert decision["headline"] == "baseline_universal_winner"
 
     objective = complete_per_seed("objective")
     objective_area = ladder_area_summary(ladder_area_per_seed(objective))
     decision = scientific_decision(objective, objective_area)
-    assert not decision["universal_baseline_gate_passed"]
-    assert decision["headline"] == "target_dependent_or_pareto_tradeoff"
+    assert decision["universal_winner_gate_passed"]
+    assert decision["universal_winner"] == "objective"
+    assert decision["headline"] == "objective_universal_winner"
     assert decision["whole_ladder_area_winners"]["cls_fixed_panel"] == "objective"
+
+
+def test_scientific_gate_rejects_a_subpractical_common_lead():
+    tiny = complete_per_seed("baseline")
+    tiny.loc[tiny.arm.eq("baseline"), ["nm_fixed_panel", "cls_fixed_panel"]] -= 0.0195
+    area = ladder_area_summary(ladder_area_per_seed(tiny))
+    decision = scientific_decision(tiny, area)
+    assert set(decision["endpoint_winners"].values()) == {"baseline"}
+    assert not decision["practical_margins_passed"]
+    assert decision["universal_winner"] is None
+    assert decision["headline"] == "target_dependent_or_pareto_tradeoff"

@@ -52,6 +52,7 @@ COLORS = {
     "schedule": "#8338EC",
     "composition": "#A6761D",
 }
+PRACTICAL_DELTA = 0.001
 
 
 def parse_args() -> argparse.Namespace:
@@ -260,28 +261,52 @@ def scientific_decision(per_seed: pd.DataFrame, area_summary: pd.DataFrame) -> d
     endpoint = per_seed[per_seed.rung.eq(max(RUNGS))]
     endpoint_winners = {}
     area_winners = {}
-    alternatives_sweep_baseline = {}
+    endpoint_winner_margins = {}
+    area_winner_margins = {}
     for metric in fixed_metrics:
         endpoint_wide = endpoint.pivot(index="training_seed", columns="arm", values=metric)
-        endpoint_winners[metric] = endpoint_wide.mean().idxmax()
+        endpoint_means = endpoint_wide.mean().sort_values(ascending=False)
+        endpoint_winners[metric] = endpoint_means.index[0]
+        endpoint_winner_margins[metric] = float(endpoint_means.iloc[0] - endpoint_means.iloc[1])
         metric_area = area_summary[area_summary.metric.eq(metric)]
-        area_winners[metric] = metric_area.loc[metric_area["mean"].idxmax(), "arm"]
-        alternatives_sweep_baseline[metric] = sorted(
-            arm for arm in ARMS if arm != "baseline" and (endpoint_wide[arm] > endpoint_wide.baseline).all()
-        )
+        area_means = metric_area.set_index("arm")["mean"].sort_values(ascending=False)
+        area_winners[metric] = area_means.index[0]
+        area_winner_margins[metric] = float(area_means.iloc[0] - area_means.iloc[1])
 
-    baseline_is_universal = (
-        all(winner == "baseline" for winner in endpoint_winners.values())
-        and all(winner == "baseline" for winner in area_winners.values())
-        and not any(alternatives_sweep_baseline.values())
+    all_winners = list(endpoint_winners.values()) + list(area_winners.values())
+    common_winner = all_winners[0] if len(set(all_winners)) == 1 else None
+    practical_margins_pass = all(
+        margin >= PRACTICAL_DELTA
+        for margin in (*endpoint_winner_margins.values(), *area_winner_margins.values())
+    )
+    alternatives_sweep_winner = {}
+    if common_winner is not None:
+        for metric in fixed_metrics:
+            endpoint_wide = endpoint.pivot(index="training_seed", columns="arm", values=metric)
+            alternatives_sweep_winner[metric] = sorted(
+                arm for arm in ARMS
+                if arm != common_winner
+                and ((endpoint_wide[arm] - endpoint_wide[common_winner]) >= PRACTICAL_DELTA).all()
+            )
+    universal_winner = (
+        common_winner
+        if common_winner is not None
+        and practical_margins_pass
+        and not any(alternatives_sweep_winner.values())
+        else None
     )
     return {
-        "headline": "balanced_interleaved_graph_local_universal_winner"
-        if baseline_is_universal else "target_dependent_or_pareto_tradeoff",
+        "headline": f"{universal_winner}_universal_winner"
+        if universal_winner is not None else "target_dependent_or_pareto_tradeoff",
+        "universal_winner": universal_winner,
         "endpoint_winners": endpoint_winners,
+        "endpoint_winner_margins": endpoint_winner_margins,
         "whole_ladder_area_winners": area_winners,
-        "alternatives_beating_baseline_all_three_seeds_at_endpoint": alternatives_sweep_baseline,
-        "universal_baseline_gate_passed": baseline_is_universal,
+        "whole_ladder_area_winner_margins": area_winner_margins,
+        "practical_delta": PRACTICAL_DELTA,
+        "practical_margins_passed": practical_margins_pass,
+        "alternatives_beating_common_winner_all_three_seeds_at_endpoint": alternatives_sweep_winner,
+        "universal_winner_gate_passed": universal_winner is not None,
         "whole_ladder_estimand": (
             "Normalized trapezoidal area over rungs 1-8, computed within each training seed; "
             "future-source area uses its seven finite rungs."
@@ -415,10 +440,10 @@ def main() -> None:
         "training_seeds": list(SEEDS),
         "scientific_decision": scientific_conclusion,
         "claim_rule": (
-            "Treat the balanced/interleaved/graph-local design as a universal winner only if it "
-            "has the highest mean endpoint and whole-ladder area on both fixed panels and no "
-            "alternative wins all three seeds at either endpoint; otherwise report a "
-            "target-dependent or Pareto tradeoff."
+            "Treat any design as a universal winner only if the same arm leads the mean endpoint "
+            "and whole-ladder area on both fixed panels by at least 0.001 ROC-AUC and no "
+            "alternative beats it by that margin in all three seeds at either endpoint; "
+            "otherwise report a target-dependent or Pareto tradeoff."
         ),
     }
     (data_dir / "audit.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")

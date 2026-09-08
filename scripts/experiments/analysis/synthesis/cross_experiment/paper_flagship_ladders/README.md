@@ -32,7 +32,8 @@ copied locally:
   --classification /path/to/classification_long.tsv
 ```
 
-The audit deliberately permits a universal design claim only if the balanced,
-interleaved, graph-local design leads both the endpoint and whole-curve area on
-both fixed panels, and no alternative beats its endpoint in all three seeds for
-either panel. Otherwise the paper reports a target-dependent or Pareto result.
+The audit treats all five designs symmetrically. It permits a universal design
+claim only if the same arm leads both the endpoint and whole-curve area on both
+fixed panels by at least 0.001 ROC-AUC, and no alternative beats its endpoint by
+that practical margin in all three seeds for either panel. Otherwise the paper
+reports a target-dependent or Pareto result.
