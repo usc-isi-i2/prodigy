@@ -1,5 +1,9 @@
 # Native public KG reproduction and paired replay
 
+The earlier frozen original-style protocol and its execution record are
+preserved verbatim in [`ORIGINAL_STYLE_PUBLIC_TEST.md`](ORIGINAL_STYLE_PUBLIC_TEST.md).
+This README documents the subsequent paired-replay and intervention workflow.
+
 `run_native.py` uses the pinned upstream recipe without modifying its source.
 Run it with `--help` for the required upstream/assets/output locations. It is
 dry-run by default; `--execute` performs the selected phase. The nominated
