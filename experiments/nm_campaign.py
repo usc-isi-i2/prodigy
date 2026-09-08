@@ -59,7 +59,7 @@ class CampaignNeighborTask(NeighborTask):
         minimum = 2 if 'low_degree' in self.flags else num_member
         return super()._eligible_candidates(candidates, minimum, cache_key)
 
-    def _sample_center_members(self, center, num_member, rng):
+    def _sample_center_members(self, center, num_member, rng, member_generators=None):
         if 'low_degree' in self.flags:
             if num_member != 7:
                 raise ValueError('Low-degree campaign arm requires 3 support / 4 query')
@@ -68,7 +68,9 @@ class CampaignNeighborTask(NeighborTask):
             if len(neighbors) < 2:
                 return None
             if len(neighbors) >= num_member:
-                return super()._sample_center_members(center, num_member, rng)
+                return super()._sample_center_members(
+                    center, num_member, rng, member_generators=member_generators
+                )
             rng.shuffle(neighbors)
             support_count = min(3, max(1, round(len(neighbors)*3/7)))
             support, query = neighbors[:support_count], neighbors[support_count:]
@@ -77,17 +79,24 @@ class CampaignNeighborTask(NeighborTask):
             return (support + rng.choices(support,k=3-len(support)) +
                     query + rng.choices(query,k=4-len(query)))
         if 'uniform_positive' not in self.flags:
-            return super()._sample_center_members(center, num_member, rng)
+            return super()._sample_center_members(
+                center, num_member, rng, member_generators=member_generators
+            )
         rowptr, col, _ = self.neighbor_sampler.whole_adj.csr()
         neighbors = torch.unique(col[int(rowptr[center]):int(rowptr[center+1])]).tolist()
         if len(neighbors) < num_member:
             return None
         return rng.sample(neighbors, num_member)
 
-    def _sample_from_stratum(self, num_label, num_member, rng, stratum_idx):
+    def _sample_from_stratum(
+        self, num_label, num_member, rng, stratum_idx, member_generators=None
+    ):
         changed = self.flags & {'degree_balanced', 'degree_hard', 'region_adaptive', 'coverage_cycle'}
         if not changed:
-            return super()._sample_from_stratum(num_label, num_member, rng, stratum_idx)
+            return super()._sample_from_stratum(
+                num_label, num_member, rng, stratum_idx,
+                member_generators=member_generators,
+            )
         candidates = self._eligible_candidates(self.strata[stratum_idx], num_member, ('stratum', stratum_idx))
         self._require_candidates(candidates, num_label, 'campaign source')
         groups = self._groups(candidates, stratum_idx)
@@ -121,7 +130,9 @@ class CampaignNeighborTask(NeighborTask):
                 center = int(rng.choice(pool))
             if center in task:
                 continue
-            members = self._sample_center_members(center, num_member, rng)
+            members = self._sample_center_members(
+                center, num_member, rng, member_generators=member_generators
+            )
             if members is not None:
                 task[center] = members
             if len(task) == num_label:
