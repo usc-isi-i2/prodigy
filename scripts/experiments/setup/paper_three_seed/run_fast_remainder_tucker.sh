@@ -25,10 +25,31 @@ configs_for() {
   awk -F'\t' -v pattern="$pattern" 'NR>1 && $1 ~ pattern {print $3}' "$PLAN_FILE"
 }
 
+require_complete_status() {
+  local run_dir="$1" expected_jobs="$2"
+  "${CONDA_PREFIX}/bin/python" - "$run_dir/status.json" "$expected_jobs" <<'PY'
+import json
+import sys
+
+path, expected_text = sys.argv[1:]
+expected = int(expected_text)
+status = json.load(open(path, encoding="utf-8"))
+finished = status.get("finished", [])
+if status.get("status") != "complete":
+    raise SystemExit(f"non-complete shared-graph status: {path}: {status.get('status')}")
+if len(finished) != expected:
+    raise SystemExit(f"shared-graph job-count mismatch: {path}: {len(finished)} != {expected}")
+if any(row.get("exitcode") != 0 for row in finished):
+    raise SystemExit(f"nonzero shared-graph exit in completed status: {path}")
+PY
+}
+
 # All two-hop GraphSAGE conditions and both missing seeds share one 111 GB graph load.
 mapfile -t twohop < <(configs_for '^(ladder_2hop|fixed_exposure_2hop)$')
 twohop_dir="$RUN_ROOT/twohop_seeds_1-2"
-if [[ ! -f "$twohop_dir/status.json" ]]; then
+if [[ -f "$twohop_dir/status.json" ]]; then
+  require_complete_status "$twohop_dir" "$((${#twohop[@]} * 2))"
+else
   [[ ! -e "$twohop_dir" ]] || { echo "REFUSE incomplete $twohop_dir" >&2; exit 1; }
   "${CONDA_PREFIX}/bin/python" experiments/run_shared_graph.py \
     --configs "${twohop[@]}" --seeds 1 2 --gpus $GPUS_TEXT \
@@ -39,7 +60,9 @@ fi
 # Seed 1's one-hop mixtures were completed by the initial batch; run seed 2 once.
 mapfile -t onehop < <(configs_for '^ladder_1hop$')
 onehop_dir="$RUN_ROOT/onehop_seed_2"
-if [[ ! -f "$onehop_dir/status.json" ]]; then
+if [[ -f "$onehop_dir/status.json" ]]; then
+  require_complete_status "$onehop_dir" "${#onehop[@]}"
+else
   [[ ! -e "$onehop_dir" ]] || { echo "REFUSE incomplete $onehop_dir" >&2; exit 1; }
   "${CONDA_PREFIX}/bin/python" experiments/run_shared_graph.py \
     --configs "${onehop[@]}" --seeds 2 --gpus $GPUS_TEXT \
