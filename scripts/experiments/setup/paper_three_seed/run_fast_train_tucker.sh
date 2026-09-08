@@ -40,10 +40,12 @@ run_shared_family() {
     return 0
   fi
   [[ ! -e "$run_dir" ]] || { echo "REFUSE existing incomplete $run_dir" >&2; return 1; }
+  local mode_args=()
+  [[ "${DRY_RUN:-0}" == 1 ]] && mode_args+=(--dry-run)
   "${CONDA_PREFIX}/bin/python" experiments/run_shared_graph.py \
     --configs "${configs[@]}" --gpus $GPUS_TEXT \
     --models-per-gpu "$MODELS_PER_GPU" --worker-budget "$WORKER_BUDGET" \
-    --threads-per-model 4 --run-dir "$run_dir" -- --seed "$seed" "$@"
+    --threads-per-model 4 --run-dir "$run_dir" "${mode_args[@]}" -- --seed "$seed" "$@"
 }
 
 for seed in $SEEDS_TEXT; do
@@ -55,4 +57,4 @@ for seed in $SEEDS_TEXT; do
   run_shared_family "$seed" fixed_exposure_2hop
 done
 
-date -u +%Y-%m-%dT%H:%M:%SZ > "$RUN_ROOT/training_complete_utc.txt"
+[[ "${DRY_RUN:-0}" == 1 ]] || date -u +%Y-%m-%dT%H:%M:%SZ > "$RUN_ROOT/training_complete_utc.txt"
