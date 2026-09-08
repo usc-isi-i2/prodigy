@@ -9,6 +9,7 @@ RUN_ROOT="${REPO_ROOT}/log/paper_three_seed_remainder/${RUN_STAMP:-20260908}"
 GPUS_TEXT="${GPUS:-0 1 2 3}"
 MODELS_PER_GPU="${MODELS_PER_GPU:-8}"
 WORKER_BUDGET="${WORKER_BUDGET:-128}"
+RECOVER_INTERRUPTED="${RECOVER_INTERRUPTED:-0}"
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
 source "$(conda info --base)/etc/profile.d/conda.sh"
@@ -47,7 +48,13 @@ PY
 # All two-hop GraphSAGE conditions and both missing seeds share one 111 GB graph load.
 mapfile -t twohop < <(configs_for '^(ladder_2hop|fixed_exposure_2hop)$')
 twohop_dir="$RUN_ROOT/twohop_seeds_1-2"
-if [[ -f "$twohop_dir/status.json" ]]; then
+if [[ -f "$twohop_dir/status.json" ]] && grep -q '"status": "complete"' "$twohop_dir/status.json"; then
+  require_complete_status "$twohop_dir" "$((${#twohop[@]} * 2))"
+elif [[ "$RECOVER_INTERRUPTED" == 1 && -d "$twohop_dir" ]]; then
+  "${CONDA_PREFIX}/bin/python" experiments/run_shared_graph.py \
+    --configs "${twohop[@]}" --seeds 1 2 --gpus $GPUS_TEXT \
+    --models-per-gpu "$MODELS_PER_GPU" --worker-budget "$WORKER_BUDGET" \
+    --threads-per-model 4 --run-dir "$twohop_dir" --recover-interrupted
   require_complete_status "$twohop_dir" "$((${#twohop[@]} * 2))"
 else
   [[ ! -e "$twohop_dir" ]] || { echo "REFUSE incomplete $twohop_dir" >&2; exit 1; }
@@ -60,7 +67,15 @@ fi
 # Seed 1's one-hop mixtures were completed by the initial batch; run seed 2 once.
 mapfile -t onehop < <(configs_for '^ladder_1hop$')
 onehop_dir="$RUN_ROOT/onehop_seed_2"
-if [[ -f "$onehop_dir/status.json" ]]; then
+if [[ -f "$onehop_dir/status.json" ]] && grep -q '"status": "complete"' "$onehop_dir/status.json"; then
+  require_complete_status "$onehop_dir" "${#onehop[@]}"
+elif [[ "$RECOVER_INTERRUPTED" == 1 && -d "$onehop_dir" ]]; then
+  "${CONDA_PREFIX}/bin/python" experiments/run_shared_graph.py \
+    --configs "${onehop[@]}" --seeds 2 --gpus $GPUS_TEXT \
+    --models-per-gpu "$MODELS_PER_GPU" --worker-budget "$WORKER_BUDGET" \
+    --threads-per-model 4 --run-dir "$onehop_dir" --recover-interrupted -- \
+    --n_hop 1 --neighbor_sampling_hop_sizes '' \
+    --neighbor_sampling_node_limit 2000 --neighbor_matching_walk_hops 0
   require_complete_status "$onehop_dir" "${#onehop[@]}"
 else
   [[ ! -e "$onehop_dir" ]] || { echo "REFUSE incomplete $onehop_dir" >&2; exit 1; }

@@ -16,6 +16,7 @@ MODELS_PER_GPU="${MODELS_PER_GPU:-14}"
 WORKER_BUDGET="${WORKER_BUDGET:-224}"
 SEEDS_TEXT="${SEEDS:-0 1 2}"
 PHASE="${PHASE:-all}"
+RECOVER_INTERRUPTED="${RECOVER_INTERRUPTED:-0}"
 
 case "$PHASE" in
   all|train|eval) ;;
@@ -32,19 +33,27 @@ unset CUDA_VISIBLE_DEVICES || true
 cd "$REPO_ROOT"
 
 if [[ "$PHASE" != eval ]]; then
-  if [[ -e "$RUN_ROOT" ]]; then
+  if [[ -e "$RUN_ROOT" && "$RECOVER_INTERRUPTED" != 1 ]]; then
     echo "REFUSE existing all-pairs root $RUN_ROOT" >&2
     exit 1
   fi
-  mkdir -p "$RUN_ROOT"
-  "${CONDA_PREFIX}/bin/python" -m scripts.experiments.setup.paper_all_pairs.plan --output "$CONFIG_DIR"
+  if [[ "$RECOVER_INTERRUPTED" == 1 ]]; then
+    [[ -d "$RUN_ROOT" && -f "$TRAIN_DIR/manifest.json" ]] || {
+      echo "missing interrupted all-pairs run under $RUN_ROOT" >&2; exit 3;
+    }
+  else
+    mkdir -p "$RUN_ROOT"
+    "${CONDA_PREFIX}/bin/python" -m scripts.experiments.setup.paper_all_pairs.plan --output "$CONFIG_DIR"
+  fi
   mapfile -t configs < <(find "$CONFIG_DIR" -maxdepth 1 -type f -name 'train_*.yaml' | sort)
   [[ ${#configs[@]} -eq 36 ]] || { echo "expected 36 pair configs" >&2; exit 2; }
 
+  recovery_args=()
+  [[ "$RECOVER_INTERRUPTED" != 1 ]] || recovery_args+=(--recover-interrupted)
   "${CONDA_PREFIX}/bin/python" experiments/run_shared_graph.py \
     --configs "${configs[@]}" --seeds $SEEDS_TEXT --gpus $GPUS_TEXT \
     --models-per-gpu "$MODELS_PER_GPU" --worker-budget "$WORKER_BUDGET" \
-    --threads-per-model 4 --run-dir "$TRAIN_DIR"
+    --threads-per-model 4 --run-dir "$TRAIN_DIR" "${recovery_args[@]}"
   date -u +%Y-%m-%dT%H:%M:%SZ > "$TRAIN_COMPLETE"
 fi
 
