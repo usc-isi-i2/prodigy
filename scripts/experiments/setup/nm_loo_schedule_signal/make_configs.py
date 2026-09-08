@@ -84,6 +84,12 @@ def main() -> None:
                                  "block_size": block, "counts": apportion({n: 1 for n in SOURCES} if exposure == "uniform" else SOURCES),
                                  "config": str(path.relative_to(HERE))})
     (HERE / "plan.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    lines = ["model_id\tseed\texposure\tblock_size\tconfig"]
+    lines.extend(
+        f"{row['model_id']}\t{row['seed']}\t{row['exposure']}\t{row['block_size']}\t{row['config']}"
+        for row in manifest
+    )
+    (HERE / "plan.tsv").write_text("\n".join(lines) + "\n")
     assert len(manifest) == 18
 
 
