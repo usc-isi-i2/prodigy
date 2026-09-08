@@ -12,6 +12,9 @@ and to the exact bio-selection policy used at graph construction.  It writes:
 - [Ukraine versus Hong Kong on COVID Political](FINDINGS_COVID_POLITICAL_SOURCE_PAIR.md):
   paired FP/FN cohorts across two fixed evaluation streams, with private
   node/profile evidence retained on Tucker.
+- [Ukraine versus Hong Kong neighbor matching](FINDINGS_NM_SOURCE_PAIR.md):
+  exact paired 30-way query/support ids, native-source specialization, shared
+  error overlap, and cross-model oracle headroom on both source graphs.
 
 For the current Parquet Twitter graphs:
 
