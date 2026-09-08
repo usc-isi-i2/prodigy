@@ -9,6 +9,9 @@ and to the exact bio-selection policy used at graph construction.  It writes:
 
 ## Findings
 
+- [Query bio embedding clusters](FINDINGS_QUERY_BIO_CLUSTERS.md): outcome-blind
+  GTE clustering with fresh-stream assignment, actual-text interpretation,
+  error enrichment, and coarse label/isolation adjustment.
 - [Consolidated source-paired error-audit report](SOURCE_PAIR_ERROR_AUDIT_REPORT.md):
   the complete cross-task synthesis, figures, caveats, and actionable next
   analyses.

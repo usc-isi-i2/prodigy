@@ -91,6 +91,28 @@ These examples show that both query processing and the support-derived class
 representation can mediate the structural associations. Full-graph degree is a
 correlate, not yet an established cause.
 
+## Update: first query bio clustering pass
+
+The [query bio clustering report](FINDINGS_QUERY_BIO_CLUSTERS.md) now adds
+actual-text interpretation and GTE geometry to the classification audit.
+Eight clusters fit without labels/outcomes on original unique queries yield
+repeatable error differences in the fresh stream (paired-gap correlation
+0.846), although embedding clusters overlap substantially (silhouette 0.031).
+
+The clearest shared-failure concentration is supplied-negative queries in a
+cluster mixing pro- and anti-Trump vocabulary: roughly 3% of query occurrences
+account for 22% of shared errors in each stream. Inspected bios include both
+stance confusion candidates and apparent text/label conflicts, requiring
+label-provenance checks before calling these annotation errors. A creative/
+hobby cluster retains an additional 4.5/4.6-point Ukraine advantage after a
+coarse true-label × isolation adjustment. Ukraine is better in all eight
+broad clusters; wholesale routing by bio topic alone is not supported.
+
+![Query bio cluster error rates](figures/query_bio_cluster_errors.png)
+
+This pass covers query bios only. Neighborhood/support GTE distributions,
+NM bio clustering, and training-node exposure remain outstanding.
+
 ## 2. Native neighbor matching
 
 Both seed-0, step-2,500 specialists were evaluated on exactly paired 30-way,
@@ -211,4 +233,3 @@ Private raw evidence remains under:
 The classification analysis uses two evaluation episode draws with identical
 weights. The NM analysis uses seed-0 specialists and fixed test/validation
 episodes. Neither substitutes for independent training-seed replication.
-
