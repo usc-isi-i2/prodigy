@@ -19,6 +19,9 @@
 !scripts/**/data/**/*.csv
 !scripts/**/data/**/*.tsv
 !scripts/**/data/**/*.json
+# This setup manifest is the frozen arm/rung inventory for the overnight
+# intervention run and is part of its reproducibility record.
+!scripts/experiments/setup/nm_interventions_overnight/manifest.json
 # The graph catalog is the repo's source of truth and must stay tracked;
 # it moved config/ -> docs/ on 2026-07-26, where the blanket *.json rule hides it.
 !docs/graph_catalog.json
