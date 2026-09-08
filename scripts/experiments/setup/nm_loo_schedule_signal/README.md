@@ -29,3 +29,5 @@ tmux new-session -d -s nm_loo_signal 'export PATH="/home/mhchu/miniconda3/bin:$P
 Evaluate every terminal checkpoint on the same frozen 512-episode held-out
 `ukr_rus` NM stream used by `nm_leave_one_out_finalcore`; use the existing
 `evaluate_loo.py` protocol after forming a model list from the shared manifest.
+That archived stream requires `neighbor_matching_member_policy: lowest_sorted`;
+the evaluation config must set it explicitly on current code.
