@@ -17,6 +17,7 @@ Setup and launch files remain in `../setup/<name>/`.
 - **Architecture-controlled NM:** [`icl_arch_matrix`](transfer/matrices/cross_architecture/icl_arch_matrix/) compares PRODIGY, VISION, and GILT.
 - **Component-compensation scope:** [`gilt_component_crossover`](graphs/transfer_prediction/gilt_component_crossover/) records the predeclared GILT test and its failure to replicate the PRODIGY direction.
 - **Native-objective architectures:** [`final_core`](transfer/matrices/cross_model/final_core/) compares PRODIGY/NM and SAMGPT/GraphCL.
+- **Recent all-pairs impact:** [`source_lattice_comparison`](transfer/matrices/cross_model/source_lattice_comparison/) compares classification pair-minus-singleton distributions for PRODIGY/NM, GraphSAGE/LP, GraphSAGE/GraphMAE, and SAMGPT/GraphCL.
 
 ### Ladders
 
