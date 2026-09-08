@@ -619,10 +619,27 @@ def parse_seeds(text: str) -> list[int]:
     return seeds
 
 
+def partition_items(items: list[Any], worker_index: int, worker_count: int) -> list[Any]:
+    """Deterministically shard work without changing its canonical order."""
+    return [
+        item for index, item in enumerate(items)
+        if index % worker_count == worker_index
+    ]
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--worker-index", required=True, type=int)
     parser.add_argument("--worker-count", required=True, type=int)
+    parser.add_argument(
+        "--partition-by",
+        choices=("checkpoints", "targets"),
+        default="checkpoints",
+        help=(
+            "Shard checkpoints (legacy) or targets across workers. Target sharding "
+            "avoids rebuilding a target cache in every worker."
+        ),
+    )
     parser.add_argument("--max-checkpoints", type=int)
     parser.add_argument("--specialists-only", action="store_true")
     parser.add_argument("--seeds", default=",".join(map(str, SEEDS)))
@@ -715,14 +732,18 @@ def main() -> int:
     expected_jobs = (9 if args.specialists_only else 31) * len(selected_seeds)
     if args.job_manifest is None and len(jobs) != expected_jobs:
         raise AssertionError(f"expected {expected_jobs} checkpoints, got {len(jobs)}")
-    assigned = [
-        job for index, job in enumerate(jobs)
-        if index % args.worker_count == args.worker_index
-    ]
+    if args.partition_by == "targets":
+        assigned = list(jobs)
+        assigned_targets = partition_items(targets, args.worker_index, args.worker_count)
+    else:
+        assigned = partition_items(jobs, args.worker_index, args.worker_count)
+        assigned_targets = list(targets)
     if args.max_checkpoints is not None:
         assigned = assigned[:args.max_checkpoints]
     if not assigned:
         raise ValueError(f"worker {args.worker_index} has no assigned checkpoints")
+    if not assigned_targets:
+        raise ValueError(f"worker {args.worker_index} has no assigned targets")
     for job in assigned:
         checkpoint = selected_checkpoint(args, job, custom_checkpoints)
         if not checkpoint.is_file():
@@ -734,14 +755,15 @@ def main() -> int:
         args,
         seed=0,
         model_id=first_job.model.model_id,
-        target=targets[0],
+        target=assigned_targets[0],
         checkpoint=first_checkpoint,
         config=args.plan_config,
     )
     seed_everything(base_params)
     print(
         f"worker={args.worker_index}/{args.worker_count} loading graph once; "
-        f"jobs={len(assigned)} targets={targets}",
+        f"partition_by={args.partition_by} jobs={len(assigned)} "
+        f"targets={assigned_targets}",
         flush=True,
     )
     dataset = load_dataset(base_params)
@@ -755,14 +777,14 @@ def main() -> int:
         args,
         seed=first_job.seed,
         model_id=first_job.model.model_id,
-        target=targets[0],
+        target=assigned_targets[0],
         checkpoint=first_checkpoint,
         config=args.plan_config,
     )
     seed_everything(bootstrap_params)
     trainer = TrainerFS(dataset, bootstrap_params)
     target_plans: dict[str, dict[str, Any]] = {}
-    for target in targets:
+    for target in assigned_targets:
         # Positive-member sampling uses the holdout NeighborSampler and therefore
         # consumes torch RNG in addition to BatchSampler's private Python RNG.
         # Reset before materialization so the raw stream is independent of the
@@ -813,7 +835,7 @@ def main() -> int:
             args,
             seed=first_job.seed,
             model_id=first_job.model.model_id,
-            target=targets[0],
+            target=assigned_targets[0],
             checkpoint=first_checkpoint,
         )
         inference_params["exp_name"] += "_inference"
@@ -831,7 +853,7 @@ def main() -> int:
         trainer = TrainerFS(dataset, inference_params)
         trainer.test_dataloader = None
 
-    for target in targets:
+    for target in assigned_targets:
         pending: list[tuple[Any, Path, Path]] = []
         existing_observed_fingerprints: set[str] = set()
         for job in assigned:
