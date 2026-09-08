@@ -29,6 +29,13 @@ compatible context family as a separate shared-memory batch. The legacy queue
 remains the fallback for the eight standalone specialist graphs, the GATv2 ladder
 (whose configs load separate source artifacts), and exact historical output naming.
 
+`run_flagship_ladders_tucker.sh` adds seeds 1 and 2 for the five matched
+intervention ladders needed by the main figure: baseline, auxiliary objective,
+size-proportional exposure, blocked scheduling, and cross-graph episode classes.
+All forty conditions per seed share one graph load. This is the inferentially
+matched comparison for the flagship; historical ladders remain context rather
+than being pooled across protocols.
+
 After training completes, the queue evaluates all checkpoints on the eight fixed
 NM receiver episode sets. One-hop GraphSAGE, GATv2, and two-hop GraphSAGE are
 evaluated separately so that each checkpoint is reconstructed with the matching
