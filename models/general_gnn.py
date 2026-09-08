@@ -7,6 +7,7 @@ import torch_geometric as pyg
 import numpy as np
 from models.layer_classes import MetagraphLayer, SupernodeAggrLayer, SupernodeToBgGraphLayer, BackgroundGNNLayer
 from models.encoder_solver_objective import ridge_query_loss
+from experiments.task_families import TASK_FAMILIES, TASK_FAMILY_TO_ID, effective_task_family
 
 
 class SingleLayerGeneralGNN(torch.nn.Module):
@@ -55,6 +56,36 @@ class SingleLayerGeneralGNN(torch.nn.Module):
             # A zero residual gives the exact cosine baseline at step zero.
             torch.nn.init.zeros_(self.relation_scorer[-1].weight)
             torch.nn.init.zeros_(self.relation_scorer[-1].bias)
+        self.task_embedding_dim = int(self.params.get("task_embedding_dim", 0))
+        self.task_embedding_dropout = float(self.params.get("task_embedding_dropout", 0.0))
+        self.task_embedding_fusion = self.params.get("task_embedding_fusion", "add")
+        if not 0.0 <= self.task_embedding_dropout <= 1.0:
+            raise ValueError("task_embedding_dropout must lie in [0, 1]")
+        if self.task_embedding_dim < 0:
+            raise ValueError("task_embedding_dim must be non-negative")
+        if self.task_embedding_dim:
+            self.task_embedding = torch.nn.Embedding(len(TASK_FAMILIES), self.task_embedding_dim)
+            if self.task_embedding_fusion == "add":
+                self.task_to_input = torch.nn.Linear(self.task_embedding_dim, params["emb_dim"], bias=False)
+                self.task_to_label = torch.nn.Linear(self.task_embedding_dim, params["emb_dim"], bias=False)
+            elif self.task_embedding_fusion == "film":
+                self.task_input_gamma = torch.nn.Linear(self.task_embedding_dim, params["emb_dim"], bias=False)
+                self.task_input_beta = torch.nn.Linear(self.task_embedding_dim, params["emb_dim"], bias=False)
+                self.task_label_gamma = torch.nn.Linear(self.task_embedding_dim, params["emb_dim"], bias=False)
+                self.task_label_beta = torch.nn.Linear(self.task_embedding_dim, params["emb_dim"], bias=False)
+                for projection in (
+                    self.task_input_gamma, self.task_input_beta,
+                    self.task_label_gamma, self.task_label_beta,
+                ):
+                    torch.nn.init.zeros_(projection.weight)
+            else:
+                raise ValueError(f"Unknown task_embedding_fusion={self.task_embedding_fusion!r}")
+            default_family = effective_task_family(
+                self.params.get("task_name", ""),
+                self.params.get("dataset", ""),
+                self.params.get("task_embedding_seen_families", ""),
+            )
+            self.default_task_family_id = TASK_FAMILY_TO_ID[default_family]
         if self.params.get("task_name") == "regression":
             self.regression_head = torch.nn.Sequential(
                 torch.nn.Linear(params["emb_dim"], params["emb_dim"]),
@@ -165,6 +196,25 @@ class SingleLayerGeneralGNN(torch.nn.Module):
 
         return input_x_mg, label_x_mg
 
+    def task_condition(self, graph, input_x, label_x):
+        """Condition one homogeneous task minibatch immediately before its metagraph."""
+        if not self.task_embedding_dim:
+            return input_x, label_x
+        family_id = getattr(graph, "task_family_id", self.default_task_family_id)
+        family_id = torch.as_tensor(family_id, device=input_x.device, dtype=torch.long).reshape(-1)[0]
+        if self.training and self.task_embedding_dropout > 0:
+            if torch.rand((), device=input_x.device) < self.task_embedding_dropout:
+                family_id = family_id.new_tensor(TASK_FAMILY_TO_ID["unknown"])
+        embedding = self.task_embedding(family_id)
+        if self.task_embedding_fusion == "add":
+            return input_x + self.task_to_input(embedding), label_x + self.task_to_label(embedding)
+        input_gamma = torch.tanh(self.task_input_gamma(embedding))
+        label_gamma = torch.tanh(self.task_label_gamma(embedding))
+        return (
+            input_x * (1 + input_gamma) + self.task_input_beta(embedding),
+            label_x * (1 + label_gamma) + self.task_label_beta(embedding),
+        )
+
     def forward(self, graph, x_label, y_true_matrix, metagraph_edge_index, metagraph_edge_attr, query_set_mask, input_seqs=None, query_seqs=None, query_seqs_gt=None, task_mask=None):
         '''
         Params as returned by the batching function.
@@ -211,6 +261,7 @@ class SingleLayerGeneralGNN(torch.nn.Module):
         
         x_input = torch.zeros((len(supernode_idx), x_label.size(1))).float().to(x_label.device)
         #x_input = None
+        task_conditioned = False
         for module in self.layer_list:
             if isinstance(module, MetagraphLayer):
                 mode = self.params.get("encoder_solver_objective", "native")
@@ -223,6 +274,9 @@ class SingleLayerGeneralGNN(torch.nn.Module):
                         x_input = x_input.detach()
                 if x_input is None:
                     raise Exception('MetagraphLayer must be preceded by a layer that produces supernode embeddings!')
+                if not task_conditioned:
+                    x_input, x_label = self.task_condition(graph, x_input, x_label)
+                    task_conditioned = True
                 if self.support_label_prototypes:
                     x_label = self.add_support_prototypes(
                         x_input, x_label, metagraph_edge_index, metagraph_edge_attr, query_set_mask

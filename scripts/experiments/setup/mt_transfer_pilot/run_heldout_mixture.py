@@ -19,6 +19,10 @@ from experiments.params import get_params  # noqa: E402
 from experiments.run_single_experiment import load_dataset, seed_everything  # noqa: E402
 from experiments.trainer import TrainerFS  # noqa: E402
 from variable_way import episode_n_way  # noqa: E402
+from experiments.task_families import (  # noqa: E402
+    TASK_FAMILY_TO_ID,
+    resolve_task_family,
+)
 
 
 SOURCES = {
@@ -48,10 +52,15 @@ class ScheduledLoader:
         iterators = {key: iter(loader) for key, loader in self.loaders.items()}
         for key in itertools.islice(itertools.cycle(self.schedule), self.steps):
             try:
-                yield next(iterators[key])
+                batch = next(iterators[key])
             except StopIteration:
                 iterators[key] = iter(self.loaders[key])
-                yield next(iterators[key])
+                batch = next(iterators[key])
+            donor, task = key
+            batch[0].task_family_id = torch.tensor(
+                TASK_FAMILY_TO_ID[resolve_task_family(task, donor)], dtype=torch.long
+            )
+            yield batch
 
 
 def donor_params(base, donor, task, variable_nm_way=False):
@@ -83,6 +92,9 @@ def main():
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--variable-nm-way", action="store_true")
     parser.add_argument("--support-relation", action="store_true")
+    parser.add_argument("--task-embedding-dim", type=int, default=0)
+    parser.add_argument("--task-embedding-dropout", type=float, default=0.25)
+    parser.add_argument("--task-embedding-fusion", choices=["add", "film"], default="add")
     args = parser.parse_args()
 
     donors = [source for source in SOURCES if source != args.heldout]
@@ -91,7 +103,13 @@ def main():
     variant = "_varway" if args.variable_nm_way else ""
     if args.support_relation:
         variant += "_supportrel"
-    prefix = f"mtpilot_{args.arm}{variant}_heldout_{args.heldout}" + ("_smoke" if args.smoke else "")
+    task_tag = (
+        f"_task{args.task_embedding_dim}_{args.task_embedding_fusion}"
+        if args.task_embedding_dim else ""
+    )
+    prefix = f"mtpilot_{args.arm}{variant}{task_tag}_heldout_{args.heldout}" + ("_smoke" if args.smoke else "")
+    seen_families = {"neighbor_matching"}
+    seen_families.update(resolve_task_family("classification", donor) for donor in donors)
     base = get_params([
         "--config", str(HERE / "configs" / f"{args.arm}.yaml"),
         "--dataset", donors[0], "--root", first_root, "--graph_filename", first_file,
@@ -99,6 +117,10 @@ def main():
         "--checkpoint_step", str(budget), "--prefix", prefix,
         "--support_label_prototypes", str(args.support_relation),
         "--learned_relation_scorer", str(args.support_relation),
+        "--task_embedding_dim", str(args.task_embedding_dim),
+        "--task_embedding_dropout", str(args.task_embedding_dropout),
+        "--task_embedding_fusion", args.task_embedding_fusion,
+        "--task_embedding_seen_families", ",".join(sorted(seen_families)),
     ])
     seed_everything(base)
     datasets = {
