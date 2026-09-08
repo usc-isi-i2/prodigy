@@ -20,6 +20,11 @@ The headline decision uses both the final rung and a normalized trapezoidal area
 over the whole eight-rung curve, always calculated inside each training seed.
 `data/ladder_area_per_seed.csv` preserves the replication unit and
 `data/ladder_area_summary.csv` records paired effects against the baseline.
+Target-level endpoint effects are paired within training seed and retained in
+`data/target_effects_per_seed.csv`, `data/target_effects_summary.csv`, and
+`data/endpoint_target_robustness.csv`. A macro-level winner is rejected if its
+worst target regresses from the matched baseline by more than the same 0.001
+practical margin; this prevents a mean gain from hiding a material target loss.
 The wide-capacity comparison is rendered separately so it does not crowd or
 retroactively redefine the five-design primary figure.
 

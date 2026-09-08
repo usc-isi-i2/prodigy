@@ -30,6 +30,7 @@ NM_TARGETS = (
     "ukr_rus", "covid", "midterm", "covid_political", "election2020",
     "ukr_rus_suspended", "cp_hk", "facebook_page_reference", "twibot20",
 )
+SOURCE_ORDER = NM_TARGETS[:-1]
 CLS_TARGETS = (
     "covid_political", "election2020", "facebook_page_reference", "twibot20",
     "ukr_rus_suspended",
@@ -70,10 +71,37 @@ def annotate_models(frame: pd.DataFrame) -> pd.DataFrame:
         bad = frame.loc[parts.isna().any(axis=1), "model_id"].unique().tolist()
         raise ValueError(f"unrecognized flagship model ids: {bad[:10]}")
     result = frame.copy()
-    result["arm"] = parts["arm"]
-    result["rung"] = parts["rung"].astype(int)
-    result["training_seed"] = parts["seed"].astype(int)
+    parsed_arm = parts["arm"]
+    parsed_rung = parts["rung"].astype(int)
+    parsed_seed = parts["seed"].astype(int)
+    declared = {
+        "arm": parsed_arm,
+        "rung": parsed_rung,
+        "training_seed": parsed_seed,
+        "seed": parsed_seed,
+    }
+    for column, expected in declared.items():
+        if column not in result:
+            continue
+        observed = result[column]
+        if column in {"rung", "training_seed", "seed"}:
+            observed = pd.to_numeric(observed, errors="coerce")
+        else:
+            observed = observed.astype(str)
+        mismatch = observed.ne(expected)
+        if mismatch.any():
+            bad = result.loc[mismatch, ["model_id", column]].head(10).to_dict("records")
+            raise ValueError(f"{column} disagrees with model id: {bad}")
+    result["arm"] = parsed_arm
+    result["rung"] = parsed_rung
+    result["training_seed"] = parsed_seed
     return result
+
+
+def source_tuple(value: object) -> tuple[str, ...]:
+    if isinstance(value, (list, tuple)):
+        return tuple(str(item).strip() for item in value)
+    return tuple(part.strip() for part in str(value).split(",") if part.strip())
 
 
 def load_nm(seed0_path: Path, replicate_root: Path) -> pd.DataFrame:
@@ -103,7 +131,16 @@ def validate_grid(
     arms: tuple[str, ...] = ARMS,
     *,
     expected_episodes: int,
+    expected_protocol: str | None = None,
 ) -> None:
+    required = {
+        "model_id", "arm", "rung", "training_seed", "target", "roc_auc",
+        "fingerprint", "episodes", "sources", "checkpoint", "checkpoint_step",
+        "checkpoint_sha256", "training_revision",
+    }
+    missing_columns = sorted(required - set(frame.columns))
+    if missing_columns:
+        raise ValueError(f"missing {task} provenance columns: {missing_columns}")
     keys = list(zip(frame.arm, frame.rung, frame.training_seed, frame.target))
     expected = {
         (arm, rung, seed, target)
@@ -120,6 +157,31 @@ def validate_grid(
         )
     if not np.isfinite(frame.roc_auc).all() or not frame.roc_auc.between(0, 1).all():
         raise ValueError(f"invalid {task} ROC-AUC values")
+    expected_sources = frame.rung.map(
+        lambda rung: SOURCE_ORDER[: int(rung)]
+    )
+    observed_sources = frame.sources.map(source_tuple)
+    source_mismatch = observed_sources.ne(expected_sources)
+    if source_mismatch.any():
+        bad = frame.loc[source_mismatch, ["model_id", "sources"]].head(10).to_dict("records")
+        raise ValueError(f"{task} source-set mismatch: {bad}")
+    if not frame.checkpoint.astype(str).str.strip().ne("").all():
+        raise ValueError(f"missing {task} checkpoint paths")
+    if not frame.checkpoint_sha256.astype(str).str.fullmatch(r"[0-9a-f]{64}").all():
+        raise ValueError(f"invalid {task} checkpoint hashes")
+    if not frame.training_revision.astype(str).str.fullmatch(r"[0-9a-f]{7,40}").all():
+        raise ValueError(f"invalid {task} training revisions")
+    checkpoint_steps = pd.to_numeric(frame.checkpoint_step, errors="coerce")
+    if not np.isfinite(checkpoint_steps).all() or not (checkpoint_steps > 0).all():
+        raise ValueError(f"invalid {task} checkpoint steps")
+    if expected_protocol is not None:
+        if "protocol" not in frame:
+            raise ValueError(f"missing {task} protocol column")
+        protocols = sorted(frame.protocol.astype(str).unique().tolist())
+        if protocols != [expected_protocol]:
+            raise ValueError(
+                f"{task} protocol drift: expected={expected_protocol} observed={protocols}"
+            )
     drift = frame.groupby("target").fingerprint.nunique()
     if not (drift == 1).all():
         raise ValueError(f"{task} episode fingerprint drift: {drift[drift != 1].to_dict()}")
@@ -261,7 +323,95 @@ def ladder_area_summary(per_seed_area: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def scientific_decision(per_seed: pd.DataFrame, area_summary: pd.DataFrame) -> dict:
+def target_diagnostics(
+    nm: pd.DataFrame, cls: pd.DataFrame
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Keep target-level paired effects visible instead of hiding them in macros."""
+    rows = []
+    for task, frame in (("NM", nm), ("CLS", cls)):
+        baseline = frame[frame.arm.eq("baseline")][
+            ["rung", "training_seed", "target", "roc_auc"]
+        ].rename(columns={"roc_auc": "baseline_roc_auc"})
+        rung_one = frame[frame.rung.eq(1)][
+            ["arm", "training_seed", "target", "roc_auc"]
+        ].rename(columns={"roc_auc": "rung1_roc_auc"})
+        paired = frame.merge(
+            baseline,
+            on=["rung", "training_seed", "target"],
+            validate="many_to_one",
+        ).merge(
+            rung_one,
+            on=["arm", "training_seed", "target"],
+            validate="many_to_one",
+        )
+        paired["task"] = task
+        paired["delta_vs_baseline"] = paired.roc_auc - paired.baseline_roc_auc
+        paired["delta_vs_rung1"] = paired.roc_auc - paired.rung1_roc_auc
+        rows.append(
+            paired[
+                [
+                    "task", "arm", "rung", "training_seed", "target", "roc_auc",
+                    "baseline_roc_auc", "rung1_roc_auc", "delta_vs_baseline",
+                    "delta_vs_rung1",
+                ]
+            ]
+        )
+    per_seed = pd.concat(rows, ignore_index=True)
+    per_target = (
+        per_seed.groupby(["task", "arm", "rung", "target"], as_index=False)
+        .agg(
+            training_seeds=("training_seed", "nunique"),
+            delta_vs_baseline_mean=("delta_vs_baseline", "mean"),
+            delta_vs_baseline_min=("delta_vs_baseline", "min"),
+            delta_vs_baseline_max=("delta_vs_baseline", "max"),
+            delta_vs_rung1_mean=("delta_vs_rung1", "mean"),
+            delta_vs_rung1_min=("delta_vs_rung1", "min"),
+            delta_vs_rung1_max=("delta_vs_rung1", "max"),
+        )
+    )
+    endpoint_rows = []
+    endpoint = per_target[per_target.rung.eq(max(RUNGS))]
+    for (task, arm), group in endpoint.groupby(["task", "arm"]):
+        worst_baseline = group.loc[group.delta_vs_baseline_mean.idxmin()]
+        worst_rung1 = group.loc[group.delta_vs_rung1_mean.idxmin()]
+        endpoint_rows.append(
+            {
+                "task": task,
+                "arm": arm,
+                "targets": len(group),
+                "targets_improved_vs_baseline": int(
+                    (group.delta_vs_baseline_mean > 0).sum()
+                ),
+                "fraction_targets_improved_vs_baseline": float(
+                    (group.delta_vs_baseline_mean > 0).mean()
+                ),
+                "worst_target_vs_baseline": worst_baseline.target,
+                "worst_target_delta_vs_baseline_mean": float(
+                    worst_baseline.delta_vs_baseline_mean
+                ),
+                "targets_materially_regressed_vs_baseline": int(
+                    (group.delta_vs_baseline_mean < -PRACTICAL_DELTA).sum()
+                ),
+                "targets_improved_from_rung1": int(
+                    (group.delta_vs_rung1_mean > 0).sum()
+                ),
+                "fraction_targets_improved_from_rung1": float(
+                    (group.delta_vs_rung1_mean > 0).mean()
+                ),
+                "worst_target_from_rung1": worst_rung1.target,
+                "worst_target_delta_from_rung1_mean": float(
+                    worst_rung1.delta_vs_rung1_mean
+                ),
+            }
+        )
+    return per_seed, per_target, pd.DataFrame(endpoint_rows)
+
+
+def scientific_decision(
+    per_seed: pd.DataFrame,
+    area_summary: pd.DataFrame,
+    endpoint_targets: pd.DataFrame | None = None,
+) -> dict:
     fixed_metrics = ("nm_fixed_panel", "cls_fixed_panel")
     endpoint = per_seed[per_seed.rung.eq(max(RUNGS))]
     endpoint_winners = {}
@@ -285,6 +435,8 @@ def scientific_decision(per_seed: pd.DataFrame, area_summary: pd.DataFrame) -> d
         for margin in (*endpoint_winner_margins.values(), *area_winner_margins.values())
     )
     alternatives_sweep_winner = {}
+    target_safety = {}
+    target_safety_pass = endpoint_targets is None
     if common_winner is not None:
         for metric in fixed_metrics:
             endpoint_wide = endpoint.pivot(index="training_seed", columns="arm", values=metric)
@@ -293,10 +445,32 @@ def scientific_decision(per_seed: pd.DataFrame, area_summary: pd.DataFrame) -> d
                 if arm != common_winner
                 and ((endpoint_wide[arm] - endpoint_wide[common_winner]) >= PRACTICAL_DELTA).all()
             )
+        if endpoint_targets is not None:
+            target_safety_pass = True
+            for metric, task in (("nm_fixed_panel", "NM"), ("cls_fixed_panel", "CLS")):
+                matched = endpoint_targets[
+                    endpoint_targets.task.eq(task)
+                    & endpoint_targets.arm.eq(common_winner)
+                ]
+                if len(matched) != 1:
+                    raise ValueError(
+                        f"missing endpoint target diagnostics for {common_winner}/{task}"
+                    )
+                row = matched.iloc[0]
+                worst = float(row.worst_target_delta_vs_baseline_mean)
+                target_safety[metric] = {
+                    "worst_target": row.worst_target_vs_baseline,
+                    "worst_target_delta_vs_baseline_mean": worst,
+                    "materially_regressed_targets": int(
+                        row.targets_materially_regressed_vs_baseline
+                    ),
+                }
+                target_safety_pass &= worst >= -PRACTICAL_DELTA
     universal_winner = (
         common_winner
         if common_winner is not None
         and practical_margins_pass
+        and target_safety_pass
         and not any(alternatives_sweep_winner.values())
         else None
     )
@@ -310,6 +484,8 @@ def scientific_decision(per_seed: pd.DataFrame, area_summary: pd.DataFrame) -> d
         "whole_ladder_area_winner_margins": area_winner_margins,
         "practical_delta": PRACTICAL_DELTA,
         "practical_margins_passed": practical_margins_pass,
+        "target_safety": target_safety,
+        "target_safety_passed": target_safety_pass,
         "alternatives_beating_common_winner_all_three_seeds_at_endpoint": alternatives_sweep_winner,
         "universal_winner_gate_passed": universal_winner is not None,
         "whole_ladder_estimand": (
@@ -406,24 +582,35 @@ def main() -> None:
     all_nm = load_nm(args.seed0_nm, args.replicate_nm_root)
     nm = all_nm[all_nm.arm.isin(ARMS)].copy()
     capacity_nm = all_nm[all_nm.arm.isin(CAPACITY_ARMS)].copy()
-    validate_grid(nm, NM_TARGETS, "NM", expected_episodes=512)
+    validate_grid(
+        nm,
+        NM_TARGETS,
+        "NM",
+        expected_episodes=512,
+        expected_protocol="nmi_fixed_nm_v1",
+    )
     validate_grid(
         capacity_nm,
         NM_TARGETS,
         "capacity NM",
         CAPACITY_ARMS,
         expected_episodes=512,
+        expected_protocol="nmi_fixed_nm_v1",
     )
     cls = pd.read_csv(args.classification, sep="\t")
     if "target" not in cls:
         cls = cls.rename(columns={"dataset": "target", "episode_fingerprint": "fingerprint"})
+    cls = annotate_models(cls)
     validate_grid(cls, CLS_TARGETS, "CLS", expected_episodes=128)
     metrics = per_seed_metrics(nm, cls)
     summary = seed_summary(metrics)
     decisions = decision_table(metrics)
     area_per_seed = ladder_area_per_seed(metrics)
     area_summary = ladder_area_summary(area_per_seed)
-    scientific_conclusion = scientific_decision(metrics, area_summary)
+    target_per_seed, target_summary, endpoint_targets = target_diagnostics(nm, cls)
+    scientific_conclusion = scientific_decision(
+        metrics, area_summary, endpoint_targets
+    )
     capacity_metrics = capacity_per_seed(capacity_nm)
     capacity_summary = seed_summary(capacity_metrics)
 
@@ -438,6 +625,9 @@ def main() -> None:
     decisions.to_csv(data_dir / "design_decisions.csv", index=False)
     area_per_seed.to_csv(data_dir / "ladder_area_per_seed.csv", index=False)
     area_summary.to_csv(data_dir / "ladder_area_summary.csv", index=False)
+    target_per_seed.to_csv(data_dir / "target_effects_per_seed.csv", index=False)
+    target_summary.to_csv(data_dir / "target_effects_summary.csv", index=False)
+    endpoint_targets.to_csv(data_dir / "endpoint_target_robustness.csv", index=False)
     capacity_metrics.to_csv(data_dir / "capacity_per_seed.csv", index=False)
     capacity_summary.to_csv(data_dir / "capacity_seed_summary.csv", index=False)
     plot_flagship(summary, figure_dir / "flagship_ladders.png")
@@ -454,7 +644,8 @@ def main() -> None:
             "Treat any design as a universal winner only if the same arm leads the mean endpoint "
             "and whole-ladder area on both fixed panels by at least 0.001 ROC-AUC and no "
             "alternative beats it by that margin in all three seeds at either endpoint; "
-            "otherwise report a target-dependent or Pareto tradeoff."
+            "its worst target must also avoid a mean regression greater than 0.001 against "
+            "the matched baseline. Otherwise report a target-dependent or Pareto tradeoff."
         ),
     }
     (data_dir / "audit.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")

@@ -6,11 +6,14 @@ from scripts.experiments.analysis.synthesis.cross_experiment.paper_flagship_ladd
     CAPACITY_ARMS,
     RUNGS,
     SEEDS,
+    SOURCE_ORDER,
+    annotate_models,
     capacity_per_seed,
     ladder_area_per_seed,
     ladder_area_summary,
     scientific_decision,
     seed_summary,
+    target_diagnostics,
     validate_grid,
 )
 
@@ -74,10 +77,16 @@ def test_capacity_grid_uses_nm_episode_count_not_task_label_heuristics():
                             "arm": arm,
                             "rung": rung,
                             "training_seed": seed,
+                            "model_id": f"nmi_{arm}_r{rung}_s{seed}",
                             "target": target,
                             "roc_auc": 0.5,
                             "fingerprint": f"fixed-{target}",
                             "episodes": 512,
+                            "sources": ",".join(SOURCE_ORDER[:rung]),
+                            "checkpoint": "/tmp/state_dict.ckpt",
+                            "checkpoint_step": 2000,
+                            "checkpoint_sha256": "a" * 64,
+                            "training_revision": "deadbeef",
                         }
                     )
     frame = pd.DataFrame(rows)
@@ -95,6 +104,50 @@ def test_capacity_grid_uses_nm_episode_count_not_task_label_heuristics():
             "capacity NM",
             CAPACITY_ARMS,
             expected_episodes=128,
+        )
+
+
+def test_declared_training_seed_must_match_model_id():
+    frame = pd.DataFrame(
+        [{"model_id": "nmi_baseline_r1_s2", "training_seed": 1}]
+    )
+    with pytest.raises(ValueError, match="training_seed disagrees"):
+        annotate_models(frame)
+
+
+def test_source_set_must_match_registered_rung():
+    rows = []
+    for arm in CAPACITY_ARMS:
+        for rung in RUNGS:
+            for seed in SEEDS:
+                for target in ("a", "b"):
+                    sources = SOURCE_ORDER[:rung]
+                    if arm == "capacity" and rung == 4 and seed == 1:
+                        sources = SOURCE_ORDER[:3]
+                    rows.append(
+                        {
+                            "arm": arm,
+                            "rung": rung,
+                            "training_seed": seed,
+                            "model_id": f"nmi_{arm}_r{rung}_s{seed}",
+                            "target": target,
+                            "roc_auc": 0.5,
+                            "fingerprint": f"fixed-{target}",
+                            "episodes": 512,
+                            "sources": ",".join(sources),
+                            "checkpoint": "/tmp/state_dict.ckpt",
+                            "checkpoint_step": 2000,
+                            "checkpoint_sha256": "a" * 64,
+                            "training_revision": "deadbeef",
+                        }
+                    )
+    with pytest.raises(ValueError, match="source-set mismatch"):
+        validate_grid(
+            pd.DataFrame(rows),
+            ("a", "b"),
+            "capacity NM",
+            CAPACITY_ARMS,
+            expected_episodes=512,
         )
 
 
@@ -158,3 +211,46 @@ def test_scientific_gate_rejects_a_subpractical_common_lead():
     assert not decision["practical_margins_passed"]
     assert decision["universal_winner"] is None
     assert decision["headline"] == "target_dependent_or_pareto_tradeoff"
+
+
+def test_target_diagnostics_and_worst_target_gate_are_paired():
+    nm_rows = []
+    cls_rows = []
+    for arm in ARMS:
+        for rung in RUNGS:
+            for seed in SEEDS:
+                for target in ("n0", "n1"):
+                    bonus = 0.02 if arm == "objective" else 0.0
+                    if arm == "objective" and rung == 8 and target == "n1":
+                        bonus = -0.01
+                    nm_rows.append(
+                        dict(
+                            arm=arm, rung=rung, training_seed=seed, target=target,
+                            roc_auc=0.5 + 0.001 * rung + bonus,
+                        )
+                    )
+                for target in ("c0", "c1"):
+                    bonus = 0.02 if arm == "objective" else 0.0
+                    cls_rows.append(
+                        dict(
+                            arm=arm, rung=rung, training_seed=seed, target=target,
+                            roc_auc=0.6 + 0.001 * rung + bonus,
+                        )
+                    )
+    _, target_summary, endpoint = target_diagnostics(
+        pd.DataFrame(nm_rows), pd.DataFrame(cls_rows)
+    )
+    assert len(target_summary) == (2 + 2) * len(ARMS) * len(RUNGS)
+    objective_nm = endpoint[
+        endpoint.task.eq("NM") & endpoint.arm.eq("objective")
+    ].iloc[0]
+    assert objective_nm.targets_improved_vs_baseline == 1
+    assert objective_nm.worst_target_vs_baseline == "n1"
+    assert objective_nm.worst_target_delta_vs_baseline_mean == pytest.approx(-0.01)
+
+    curves = complete_per_seed("objective")
+    area = ladder_area_summary(ladder_area_per_seed(curves))
+    decision = scientific_decision(curves, area, endpoint)
+    assert decision["target_safety"]["nm_fixed_panel"]["worst_target"] == "n1"
+    assert not decision["target_safety_passed"]
+    assert decision["universal_winner"] is None
