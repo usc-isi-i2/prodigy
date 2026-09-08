@@ -27,6 +27,8 @@ n_query n_way_upper n_shots_upper n_query_upper batch_size learning_rate weight_
 emb_dim layers gnn_type n_layer dropout neighbor_sampling_source_subset
 neighbor_sampling_method pinsage_num_walks pinsage_walk_length
 pinsage_restart_prob pinsage_topk
+n_hop neighbor_sampling_hop_sizes neighbor_sampling_node_limit
+neighbor_matching_walk_hops
 neighbor_sampling_source_sequence neighbor_sampling_source_sequence_steps
 neighbor_sampling_source_schedule neighbor_sampling_source_schedule_steps
 neighbor_sampling_source_schedule_seed
@@ -255,7 +257,8 @@ def train_one(dataset, params, job_dir, threads):
 def make_plan(args, overrides):
     import torch
     from experiments.params import get_params
-    active = min(len(args.configs), len(args.gpus)*args.models_per_gpu)
+    requested = [(config, seed) for seed in (args.seeds or [None]) for config in args.configs]
+    active = min(len(requested), len(args.gpus)*args.models_per_gpu)
     workers = args.workers_per_model
     if workers is None:
         workers = min(16, args.worker_budget // active)
@@ -265,8 +268,10 @@ def make_plan(args, overrides):
         raise ValueError('Worker budget must allow at least one worker per active model')
     stamp = time.strftime('%Y%m%d_%H%M%S')
     params = []
-    for index, config in enumerate(args.configs):
+    for index, (config, seed) in enumerate(requested):
         p = get_params(['--config', str(Path(config).resolve()), *overrides])
+        if seed is not None:
+            p['seed'] = seed
         if args.smoke_steps and p.get('neighbor_sampling_source_sequence'):
             raise ValueError('Smoke mode requires interleaved configs; do not truncate a blocked-source schedule')
         p.update(device=torch.device(f'cuda:{args.gpus[index % len(args.gpus)]}'),
@@ -291,6 +296,8 @@ def main():
     own, overrides = argv[:split], argv[split+1:]
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--configs', nargs='+', required=True)
+    parser.add_argument('--seeds', nargs='+', type=int,
+                        help='Expand every config once per training seed in one shared graph load')
     parser.add_argument('--gpus', nargs='+', type=int, choices=(0, 1, 2, 3), default=[2])
     parser.add_argument('--models-per-gpu', type=int, default=2)
     parser.add_argument('--worker-budget', type=int, default=32)
@@ -310,7 +317,8 @@ def main():
     args.run_dir = args.run_dir.resolve()
     params, workers = make_plan(args, overrides)
     slots = [gpu for gpu in args.gpus for _ in range(args.models_per_gpu)]
-    plan = dict(configs=[str(Path(c).resolve()) for c in args.configs], gpus=args.gpus,
+    plan = dict(configs=[str(Path(c).resolve()) for c in args.configs], seeds=args.seeds,
+                gpus=args.gpus,
                 models_per_gpu=args.models_per_gpu, workers_per_model=workers,
                 worker_budget=args.worker_budget, mode='smoke' if args.smoke_steps else 'training',
                 revision=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=REPO, text=True).strip(),

@@ -109,6 +109,10 @@ same ordered node IDs. Different worker counts can change stochastic training
 samples and do not promise bitwise historical replay.
 
 Common experiment overrides go after `--`, e.g. `-- --detect_anomaly True`.
+Use `--seeds 0 1 2` to expand every supplied config for several training seeds
+inside one shared graph load. Per-job context depth, hop sizes, node cap, and NM
+walk length may differ; these settings are applied by each spawned trainer and
+do not rebuild the immutable graph or CSR storage.
 Outside explicit smoke mode/overrides, shots, queries, fanouts, training steps,
 split views, and checkpoint schedules are preserved.
 

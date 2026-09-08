@@ -32,19 +32,17 @@ for arm in $ARMS_TEXT; do
 done
 [[ ${#configs[@]} -eq 40 ]] || { echo "expected 40 flagship configs" >&2; exit 2; }
 
-for seed in $SEEDS_TEXT; do
-  run_dir="$RUN_ROOT/seed${seed}"
-  if [[ -f "$run_dir/status.json" ]] && grep -q '"status": "complete"' "$run_dir/status.json"; then
-    echo "SKIP complete seed=$seed"
-    continue
-  fi
-  [[ ! -e "$run_dir" ]] || { echo "REFUSE existing incomplete $run_dir" >&2; exit 1; }
-  mode_args=()
-  [[ "${DRY_RUN:-0}" == 1 ]] && mode_args+=(--dry-run)
-  "${CONDA_PREFIX}/bin/python" experiments/run_shared_graph.py \
-    --configs "${configs[@]}" --gpus $GPUS_TEXT \
-    --models-per-gpu "$MODELS_PER_GPU" --worker-budget "$WORKER_BUDGET" \
-    --threads-per-model 4 --run-dir "$run_dir" "${mode_args[@]}" -- --seed "$seed"
-done
+run_dir="$RUN_ROOT/seeds_$(tr ' ' '-' <<< "$SEEDS_TEXT")"
+if [[ -f "$run_dir/status.json" ]] && grep -q '"status": "complete"' "$run_dir/status.json"; then
+  echo "SKIP complete seeds=$SEEDS_TEXT"
+  exit 0
+fi
+[[ ! -e "$run_dir" ]] || { echo "REFUSE existing incomplete $run_dir" >&2; exit 1; }
+mode_args=()
+[[ "${DRY_RUN:-0}" == 1 ]] && mode_args+=(--dry-run)
+"${CONDA_PREFIX}/bin/python" experiments/run_shared_graph.py \
+  --configs "${configs[@]}" --seeds $SEEDS_TEXT --gpus $GPUS_TEXT \
+  --models-per-gpu "$MODELS_PER_GPU" --worker-budget "$WORKER_BUDGET" \
+  --threads-per-model 4 --run-dir "$run_dir" "${mode_args[@]}"
 
 [[ "${DRY_RUN:-0}" == 1 ]] || date -u +%Y-%m-%dT%H:%M:%SZ > "$RUN_ROOT/training_complete_utc.txt"

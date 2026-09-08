@@ -128,7 +128,7 @@ class SharedGraphTests(unittest.TestCase):
         tmp_path = Path(tempfile.gettempdir()) / "shared-plan-only"
         args = SimpleNamespace(configs=[ladder_config()]*8, gpus=[2], models_per_gpu=8,
                                worker_budget=32, workers_per_model=None, smoke_steps=0,
-                               run_dir=tmp_path)
+                               run_dir=tmp_path, seeds=None)
         plan, workers = make_plan(args, [])
         assert workers == 4
         assert len({p['exp_name'] for p in plan}) == 8
@@ -137,6 +137,15 @@ class SharedGraphTests(unittest.TestCase):
         args.workers_per_model = 16
         with self.assertRaisesRegex(ValueError, 'budget'):
             make_plan(args, [])
+
+    def test_plan_expands_multiple_seeds_in_one_shared_load(self):
+        args = SimpleNamespace(configs=[ladder_config()]*2, seeds=[1, 2], gpus=[0, 2],
+                               models_per_gpu=2, worker_budget=16, workers_per_model=None,
+                               smoke_steps=0, run_dir=Path(tempfile.gettempdir())/'shared-seeds')
+        plan, workers = make_plan(args, [])
+        assert workers == 4
+        assert [p['seed'] for p in plan] == [1, 1, 2, 2]
+        assert len({p['exp_name'] for p in plan}) == 4
 
 
     def test_mismatched_graph_or_new_unknown_data_option_rejected(self):
@@ -149,6 +158,10 @@ class SharedGraphTests(unittest.TestCase):
                 validate_configs([p, other])
         other = copy.deepcopy(p)
         other.update(prefix='different', seed=9, neighbor_sampling_source_subset='covid')
+        validate_configs([p, other])
+        other = copy.deepcopy(p)
+        other.update(n_hop=1, neighbor_sampling_hop_sizes=[],
+                     neighbor_sampling_node_limit=2000, neighbor_matching_walk_hops=0)
         validate_configs([p, other])
 
 
