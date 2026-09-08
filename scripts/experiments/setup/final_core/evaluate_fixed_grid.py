@@ -319,9 +319,10 @@ def resolved_params(
     model_id: str,
     target: str,
     checkpoint: Path,
+    config: Path | None = None,
 ) -> dict[str, Any]:
     argv = [
-        "--config", str(args.config),
+        "--config", str(config or args.config),
         "--device", "0",
         "--seed", str(seed),
         "--prefix", f"finalcore_fixed_{model_id}_s{seed}",
@@ -624,6 +625,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", default=64, type=int)
     parser.add_argument("--episode-count", default=EPISODE_COUNT, type=int)
     parser.add_argument("--config", type=Path, default=HERE / "training.yaml")
+    parser.add_argument(
+        "--plan-config", type=Path,
+        help="Optional config used only to create the frozen episode identities.",
+    )
     parser.add_argument("--training-state-root", required=True, type=Path)
     parser.add_argument("--training-run-stamp", default="20260807")
     parser.add_argument("--evaluation-state-root", required=True, type=Path)
@@ -723,6 +728,7 @@ def main() -> int:
         model_id=first_job.model.model_id,
         target=targets[0],
         checkpoint=first_checkpoint,
+        config=args.plan_config,
     )
     seed_everything(base_params)
     print(
@@ -743,6 +749,7 @@ def main() -> int:
         model_id=first_job.model.model_id,
         target=targets[0],
         checkpoint=first_checkpoint,
+        config=args.plan_config,
     )
     seed_everything(bootstrap_params)
     trainer = TrainerFS(dataset, bootstrap_params)
@@ -783,6 +790,28 @@ def main() -> int:
             flush=True,
         )
     trainer.test_dataloader = None
+
+    if args.plan_config is not None:
+        inference_params = resolved_params(
+            args,
+            seed=first_job.seed,
+            model_id=first_job.model.model_id,
+            target=targets[0],
+            checkpoint=first_checkpoint,
+        )
+        sampler = dataset.neighbor_sampler
+        for key in (
+            "neighbor_sampling_method", "pinsage_num_walks", "pinsage_walk_length",
+            "pinsage_restart_prob", "pinsage_topk",
+        ):
+            attribute = key.removeprefix("neighbor_sampling_")
+            if hasattr(sampler, attribute):
+                setattr(sampler, attribute, inference_params[key])
+        if sampler.method != "pinsage" or inference_params["gnn_type"] != "pinsage":
+            raise AssertionError("custom plan config transition did not enable PinSAGE")
+        seed_everything(inference_params)
+        trainer = TrainerFS(dataset, inference_params)
+        trainer.test_dataloader = None
 
     for target in targets:
         pending: list[tuple[Any, Path, Path]] = []
