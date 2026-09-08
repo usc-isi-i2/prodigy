@@ -60,7 +60,7 @@ mapfile -t PLAN_ROWS < <(
 } > "$LOG_ROOT/launch/provenance.txt"
 
 run_one() {
-  local gpu="$1" model_id="$2" sources="$3" checkpoint step result
+  local gpu="$1" model_id="$2" sources="$3" checkpoint step result failed_stamp
   [[ "$model_id" != "all9" ]] || return 0
   wait_for_gpu "$gpu"
   checkpoint="$STATE_ROOT/vision/$model_id/checkpoint/state_dict_2500.pt"
@@ -75,11 +75,20 @@ run_one() {
   [[ -f "$checkpoint" ]] || { echo "missing terminal checkpoint $checkpoint" >&2; return 1; }
   for step in 100 300 900 2500; do
     result="$LOG_ROOT/results/${model_id}_step${step}.jsonl"
+    if [[ -f "$result" && "$(wc -l < "$result")" -ne 5 ]]; then
+      failed_stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+      mv "$result" "${result}.incomplete_${failed_stamp}"
+      if [[ -f "$LOG_ROOT/eval/${model_id}_step${step}.log" ]]; then
+        mv "$LOG_ROOT/eval/${model_id}_step${step}.log" \
+          "$LOG_ROOT/eval/${model_id}_step${step}.log.failed_${failed_stamp}"
+      fi
+    fi
     if [[ ! -f "$result" ]]; then
       CUDA_VISIBLE_DEVICES="$gpu" "$PYTHON" -u -m \
         scripts.experiments.setup.icl_arch_matrix.evaluate_adapters \
         --architecture vision --upstream-root "$VISION_ROOT" --state-root "$STATE_ROOT" \
-        --model-ids "$model_id" --checkpoint-step "$step" --training-seed "$SEED" \
+        --model-ids "$model_id" --run-name "$model_id" \
+        --checkpoint-step "$step" --training-seed "$SEED" \
         --eval-episode-seed-offset 0 --include-facebook --results "$result" --device 0 \
         > "$LOG_ROOT/eval/${model_id}_step${step}.log" 2>&1
     fi

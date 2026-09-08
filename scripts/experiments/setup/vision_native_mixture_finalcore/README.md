@@ -31,6 +31,11 @@ owned 0--3 set and preserves every checkpoint's downstream trajectory.
 Set `SEED`, `STATE_ROOT`, and `LOG_ROOT` explicitly for additional training-seed
 replicas. The 12 non-all-nine source sets are trained and evaluated in each run;
 the registered seed-matched all-nine checkpoint is joined during analysis.
+The evaluator receives the explicit unsuffixed run name because each replica is
+already isolated by its seed-specific state root. On restart, a result with other
+than five rows is timestamp-archived together with its failed log before that
+checkpoint is evaluated again; complete checkpoints and five-row results are
+never repeated.
 
 After the two replica roots contain `COMPLETE`, run
 `postprocess_three_seed_tucker.sh` from a separate idle worktree. It waits rather
