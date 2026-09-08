@@ -67,6 +67,12 @@ pairwise link-prediction implementation, not the invalid PRODIGY evaluator.
   with min--max training-seed envelopes. The seed-1 and seed-2 raw directories
   are populated only after the active Tucker replicas pass their completion
   markers; the original seed-0 outputs remain immutable.
+- `plot_native_mixture_ladder_three_seed.py` then places the replicated VISION
+  ladder beside the existing three-seed PRODIGY and SAMGPT ladders on the same
+  five labeled targets. Each panel retains its native objective and fixed-compute
+  budget; values are macro-averaged within seed and bands are min--max across the
+  three training seeds. The script rejects all incomplete or fingerprint-drifted
+  inputs and does not pool scores across architectures.
 - `data/vision_native_cross_ssl_raw/` and `analyze_vision_cross_ssl.py` retain
   and validate the separate 5×5 native feature-similarity pseudo-task matrix,
   including all five checkpoints and the terminal-matrix/full-trajectory
