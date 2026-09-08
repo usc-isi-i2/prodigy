@@ -784,7 +784,9 @@ def main() -> int:
             "episode_plan_fingerprint"
         ]:
             raise AssertionError(
-                f"target {target} raw plan differs from published fixed-test fingerprint"
+                f"target {target} raw plan differs from published fixed-test fingerprint: "
+                f"observed={fingerprint} "
+                f"expected={reference_fingerprints[target]['episode_plan_fingerprint']}"
             )
         target_plans[target] = {
             "batches": batches,
