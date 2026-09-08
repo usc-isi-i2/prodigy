@@ -16,7 +16,7 @@ from data.dataset import SubgraphDataset
 from data.dataloader import NeighborTask, ParamSampler
 from experiments.sampler import NeighborSampler
 from experiments.params import get_params
-from experiments.run_shared_graph import (REPO, make_plan, prepare_shared_dataset,
+from experiments.run_shared_graph import (REPO, configure_job_samplers, make_plan, prepare_shared_dataset,
                                           shared_storage_report, start_on_gpu, validate_configs,
                                           validate_disjoint_sources)
 
@@ -41,6 +41,23 @@ def ladder_config():
 
 
 class SharedGraphTests(unittest.TestCase):
+    def test_each_job_configures_sampler_without_rebuilding_shared_graph(self):
+        dataset = prepare_shared_dataset(tiny_dataset())
+        adjacency = dataset.neighbor_sampler.whole_adj
+        params = dict(gnn_type='pinsage', neighbor_sampling_method='pinsage',
+                      pinsage_num_walks=32, pinsage_walk_length=3,
+                      pinsage_restart_prob=0.2, pinsage_topk=17)
+        configure_job_samplers(dataset, params)
+        sampler = dataset.neighbor_sampler
+        assert sampler.whole_adj is adjacency
+        assert sampler.method == 'pinsage'
+        assert (sampler.pinsage_num_walks, sampler.pinsage_walk_length,
+                sampler.pinsage_restart_prob, sampler.pinsage_topk) == (32, 3, 0.2, 17)
+
+        params.update(gnn_type='sage')
+        with self.assertRaisesRegex(ValueError, 'requires'):
+            configure_job_samplers(dataset, params)
+
     def test_gpu_visibility_set_before_spawn_and_parent_environment_restored(self):
         class FakeProcess:
             def start(process):
