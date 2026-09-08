@@ -78,6 +78,8 @@ def ladder_model_ids() -> set[str]:
 
 
 def checkpoint_path(args, training_seed: int, model_id: str) -> Path:
+    if args.checkpoint_path:
+        return Path(args.checkpoint_path)
     if args.checkpoint_layout == "architecture-matrix":
         return (
             Path(args.state_root)
@@ -160,6 +162,19 @@ def parse_args():
         default="",
         help="Optional TSV with model_id, checkpoint, and comma-separated sources.",
     )
+    parser.add_argument(
+        "--checkpoint-path",
+        help="Evaluate one checkpoint at this exact path instead of a managed checkpoint layout.",
+    )
+    parser.add_argument(
+        "--custom-model-id",
+        help="Result identifier used with --checkpoint-path.",
+    )
+    parser.add_argument(
+        "--custom-sources",
+        default="",
+        help="Comma-separated source labels recorded with a custom checkpoint result.",
+    )
     parser.add_argument("--datasets", default="")
     parser.add_argument("--checkpoint-step", default=TRAIN_STEPS, type=int)
     parser.add_argument(
@@ -212,6 +227,10 @@ def load_external_models(path: str | Path):
 
 
 def checkpoint_path(args, training_seed: int, model_id: str) -> Path:
+    if args.checkpoint_path:
+        return Path(args.checkpoint_path)
+    if args.checkpoint_path:
+        return Path(args.checkpoint_path)
     if args.checkpoint_layout == "architecture-matrix":
         return (
             Path(args.state_root)
@@ -319,11 +338,17 @@ def main() -> int:
     torch.set_num_threads(cpu_threads)
     torch.set_num_interop_threads(1)
     selected = set(filter(None, args.model_ids.split(",")))
+    if bool(args.checkpoint_path) != bool(args.custom_model_id):
+        raise ValueError("--checkpoint-path and --custom-model-id must be supplied together")
+    if args.checkpoint_path and (selected or args.random_init or args.ladder_only):
+        raise ValueError(
+            "--checkpoint-path cannot be combined with --model-ids, --random-init, or --ladder-only"
+        )
     if args.random_init:
         if args.checkpoint_step != TRAIN_STEPS:
             raise ValueError("--checkpoint-step cannot be combined with --random-init")
-        if selected or args.model_list:
-            raise ValueError("--model-ids/--model-list cannot be combined with --random-init")
+        if selected or args.model_list or args.checkpoint_path:
+            raise ValueError("model selection options cannot be combined with --random-init")
         models = [SimpleNamespace(model_id="random_init", sources=())]
     elif args.model_list:
         models = load_external_models(args.model_list)
@@ -332,6 +357,15 @@ def main() -> int:
             present = {model.model_id for model in models}
             if selected != present:
                 raise ValueError(f"unknown model ids: {sorted(selected - present)}")
+    elif args.checkpoint_path:
+        if not args.custom_model_id:
+            raise ValueError("--custom-model-id is required with --checkpoint-path")
+        models = [
+            SimpleNamespace(
+                model_id=args.custom_model_id,
+                sources=tuple(filter(None, args.custom_sources.split(","))),
+            )
+        ]
     else:
         if args.checkpoint_layout == "radius-finalcore":
             if not selected:
@@ -350,6 +384,8 @@ def main() -> int:
         raise ValueError(f"invalid --training-seeds {args.training_seeds!r}")
     if args.checkpoint_layout == "architecture-matrix" and training_seeds != (0,):
         raise ValueError("architecture-matrix checkpoints exist only for seed 0")
+    if args.checkpoint_path and len(training_seeds) != 1:
+        raise ValueError("a custom checkpoint must have exactly one --training-seeds value")
     if not 0 <= args.worker_index < args.worker_count:
         raise ValueError("worker-index must be in [0, worker-count)")
     jobs = [
