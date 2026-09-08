@@ -77,6 +77,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--original', type=Path, default=Path('/dataMeR1/phil/gfm/error_audit/nm_hk_mechanism_20260908'))
     p.add_argument('--extremes', type=Path, default=Path('/dataMeR1/phil/gfm/error_audit/nm_hk_support_extremes_20260908'))
+    p.add_argument('--config', type=Path, default=Path('/dataMeR1/phil/gfm/error_audit/nm_canonical_split_20260908/effective_config.json'))
     p.add_argument('--out', type=Path, required=True)
     p.add_argument('--device', default='cpu')
     p.add_argument('--threads', type=int, default=2)
@@ -103,7 +104,7 @@ def main():
     assert digest(bank_path) == receipts['extremes']['candidate_bank_sha256']
     cached = torch.load(original_path, map_location='cpu', weights_only=False)
     bank = bank_metadata(bank_path)
-    params = json.loads((a.original / 'effective_config.json').read_text())
+    params = json.loads(a.config.read_text())
     params['device'] = a.device
     model = build_model(params, cached['checkpoint'], a.device)
     before = digest_state(model)
@@ -173,6 +174,7 @@ def main():
     report = dict(complete=True, seconds=time.time() - started, device=a.device, threads=a.threads,
         revision=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
         original_cache_sha256=receipts['original']['cache_sha256'], bank_sha256=receipts['extremes']['candidate_bank_sha256'],
+        effective_config_path=str(a.config), effective_config_sha256=digest(a.config),
         model_state_sha256=before, unchanged_model=True, methods=a.methods, rows=len(frame),
         csv_sha256=digest(a.out / 'results_private.csv'), traces_sha256=digest(a.out / 'traces_private.pt'),
         parity=audits, graph_loading=False, encoding=False, training=False)
