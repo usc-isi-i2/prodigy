@@ -4,6 +4,7 @@ from pathlib import Path
 from types import SimpleNamespace
 import unittest
 
+import numpy as np
 import torch
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -40,6 +41,28 @@ class ExportTest(unittest.TestCase):
         fake.parameter["prediction_support_per_label"] = 2
         rows = method(fake,batch,yt,yp,"test",0,{})
         self.assertEqual([s["node_id"] for s in rows[0]["supports"]], [0,1,2,3])
+
+    def test_edge_audit_rejects_overlap_and_wrong_split(self):
+        tree = ast.parse(Path(__file__).with_name("run_audit.py").read_text())
+        methods = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name in {"membership","check_plan"}]
+        env = {"np":np}
+        exec(compile(ast.Module(body=methods,type_ignores=[]),"edge_audit","exec"),env)
+        def sampler(pairs):
+            neighbors = [sorted({b for a,b in pairs if a==row}) for row in range(3)]
+            ptr = torch.tensor([0]+list(np.cumsum([len(row) for row in neighbors])))
+            col = torch.tensor([v for row in neighbors for v in row],dtype=torch.long)
+            return SimpleNamespace(whole_adj=SimpleNamespace(csr=lambda:(ptr,col,None)))
+        dataset = SimpleNamespace(neighbor_sampler=sampler([(0,2),(2,0)]),
+                                  nm_validation_neighbor_sampler=sampler([(1,2),(2,1)]),
+                                  nm_test_neighbor_sampler=sampler([(0,1),(1,0)]))
+        batches = [([{0:[1]}],None)]
+        self.assertEqual(env["check_plan"](dataset,batches,"test")["membership_counts"],
+                         {"train":0,"val":0,"test":1})
+        with self.assertRaises(AssertionError):
+            env["check_plan"](dataset,batches,"val")
+        dataset.neighbor_sampler = sampler([(0,1),(1,0)])
+        with self.assertRaises(AssertionError):
+            env["check_plan"](dataset,batches,"test")
 
 
 if __name__ == "__main__":

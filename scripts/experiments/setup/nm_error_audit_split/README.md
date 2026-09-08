@@ -15,7 +15,10 @@ materialized CPU batches. All cached input tensors are hashed before/after repla
 
 Member selection is explicitly `lowest_sorted`, the historical checkpoint and
 fixed-benchmark policy. The current default `randomized` does not reproduce those
-plans. Retaining this policy makes the edge-holdout correction comparable but does
+plans. Current loaders force `randomized` on evaluation even when a different
+training policy is configured, so the audit pins its own sampler instance after
+loader construction and records that actual policy. Shared defaults are unchanged.
+Retaining this policy makes the edge-holdout correction comparable but does
 not correct the benchmark's lower-node-ID retention/support-role bias. This remains
 a sampler-conditioned diagnostic, not an unbiased sample of all nodes or edges.
 

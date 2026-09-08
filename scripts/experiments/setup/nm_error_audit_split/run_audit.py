@@ -154,6 +154,13 @@ def main():
             trainer.parameter["eval_only_split"] = split
             loaders = trainer._build_dataloaders(dataset, trainer.dataset_name)
             loader = loaders[3 if split == "test" else 2]
+            # Current loaders deliberately force randomized members at eval,
+            # regardless of the training-policy config. Pin this diagnostic's
+            # sampler instance only; do not alter the shared evaluation default.
+            task = loader.batch_sampler.task
+            assert hasattr(task, "member_policy") and task.member_generators is None
+            task.member_policy = "lowest_sorted"
+            print(f"ACTUAL_MEMBER_POLICY {target} {split} {task.member_policy}", flush=True)
             batches = list(loader.batch_sampler)
             plan_hash, episodes = fingerprint_plan(target, batches, expected_batch_size=args.batch_size, dataset=dataset)
             assert episodes == args.episodes
