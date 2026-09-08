@@ -115,6 +115,7 @@ fi
 if [[ ! -f "$CLS_OUTPUT/classification_long.tsv" ]]; then
   write_status evaluating "running fixed downstream classification panel"
   RUN_STAMP="$RUN_STAMP" OUTPUT_ROOT="$CLS_OUTPUT" REPLICATE_RUN="$REPLICATE_RUN" \
-    SEED0_RUN="$SEED0_RUN" WORKERS=4 bash "$SCRIPT_DIR/run_flagship_cls_tucker.sh"
+    SEED0_RUN="$SEED0_RUN" GPUS="0 1 2 3" WORKERS_PER_GPU=2 \
+    bash "$SCRIPT_DIR/run_flagship_cls_tucker.sh"
 fi
 write_status complete "corrected flagship training and both evaluations are complete"
