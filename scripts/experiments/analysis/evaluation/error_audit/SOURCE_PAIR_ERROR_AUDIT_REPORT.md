@@ -3,7 +3,8 @@
 > **NM protocol correction (8 September):** the original NM exports below used
 > `neighbor_matching_edge_split=False` and `edge_view=default`. They are descriptive
 > full-graph episode results, **not held-out-edge generalization evidence**.
-> A canonical-split, identical-input rerun is in progress. This issue does not
+> The [canonical-split, identical-input rerun](FINDINGS_NM_CANONICAL_SPLIT.md)
+> supersedes those NM numbers. This issue does not
 > establish leakage in the classification audit or the separate final-core benchmark.
 
 Updated 8 September 2026. This report consolidates the Ukraine-versus-Hong Kong
@@ -14,15 +15,17 @@ specialist analyses for downstream COVID Political classification and native
 
 1. **The source graph changes which episodes a model can solve, not only its
    aggregate accuracy.** NM shows native-source specialization under the
-   current occurrence-weighted sampler; Hong Kong's ranking reverses when
-   observed query nodes receive equal weight. Classification shows different structural
+   corrected occurrence-weighted sampler **and** with equal weight per
+   observed query node. The old HK reversal is superseded. Classification shows different structural
    false-positive and false-negative regimes.
-2. **A substantial shared hard core remains.** The NM wrong-set Jaccard is
-   0.580 on Ukraine and 0.781 on Hong Kong. Source selection alone therefore
-   cannot remove most Hong Kong failures.
-3. **The specialists are still complementary.** An either-model oracle adds
-   3.75 accuracy points on Ukraine and 6.73 points on Hong Kong over the best
-   specialist. This makes routing, mixtures, and compact adaptation plausible.
+2. **A substantial shared hard core remains.** On corrected Ukraine test
+   episodes, both models miss 51.12% of queries (wrong-set Jaccard 0.590);
+   on HK they miss 76.01% (Jaccard 0.805).
+   Source selection alone cannot remove these shared failures.
+3. **The specialists are still complementary.** The corrected Ukraine
+   either-model oracle adds 4.74 accuracy points; on HK it adds 6.13 points.
+   Validation-selected bio-cluster routing adds nothing on either target.
+   Oracle headroom is not an achieved improvement.
 4. **Off-source mistakes are usually more severe.** Even when both models are
    wrong, the native model ranks the true NM anchor substantially higher.
 5. **Downstream classification failures expose opposite structural biases.**
@@ -32,10 +35,11 @@ specialist analyses for downstream COVID Political classification and native
    NM test/validation results nearly coincide. The classification “original”
    and “fresh” streams use identical checkpoint weights with different episode
    draws. Independent training-seed replication remains outstanding.
-7. **Repeated nodes and overlapping anchors matter for NM.** Hong Kong's top
-   1% of observed queries supply 54% of occurrences, and 42% of occurrences
-   involve a query assigned multiple anchors within its episode. The semantic
-   audit therefore qualifies the earlier interpretation of source specialization.
+7. **The evaluation protocol matters.** The original NM diagnostic disabled
+   edge splitting. Its replacement verifies zero training-edge overlap for
+   every sampled support/query positive and replays identical input tensors.
+   Repetition and anchor ambiguity must be measured under this corrected
+   protocol; the historical magnitudes below must not be mixed with it.
 
 ## 1. Downstream binary classification
 
@@ -125,7 +129,52 @@ The classification clustering pass covers query bios only. The subsequent NM
 query/anchor/support analysis appears below; training-node exposure and full
 neighborhood-semantic analysis remain outstanding.
 
-## 2. Native neighbor matching
+## 2. Native neighbor matching: corrected held-out-edge protocol
+
+The [complete corrected NM report](FINDINGS_NM_CANONICAL_SPLIT.md) contains
+the current distributions, bio examples, provenance and limitations. Both
+seed-0, step-2500 checkpoints were verified to have trained on `static_train`.
+We evaluate 512 episodes per target/split (30-way, 3-shot, 4-query), sharing
+all realized model inputs and checking every positive against all edge splits.
+The historical sorted-ID member policy is retained to reproduce the benchmark;
+this remains a sampler-conditioned rather than uniformly node-sampled result.
+
+| Held-out test target | Ukraine model | Hong Kong model |
+|---|---:|---:|
+| Ukraine | 44.15% | 18.15% |
+| Hong Kong | 11.68% | 17.86% |
+
+![Corrected paired NM outcomes](figures/canonical_split/nm_paired_outcomes.png)
+
+Ukraine remains better on Ukraine with equal weight per observed query node
+(52.84% / 22.90%). Journalism/editor bios are a concentrated shared-error group
+(63.04% both wrong); the native model wins all eight nonzero bio groups.
+These are broad overlapping clusters, not cleanly separated semantic classes.
+
+HK also remains better on HK under node weighting (UKR 26.85% / HK 30.71%),
+and wins all eight bio groups plus the zero-vector group. Its top 1% of observed
+queries supply 34.70% of occurrences; 23.12% of occurrences have multiple anchors
+within the episode. Shared errors exceed 82% in two overlapping Hong Kong
+self-description groups. The Japanese-language/interests group is substantially
+easier (44.26% shared errors). The earlier ranking reversal and +0.55-point
+topic-routing gain **do not reproduce** and are withdrawn as current conclusions.
+
+![Corrected NM bio clusters](figures/canonical_split/nm_bio_cluster_accuracy.png)
+
+![Corrected query weighting and repetition](figures/canonical_split/nm_query_weighting.png)
+
+Raw query-to-support bio similarities often favor an incorrect NM anchor class.
+The actual-text examples include plausible wrong text matches and correct graph
+matches with missing anchor bios. NM labels are graph adjacency, **not stance**;
+the earlier text/label-conflict candidates concern classification only.
+
+![Corrected support cosine distributions](figures/canonical_split/nm_support_cosine_margins.png)
+
+### Historical full-graph NM results (superseded)
+
+Everything from here through the old routing result below describes the
+September 7 full-graph diagnostic only. Its original images and findings are
+retained for traceability, not as current held-out-edge evidence.
 
 Both seed-0, step-2,500 specialists were evaluated on exactly paired 30-way,
 3-shot NM episodes on `ukr_rus_twitter` and `cp_hk_twitter`. Test and
@@ -221,12 +270,12 @@ well below the 6.73-point oracle gain. No model or sampler was changed.
 
 ## 3. Combined interpretation
 
-The consistent explanation is not simply that one checkpoint is globally
-better. Source pretraining produces different graph-role and matching
-heuristics:
+The corrected evidence is consistent with source-specific graph-role and
+matching behavior, although two checkpoints cannot causally isolate source
+composition from all other training variation:
 
-- source matching supplies a large advantage under the current NM sampler,
-  while Hong Kong's advantage reverses under equal weight per observed query;
+- source matching supplies an advantage under corrected NM occurrence and
+  node weighting on both targets;
 - native representations remain better aligned even on many shared mistakes;
 - the specialists preserve complementary decision boundaries; and
 - downstream transfer exposes opposing sensitivity to connectedness and
@@ -236,17 +285,18 @@ This supports two improvement tracks. A **generalization track** should reduce
 source-specific reliance through source-diverse/harder episodes, role-balanced
 sampling, context dropout, or invariant structural features. A
 **specialization track** should exploit complementarity through routing,
-ensembling, rank-aware reranking, or small downstream adapters. The latter may
-also support smaller base models or more label-efficient adaptation if the
-residual correction boundary is simple.
+ensembling, rank-aware reranking, or small downstream adapters. However, the
+tested broad bio-cluster router adds zero on both targets. Smaller models and
+label-efficient adaptation remain possible future experiments, not findings.
 
 ## 4. What is established versus unresolved
 
 Established:
 
-- exact query/support-center pairing between compared NM models;
-- native-source specialization across every or nearly every episode under
-  query-occurrence weighting, with the Hong Kong node-weighted reversal;
+- identical realized input tensors between models in the corrected NM audit,
+  with sampled positive edges disjoint from training;
+- native-source specialization under corrected query-occurrence and
+  node weighting on both targets;
 - stable test/validation and original/fresh evaluation patterns;
 - target-dependent shared-error overlap and oracle headroom; and
 - robust structural associations in binary-classification FP/FN cohorts.
@@ -264,8 +314,9 @@ Not yet established:
 
 ## 5. Highest-value next analysis
 
-Join the saved episode ids to each source's pretraining exposure ledger and to
-target-graph structure. Compare shared failures, native-only rescues, and
+First audit or reconstruct pretraining node exposure; no complete exposure ledger
+has yet been established here. Join it to saved episode IDs and graph structure.
+Compare shared failures, native-only rescues, and
 counter-source rescues on:
 
 1. query/true-anchor/support-node exposure;
@@ -290,15 +341,18 @@ label-efficient adapter.
 Detailed reports:
 
 - [COVID Political classification](FINDINGS_COVID_POLITICAL_SOURCE_PAIR.md)
-- [Neighbor matching](FINDINGS_NM_SOURCE_PAIR.md)
+- [Current canonical-split neighbor matching](FINDINGS_NM_CANONICAL_SPLIT.md)
+- [Historical full-graph neighbor matching](FINDINGS_NM_SOURCE_PAIR.md)
 - [Classification query bio clusters](FINDINGS_QUERY_BIO_CLUSTERS.md)
-- [NM bio clusters, weighting, and anchor ambiguity](FINDINGS_NM_BIO_CLUSTERS.md)
+- [Historical full-graph NM bio clusters](FINDINGS_NM_BIO_CLUSTERS.md)
 
 Private raw evidence remains under:
 
 - `/dataMeR1/phil/gfm/error_audit/source_pair_fpfn_20260907/`
 - `/dataMeR1/phil/gfm/error_audit/nm_source_pair_20260907/`
 - `/dataMeR1/phil/gfm/error_audit/nm_bio_clusters_20260908/`
+- `/dataMeR1/phil/gfm/error_audit/nm_canonical_split_20260908/`
+- `/dataMeR1/phil/gfm/error_audit/nm_canonical_split_bios_20260908/`
 
 The classification analysis uses two evaluation episode draws with identical
 weights. The NM analysis uses seed-0 specialists and fixed test/validation

@@ -2,7 +2,8 @@
 
 > **Protocol correction:** these bios/clusters describe the original full-graph
 > NM draws, whose evaluator had edge splitting disabled. They are not evidence
-> of held-out-edge generalization. A canonical-split replacement is in progress.
+> of held-out-edge generalization. See the
+> [canonical-split replacement](FINDINGS_NM_CANONICAL_SPLIT.md) for current results.
 
 8 September 2026. Analysis of existing Ukraine- and Hong Kong-trained
 PRODIGY NM specialists on **ukraine** and **hongkong**. These are NM anchor

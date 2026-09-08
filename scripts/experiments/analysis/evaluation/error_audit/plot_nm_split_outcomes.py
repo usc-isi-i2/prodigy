@@ -28,7 +28,7 @@ def main():
                 if v>3: ax.text(l+v/2,y,f"{v:.1f}",ha="center",va="center",fontsize=9)
             left+=values
         ax.set_yticks([0,1],["Validation","Test"])
-        ax.invert_yaxis();ax.set_xlim(0,100)
+        ax.set_ylim(1.7,-.7);ax.set_xlim(0,100)
         ax.set_xlabel("Query occurrences (%)")
         ax.set_title("Ukraine" if target=="ukraine" else "Hong Kong")
         ax.spines[["top","right"]].set_visible(False)

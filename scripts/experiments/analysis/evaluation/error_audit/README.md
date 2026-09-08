@@ -9,7 +9,10 @@ and to the exact bio-selection policy used at graph construction.  It writes:
 
 ## Findings
 
-- [NM bio clusters and query weighting](FINDINGS_NM_BIO_CLUSTERS.md): semantic
+- [Canonical-split NM audit](FINDINGS_NM_CANONICAL_SPLIT.md): corrected held-out
+  edges, identical realized model inputs, paired failures, bio groups, query
+  weighting, and GTE distributions. This supersedes the original NM diagnostics.
+- [Historical NM bio clusters and query weighting](FINDINGS_NM_BIO_CLUSTERS.md): semantic
   clusters, query/anchor/support GTE distributions, actual-text examples,
   the Hong Kong node-weighted ranking reversal, and overlapping anchor labels.
 - [Query bio embedding clusters](FINDINGS_QUERY_BIO_CLUSTERS.md): outcome-blind
@@ -21,7 +24,7 @@ and to the exact bio-selection policy used at graph construction.  It writes:
 - [Ukraine versus Hong Kong on COVID Political](FINDINGS_COVID_POLITICAL_SOURCE_PAIR.md):
   paired FP/FN cohorts across two fixed evaluation streams, with private
   node/profile evidence retained on Tucker.
-- [Ukraine versus Hong Kong neighbor matching](FINDINGS_NM_SOURCE_PAIR.md):
+- [Historical Ukraine versus Hong Kong neighbor matching](FINDINGS_NM_SOURCE_PAIR.md):
   exact paired 30-way query/support ids, native-source specialization, shared
   error overlap, and cross-model oracle headroom on both source graphs.
 
