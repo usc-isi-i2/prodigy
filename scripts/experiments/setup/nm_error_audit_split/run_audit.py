@@ -121,7 +121,7 @@ def main():
     args.out_dir.mkdir(parents=True, exist_ok=False)
     torch.set_num_threads(args.threads)
     torch.set_num_interop_threads(1)
-    atomic_json(args.out_dir / "effective_config.json", params)
+    atomic_json(args.out_dir / "effective_config.json", json.loads(json.dumps(params, default=str)))
     seed_everything(params)
     dataset = load_dataset(params)
     assert dataset.nm_background_edge_view == "static_train"
