@@ -13,6 +13,7 @@ CLS_OUTPUT="${FLAGSHIP_ROOT}/classification_evaluation"
 SEED0_RUN="${SEED0_RUN:-/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434}"
 ONEHOP_STATUS="${SHARED_ROOT}/paper_three_seed_remainder/${RUN_STAMP}/onehop_seed_2/status.json"
 TWOHOP_STATUS="${SHARED_ROOT}/paper_three_seed_remainder/${RUN_STAMP}/twohop_seeds_1-2/status.json"
+REMAINDER_TRAIN_COMPLETE="${SHARED_ROOT}/paper_three_seed_remainder/${RUN_STAMP}/training_complete_utc.txt"
 STATUS_FILE="${REPO_ROOT}/log/paper_flagship_recovery_${RUN_STAMP}.json"
 MECHANISM_TRAIN_COMPLETE="${MECHANISM_TRAIN_COMPLETE:-/dataMeR1/phil/gfm/prodigy-paper-mechanism/log/paper_mechanism_sweeps/${RUN_STAMP}/training_complete_utc.txt}"
 ALL_PAIRS_TRAIN_COMPLETE="${ALL_PAIRS_TRAIN_COMPLETE:-/dataMeR1/phil/gfm/prodigy-paper-all-pairs/log/paper_all_pairs/${RUN_STAMP}/training_complete_utc.txt}"
@@ -41,22 +42,31 @@ path.write_text(json.dumps({
 PY
 }
 trap 'write_status failed "corrected flagship recovery failed"' ERR
-write_status waiting "waiting for the old remainder orchestrator to exit"
-while tmux has-session -t paper-optimized-queue 2>/dev/null; do sleep 30; done
+
+wait_for_marker() {
+  local marker="$1" detail="$2"
+  shift 2
+  while [[ ! -f "$marker" ]]; do
+    write_status waiting "$detail"
+    local alive=0 session
+    for session in "$@"; do
+      if tmux has-session -t "$session" 2>/dev/null; then alive=1; fi
+    done
+    (( alive == 1 )) || { echo "missing producer for $marker" >&2; return 1; }
+    sleep 30
+  done
+}
+
+wait_for_marker "$REMAINDER_TRAIN_COMPLETE" "waiting for remainder recovery" \
+  paper-optimized-queue paper-remainder-recovery
 
 # The mechanism queue may deliberately refill the six-per-GPU slots released
 # by the one-hop overlap. If the old remainder exits unexpectedly early, do not
 # start the flagship until that bounded 10k-update training phase releases 0/2/3.
-while tmux has-session -t paper-mechanism-sweeps 2>/dev/null \
-    && [[ ! -f "$MECHANISM_TRAIN_COMPLETE" ]]; do
-  write_status waiting "old remainder exited; waiting for overlapped mechanism training"
-  sleep 30
-done
-while tmux has-session -t paper-all-pairs-after-mechanism 2>/dev/null \
-    && [[ ! -f "$ALL_PAIRS_TRAIN_COMPLETE" ]]; do
-  write_status waiting "old remainder exited; waiting for overlapped all-pairs training"
-  sleep 30
-done
+wait_for_marker "$MECHANISM_TRAIN_COMPLETE" "waiting for mechanism training" \
+  paper-mechanism-sweeps paper-mechanism-eval
+wait_for_marker "$ALL_PAIRS_TRAIN_COMPLETE" "waiting for all-pairs recovery" \
+  paper-all-pairs-after-mechanism paper-all-pairs-recovery
 
 "${CONDA_PREFIX}/bin/python" - "$ONEHOP_STATUS" 18 "$TWOHOP_STATUS" 46 <<'PY'
 import json, sys
