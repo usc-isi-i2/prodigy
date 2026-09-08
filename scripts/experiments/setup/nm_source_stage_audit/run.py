@@ -65,6 +65,16 @@ def matrix_metrics(z, truth, prefix):
     }
 
 
+def full_metagraph(model, pre, batch, device):
+    """Preserve original metagraph GEMM shapes, including for wrong-class ties."""
+    edges, attrs, mask = [v.to(device) for v in batch[3:6]]
+    labels = model.learned_label_embedding(torch.arange(batch[1].shape[0], device=device))
+    x, label_out = model.forward_metagraph(model.layer_list[2], pre, labels,
+        edges, attrs, mask, None, None, None)
+    logits = model.decode(model.final_input_mlp(x), model.final_label_mlp(label_out), edges)
+    return logits.reshape(32, 210, 30)
+
+
 def self_test():
     """Exercise strided storage/offset recovery and competing-class ranking."""
     import tempfile
@@ -92,6 +102,7 @@ def main():
     p.add_argument('--out', type=Path)
     p.add_argument('--device', default='cuda:0')
     p.add_argument('--threads', type=int, default=4)
+    p.add_argument('--resume-cache', type=Path, help='Reuse completed batch embeddings from an interrupted pass')
     p.add_argument('--self-test', action='store_true')
     p.add_argument('--dry-run', action='store_true')
     args = p.parse_args()
@@ -153,7 +164,7 @@ def main():
         input_hash = hashlib.sha256()
         target_report = dict(reference_sha256=digest(refpath), batches=[],
             reencoded_subgraphs={m: 0 for m in models}, reused_episodes=0,
-            encoding_route={}, partial_batch_fallbacks=[],
+            encoding_route={}, partial_batch_fallbacks=[], resumed_batches=[],
             max_probability_error={m: 0. for m in models},
             prediction_mismatches={m: 0 for m in models},
             correctness_mismatches={m: 0 for m in models}, witnesses=[])
@@ -168,9 +179,16 @@ def main():
             g.x[g.global_node_ids < 0] = 0
             update_hash(input_hash, batch)
             packed = dict(model_states=hashes, models={}, input_file_sha256=item['sha256'])
+            prior_path = None if args.resume_cache is None else args.resume_cache/target/f'batch_{bi:03d}_embeddings_private.pt'
+            prior = None
+            if prior_path is not None and prior_path.exists():
+                prior = torch.load(prior_path, map_location='cpu', weights_only=False)
+                assert prior['model_states'] == hashes and prior['input_file_sha256'] == item['sha256']
+                target_report['resumed_batches'].append(dict(file=str(prior_path), sha256=digest(prior_path)))
             with torch.inference_mode():
                 for model_name, model in models.items():
-                    reuse = cached['episodes'] if target == 'cp_hk' and model_name == 'hk' else {}
+                    reuse = ({(bi, ep): prior['models'][model_name][ep]['inputs'] for ep in range(32)}
+                        if prior is not None else cached['episodes'] if target == 'cp_hk' and model_name == 'hk' else {})
                     missing = [ep for ep in range(32) if (bi, ep) not in reuse]
                     graphs, pieces, all_pre = [], [], []
                     if not reuse:
@@ -189,14 +207,37 @@ def main():
                         fresh = {ep: all_pre[i] for i, ep in enumerate(missing)}
                         target_report['reencoded_subgraphs'][model_name] += len(graphs)
                         target_report['encoding_route'][model_name] = 'reuse HK cache; encode missing episodes'
-                        witness = capture(model, batch, args.device) if bi == 0 else None
+                        witness = capture(model, batch, args.device) if bi == 0 and prior is None else None
                         if witness is not None:
-                            max_missing_error = max(float((fresh[ep].to(args.device)-witness[0]['pre'][ep*210:(ep+1)*210]).abs().max()) for ep in missing)
+                            max_missing_error = max((float((fresh[ep].to(args.device)-witness[0]['pre'][ep*210:(ep+1)*210]).abs().max()) for ep in missing), default=0.)
                             if max_missing_error >= 1e-5:
                                 fresh = {ep: witness[0]['pre'][ep*210:(ep+1)*210].cpu() for ep in missing}
                                 target_report['partial_batch_fallbacks'].append(dict(batch=bi, original_max_pre_error=max_missing_error))
                     if model_name == 'hk':
                         target_report['reused_episodes'] += 32-len(missing)
+                    full_pre = torch.cat([reuse[bi, ep][0] if (bi, ep) in reuse else fresh[ep] for ep in range(32)]).to(args.device)
+                    full_final = full_metagraph(model, full_pre, batch, args.device)
+                    # A cache produced with smaller encoder batches can differ at
+                    # nearly tied logits. Recover the original production path
+                    # for that batch instead of relaxing the exact-decision gate.
+                    block_index = pd.MultiIndex.from_tuples([(f'{bi}:{ep}', ep*210+int(q))
+                        for ep in range(32) for q in query_slots.cpu().tolist()])
+                    block_ref = refs.loc[block_index]
+                    block_anchors = g.task_label_map.cpu().numpy()-offset
+                    block_pred = full_final[:, query_slots].argmax(2).cpu().numpy()
+                    block_pred_ids = np.take_along_axis(block_anchors, block_pred, axis=1).reshape(-1)
+                    if reuse and not np.array_equal(block_pred_ids, block_ref[model_name+'_pred'].to_numpy()):
+                        witness = capture(model, batch, args.device)
+                        full_pre = witness[0]['pre']
+                        full_final = full_metagraph(model, full_pre, batch, args.device)
+                        fresh = {ep: full_pre[ep*210:(ep+1)*210].cpu() for ep in range(32)}
+                        reuse = {}
+                        target_report['reencoded_subgraphs'][model_name] += 32*210
+                        target_report['partial_batch_fallbacks'].append(dict(batch=bi, model=model_name,
+                            reason='cached encoding disagreed on original predicted anchor; original full forward used'))
+                    if witness is not None:
+                        err = float((full_final[:, query_slots].reshape(-1, 30)-witness[1]).abs().max())
+                        assert err < 1e-4, err
                     episodes = {}
                     for ep in range(32):
                         pre = reuse[bi, ep][0] if (bi, ep) in reuse else fresh[ep]
@@ -204,7 +245,7 @@ def main():
                         if (bi, ep) in reuse:
                             for old, new in zip(reuse[bi, ep][1:], a[1:]):
                                 assert torch.equal(old, new.cpu())
-                        native = meta(model, *a)[query_slots]
+                        native = full_final[ep, query_slots]
                         support = a[0].reshape(30, 7, -1)[:, :3]
                         query = F.normalize(a[0][query_slots], dim=1)
                         mean_cosine = query @ F.normalize(support, dim=2).mean(dim=1).T
@@ -239,7 +280,7 @@ def main():
                             native_logits=native.cpu(), mean_cosine=mean_cosine.cpu(),
                             prototype_cosine=prototype.cpu())
                     packed['models'][model_name] = episodes
-                    del graphs, pieces, all_pre, fresh, witness
+                    del graphs, pieces, all_pre, fresh, witness, full_pre, full_final
                 cachepath = dest/f'batch_{bi:03d}_embeddings_private.pt'
                 torch.save(packed, cachepath)
                 target_report['batches'].append(dict(file=cachepath.name, sha256=digest(cachepath), bytes=cachepath.stat().st_size))
