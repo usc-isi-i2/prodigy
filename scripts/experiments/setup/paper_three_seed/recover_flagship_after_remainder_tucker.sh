@@ -17,6 +17,8 @@ REMAINDER_TRAIN_COMPLETE="${SHARED_ROOT}/paper_three_seed_remainder/${RUN_STAMP}
 STATUS_FILE="${REPO_ROOT}/log/paper_flagship_recovery_${RUN_STAMP}.json"
 MECHANISM_TRAIN_COMPLETE="${MECHANISM_TRAIN_COMPLETE:-/dataMeR1/phil/gfm/prodigy-paper-mechanism/log/paper_mechanism_sweeps/${RUN_STAMP}/training_complete_utc.txt}"
 ALL_PAIRS_TRAIN_COMPLETE="${ALL_PAIRS_TRAIN_COMPLETE:-/dataMeR1/phil/gfm/prodigy-paper-all-pairs/log/paper_all_pairs/${RUN_STAMP}/training_complete_utc.txt}"
+TRAIN_GPUS="${TRAIN_GPUS:-}"
+EVAL_GPUS="${EVAL_GPUS:-}"
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
 source "$(conda info --base)/etc/profile.d/conda.sh"
@@ -57,6 +59,82 @@ wait_for_marker() {
   done
 }
 
+gpu_idle() {
+  local gpu="$1" values used util
+  values="$(nvidia-smi -i "$gpu" --query-gpu=memory.used,utilization.gpu \
+    --format=csv,noheader,nounits | tr -d ' ')"
+  IFS=, read -r used util <<< "$values"
+  (( used < 1000 && util < 10 ))
+}
+
+validate_gpu_list() {
+  local text="$1" minimum="$2" gpu
+  local -A seen=()
+  read -r -a values <<< "$text"
+  (( ${#values[@]} >= minimum )) || return 1
+  for gpu in "${values[@]}"; do
+    [[ "$gpu" =~ ^[0-3]$ ]] || return 1
+    [[ -z "${seen[$gpu]:-}" ]] || return 1
+    seen[$gpu]=1
+  done
+}
+
+wait_for_stable_gpus() {
+  local text="$1" stable=0 gpu_csv
+  validate_gpu_list "$text" 1 || return 1
+  gpu_csv="$(tr ' ' ',' <<< "$text")"
+  while (( stable < 4 )); do
+    if nvidia-smi --query-gpu=memory.used,utilization.gpu \
+        --format=csv,noheader,nounits -i "$gpu_csv" |
+        awk -F, '{gsub(/ /,"",$1); gsub(/ /,"",$2); if ($1>1000 || $2>10) bad=1} END{exit bad}'; then
+      stable=$((stable + 1))
+    else
+      stable=0
+    fi
+    sleep 30
+  done
+}
+
+choose_training_gpus() {
+  if [[ -n "$TRAIN_GPUS" ]]; then
+    validate_gpu_list "$TRAIN_GPUS" 3 || return 1
+    echo "$TRAIN_GPUS"
+    return
+  fi
+  while true; do
+    if gpu_idle 0; then
+      echo "0 2 3"
+      return
+    fi
+    if ! tmux has-session -t vision-mixture-seeds 2>/dev/null && gpu_idle 1; then
+      echo "1 2 3"
+      return
+    fi
+    write_status waiting "waiting for either GPU 0 or post-VISION GPU 1"
+    sleep 30
+  done
+}
+
+choose_evaluation_gpus() {
+  if [[ -n "$EVAL_GPUS" ]]; then
+    validate_gpu_list "$EVAL_GPUS" 3 || return 1
+    echo "$EVAL_GPUS"
+    return
+  fi
+  while true; do
+    local available=() gpu
+    for gpu in 0 1 2 3; do
+      if gpu_idle "$gpu"; then available+=("$gpu"); fi
+    done
+    if (( ${#available[@]} >= 3 )); then
+      echo "${available[*]}"
+      return
+    fi
+    write_status waiting "waiting for at least three idle owned evaluation GPUs"
+    sleep 30
+  done
+}
+
 wait_for_marker "$REMAINDER_TRAIN_COMPLETE" "waiting for remainder recovery" \
   paper-optimized-queue paper-remainder-recovery
 
@@ -89,49 +167,36 @@ if [[ -e "$REPLICATE_RUN" ]]; then
   else
     stamp="$(date -u +%Y%m%dT%H%M%SZ)"
     mv "$REPLICATE_RUN" "${REPLICATE_RUN}.failed_sampler_${stamp}"
-    write_status waiting "archived failed flagship attempt; waiting for GPUs 0,2,3"
+    write_status waiting "archived failed flagship attempt; selecting idle owned GPUs"
   fi
 fi
 
 if [[ ! -e "$REPLICATE_RUN" ]]; then
-  stable=0
-  while (( stable < 4 )); do
-    if nvidia-smi --query-gpu=memory.used,utilization.gpu --format=csv,noheader,nounits -i 0,2,3 |
-        awk -F, '{gsub(/ /,"",$1); gsub(/ /,"",$2); if ($1>1000 || $2>10) bad=1} END{exit bad}'; then
-      stable=$((stable + 1))
-    else
-      stable=0
-    fi
-    sleep 30
-  done
-  write_status training "launching corrected three-seed flagship replicas"
-  RUN_ROOT="$FLAGSHIP_ROOT" SEEDS="1 2" GPUS="0 2 3" MODELS_PER_GPU=14 WORKER_BUDGET=168 \
+  train_gpus="$(choose_training_gpus)"
+  wait_for_stable_gpus "$train_gpus"
+  read -r -a train_gpu_ids <<< "$train_gpus"
+  write_status training "launching corrected flagship replicas on GPUs $train_gpus"
+  RUN_ROOT="$FLAGSHIP_ROOT" SEEDS="1 2" GPUS="$train_gpus" MODELS_PER_GPU=14 \
+    WORKER_BUDGET="$((${#train_gpu_ids[@]} * 56))" \
     bash "$SCRIPT_DIR/run_flagship_ladders_tucker.sh"
 fi
 
-# VISION owns GPU 1 independently. The fixed evaluations require all four devices.
+# Evaluation waits for VISION, then uses every idle owned device with a
+# three-device minimum. This avoids blocking on an unrelated user of GPU 0.
 while tmux has-session -t vision-mixture-seeds 2>/dev/null; do sleep 30; done
-stable=0
-while (( stable < 4 )); do
-  if nvidia-smi --query-gpu=memory.used,utilization.gpu --format=csv,noheader,nounits -i 0,1,2,3 |
-      awk -F, '{gsub(/ /,"",$1); gsub(/ /,"",$2); if ($1>1000 || $2>10) bad=1} END{exit bad}'; then
-    stable=$((stable + 1))
-  else
-    stable=0
-  fi
-  sleep 30
-done
+eval_gpus="$(choose_evaluation_gpus)"
+wait_for_stable_gpus "$eval_gpus"
 
 if [[ ! -f "$NM_OUTPUT/status.json" ]] || ! grep -q '"status": "complete"' "$NM_OUTPUT/status.json"; then
-  write_status evaluating "running fixed 512-episode NM receiver panel"
+  write_status evaluating "running fixed 512-episode NM receiver panel on GPUs $eval_gpus"
   "${CONDA_PREFIX}/bin/python" -u scripts/experiments/setup/nm_interventions_overnight/evaluate.py \
     --run-dirs "$REPLICATE_RUN" --output "$NM_OUTPUT" \
-    --gpus 0 1 2 3 --workers-per-gpu 2 --episodes 512
+    --gpus $eval_gpus --workers-per-gpu 2 --episodes 512
 fi
 if [[ ! -f "$CLS_OUTPUT/classification_long.tsv" ]]; then
-  write_status evaluating "running fixed downstream classification panel"
+  write_status evaluating "running fixed downstream classification panel on GPUs $eval_gpus"
   RUN_STAMP="$RUN_STAMP" OUTPUT_ROOT="$CLS_OUTPUT" REPLICATE_RUN="$REPLICATE_RUN" \
-    SEED0_RUN="$SEED0_RUN" GPUS="0 1 2 3" WORKERS_PER_GPU=2 \
+    SEED0_RUN="$SEED0_RUN" GPUS="$eval_gpus" WORKERS_PER_GPU=2 \
     bash "$SCRIPT_DIR/run_flagship_cls_tucker.sh"
 fi
 write_status complete "corrected flagship training and both evaluations are complete"
