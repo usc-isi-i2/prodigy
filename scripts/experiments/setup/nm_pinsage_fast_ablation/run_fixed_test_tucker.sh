@@ -10,7 +10,7 @@ RUN_ID="${RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)}"
 GPUS_TEXT="${GPUS:-0 1 2 3}"
 TARGETS="${TARGETS:-covid_political,election2020,ukr_rus_suspended,twibot20}"
 OUT_ROOT="${OUT_ROOT:-${REPO_ROOT}/log/pinsage_finalcore_fixed_test/${RUN_ID}}"
-REFERENCE_FINGERPRINTS="${REFERENCE_FINGERPRINTS:-/dataMeR1/phil/gfm/prodigy-final-core-cache/log/final_core_cached_test/production/bs32/summary/episode_fingerprints.tsv}"
+REFERENCE_FINGERPRINTS="${REFERENCE_FINGERPRINTS:-${REPO_ROOT}/scripts/experiments/analysis/transfer/matrices/cross_model/final_core/data/prodigy_final_core/fixed_test/summary/episode_fingerprints.tsv}"
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
 source "$(conda info --base)/etc/profile.d/conda.sh"
