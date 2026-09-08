@@ -45,6 +45,9 @@ def read_pairs(paths, split):
                           ukr_correct=int(u["correct"]), hk_correct=int(h["correct"]))
             assert record["ukr_correct"] == int(u["prediction"] == u["gt"])
             assert record["hk_correct"] == int(h["prediction"] == h["gt"])
+            for model, r in [("ukr",u), ("hk",h)]:
+                record[f"{model}_true_rank"] = 1 + sum(p > r["probabilities"][r["gt_local"]] for p in r["probabilities"])
+                record[f"{model}_true_probability"] = r["probabilities"][r["gt_local"]]
             for prefix, r, local in [("true",u,u["gt_local"]), ("ukr",u,u["pred_local"]), ("hk",h,h["pred_local"])]:
                 for j, node in enumerate(supports(r, local)):
                     record[f"{prefix}_support_{j}"] = node
@@ -63,6 +66,8 @@ def stats(df):
                 gap=float((u-h).mean()), both_wrong=float(((u==0)&(h==0)).mean()),
                 both_correct=float(((u==1)&(h==1)).mean()),
                 ukr_only=float(((u==1)&(h==0)).mean()), hk_only=float(((u==0)&(h==1)).mean()),
+                wrong_set_jaccard=float(((u==0)&(h==0)).sum()/max(1,((u==0)|(h==0)).sum())),
+                either_model_oracle=float(((u==1)|(h==1)).mean()),
                 query_zero_fraction=float(df.query_zero.mean()),
                 query_degree_median=float(df.query_degree.median()))
 
@@ -105,6 +110,9 @@ def summarize_weighting(args):
         for group,z in sub.groupby("frequency_bin",observed=True):
             s["frequency_groups"][str(group)] = stats(z)
         s["novel_vs_val"] = stats(sub[~sub["query"].isin(df.loc[df.split=="val","query"])])
+        seen = sub["query"].isin(df.loc[df.split=="val","query"])
+        s["validation_reused_occurrences"] = int(seen.sum())
+        s["validation_reused_distinct_queries"] = int(sub.loc[seen,"query"].nunique())
         summary["splits"][split] = s
     (out/"nm_query_weighting_summary.json").write_text(json.dumps(summary,indent=2))
     print(json.dumps(summary,indent=2))
@@ -282,6 +290,7 @@ def analyze(args):
             primary = labels.copy()
             q_assignments["cluster"] = labels
             df.to_parquet(out/"paired_cluster_queries_private.parquet",index=False)
+            df.to_csv(out/"paired_cluster_queries_private.tsv",sep="\t",index=False)
             np.savez_compressed(out/"cluster_centroids.npz",centroids=km.cluster_centers_)
     # Select actual paired examples before reading text: random cases per test cohort.
     examples=[]
