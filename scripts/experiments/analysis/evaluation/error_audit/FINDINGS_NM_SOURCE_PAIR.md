@@ -1,5 +1,9 @@
 # Source-paired neighbor-matching error audit
 
+> **Protocol invalid for held-out claims:** these original diagnostic exports
+> disabled edge splitting and sampled the full standalone graphs. The findings
+> below describe those draws only. A canonical-split replacement is in progress.
+
 7 September 2026. **Exploratory fixed-checkpoint diagnosis of two seed-0,
 step-2,500 specialists; not a training-seed replication or causal source-data
 intervention.**

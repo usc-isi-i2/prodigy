@@ -1921,6 +1921,16 @@ class TrainerFS():
         task_name = str(self.parameter.get("task_name", ""))
         records = []
 
+        # Index once, rather than scanning every sample for every exported query.
+        # Preserve sample order and the existing per-label export limit.
+        support_indices = {}
+        if multiway:
+            for idx, (is_query, tid, label) in enumerate(zip(
+                query_mask.tolist(), task_ids.tolist(), sample_labels.tolist()
+            )):
+                if not is_query:
+                    support_indices.setdefault((tid, label), []).append(idx)
+
         def global_label(task_id, local_label):
             if task_label_map is None or task_label_map.ndim != 2:
                 return int(local_label)
@@ -1969,9 +1979,11 @@ class TrainerFS():
                 support_rows = []
                 wanted_labels = {gt_local, pr_local}
                 counts = {label: 0 for label in wanted_labels}
-                for support_idx in range(n_samples):
-                    if query_mask[support_idx] or int(task_ids[support_idx].item()) != task_id:
-                        continue
+                selected_supports = sorted(
+                    idx for label in wanted_labels
+                    for idx in support_indices.get((task_id, label), [])[:max(0, support_limit)]
+                )
+                for support_idx in selected_supports:
                     support_label = int(sample_labels[support_idx].item())
                     if support_label not in wanted_labels or counts[support_label] >= support_limit:
                         continue

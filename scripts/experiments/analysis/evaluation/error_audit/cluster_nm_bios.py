@@ -39,7 +39,7 @@ def read_pairs(paths, split):
                 return [s["node_id"] for s in r["supports"] if s["local_label"] == local]
             assert supports(u, u["gt_local"]) == supports(h, h["gt_local"])
             assert len(supports(u, u["gt_local"])) == 3
-            record = dict(split=split, episode=u["batch_index"], sample=u["sample_index"],
+            record = dict(split=split, episode=f"{u['batch_index']}:{u['task_id']}", sample=u["sample_index"],
                           query=u["query_node_id"], anchor=u["gt"],
                           ukr_pred=u["prediction"], hk_pred=h["prediction"],
                           ukr_correct=int(u["correct"]), hk_correct=int(h["correct"]))
@@ -162,6 +162,12 @@ def analyze(args):
     graph_path = root/entry["relative_path"]
     print(args.target,"loading graph and selecting",len(ids),"node vectors",flush=True)
     g = torch.load(graph_path,map_location="cpu",weights_only=False,mmap=True)
+    probe_path = args.audit_dir / {"ukr_rus_twitter":"ukr_rus", "cp_hk_twitter":"cp_hk"}[args.target] / "source_feature_probe.npz"
+    if probe_path.exists():
+        probe = np.load(probe_path)
+        assert g["x"].shape[0] == int(probe["source_node_count"])
+        assert np.array_equal(g["x"][torch.tensor(probe["ids"])].numpy(), probe["x"]), "source/core features differ"
+        print(args.target, "source/core feature probe verified", flush=True)
     x = g["x"][torch.tensor(ids)].float().numpy()
     assert np.isfinite(x).all()
     norms = np.linalg.norm(x,axis=1)

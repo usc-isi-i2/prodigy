@@ -1,5 +1,11 @@
 # Source-paired episode error audit
 
+> **NM protocol correction (8 September):** the original NM exports below used
+> `neighbor_matching_edge_split=False` and `edge_view=default`. They are descriptive
+> full-graph episode results, **not held-out-edge generalization evidence**.
+> A canonical-split, identical-input rerun is in progress. This issue does not
+> establish leakage in the classification audit or the separate final-core benchmark.
+
 Updated 8 September 2026. This report consolidates the Ukraine-versus-Hong Kong
 specialist analyses for downstream COVID Political classification and native
 30-way neighbor matching (NM).
