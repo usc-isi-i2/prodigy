@@ -154,7 +154,16 @@ def load_bios(target, ids, users, data_root, threads):
 def analyze(args):
     out = args.out_dir/args.target
     out.mkdir(parents=True, exist_ok=True)
-    source = json.loads((args.audit_dir/"nm_ukr_vs_cp_hk_test_summary.json").read_text())[args.target]["paths"]
+    manifest = args.audit_dir/"nm_ukr_vs_cp_hk_test_summary.json"
+    if manifest.exists():
+        source = json.loads(manifest.read_text())[args.target]["paths"]
+    else:
+        # Allow CPU analysis of a completed target while another target evaluates.
+        protocol = json.loads((args.audit_dir/"protocol_summary.json").read_text())
+        name = {"ukr_rus_twitter":"ukr_rus", "cp_hk_twitter":"cp_hk"}[args.target]
+        splits = protocol["targets"][name]["splits"]
+        assert all(set(splits[s]["models"]) == {"ukr_rus","cp_hk"} for s in ["val","test"])
+        source = {short:splits["test"]["models"][model]["path"] for short,model in [("ukr","ukr_rus"),("hk","cp_hk")]}
     paths = {s:{m:p.replace("predictions_test_",f"predictions_{s}_") for m,p in source.items()} for s in ["val","test"]}
     frames = []
     for s in ["val","test"]:
