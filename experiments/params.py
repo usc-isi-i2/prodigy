@@ -248,6 +248,8 @@ def get_params(argv=None):
                       help="Add support-derived class prototypes to label nodes before metagraph reasoning.")
     args.add_argument("--learned_relation_scorer", default=False, type=str2bool,
                       help="Add a learned query-label relation residual to cosine logits.")
+    args.add_argument("--nm_geometry_residual", default=False, type=str2bool,
+                      help="Experimental inference-only NM readout: equal standardized native and pre-metagraph support-cosine scores.")
     args.add_argument("--transductive_refinement", default=False, type=str2bool)
     args.add_argument("--transductive_threshold", default=0.8, type=float)
     args.add_argument("--transductive_alpha", default=0.25, type=float)

@@ -59,6 +59,48 @@ an open-ended component sweep. Setup estimate 10–20 minutes, CPU compute 1–2
 minutes, no GPU. The first failed start stopped before inference because the
 effective config path was wrong; its log is retained and excluded from results.
 
+## Frozen bounded repair, after the radius/direction result
+
+Value direction alone reproduces 21/25 nearest rescues and 50/54 breakages;
+radius alone reproduces 2/25 and 13/54. Direction-only also reproduces all five
+nearest rescues in the 71 persistent cases. This motivates preserving explicit
+query/support geometry around the learned class-reference construction. It does
+not show that native values should be discarded: the original native head is
+better than the direct cosine head on the full HK stream.
+
+Test exactly one parameter-free inference change: for each query, center each
+head's 30 class scores and divide by its population standard deviation (floor
+1e-8), then average the native head and mean pre-metagraph support cosine with
+equal weights. This is an explicit symmetric default, not an optimized weight.
+No query labels enter either head; only observed support labels define classes.
+No fitting, temperature selection, target-specific choice, or weight sweep.
+Standardized outputs are ranking scores, not calibrated probabilities. They
+are invariant to each head's positive scale and offset, except at the floor.
+The existing support-prototype flag changes label inputs before M, while the
+learned relation scorer operates after M; neither preserves this direct route.
+
+Primary: original, unchanged full canonical HK target (61,440 occurrences),
+native HK checkpoint. Controls: Ukraine checkpoint on the same HK inputs, and
+both checkpoints on the original Ukraine target. Report native/direct/residual
+accuracy, recoveries and losses relative to the original canonical predictions,
+node-weighted accuracy, query-frequency strata, and episode-level paired deltas.
+The 512 episodes and repeated nodes do not constitute independent model seeds.
+All four cells use existing hashed caches. Recompute the geometry score from
+support signs and check it against cached cosine scores; do not re-encode graphs.
+
+Secondary: the already selected original and replacement HK cases, separately
+by method and cohort. Report nearest and random draws without picking a winning
+method. These remain known-true-class interventions, not benchmark performance.
+Report differences from both the original native outcomes and the native head
+on the SAME modified inputs. One failed repair is a completed bounded test;
+do not tune on the canonical test to reverse an inconvenient result.
+
+Setup estimate: 20–35 minutes. CPU estimate: 2–5 minutes, two low-priority
+threads, no CUDA allocation. The optional production flag is off by default,
+NM-only and inference-only, and adds no checkpoint parameters. It is retained
+as an experimental implementation regardless of the outcome, not recommended
+as a successful model improvement before evaluation.
+
 Runtime branch: `codex/nm-hk-goal-20260908`; local worktree
 `/private/tmp/prodigy-nm-hk-goal`. Transfer source via private git and use a new
 Tucker worktree. All paths, methods and thread counts must be explicit/overridable.
