@@ -13,6 +13,12 @@ pairs must belong to the intended split and be absent from both other splits in
 the actual undirected sampler adjacencies. Both models consume clones of the same
 materialized CPU batches. All cached input tensors are hashed before/after replay.
 
+Member selection is explicitly `lowest_sorted`, the historical checkpoint and
+fixed-benchmark policy. The current default `randomized` does not reproduce those
+plans. Retaining this policy makes the edge-holdout correction comparable but does
+not correct the benchmark's lower-node-ID retention/support-role bias. This remains
+a sampler-conditioned diagnostic, not an unbiased sample of all nodes or edges.
+
 Use a dedicated Tucker worktree and a free owned GPU. In the `prodigy` environment:
 
 ```bash

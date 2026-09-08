@@ -111,7 +111,8 @@ def main():
                              checkpoint=ckpts["ukr_rus"])
     params.update(eval_only_split="both", val_len_cap=args.batch_count,
                   export_predictions=True, prediction_context_neighbors=3,
-                  prediction_support_per_label=3)
+                  prediction_support_per_label=3,
+                  neighbor_matching_member_policy="lowest_sorted")
     assert params["neighbor_matching_edge_split"] is True
     assert params["edge_view"] == "static_train" and params["target_edge_view"] == "static_test"
     assert params["neighbor_matching_walk_hops"] == 1
@@ -130,7 +131,8 @@ def main():
     summary = {"protocol": "canonical_split_paired_nm_v1", "commit": git_commit(),
                "graph": str(Path(params["root"]) / params["graph_filename"]),
                "episodes_per_target_split": args.episodes, "batch_size": args.batch_size,
-               "n_way": 30, "n_shots": 3, "n_query": 4, "targets": {}}
+               "n_way": 30, "n_shots": 3, "n_query": 4,
+               "member_policy": "lowest_sorted", "targets": {}}
     paths = {}
     for target in args.targets:
         source_id = list(dataset.graph.source_graph_names).index(target)
@@ -149,11 +151,18 @@ def main():
         for split in ["test", "val"]:
             reset_fixed_eval_rng(target)
             trainer.parameter["neighbor_sampling_source_subset"] = target
+            trainer.parameter["eval_only_split"] = split
             loaders = trainer._build_dataloaders(dataset, trainer.dataset_name)
             loader = loaders[3 if split == "test" else 2]
             batches = list(loader.batch_sampler)
             plan_hash, episodes = fingerprint_plan(target, batches, expected_batch_size=args.batch_size, dataset=dataset)
             assert episodes == args.episodes
+            reference = None
+            if split == "test" and args.episodes == 512 and args.batch_size == 32:
+                ref = ROOT / "scripts/experiments/analysis/transfer/matrices/cross_model/final_core/data/prodigy_final_core/auc/results/seed_0/ss_cp_hk" / f"{target}.json"
+                reference = json.loads(ref.read_text())
+                assert plan_hash == reference["episode_plan_fingerprint"], (target, plan_hash, reference["episode_plan_fingerprint"])
+                print(f"PUBLISHED_PLAN_MATCH {target} {plan_hash}", flush=True)
             torch.save(batches, target_dir / f"{split}_plan_private.pt")
             check = check_plan(dataset, batches, split)
             print(f"SPLIT_CHECK {target} {split} {check}", flush=True)
@@ -167,9 +176,7 @@ def main():
                     "all_input_tensors_sha256": tensor_hash, "models": {}}
             summary["targets"][target]["splits"][split] = cell
             # Published test fingerprints provide an independent episode check.
-            if split == "test" and args.episodes == 512 and args.batch_size == 32:
-                ref = ROOT / "scripts/experiments/analysis/transfer/matrices/cross_model/final_core/data/prodigy_final_core/auc/results/seed_0/ss_cp_hk" / f"{target}.json"
-                reference = json.loads(ref.read_text())
+            if reference is not None:
                 cell["published_plan_match"] = plan_hash == reference["episode_plan_fingerprint"]
                 cell["published_identity_match"] = identity_hash == reference["observed_episode_fingerprint"]
                 assert cell["published_plan_match"] and cell["published_identity_match"], cell
