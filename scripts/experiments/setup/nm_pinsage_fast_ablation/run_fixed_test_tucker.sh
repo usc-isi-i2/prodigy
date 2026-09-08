@@ -11,6 +11,7 @@ GPUS_TEXT="${GPUS:-0 1 2 3}"
 TARGETS="${TARGETS:-covid_political,election2020,ukr_rus_suspended,twibot20}"
 OUT_ROOT="${OUT_ROOT:-${REPO_ROOT}/log/pinsage_finalcore_fixed_test/${RUN_ID}}"
 REFERENCE_FINGERPRINTS="${REFERENCE_FINGERPRINTS:-${REPO_ROOT}/scripts/experiments/analysis/transfer/matrices/cross_model/final_core/data/prodigy_final_core/fixed_test/summary/episode_fingerprints.tsv}"
+EPISODE_PLAN_ROOT="${EPISODE_PLAN_ROOT:-/dataMeR1/phil/gfm/final_core_episode_plans_045ba527}"
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
 source "$(conda info --base)/etc/profile.d/conda.sh"
@@ -55,6 +56,7 @@ for ((worker=0; worker<workers; worker++)); do
     --config "$SCRIPT_DIR/configs/train_covid_pinsage_s0.yaml" \
     --plan-config "$FINAL_CORE_DIR/training.yaml" \
     --plan-member-policy lowest_sorted --plan-member-seed -1 \
+    --episode-plan-root "$EPISODE_PLAN_ROOT" \
     --training-state-root "$STATE_ROOT" --evaluation-state-root "$OUT_ROOT/state" \
     --evaluation-log-root "$OUT_ROOT/internal" --results-root "$OUT_ROOT/results" \
     --evaluation-run-stamp "$RUN_ID" --ready-dir "$OUT_ROOT/ready" \

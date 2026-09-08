@@ -636,6 +636,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--plan-member-policy", default="randomized")
     parser.add_argument("--plan-member-seed", default=-1, type=int)
+    parser.add_argument("--episode-plan-root", type=Path)
     parser.add_argument("--training-state-root", required=True, type=Path)
     parser.add_argument("--training-run-stamp", default="20260807")
     parser.add_argument("--evaluation-state-root", required=True, type=Path)
@@ -769,7 +770,14 @@ def main() -> int:
         reset_fixed_eval_rng(target)
         trainer.parameter["neighbor_sampling_source_subset"] = target
         _, _, _, loader = trainer._build_dataloaders(dataset, trainer.dataset_name)
-        batches = list(loader.batch_sampler)
+        plan_path = (
+            args.episode_plan_root / f"{target}.pt"
+            if args.episode_plan_root is not None else None
+        )
+        batches = (
+            torch.load(plan_path, map_location="cpu", weights_only=False)
+            if plan_path is not None else list(loader.batch_sampler)
+        )
         fingerprint, episode_count = fingerprint_plan(
             target,
             batches,
