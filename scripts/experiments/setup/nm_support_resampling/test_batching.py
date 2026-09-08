@@ -1,13 +1,14 @@
 """Regression for fresh support graphs mixed with unbatched canonical graphs."""
 import torch
 from torch_geometric.data import Data, Batch
-from .run import align_scalar_attributes
+from .run import align_scalar_attributes, context_digest
 
 def test_mixed_scalar_metadata():
     graphs=[Data(x=torch.tensor([[float(i)],[0.]]),edge_index=torch.tensor([[0],[1]]),
                  center_node_idx=i,global_node_ids=torch.tensor([i,-1])) for i in range(3)]
     original=Batch.from_data_list(graphs)
     parts=original.to_data_list()
+    assert context_digest(graphs[1])==context_digest(parts[1])
     parts[1]=align_scalar_attributes(graphs[1],parts[1])
     restored=Batch.from_data_list(parts)
     for key,value in original:

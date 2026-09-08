@@ -28,6 +28,16 @@ def align_scalar_attributes(replacement, reference):
             replacement[key]=torch.tensor(replacement[key],dtype=value.dtype).reshape(value.shape)
     return replacement
 
+def context_digest(graph):
+    """Compare context tensors without PyG scalar-metadata representation noise."""
+    h=hashlib.sha256()
+    for key in ['x','edge_index','edge_attr','edge_index_supernode','supernode','global_node_ids']:
+        value=getattr(graph,key,None)
+        if isinstance(value,torch.Tensor):
+            h.update(key.encode());h.update(str((value.dtype,tuple(value.shape))).encode())
+            h.update(value.detach().cpu().contiguous().numpy().tobytes())
+    return h.hexdigest()
+
 def encode(model, graphs, device):
     g=graphs.clone().to(device)
     g.x=model.initial_input_mlp(g.x)
@@ -192,7 +202,7 @@ def main():
                         g=dataset[SeededNodeIndex(int(center),trial["seeds"][j])]
                         assert int(g.global_node_ids[0])==center
                         graphs.append(g)
-                        if condition=="same_context":changes.append(full_hash([[g]])!=full_hash([[original[j]]]))
+                        if condition=="same_context":changes.append(context_digest(g)!=context_digest(original[j]))
                     spec.append(dict(case=c["case"],condition=condition,draw=trial["draw"],start=start))
         torch.save({"graphs":graphs,"spec":spec},args.out/(target+"_support_draws_private.pt"))
         atomic_json(args.out/(target+"_cases_private.json"),cases)
