@@ -4,6 +4,14 @@
 step-2,500 specialists; not a training-seed replication or causal source-data
 intervention.**
 
+**8 September follow-up:** the [bio/weighting audit](FINDINGS_NM_BIO_CLUSTERS.md)
+qualifies the native-source interpretation below. Hong Kong's top 1% of
+observed query nodes supply 54% of occurrences. Giving each observed query
+equal weight reverses its ranking: UKR 44.95% versus HK 33.28%. The original
+occurrence-weighted numbers remain unchanged. The follow-up also covers
+semantic clusters, GTE anchor/support geometry, and multiple anchor labels
+for repeated query nodes within the same episode.
+
 ## Question and protocol
 
 Do models pretrained on Ukraine and Hong Kong fail on the same neighbor-matching

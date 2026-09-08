@@ -9,6 +9,9 @@ and to the exact bio-selection policy used at graph construction.  It writes:
 
 ## Findings
 
+- [NM bio clusters and query weighting](FINDINGS_NM_BIO_CLUSTERS.md): semantic
+  clusters, query/anchor/support GTE distributions, actual-text examples,
+  the Hong Kong node-weighted ranking reversal, and overlapping anchor labels.
 - [Query bio embedding clusters](FINDINGS_QUERY_BIO_CLUSTERS.md): outcome-blind
   GTE clustering with fresh-stream assignment, actual-text interpretation,
   error enrichment, and coarse label/isolation adjustment.

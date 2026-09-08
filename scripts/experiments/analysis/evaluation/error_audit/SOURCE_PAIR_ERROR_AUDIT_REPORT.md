@@ -1,14 +1,15 @@
 # Source-paired episode error audit
 
-7 September 2026. This report consolidates the Ukraine-versus-Hong Kong
+Updated 8 September 2026. This report consolidates the Ukraine-versus-Hong Kong
 specialist analyses for downstream COVID Political classification and native
 30-way neighbor matching (NM).
 
 ## Executive findings
 
 1. **The source graph changes which episodes a model can solve, not only its
-   aggregate accuracy.** NM shows large native-source specialization on both
-   source graphs, and downstream classification shows different structural
+   aggregate accuracy.** NM shows native-source specialization under the
+   current occurrence-weighted sampler; Hong Kong's ranking reverses when
+   observed query nodes receive equal weight. Classification shows different structural
    false-positive and false-negative regimes.
 2. **A substantial shared hard core remains.** The NM wrong-set Jaccard is
    0.580 on Ukraine and 0.781 on Hong Kong. Source selection alone therefore
@@ -25,6 +26,10 @@ specialist analyses for downstream COVID Political classification and native
    NM test/validation results nearly coincide. The classification “original”
    and “fresh” streams use identical checkpoint weights with different episode
    draws. Independent training-seed replication remains outstanding.
+7. **Repeated nodes and overlapping anchors matter for NM.** Hong Kong's top
+   1% of observed queries supply 54% of occurrences, and 42% of occurrences
+   involve a query assigned multiple anchors within its episode. The semantic
+   audit therefore qualifies the earlier interpretation of source specialization.
 
 ## 1. Downstream binary classification
 
@@ -110,8 +115,9 @@ broad clusters; wholesale routing by bio topic alone is not supported.
 
 ![Query bio cluster error rates](figures/query_bio_cluster_errors.png)
 
-This pass covers query bios only. Neighborhood/support GTE distributions,
-NM bio clustering, and training-node exposure remain outstanding.
+The classification clustering pass covers query bios only. The subsequent NM
+query/anchor/support analysis appears below; training-node exposure and full
+neighborhood-semantic analysis remain outstanding.
 
 ## 2. Native neighbor matching
 
@@ -161,13 +167,60 @@ reranking, or improved support aggregation may recover some shared failures.
 The counter-source rescues are also non-negligible—6,757 Ukraine queries and
 4,040 Hong Kong queries—providing concrete cases for routing or adaptation.
 
+### NM bio clusters and query weighting: follow-up findings
+
+The [NM bio clustering report](FINDINGS_NM_BIO_CLUSTERS.md) adds validation-fitted
+query clusters, actual bio examples, GTE anchor/support similarity distributions,
+and an audit of repeated queries and within-episode anchor overlap.
+
+![NM bio clusters](figures/nm_bio_cluster_accuracy.png)
+
+On Hong Kong, Ukraine wins in the zero-vector group (24.76% versus 16.84%) and
+a predominantly Japanese-language/interests cluster (58.41% versus 55.41%).
+Hong Kong wins in most other occurrence-weighted clusters, especially news/
+URL-heavy bios. On Ukraine, the native model wins throughout; its margin is
+particularly large in the Spanish/Romance-language cluster. These are broad,
+overlapping partitions with modest stability across clustering seeds.
+
+The larger finding is a **model-ranking reversal under query-node weighting**:
+Hong Kong's occurrence-weighted scores are UKR 13.20% / HK 20.26%, but equal
+weight per observed query node gives **UKR 44.95% / HK 33.28%**. The top 1% of
+observed Hong Kong queries produce 54.16% of test occurrences. Nodes repeated
+20+ times account for 79% of occurrences; Hong Kong is better on those, while
+Ukraine is better on sparse queries. Validation reproduces this reversal.
+These metrics answer different questions; the historical aggregate is unchanged.
+
+![NM query weighting](figures/nm_query_weighting.png)
+
+Within-episode ambiguity is also common: 42.27% of Hong Kong and 8.31% of
+Ukraine test occurrences involve query nodes assigned more than one true
+anchor within their episode. Shared-error rates rise to 83.90% / 78.69% on
+these groups. This identifies overlapping NM memberships, not political label
+conflicts. Sampled contexts may differ, so it does not establish a universal
+performance ceiling.
+
+![NM support cosine margins](figures/nm_support_cosine_margins.png)
+
+True and predicted support classes often have similar query-bio cosine scores.
+In Hong Kong shared failures, mean true-minus-predicted support margins are
+−.0086 for Ukraine's predictions and +.0001 for Hong Kong's. Selected actual
+query/anchor bios show both semantically sensible rescues and correct graph
+matches whose wrong alternative is closer in text space. Bio similarity alone
+does not define NM truth.
+
+A routing rule chosen on validation clusters selects Ukraine for Hong Kong's
+zero-vector/Japanese groups and Hong Kong otherwise. It reaches **20.80% test
+accuracy**, versus 20.26% for Hong Kong alone: a measured +0.55-point gain,
+well below the 6.73-point oracle gain. No model or sampler was changed.
+
 ## 3. Combined interpretation
 
 The consistent explanation is not simply that one checkpoint is globally
 better. Source pretraining produces different graph-role and matching
 heuristics:
 
-- source matching supplies a large native advantage;
+- source matching supplies a large advantage under the current NM sampler,
+  while Hong Kong's advantage reverses under equal weight per observed query;
 - native representations remain better aligned even on many shared mistakes;
 - the specialists preserve complementary decision boundaries; and
 - downstream transfer exposes opposing sensitivity to connectedness and
@@ -186,7 +239,8 @@ residual correction boundary is simple.
 Established:
 
 - exact query/support-center pairing between compared NM models;
-- native-source specialization across every or nearly every episode;
+- native-source specialization across every or nearly every episode under
+  query-occurrence weighting, with the Hong Kong node-weighted reversal;
 - stable test/validation and original/fresh evaluation patterns;
 - target-dependent shared-error overlap and oracle headroom; and
 - robust structural associations in binary-classification FP/FN cohorts.
@@ -210,8 +264,15 @@ counter-source rescues on:
 
 1. query/true-anchor/support-node exposure;
 2. degree, directionality, connectedness, and shortest-path status;
-3. query-to-true versus query-to-predicted anchor similarity; and
-4. within-class support dispersion and query-to-support similarity.
+3. query-to-true versus query-to-predicted anchor similarity (first NM pass
+   completed above); and
+4. within-class support dispersion and query-to-support similarity (first NM
+   mean-similarity pass completed above).
+
+The repeated-query findings add an immediate evaluation priority: report both
+node- and occurrence-weighted metrics, and audit multi-anchor memberships and
+identical realized query inputs before interpreting all shared NM errors as
+representation limitations.
 
 This directly distinguishes coverage or memorization from transferable motif
 learning. It also determines whether the next intervention should be broader
@@ -224,11 +285,14 @@ Detailed reports:
 
 - [COVID Political classification](FINDINGS_COVID_POLITICAL_SOURCE_PAIR.md)
 - [Neighbor matching](FINDINGS_NM_SOURCE_PAIR.md)
+- [Classification query bio clusters](FINDINGS_QUERY_BIO_CLUSTERS.md)
+- [NM bio clusters, weighting, and anchor ambiguity](FINDINGS_NM_BIO_CLUSTERS.md)
 
 Private raw evidence remains under:
 
 - `/dataMeR1/phil/gfm/error_audit/source_pair_fpfn_20260907/`
 - `/dataMeR1/phil/gfm/error_audit/nm_source_pair_20260907/`
+- `/dataMeR1/phil/gfm/error_audit/nm_bio_clusters_20260908/`
 
 The classification analysis uses two evaluation episode draws with identical
 weights. The NM analysis uses seed-0 specialists and fixed test/validation
