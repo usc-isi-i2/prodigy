@@ -196,10 +196,11 @@ def main():
             predictions[f"{condition}:{step}"] = scores[f"{condition}:{step}"].argmax(axis=1)
             print(condition, step, "seconds", round(time.time() - started, 2), flush=True)
 
-    if states["baseline:0"] != states["treatment:0"]:
-        raise ValueError("step-zero model states differ")
-    if not np.array_equal(predictions["baseline:0"], predictions["treatment:0"]):
-        raise ValueError("step-zero predictions differ")
+    if 0 in steps:
+        if states["baseline:0"] != states["treatment:0"]:
+            raise ValueError("step-zero model states differ")
+        if not np.array_equal(predictions["baseline:0"], predictions["treatment:0"]):
+            raise ValueError("step-zero predictions differ")
     report = {
         "complete": True,
         "protocol": "nm_hk_overlap_training_pair_mrr_v1",
@@ -211,7 +212,7 @@ def main():
         "steps": list(steps),
         "exact_complete_input_hash": input_hashes[0],
         "all_input_hashes_equal": len(set(input_hashes)) == 1,
-        "step_zero_state_sha256": states["baseline:0"],
+        "step_zero_state_sha256": states.get("baseline:0"),
         "model_state_sha256": states,
         "results": {},
         "selection": "All checkpoints were fixed before training; no test-performance selection.",
