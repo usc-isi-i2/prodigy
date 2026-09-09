@@ -70,7 +70,7 @@ def expected_accuracy(root, model, target):
     payload = json.loads(path.read_text())
     if payload["target"] != target or payload["model_id"] != f"ss_{model}":
         raise ValueError(f"unexpected fixed-result identity in {path}")
-    return path, float(payload["accuracy"])
+    return path, float(payload["score"])
 
 
 def self_test():
@@ -99,7 +99,7 @@ def main():
     parser.add_argument("--out", type=Path)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--threads", type=int, default=4)
-    parser.add_argument("--batch-size", type=int, default=64)
+    parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--self-test", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
