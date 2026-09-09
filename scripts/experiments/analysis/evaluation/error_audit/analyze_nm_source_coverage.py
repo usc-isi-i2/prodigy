@@ -76,13 +76,13 @@ def load_target(root, target):
 def reference_bank(frame, model, size, salt):
     subset = frame[frame.model.eq(model)][["query", "embedding"]].copy()
     subset = subset.drop_duplicates("query", keep="first")
-    subset["rank"] = subset.query.map(lambda value: deterministic_rank(value, salt))
+    subset["rank"] = subset["query"].map(lambda value: deterministic_rank(value, salt))
     subset = subset.sort_values("rank").head(size)
     if len(subset) != size:
         raise ValueError(f"reference bank only has {len(subset)} nodes")
     matrix = np.stack(subset.embedding).astype(np.float32)
     matrix /= np.maximum(np.linalg.norm(matrix, axis=1, keepdims=True), 1e-12)
-    return subset.query.to_numpy(dtype=np.int64), matrix
+    return subset["query"].to_numpy(dtype=np.int64), matrix
 
 
 def topk_similarity(queries, query_ids, reference_ids, reference, k, chunk_size):
@@ -114,9 +114,9 @@ def auc_binary(y, score):
 
 def summaries(frame):
     metrics = ["target_similarity", "other_similarity", "coverage_gap"]
-    result = {"rows": len(frame), "unique_queries": int(frame.query.nunique()), "cohorts": {}}
+    result = {"rows": len(frame), "unique_queries": int(frame["query"].nunique()), "cohorts": {}}
     for cohort, subset in frame.groupby("cohort", sort=True):
-        item = {"rows": len(subset), "unique_queries": int(subset.query.nunique())}
+        item = {"rows": len(subset), "unique_queries": int(subset["query"].nunique())}
         for metric in metrics:
             item[metric] = {
                 "occurrence_mean": float(subset[metric].mean()),
@@ -180,7 +180,7 @@ def main():
         for model in MODELS:
             frame = data[target][data[target].model.eq(model)].copy()
             queries = np.stack(frame.embedding).astype(np.float32)
-            ids = frame.query.to_numpy(dtype=np.int64)
+            ids = frame["query"].to_numpy(dtype=np.int64)
             target_ids, target_bank = banks[(model, target)]
             other_ids, other_bank = banks[(model, OTHER[target])]
             frame["target_similarity"] = topk_similarity(
