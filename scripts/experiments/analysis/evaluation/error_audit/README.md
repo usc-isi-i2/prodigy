@@ -36,6 +36,9 @@ and to the exact bio-selection policy used at graph construction.  It writes:
 - [NM failure hierarchy](FINDINGS_NM_FAILURE_HIERARCHY.md): integrates one-query,
   episode, full-HK, native/foreign, training-conflict, and nine-graph evidence
   while separating causal results from localization and graph-level correlation.
+- [Matched HK overlap-aware training](FINDINGS_NM_HK_OVERLAP_TRAINING.md): exact
+  baseline/treatment stream shows that deleting contradicted negative messages
+  during training hurts terminal corrected and unique-anchor accuracy.
 
 For the current Parquet Twitter graphs:
 

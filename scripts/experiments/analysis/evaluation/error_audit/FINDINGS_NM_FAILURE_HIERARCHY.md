@@ -128,17 +128,21 @@ deletion is not a repair, support replacement is unstable, scalar overlap does
 not determine success, and one universal metagraph-only source mechanism is
 false.
 
-The current matched training pair is therefore appropriately narrow. If it
-improves multi-positive and uniquely answerable HK accuracy while preserving
-baseline successes, it supports one causal link and nominates a relation-aware
-training objective. If it does not, support-label conflict remains observed but
-insufficient, and the next targeted mechanism should test source-distribution
-coverage at the pre-metagraph representation stage using fixed target episodes
-and matched source training—not another selected-case support heuristic.
+The matched training pair supplies a controlled negative result. Suppressing
+training-view-contradicted negative support messages reduces terminal
+multi-positive accuracy from 23.75% to 21.96% and unique-anchor accuracy from
+22.51% to 21.19%; 5,303 corrected failures are recovered but 6,404 successes
+are broken. Small gains at steps 100 and 300 reverse by step 900. This rejects
+message deletion as a sufficient repair, while leaving broader exclusive-target
+conflict unresolved because the cross-entropy target itself was unchanged.
+The next targeted mechanism should test source-distribution coverage at the
+pre-metagraph representation stage using fixed target episodes and matched
+source training, rather than another selected-case support heuristic.
 
 Evidence: [first query and episode](FINDINGS_NM_HK_FIRST_QUERY_EPISODE.md),
 [full HK decomposition](FINDINGS_NM_HK_CLASS_REFERENCE_FULL.md),
 [native-graph replication](FINDINGS_NM_NATIVE_GRAPH_REFERENCE_REPLICATION.md),
 [training-conflict bridge](FINDINGS_NM_HK_TRAINING_CONFLICT_BRIDGE.md),
+[matched training intervention](FINDINGS_NM_HK_OVERLAP_TRAINING.md),
 [final-core matrix](../../transfer/matrices/cross_model/final_core/FINDINGS.md),
 and [nine-graph predictor study](../../graphs/transfer_prediction/similarity_vs_transfer_v2/FINDINGS.md).
