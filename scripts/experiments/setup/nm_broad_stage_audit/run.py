@@ -94,6 +94,8 @@ def main():
     parser.add_argument("--fingerprints", type=Path, default=ROOT /
         "scripts/experiments/analysis/transfer/matrices/cross_model/final_core/data/"
         "prodigy_final_core/fixed_test/summary/episode_fingerprints.tsv")
+    parser.add_argument("--episode-plan-root", type=Path,
+                        help="Optional exported raw plans from the historical evaluator revision")
     parser.add_argument("--targets", default=",".join(DEFAULT_SOURCES))
     parser.add_argument("--models", default=",".join(DEFAULT_SOURCES))
     parser.add_argument("--out", type=Path)
@@ -122,6 +124,8 @@ def main():
     references = load_fingerprints(args.fingerprints)
     required_paths = [args.config, args.fingerprints, *checkpoints.values(),
                       *(item["path"] for item in expected.values())]
+    if args.episode_plan_root is not None:
+        required_paths.extend(args.episode_plan_root / f"{target}.pt" for target in targets)
     missing = [str(path) for path in required_paths if not path.is_file()]
     if missing:
         raise FileNotFoundError(missing)
@@ -137,6 +141,7 @@ def main():
         "training": False,
         "new_episode_sampling": False,
         "episode_protocol": "published fixed-test deterministic reconstruction",
+        "episode_plan_root": str(args.episode_plan_root) if args.episode_plan_root else None,
         "member_policy": "randomized",
         "checkpoints": {name: str(path) for name, path in checkpoints.items()},
     }
@@ -190,7 +195,10 @@ def main():
         reset_fixed_eval_rng(target)
         trainer.parameter.update(neighbor_sampling_source_subset=target, eval_only_split="test")
         loader = trainer._build_dataloaders(dataset, trainer.dataset_name)[3]
-        batches = list(loader.batch_sampler)
+        plan_path = (args.episode_plan_root / f"{target}.pt"
+                     if args.episode_plan_root is not None else None)
+        batches = (torch.load(plan_path, map_location="cpu", weights_only=False)
+                   if plan_path is not None else list(loader.batch_sampler))
         raw_fingerprint, episode_count = fingerprint_plan(
             target, batches, expected_batch_size=args.batch_size, dataset=dataset)
         expected_raw = references.loc[target, "episode_plan_fingerprint"]
@@ -292,6 +300,8 @@ def main():
                 "published_result_sha256": digest(expected[(target, model_name)]["path"]),
             }
         report["targets"][target] = {
+            "episode_plan": ({"path": str(plan_path), "sha256": digest(plan_path)}
+                             if plan_path is not None else {"path": None, "sha256": None}),
             "raw_plan_fingerprint": raw_fingerprint,
             "observed_fingerprint": audited.fingerprint,
             "full_input_tensors_sha256": input_hash.hexdigest(),

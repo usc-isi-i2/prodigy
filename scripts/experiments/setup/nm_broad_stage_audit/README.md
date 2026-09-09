@@ -24,6 +24,7 @@ python scripts/experiments/setup/nm_broad_stage_audit/run.py --self-test
 python scripts/experiments/setup/nm_broad_stage_audit/run.py --dry-run
 python -u scripts/experiments/setup/nm_broad_stage_audit/run.py \
   --device cuda:0 \
+  --episode-plan-root /dataMeR1/phil/gfm/final_core_episode_plans_045ba527_missing \
   --out /dataMeR1/phil/gfm/error_audit/nm_broad_stage_20260909
 ```
 
