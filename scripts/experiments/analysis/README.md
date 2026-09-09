@@ -61,6 +61,7 @@ Setup and launch files remain in `../setup/<name>/`.
 - Structure/feature coupling: [`path_feature_coupling`](graphs/structure_features/path_feature_coupling/)
 - Dataset overlap: [`identity_overlap_audit`](graphs/overlap/identity_overlap_audit/)
 - Similarity as a transfer predictor: [`similarity_vs_transfer`](graphs/transfer_prediction/similarity_vs_transfer/), [`similarity_vs_transfer_v2`](graphs/transfer_prediction/similarity_vs_transfer_v2/)
+- Proxy-A estimator repeatability: [`proxy_a_seed_stability`](graphs/transfer_prediction/proxy_a_seed_stability/) — three seeds, original versus uniform node sampling, fixed NM transfer outcomes.
 - Target-performance mechanisms: [fixed-query stage replay and source-sampler audit](graphs/transfer_prediction/target_performance_mechanisms/FINDINGS_REPLAY.md)
 - Completed singleton/pair/leave-one-out lattice audit: [`target_performance_mechanisms`](graphs/transfer_prediction/target_performance_mechanisms/)
 - Local transfer contrast: [matched examples and support-anchored transfer health](graphs/transfer_prediction/local_transfer_contrast/FINDINGS.md)
