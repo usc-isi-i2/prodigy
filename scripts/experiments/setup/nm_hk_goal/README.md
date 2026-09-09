@@ -128,3 +128,44 @@ cannot undo gradients or representations learned under the original objective.
 A null or harmful result does not disprove training-time gradient conflict.
 Setup estimate 30–45 minutes; CPU estimate 1–3 minutes with two low-priority
 threads. No graph loading, encoding, sampling, training, or GPU allocation.
+
+## Matched overlap-aware HK training pair
+
+The full class-reference decomposition and Ukraine replication show that
+positive-support references carry most NM decisions but are not an HK-specific
+failure mode. The consumed-training and prior identity-soft gradient audits
+establish extensive HK support-label conflict and a learned response to changed
+support binding, without demonstrating a repair. Test the narrower causal link
+with one baseline/treatment pair.
+
+Both arms use HK-only, 30-way, 3-shot/4-query episodes, the historical
+lowest-ID/sorted-role policy, identical seed and initialization, zero loader
+workers, 2,500 updates, and the canonical architecture. The treatment alone
+suppresses a negative support-to-label **message** when the support center and
+candidate anchor are adjacent in the training view. It retains query targets,
+positive messages, candidate decoding, centers, members, contexts, and every
+validation/test edge unseen by the intervention.
+
+Run a 4-step smoke first on an idle owned GPU:
+
+```bash
+python -m scripts.experiments.setup.nm_hk_goal.run_overlap_training_pair \
+  --run-dir /dataMeR1/phil/gfm/nm_hk_overlap_training_smoke_<stamp> \
+  --device <idle-0-to-3> --smoke-steps 4
+```
+
+The verifier requires identical initial model hashes and exact equality of all
+2,500 consumed episode records, including anchor/member identities, role order,
+sampled context-node order, and sampled context edges. It separately records
+the treatment mask hash and count at every update. Only after the smoke and its
+verification pass, run the same command without `--smoke-steps` into a new
+directory. Never reuse or overwrite a failed output.
+
+Setup estimate: 20–30 minutes including code transport, smoke, and verification.
+Smoke compute: under 2 minutes per arm. Full compute estimate: 15–20 minutes per
+arm, sequentially on one low-priority GPU; one full graph load. Check `tmux ls`
+and GPU utilization immediately before launch and yield to the user's priority
+process. Evaluation uses the already fixed canonical 512-episode inputs:
+multi-positive top-1 primary; assigned-anchor and uniquely answerable accuracy,
+recoveries, and lost successes mandatory. Do not select a checkpoint or variant
+from test performance.

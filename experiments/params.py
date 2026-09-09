@@ -757,6 +757,16 @@ def get_params(argv=None):
                       help="Nonnegative enables private NM walk/retention/role streams; -1 preserves historical global RNG.")
     args.add_argument("--train_episode_audit", default=False, type=str2bool,
                       help="Record consumed training anchor/member IDs and role metadata for mechanism audits.")
+    args.add_argument(
+        "--neighbor_matching_overlap_aware_support_edges",
+        default=False,
+        type=str2bool,
+        help=(
+            "During NM training only, suppress a negative support-to-label message "
+            "when the support node is adjacent to that candidate anchor in the "
+            "training edge view. Candidate decoding and query targets stay unchanged."
+        ),
+    )
     args.add_argument("--graph_filename", default="graph_data.pt", type=str)  # graph file to load from root
     args.add_argument(
         "--target_feature",
@@ -960,6 +970,11 @@ def get_params(argv=None):
             )
     if params["train_episode_audit"] and params["task_name"] != "neighbor_matching":
         raise ValueError("train_episode_audit currently supports NM only")
+    if params["neighbor_matching_overlap_aware_support_edges"]:
+        if params["task_name"] != "neighbor_matching" or not params["neighbor_matching_edge_split"]:
+            raise ValueError("overlap-aware support edges require split-aware neighbor_matching")
+        if params["layers"] != "S,U,M" or params["second_gnn"] != "Atten" or params["meta_n_layer"] != 1:
+            raise ValueError("overlap-aware support edges currently require the canonical one-layer S,U,M model")
 
     # Feature-ablation intervention: compose the ablation aug into the eval path.
     # Meant for -eval_only True runs; if used during training it would also ablate

@@ -89,6 +89,16 @@ conflicts without reliably improving that target. Those results reject a scalar
 “more identity overlap causes worse transfer” account, although classification
 is not the NM endpoint studied here.
 
+An existing no-update gradient study narrows this further. On the first four
+exact consumed batches for HK, Ukraine, and COVID across three seeds, making
+repeated support identities carry consistent soft labels changes the active
+full-parameter gradients (HK mean relative distance .516; directional cosine
+.915 against a class-matched perturbation). The source-specific loss response
+is learned rather than present at initialization. But the treatment raises
+absolute trained-state NM loss and covers duplicate identities rather than all
+training-adjacent rival anchors. It is controlled evidence that support-label
+binding changes learning signals, not evidence of a repair.
+
 **Still a hypothesis:** repeated exclusive supervision on many-to-many HK
 neighborhoods teaches the encoder and positive-support reference path to favor
 semantic or high-frequency aliases instead of exact held-out adjacency. No
@@ -101,7 +111,12 @@ first episode to all 512 cached HK episodes and compare errors with preserved
 successes. This determines whether positive-reference dominance is population
 wide and identifies the uniquely answerable cohort for a training test.
 
-If it generalizes, use a matched-input, matched-initialization training pair:
+The population-wide decomposition now shows that it does generalize: the
+positive term favors the wrong winner in 93.39% of native HK errors and points
+toward truth in 82.02% of successes. Positive dominance also appears on Ukraine,
+so it is the shared decision pathway rather than an HK-specific cause.
+
+Use a matched-input, matched-initialization training pair:
 retain the same centers, members, contexts, optimizer updates, and exclusive
 query target, but stop sending a negative support message when training-view
 adjacency says that support is also valid for the rival anchor. Measure the

@@ -275,6 +275,22 @@ class SingleLayerGeneralGNN(torch.nn.Module):
         task_conditioned = False
         for module in self.layer_list:
             if isinstance(module, MetagraphLayer):
+                message_edge_index = metagraph_edge_index
+                message_edge_attr = metagraph_edge_attr
+                message_query_mask = query_set_mask
+                message_input_seqs = input_seqs
+                message_query_seqs = query_seqs
+                message_query_seqs_gt = query_seqs_gt
+                if hasattr(graph, "metagraph_message_keep_mask"):
+                    keep = graph.metagraph_message_keep_mask.bool()
+                    if keep.shape != query_set_mask.shape:
+                        raise ValueError("metagraph message mask shape differs from edge mask")
+                    message_edge_index = metagraph_edge_index[:, keep]
+                    message_edge_attr = metagraph_edge_attr[keep]
+                    message_query_mask = query_set_mask[keep]
+                    # Canonical attention does not consume sequence tensors. They
+                    # describe the complete edge layout and cannot be reused after filtering.
+                    message_input_seqs = message_query_seqs = message_query_seqs_gt = None
                 mode = self.params.get("encoder_solver_objective", "native")
                 if self.encoder_solver_training and mode != "native":
                     self.encoder_solver_ridge_loss = ridge_query_loss(
@@ -295,7 +311,11 @@ class SingleLayerGeneralGNN(torch.nn.Module):
                 if self.nm_geometry_residual:
                     geometry_scores = mean_support_cosine(x_input, metagraph_edge_index,
                         metagraph_edge_attr, query_set_mask, y_true_matrix.shape[1])
-                x_input, new_x_label = self.forward_metagraph(module, x_input, x_label, metagraph_edge_index, metagraph_edge_attr, query_set_mask, input_seqs, query_seqs, query_seqs_gt)
+                x_input, new_x_label = self.forward_metagraph(
+                    module, x_input, x_label, message_edge_index, message_edge_attr,
+                    message_query_mask, message_input_seqs, message_query_seqs,
+                    message_query_seqs_gt,
+                )
                 if self.params["skip_path"]:
                     x_label = x_label + new_x_label
                 else:

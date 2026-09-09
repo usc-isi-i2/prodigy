@@ -36,13 +36,18 @@ def episode_record(batch, step):
         raise ValueError("expected one common support/query role pattern")
     nodes = (graph.ptr[1:] - graph.ptr[:-1] - 1).reshape(n_tasks, n_way, n_members)
     # Member sets are retained separately from roles for matched factorial checks.
-    return {"step": int(step), "anchor_ids": anchors.tolist(), "member_ids": members.tolist(),
+    record = {"step": int(step), "anchor_ids": anchors.tolist(), "member_ids": members.tolist(),
             "query_roles": role_grid[0, 0].int().tolist(), "context_node_counts": nodes.tolist(),
             "source_ids": graph.source_id_per_task.tolist(),
             "anchor_sha256": digest(anchors), "member_order_sha256": digest(members),
             "member_set_sha256": digest(members.sort(-1).values),
             "context_node_order_sha256": digest(graph.global_node_ids),
             "context_edge_sha256": digest(graph.edge_index)}
+    if hasattr(graph, "metagraph_message_keep_mask"):
+        keep = graph.metagraph_message_keep_mask.bool()
+        record["overlap_masked_negative_edges"] = int((~keep).sum())
+        record["overlap_message_keep_sha256"] = digest(keep)
+    return record
 
 
 def append_episode_audit(batch, step, logging_dir):

@@ -546,6 +546,9 @@ class TrainerFS():
 
         # Data loader creation.
         self.train_dataloader, self.train_val_dataloader, self.val_dataloader, self.test_dataloader = self._build_dataloaders(dataset, self.dataset_name)
+        self.nm_overlap_training_csr = None
+        if bool(self.parameter.get("neighbor_matching_overlap_aware_support_edges", False)):
+            self.nm_overlap_training_csr = dataset.neighbor_sampler.whole_adj.csr()[:2]
         self.training_role_counter = None
         if bool(self.parameter.get("track_training_user_roles", False)):
             if self.parameter.get("task_name") != "neighbor_matching":
@@ -796,6 +799,27 @@ class TrainerFS():
 
     def move_to_device(self, bt_response):
         return tuple([x.to(self.device) for x in bt_response])
+
+    def _apply_nm_overlap_training_mask(self, batch):
+        if self.nm_overlap_training_csr is None:
+            return 0
+        from experiments.nm_overlap import overlap_aware_support_keep_mask
+        graph = batch[0]
+        required = ("global_node_ids", "ptr", "task_id_per_sample", "task_label_map")
+        if any(not hasattr(graph, key) for key in required):
+            raise ValueError("overlap-aware NM training requires retained center/anchor metadata")
+        sample_centers = graph.global_node_ids[graph.ptr[:-1]]
+        keep = overlap_aware_support_keep_mask(
+            *self.nm_overlap_training_csr,
+            sample_centers,
+            graph.task_id_per_sample,
+            graph.task_label_map,
+            batch[3],
+            batch[4],
+        )
+        graph.metagraph_message_keep_mask = keep
+        graph.metagraph_masked_negative_edges = torch.tensor(int((~keep).sum()))
+        return int((~keep).sum())
         
 
     def get_loss_and_acc(self, y_true_matrix, y_pred_matrix):
@@ -2161,6 +2185,7 @@ class TrainerFS():
                 train_dataloader_itr = iter(self.train_dataloader)
                 batch = next(train_dataloader_itr)
             t2 = time.time()
+            masked_support_edges = self._apply_nm_overlap_training_mask(batch)
             if self.parameter.get("train_episode_audit", False):
                 from experiments.episode_audit import append_episode_audit
                 append_episode_audit(batch, steps_run, self.logging_dir)
@@ -2218,6 +2243,7 @@ class TrainerFS():
                     self._score_key("train"): _to_float(acc),
                     "train_aux_loss": _to_float(aux_loss),
                     "train_total_loss": _to_float(total_loss),
+                    "train_masked_support_edges": masked_support_edges,
                 },
                 step=e,
             )

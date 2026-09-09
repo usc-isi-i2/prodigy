@@ -119,9 +119,12 @@ recurrent semantic/high-degree aliases rather than exact candidate adjacency.
 Training conflict is directly observed, and final positive-reference dominance
 is directly observed, but the link between them remains unisolated.
 
-The next informative intervention is a matched-input HK training pair that
-changes only contradicted support-to-rival labels. Before training, compare
-per-example gradients on saved conflicting and nonconflicting batches. Then
+The existing identity-soft gradient study already proves that support-label
+binding changes the learned loss and full-parameter gradients, but it covers
+only duplicate support identities and worsens absolute trained-state loss. The
+next informative intervention is therefore a narrower matched-input HK training
+pair that changes only support-to-rival messages contradicted by actual
+training-view adjacency. Then
 evaluate both checkpoints on the same canonical episodes, with multi-positive
 top-1 primary and uniquely answerable accuracy, recoveries, and lost successes
 as required controls. This tests the proposed training link without changing
