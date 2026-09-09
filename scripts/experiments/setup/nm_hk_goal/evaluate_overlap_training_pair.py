@@ -50,13 +50,26 @@ def restore_hk(packed, features, offset):
     return batch
 
 
-def summarize(frame, prediction, baseline=None):
+def reciprocal_ranks(frame, scores):
     row = np.arange(len(frame))
     truth = frame.truth.to_numpy(dtype=int)
     positives = np.stack(frame.positives)
+    assigned_score = scores[row, truth]
+    assigned_rank = 1 + (scores > assigned_score[:, None]).sum(axis=1)
+    legal_score = np.where(positives, scores, -np.inf).max(axis=1)
+    legal_rank = 1 + (scores > legal_score[:, None]).sum(axis=1)
+    return 1.0 / assigned_rank, 1.0 / legal_rank
+
+
+def summarize(frame, scores, baseline=None):
+    row = np.arange(len(frame))
+    truth = frame.truth.to_numpy(dtype=int)
+    positives = np.stack(frame.positives)
+    prediction = scores.argmax(axis=1)
     assigned = prediction == truth
     multi = positives[row, prediction]
     unique = frame.valid_count.to_numpy() == 1
+    assigned_rr, multi_rr = reciprocal_ranks(frame, scores)
     by_node_assigned = pd.DataFrame({"query": frame.query, "ok": assigned}).groupby("query").ok.mean()
     by_node_multi = pd.DataFrame({"query": frame.query, "ok": multi}).groupby("query").ok.mean()
     result = {
@@ -65,6 +78,9 @@ def summarize(frame, prediction, baseline=None):
         "multi_positive_accuracy": float(multi.mean()),
         "unique_rows": int(unique.sum()),
         "unique_accuracy": float(assigned[unique].mean()),
+        "assigned_mrr": float(assigned_rr.mean()),
+        "multi_positive_mrr": float(multi_rr.mean()),
+        "unique_mrr": float(assigned_rr[unique].mean()),
         "node_weighted_assigned_accuracy": float(by_node_assigned.mean()),
         "node_weighted_multi_positive_accuracy": float(by_node_multi.mean()),
     }
@@ -152,6 +168,7 @@ def main():
         raise ValueError("canonical row identity mismatch")
 
     predictions = {}
+    scores = {}
     states = {}
     input_hashes = []
     for condition in ("baseline", "treatment"):
@@ -171,11 +188,12 @@ def main():
                     batch = restore_hk(packed, features, info["source_node_offset"])
                     update_hash(input_hash, batch)
                     _, logits = capture(model, batch, args.device)
-                    chunks.append(logits.reshape(-1, 30).argmax(1).cpu().numpy())
+                    chunks.append(logits.reshape(-1, 30).cpu().numpy())
             if input_hash.hexdigest() != info["expected_hash"]:
                 raise ValueError("restored complete-input hash mismatch")
             input_hashes.append(input_hash.hexdigest())
-            predictions[f"{condition}:{step}"] = np.concatenate(chunks)
+            scores[f"{condition}:{step}"] = np.concatenate(chunks)
+            predictions[f"{condition}:{step}"] = scores[f"{condition}:{step}"].argmax(axis=1)
             print(condition, step, "seconds", round(time.time() - started, 2), flush=True)
 
     if states["baseline:0"] != states["treatment:0"]:
@@ -184,6 +202,7 @@ def main():
         raise ValueError("step-zero predictions differ")
     report = {
         "complete": True,
+        "protocol": "nm_hk_overlap_training_pair_mrr_v1",
         "revision": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
         "seconds": time.time() - started,
         "device": args.device,
@@ -196,13 +215,19 @@ def main():
         "model_state_sha256": states,
         "results": {},
         "selection": "All checkpoints were fixed before training; no test-performance selection.",
+        "ranking": {
+            "assigned_mrr": "reciprocal rank of the historically assigned anchor",
+            "multi_positive_mrr": "reciprocal rank of the highest-ranked test-positive candidate anchor",
+            "unique_mrr": "assigned-anchor MRR restricted to queries with exactly one test-positive candidate",
+            "ties": "competition rank: 1 + count of candidates with strictly greater logit",
+        },
     }
     for step in steps:
         baseline = predictions[f"baseline:{step}"]
         treatment = predictions[f"treatment:{step}"]
         report["results"][str(step)] = {
-            "baseline": summarize(frame, baseline),
-            "treatment": summarize(frame, treatment, baseline),
+            "baseline": summarize(frame, scores[f"baseline:{step}"]),
+            "treatment": summarize(frame, scores[f"treatment:{step}"], baseline),
         }
     np.savez_compressed(args.out / "predictions_private.npz", **predictions)
     report["predictions_sha256"] = digest(args.out / "predictions_private.npz")
