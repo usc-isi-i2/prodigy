@@ -118,20 +118,20 @@ def auc_binary(y, score):
 
 def weighted_auc_binary(y, score, weight):
     """Weighted probability that a positive score exceeds a negative score."""
-    table = pd.DataFrame({"y": np.asarray(y, dtype=bool),
-                          "score": np.asarray(score, dtype=float),
-                          "weight": np.asarray(weight, dtype=float)})
-    total_positive = table.loc[table.y, "weight"].sum()
-    total_negative = table.loc[~table.y, "weight"].sum()
+    y = np.asarray(y, dtype=bool)
+    score = np.asarray(score, dtype=float)
+    weight = np.asarray(weight, dtype=float)
+    total_positive = weight[y].sum()
+    total_negative = weight[~y].sum()
     if total_positive <= 0 or total_negative <= 0:
         return None
-    favorable = 0.0
-    negative_below = 0.0
-    for _, group in table.groupby("score", sort=True):
-        positive = group.loc[group.y, "weight"].sum()
-        negative = group.loc[~group.y, "weight"].sum()
-        favorable += positive * (negative_below + 0.5 * negative)
-        negative_below += negative
+    order = np.argsort(score, kind="stable")
+    score, y, weight = score[order], y[order], weight[order]
+    starts = np.r_[0, np.flatnonzero(score[1:] != score[:-1]) + 1]
+    positive = np.add.reduceat(weight * y, starts)
+    negative = np.add.reduceat(weight * ~y, starts)
+    negative_below = np.cumsum(negative) - negative
+    favorable = np.sum(positive * (negative_below + 0.5 * negative))
     return float(favorable / (total_positive * total_negative))
 
 
