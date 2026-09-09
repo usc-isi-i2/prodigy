@@ -9,6 +9,15 @@ and to the exact bio-selection policy used at graph construction.  It writes:
 
 ## Findings
 
+- [HK NM mechanism and bounded repair](FINDINGS_NM_HK_GOAL.md): controlled
+  key/value and direction/magnitude interventions, followed by a fixed geometry
+  residual that improves selected modified cases but fails on original HK NM.
+- [HK failure localization](FINDINGS_NM_HK_FAILURE_LOCALIZATION.md): complete-edge
+  accounting of wrong anchors, nearest-support residuals, and cached true-class
+  versus competitor score interventions.
+- [Canonical NM source-by-stage comparison](FINDINGS_NM_SOURCE_STAGES.md): all
+  original Ukraine/HK test inputs, both source checkpoints, common encoded heads
+  versus final decisions, readout recoveries/losses and query-weighting sensitivity.
 - [NM bio clusters and query weighting](FINDINGS_NM_BIO_CLUSTERS.md): semantic
   clusters, query/anchor/support GTE distributions, actual-text examples,
   the Hong Kong node-weighted ranking reversal, and overlapping anchor labels.
