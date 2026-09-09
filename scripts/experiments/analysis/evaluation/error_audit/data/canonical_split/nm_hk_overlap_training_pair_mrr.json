@@ -1,0 +1,68 @@
+{
+  "complete": true,
+  "protocol": "nm_hk_overlap_training_pair_mrr_v1",
+  "revision": "fef1a9b1aa5471f6fd070804550717d85fb70518",
+  "seconds": 390.48834443092346,
+  "device": "cpu",
+  "threads": 2,
+  "rows": 61440,
+  "steps": [
+    2500
+  ],
+  "exact_complete_input_hash": "f574522b22786449ec17c8a215c56f9181b7e30c562db448e7d69e083f588205",
+  "all_input_hashes_equal": true,
+  "step_zero_state_sha256": null,
+  "model_state_sha256": {
+    "baseline:2500": "d946d9c740502faaea63226eb6a82fd1fbc1f8635b5c1b40a45f5736fd7e1850",
+    "treatment:2500": "e83d7382f4369c7acd7c8ec3c21d0cc5bc1ed503db35522847c8405a0da8f979"
+  },
+  "results": {
+    "2500": {
+      "baseline": {
+        "rows": 61440,
+        "assigned_accuracy": 0.18154296875,
+        "multi_positive_accuracy": 0.23753255208333332,
+        "unique_rows": 33033,
+        "unique_accuracy": 0.22507795235067962,
+        "assigned_mrr": 0.3511110735699438,
+        "multi_positive_mrr": 0.42049614346259717,
+        "unique_mrr": 0.39428108127605904,
+        "node_weighted_assigned_accuracy": 0.18154296875,
+        "node_weighted_multi_positive_accuracy": 0.23753255208333332
+      },
+      "treatment": {
+        "rows": 61440,
+        "assigned_accuracy": 0.16526692708333332,
+        "multi_positive_accuracy": 0.21961263020833333,
+        "unique_rows": 33033,
+        "unique_accuracy": 0.21187903006084824,
+        "assigned_mrr": 0.3242355583582011,
+        "multi_positive_mrr": 0.39821924603216696,
+        "unique_mrr": 0.3741880924197904,
+        "node_weighted_assigned_accuracy": 0.16526692708333332,
+        "node_weighted_multi_positive_accuracy": 0.21961263020833333,
+        "assigned_recovered": 3903,
+        "assigned_lost": 4903,
+        "multi_positive_recovered": 5303,
+        "multi_positive_lost": 6404,
+        "unique_recovered": 2315,
+        "unique_lost": 2751,
+        "episode_multi_positive_delta": {
+          "mean": -0.017919921875,
+          "median": -0.016666666666666666,
+          "improved": 156,
+          "tied": 36,
+          "worsened": 320
+        }
+      }
+    }
+  },
+  "selection": "All checkpoints were fixed before training; no test-performance selection.",
+  "ranking": {
+    "assigned_mrr": "reciprocal rank of the historically assigned anchor",
+    "multi_positive_mrr": "reciprocal rank of the highest-ranked test-positive candidate anchor",
+    "unique_mrr": "assigned-anchor MRR restricted to queries with exactly one test-positive candidate",
+    "ties": "competition rank: 1 + count of candidates with strictly greater logit"
+  },
+  "predictions_sha256": "63eed25130611d75b764599835dd1740cb5403a615ff2477adc64d336900a56b"
+}

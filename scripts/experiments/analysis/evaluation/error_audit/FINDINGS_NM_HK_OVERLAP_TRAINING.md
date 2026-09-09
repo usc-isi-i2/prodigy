@@ -23,6 +23,13 @@ was 20–30 minutes; setup and smoke validation fit that range. The earlier
 15–20-minute-per-arm training estimate was too low because zero-worker sampling
 was heavily CPU-bound under concurrent priority jobs.
 
+The terminal-only MRR replay took 390.49 seconds on two low-priority CPU threads
+and reproduced all previously reported terminal accuracies and recovery/loss
+counts exactly. An initial terminal-only invocation completed 375.53 seconds of
+inference but failed before writing a receipt because the evaluator assumed step
+zero was requested; the validation guard was corrected and the full terminal
+replay was rerun from scratch. Neither invocation used a GPU.
+
 ## Result
 
 | Step | Baseline multi-positive | Treatment multi-positive | Change | Baseline unique | Treatment unique | Change |
@@ -32,6 +39,19 @@ was heavily CPU-bound under concurrent priority jobs.
 | 300 | 15.67% | 16.07% | +0.41 pp | 15.56% | 15.64% | +0.08 pp |
 | 900 | 22.12% | 20.89% | −1.23 pp | 21.10% | 20.02% | −1.08 pp |
 | 2,500 | **23.75%** | **21.96%** | **−1.79 pp** | **22.51%** | **21.19%** | **−1.32 pp** |
+
+The terminal ranking metrics agree with top-1 accuracy:
+
+| Metric | Baseline | Treatment | Change |
+|---|---:|---:|---:|
+| Assigned-anchor MRR | **.3511** | .3242 | −.0269 |
+| Multi-positive MRR | **.4205** | .3982 | −.0223 |
+| Unique-answer MRR | **.3943** | .3742 | −.0201 |
+
+Multi-positive MRR uses the reciprocal rank of the highest-ranked candidate
+anchor joined to the query by a held-out test edge. Unique-answer MRR restricts
+to the 33,033 queries with exactly one such candidate. Ranks use competition
+ranking (`1 +` the number of candidates with a strictly greater logit).
 
 At the fixed terminal step, assigned-anchor accuracy also falls from 18.15% to
 16.53% (−1.63 points). The treatment recovers 5,303 baseline multi-positive
@@ -71,5 +91,6 @@ readout is designed. Another support-deletion heuristic is not warranted by
 these results.
 
 [Canonical evaluation receipt](data/canonical_split/nm_hk_overlap_training_pair.json) ·
+[terminal MRR receipt](data/canonical_split/nm_hk_overlap_training_pair_mrr.json) ·
 [matched-stream verification](data/canonical_split/nm_hk_overlap_training_pair_verification.json) ·
 [protocol](../../../setup/nm_hk_goal/README.md).
