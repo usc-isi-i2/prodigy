@@ -40,21 +40,30 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument("--cache",type=Path,default=Path("/dataMeR1/phil/gfm/error_audit/nm_source_stage_20260908_v4"))
     p.add_argument("--config",type=Path,default=Path("/dataMeR1/phil/gfm/error_audit/nm_canonical_split_20260908/effective_config.json"))
+    p.add_argument("--checkpoint",type=Path,default=None,
+                   help="Optional local copy of the selected checkpoint recorded by the cache receipt.")
+    p.add_argument("--model", choices=("hk", "ukr"), default="hk")
     p.add_argument("--out",type=Path,required=True); p.add_argument("--threads",type=int,default=2); p.add_argument("--dry-run",action="store_true")
     a=p.parse_args(); assert 1<=a.threads<=2
     if a.dry_run:
         print(json.dumps({"target":"HK","episodes":512,"queries":61440,"device":"cpu","threads":a.threads,"training":False,"encoding":False},indent=2)); return
-    a.out.mkdir(parents=True,exist_ok=False); os.nice(10); torch.set_num_threads(a.threads);torch.set_num_interop_threads(1)
+    a.out.mkdir(parents=True,exist_ok=False)
+    try:
+        os.nice(10)
+    except PermissionError:
+        pass
+    torch.set_num_threads(a.threads);torch.set_num_interop_threads(1)
     started=time.time(); receipt=json.loads((a.cache/"receipt.json").read_text()); assert receipt["complete"]
-    stages=pd.read_csv(a.cache/"cp_hk/stage_predictions_private.csv"); stages=stages[stages.model.eq("hk")].set_index(["episode","sample"])
-    params=json.loads(a.config.read_text());params["device"]="cpu";ckpt=receipt["checkpoints"]["hk"]["path"]
+    stages=pd.read_csv(a.cache/"cp_hk/stage_predictions_private.csv"); stages=stages[stages.model.eq(a.model)].set_index(["episode","sample"])
+    params=json.loads(a.config.read_text());params["device"]="cpu"
+    ckpt=str(a.checkpoint) if a.checkpoint is not None else receipt["checkpoints"][a.model]["path"]
     model=build_model(params,ckpt,"cpu"); state=digest_state(model); query_slots=torch.tensor([i for i in range(210) if i%7>=3]);truth=(query_slots//7).numpy()
     components=["positive","negative","self","output_bias","label_residual","bn_offset"]
     rows=[]; max_error=0.; argmax_differences=0
     for bi,item in enumerate(receipt["targets"]["cp_hk"]["batches"]):
         path=a.cache/"cp_hk"/item["file"];assert digest(path)==item["sha256"]
         packed=torch.load(path,map_location="cpu",weights_only=False)
-        for ep,v in packed["models"]["hk"].items():
+        for ep,v in packed["models"][a.model].items():
             episode=f"{bi}:{ep}"; args=tuple(x.clone() for x in v["inputs"]); z,audit=replay(model,args); scores=z[query_slots]
             ref=stages.loc[pd.MultiIndex.from_tuples([(episode,ep*210+int(q)) for q in query_slots])]
             canonical=ref.native_prediction.to_numpy(dtype=int); shortfall=scores.max(1).values-scores[torch.arange(120),torch.tensor(canonical)]
@@ -76,7 +85,7 @@ def main():
     d=pd.concat(rows,ignore_index=True);assert len(d)==61440 and not d.duplicated(["episode","sample"]).any();assert digest_state(model)==state
     d.to_csv(a.out/"rows_private.csv",index=False)
     first=d[(d.episode=="0:0")&d["sample"].eq(3)].iloc[0]
-    report={"complete":True,"revision":subprocess.check_output(["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip(),"seconds":time.time()-started,"device":"cpu","threads":a.threads,
+    report={"complete":True,"revision":subprocess.check_output(["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip(),"seconds":time.time()-started,"device":"cpu","threads":a.threads,"model":a.model,
         "model_state_sha256":state,"unchanged_model":True,"max_additive_error":max_error,"canonical_argmax_differences_within_1e4":argmax_differences,
         "all":summarize(d),"episode_0_0":summarize(d[d.episode.eq("0:0")]),"first_query":{k:(bool(v) if isinstance(v,np.bool_) else int(v) if isinstance(v,np.integer) else float(v) if isinstance(v,np.floating) else v) for k,v in first.to_dict().items()},
         "rows_sha256":digest(a.out/"rows_private.csv"),"cache_receipt_sha256":digest(a.cache/"receipt.json"),"config_sha256":digest(a.config),"training":False,"encoding":False,"sampling":False,

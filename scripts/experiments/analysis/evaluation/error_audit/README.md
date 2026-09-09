@@ -24,6 +24,12 @@ and to the exact bio-selection policy used at graph construction.  It writes:
 - [Ukraine versus Hong Kong neighbor matching](FINDINGS_NM_SOURCE_PAIR.md):
   exact paired 30-way query/support ids, native-source specialization, shared
   error overlap, and cross-model oracle headroom on both source graphs.
+- [Full HK class-reference decomposition](FINDINGS_NM_HK_CLASS_REFERENCE_FULL.md):
+  all 512 canonical HK episodes, correct controls, ambiguity strata, and the
+  native-versus-Ukraine positive-support decision pathway on identical inputs.
+- [HK training-conflict bridge](FINDINGS_NM_HK_TRAINING_CONFLICT_BRIDGE.md):
+  connects canonical failures to verified consumed training episodes while
+  separating established exposure, controlled interventions, and hypotheses.
 
 For the current Parquet Twitter graphs:
 
