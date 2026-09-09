@@ -7,6 +7,10 @@ It performs no training or new experimental sampling: episode plans are rebuilt
 from the deterministic fixed-test protocol and must match the published raw and
 observed fingerprints.
 
+The published final-core stream uses randomized member assignment. This differs
+from the later detailed HK/Ukraine canonical audit's lowest-sorted member policy;
+the two protocols must be reported separately.
+
 The process loads the all-nine merged graph once, runs on one GPU, and releases
 each target before moving to the next. Outputs are private Tucker artifacts;
 only compact aggregate findings belong in git.

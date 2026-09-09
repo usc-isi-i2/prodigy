@@ -137,6 +137,7 @@ def main():
         "training": False,
         "new_episode_sampling": False,
         "episode_protocol": "published fixed-test deterministic reconstruction",
+        "member_policy": "randomized",
         "checkpoints": {name: str(path) for name, path in checkpoints.items()},
     }
     if args.dry_run:
@@ -153,6 +154,8 @@ def main():
     params.update(device=args.device, batch_size=args.batch_size,
                   test_len_cap=512 // args.batch_size, workers=0,
                   eval_only=True, eval_only_split="test",
+                  neighbor_matching_member_policy="randomized",
+                  neighbor_matching_member_seed=-1,
                   log_dir=str(args.out / "logs"), state_dir=str(args.out / "state"),
                   override_log=True)
     seed_everything(params)
