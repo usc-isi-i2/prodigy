@@ -1,9 +1,8 @@
 # NM failure hierarchy: from one HK query to source-dependent transfer
 
 9 September 2026. This synthesis separates what the canonical episode audits
-establish from what the transfer matrices only correlate. The active matched
-HK training intervention is reported separately when its fixed evaluation is
-complete.
+establish from what the transfer matrices only correlate. It includes the
+completed matched HK training intervention at its fixed terminal checkpoint.
 
 ## One query and one episode
 
@@ -107,6 +106,15 @@ compatibility—but remain graph-level correlations among entangled properties.
 They do not identify whether the operative episode-level cause is feature-space
 coverage, local topology, support conflict, optimization, or some combination.
 
+Existing source-mixture interventions narrow that question. On two source
+pairs, source-confined episodes outperform proportional mixed-source episodes;
+under extreme source-size imbalance, balanced source exposure rescues the small
+source from 0.33 to 0.43 NM accuracy. Those are training interventions, but only
+one seed and older 50k/110k endpoints, and they change the distribution of
+negatives and per-source exposure together. They support source discrimination
+and exposure as real training factors without identifying the episode-level
+mechanism behind canonical HK errors.
+
 ## Defensible claim boundary
 
 We can explain 6.57% of assigned HK errors with high confidence as metric
@@ -135,9 +143,15 @@ multi-positive accuracy from 23.75% to 21.96% and unique-anchor accuracy from
 are broken. Small gains at steps 100 and 300 reverse by step 900. This rejects
 message deletion as a sufficient repair, while leaving broader exclusive-target
 conflict unresolved because the cross-entropy target itself was unchanged.
-The next targeted mechanism should test source-distribution coverage at the
-pre-metagraph representation stage using fixed target episodes and matched
-source training, rather than another selected-case support heuristic.
+The next targeted mechanism should first test **source-manifold affinity** at
+the pre-metagraph stage on fixed canonical HK and Ukraine inputs: within each
+checkpoint space, compare native-only, foreign-only, shared-success, and
+shared-failure queries with balanced, outcome-blind HK and Ukraine reference
+banks. Because those banks contain held-out canonical nodes, this is not yet a
+training-density estimate. A cohort signal would motivate a second test against
+actual training nodes and a matched coverage intervention; a null result would
+weaken the simple out-of-support account. Either outcome is more informative
+than another selected-case support heuristic.
 
 Evidence: [first query and episode](FINDINGS_NM_HK_FIRST_QUERY_EPISODE.md),
 [full HK decomposition](FINDINGS_NM_HK_CLASS_REFERENCE_FULL.md),
