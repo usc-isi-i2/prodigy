@@ -22,6 +22,19 @@ from scripts.experiments.setup.paper_three_seed.evaluate_fast_core import (
 EXPECTED_JOBS = len(ARMS) * len(SEEDS)
 
 
+def resolve_arm(prefix: str, seed: int):
+    """Resolve the trainer's seed-qualified prefix without accepting drift."""
+    registry = {
+        (f"paper_mech_{arm.name}_s{expected_seed}", expected_seed): arm
+        for arm in ARMS
+        for expected_seed in SEEDS
+    }
+    key = (prefix, seed)
+    if key not in registry:
+        raise ValueError(f"unexpected mechanism prefix/seed: {prefix} seed={seed}")
+    return registry[key]
+
+
 def sha256(path: Path) -> str:
     with path.open("rb") as handle:
         return hashlib.file_digest(handle, "sha256").hexdigest()
@@ -30,7 +43,6 @@ def sha256(path: Path) -> str:
 def discover(run_dir: Path) -> list[dict]:
     validate_terminal_status(run_dir, EXPECTED_JOBS)
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
-    registry = {f"paper_mech_{arm.name}": arm for arm in ARMS}
     observed_jobs = set()
     models = []
     for result_path in sorted(run_dir.glob("job_*/result.json")):
@@ -39,12 +51,8 @@ def discover(run_dir: Path) -> list[dict]:
             raise ValueError(f"non-complete job under completed run: {result_path}")
         params = json.loads((result_path.parent / "effective_config.json").read_text(encoding="utf-8"))
         prefix = str(params.get("prefix", ""))
-        if prefix not in registry:
-            raise ValueError(f"unexpected mechanism prefix: {prefix}")
-        arm = registry[prefix]
         seed = int(params["seed"])
-        if seed not in SEEDS or not prefix.endswith(arm.name):
-            raise ValueError(f"invalid arm/seed declaration: {prefix} seed={seed}")
+        arm = resolve_arm(prefix, seed)
         if float(params["neighbor_sampling_cross_source_prob"]) != arm.cross_graph_prob:
             raise ValueError(f"cross-graph probability drift for {prefix}")
         if int(params["emb_dim"]) != arm.emb_dim:
