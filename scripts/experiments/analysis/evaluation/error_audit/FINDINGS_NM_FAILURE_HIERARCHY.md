@@ -143,20 +143,22 @@ multi-positive accuracy from 23.75% to 21.96% and unique-anchor accuracy from
 are broken. Small gains at steps 100 and 300 reverse by step 900. This rejects
 message deletion as a sufficient repair, while leaving broader exclusive-target
 conflict unresolved because the cross-entropy target itself was unchanged.
-The next targeted mechanism should first test **source-manifold affinity** at
-the pre-metagraph stage on fixed canonical HK and Ukraine inputs: within each
-checkpoint space, compare native-only, foreign-only, shared-success, and
-shared-failure queries with balanced, outcome-blind HK and Ukraine reference
-banks. Because those banks contain held-out canonical nodes, this is not yet a
-training-density estimate. A cohort signal would motivate a second test against
-actual training nodes and a matched coverage intervention; a null result would
-weaken the simple out-of-support account. Either outcome is more informative
-than another selected-case support heuristic.
+The replicated source-manifold test is now a negative result. Across five
+balanced, outcome-blind reference banks, absolute target-graph similarity is
+only weakly predictive for native HK→HK (node-balanced AUC .562) and inversely
+predictive for native Ukraine→Ukraine (.398). Target-minus-other affinity is at
+chance or points in the wrong direction in every model-target cell. This weakens
+the simple out-of-support account and does not justify a coverage regularizer.
+The next cached analysis should compare native/foreign true-versus-rival margins
+before and after the metagraph within paired outcome cohorts. That directly
+tests whether source training creates episode-relative candidate separation in
+the encoder or converts it through the support-derived class reference.
 
 Evidence: [first query and episode](FINDINGS_NM_HK_FIRST_QUERY_EPISODE.md),
 [full HK decomposition](FINDINGS_NM_HK_CLASS_REFERENCE_FULL.md),
 [native-graph replication](FINDINGS_NM_NATIVE_GRAPH_REFERENCE_REPLICATION.md),
 [training-conflict bridge](FINDINGS_NM_HK_TRAINING_CONFLICT_BRIDGE.md),
 [matched training intervention](FINDINGS_NM_HK_OVERLAP_TRAINING.md),
+[source-manifold diagnostic](FINDINGS_NM_SOURCE_MANIFOLD.md),
 [final-core matrix](../../transfer/matrices/cross_model/final_core/FINDINGS.md),
 and [nine-graph predictor study](../../graphs/transfer_prediction/similarity_vs_transfer_v2/FINDINGS.md).

@@ -39,6 +39,9 @@ and to the exact bio-selection policy used at graph construction.  It writes:
 - [Matched HK overlap-aware training](FINDINGS_NM_HK_OVERLAP_TRAINING.md): exact
   baseline/treatment stream shows that deleting contradicted negative messages
   during training hurts terminal corrected and unique-anchor accuracy.
+- [HK/Ukraine source-manifold affinity](FINDINGS_NM_SOURCE_MANIFOLD.md): five
+  balanced reference-bank replicates reject global target-manifold proximity as
+  a consistent explanation for native NM success.
 
 For the current Parquet Twitter graphs:
 
