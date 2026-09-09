@@ -33,6 +33,9 @@ and to the exact bio-selection policy used at graph construction.  It writes:
 - [HK training-conflict bridge](FINDINGS_NM_HK_TRAINING_CONFLICT_BRIDGE.md):
   connects canonical failures to verified consumed training episodes while
   separating established exposure, controlled interventions, and hypotheses.
+- [NM failure hierarchy](FINDINGS_NM_FAILURE_HIERARCHY.md): integrates one-query,
+  episode, full-HK, native/foreign, training-conflict, and nine-graph evidence
+  while separating causal results from localization and graph-level correlation.
 
 For the current Parquet Twitter graphs:
 
