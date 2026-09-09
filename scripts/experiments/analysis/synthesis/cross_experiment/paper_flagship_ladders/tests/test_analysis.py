@@ -1,3 +1,5 @@
+import json
+
 import pandas as pd
 import pytest
 
@@ -11,12 +13,39 @@ from scripts.experiments.analysis.synthesis.cross_experiment.paper_flagship_ladd
     capacity_per_seed,
     ladder_area_per_seed,
     ladder_area_summary,
+    load_nm,
     scientific_decision,
     seed_summary,
     target_diagnostics,
     validate_cross_task_models,
     validate_grid,
 )
+
+
+def test_fresh_seed0_cells_replace_historical_seed0(tmp_path):
+    seed0_csv = tmp_path / "historical.csv"
+    pd.DataFrame(
+        [{"model_id": "nmi_baseline_r1_s0", "roc_auc": 0.1, "sources": "ukr_rus"}]
+    ).to_csv(seed0_csv, index=False)
+    refresh = tmp_path / "refresh" / "nmi_baseline_r1_s0"
+    refresh.mkdir(parents=True)
+    (refresh / "ukr_rus.json").write_text(
+        json.dumps(
+            {"model_id": "nmi_baseline_r1_s0", "roc_auc": 0.7, "sources": ["ukr_rus"]}
+        )
+    )
+    replicas = tmp_path / "replicas" / "nmi_baseline_r1_s1"
+    replicas.mkdir(parents=True)
+    (replicas / "ukr_rus.json").write_text(
+        json.dumps(
+            {"model_id": "nmi_baseline_r1_s1", "roc_auc": 0.6, "sources": ["ukr_rus"]}
+        )
+    )
+
+    result = load_nm(seed0_csv, replicas.parent, refresh.parent)
+
+    assert len(result) == 2
+    assert result.loc[result.training_seed.eq(0), "roc_auc"].item() == 0.7
 
 
 def test_seed_summary_uses_observed_seed_range():
