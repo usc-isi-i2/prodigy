@@ -156,9 +156,15 @@ by .55. On Ukraine-native-only successes, 69.5% are already pre-metagraph
 correct, Ukraine has the better pre-metagraph rank in 80.4%, and its normalized
 margin advantage is +1.12. Thus Ukraine specialization is mainly
 representational, whereas HK specialization is mainly support-conditioned
-readout conversion over weaker ordinal evidence. The next generalization step
-is to replicate this decomposition on native graphs spanning donor, small-source,
-and island regimes before choosing a source-adaptive readout.
+readout conversion over weaker ordinal evidence. An exact replay of the published
+randomized four-graph panel confirms that source matching improves pre-M accuracy
+on Ukraine/Russia, COVID, Midterm, and HK, but the native readout advantage varies
+strongly by target. HK is the clearest readout-dominant case: its native model gains
+4.89 points through the readout versus .80 for the best foreign model, and only
+33.4% of its native-only wins over that model were already pre-M correct. Across
+all cells the readout both rescues and breaks predictions, so a fixed bypass is not
+supported. The next step is a cached cross-graph predictability/oracle audit of that
+recover-versus-break decision before training an episode-conditioned residual gate.
 
 Evidence: [first query and episode](FINDINGS_NM_HK_FIRST_QUERY_EPISODE.md),
 [full HK decomposition](FINDINGS_NM_HK_CLASS_REFERENCE_FULL.md),
@@ -167,5 +173,6 @@ Evidence: [first query and episode](FINDINGS_NM_HK_FIRST_QUERY_EPISODE.md),
 [matched training intervention](FINDINGS_NM_HK_OVERLAP_TRAINING.md),
 [source-manifold diagnostic](FINDINGS_NM_SOURCE_MANIFOLD.md),
 [native/foreign stage margins](FINDINGS_NM_SOURCE_MARGIN_STAGES.md),
+[broad four-graph stage audit](FINDINGS_NM_BROAD_SOURCE_STAGES.md),
 [final-core matrix](../../transfer/matrices/cross_model/final_core/FINDINGS.md),
 and [nine-graph predictor study](../../graphs/transfer_prediction/similarity_vs_transfer_v2/FINDINGS.md).

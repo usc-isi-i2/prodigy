@@ -45,6 +45,10 @@ and to the exact bio-selection policy used at graph construction.  It writes:
 - [Native/foreign margin stages](FINDINGS_NM_SOURCE_MARGIN_STAGES.md): paired
   candidate margins show that Ukraine's native advantage is mostly present
   before the metagraph, while HK's is mostly created by its readout.
+- [Broad native/foreign stage audit](FINDINGS_NM_BROAD_SOURCE_STAGES.md): exact
+  published randomized episodes extend stage localization to four native graphs;
+  HK is the clearest readout-dominant case, while source matching also changes
+  pre-metagraph ordering on every target.
 
 For the current Parquet Twitter graphs:
 
