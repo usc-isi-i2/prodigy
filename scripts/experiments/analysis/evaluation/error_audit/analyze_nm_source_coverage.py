@@ -199,8 +199,8 @@ def main():
             report["targets"][target]["models"][model] = summaries(frame)
 
     private = pd.concat(output_rows, ignore_index=True)
-    private_path = args.output_root / "coverage_rows_private.parquet"
-    private.to_parquet(private_path, index=False)
+    private_path = args.output_root / "coverage_rows_private.csv.gz"
+    private.to_csv(private_path, index=False, compression="gzip")
     report["private_rows"] = len(private)
     report["private_rows_sha256"] = digest(private_path)
     (args.output_root / "receipt.json").write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
