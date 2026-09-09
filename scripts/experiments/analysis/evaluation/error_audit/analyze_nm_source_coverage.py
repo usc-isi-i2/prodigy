@@ -116,6 +116,25 @@ def auc_binary(y, score):
     return float((ranks[y].sum() - n1 * (n1 + 1) / 2) / (n1 * n0))
 
 
+def weighted_auc_binary(y, score, weight):
+    """Weighted probability that a positive score exceeds a negative score."""
+    table = pd.DataFrame({"y": np.asarray(y, dtype=bool),
+                          "score": np.asarray(score, dtype=float),
+                          "weight": np.asarray(weight, dtype=float)})
+    total_positive = table.loc[table.y, "weight"].sum()
+    total_negative = table.loc[~table.y, "weight"].sum()
+    if total_positive <= 0 or total_negative <= 0:
+        return None
+    favorable = 0.0
+    negative_below = 0.0
+    for _, group in table.groupby("score", sort=True):
+        positive = group.loc[group.y, "weight"].sum()
+        negative = group.loc[~group.y, "weight"].sum()
+        favorable += positive * (negative_below + 0.5 * negative)
+        negative_below += negative
+    return float(favorable / (total_positive * total_negative))
+
+
 def summaries(frame):
     metrics = ["target_similarity", "other_similarity", "coverage_gap"]
     result = {"rows": len(frame), "unique_queries": int(frame["query"].nunique()), "cohorts": {}}
@@ -129,6 +148,11 @@ def summaries(frame):
         result["cohorts"][cohort] = item
     result["correctness_auc"] = {
         metric: auc_binary(frame.native_correct, frame[metric]) for metric in metrics
+    }
+    node_weight = 1.0 / frame.groupby("query")["query"].transform("size")
+    result["node_balanced_correctness_auc"] = {
+        metric: weighted_auc_binary(frame.native_correct, frame[metric], node_weight)
+        for metric in metrics
     }
     return result
 
