@@ -95,6 +95,7 @@ if len(seed0_nm_paths) != 432:
 for path in seed0_nm_paths:
     row = json.loads(path.read_text(encoding="utf-8"))
     if int(row.get("seed", -1)) != 0 or int(row.get("episodes", -1)) != 512 \
+            or row.get("legacy_test_only") is not True \
             or not math.isfinite(float(row["roc_auc"])):
         raise ValueError(f"invalid refreshed seed-0 NM cell: {path}")
 with cls_path.open(encoding="utf-8", newline="") as handle:
