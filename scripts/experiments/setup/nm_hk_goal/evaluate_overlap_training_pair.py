@@ -20,7 +20,7 @@ from scripts.experiments.setup.nm_hk_mechanism.run import build_model
 from scripts.experiments.setup.nm_support_resampling.run import capture, digest_state
 
 
-STEPS = (0, 100, 300, 900, 2500)
+DEFAULT_STEPS = (0, 100, 300, 900, 2500)
 
 
 def digest(path):
@@ -102,10 +102,14 @@ def main():
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--threads", type=int, default=2)
+    parser.add_argument("--steps", default=",".join(map(str, DEFAULT_STEPS)))
     args = parser.parse_args()
     if not 1 <= args.threads <= 2:
         raise ValueError("use at most two CPU threads")
     args.out.mkdir(parents=True, exist_ok=False)
+    steps = tuple(int(value) for value in args.steps.split(","))
+    if not steps or len(set(steps)) != len(steps) or any(step < 0 for step in steps):
+        raise ValueError("steps must be distinct nonnegative integers")
     torch.set_num_threads(args.threads)
     torch.set_num_interop_threads(1)
     started = time.time()
@@ -152,7 +156,7 @@ def main():
     input_hashes = []
     for condition in ("baseline", "treatment"):
         run = args.run / condition
-        for step in STEPS:
+        for step in steps:
             path = checkpoint(run, step)
             model = build_model(params, path, args.device)
             states[f"{condition}:{step}"] = digest_state(model)
@@ -185,7 +189,7 @@ def main():
         "device": args.device,
         "threads": args.threads,
         "rows": len(frame),
-        "steps": list(STEPS),
+        "steps": list(steps),
         "exact_complete_input_hash": input_hashes[0],
         "all_input_hashes_equal": len(set(input_hashes)) == 1,
         "step_zero_state_sha256": states["baseline:0"],
@@ -193,7 +197,7 @@ def main():
         "results": {},
         "selection": "All checkpoints were fixed before training; no test-performance selection.",
     }
-    for step in STEPS:
+    for step in steps:
         baseline = predictions[f"baseline:{step}"]
         treatment = predictions[f"treatment:{step}"]
         report["results"][str(step)] = {
