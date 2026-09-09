@@ -112,8 +112,11 @@ def validate_grid(frame: pd.DataFrame, task: str, targets: tuple[str, ...], arms
         raise ValueError(f"{task} source-set drift: {sorted(set(frame.sources))}")
     if frame.training_revision.nunique() != 1:
         raise ValueError(f"{task} mixes training revisions")
+    normalized_task = task.lower()
     for target, part in frame.groupby("dataset"):
-        fingerprint = "fingerprint" if task == "nm" else "episode_fingerprint"
+        fingerprint = "fingerprint" if normalized_task == "nm" else "episode_fingerprint"
+        if fingerprint not in part:
+            raise ValueError(f"{task} missing episode fingerprint column: {fingerprint}")
         if part[fingerprint].nunique() != 1:
             raise ValueError(f"{task} episode drift for {target}")
 
@@ -282,6 +285,8 @@ def main() -> None:
     data_dir = args.output / "data"
     figure_dir = args.output / "figures"
     data_dir.mkdir(parents=True, exist_ok=True)
+    nm.to_csv(data_dir / "nm_cells.csv", index=False)
+    cls.to_csv(data_dir / "classification_cells.csv", index=False)
     per_seed.to_csv(data_dir / "macro_per_seed.csv", index=False)
     summary.to_csv(data_dir / "macro_summary.csv", index=False)
     effects.to_csv(data_dir / "target_effects_per_seed.csv", index=False)
