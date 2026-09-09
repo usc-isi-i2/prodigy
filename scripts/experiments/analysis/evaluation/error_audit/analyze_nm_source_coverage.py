@@ -85,14 +85,18 @@ def reference_bank(frame, model, size, salt):
     return subset["query"].to_numpy(dtype=np.int64), matrix
 
 
-def topk_similarity(queries, query_ids, reference_ids, reference, k, chunk_size):
+def topk_similarity(queries, query_ids, reference_ids, reference, k, chunk_size,
+                    exclude_matching_ids):
     result = np.empty(len(queries), dtype=np.float32)
     for start in range(0, len(queries), chunk_size):
         stop = min(start + chunk_size, len(queries))
         q = queries[start:stop].astype(np.float32, copy=True)
         q /= np.maximum(np.linalg.norm(q, axis=1, keepdims=True), 1e-12)
         scores = q @ reference.T
-        same = query_ids[start:stop, None] == reference_ids[None, :]
+        if exclude_matching_ids:
+            same = query_ids[start:stop, None] == reference_ids[None, :]
+        else:
+            same = np.zeros(scores.shape, dtype=bool)
         scores[same] = -np.inf
         available = (~same).sum(axis=1)
         if (available < k).any():
@@ -136,6 +140,7 @@ def main():
     parser.add_argument("--reference-size", type=int, default=256)
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--chunk-size", type=int, default=4096)
+    parser.add_argument("--reference-replicate", type=int, default=0)
     args = parser.parse_args()
     if args.reference_size < args.top_k + 1 or args.top_k < 1:
         raise ValueError("reference-size must exceed top-k")
@@ -149,16 +154,18 @@ def main():
     for model in MODELS:
         for source in TARGETS:
             banks[(model, source)] = reference_bank(
-                data[source], model, args.reference_size, f"nm-coverage-v1:{model}:{source}"
+                data[source], model, args.reference_size,
+                f"nm-coverage-v2:{args.reference_replicate}:{model}:{source}"
             )
 
     output_rows = []
     report = {
         "complete": True,
-        "protocol": "nm_pre_metagraph_source_coverage_v1",
+        "protocol": "nm_pre_metagraph_source_coverage_v2",
         "reference_size": args.reference_size,
         "top_k": args.top_k,
         "chunk_size": args.chunk_size,
+        "reference_replicate": args.reference_replicate,
         "geometry_uses_outcomes": False,
         "identity_exclusion": "Exact query id excluded from same-source reference bank.",
         "reference_selection": "SHA256 ordering of unique query ids; first occurrence embedding; balanced banks.",
@@ -184,10 +191,10 @@ def main():
             target_ids, target_bank = banks[(model, target)]
             other_ids, other_bank = banks[(model, OTHER[target])]
             frame["target_similarity"] = topk_similarity(
-                queries, ids, target_ids, target_bank, args.top_k, args.chunk_size
+                queries, ids, target_ids, target_bank, args.top_k, args.chunk_size, True
             )
             frame["other_similarity"] = topk_similarity(
-                queries, ids, other_ids, other_bank, args.top_k, args.chunk_size
+                queries, ids, other_ids, other_bank, args.top_k, args.chunk_size, False
             )
             frame["coverage_gap"] = frame.target_similarity - frame.other_similarity
             keys = pd.MultiIndex.from_frame(frame[["episode", "sample", "query"]])
