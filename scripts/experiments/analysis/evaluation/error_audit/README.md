@@ -27,6 +27,9 @@ and to the exact bio-selection policy used at graph construction.  It writes:
 - [Full HK class-reference decomposition](FINDINGS_NM_HK_CLASS_REFERENCE_FULL.md):
   all 512 canonical HK episodes, correct controls, ambiguity strata, and the
   native-versus-Ukraine positive-support decision pathway on identical inputs.
+- [Native-graph class-reference replication](FINDINGS_NM_NATIVE_GRAPH_REFERENCE_REPLICATION.md):
+  shows which HK findings replicate on Ukraine and separates pre-metagraph from
+  final source divergence on identical target episodes.
 - [HK training-conflict bridge](FINDINGS_NM_HK_TRAINING_CONFLICT_BRIDGE.md):
   connects canonical failures to verified consumed training episodes while
   separating established exposure, controlled interventions, and hypotheses.
