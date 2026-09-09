@@ -26,3 +26,20 @@ python scripts/experiments/setup/proxy_a_seed_stability/run.py --out /dataMeR1/p
 The output retains sampled IDs/features, input metadata/hashes, protocol, six
 matrices and a DONE marker. Convergence warnings are fatal. Analysis belongs in
 `analysis/graphs/transfer_prediction/proxy_a_seed_stability/`.
+
+## 40,000-node repeat (2026-09-09)
+
+Use `--samples 40000` with the same runner revision `020c7f39`, seeds, classifiers,
+and policies. Successful-launch output directory is
+`/dataMeR1/phil/gfm/prodigy-proxy-a-seeds/log/proxy_a_seed_stability_40k_retry01`.
+The first attempt (`..._40k`) failed before sampling because tmux inherited an
+activated environment with base Python ahead on PATH. Use the explicit
+`/home/mhchu/miniconda3/envs/prodigy/bin/python` executable after activation.
+Do not rerun into either existing directory.
+
+Download completed small outputs into the analysis leaf's
+`sample_40000/data/`. Run `analyze.py --run-dir <analysis-leaf>/sample_40000`, then
+`compare_sizes.py`. The original 4k outputs stay intact. At 40k, the historical
+sorted sampler exhausts candidate populations for some smaller graphs, so its
+sampled IDs may be identical across seeds; its remaining variability is then
+classifier splitting. Uniform sampling remains the primary estimator.

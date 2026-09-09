@@ -1,4 +1,5 @@
 """Validate three-seed proxy-A outputs and compare to fixed NM transfer AUC."""
+import argparse
 import json
 from pathlib import Path
 import numpy as np
@@ -8,12 +9,16 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-HERE=Path(__file__).resolve().parent
-ROOT=Path(__file__).resolve().parents[6]
+BASE=Path(__file__).resolve().parent
+parser=argparse.ArgumentParser(__doc__)
+parser.add_argument('--run-dir',type=Path,default=BASE,help='Folder containing data/results.json and data/protocol.json')
+HERE=parser.parse_args().run_dir
+protocol=json.loads((HERE/'data/protocol.json').read_text())
+nsamples=int(protocol['samples'])
 d=json.loads((HERE/'data/results.json').read_text()); names=d['graphs']
 assert len(names)==9 and len(d['runs'])==6
 assert {(r['policy'],r['seed']) for r in d['runs']}=={(p,s) for p in ['legacy_sorted','uniform'] for s in range(3)}
-f=pd.read_csv(HERE.parent/'similarity_vs_transfer_v2/data/final_core_auc/transfer_matrix_three_seed_mean_long.csv')
+f=pd.read_csv(BASE.parent/'similarity_vs_transfer_v2/data/final_core_auc/transfer_matrix_three_seed_mean_long.csv')
 y=f[f.metric=='roc_auc_ovr_macro'].pivot(index='train',columns='test',values='value').reindex(index=names,columns=names).to_numpy()
 assert np.isfinite(y).all()
 mask=~np.eye(9,dtype=bool); upper=np.triu_indices(9,1)
@@ -47,10 +52,10 @@ fig.suptitle('Proxy-A repeatability with uniform node sampling',fontsize=19,y=.9
 fig.text(.07,.934,'Dots: three-estimator-seed means; horizontal bars: ±1 sample SD. NM AUC fixed at three-training-seed means.',fontsize=11)
 fig.supxlabel('Raw-feature proxy-A distance',y=.115);fig.supylabel('Target NM ROC-AUC',x=.015)
 fig.legend(handles=[plt.Line2D([],[],marker='o',linestyle='',color=colors[i],label=labels[i]) for i in range(9)],loc='lower center',bbox_to_anchor=(.5,.025),ncol=5,frameon=False,title='Pretraining source')
-fig.text(.07,.008,'4,000 nonzero-feature nodes/graph. Self-transfer excluded. Three seeds measure repeatability, not sample-size convergence.',fontsize=9)
+fig.text(.07,.008,f'{nsamples:,} nonzero-feature nodes/graph. Self-transfer excluded. Three seeds measure repeatability, not sample-size convergence.',fontsize=9)
 fig.subplots_adjust(left=.07,right=.98,top=.88,bottom=.18,hspace=.3)
 for ext in ['png','pdf']:fig.savefig(HERE/f'figures/proxy_a_seed_stability.{ext}',dpi=180)
-report=['# Proxy-A: three-seed stability','', 'Raw features, 4,000 nonzero nodes per graph. Joint node-sampling and classifier-split variation. Fixed NM transfer outcomes.','']
+report=['# Proxy-A: three-seed stability','', f'Raw features, {nsamples:,} nonzero nodes per graph. Joint node-sampling and classifier-split variation. Fixed NM transfer outcomes.','']
 for policy,a in matrices.items():
  vals=[r['mean_target_spearman'] for r in summary if r['policy']==policy]
  sd=a.std(axis=0,ddof=1)[upper]
