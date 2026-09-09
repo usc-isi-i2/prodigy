@@ -112,8 +112,11 @@ def validate_grid(frame: pd.DataFrame, task: str, targets: tuple[str, ...], arms
         raise ValueError(f"{task} source-set drift: {sorted(set(frame.sources))}")
     if frame.training_revision.nunique() != 1:
         raise ValueError(f"{task} mixes training revisions")
+    normalized_task = task.lower()
     for target, part in frame.groupby("dataset"):
-        fingerprint = "fingerprint" if task == "nm" else "episode_fingerprint"
+        fingerprint = "fingerprint" if normalized_task == "nm" else "episode_fingerprint"
+        if fingerprint not in part:
+            raise ValueError(f"{task} missing episode fingerprint column: {fingerprint}")
         if part[fingerprint].nunique() != 1:
             raise ValueError(f"{task} episode drift for {target}")
 

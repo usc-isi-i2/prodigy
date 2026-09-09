@@ -85,3 +85,9 @@ def test_cross_task_checkpoint_drift_is_rejected():
         assert "checkpoint_sha256" in str(error)
     else:
         raise AssertionError("expected cross-task provenance failure")
+
+
+def test_nm_grid_uses_nm_fingerprint_column_even_with_display_case():
+    frame = synthetic()
+    nm = frame[frame.task.eq("nm")].drop(columns=["episode_fingerprint"])
+    analysis.validate_grid(nm, "NM", analysis.NM_TARGETS, tuple(analysis.ARMS))
