@@ -42,6 +42,9 @@ and to the exact bio-selection policy used at graph construction.  It writes:
 - [HK/Ukraine source-manifold affinity](FINDINGS_NM_SOURCE_MANIFOLD.md): five
   balanced reference-bank replicates reject global target-manifold proximity as
   a consistent explanation for native NM success.
+- [Native/foreign margin stages](FINDINGS_NM_SOURCE_MARGIN_STAGES.md): paired
+  candidate margins show that Ukraine's native advantage is mostly present
+  before the metagraph, while HK's is mostly created by its readout.
 
 For the current Parquet Twitter graphs:
 

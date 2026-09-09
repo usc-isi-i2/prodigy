@@ -66,13 +66,10 @@ realization of those contexts.
 
 Loading actual training-node banks is not justified as the immediate next
 step: the cheaper held-out-manifold prerequisite did not show the predicted
-cross-target pattern. The next analysis should stay episode-relative. On these
-same rows, compare native and foreign **true-versus-best-rival margins** before
-and after the metagraph, stratified by shared success, native-only rescue,
-foreign-only rescue, and shared failure. That directly asks whether source
-training creates candidate separation in the encoder or converts existing
-separation through the support-derived class reference. It is more diagnostic
-than another global density measure and requires only cached tables.
+cross-target pattern. The subsequent [episode-relative margin audit](FINDINGS_NM_SOURCE_MARGIN_STAGES.md)
+therefore compares native and foreign true-versus-best-rival separation before
+and after the metagraph. It finds that Ukraine's native advantage is mostly
+pre-metagraph, while HK's is mostly created by the support-conditioned readout.
 
 Compact aggregate: [nm_source_manifold_v4_aggregate.json](data/canonical_split/nm_source_manifold_v4_aggregate.json).
 Private per-occurrence rows and five receipts are under

@@ -62,17 +62,13 @@ supervision itself intact. One fixed seed also cannot establish a precise mean
 effect across training randomness, although the exact paired stream makes the
 direction within this run unambiguous.
 
-The most informative next mechanism is source-manifold affinity at the
-pre-metagraph stage, using fixed target inputs and native/foreign checkpoints.
-First test whether native-only successes occupy target-graph representation
-regions more strongly than shared failures, using balanced outcome-blind graph
-reference banks. Those held-out banks do not measure training density. Only if
-the cohort signal is present should the analysis load actual training-node
-references and test a matched coverage intervention or representation
-regularizer. This follows the established stage split: Ukraine's native
-advantage is already mostly pre-metagraph, whereas HK's smaller pre-metagraph
-advantage is amplified by the readout. Another support-deletion heuristic is
-not warranted by these results.
+The subsequent source-manifold audit is negative: global target-graph affinity
+does not consistently predict native success. The paired margin audit instead
+shows that Ukraine's native advantage is mostly pre-metagraph, whereas HK's is
+mostly created by its support-conditioned readout. The next step is broader
+native-graph replication of that stage balance before a confidence-gated
+readout is designed. Another support-deletion heuristic is not warranted by
+these results.
 
 [Canonical evaluation receipt](data/canonical_split/nm_hk_overlap_training_pair.json) ·
 [matched-stream verification](data/canonical_split/nm_hk_overlap_training_pair_verification.json) ·

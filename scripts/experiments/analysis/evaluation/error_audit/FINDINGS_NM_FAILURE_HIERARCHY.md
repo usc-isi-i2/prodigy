@@ -149,10 +149,16 @@ only weakly predictive for native HK→HK (node-balanced AUC .562) and inversely
 predictive for native Ukraine→Ukraine (.398). Target-minus-other affinity is at
 chance or points in the wrong direction in every model-target cell. This weakens
 the simple out-of-support account and does not justify a coverage regularizer.
-The next cached analysis should compare native/foreign true-versus-rival margins
-before and after the metagraph within paired outcome cohorts. That directly
-tests whether source training creates episode-relative candidate separation in
-the encoder or converts it through the support-derived class reference.
+The episode-relative margin audit supplies that next stage. On HK-native-only
+successes, only 33.4% are pre-metagraph correct (39.1% among uniquely answerable
+cases); native HK improves mean true rank by 3.71 places while Ukraine worsens
+by .55. On Ukraine-native-only successes, 69.5% are already pre-metagraph
+correct, Ukraine has the better pre-metagraph rank in 80.4%, and its normalized
+margin advantage is +1.12. Thus Ukraine specialization is mainly
+representational, whereas HK specialization is mainly support-conditioned
+readout conversion over weaker ordinal evidence. The next generalization step
+is to replicate this decomposition on native graphs spanning donor, small-source,
+and island regimes before choosing a source-adaptive readout.
 
 Evidence: [first query and episode](FINDINGS_NM_HK_FIRST_QUERY_EPISODE.md),
 [full HK decomposition](FINDINGS_NM_HK_CLASS_REFERENCE_FULL.md),
@@ -160,5 +166,6 @@ Evidence: [first query and episode](FINDINGS_NM_HK_FIRST_QUERY_EPISODE.md),
 [training-conflict bridge](FINDINGS_NM_HK_TRAINING_CONFLICT_BRIDGE.md),
 [matched training intervention](FINDINGS_NM_HK_OVERLAP_TRAINING.md),
 [source-manifold diagnostic](FINDINGS_NM_SOURCE_MANIFOLD.md),
+[native/foreign stage margins](FINDINGS_NM_SOURCE_MARGIN_STAGES.md),
 [final-core matrix](../../transfer/matrices/cross_model/final_core/FINDINGS.md),
 and [nine-graph predictor study](../../graphs/transfer_prediction/similarity_vs_transfer_v2/FINDINGS.md).
