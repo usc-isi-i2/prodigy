@@ -1,0 +1,50 @@
+graphs:
+  ukr_rus_twitter:
+    path: /dataMeR1/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.pt
+  covid19_twitter:
+    path: /dataMeR1/phil/data/covid19_twitter/graphs/retweet_graph_parquet.pt
+  midterm:
+    path: /dataMeR1/phil/data/midterm/graphs/retweet_graph_parquet.pt
+  covid_political:
+    path: /dataMeR1/phil/data/covid_political/graphs/retweet_graph.pt
+  election2020:
+    path: /dataMeR1/phil/data/election2020/graphs/retweet_graph.pt
+  ukr_rus_suspended:
+    path: /dataMeR1/phil/data/ukr_rus_suspended/graphs/retweet_graph.pt
+  twibot20:
+    path: /dataMeR1/phil/data/twibot20/graphs/retweet_graph.pt
+  cp_hk_twitter:
+    path: /dataMeR1/phil/data/cp_hk_twitter/graphs/retweet_graph.pt
+  facebook_page_reference:
+    path: /dataMeR1/phil/data/facebook_page_reference/graphs/page_reference_graph.pt
+
+protocol:
+  seed: 0
+  input_dim: 768
+  hidden_dim: 256
+  output_dim: 256
+  dropout: 0.0
+  fanout: 0
+  layers: 1
+  sampling_backend: torch_sparse
+  ssl_batch_size: 1024
+  negatives_per_positive: 5
+  edge_validation_fraction: 0.15
+  node_validation_fraction: 0.15
+  mask_rate: 0.5
+  sce_alpha: 2.0
+  node_mlp_lp_learning_rate: 0.0005
+  node_mlp_fp_learning_rate: 0.001
+  learning_rate: 0.001
+  gradient_clip_norm: 1.0
+  weight_decay: 0.00001
+  max_steps: 10000
+  checkpoint_steps: [250, 500, 1000, 2000, 2500, 5000, 7500, 10000]
+  validation_interval: 250
+  validation_batches: 20
+  minimum_steps: 2000
+  min_relative_improvement: 0.0025
+  patience_evaluations: 8
+  eval_batch_size: 4096
+  fp_eval_mask_replicates: 10
+  lp_eval_positives: 2000

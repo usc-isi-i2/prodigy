@@ -54,3 +54,35 @@ class GraphMAE(nn.Module):
 
     def forward(self, x: torch.Tensor, edge_index: torch.Tensor) -> torch.Tensor:
         return self.decoder(self.encode(x, edge_index))
+
+
+class NodeMLP(nn.Module):
+    """Topology-free node encoder with capacity matched to one-layer GraphSAGE."""
+
+    def __init__(self, input_dim: int, hidden_dim: int, output_dim: int, dropout: float = 0.0):
+        super().__init__()
+        self.network = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, output_dim),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.network(x)
+
+
+class MaskedFeatureMLP(nn.Module):
+    """Node-only masked-coordinate feature predictor."""
+
+    def __init__(self, input_dim: int, hidden_dim: int, output_dim: int, dropout: float = 0.0):
+        super().__init__()
+        self.encoder = NodeMLP(input_dim, hidden_dim, output_dim, dropout)
+        self.mask_token = nn.Parameter(torch.zeros(input_dim))
+        self.decoder = nn.Linear(output_dim, input_dim)
+
+    def encode(self, x: torch.Tensor) -> torch.Tensor:
+        return self.encoder(x)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.decoder(self.encode(x))
