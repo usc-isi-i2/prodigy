@@ -236,8 +236,8 @@ def main() -> int:
     parser.add_argument("--cache-root")
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
-    if args.device not in (2, 3):
-        raise ValueError("this project is restricted to Tucker GPUs 2-3")
+    if args.device not in (0, 1, 2, 3):
+        raise ValueError("only owned Tucker GPUs 0-3 are allowed")
     if not 0 <= args.worker_index < args.workers:
         raise ValueError("invalid worker index")
     config = load_config(args.config)

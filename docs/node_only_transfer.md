@@ -31,6 +31,6 @@ bash scripts/eval_node_only_transfer_tucker.sh fp
 bash scripts/eval_node_only_transfer_tucker.sh lp
 ```
 
-Only GPUs 2 and 3 are accepted. Launchers refuse occupied GPUs, skip completed
+Only GPUs 0–3 are accepted. Launchers refuse occupied GPUs, skip completed
 models, and reject ambiguous partial run directories. Canonical aggregate outputs
 are `results/node_only_transfer/aggregated/node_mlp_{fp,lp}_transfer.tsv`.

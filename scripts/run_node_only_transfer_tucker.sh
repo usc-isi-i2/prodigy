@@ -13,7 +13,7 @@ fi
 mkdir -p "$LOG_ROOT"
 cd "$ROOT"
 
-for gpu in 2 3; do
+for gpu in 0 1 2 3; do
   used="$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i "$gpu")"
   if (( used >= 2000 )); then
     echo "GPU $gpu is occupied: ${used} MiB" >&2
@@ -27,17 +27,17 @@ done
   echo "objective=$OBJECTIVE"
   echo "selection=$SELECTION"
   echo "seed=0"
-  echo "physical_gpus=2,3"
+  echo "physical_gpus=0,1,2,3"
   echo "state_root=$STATE_ROOT"
   echo "started_utc=$(date -u +%FT%TZ)"
 } > "$LOG_ROOT/provenance.txt"
 
 pids=()
-for worker in 0 1; do
-  gpu=$((worker + 2))
+for worker in 0 1 2 3; do
+  gpu="$worker"
   WANDB_MODE=offline PYTHONPATH=src python -m mixture_scaling.node_only_transfer \
     --config configs/node_only_transfer.yaml --objective "$OBJECTIVE" \
-    --selection "$SELECTION" --worker-index "$worker" --workers 2 --device "$gpu" \
+    --selection "$SELECTION" --worker-index "$worker" --workers 4 --device "$gpu" \
     --output-root "$STATE_ROOT" --cache-root "$STATE_ROOT/_cache" --seed 0 \
     > "$LOG_ROOT/worker_${worker}_gpu_${gpu}.log" 2>&1 &
   pids+=("$!")

@@ -134,8 +134,8 @@ def main() -> int:
     parser.add_argument("--run-id")
     parser.add_argument("--target")
     args = parser.parse_args()
-    if args.device not in (2, 3):
-        raise ValueError("this project is restricted to Tucker GPUs 2-3")
+    if args.device not in (0, 1, 2, 3):
+        raise ValueError("only owned Tucker GPUs 0-3 are allowed")
     config = load_config(args.config)
     rows = singleton_rows()
     if args.run_id:
