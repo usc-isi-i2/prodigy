@@ -105,17 +105,20 @@ class DirectLinkLoader:
                 self_loops = negative[0] == negative[1]
             pairs = torch.cat((positive, negative), dim=1)
             endpoints = torch.cat((pairs[0], pairs[1]))
-            features = self.x[endpoints].pin_memory() if torch.cuda.is_available() else self.x[endpoints]
+            if self.x.is_cuda:
+                features = self.x[endpoints.to(self.x.device, non_blocking=True)]
+            else:
+                features = self.x[endpoints].pin_memory() if torch.cuda.is_available() else self.x[endpoints]
             n_pairs = pairs.shape[1]
             local_edges = torch.stack((torch.arange(n_pairs), torch.arange(n_pairs, 2 * n_pairs)))
             labels = torch.cat((torch.ones(n_positive), torch.zeros(n_negative)))
             yield DirectLinkBatch(features, local_edges, labels)
 
 
-def make_direct_lp_loader(graph, protocol, validation: bool, seed: int):
+def make_direct_lp_loader(graph, protocol, validation: bool, seed: int, features=None):
     edges = graph.validation_edges if validation else graph.train_edges
     return DirectLinkLoader(
-        graph.data.x, edges, int(protocol["ssl_batch_size"]),
+        graph.data.x if features is None else features, edges, int(protocol["ssl_batch_size"]),
         int(protocol["negatives_per_positive"]), not validation,
         seed + (32452843 if validation else 49979687),
     )
@@ -206,8 +209,12 @@ def train_one(run_id, source, objective, graph, config, device, output_root, see
         weight_decay=float(protocol["weight_decay"]),
     )
     if objective == "lp" and protocol.get("node_mlp_link_loader", "direct") == "direct":
-        lp_train = make_direct_lp_loader(graph, protocol, False, seed)
-        lp_val = make_direct_lp_loader(graph, protocol, True, seed)
+        residency = protocol.get("node_mlp_feature_residency", "cpu")
+        if residency not in ("cpu", "gpu"):
+            raise ValueError(f"unknown node_mlp_feature_residency: {residency}")
+        shared_features = graph.data.x.float().to(device) if residency == "gpu" else graph.data.x
+        lp_train = make_direct_lp_loader(graph, protocol, False, seed, shared_features)
+        lp_val = make_direct_lp_loader(graph, protocol, True, seed, shared_features)
     else:
         lp_train = make_lp_loader(graph, protocol, False) if objective == "lp" else None
         lp_val = make_lp_loader(graph, protocol, True) if objective == "lp" else None
@@ -222,6 +229,7 @@ def train_one(run_id, source, objective, graph, config, device, output_root, see
         "uses_topology_in_encoder": False, "protocol": protocol,
         "checkpoint_selection": "source_ssl_validation_only",
         "link_loader": protocol.get("node_mlp_link_loader", "direct"),
+        "feature_residency": protocol.get("node_mlp_feature_residency", "cpu"),
     }
     if objective == "lp":
         metadata["training_negative_sampling"] = "uniform_approximate_excluding_self_loops"

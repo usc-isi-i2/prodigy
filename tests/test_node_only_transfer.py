@@ -45,3 +45,11 @@ def test_direct_link_loader_builds_endpoint_only_batches_deterministically():
     assert first.edge_label.tolist() == [1.0, 1.0] + [0.0] * 10
     assert torch.equal(first.x, second.x)
     assert not torch.any(first.edge_label_index[0] == first.edge_label_index[1])
+
+
+def test_direct_link_loader_accepts_prepositioned_feature_tensor():
+    x = torch.arange(24, dtype=torch.float).reshape(6, 4)
+    edges = torch.tensor([[0, 2], [1, 3]])
+    batch = next(iter(DirectLinkLoader(x, edges, 2, 1, False, 11)))
+    assert batch.x.device == x.device
+    assert batch.x.shape == (8, 4)

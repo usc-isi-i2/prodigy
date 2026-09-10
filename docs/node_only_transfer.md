@@ -14,8 +14,9 @@ every eligible target.
   from its raw feature vector; endpoint dot products train the model. Evaluation
   uses the existing deterministic background/holdout partitions, degree-matched
   negatives, validation-locked cosine orientation, and leakage/sensitivity gates.
-  Training batches use direct CPU indexing of endpoint feature rows and pinned-memory
-  transfer; no neighborhoods are sampled or collated. Uniform random
+  The feature matrix is copied to the assigned GPU once and endpoint rows are gathered
+  there; no neighborhoods are sampled or collated, and only compact endpoint indices
+  cross the host-device boundary per update. Uniform random
   training negatives exclude self-loops, matching the earlier loader's approximate
   negative-sampling contract. Evaluation negatives are unchanged.
 
@@ -38,3 +39,9 @@ bash scripts/eval_node_only_transfer_tucker.sh lp
 Only GPUs 0–3 are accepted. Launchers refuse occupied GPUs, skip completed
 models, and reject ambiguous partial run directories. Canonical aggregate outputs
 are `results/node_only_transfer/aggregated/node_mlp_{fp,lp}_transfer.tsv`.
+
+The GPU-resident change keeps the canonical 1,024-positive batch size and therefore
+does not alter the optimizer-update protocol. On `covid19_twitter`, a fixed-example
+benchmark measured 882 versus 105 updates/second for GPU-resident versus CPU-direct
+batches (8.4x), with identical endpoint pairs and final loss. The 65.8 GiB feature
+matrix fits on an 80 GB H100; measured peak allocation was 66.0 GiB at this batch size.
