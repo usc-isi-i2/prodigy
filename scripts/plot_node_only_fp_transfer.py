@@ -42,63 +42,51 @@ def main() -> int:
         raise ValueError("graph set does not match the Social-9 contract")
 
     plt.rcParams.update({
-        "font.size": 10,
+        "font.size": 9,
         "axes.spines.top": False,
         "axes.spines.right": False,
         "figure.dpi": 160,
     })
-    fig, ax = plt.subplots(figsize=(9.4, 6.4))
-    fig.subplots_adjust(left=0.09, right=0.98, bottom=0.27, top=0.84)
-    colors = plt.get_cmap("tab10")(np.arange(len(targets)))
-
-    source_offsets = np.linspace(-0.28, 0.28, len(targets))
-    handles = []
-    for source_index, (color, source) in enumerate(zip(colors, targets)):
-        xs, penalties = [], []
-        for target_index, target in enumerate(targets):
-            if source == target:
-                continue
-            xs.append(target_index + source_offsets[source_index])
-            penalties.append(float(matrix.loc[source, target] - matrix.loc[target, target]))
-        handle = ax.scatter(
-            xs, penalties, s=39, color=color, alpha=0.78, edgecolors="none",
-            label=SHORT[source], zorder=3,
-        )
-        handles.append(handle)
-
-    medians = []
-    for target in targets:
-        penalties = matrix[target].drop(index=target) - matrix.loc[target, target]
-        medians.append(float(penalties.median()))
-    for index, median in enumerate(medians):
-        ax.plot([index - 0.34, index + 0.34], [median, median], color="black", linewidth=2.1, zorder=4)
-    ax.scatter(
-        np.arange(len(targets)), np.zeros(len(targets)), marker="D", s=36,
-        facecolor="white", edgecolor="black", linewidth=1, label="Target-trained baseline", zorder=5,
+    fig, axes = plt.subplots(3, 3, figsize=(11.2, 9.0), sharex=True)
+    fig.subplots_adjust(left=0.10, right=0.98, bottom=0.10, top=0.86, hspace=0.42, wspace=0.34)
+    max_penalty = max(
+        float((matrix[target] - matrix.loc[target, target]).max()) for target in targets
     )
 
-    ax.axhline(0, linestyle="--", linewidth=1.1, color="0.35", zorder=1)
-    ax.set_xlim(-0.55, len(targets) - 0.45)
-    ax.set_ylim(-0.08, None)
-    ax.set_xticks(np.arange(len(targets)), [SHORT[target] for target in targets], rotation=28, ha="right")
-    ax.grid(axis="y", linewidth=0.5, alpha=0.3)
-    ax.set_xlabel("Target graph")
-    ax.set_ylabel("Transfer penalty vs target-trained MLP\n(Δ scaled cosine error ×100; lower is better)")
+    for ax, target in zip(axes.flat, targets):
+        penalties = matrix[target] - matrix.loc[target, target]
+        ordered_sources = [target] + sorted(
+            (source for source in targets if source != target), key=lambda source: penalties[source]
+        )
+        values = np.array([float(penalties[source]) for source in ordered_sources])
+        positions = np.arange(len(ordered_sources))
+        ax.axvline(0, color="0.35", linestyle="--", linewidth=1.0, zorder=1)
+        ax.hlines(positions, 0, values, color="0.82", linewidth=1.0, zorder=1)
+        ax.scatter(values[1:], positions[1:], s=35, color="#3b82b8", zorder=3)
+        ax.scatter(
+            values[0], positions[0], marker="D", s=43, facecolor="white",
+            edgecolor="black", linewidth=1.0, zorder=4,
+        )
+        median = float(np.median(values[1:]))
+        ax.axvline(median, color="black", linewidth=1.4, alpha=0.8, zorder=2)
+        ax.set_title(f"Target: {SHORT[target]}", loc="left", fontsize=10, weight="bold")
+        ax.set_yticks(positions, [SHORT[source] for source in ordered_sources])
+        ax.invert_yaxis()
+        ax.set_xlim(-0.06, max_penalty * 1.06)
+        ax.grid(axis="x", linewidth=0.5, alpha=0.25)
+        ax.tick_params(axis="y", length=0, labelsize=8)
+        ax.tick_params(axis="x", labelsize=8)
+
+    fig.supxlabel("Transfer penalty vs target-trained MLP (Δ scaled cosine error ×100; lower is better)", y=0.035)
     fig.suptitle(
-        "Node-only feature-prediction transfer penalty", x=0.09, y=0.97,
+        "Node-only feature-prediction transfer penalty", x=0.10, y=0.965,
         ha="left", weight="bold", fontsize=14,
     )
     fig.text(
-        0.09, 0.91,
-        "Each circle is a source-trained MLP on a target; black bars mark target medians",
+        0.10, 0.92,
+        "Sources are ordered best-to-worst within each target · Diamond: target-trained baseline · Vertical bar: foreign-source median",
         fontsize=8.5, color="0.35", ha="left",
     )
-    legend = ax.legend(
-        handles=ax.collections[:len(targets)] + [ax.collections[-1]],
-        loc="upper center", bbox_to_anchor=(0.5, -0.22), ncol=5,
-        frameon=False, fontsize=8.2, handletextpad=0.35, columnspacing=1.1,
-    )
-    legend.set_title("Training source", prop={"size": 8.2})
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(args.output, dpi=220, bbox_inches="tight")
