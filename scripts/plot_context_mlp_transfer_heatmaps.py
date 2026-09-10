@@ -72,13 +72,14 @@ def overview(matrices, output):
             axes_style(ax,list(matrix.columns),show_ylabel=col==0)
             ax.set_title(VIEWS[view],weight="bold",fontsize=13)
             if col==2:
-                bar=fig.colorbar(image,ax=axes[row,:].tolist(),shrink=.72,pad=.015)
+                color_axis=fig.add_axes([.945,.595 if objective=="fp" else .145,.012,.245])
+                bar=fig.colorbar(image,cax=color_axis)
                 bar.set_label("Error ×100 ↓" if objective=="fp" else "ROC-AUC ↑")
     fig.text(.01,.72,"Feature prediction",rotation=90,va="center",weight="bold",fontsize=14)
     fig.text(.01,.27,"Static link prediction",rotation=90,va="center",weight="bold",fontsize=14)
     fig.suptitle("MLP transfer matrices by available input view",x=.04,ha="left",weight="bold",fontsize=18)
     fig.text(.04,.945,"Consistent color scales across views · White boxes mark source=target",color=".35",fontsize=10)
-    fig.subplots_adjust(left=.07,right=.93,bottom=.09,top=.9,wspace=.24,hspace=.32)
+    fig.subplots_adjust(left=.07,right=.92,bottom=.09,top=.9,wspace=.24,hspace=.32)
     output.parent.mkdir(parents=True,exist_ok=True); fig.savefig(output,dpi=220,bbox_inches="tight"); plt.close(fig)
 
 
