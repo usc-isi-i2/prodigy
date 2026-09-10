@@ -23,19 +23,6 @@ SHORT = {
     "facebook_page_reference": "Facebook",
 }
 
-LABEL_OFFSETS = {
-    "ukr_rus_twitter": (7, 5),
-    "covid19_twitter": (7, 5),
-    "midterm": (7, -12),
-    "covid_political": (8, 7),
-    "election2020": (-2, -18),
-    "ukr_rus_suspended": (7, -9),
-    "twibot20": (7, -9),
-    "cp_hk_twitter": (7, -12),
-    "facebook_page_reference": (10, -8),
-}
-
-
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", type=Path, required=True)
@@ -60,46 +47,58 @@ def main() -> int:
         "axes.spines.right": False,
         "figure.dpi": 160,
     })
-    fig, ax = plt.subplots(figsize=(7.2, 6.4))
-    fig.subplots_adjust(left=0.13, right=0.98, bottom=0.12, top=0.86)
+    fig, ax = plt.subplots(figsize=(9.4, 6.4))
+    fig.subplots_adjust(left=0.09, right=0.98, bottom=0.27, top=0.84)
     colors = plt.get_cmap("tab10")(np.arange(len(targets)))
-    all_values = matrix.to_numpy().ravel()
-    lo, hi = float(all_values.min()), float(all_values.max())
-    pad = 0.04 * (hi - lo)
-    limits = (lo - pad, hi + pad)
 
-    for color, target in zip(colors, targets):
-        diagonal = float(matrix.loc[target, target])
-        transfer = matrix[target].drop(index=target)
-        ax.scatter(
-            np.full(len(transfer), diagonal), transfer.to_numpy(),
-            s=34, color=color, alpha=0.68, edgecolors="none", zorder=2,
+    source_offsets = np.linspace(-0.28, 0.28, len(targets))
+    handles = []
+    for source_index, (color, source) in enumerate(zip(colors, targets)):
+        xs, penalties = [], []
+        for target_index, target in enumerate(targets):
+            if source == target:
+                continue
+            xs.append(target_index + source_offsets[source_index])
+            penalties.append(float(matrix.loc[source, target] - matrix.loc[target, target]))
+        handle = ax.scatter(
+            xs, penalties, s=39, color=color, alpha=0.78, edgecolors="none",
+            label=SHORT[source], zorder=3,
         )
-        ax.scatter(
-            diagonal, diagonal, marker="D", s=62, color=color,
-            edgecolors="black", linewidths=0.65, zorder=4,
-        )
-        ax.annotate(
-            SHORT[target], (diagonal, diagonal), xytext=LABEL_OFFSETS[target],
-            textcoords="offset points", color=color, fontsize=8.5,
-        )
+        handles.append(handle)
 
-    ax.plot(limits, limits, linestyle="--", linewidth=1.1, color="0.35", zorder=1)
-    ax.text(18.5, 18.9, "equal to in-domain", color="0.35", fontsize=8.5, rotation=45)
-    ax.set(xlim=limits, ylim=limits)
-    ax.set_aspect("equal", adjustable="box")
-    ax.grid(True, linewidth=0.5, alpha=0.25)
-    ax.set_xlabel("Target in-domain error (scaled cosine ×100)")
-    ax.set_ylabel("Model error on target (scaled cosine ×100)")
+    medians = []
+    for target in targets:
+        penalties = matrix[target].drop(index=target) - matrix.loc[target, target]
+        medians.append(float(penalties.median()))
+    for index, median in enumerate(medians):
+        ax.plot([index - 0.34, index + 0.34], [median, median], color="black", linewidth=2.1, zorder=4)
+    ax.scatter(
+        np.arange(len(targets)), np.zeros(len(targets)), marker="D", s=36,
+        facecolor="white", edgecolor="black", linewidth=1, label="Target-trained baseline", zorder=5,
+    )
+
+    ax.axhline(0, linestyle="--", linewidth=1.1, color="0.35", zorder=1)
+    ax.set_xlim(-0.55, len(targets) - 0.45)
+    ax.set_ylim(-0.08, None)
+    ax.set_xticks(np.arange(len(targets)), [SHORT[target] for target in targets], rotation=28, ha="right")
+    ax.grid(axis="y", linewidth=0.5, alpha=0.3)
+    ax.set_xlabel("Target graph")
+    ax.set_ylabel("Transfer penalty vs target-trained MLP\n(Δ scaled cosine error ×100; lower is better)")
     fig.suptitle(
-        "Node-only feature-prediction transfer", x=0.13, y=0.975,
+        "Node-only feature-prediction transfer penalty", x=0.09, y=0.97,
         ha="left", weight="bold", fontsize=14,
     )
     fig.text(
-        0.13, 0.925,
-        "Circles: cross-source models · Diamonds: target-trained model · Lower is better",
+        0.09, 0.91,
+        "Each circle is a source-trained MLP on a target; black bars mark target medians",
         fontsize=8.5, color="0.35", ha="left",
     )
+    legend = ax.legend(
+        handles=ax.collections[:len(targets)] + [ax.collections[-1]],
+        loc="upper center", bbox_to_anchor=(0.5, -0.22), ncol=5,
+        frameon=False, fontsize=8.2, handletextpad=0.35, columnspacing=1.1,
+    )
+    legend.set_title("Training source", prop={"size": 8.2})
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(args.output, dpi=220, bbox_inches="tight")
