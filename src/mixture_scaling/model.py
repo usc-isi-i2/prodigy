@@ -86,3 +86,24 @@ class MaskedFeatureMLP(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.decoder(self.encode(x))
+
+
+class ViewMLP(NodeMLP):
+    """MLP over a fixed node/neighborhood view; contains no message passing."""
+
+
+class MaskedViewFeatureMLP(nn.Module):
+    """Masked-feature decoder over a fixed neighborhood-derived view."""
+
+    def __init__(self, view_dim: int, feature_dim: int, hidden_dim: int, output_dim: int,
+                 dropout: float = 0.0):
+        super().__init__()
+        self.encoder = ViewMLP(view_dim, hidden_dim, output_dim, dropout)
+        self.mask_token = nn.Parameter(torch.zeros(feature_dim))
+        self.decoder = nn.Linear(output_dim, feature_dim)
+
+    def encode(self, view: torch.Tensor) -> torch.Tensor:
+        return self.encoder(view)
+
+    def forward(self, view: torch.Tensor) -> torch.Tensor:
+        return self.decoder(self.encode(view))
