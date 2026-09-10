@@ -53,18 +53,25 @@ def lp_loss(model, batch, view, device):
 
 @torch.no_grad()
 def validate(model, loaders, view, objective, protocol, seed, device):
-    model.eval(); torch.manual_seed(seed + 32452843)
-    generator = torch.Generator().manual_seed(seed + 32452843)
-    values = []
-    for loader in loaders.values():
-        losses = []
-        for _, batch in zip(range(int(protocol["validation_batches"])), loader):
-            loss = lp_loss(model, batch, view, device) if objective == "lp" else fp_loss(
-                model, batch, view, protocol, generator, device)
-            losses.append(float(loss))
-        if not losses: raise RuntimeError("empty validation loader")
-        values.append(np.mean(losses))
-    model.train(); return float(np.mean(values))
+    cpu_rng = torch.random.get_rng_state()
+    cuda_rng = torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None
+    try:
+        model.eval(); torch.manual_seed(seed + 32452843)
+        generator = torch.Generator().manual_seed(seed + 32452843)
+        values = []
+        for loader in loaders.values():
+            losses = []
+            for _, batch in zip(range(int(protocol["validation_batches"])), loader):
+                loss = lp_loss(model, batch, view, device) if objective == "lp" else fp_loss(
+                    model, batch, view, protocol, generator, device)
+                losses.append(float(loss))
+            if not losses: raise RuntimeError("empty validation loader")
+            values.append(np.mean(losses))
+        return float(np.mean(values))
+    finally:
+        torch.random.set_rng_state(cpu_rng)
+        if cuda_rng is not None: torch.cuda.set_rng_state_all(cuda_rng)
+        model.train()
 
 
 def save(path, model, optimizer, step, metadata):
