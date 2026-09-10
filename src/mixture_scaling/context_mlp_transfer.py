@@ -28,19 +28,27 @@ def build_model(view, objective, protocol, device):
 
 
 def fp_loss(model, batch, view, protocol, generator, device):
+    return fp_losses([model], batch, view, protocol, generator, device)[0]
+
+
+def fp_losses(models, batch, view, protocol, generator, device):
+    """Evaluate several models on one sampled batch and one shared feature mask."""
     batch = batch.to(device)
     roots = int(batch.batch_size)
     target = batch.x[:roots].float()
     mask = torch.rand(target.shape, generator=generator).to(device) < float(protocol["mask_rate"])
     empty = ~mask.any(1)
     if empty.any(): mask[empty, 0] = True
-    corrupted = batch.x.float().clone()
-    corrupted[:roots] = torch.where(mask, model.mask_token.expand_as(target), target)
-    prediction = model(fixed_view(corrupted, batch.edge_index, view)[:roots])
-    prediction = prediction.masked_fill(~mask, 0)
-    target = target.masked_fill(~mask, 0)
-    error = 1 - F.cosine_similarity(prediction, target, dim=-1)
-    return error.clamp_min(0).pow(float(protocol["sce_alpha"])).mean()
+    masked_target = target.masked_fill(~mask, 0)
+    losses = []
+    for model in models:
+        corrupted = batch.x.float().clone()
+        corrupted[:roots] = torch.where(mask, model.mask_token.expand_as(target), target)
+        prediction = model(fixed_view(corrupted, batch.edge_index, view)[:roots])
+        prediction = prediction.masked_fill(~mask, 0)
+        error = 1 - F.cosine_similarity(prediction, masked_target, dim=-1)
+        losses.append(error.clamp_min(0).pow(float(protocol["sce_alpha"])).mean())
+    return losses
 
 
 def lp_loss(model, batch, view, device):

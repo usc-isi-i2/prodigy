@@ -7,7 +7,7 @@ from torch_geometric.data import Data
 from torch_geometric.loader import NeighborLoader
 
 from .config import load_config
-from .context_mlp_transfer import build_model, fp_loss
+from .context_mlp_transfer import build_model, fp_losses
 from .context_views import VIEWS, fixed_view
 from .evaluate_lattice import LP_TARGETS, cached_lp_views, load_pair_module, unwrap
 from .lattice import SOURCE_ORDER
@@ -44,22 +44,33 @@ def assigned_target_rows(targets, rows, worker_index, workers):
 def evaluate_fp(target,a,config,rows,device,root):
     graph=unwrap(config["graphs"][target]["path"]); protocol=config["protocol"]
     nodes=feature_split(int(graph.num_nodes),True,a.seed,float(protocol["node_validation_fraction"]))
+    pending=[]
     for run_id,_ in rows:
         output=root/a.view/"fp"/f"{run_id}__to__{target}.json"
         if output.is_file(): continue
         checkpoint=torch.load(Path(a.state_root)/a.view/"fp"/run_id/"best.pt",map_location="cpu",weights_only=False)
-        model,p=load_model(config,checkpoint,a.view,"fp",device); replicate=[]
-        for rep in range(int(p.get("fp_eval_mask_replicates",10))):
-            torch.manual_seed(a.seed+80021+rep); generator=torch.Generator().manual_seed(a.seed+80021+rep)
-            losses=[]; weights=[]
-            for batch in node_loader(graph,nodes,p):
-                losses.append(float(fp_loss(model,batch,a.view,p,generator,device))); weights.append(int(batch.batch_size))
-            replicate.append(float(np.average(losses,weights=weights)))
+        model,p=load_model(config,checkpoint,a.view,"fp",device)
+        pending.append((run_id,output,checkpoint,model,p))
+    if not pending: return
+    reference_protocol=pending[0][4]
+    if any(item[4] != reference_protocol for item in pending[1:]):
+        raise ValueError("cannot share FP samples across checkpoints with different protocols")
+    replicate=[[] for _ in pending]
+    for rep in range(int(reference_protocol.get("fp_eval_mask_replicates",10))):
+        torch.manual_seed(a.seed+80021+rep); generator=torch.Generator().manual_seed(a.seed+80021+rep)
+        losses=[[] for _ in pending]; weights=[]
+        for batch in node_loader(graph,nodes,reference_protocol):
+            batch_losses=fp_losses([item[3] for item in pending],batch,a.view,reference_protocol,generator,device)
+            for values,loss in zip(losses,batch_losses): values.append(float(loss))
+            weights.append(int(batch.batch_size))
+        for values,model_losses in zip(replicate,losses):
+            values.append(float(np.average(model_losses,weights=weights)))
+    for (run_id,output,checkpoint,_,_), values in zip(pending,replicate):
         payload={"status":"complete","task":"masked_feature_prediction","target":target,"run_id":run_id,
                  "view":a.view,"sources":checkpoint["metadata"]["sources"],"checkpoint_step":int(checkpoint["step"]),
-                 "seed":a.seed,"n_nodes":len(nodes),"mask_replicates":len(replicate),
-                 "scaled_cosine_error_mean":float(np.mean(replicate)),"scaled_cosine_error_std":float(np.std(replicate)),
-                 "replicate_losses":replicate}
+                 "seed":a.seed,"n_nodes":len(nodes),"mask_replicates":len(values),
+                 "scaled_cosine_error_mean":float(np.mean(values)),"scaled_cosine_error_std":float(np.std(values)),
+                 "replicate_losses":values}
         output.parent.mkdir(parents=True,exist_ok=True); output.write_text(json.dumps(payload,indent=2)+"\n")
 
 
