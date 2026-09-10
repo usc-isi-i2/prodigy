@@ -2,7 +2,7 @@ import torch
 from torch_geometric.data import Data
 
 from mixture_scaling.context_views import fixed_view, neighbor_mean, view_dim
-from mixture_scaling.evaluate_context_mlp import node_loader
+from mixture_scaling.evaluate_context_mlp import assigned_target_rows, node_loader
 
 
 def test_neighbor_mean_excludes_self_loops_and_uses_incoming_edges():
@@ -30,3 +30,11 @@ def test_context_eval_loader_drops_unsliceable_graph_metadata():
     )
     loader = node_loader(graph, torch.tensor([0, 1]), {"fanout": 1, "eval_batch_size": 2})
     assert set(loader.data.keys()) == {"x", "edge_index"}
+
+
+def test_context_eval_shards_each_target_across_workers():
+    rows = [(f"run{i}", (f"source{i}",)) for i in range(9)]
+    assignments = [assigned_target_rows(["large", "small"], rows, i, 4) for i in range(4)]
+    assert [len(item["large"]) for item in assignments] == [3, 2, 2, 2]
+    cells = [(target, row[0]) for item in assignments for target, assigned in item.items() for row in assigned]
+    assert len(cells) == len(set(cells)) == 18

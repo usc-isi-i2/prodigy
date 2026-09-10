@@ -31,6 +31,15 @@ def node_loader(graph,nodes,protocol):
                           batch_size=int(protocol.get("eval_batch_size",1024)),shuffle=False,num_workers=0)
 
 
+def assigned_target_rows(targets, rows, worker_index, workers):
+    """Shard target/model cells, then regroup to load each graph once per worker."""
+    assigned = {}
+    cells = [(target, row) for target in targets for row in rows]
+    for target, row in cells[worker_index::workers]:
+        assigned.setdefault(target, []).append(row)
+    return assigned
+
+
 @torch.no_grad()
 def evaluate_fp(target,a,config,rows,device,root):
     graph=unwrap(config["graphs"][target]["path"]); protocol=config["protocol"]
@@ -81,8 +90,8 @@ def evaluate_lp(target,a,config,rows,device,root,pair):
 
 def main():
     p=argparse.ArgumentParser(); p.add_argument("--config",required=True); p.add_argument("--view",choices=VIEWS,required=True); p.add_argument("--objective",choices=("fp","lp"),required=True); p.add_argument("--worker-index",type=int,required=True); p.add_argument("--workers",type=int,default=4); p.add_argument("--device",type=int,required=True); p.add_argument("--state-root",required=True); p.add_argument("--output-root",required=True); p.add_argument("--prodigy-root",default="/dataMeR1/phil/gfm/prodigy-nm-pairs"); p.add_argument("--seed",type=int,default=0); a=p.parse_args()
-    config=load_config(a.config); configure_sampling_backend(config["protocol"]); rows=singleton_rows(); targets=SOURCE_ORDER if a.objective=="fp" else LP_TARGETS; assigned=targets[a.worker_index::a.workers]; device=torch.device(f"cuda:{a.device}"); pair=load_pair_module(Path(a.prodigy_root)) if a.objective=="lp" else None; root=Path(a.output_root)
-    for target in assigned:
-        evaluate_fp(target,a,config,rows,device,root) if a.objective=="fp" else evaluate_lp(target,a,config,rows,device,root,pair)
+    config=load_config(a.config); configure_sampling_backend(config["protocol"]); rows=singleton_rows(); targets=SOURCE_ORDER if a.objective=="fp" else LP_TARGETS; device=torch.device(f"cuda:{a.device}"); pair=load_pair_module(Path(a.prodigy_root)) if a.objective=="lp" else None; root=Path(a.output_root)
+    for target, target_rows in assigned_target_rows(targets,rows,a.worker_index,a.workers).items():
+        evaluate_fp(target,a,config,target_rows,device,root) if a.objective=="fp" else evaluate_lp(target,a,config,target_rows,device,root,pair)
     return 0
 if __name__=="__main__": raise SystemExit(main())
