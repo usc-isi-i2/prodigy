@@ -23,6 +23,10 @@ def load_model(config, checkpoint, view, objective, device):
 
 
 def node_loader(graph,nodes,protocol):
+    # NeighborLoader attempts to slice every node-level attribute.  The source
+    # artifacts also carry list-valued provenance metadata, which is not a
+    # sliceable feature tensor and must not enter the sampled evaluation graph.
+    graph = Data(x=graph.x.float(), edge_index=graph.edge_index)
     return NeighborLoader(graph,input_nodes=nodes,num_neighbors=[int(protocol["fanout"])],
                           batch_size=int(protocol.get("eval_batch_size",1024)),shuffle=False,num_workers=0)
 

@@ -1,6 +1,8 @@
 import torch
+from torch_geometric.data import Data
 
 from mixture_scaling.context_views import fixed_view, neighbor_mean, view_dim
+from mixture_scaling.evaluate_context_mlp import node_loader
 
 
 def test_neighbor_mean_excludes_self_loops_and_uses_incoming_edges():
@@ -18,3 +20,13 @@ def test_fixed_views_have_expected_content_and_width():
     assert torch.equal(combined, torch.cat((x, x.flip(0)), dim=1))
     assert view_dim(2, "neighborhood") == 2
     assert view_dim(2, "node_neighborhood") == 4
+
+
+def test_context_eval_loader_drops_unsliceable_graph_metadata():
+    graph = Data(
+        x=torch.randn(3, 2),
+        edge_index=torch.tensor([[0, 1], [1, 2]]),
+        provenance=["source", "metadata"],
+    )
+    loader = node_loader(graph, torch.tensor([0, 1]), {"fanout": 1, "eval_batch_size": 2})
+    assert set(loader.data.keys()) == {"x", "edge_index"}
