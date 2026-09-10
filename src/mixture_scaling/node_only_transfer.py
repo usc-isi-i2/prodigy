@@ -5,6 +5,7 @@ import json
 import math
 import random
 import time
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -53,6 +54,71 @@ def feature_batches(x: torch.Tensor, indices: torch.Tensor, batch_size: int, shu
     order = indices[torch.randperm(len(indices), generator=generator)] if shuffle else indices
     for start in range(0, len(order), batch_size):
         yield x[order[start:start + batch_size]]
+
+
+@dataclass
+class DirectLinkBatch:
+    x: torch.Tensor
+    edge_label_index: torch.Tensor
+    edge_label: torch.Tensor
+
+    def to(self, device):
+        self.x = self.x.to(device, non_blocking=True)
+        self.edge_label_index = self.edge_label_index.to(device, non_blocking=True)
+        self.edge_label = self.edge_label.to(device, non_blocking=True)
+        return self
+
+
+class DirectLinkLoader:
+    """Topology-free endpoint batches without neighborhood sampling or PyG collation."""
+
+    def __init__(self, x, positive_edges, batch_size, negatives_per_positive, shuffle, seed):
+        self.x = x.float()
+        self.positive_edges = positive_edges.long()
+        self.batch_size = int(batch_size)
+        self.negatives_per_positive = int(negatives_per_positive)
+        self.shuffle = bool(shuffle)
+        self.seed = int(seed)
+        self.epoch = 0
+        if self.positive_edges.ndim != 2 or self.positive_edges.shape[0] != 2:
+            raise ValueError("positive_edges must have shape [2, E]")
+        if self.negatives_per_positive < 1:
+            raise ValueError("negatives_per_positive must be a positive integer")
+
+    def __iter__(self):
+        epoch = self.epoch if self.shuffle else 0
+        self.epoch += int(self.shuffle)
+        generator = torch.Generator().manual_seed(self.seed + epoch)
+        count = self.positive_edges.shape[1]
+        order = torch.randperm(count, generator=generator) if self.shuffle else torch.arange(count)
+        n_nodes = self.x.shape[0]
+        for start in range(0, count, self.batch_size):
+            positive = self.positive_edges[:, order[start:start + self.batch_size]]
+            n_positive = positive.shape[1]
+            n_negative = n_positive * self.negatives_per_positive
+            negative = torch.randint(n_nodes, (2, n_negative), generator=generator)
+            self_loops = negative[0] == negative[1]
+            while self_loops.any():
+                negative[1, self_loops] = torch.randint(
+                    n_nodes, (int(self_loops.sum()),), generator=generator
+                )
+                self_loops = negative[0] == negative[1]
+            pairs = torch.cat((positive, negative), dim=1)
+            endpoints = torch.cat((pairs[0], pairs[1]))
+            features = self.x[endpoints].pin_memory() if torch.cuda.is_available() else self.x[endpoints]
+            n_pairs = pairs.shape[1]
+            local_edges = torch.stack((torch.arange(n_pairs), torch.arange(n_pairs, 2 * n_pairs)))
+            labels = torch.cat((torch.ones(n_positive), torch.zeros(n_negative)))
+            yield DirectLinkBatch(features, local_edges, labels)
+
+
+def make_direct_lp_loader(graph, protocol, validation: bool, seed: int):
+    edges = graph.validation_edges if validation else graph.train_edges
+    return DirectLinkLoader(
+        graph.data.x, edges, int(protocol["ssl_batch_size"]),
+        int(protocol["negatives_per_positive"]), not validation,
+        seed + (32452843 if validation else 49979687),
+    )
 
 
 def masked_feature_loss(model, x, mask_rate: float, alpha: float, generator, device):
@@ -139,8 +205,12 @@ def train_one(run_id, source, objective, graph, config, device, output_root, see
         lr=float(protocol.get(f"node_mlp_{objective}_learning_rate", protocol["learning_rate"])),
         weight_decay=float(protocol["weight_decay"]),
     )
-    lp_train = make_lp_loader(graph, protocol, False) if objective == "lp" else None
-    lp_val = make_lp_loader(graph, protocol, True) if objective == "lp" else None
+    if objective == "lp" and protocol.get("node_mlp_link_loader", "direct") == "direct":
+        lp_train = make_direct_lp_loader(graph, protocol, False, seed)
+        lp_val = make_direct_lp_loader(graph, protocol, True, seed)
+    else:
+        lp_train = make_lp_loader(graph, protocol, False) if objective == "lp" else None
+        lp_val = make_lp_loader(graph, protocol, True) if objective == "lp" else None
     feature_indices = feature_split(
         int(graph.data.num_nodes), False, seed, float(protocol["node_validation_fraction"])
     )
@@ -151,7 +221,10 @@ def train_one(run_id, source, objective, graph, config, device, output_root, see
         "architecture": "node_mlp", "input_view": "center_node_features_only",
         "uses_topology_in_encoder": False, "protocol": protocol,
         "checkpoint_selection": "source_ssl_validation_only",
+        "link_loader": protocol.get("node_mlp_link_loader", "direct"),
     }
+    if objective == "lp":
+        metadata["training_negative_sampling"] = "uniform_approximate_excluding_self_loops"
     (run_dir / "metadata.json").write_text(json.dumps(metadata, indent=2) + "\n")
     best_loss = reference = math.inf
     best_step = patience = 0

@@ -14,6 +14,10 @@ every eligible target.
   from its raw feature vector; endpoint dot products train the model. Evaluation
   uses the existing deterministic background/holdout partitions, degree-matched
   negatives, validation-locked cosine orientation, and leakage/sensitivity gates.
+  Training batches use direct CPU indexing of endpoint feature rows and pinned-memory
+  transfer; no neighborhoods are sampled or collated. Uniform random
+  training negatives exclude self-loops, matching the earlier loader's approximate
+  negative-sampling contract. Evaluation negatives are unchanged.
 
 Checkpoint selection uses source SSL validation only. Target performance never
 selects a checkpoint. FP evaluates all nine targets with ten deterministic mask
