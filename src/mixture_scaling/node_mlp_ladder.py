@@ -257,9 +257,18 @@ def main():
             train_rung(run_id, sources, graphs, config, args, device)
             torch.cuda.empty_cache()
     else:
+        selected = ladder_rows()
+        if args.rungs:
+            wanted = {int(k) for k in args.rungs.split(",")}
+            if not wanted or not wanted <= set(range(1, 10)):
+                p.error("rungs must be in 1..9")
+            selected = [row for row in selected if len(row[1]) in wanted]
+        for run_id, _ in selected:
+            if not (Path(args.state_root) / "lp" / run_id / "summary.json").is_file():
+                raise ValueError(f"evaluation requires a completed rung: {run_id}")
         pair = load_pair_module(Path(args.prodigy_root))
         for target in LP_TARGETS[args.worker_index::args.workers]:
-            evaluate_lp(target, args, config, ladder_rows(), device, Path(args.output_root), pair)
+            evaluate_lp(target, args, config, selected, device, Path(args.output_root), pair)
 
 
 if __name__ == "__main__":
