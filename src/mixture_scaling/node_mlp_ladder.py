@@ -10,6 +10,8 @@ from pathlib import Path
 
 import torch
 
+from .ladder_queue import claimed_rows
+from .prefetch_links import PrefetchLinks
 from .convergence import SourcePlateau
 from .ladder_tracking import LossWindow, tracked_run
 from .config import load_config
@@ -77,11 +79,14 @@ def train_rung(run_id, sources, graphs, config, args, device):
                      "patience": args.patience, "min_delta": args.min_delta,
                      "max_steps_per_source": args.max_steps_per_source}, "source_sampling": "uniform_round_robin",
         "training_negative_sampling": "source_confined_uniform_approximate_excluding_self_loops",
+        "prefetch_depth": args.prefetch_depth, "prefetch_workers": args.prefetch_workers,
         "feature_residency": {s: "gpu" if s in resident else "cpu_direct_pinned" for s in sources},
     }
     (run_dir / "metadata.json").write_text(json.dumps(metadata, indent=2) + "\n")
     print(json.dumps({"starting": run_id, "feature_residency": metadata["feature_residency"]}), flush=True)
-    with tracked_run(run_dir, metadata, args) as (run, log):
+    with tracked_run(run_dir, metadata, args) as (run, log), PrefetchLinks(
+            train, source_schedule(sources, limit), device, depth=args.prefetch_depth,
+            workers=args.prefetch_workers) as batches:
         window = LossWindow()
         started = time.monotonic()
         stopper = SourcePlateau(sources, args.patience, args.min_delta)
@@ -89,7 +94,9 @@ def train_rung(run_id, sources, graphs, config, args, device):
         stop_reason = "safety_cap" if args.convergence else "fixed_budget"
         validation = None
         for step, source in enumerate(source_schedule(sources, limit), 1):
-            batch, iterators[source] = next_batch(train[source], iterators[source])
+            batch_source, batch = next(batches)
+            if batch_source != source:
+                raise RuntimeError("prefetch changed source order")
             optimizer.zero_grad(set_to_none=True)
             loss = lp_loss(model, batch, device)
             if not torch.isfinite(loss):
@@ -185,10 +192,14 @@ def main():
     p.add_argument("--prodigy-root", default="/dataMeR1/phil/gfm/prodigy-nm-pairs")
     p.add_argument("--steps", type=int, default=2500)
     p.add_argument("--seed", type=int, default=0)
-    p.add_argument("--device", type=int, choices=(2, 3), default=2)
+    p.add_argument("--device", type=int, choices=(0, 1, 2, 3), default=0)
     p.add_argument("--worker-index", type=int, default=0)
     p.add_argument("--workers", type=int, default=2)
     p.add_argument("--feature-budget-gib", type=float, default=70)
+    p.add_argument("--queue", action="store_true")
+    p.add_argument("--rungs", help="Comma-separated rung numbers; default all")
+    p.add_argument("--prefetch-depth", type=int, default=8)
+    p.add_argument("--prefetch-workers", type=int, default=4)
     p.add_argument("--threads", type=int, default=4)
     p.add_argument("--wandb-mode", choices=("offline", "online", "disabled"),
                    default=os.environ.get("WANDB_MODE", "offline"))
@@ -223,10 +234,18 @@ def main():
         return
     torch.set_num_threads(args.threads)
     config = load_config(args.config)
+    torch.cuda.set_device(args.device)
     device = torch.device(f"cuda:{args.device}")
     if args.phase == "train":
         graphs = {}
-        for run_id, sources in ladder_rows()[args.worker_index::args.workers]:
+        selected = ladder_rows()
+        if args.rungs:
+            wanted = {int(k) for k in args.rungs.split(",")}
+            if not wanted or not wanted <= set(range(1, 10)):
+                p.error("rungs must be in 1..9")
+            selected = [row for row in selected if len(row[1]) in wanted]
+        assigned = claimed_rows(args.state_root, selected) if args.queue else selected[args.worker_index::args.workers]
+        for run_id, sources in assigned:
             for source in sources:
                 if source not in graphs:
                     started = time.monotonic()
