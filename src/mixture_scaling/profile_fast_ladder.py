@@ -72,10 +72,10 @@ def main():
     sources = SOURCE_ORDER[:a.rung]
     graphs, features = {}, {}
     for source in sources:
-        # Map existing files read-only rather than copy ~100 GiB for this short probe.
-        raw = torch.load(protocol["graphs"][source]["path"],mmap=True,map_location="cpu",weights_only=False)
+        # Use the same deserializer and CPU feature representation as production.
+        raw = torch.load(protocol["graphs"][source]["path"],map_location="cpu",weights_only=False)
         raw = raw if isinstance(raw,dict) else raw.to_dict()
-        split = torch.load(a.cache_root/f"{source}_edge_split_s0.pt",mmap=True,map_location="cpu",weights_only=False)
+        split = torch.load(a.cache_root/f"{source}_edge_split_s0.pt",map_location="cpu",weights_only=False)
         graphs[source]=SimpleNamespace(data=SimpleNamespace(x=raw["x"].float()),
             train_edges=split["train_edges"],validation_edges=split["validation_edges"])
         features[source] = graphs[source].data.x
@@ -95,7 +95,7 @@ def main():
     steps=180
     a.output.parent.mkdir(parents=True,exist_ok=True)
     with TimedPrefetch(loaders,[sources[i%len(sources)] for i in range(steps+36)],device,depth=8,workers=4) as batches:
-        # Prefill CPU futures and touch mapped source pages before the brief pause.
+        # Prefill CPU futures and warm source pages before the brief pause.
         def update(measure):
             start=time.perf_counter()
             source,batch=next(batches)
@@ -132,7 +132,7 @@ def main():
             "host_phase_percent":{k:100*v/elapsed for k,v in phase_seconds.items()},
             "sampling_seconds_in_next_batch":batches.sample_seconds-sample_before,
             "parallel_prepare_worker_seconds":{s:v-prep_before.get(s,0) for s,v in batches.prepare_seconds.items()},
-            "limitations":"Short real-data replay with memory-mapped CPU features; host timings include dispatch and waits, not pure GPU kernel durations. Validation/W&B excluded. Other GPUs remain active."}
+            "limitations":"Short real-data replay with the production CPU feature representation; host timings include dispatch and waits, not pure GPU kernel durations. Validation/W&B excluded. Other GPUs remain active."}
     a.output.write_text(json.dumps(row,indent=2)+"\n")
     print(json.dumps(row,indent=2),flush=True)
 
