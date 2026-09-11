@@ -120,12 +120,12 @@
       "artifact_size_bytes": 247456401,
       "artifact_size_gb": 0.247,
       "statistics": {"nodes": 78672, "edges": 180928},
-      "features": {"node_feature_dim": 768, "node_features": "mean-pooled GTE multilingual bio embeddings", "edge_features": ["rt_weight", "mn_weight"]},
+      "features": {"node_feature_dim": 768, "node_features": "mean-pooled GTE multilingual embeddings of upstream-cleaned profile text (cleaned-profile-v001 legacy)", "edge_features": ["rt_weight", "mn_weight"], "provenance_note": "docs/political_bio_provenance_20260911.md; raw-profile replacement candidate available separately"},
       "labels": {"type": "binary node classification", "names": ["non_conservative", "conservative"], "labeled_nodes": 78672},
       "tasks": {"supported": ["neighbor_matching", "node_classification"], "unavailable": ["temporal_link_prediction", "node_regression"]},
       "source_data": [
         {"role": "interaction graph", "path": "social_llm_data/covid/graph.pickle", "format": "NetworkX pickle"},
-        {"role": "user records and labels", "path": "social_llm_data/covid/user_data.csv", "format": "CSV"},
+        {"role": "user records and labels", "path": "social_llm_data/covid/user_data.csv", "format": "CSV", "note": "profile is upstream-cleaned; full_user_data.csv preserves raw_profile"},
         {"role": "bio embeddings", "path": "covid_political/embeddings/user_bio_embeddings_gte_multilingual_base.pt", "format": "PyTorch"}
       ],
       "construction": {"script": "data/data/covid_political/scripts/generate_graph.py"},
@@ -162,12 +162,12 @@
       "artifact_size_bytes": 311565265,
       "artifact_size_gb": 0.312,
       "statistics": {"nodes": 78932, "edges": 2818603},
-      "features": {"node_feature_dim": 768, "node_features": "mean-pooled GTE multilingual bio embeddings", "edge_features": ["rt_weight", "mn_weight"]},
+      "features": {"node_feature_dim": 768, "node_features": "mean-pooled GTE multilingual embeddings of upstream-cleaned profile text (cleaned-profile-v001 legacy)", "edge_features": ["rt_weight", "mn_weight"], "provenance_note": "docs/political_bio_provenance_20260911.md; original raw profiles not currently available"},
       "labels": {"type": "binary node classification", "names": ["non_conservative", "conservative"], "labeled_nodes": 78932},
       "tasks": {"supported": ["neighbor_matching", "node_classification"], "unavailable": ["temporal_link_prediction", "node_regression"]},
       "source_data": [
         {"role": "interaction graph", "path": "social_llm_data/election2020/graph.pickle", "format": "NetworkX pickle"},
-        {"role": "user records and labels", "path": "social_llm_data/election2020/user_data.csv", "format": "CSV"},
+        {"role": "user records and labels", "path": "social_llm_data/election2020/user_data.csv", "format": "CSV", "note": "profile is upstream-cleaned; raw_profile source not currently available"},
         {"role": "bio embeddings", "path": "election2020/embeddings/user_bio_embeddings_gte_multilingual_base.pt", "format": "PyTorch"}
       ],
       "construction": {"script": "scripts/social_llm/generate_graph.py"},
