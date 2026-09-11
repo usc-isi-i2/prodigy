@@ -32,3 +32,22 @@ models can be skipped with a fresh log directory. Data and checkpoints remain un
 The command's `plan` phase is read-only. The `aggregate` phase checks completion,
 source sets, checkpoint budget and LP gates before writing `ladder_results.csv`
 and `COMPLETE.json`. No run should be called complete before those outputs exist.
+
+## W&B tracking
+
+Each rung creates one W&B run, offline by default even when invoked directly in
+Python. Override `WANDB_MODE` or `--wandb-mode` explicitly for online or disabled
+mode. The default project is `node-mlp-ladder`; `WANDB_PROJECT` and
+`WANDB_RUN_GROUP` are supported. There is no automatic upload or login.
+
+Every 25 updates, log example-weighted window BCE and per-source window BCE,
+example counts, optimizer step and elapsed time. `--log-interval` changes the
+window size. Every batch contributes, including the final partial window. Final
+per-source validation losses are diagnostic, not a validation trajectory.
+Configuration, source sets, source update counts and timings are recorded too.
+The human-readable `metrics.jsonl` mirrors the metrics in W&B. Offline records
+live at `<state-root>/lp/<rung>/wandb/offline-run-*`; `wandb_run.json` identifies
+each run. They can later be uploaded explicitly using `wandb sync <offline-run-dir>`.
+
+Use fresh state/results/log roots for a rerun, since completed rungs are skipped
+and partial runs are refused. Tracking does not change the fixed training budget.

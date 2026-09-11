@@ -5,7 +5,8 @@ source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate prodigy
 export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 export PYTHONPATH=src
-export WANDB_MODE=offline
+export WANDB_MODE="${WANDB_MODE:-offline}"
+export WANDB_PROJECT="${WANDB_PROJECT:-node-mlp-ladder}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 STATE_ROOT="${STATE_ROOT:-/dataMeR1/phil/gfm/mixture-scaling/state/node_mlp_ladder_s0_2500}"

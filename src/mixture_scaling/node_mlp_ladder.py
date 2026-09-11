@@ -4,11 +4,13 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import time
 from pathlib import Path
 
 import torch
 
+from .ladder_tracking import LossWindow, tracked_run
 from .config import load_config
 from .evaluate_lattice import LP_TARGETS, load_pair_module
 from .evaluate_node_only import evaluate_lp
@@ -71,32 +73,41 @@ def train_rung(run_id, sources, graphs, config, args, device):
     }
     (run_dir / "metadata.json").write_text(json.dumps(metadata, indent=2) + "\n")
     print(json.dumps({"starting": run_id, "feature_residency": metadata["feature_residency"]}), flush=True)
-    started = time.monotonic()
-    for step, source in enumerate(source_schedule(sources, args.steps), 1):
-        batch, iterators[source] = next_batch(train[source], iterators[source])
-        optimizer.zero_grad(set_to_none=True)
-        loss = lp_loss(model, batch, device)
-        if not torch.isfinite(loss):
-            raise FloatingPointError(f"non-finite loss: {run_id} step {step}")
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), float(protocol["gradient_clip_norm"]))
-        optimizer.step()
-        counts[source] += 1
-        if step % 250 == 0 or step == args.steps:
-            print(json.dumps({"run_id": run_id, "step": step, "loss": float(loss),
-                "elapsed_seconds": time.monotonic() - started}), flush=True)
-    training_seconds = time.monotonic() - started
-    validation = {s: validate(model, graphs[s], val[s], "lp", device, protocol, args.seed) for s in sources}
-    metadata["source_update_counts"] = counts
-    save_checkpoint(run_dir / "checkpoints" / f"step_{args.steps}.pt", model, optimizer, args.steps, metadata)
-    # The existing evaluator expects best.pt. It is explicitly the terminal model,
-    # not a model chosen on target scores or an unequal early-stopping budget.
-    (run_dir / "best.pt").symlink_to(f"checkpoints/step_{args.steps}.pt")
-    summary = {**metadata, "status": "complete", "final_step": args.steps, "best_step": args.steps,
-        "training_seconds": training_seconds, "elapsed_seconds": time.monotonic() - started,
-        "source_validation_losses": validation}
-    (run_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
-    print(json.dumps({"completed": run_id, "training_seconds": training_seconds}), flush=True)
+    with tracked_run(run_dir, metadata, args) as (run, log):
+        window = LossWindow()
+        started = time.monotonic()
+        for step, source in enumerate(source_schedule(sources, args.steps), 1):
+            batch, iterators[source] = next_batch(train[source], iterators[source])
+            optimizer.zero_grad(set_to_none=True)
+            loss = lp_loss(model, batch, device)
+            if not torch.isfinite(loss):
+                raise FloatingPointError(f"non-finite loss: {run_id} step {step}")
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), float(protocol["gradient_clip_norm"]))
+            optimizer.step()
+            counts[source] += 1
+            window.add(source, float(loss.detach()), batch.edge_label.numel())
+            if step % args.log_interval == 0 or step == args.steps:
+                log(step, {**window.flush(), "train/elapsed_seconds": time.monotonic() - started})
+            if step % 250 == 0 or step == args.steps:
+                print(json.dumps({"run_id": run_id, "step": step, "loss": float(loss),
+                    "elapsed_seconds": time.monotonic() - started}), flush=True)
+        training_seconds = time.monotonic() - started
+        validation = {s: validate(model, graphs[s], val[s], "lp", device, protocol, args.seed) for s in sources}
+        log(args.steps, {"validation/loss": sum(validation.values()) / len(validation),
+            **{f"validation/source/{s}/loss": value for s, value in validation.items()}})
+        run.summary.update({"final_step": args.steps, "training_seconds": training_seconds,
+                            "status": "complete", "source_update_counts": counts})
+        metadata["source_update_counts"] = counts
+        save_checkpoint(run_dir / "checkpoints" / f"step_{args.steps}.pt", model, optimizer, args.steps, metadata)
+        # The existing evaluator expects best.pt. It is explicitly the terminal model,
+        # not a model chosen on target scores or an unequal early-stopping budget.
+        (run_dir / "best.pt").symlink_to(f"checkpoints/step_{args.steps}.pt")
+        summary = {**metadata, "status": "complete", "final_step": args.steps, "best_step": args.steps,
+            "training_seconds": training_seconds, "elapsed_seconds": time.monotonic() - started,
+            "source_validation_losses": validation}
+        (run_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+        print(json.dumps({"completed": run_id, "training_seconds": training_seconds}), flush=True)
 
 
 def aggregate(args):
@@ -137,7 +148,14 @@ def main():
     p.add_argument("--workers", type=int, default=2)
     p.add_argument("--feature-budget-gib", type=float, default=70)
     p.add_argument("--threads", type=int, default=4)
+    p.add_argument("--wandb-mode", choices=("offline", "online", "disabled"),
+                   default=os.environ.get("WANDB_MODE", "offline"))
+    p.add_argument("--wandb-project", default=os.environ.get("WANDB_PROJECT", "node-mlp-ladder"))
+    p.add_argument("--wandb-group", default=os.environ.get("WANDB_RUN_GROUP"))
+    p.add_argument("--log-interval", type=int, default=25)
     args = p.parse_args()
+    if args.log_interval < 1 or args.wandb_mode not in ("offline", "online", "disabled"):
+        p.error("invalid tracking mode or logging interval")
     if args.steps < 1 or not 0 <= args.worker_index < args.workers:
         p.error("invalid budget or worker assignment")
     if args.phase == "plan":
