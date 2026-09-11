@@ -45,7 +45,11 @@ def main():
     p.add_argument("--gpus", default="0,1,2,3")
     p.add_argument("--legacy-state-root", type=Path)
     p.add_argument("--legacy-worker", action="append", default=[], help="GPU:PID:active_rung")
+    p.add_argument("--legacy-worker-root", action="append", default=[], help="GPU:state_root override")
     args, extra = p.parse_known_args()
+    worker_roots = {int(v.split(":", 1)[0]): Path(v.split(":", 1)[1]) for v in args.legacy_worker_root}
+    def legacy_root(gpu):
+        return worker_roots.get(gpu, args.legacy_state_root)
     gpus = [int(g) for g in args.gpus.split(",")]
     if not gpus or len(set(gpus)) != len(gpus) or not set(gpus) <= {0,1,2,3}:
         p.error("select unique owned GPUs 0–3")
@@ -55,7 +59,7 @@ def main():
     for gpu, pid, rung in legacy_workers:
         if gpu not in gpus or not 1 <= rung <= 9:
             p.error("invalid legacy worker")
-        verify_legacy(pid, gpu, args.legacy_state_root)
+        verify_legacy(pid, gpu, legacy_root(gpu))
     args.log_root.mkdir(parents=True, exist_ok=False)
     (args.state_root / "lp").mkdir(parents=True, exist_ok=True)
     args.output_root.mkdir(parents=True, exist_ok=True)
@@ -100,8 +104,8 @@ def main():
     draining = list(legacy_workers)
     while draining or any(proc.poll() is None for proc in workers.values()):
         for gpu,pid,rung in list(draining):
-            if import_completed(args.legacy_state_root,args.state_root,rung):
-                if verify_legacy(pid,gpu,args.legacy_state_root):
+            if import_completed(legacy_root(gpu),args.state_root,rung):
+                if verify_legacy(pid,gpu,legacy_root(gpu)):
                     # The imported summary is written after checkpoint and W&B finalization.
                     # Retire this worker before it trains further obsolete static-queue jobs.
                     os.kill(pid,signal.SIGTERM)
@@ -114,7 +118,7 @@ def main():
                 draining.remove((gpu,pid,rung))
                 print(json.dumps({"imported_rung":rung,"released_gpu":gpu}),flush=True)
                 launch(gpu)
-            elif not verify_legacy(pid,gpu,args.legacy_state_root):
+            elif not verify_legacy(pid,gpu,legacy_root(gpu)):
                 raise RuntimeError(f"legacy worker {pid} exited before rung {rung} completed")
         for gpu,proc in workers.items():
             if proc.poll() not in (None,0):
