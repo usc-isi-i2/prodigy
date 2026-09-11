@@ -128,7 +128,7 @@
         {"role": "user records and labels", "path": "social_llm_data/covid/user_data.csv", "format": "CSV", "note": "profile is upstream-cleaned; full_user_data.csv preserves raw_profile"},
         {"role": "bio embeddings", "path": "covid_political/embeddings/user_bio_embeddings_gte_multilingual_base.pt", "format": "PyTorch"}
       ],
-      "construction": {"script": "data/data/covid_political/scripts/generate_graph.py"},
+      "construction": {"script": "data/data/covid_political/scripts/generate_graph.py", "provenance_note": "docs/political_bio_provenance_20260911.md", "legacy_snapshot": "/dataMeR1/phil/data/covid_political/legacy/cleaned-profile-v001", "raw_profile_candidate": "/dataMeR1/phil/gfm/mixture-scaling/results/political_bio_raw_rebuild_20260911/covid_political"},
       "eval": {"supports_lp": false, "nm_n_query": 12, "pl_n_query": 12, "val_cap": 500, "test_cap": 500, "eval_random_query": true},
       "default_eval": true
     },
@@ -170,7 +170,7 @@
         {"role": "user records and labels", "path": "social_llm_data/election2020/user_data.csv", "format": "CSV", "note": "profile is upstream-cleaned; raw_profile source not currently available"},
         {"role": "bio embeddings", "path": "election2020/embeddings/user_bio_embeddings_gte_multilingual_base.pt", "format": "PyTorch"}
       ],
-      "construction": {"script": "scripts/social_llm/generate_graph.py"},
+      "construction": {"script": "scripts/social_llm/generate_graph.py", "provenance_note": "docs/political_bio_provenance_20260911.md", "legacy_snapshot": "/dataMeR1/phil/data/election2020/legacy/cleaned-profile-v001", "raw_profile_status": "blocked: original raw profiles not currently available"},
       "eval": {"supports_lp": false, "nm_n_query": 1, "pl_n_query": 1, "val_cap": 500, "test_cap": 500},
       "default_eval": true
     },

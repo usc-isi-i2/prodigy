@@ -14,11 +14,15 @@ Candidate artifacts live under:
 
 `/dataMeR1/phil/gfm/mixture-scaling/results/political_bio_raw_rebuild_20260911/covid_political/`
 
-They are candidates until their verification report passes and promotion is explicitly recorded. Promotion must copy the current canonical CSV-derived embedding and graph artifacts to a versioned legacy directory before replacing any canonical file. Training must not mix the two feature versions without naming the version in the run metadata.
+The candidate passed full verification: topology, edge attributes, labels, and user IDs are identical to the legacy graph; all 78,672 feature rows equal the new embedding artifact; all stored hashes match the restored raw bios; coordinates are finite; and 77,007 feature rows changed. The report and SHA-256 fingerprints are in `verification.json`. It remains a candidate until promotion is explicitly recorded. Training must not mix the two feature versions without naming the version in the run metadata.
+
+The legacy snapshot is `/dataMeR1/phil/data/covid_political/legacy/cleaned-profile-v001/`. It contains the graph, graph sidecar, embedding, embedding sidecar, source `user_data.csv`, and a verified `SHA256SUMS` manifest.
 
 ## Election 2020
 
 No `raw_profile` source was found in `social_llm_data/election2020`, its topology-only `graph.pickle`, or the searched Tucker data/project trees. The existing graph is therefore designated `cleaned-profile-v001`. Do not synthesize punctuation or digits or call a reconstructed string “raw.” A raw-profile replacement requires recovery from the original upstream collection.
+
+The immutable reference snapshot is `/dataMeR1/phil/data/election2020/legacy/cleaned-profile-v001/`, with the graph, sidecars, embedding, source CSV, and verified `SHA256SUMS` manifest.
 
 ## Evidence
 
