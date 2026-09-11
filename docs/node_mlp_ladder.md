@@ -12,7 +12,7 @@ Features stay on GPU when they fit in a conservative 70 GiB budget (with at leas
 6 GiB currently free memory reserved); smaller sources are prioritized. Other
 sources use the same endpoint-only pinned CPU batch path. No neighborhood sampling
 or message passing is performed. Each worker loads each CPU graph once and reuses it
-across its assigned rungs. Only Tucker GPUs 2 and 3 are used.
+across its assigned rungs. Tucker GPUs 0–3 are available; GPUs 4–7 are never used.
 
 Evaluate each terminal checkpoint against all six existing LP targets with the
 canonical cached edge partition, degree-matched negatives, and validation-selected
@@ -75,3 +75,23 @@ the aggregate receipt exposes `all_converged` separately from job completion.
 Other knobs are `--minimum-steps-per-source`, `--validation-every-per-source`,
 `--patience`, and `--min-delta`. The historical 2,500-total-update mode remains
 available without `--convergence`.
+
+## Fast scheduling and prefetch
+
+Both launchers now use a shared filesystem-locked rung queue on GPUs 0–3,
+with largest rungs claimed first. Set `GPUS=0,1` (for example) to use a subset.
+Workers retain loaded CPU graphs across claimed rungs. An explicit CUDA device
+is set in the main worker and each preparation thread, avoiding implicit GPU-0
+contexts. CPU gathering runs in a bounded thread pool; pinned batch transfers
+use a dedicated CUDA stream and overlap training. Sampling stays serial and
+ordered: epoch shuffles, source order, positive/negative indices and optimizer
+updates are unchanged. `--prefetch-depth 0` disables prefetch for benchmarking.
+The real-data benchmark compares final weights exactly against that baseline.
+
+`run_fast_mlp_ladder_tucker.sh` requires explicit fresh state/results/log roots.
+It can adopt completed earlier runs using `--legacy-state-root`. Explicit
+`--legacy-worker GPU:PID:active_rung` declarations drain only verified owned
+ladder PIDs after that rung's summary and W&B history have finalized, then put
+that GPU on the new queue. It does not rewrite the active checkout. Imported
+models are symlinks to their original completed directories. Pending models
+run in new directories. Evaluation waits for all imported and new models.
