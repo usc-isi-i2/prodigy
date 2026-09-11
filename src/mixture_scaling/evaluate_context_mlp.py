@@ -68,7 +68,8 @@ def evaluate_fp(target,a,config,rows,device,root):
     for (run_id,output,checkpoint,_,_), values in zip(pending,replicate):
         payload={"status":"complete","task":"masked_feature_prediction","target":target,"run_id":run_id,
                  "view":a.view,"sources":checkpoint["metadata"]["sources"],"checkpoint_step":int(checkpoint["step"]),
-                 "seed":a.seed,"n_nodes":len(nodes),"mask_replicates":len(values),
+                 "seed":a.seed,"fanout":int(checkpoint["metadata"]["fanout"]),
+                 "n_nodes":len(nodes),"mask_replicates":len(values),
                  "scaled_cosine_error_mean":float(np.mean(values)),"scaled_cosine_error_std":float(np.std(values)),
                  "replicate_losses":values}
         output.parent.mkdir(parents=True,exist_ok=True); output.write_text(json.dumps(payload,indent=2)+"\n")
@@ -95,13 +96,17 @@ def evaluate_lp(target,a,config,rows,device,root,pair):
         if output.is_file(): continue
         checkpoint=torch.load(Path(a.state_root)/a.view/"lp"/run_id/"best.pt",map_location="cpu",weights_only=False)
         model,p=load_model(config,checkpoint,a.view,"lp",device); table=embed_nodes(model,graph,nodes,a.view,p,device); embeddings=pair.NodeEmbeddings(table,nodes,n_nodes); scores=pair.pair_scores(embeddings,pairs,"cosine"); report=pair.evaluate_scores("fixed_view_mlp_cosine",pairs.label,scores,val_mask).as_dict()
-        payload={"status":"complete","task":"static_link_prediction","target":target,"run_id":run_id,"view":a.view,"sources":checkpoint["metadata"]["sources"],"checkpoint_step":int(checkpoint["step"]),"seed":a.seed,"n_pairs":len(pairs),"report":report,"gates":{"holdout_leakage_edges":pair.leakage_check(background,pairs),"endpoint_sensitivity":pair.endpoint_sensitivity(embeddings,pairs),"endpoint_permutation_auc":pair.endpoint_permutation_auc(embeddings,pairs,np.random.default_rng(a.seed+1))}}
+        payload={"status":"complete","task":"static_link_prediction","target":target,"run_id":run_id,"view":a.view,"sources":checkpoint["metadata"]["sources"],"checkpoint_step":int(checkpoint["step"]),"seed":a.seed,"fanout":int(checkpoint["metadata"]["fanout"]),"n_pairs":len(pairs),"report":report,"gates":{"holdout_leakage_edges":pair.leakage_check(background,pairs),"endpoint_sensitivity":pair.endpoint_sensitivity(embeddings,pairs),"endpoint_permutation_auc":pair.endpoint_permutation_auc(embeddings,pairs,np.random.default_rng(a.seed+1))}}
         output.parent.mkdir(parents=True,exist_ok=True); output.write_text(json.dumps(payload,indent=2)+"\n")
 
 
 def main():
-    p=argparse.ArgumentParser(); p.add_argument("--config",required=True); p.add_argument("--view",choices=VIEWS,required=True); p.add_argument("--objective",choices=("fp","lp"),required=True); p.add_argument("--worker-index",type=int,required=True); p.add_argument("--workers",type=int,default=4); p.add_argument("--device",type=int,required=True); p.add_argument("--state-root",required=True); p.add_argument("--output-root",required=True); p.add_argument("--prodigy-root",default="/dataMeR1/phil/gfm/prodigy-nm-pairs"); p.add_argument("--seed",type=int,default=0); a=p.parse_args()
-    config=load_config(a.config); configure_sampling_backend(config["protocol"]); rows=singleton_rows(); targets=SOURCE_ORDER if a.objective=="fp" else LP_TARGETS; device=torch.device(f"cuda:{a.device}"); pair=load_pair_module(Path(a.prodigy_root)) if a.objective=="lp" else None; root=Path(a.output_root)
+    p=argparse.ArgumentParser(); p.add_argument("--config",required=True); p.add_argument("--view",choices=VIEWS,required=True); p.add_argument("--objective",choices=("fp","lp"),required=True); p.add_argument("--worker-index",type=int,required=True); p.add_argument("--workers",type=int,default=4); p.add_argument("--device",type=int,required=True); p.add_argument("--state-root",required=True); p.add_argument("--output-root",required=True); p.add_argument("--prodigy-root",default="/dataMeR1/phil/gfm/prodigy-nm-pairs"); p.add_argument("--seed",type=int,default=0); p.add_argument("--fanout",type=int); a=p.parse_args()
+    config=load_config(a.config)
+    if a.fanout is not None:
+        if a.fanout < 1: raise ValueError("fanout must be positive")
+        config["protocol"]["fanout"] = a.fanout
+    configure_sampling_backend(config["protocol"]); rows=singleton_rows(); targets=SOURCE_ORDER if a.objective=="fp" else LP_TARGETS; device=torch.device(f"cuda:{a.device}"); pair=load_pair_module(Path(a.prodigy_root)) if a.objective=="lp" else None; root=Path(a.output_root)
     for target, target_rows in assigned_target_rows(targets,rows,a.worker_index,a.workers).items():
         evaluate_fp(target,a,config,target_rows,device,root) if a.objective=="fp" else evaluate_lp(target,a,config,target_rows,device,root,pair)
     return 0

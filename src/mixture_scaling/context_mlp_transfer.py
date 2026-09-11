@@ -129,9 +129,13 @@ def train_one(run_id, source, view, objective, graph, config, device, root, seed
 
 
 def main():
-    p=argparse.ArgumentParser(); p.add_argument("--config",required=True); p.add_argument("--view",choices=VIEWS,required=True); p.add_argument("--objective",choices=("fp","lp"),required=True); p.add_argument("--selection",default="full"); p.add_argument("--worker-index",type=int,required=True); p.add_argument("--workers",type=int,default=4); p.add_argument("--device",type=int,required=True); p.add_argument("--output-root",required=True); p.add_argument("--cache-root"); p.add_argument("--seed",type=int,default=0); a=p.parse_args()
+    p=argparse.ArgumentParser(); p.add_argument("--config",required=True); p.add_argument("--view",choices=VIEWS,required=True); p.add_argument("--objective",choices=("fp","lp"),required=True); p.add_argument("--selection",default="full"); p.add_argument("--worker-index",type=int,required=True); p.add_argument("--workers",type=int,default=4); p.add_argument("--device",type=int,required=True); p.add_argument("--output-root",required=True); p.add_argument("--cache-root"); p.add_argument("--seed",type=int,default=0); p.add_argument("--fanout",type=int); a=p.parse_args()
     if a.device not in (0,1,2,3): raise ValueError("only GPUs 0-3")
-    config=load_config(a.config); configure_sampling_backend(config["protocol"]); root=Path(a.output_root)
+    config=load_config(a.config)
+    if a.fanout is not None:
+        if a.fanout < 1: raise ValueError("fanout must be positive")
+        config["protocol"]["fanout"] = a.fanout
+    configure_sampling_backend(config["protocol"]); root=Path(a.output_root)
     for run_id,(source,) in selected_rows(a.selection)[a.worker_index::a.workers]:
         graph=load_shared_graph(source,config["graphs"][source]["path"],"lp" if a.objective=="lp" else "graphmae",config["protocol"],a.seed,Path(a.cache_root or root/"_cache"))
         result=train_one(run_id,source,a.view,a.objective,graph,config,torch.device(f"cuda:{a.device}"),root,a.seed); print(json.dumps({"completed":run_id,"final_step":result["final_step"]}),flush=True)
