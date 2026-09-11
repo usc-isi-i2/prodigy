@@ -32,6 +32,14 @@ No `raw_profile` source was found in `social_llm_data/election2020`, its topolog
 
 Recovery checks also covered the original CARC location `/project2/emiliofe_74/julie/social_llm_data/election2020/`. Its `user_data.csv` and `graph.pickle` are byte-identical to Tucker (SHA-256 `0cb20c0f...304b` and `0fbfd1ec...3273`). The CSV has only `profile,label_conservative`; the graph and edge lists use positional integers and contain no account handle, Twitter user ID, description, or raw-profile attribute. The complete seven-commit history of the public `julie-jiang/retweet-bert` repository contains model code and links to public tweet-ID collections, but no deleted user map or profile data. Public rehydration cannot prove the historical 78,932-account mapping because this derivative discarded account identity. The required recovery input is the Retweet-BERT/Election preprocessing table containing account ID or handle alongside the original profile description and the final positional row assignment.
 
+A read-only cross-dataset recovery audit tested whether later raw-bio stores can fill this gap. Election has 78,932 rows and 78,665 unique cleaned profile strings. Exact cleaned-profile matching against COVID Political `full_user_data.csv` recovers 17,698 Election rows; 17,600 of these map to exactly one handle and one raw profile. This is strong, auditable evidence for those rows, but covers only 22.30% of Election. It does not establish the missing 61,332 rows, so it is insufficient for a consistent replacement graph. A graph mixing raw-profile features for the recovered subset with cleaned-profile features elsewhere must not be treated as `raw-profile-v001`.
+
+The recovered raw-profile hashes were also joined to the GTE bio observation stores for the larger graphs. Exact hash matches occur for 17,433 Election rows in COVID, 3,172 in Ukraine, and 1,402 in Midterm; respectively 17,328, 3,144, and 1,400 map to exactly one stored user ID. All three stores use `Alibaba-NLP/gte-multilingual-base`, revision `9bbca17d9273fd0d03d5725c7a4b0f6b45142062`, and preprocessing `bio-text-v001`. Their embedding rows are therefore valid reusable vectors for an exact normalized-bio hash. They do not extend full Election coverage: most are the same 17,600 profiles already recovered through COVID Political, and shared generic bios can map to multiple accounts.
+
+Direct Election-cleaned-text searches of the large stores are much weaker. Exact normalized-text/hash matches cover 98 Midterm, 262 Ukraine, and 1,088 COVID rows. Applying the inferred historical cleaning operation to stored normalized bios raises coverage only to 100, 277, and 1,211 rows, with ambiguous user-ID matches. The inferred operation reproduces 128,431 of 128,441 COVID raw/clean pairs (99.992%): remove recognized URLs, delete ASCII digits, replace ASCII punctuation with spaces, and collapse whitespace. Because the large bio stores replace URLs and handles during `bio-text-v001` normalization, these transformed-text joins are lossy and are not identity evidence.
+
+The complete counts and method notes are in `scripts/experiments/analysis/graphs/features/election_covid_alignment_audit/data/election_cross_graph_recovery_20260911.json`. Tucker and CARC source collections remained read-only throughout this audit.
+
 The immutable reference snapshot is `/dataMeR1/phil/data/election2020/legacy/cleaned-profile-v001/`, with the graph, sidecars, embedding, source CSV, and verified `SHA256SUMS` manifest.
 
 ## Evidence
@@ -42,5 +50,6 @@ The full audit is in `scripts/experiments/analysis/graphs/features/election_covi
 - upstream COVID cleaning changes the same-user embedding distribution by mean per-coordinate KS 0.0708;
 - political selection and ideology mix are also material: matching Election and COVID Political label proportions reduces their mutual KS from 0.0669 to 0.0403–0.0526;
 - re-encoding cleaned COVID profiles reproduces canonical vectors exactly.
+- the later stores provide a verified raw-profile bridge for 17,600 Election rows, but not enough coverage to replace the canonical Election artifact.
 
 The graph catalog carries the short operational warning so future loaders and agents encounter it at the registry entry rather than rediscovering it from geometry plots.

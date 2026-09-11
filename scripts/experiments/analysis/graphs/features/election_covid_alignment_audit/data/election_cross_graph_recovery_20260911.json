@@ -1,0 +1,86 @@
+{
+  "audit_date": "2026-09-11",
+  "mode": "read-only",
+  "decision": "partial recovery only; do not replace or promote the canonical Election artifact",
+  "election": {
+    "source_csv": "/dataMeR1/phil/data/social_llm_data/election2020/user_data.csv",
+    "rows": 78932,
+    "unique_cleaned_profiles": 78665,
+    "duplicate_profile_rows": 267,
+    "canonical_feature_version": "cleaned-profile-v001"
+  },
+  "covid_political_bridge": {
+    "source_csv": "/dataMeR1/phil/data/social_llm_data/covid/full_user_data.csv",
+    "join_key": "exact cleaned profile string",
+    "matched_election_rows": 17698,
+    "rows_with_one_handle_and_one_raw_profile": 17600,
+    "distinct_handles_in_unique_mapping": 17501,
+    "distinct_raw_bio_hashes_in_unique_mapping": 17500,
+    "coverage_fraction": 0.222977,
+    "unrecovered_election_rows": 61332,
+    "note": "The unique subset is an auditable partial bridge. It is not sufficient for a uniformly raw-profile Election graph."
+  },
+  "exact_recovered_raw_hash_in_large_stores": {
+    "covid19_twitter": {
+      "election_rows": 17433,
+      "rows_mapping_to_one_userid": 17328,
+      "rows_mapping_to_multiple_userids": 105,
+      "maximum_userids_for_one_row": 94
+    },
+    "ukr_rus_twitter": {
+      "election_rows": 3172,
+      "rows_mapping_to_one_userid": 3144,
+      "rows_mapping_to_multiple_userids": 28,
+      "maximum_userids_for_one_row": 45
+    },
+    "midterm": {
+      "election_rows": 1402,
+      "rows_mapping_to_one_userid": 1400,
+      "rows_mapping_to_multiple_userids": 2,
+      "maximum_userids_for_one_row": 2
+    }
+  },
+  "direct_large_store_search": {
+    "exact_normalized_text_or_hash_election_rows": {
+      "covid19_twitter": 1088,
+      "ukr_rus_twitter": 262,
+      "midterm": 98
+    },
+    "inferred_cleaner_match_election_rows": {
+      "covid19_twitter": 1211,
+      "ukr_rus_twitter": 277,
+      "midterm": 100
+    },
+    "warning": "Cleaning normalized large-store text is lossy because bio-text-v001 has already replaced URLs and handles. These matches do not independently prove identity."
+  },
+  "inferred_upstream_cleaner": {
+    "validation_source": "/dataMeR1/phil/data/social_llm_data/covid/full_user_data.csv",
+    "exact_roundtrips": 128431,
+    "total_pairs": 128441,
+    "exact_fraction": 0.999922,
+    "operations": [
+      "remove recognized URLs",
+      "delete ASCII digits",
+      "replace ASCII punctuation with spaces",
+      "collapse whitespace"
+    ]
+  },
+  "embedding_compatibility": {
+    "model": "Alibaba-NLP/gte-multilingual-base",
+    "revision": "9bbca17d9273fd0d03d5725c7a4b0f6b45142062",
+    "preprocessing_version": "bio-text-v001",
+    "dimension": 768,
+    "rule": "A large-store embedding is reusable only when its normalized bio hash matches exactly. A cleaned-text or approximate match is not sufficient."
+  },
+  "source_store_paths": {
+    "covid19_twitter": "/dataMeR1/phil/data/covid19_twitter/bio_embeddings/gte-multilingual-base/version=v001",
+    "ukr_rus_twitter": "/dataMeR1/phil/data/ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001",
+    "midterm": "/dataMeR1/phil/data/midterm/bio_embeddings/gte-multilingual-base/version=v001"
+  },
+  "limitations": [
+    "Election rows have no retained user ID or handle, so text-only matches cannot prove identity for unmatched rows.",
+    "Identical generic bios can belong to multiple accounts.",
+    "Later observations may contain a changed bio and cannot reconstruct the historical Election bio without an identity mapping.",
+    "A partial raw/clean hybrid would have inconsistent feature provenance and is not a valid full repair."
+  ]
+}
