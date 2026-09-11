@@ -85,7 +85,8 @@ class DirectLinkLoader:
         if self.negatives_per_positive < 1:
             raise ValueError("negatives_per_positive must be a positive integer")
 
-    def __iter__(self):
+    def endpoint_batches(self):
+        """CPU-only sampler; order/RNG identical to the direct loader."""
         epoch = self.epoch if self.shuffle else 0
         self.epoch += int(self.shuffle)
         generator = torch.Generator().manual_seed(self.seed + epoch)
@@ -105,13 +106,17 @@ class DirectLinkLoader:
                 self_loops = negative[0] == negative[1]
             pairs = torch.cat((positive, negative), dim=1)
             endpoints = torch.cat((pairs[0], pairs[1]))
+            n_pairs = pairs.shape[1]
+            local_edges = torch.stack((torch.arange(n_pairs), torch.arange(n_pairs, 2 * n_pairs)))
+            labels = torch.cat((torch.ones(n_positive), torch.zeros(n_negative)))
+            yield endpoints, local_edges, labels
+
+    def __iter__(self):
+        for endpoints, local_edges, labels in self.endpoint_batches():
             if self.x.is_cuda:
                 features = self.x[endpoints.to(self.x.device, non_blocking=True)]
             else:
                 features = self.x[endpoints].pin_memory() if torch.cuda.is_available() else self.x[endpoints]
-            n_pairs = pairs.shape[1]
-            local_edges = torch.stack((torch.arange(n_pairs), torch.arange(n_pairs, 2 * n_pairs)))
-            labels = torch.cat((torch.ones(n_positive), torch.zeros(n_negative)))
             yield DirectLinkBatch(features, local_edges, labels)
 
 
