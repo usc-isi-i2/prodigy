@@ -3,7 +3,7 @@
   "data_root": "/dataMeR1/phil/data",
   "last_verified": "2026-09-11",
   "verified_on": "tucker",
-  "notes": "Canonical inventory of graph artifacts. Use canonical_name in prose and dataset_key for compatibility with existing code, configs, and logs. Sizes and graph statistics describe the current graph object on Tucker, not the total size of its source corpus. The 2026-09-07 verification covers the two newly staged official public KG graph tensors and archive integrity; older entries retain their earlier verification evidence. The 2026-09-11 verification covers the corrected Ukraine Suspended graph only.",
+  "notes": "Canonical inventory of graph artifacts. Use canonical_name in prose and dataset_key for compatibility with existing code, configs, and logs. Sizes and graph statistics describe the current graph object on Tucker, not the total size of its source corpus. The 2026-09-07 verification covers the two newly staged official public KG graph tensors and archive integrity; older entries retain their earlier verification evidence. The 2026-09-11 verification covers the corrected Ukraine Suspended graph and the promoted raw-profile COVID Political graph.",
   "field_notes": {
     "artifact_size_gb": "Decimal GB (artifact_size_bytes / 1e9).",
     "tasks.supported": "Implemented and backed by fields/views in the current graph object.",
@@ -117,18 +117,18 @@
       "kind": "source",
       "relative_path": "covid_political/graphs/retweet_graph.pt",
       "metadata_path": "covid_political/graphs/retweet_graph.meta.json",
-      "artifact_size_bytes": 247456401,
+      "artifact_size_bytes": 247456395,
       "artifact_size_gb": 0.247,
       "statistics": {"nodes": 78672, "edges": 180928},
-      "features": {"node_feature_dim": 768, "node_features": "mean-pooled GTE multilingual embeddings of upstream-cleaned profile text (cleaned-profile-v001 legacy)", "edge_features": ["rt_weight", "mn_weight"], "provenance_note": "docs/political_bio_provenance_20260911.md; raw-profile replacement candidate available separately"},
+      "features": {"node_feature_dim": 768, "node_features": "mean-pooled GTE multilingual embeddings of restored raw profile text (raw-profile-v001, promoted 2026-09-11)", "edge_features": ["rt_weight", "mn_weight"], "provenance_note": "docs/political_bio_provenance_20260911.md; cleaned-profile-v001 retained as an immutable legacy snapshot"},
       "labels": {"type": "binary node classification", "names": ["non_conservative", "conservative"], "labeled_nodes": 78672},
       "tasks": {"supported": ["neighbor_matching", "node_classification"], "unavailable": ["temporal_link_prediction", "node_regression"]},
       "source_data": [
         {"role": "interaction graph", "path": "social_llm_data/covid/graph.pickle", "format": "NetworkX pickle"},
-        {"role": "user records and labels", "path": "social_llm_data/covid/user_data.csv", "format": "CSV", "note": "profile is upstream-cleaned; full_user_data.csv preserves raw_profile"},
+        {"role": "user records and labels", "path": "social_llm_data/covid/user_data.csv", "format": "CSV", "note": "profile contains the restored raw_profile values from full_user_data.csv; row order and labels are unchanged"},
         {"role": "bio embeddings", "path": "covid_political/embeddings/user_bio_embeddings_gte_multilingual_base.pt", "format": "PyTorch"}
       ],
-      "construction": {"script": "data/data/covid_political/scripts/generate_graph.py", "provenance_note": "docs/political_bio_provenance_20260911.md", "legacy_snapshot": "/dataMeR1/phil/data/covid_political/legacy/cleaned-profile-v001", "raw_profile_candidate": "/dataMeR1/phil/gfm/mixture-scaling/results/political_bio_raw_rebuild_20260911/covid_political"},
+      "construction": {"script": "data/data/covid_political/scripts/generate_graph.py", "profile_preparation_script": "scripts/social_llm/prepare_covid_raw_profiles.py", "provenance_note": "docs/political_bio_provenance_20260911.md", "feature_version": "raw-profile-v001", "promoted_at": "2026-09-11", "legacy_snapshot": "/dataMeR1/phil/data/covid_political/legacy/cleaned-profile-v001", "build_receipt": "/dataMeR1/phil/gfm/mixture-scaling/results/political_bio_raw_rebuild_20260911/covid_political/verification.json"},
       "eval": {"supports_lp": false, "nm_n_query": 12, "pl_n_query": 12, "val_cap": 500, "test_cap": 500, "eval_random_query": true},
       "default_eval": true
     },

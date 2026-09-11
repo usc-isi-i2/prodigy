@@ -4,17 +4,25 @@
 
 The Election 2020 and COVID Political graph features are internally aligned with their recorded GTE artifacts, but both embedded an upstream-cleaned `profile` field rather than the original biography text used by the other social graphs. This is a provenance and comparability issue, not a row-alignment defect.
 
-The existing artifacts must remain available as `cleaned-profile-v001` legacy inputs because published experiment runs used them. New work should use raw-profile artifacts when an auditable raw source is available.
+The existing artifacts remain available as `cleaned-profile-v001` legacy inputs because published experiment runs used them. New work uses raw-profile artifacts when an auditable raw source is available.
 
 ## COVID Political
 
 `social_llm_data/covid/full_user_data.csv` contains both `profile` and `raw_profile`. Every one of the 78,672 canonical rows maps uniquely to a full-data row after normalizing the serialized Boolean `verified` field. `scripts/social_llm/prepare_covid_raw_profiles.py` creates a row-identical candidate CSV with only `profile` replaced by `raw_profile`; it rejects ambiguous, missing, empty, or non-round-tripping mappings.
 
-Candidate artifacts live under:
+The reproducible build receipt and pre-promotion candidate remain under:
 
 `/dataMeR1/phil/gfm/mixture-scaling/results/political_bio_raw_rebuild_20260911/covid_political/`
 
-The candidate passed full verification: topology, edge attributes, labels, and user IDs are identical to the legacy graph; all 78,672 feature rows equal the new embedding artifact; all stored hashes match the restored raw bios; coordinates are finite; and 77,007 feature rows changed. The report and SHA-256 fingerprints are in `verification.json`. It remains a candidate until promotion is explicitly recorded. Training must not mix the two feature versions without naming the version in the run metadata.
+The candidate passed full verification: topology, edge attributes, labels, and user IDs are identical to the legacy graph; all 78,672 feature rows equal the new embedding artifact; all stored hashes match the restored raw bios; coordinates are finite; and 77,007 feature rows changed. The report and SHA-256 fingerprints are in `verification.json`.
+
+`raw-profile-v001` was promoted atomically to the canonical Tucker paths on 2026-09-11. The canonical graph is `/dataMeR1/phil/data/covid_political/graphs/retweet_graph.pt`, its embedding is `/dataMeR1/phil/data/covid_political/embeddings/user_bio_embeddings_gte_multilingual_base.pt`, and its row-aligned source is `/dataMeR1/phil/data/social_llm_data/covid/user_data.csv`. Post-promotion verification independently loaded these canonical files and confirmed 78,672 rows, 180,928 edges, exact graph/embedding feature equality, zero bio-hash mismatches, unchanged topology, edge attributes, labels, and user order, zero all-zero rows, and zero nonfinite values. The canonical SHA-256 fingerprints are:
+
+- source CSV: `62cd481247b10d3d1c4dd792aa05d413f3ad01aa9331b91039b32ef7c98be42a`
+- embedding: `83bfc1e105e789d865fb32150d852d6cbd7e3bab5b96903d1a69b3eb2a20e81c`
+- graph: `755219daede78f913ab897fec51c98f261cff797a9869d80fb7ed35ce0b4d516`
+
+Training and evaluation records must name the feature version when comparing results produced before and after this promotion.
 
 The legacy snapshot is `/dataMeR1/phil/data/covid_political/legacy/cleaned-profile-v001/`. It contains the graph, graph sidecar, embedding, embedding sidecar, source `user_data.csv`, and a verified `SHA256SUMS` manifest.
 
