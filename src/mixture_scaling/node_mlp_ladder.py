@@ -15,7 +15,7 @@ from .prefetch_links import PrefetchLinks
 from .convergence import SourcePlateau
 from .ladder_tracking import LossWindow, tracked_run
 from .config import load_config
-from .evaluate_lattice import LP_TARGETS, load_pair_module
+from .evaluate_lattice import load_pair_module
 from .evaluate_node_only import evaluate_lp
 from .lattice import SOURCE_ORDER, load_shared_graph, next_batch
 from .node_only_transfer import build_model, lp_loss, make_direct_lp_loader, save_checkpoint, seed_everything, validate
@@ -158,7 +158,7 @@ def aggregate(args):
     rows = []
     for run_id, sources in ladder_rows():
         summary = json.loads((Path(args.state_root) / "lp" / run_id / "summary.json").read_text())
-        for target in LP_TARGETS:
+        for target in args.targets:
             path = Path(args.output_root) / "lp" / f"{run_id}__to__{target}.json"
             payload = json.loads(path.read_text())
             if payload["sources"] != list(sources) or payload["checkpoint_step"] != summary["best_step"]:
@@ -197,6 +197,7 @@ def main():
     p.add_argument("--workers", type=int, default=2)
     p.add_argument("--feature-budget-gib", type=float, default=70)
     p.add_argument("--queue", action="store_true")
+    p.add_argument("--targets", nargs="+", choices=SOURCE_ORDER, default=list(SOURCE_ORDER))
     p.add_argument("--rungs", help="Comma-separated rung numbers; default all")
     p.add_argument("--prefetch-depth", type=int, default=8)
     p.add_argument("--prefetch-workers", type=int, default=4)
@@ -222,8 +223,8 @@ def main():
     if args.steps < 1 or not 0 <= args.worker_index < args.workers:
         p.error("invalid budget or worker assignment")
     if args.phase == "plan":
-        print(json.dumps({"rows": ladder_rows(), "targets": LP_TARGETS, "steps_per_rung": args.steps,
-            "total_updates": None if args.convergence else 9 * args.steps, "cells": 54,
+        print(json.dumps({"rows": ladder_rows(), "targets": args.targets, "steps_per_rung": args.steps,
+            "total_updates": None if args.convergence else 9 * args.steps, "cells": 9 * len(args.targets),
             "convergence": args.convergence, "max_steps_per_source": args.max_steps_per_source,
             "minimum_steps_per_source": args.minimum_steps_per_source,
             "validation_every_per_source": args.validation_every_per_source,
@@ -267,7 +268,7 @@ def main():
             if not (Path(args.state_root) / "lp" / run_id / "summary.json").is_file():
                 raise ValueError(f"evaluation requires a completed rung: {run_id}")
         pair = load_pair_module(Path(args.prodigy_root))
-        for target in LP_TARGETS[args.worker_index::args.workers]:
+        for target in args.targets[args.worker_index::args.workers]:
             evaluate_lp(target, args, config, selected, device, Path(args.output_root), pair)
 
 
