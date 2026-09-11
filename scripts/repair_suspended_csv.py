@@ -6,8 +6,8 @@ import pandas as pd
 import torch
 sys.path.insert(0,'/dataMeR1/phil/gfm/prodigy')
 from scripts.bio_embeddings.preprocessing import normalize_bio_text,bio_hash
-root=Path('/dataMeR1/phil/data');src=root/'social_llm_data/ukr_rus_suspended';out=Path('/dataMeR1/phil/gfm/mixture-scaling/results/suspended_csv_repair_20260911');out.mkdir(parents=True,exist_ok=False)
-raw=(src/'user_data.csv').read_bytes();reader=csv.reader(io.StringIO(raw.decode()));header=next(reader);records=list(reader);fixed=[];repairs=[];i=0
+root=Path('/dataMeR1/phil/data');src=root/'social_llm_data/ukr_rus_suspended';out=Path('/dataMeR1/phil/gfm/mixture-scaling/results/suspended_csv_repair_20260911_v2');out.mkdir(parents=True,exist_ok=False)
+raw=(src/'user_data.csv').read_bytes();reader=csv.reader(io.StringIO(raw.decode(), newline=None));header=next(reader);records=list(reader);fixed=[];repairs=[];i=0
 while i<len(records):
  row=records[i]
  if len(row)==14:fixed.append(row);i+=1;continue
