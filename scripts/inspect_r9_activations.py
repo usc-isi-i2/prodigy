@@ -20,10 +20,15 @@ def stats(x):
  return {'variance_spectrum':p.tolist(),'top1_variance':p[0].item(),'top10_variance':p[:10].sum().item(),'effective_rank':torch.exp(-(p[p>0]*p[p>0].log()).sum()).item(),'dims90':int((p.cumsum(0)<.9).sum()+1),'norm_quantiles':torch.quantile(norms,torch.tensor([0.,.5,1.],dtype=torch.double)).tolist(),'cosine_quantiles':torch.quantile(cos,torch.tensor([.05,.5,.95],dtype=torch.double)).tolist(),'mean_energy_fraction':(x.mean(0).square().sum()/x.square().sum(1).mean()).item(),'dead_dimensions':int((x.abs().max(0).values<1e-10).sum())}
 
 result={'checkpoint_step':c['step'],'sampling':'4096 uniform nodes without replacement per graph (or all if fewer), seed 2026; not edge-weighted or held-out-only','graphs':{}}
+w=m.network[0].weight.detach().double(); b=m.network[0].bias.detach().double(); sv=torch.linalg.svdvals(w)
+result['first_layer']={'weight':w.tolist(),'bias':b.tolist(),'singular_values':sv.tolist(),'mean':w.mean().item(),'std':w.std().item(),'min':w.min().item(),'max':w.max().item(),'stable_rank':(sv.square().sum()/sv[0].square()).item(),'top10_energy':(sv[:10].square().sum()/sv.square().sum()).item()}
+active_any=torch.zeros(256,dtype=torch.bool)
 with torch.no_grad():
  for name,entry in config['graphs'].items():
   g=unwrap(entry['path']); n=g.x.shape[0];ids=np.random.default_rng(2026).choice(n,min(n,4096),replace=False);x=g.x[torch.from_numpy(ids)].float().clone();del g
   pre=m.network[0](x);h=F.relu(pre);z=m.network[3](h)
-  result['graphs'][name]={'sample_size':len(x),'input':stats(x),'hidden':stats(h),'output':stats(z),'hidden_zero_fraction':float((h==0).float().mean())}
-  print(name,json.dumps({k:v for k,v in result['graphs'][name]['output'].items() if k!='variance_spectrum'}),flush=True)
-Path('activation_results.json').write_text(json.dumps(result,indent=2))
+  result['graphs'][name]={'sample_size':len(x),'input':stats(x),'pre_relu':stats(pre),'hidden':stats(h),'output':stats(z),'normalized_output':stats(F.normalize(z,dim=1)), 'unit_activation_fraction':(h>0).double().mean(0).tolist(), 'all_zero_hidden_fraction':float((h==0).all(1).float().mean()),'pre_relu_quantiles':torch.quantile(pre.flatten(),torch.tensor([.01,.5,.99])).tolist(),'hidden_zero_fraction':float((h==0).float().mean())}
+  active_any |= (h>0).any(0)
+  print(name, 'normalized_rank', result['graphs'][name]['normalized_output']['effective_rank'], 'pre_rank', result['graphs'][name]['pre_relu']['effective_rank'],json.dumps({k:v for k,v in result['graphs'][name]['output'].items() if k!='variance_spectrum'}),flush=True)
+result['hidden_never_active_across_all_samples']=int((~active_any).sum())
+Path('activation_results_v2.json').write_text(json.dumps(result,indent=2))
