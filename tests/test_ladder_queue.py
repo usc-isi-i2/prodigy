@@ -19,3 +19,14 @@ def test_queue_skips_completed_models(tmp_path):
     run.mkdir(parents=True)
     (run/"summary.json").write_text('{}')
     assert list(claimed_rows(tmp_path,[("r1",("a",))]))==[]
+
+
+def test_exited_unreaped_worker_does_not_block_handoff(tmp_path):
+    from mixture_scaling.schedule_ladder import process_running
+    proc = tmp_path / "123"
+    proc.mkdir()
+    (proc / "stat").write_text("123 (python worker) Z 1 0 0")
+    assert not process_running(123, tmp_path)
+    (proc / "stat").write_text("123 (python worker) R 1 0 0")
+    assert process_running(123, tmp_path)
+    assert not process_running(456, tmp_path)

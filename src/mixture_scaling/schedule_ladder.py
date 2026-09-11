@@ -25,7 +25,18 @@ def import_completed(legacy, root, rung):
     return True
 
 
+def process_running(pid, proc_root=Path("/proc")):
+    try:
+        # Zombies have exited even though their parent has not reaped them.
+        state = (proc_root / str(pid) / "stat").read_text().rsplit(")", 1)[1].split()[0]
+    except FileNotFoundError:
+        return False
+    return state not in {"Z", "X"}
+
+
 def verify_legacy(pid, gpu, legacy):
+    if not process_running(pid):
+        return False
     try:
         tokens = Path(f"/proc/{pid}/cmdline").read_bytes().decode().split("\0")
     except FileNotFoundError:
@@ -110,7 +121,7 @@ def main():
                     # Retire this worker before it trains further obsolete static-queue jobs.
                     os.kill(pid,signal.SIGTERM)
                     for _ in range(60):
-                        if not Path(f"/proc/{pid}").exists():
+                        if not process_running(pid):
                             break
                         time.sleep(1)
                     else:
