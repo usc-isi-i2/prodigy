@@ -51,3 +51,27 @@ each run. They can later be uploaded explicitly using `wandb sync <offline-run-d
 
 Use fresh state/results/log roots for a rerun, since completed rungs are skipped
 and partial runs are refused. Tracking does not change the fixed training budget.
+
+## Validation convergence mode
+
+Pass `--convergence` to the launcher or Python command. Start independent seed-0
+models in fresh roots. Evaluate the same deterministic 20 validation batches per
+source every 500 updates per source (500 × rung total updates). Each source must
+receive at least 2,500 updates before patience begins accumulating. Stop when
+**every source** has gone 10 eligible validation checks without an absolute BCE
+improvement greater than 0.0001 over its reference best. A source still improving
+keeps the model running even if other sources are flat. This operational plateau
+criterion is not proof of a global optimum.
+
+Select `best.pt` by the lowest equal-source mean validation BCE; downstream test
+scores never influence stopping or selection. W&B logs validation trajectories,
+per-source patience, selected step, final step, and stop reason. `latest.pt` retains
+the most recent model/optimizer state, and a terminal checkpoint is also saved.
+These are not an exact data-loader resume mechanism.
+
+A safety ceiling of 100,000 updates per source is configurable with
+`--max-steps-per-source`. Reaching it records `safety_cap` and `converged=false`;
+the aggregate receipt exposes `all_converged` separately from job completion.
+Other knobs are `--minimum-steps-per-source`, `--validation-every-per-source`,
+`--patience`, and `--min-delta`. The historical 2,500-total-update mode remains
+available without `--convergence`.

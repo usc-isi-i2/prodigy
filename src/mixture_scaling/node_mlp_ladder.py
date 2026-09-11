@@ -10,6 +10,7 @@ from pathlib import Path
 
 import torch
 
+from .convergence import SourcePlateau
 from .ladder_tracking import LossWindow, tracked_run
 from .config import load_config
 from .evaluate_lattice import LP_TARGETS, load_pair_module
@@ -39,17 +40,19 @@ def resident_sources(sizes, budget):
 
 
 def train_rung(run_id, sources, graphs, config, args, device):
+    limit = args.max_steps_per_source * len(sources) if args.convergence else args.steps
     run_dir = Path(args.state_root) / "lp" / run_id
     if (run_dir / "summary.json").is_file():
         summary = json.loads((run_dir / "summary.json").read_text())
-        if (summary["sources"] != list(sources) or summary["final_step"] != args.steps
+        if (summary["sources"] != list(sources) or summary["protocol"]["max_steps"] != limit
+                or summary.get("convergence", False) != args.convergence
                 or summary["seed"] != args.seed or not (run_dir / "best.pt").is_file()):
             raise ValueError(f"completed run does not match requested protocol: {run_dir}")
         return
     if run_dir.exists():
         raise FileExistsError(f"refusing partial run: {run_dir}")
     run_dir.mkdir(parents=True)
-    protocol = dict(config["protocol"], max_steps=args.steps)
+    protocol = dict(config["protocol"], max_steps=limit)
     seed_everything(args.seed)
     model = build_model("lp", protocol, device)
     optimizer = torch.optim.AdamW(model.parameters(),
@@ -67,7 +70,12 @@ def train_rung(run_id, sources, graphs, config, args, device):
         "run_id": run_id, "sources": list(sources), "seed": args.seed, "objective": "lp",
         "architecture": "node_mlp", "input_view": "center_node_features_only",
         "uses_topology_in_encoder": False, "protocol": protocol,
-        "checkpoint_selection": "fixed_terminal_budget", "source_sampling": "uniform_round_robin",
+        "checkpoint_selection": "source_validation_macro_loss" if args.convergence else "fixed_terminal_budget",
+        "convergence": args.convergence,
+        "stopping": {"minimum_steps_per_source": args.minimum_steps_per_source,
+                     "validation_every_per_source": args.validation_every_per_source,
+                     "patience": args.patience, "min_delta": args.min_delta,
+                     "max_steps_per_source": args.max_steps_per_source}, "source_sampling": "uniform_round_robin",
         "training_negative_sampling": "source_confined_uniform_approximate_excluding_self_loops",
         "feature_residency": {s: "gpu" if s in resident else "cpu_direct_pinned" for s in sources},
     }
@@ -76,7 +84,11 @@ def train_rung(run_id, sources, graphs, config, args, device):
     with tracked_run(run_dir, metadata, args) as (run, log):
         window = LossWindow()
         started = time.monotonic()
-        for step, source in enumerate(source_schedule(sources, args.steps), 1):
+        stopper = SourcePlateau(sources, args.patience, args.min_delta)
+        best_value, best_step = float("inf"), 0
+        stop_reason = "safety_cap" if args.convergence else "fixed_budget"
+        validation = None
+        for step, source in enumerate(source_schedule(sources, limit), 1):
             batch, iterators[source] = next_batch(train[source], iterators[source])
             optimizer.zero_grad(set_to_none=True)
             loss = lp_loss(model, batch, device)
@@ -87,50 +99,80 @@ def train_rung(run_id, sources, graphs, config, args, device):
             optimizer.step()
             counts[source] += 1
             window.add(source, float(loss.detach()), batch.edge_label.numel())
-            if step % args.log_interval == 0 or step == args.steps:
+            if step % args.log_interval == 0 or step == limit:
                 log(step, {**window.flush(), "train/elapsed_seconds": time.monotonic() - started})
-            if step % 250 == 0 or step == args.steps:
+            if step % 250 == 0 or step == limit:
                 print(json.dumps({"run_id": run_id, "step": step, "loss": float(loss),
                     "elapsed_seconds": time.monotonic() - started}), flush=True)
+            if args.convergence and (step % (args.validation_every_per_source * len(sources)) == 0 or step == limit):
+                validation = {s: validate(model, graphs[s], val[s], "lp", device, protocol, args.seed) for s in sources}
+                value = sum(validation.values()) / len(validation)
+                plateau = stopper.update(validation, step >= args.minimum_steps_per_source * len(sources))
+                log(step, {"validation/loss": value,
+                    **{f"validation/source/{s}/loss": v for s, v in validation.items()},
+                    **{f"validation/source/{s}/stale_checks": n for s, n in stopper.stale.items()}})
+                print(json.dumps({"run_id": run_id, "step": step, "validation_loss": value,
+                                  "stale_checks": stopper.stale}), flush=True)
+                if value < best_value:
+                    best_value, best_step = value, step
+                    save_checkpoint(run_dir / "best.pt", model, optimizer, step,
+                                    {**metadata, "source_update_counts": dict(counts)})
+                # Retain the latest full state without accumulating large checkpoint histories.
+                save_checkpoint(run_dir / "latest.pt", model, optimizer, step,
+                                {**metadata, "source_update_counts": dict(counts)})
+                if plateau:
+                    stop_reason = "validation_plateau"
+                    break
         training_seconds = time.monotonic() - started
-        validation = {s: validate(model, graphs[s], val[s], "lp", device, protocol, args.seed) for s in sources}
-        log(args.steps, {"validation/loss": sum(validation.values()) / len(validation),
-            **{f"validation/source/{s}/loss": value for s, value in validation.items()}})
-        run.summary.update({"final_step": args.steps, "training_seconds": training_seconds,
-                            "status": "complete", "source_update_counts": counts})
+        if window.weights:
+            log(step, window.flush())
+        if not args.convergence:
+            validation = {s: validate(model, graphs[s], val[s], "lp", device, protocol, args.seed) for s in sources}
+            log(step, {"validation/loss": sum(validation.values()) / len(validation),
+                **{f"validation/source/{s}/loss": value for s, value in validation.items()}})
+            best_step = step
         metadata["source_update_counts"] = counts
-        save_checkpoint(run_dir / "checkpoints" / f"step_{args.steps}.pt", model, optimizer, args.steps, metadata)
-        # The existing evaluator expects best.pt. It is explicitly the terminal model,
-        # not a model chosen on target scores or an unequal early-stopping budget.
-        (run_dir / "best.pt").symlink_to(f"checkpoints/step_{args.steps}.pt")
-        summary = {**metadata, "status": "complete", "final_step": args.steps, "best_step": args.steps,
+        save_checkpoint(run_dir / "checkpoints" / f"step_{step}.pt", model, optimizer, step, metadata)
+        if not args.convergence:
+            (run_dir / "best.pt").symlink_to(f"checkpoints/step_{step}.pt")
+        summary = {**metadata, "status": "complete", "final_step": step, "best_step": best_step,
+            "stop_reason": stop_reason, "converged": stop_reason == "validation_plateau",
             "training_seconds": training_seconds, "elapsed_seconds": time.monotonic() - started,
             "source_validation_losses": validation}
-        (run_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
-        print(json.dumps({"completed": run_id, "training_seconds": training_seconds}), flush=True)
+        run.summary.update({"final_step": step, "best_step": best_step,
+                            "stop_reason": stop_reason, "converged": summary["converged"],
+                            "training_seconds": training_seconds, "status": "complete"})
+    (run_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+    print(json.dumps({"completed": run_id, "final_step": step, "stop_reason": stop_reason}), flush=True)
+
 
 
 def aggregate(args):
     rows = []
     for run_id, sources in ladder_rows():
+        summary = json.loads((Path(args.state_root) / "lp" / run_id / "summary.json").read_text())
         for target in LP_TARGETS:
             path = Path(args.output_root) / "lp" / f"{run_id}__to__{target}.json"
             payload = json.loads(path.read_text())
-            if payload["sources"] != list(sources) or payload["checkpoint_step"] != args.steps:
+            if payload["sources"] != list(sources) or payload["checkpoint_step"] != summary["best_step"]:
                 raise ValueError(f"unexpected evaluation metadata: {path}")
             if payload["gates"]["holdout_leakage_edges"] != 0 or payload["gates"]["endpoint_sensitivity"] <= 0:
                 raise ValueError(f"failed LP gate: {path}")
             rows.append({"run_id": run_id, "n_sources": len(sources), "sources": ",".join(sources),
                 "target": target, "target_in_pretraining": target in sources,
                 "seed": payload["seed"], "checkpoint_step": payload["checkpoint_step"],
-                "roc_auc": payload["report"]["auc"]})
+                "stop_reason": summary.get("stop_reason", "fixed_budget"),
+                "converged": summary.get("converged", False),
+                "final_step": summary["final_step"], "roc_auc": payload["report"]["auc"]})
     path = Path(args.output_root) / "ladder_results.csv"
     with path.open("w", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
         writer.writeheader()
         writer.writerows(rows)
     (path.parent / "COMPLETE.json").write_text(json.dumps({"models": 9, "cells": len(rows),
-        "status": "complete", "seed": args.seed, "steps": args.steps}, indent=2) + "\n")
+        "status": "complete", "seed": args.seed, "convergence": args.convergence,
+        "all_converged": all(r["converged"] for r in rows),
+        "steps": None if args.convergence else args.steps}, indent=2) + "\n")
 
 
 def main():
@@ -153,14 +195,28 @@ def main():
     p.add_argument("--wandb-project", default=os.environ.get("WANDB_PROJECT", "node-mlp-ladder"))
     p.add_argument("--wandb-group", default=os.environ.get("WANDB_RUN_GROUP"))
     p.add_argument("--log-interval", type=int, default=25)
+    p.add_argument("--convergence", action="store_true")
+    p.add_argument("--max-steps-per-source", type=int, default=100000)
+    p.add_argument("--minimum-steps-per-source", type=int, default=2500)
+    p.add_argument("--validation-every-per-source", type=int, default=500)
+    p.add_argument("--patience", type=int, default=10)
+    p.add_argument("--min-delta", type=float, default=1e-4)
     args = p.parse_args()
+    if (min(args.max_steps_per_source, args.minimum_steps_per_source,
+            args.validation_every_per_source, args.patience) < 1
+            or args.min_delta < 0 or args.minimum_steps_per_source > args.max_steps_per_source):
+        p.error("invalid convergence settings")
     if args.log_interval < 1 or args.wandb_mode not in ("offline", "online", "disabled"):
         p.error("invalid tracking mode or logging interval")
     if args.steps < 1 or not 0 <= args.worker_index < args.workers:
         p.error("invalid budget or worker assignment")
     if args.phase == "plan":
         print(json.dumps({"rows": ladder_rows(), "targets": LP_TARGETS, "steps_per_rung": args.steps,
-            "total_updates": 9 * args.steps, "cells": 54}, indent=2))
+            "total_updates": None if args.convergence else 9 * args.steps, "cells": 54,
+            "convergence": args.convergence, "max_steps_per_source": args.max_steps_per_source,
+            "minimum_steps_per_source": args.minimum_steps_per_source,
+            "validation_every_per_source": args.validation_every_per_source,
+            "patience": args.patience, "min_delta": args.min_delta}, indent=2))
         return
     if args.phase == "aggregate":
         aggregate(args)

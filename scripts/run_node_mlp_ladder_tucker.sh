@@ -27,6 +27,7 @@ fi
 git rev-parse HEAD > "$LOG_ROOT/revision.txt"
 date -u +%FT%TZ > "$LOG_ROOT/STARTED"
 args=(--state-root "$STATE_ROOT" --output-root "$RESULTS_ROOT" --cache-root "$CACHE_ROOT")
+args+=("$@")
 python -m mixture_scaling.node_mlp_ladder plan "${args[@]}" > "$LOG_ROOT/plan.json"
 for phase in train eval; do
   pids=()
