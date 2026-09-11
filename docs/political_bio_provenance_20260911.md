@@ -22,6 +22,8 @@ The legacy snapshot is `/dataMeR1/phil/data/covid_political/legacy/cleaned-profi
 
 No `raw_profile` source was found in `social_llm_data/election2020`, its topology-only `graph.pickle`, or the searched Tucker data/project trees. The existing graph is therefore designated `cleaned-profile-v001`. Do not synthesize punctuation or digits or call a reconstructed string “raw.” A raw-profile replacement requires recovery from the original upstream collection.
 
+Recovery checks also covered the original CARC location `/project2/emiliofe_74/julie/social_llm_data/election2020/`. Its `user_data.csv` and `graph.pickle` are byte-identical to Tucker (SHA-256 `0cb20c0f...304b` and `0fbfd1ec...3273`). The CSV has only `profile,label_conservative`; the graph and edge lists use positional integers and contain no account handle, Twitter user ID, description, or raw-profile attribute. The complete seven-commit history of the public `julie-jiang/retweet-bert` repository contains model code and links to public tweet-ID collections, but no deleted user map or profile data. Public rehydration cannot prove the historical 78,932-account mapping because this derivative discarded account identity. The required recovery input is the Retweet-BERT/Election preprocessing table containing account ID or handle alongside the original profile description and the final positional row assignment.
+
 The immutable reference snapshot is `/dataMeR1/phil/data/election2020/legacy/cleaned-profile-v001/`, with the graph, sidecars, embedding, source CSV, and verified `SHA256SUMS` manifest.
 
 ## Evidence
