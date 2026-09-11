@@ -1,5 +1,7 @@
 # Experiment analysis
 
+- [September 11 node-only MLP ladder, activation diagnostics, LeakyReLU screening and Suspended repair](transfer/ablations/node_mlp/node_mlp_ladder_20260911/RESULTS.md)
+
 Analyses are grouped by research question. Each named experiment remains a
 self-contained leaf with its own findings, scripts, `data/`, and `figures/`.
 Setup and launch files remain in `../setup/<name>/`.
