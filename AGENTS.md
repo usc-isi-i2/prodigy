@@ -6,8 +6,10 @@
   `/dataMeR1/phil/gfm/mixture-scaling/{state,log,results}`.
 - Never delete or replace an existing run directory. Launchers must skip complete runs
   and refuse ambiguous partial runs.
-- Use only Tucker GPUs 2 and 3 for this project unless the user explicitly changes the
-  allocation.
+- Use Tucker GPUs 0, 1, 2 and 3 for this project. Leave GPUs 4–7 untouched.
+- Prefer a shared work queue across available owned GPUs. Check process ownership
+  before scheduling; do not interrupt unrelated jobs. Benchmark throughput, not only
+  instantaneous utilization, and preserve sampling and optimization semantics.
 - Use the Tucker `prodigy` conda environment for GraphSAGE training and evaluation.
 - Source changes move through git. Do not hand-copy source files to Tucker.
 - The primary protocol uses source-confined random-walk/edge pairs, uniform source
