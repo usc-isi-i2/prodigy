@@ -1,6 +1,6 @@
 # Lower Facebook distillation weights
 
-Authorized 2026-09-12 after the [extension control](async_extension_plan.md). Status: implemented, with results pending cluster completion. This tests whether lowering Facebook's KD loss weight relaxes the observed retention/fitting tradeoff.
+Authorized 2026-09-12 after the [extension control](async_extension_plan.md). Status: completed, three new weights plus reused weight1, eight declared checkpoints and64 evaluation cells. [Findings and figures](../results/async_kd_weights/FINDINGS.md). This tests whether lowering Facebook's KD loss weight relaxes the observed retention/fitting tradeoff.
 
 ## Fixed design
 

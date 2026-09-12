@@ -222,6 +222,19 @@ def transfer_tables(data: dict, data_dir: Path, previous: Path, original: Path, 
     if baseline_path.exists():
         singletons = pd.read_csv(baseline_path)
         comparison["Ukraine singleton"] = singletons[singletons.source == SOURCES[0]].set_index("target").auc * 100
+        source_tests = []
+        chosen_id = data.get("manifest", {}).get("chosen_run_id")
+        for model in current:
+            for source in SOURCES:
+                own = singletons[(singletons.source == source) & (singletons.target == source)].iloc[0]
+                measured = matrix[(matrix[key] == model) & (matrix.target == source)].iloc[0]
+                source_tests.append(dict(model=model, source=source,
+                                         test_auc_pct=measured[metric]*100,
+                                         own_singleton_test_auc_pct=own.auc*100,
+                                         delta_auc_pp=(measured[metric]-own.auc)*100,
+                                         test_bce=measured.bce, own_singleton_test_bce=own.bce,
+                                         chosen_by_source_validation=model == chosen_id))
+        pd.DataFrame(source_tests).to_csv(output / "source_test_retention.csv", index=False)
     means = []
     chosen = data.get("manifest", {}).get("chosen_run_id")
     for model in comparison:
@@ -240,6 +253,26 @@ def transfer_tables(data: dict, data_dir: Path, previous: Path, original: Path, 
     comparison["graph_role"] = ["training graph test" if t in SOURCES else "excluded target" if t == "election2020"
                                 else "transfer graph test" for t in comparison.index]
     comparison.to_csv(output / "transfer_comparison.csv")
+    if chosen and chosen in comparison and "Ukraine singleton" in comparison:
+        chosen_values = comparison.loc[targets, chosen]
+        fig, ax = plt.subplots(figsize=(9, 4.8), layout="constrained")
+        labels = {"covid19_twitter":"COVID", "covid_political":"COVID political", "cp_hk_twitter":"Hong Kong",
+                  "midterm":"Midterm", "twibot20":"TwiBot-20", "ukr_rus_suspended":"Ukraine suspended"}
+        positions = list(range(len(targets)))
+        ax.barh([v-.18 for v in positions], chosen_values-comparison.loc[targets,"Ukraine singleton"],
+                height=.34, color="#3166ad", label="vs stronger constituent singleton (Ukraine)")
+        if "previous_kd_extended_selected" in comparison:
+            ax.barh([v+.18 for v in positions], chosen_values-comparison.loc[targets,"previous_kd_extended_selected"],
+                    height=.34, color="#965c99", label="vs source-selected KD weight 1")
+        ax.set_yticks(positions, [labels.get(target,target) for target in targets])
+        ax.invert_yaxis()
+        ax.axvline(0, color="#555555", lw=.8)
+        ax.set(xlabel="Test AUC difference (percentage points)",
+               title="Source-selected KD weight: transfer to six non-source graphs\nOne seed; exploratory evaluation. No transfer-based model selection.")
+        handles, labels = ax.get_legend_handles_labels()
+        fig.legend(handles, labels, loc="outside lower center", fontsize=8, frameon=False)
+        style(ax)
+        save_figure(fig, output.parent / "figures", "transfer_deltas")
     print("Transfer test means; chosen weight is copied from source-only manifest:")
     print(means.to_string(index=False))
 
