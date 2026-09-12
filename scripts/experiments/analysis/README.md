@@ -59,6 +59,7 @@ Setup and launch files remain in `../setup/<name>/`.
 
 ## Graphs
 
+- Nonzero mini sampling: [`nonzero_mini_sampling_pilot`](graphs/structure/nonzero_mini_sampling_pilot/FINDINGS.md) compares uniform nodes, edge endpoints and short walks against parent degree and component structure.
 - Structural statistics and divergence: [`graph_divergence`](graphs/structure/graph_divergence/)
 - Biography-embedding geometry: [`bio_embedding_geometry`](graphs/features/bio_embedding_geometry/)
 - Political bio provenance and alignment: [`election_covid_alignment_audit`](graphs/features/election_covid_alignment_audit/); operational decision in [`docs/political_bio_provenance_20260911.md`](../../../docs/political_bio_provenance_20260911.md)
