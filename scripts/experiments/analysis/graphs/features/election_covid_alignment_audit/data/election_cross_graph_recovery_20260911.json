@@ -82,5 +82,37 @@
     "Identical generic bios can belong to multiple accounts.",
     "Later observations may contain a changed bio and cannot reconstruct the historical Election bio without an identity mapping.",
     "A partial raw/clean hybrid would have inconsistent feature provenance and is not a valid full repair."
-  ]
+  ],
+  "carc_deep_search": {
+    "mode": "read-only",
+    "related_backup": "/project2/emiliofe_74/data_backup/polarization_twitter",
+    "original_raw_path_from_preprocessing_code": "/project/emiliofe_74/muric/elections2020/data/raw_data/",
+    "secondary_archive_path_from_processing_code": "/scratch1/beverlyn/tweet_data",
+    "path_status": "original raw paths absent or inaccessible; no March-May 2020 raw archive found in accessible project storage or available snapshots",
+    "surviving_archive_path": "/project2/emiliofe_74/us-elections-2020",
+    "surviving_archive_first_date": "2021-05-27",
+    "polarization_backup": {
+      "per_user_files": 1860,
+      "per_user_date_range": "2020-07-24 through 2020-11-13",
+      "users_ratings_rows": 1865559,
+      "retweet_network_edges": 107562040,
+      "verified_election_row_userid_anchors": 2897,
+      "anchored_election_edges": 14870,
+      "same_direction_edges_present": 904,
+      "reverse_direction_edges_present": 7912,
+      "same_direction_exact_weight_matches": 74
+    },
+    "structural_recovery_validation": {
+      "decision": "rejected; do not use topology to infer additional identities",
+      "held_out_known_identities": 571,
+      "held_out_with_anchor_signature": 521,
+      "exact_signature_unique_calls": 2,
+      "exact_signature_correct_calls": 0,
+      "partial_overlap_evaluated": 473,
+      "partial_overlap_true_id_ranked_first": 3,
+      "strictest_nonempty_rule_calls": 14,
+      "strictest_nonempty_rule_correct": 2,
+      "strictest_nonempty_rule_precision": 0.142857
+    }
+  }
 }

@@ -38,6 +38,10 @@ The recovered raw-profile hashes were also joined to the GTE bio observation sto
 
 Direct Election-cleaned-text searches of the large stores are much weaker. Exact normalized-text/hash matches cover 98 Midterm, 262 Ukraine, and 1,088 COVID rows. Applying the inferred historical cleaning operation to stored normalized bios raises coverage only to 100, 277, and 1,211 rows, with ambiguous user-ID matches. The inferred operation reproduces 128,431 of 128,441 COVID raw/clean pairs (99.992%): remove recognized URLs, delete ASCII digits, replace ASCII punctuation with spaces, and collapse whitespace. Because the large bio stores replace URLs and handles during `bio-text-v001` normalization, these transformed-text joins are lossy and are not identity evidence.
 
+A deeper read-only CARC search located a related backup at `/project2/emiliofe_74/data_backup/polarization_twitter/`. Its preprocessing code identifies the original raw collection path as `/project/emiliofe_74/muric/elections2020/data/raw_data/`, which no longer exists under `/project`, `/project2`, the lab backup tree, or the available project snapshots. A separate script points to `/scratch1/beverlyn/tweet_data`; that path is also missing or inaccessible. The surviving `/project2/emiliofe_74/us-elections-2020/` archives begin on 2021-05-27, outside the March--May 2020 Election derivative window.
+
+The polarization backup contains 1,860 hourly per-user files from July--November 2020, a 1,865,559-row user-rating table, and a 107,562,040-edge retweet network. Exact profile-to-handle joins followed by handle-to-ID joins recover 2,897 verified Election row-to-user-ID anchors. The network is related to the Election collection: 7,912 of 14,870 anchored Election edges occur in the backup under the reverse edge convention. It is not the exact parent: only 74 same-direction edges have the same stored weight. Structural identity recovery was rejected by held-out validation. Exact neighborhood signatures made two held-out calls and both were wrong; partial-overlap matching ranked the correct ID first for only 3 of 473 held-out rows, and its strictest nonempty rule achieved 2 correct calls out of 14. Apparent structural matches must not be used to extend the verified identity bridge.
+
 The complete counts and method notes are in `scripts/experiments/analysis/graphs/features/election_covid_alignment_audit/data/election_cross_graph_recovery_20260911.json`. Tucker and CARC source collections remained read-only throughout this audit.
 
 The immutable reference snapshot is `/dataMeR1/phil/data/election2020/legacy/cleaned-profile-v001/`, with the graph, sidecars, embedding, source CSV, and verified `SHA256SUMS` manifest.
@@ -51,5 +55,6 @@ The full audit is in `scripts/experiments/analysis/graphs/features/election_covi
 - political selection and ideology mix are also material: matching Election and COVID Political label proportions reduces their mutual KS from 0.0669 to 0.0403–0.0526;
 - re-encoding cleaned COVID profiles reproduces canonical vectors exactly.
 - the later stores provide a verified raw-profile bridge for 17,600 Election rows, but not enough coverage to replace the canonical Election artifact.
+- the related CARC polarization backup corroborates 2,897 identities but cannot safely recover new identities from topology.
 
 The graph catalog carries the short operational warning so future loaders and agents encounter it at the registry entry rather than rediscovering it from geometry plots.
