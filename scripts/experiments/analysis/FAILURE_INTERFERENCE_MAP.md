@@ -148,11 +148,12 @@ query. The strongest current statements are:
 These are ordered by how directly they answer “when does helping one thing hurt
 another?” rather than by implementation convenience.
 
-1. **Build an example-level interference matrix.** For every fixed query, record
-   correctness/logit-margin changes between a base checkpoint and a source-addition
-   checkpoint. Summarize rescue, break, both-correct, and both-wrong rates by target,
-   degree, ambiguity, support health, and representation stage. Existing aggregate
-   pair deltas cannot reveal cancellation between rescues and breaks.
+1. **Completed first pass: example-level interference matrix.** The
+   [source-addition interference study](graphs/transfer_prediction/example_interference/FINDINGS.md)
+   records rescue, break, churn, margins, and stage-resolved correctness for 56
+   directional additions on two targets and two episode streams. Every addition both
+   rescues and breaks examples. The remaining step is to add degree, ambiguity, and
+   support-health strata and extend beyond the two available replayed targets.
 2. **Run matched source-addition replays on identical episodes and tensors.** Pair the
    singleton, pair, and LOO checkpoints on the same query/support inputs. This connects
    the graph-level lattice directly to individual examples without training new models.
