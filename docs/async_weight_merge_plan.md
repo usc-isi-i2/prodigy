@@ -1,6 +1,6 @@
 # Eleven weight mixtures of the existing seed-2 continuation endpoints
 
-Authorized after the [matched control](../results/async_seed2_control/FINDINGS.md). Status: implemented, pending completion. No new training or seeds. This tests one straight interpolation line between two fixed endpoints, not a full iterative branching/merging training procedure.
+Authorized after the [matched control](../results/async_seed2_control/FINDINGS.md). Status: completed at revision `e550945`; none of the 11 candidates meets both source-validation floors, so zero downstream evaluations were run. See [findings](../results/async_weight_merge/FINDINGS.md). No new training or seeds. This tests one straight interpolation line between two fixed endpoints, not a full iterative branching/merging training procedure.
 
 Use the existing seed-2 weight-0.1 KD and Ukraine-only checkpoints after exactly 60k added optimizer updates each. They share the same parent checkpoint and initialization/optimizer/sampling state at branch start. Cumulative Ukraine exposure differs (46k versus 76k); this is total-update matching, not exposure or compute matching. Do not substitute the Ukraine-only +30k endpoint because it had better measured transfer.
 
