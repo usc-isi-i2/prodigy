@@ -191,6 +191,35 @@ def curves(data: dict, prior: dict, refs: dict, figures: Path) -> None:
             fig.savefig(figures / f"{filename}.{suffix}", dpi=180)
         plt.close(fig)
 
+    # Joint retention is a two-metric requirement, not an average over sources.
+    fig, ax = plt.subplots(figsize=(8.8, 5.8), layout="constrained")
+    ua_threshold = baselines[SOURCES[0]]["validation"]["auc"] * 100
+    fb_threshold = baselines[SOURCES[1]]["validation"]["auc"] * 100
+    for arm, records in data["history"].items():
+        x = [r["validation"][0]["auc"] * 100 for r in records]
+        y = [r["validation"][1]["auc"] * 100 for r in records]
+        ax.plot(x, y, color=COLORS[arm], label=LABELS[arm], marker=".", lw=1.8, markersize=4)
+        ax.scatter([x[-1]], [y[-1]], color=COLORS[arm], marker="*", s=130, zorder=8)
+    for item in data.get("manifest", {}).get("models", []):
+        if item["run_id"].endswith("_selected"):
+            ax.scatter([item["validation"][0]["auc"] * 100], [item["validation"][1]["auc"] * 100],
+                       color=COLORS[item["arm"]], marker="D", s=65, zorder=9)
+    ax.axvline(ua_threshold, color="#555555", lw=1, ls="--")
+    ax.axhline(fb_threshold, color="#555555", lw=1, ls="--")
+    xlim, ylim = ax.get_xlim(), ax.get_ylim()
+    ax.fill_between([ua_threshold, xlim[1]], fb_threshold, ylim[1], color="#d9ecd6", alpha=.55, zorder=-1)
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    ax.text(xlim[1] - .005, ylim[1] - .13, "Both singleton thresholds met", ha="right", va="top", fontsize=9)
+    ax.set(xlabel="Ukraine source-validation AUC (%)", ylabel="Facebook source-validation AUC (%)",
+           title="The source-retention tradeoff remains\nDiamonds: source-selected checkpoints. Stars: fixed final endpoints.")
+    ax.grid(alpha=.15)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.legend(loc="lower left", frameon=False, fontsize=9)
+    for suffix in ("png", "pdf"):
+        fig.savefig(figures / f"retention_tradeoff.{suffix}", dpi=180)
+    plt.close(fig)
+
 
 def transfer_tables(matrix_path: Path, prior_data: Path, output: Path) -> None:
     if not matrix_path.exists():

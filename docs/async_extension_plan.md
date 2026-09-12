@@ -1,6 +1,6 @@
 # Fixed-horizon asynchronous KD continuation
 
-Authorized 2026-09-12 after the asynchronous convergence pilot. Status: implemented; completion requires the run's `results/COMPLETE.json` receipt. Parent protocol: [asynchronous convergence](asynchronous_convergence_plan.md).
+Authorized 2026-09-12 after the asynchronous convergence pilot. Status: completed, two continuations and 40 evaluation cells, with exact parent replay and matched-source sampling checks. [Findings and figures](../results/async_extension/FINDINGS.md). Parent protocol: [asynchronous convergence](asynchronous_convergence_plan.md).
 
 Question: did source-specific AUC patience stop Ukraine too early, or does continuing Facebook distillation obstruct recovery relative to Ukraine-only continuation?
 
