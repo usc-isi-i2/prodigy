@@ -79,6 +79,7 @@ def source_tables(data: dict, output: Path) -> pd.DataFrame:
                 "seed": 2, "run_id": entry["run_id"], "arm": entry.get("arm"), "source": source,
                 "selection": entry.get("selection"), "provenance": json.dumps(entry.get("provenance")),
                 "additional_step": entry.get("additional_step"), "validation_auc_pct": val["auc"] * 100,
+                "start_fallback": entry.get("start_fallback", False),
                 "validation_bce": val["bce"], "hard_label_training_probe_bce": probe,
                 "own_singleton_validation_auc_pct": thresholds[source] * 100,
                 "delta_own_singleton_validation_pp": (val["auc"] - thresholds[source]) * 100,
@@ -169,7 +170,8 @@ def transfer_tables(data: dict, matrix: pd.DataFrame, output: Path) -> tuple[pd.
                       "expected_targets": len(TARGETS), "complete": complete,
                       "mean_transfer_auc_pct": values.mean() * 100 if complete else np.nan,
                       "selection": models.get(arm, {}).get("selection"),
-                      "additional_step": models.get(arm, {}).get("additional_step")})
+                      "additional_step": models.get(arm, {}).get("additional_step"),
+                      "start_fallback": models.get(arm, {}).get("start_fallback", False)})
     pd.DataFrame(means).to_csv(output / "transfer_means.csv", index=False)
     comparisons, target_rows, test_rows = [], [], []
     for label, treatment, control, description, budget in CONTRASTS:
@@ -180,8 +182,12 @@ def transfer_tables(data: dict, matrix: pd.DataFrame, output: Path) -> tuple[pd.
             continue
         deltas = (pivot[treatment] - pivot[control]).reindex(TARGETS) * 100
         complete = deltas.notna().all()
+        fallback = models.get(control, {}).get("start_fallback", False)
+        if fallback:
+            description += "\nUkraine-only selects unchanged parent"
         comparisons.append({"seed": 2, "comparison": label, "description": description,
                             "kd_run_id": treatment, "control_run_id": control, "budget_relationship": budget,
+                            "control_start_fallback": fallback,
                             "kd_additional_steps": models.get(treatment, {}).get("additional_step"),
                             "control_additional_steps": models.get(control, {}).get("additional_step"),
                             "available_targets": int(deltas.notna().sum()), "expected_targets": len(TARGETS),

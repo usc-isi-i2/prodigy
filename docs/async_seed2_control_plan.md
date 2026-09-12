@@ -1,6 +1,6 @@
 # Ukraine-only continuation from the existing seed-2 parent
 
-Authorized after the mixed [seed replication](../results/async_seed_replication/FINDINGS.md). This is one targeted diagnostic branch from the already observed failing seed, with no new random seed. Status: implemented, pending completion.
+Authorized after the mixed [seed replication](../results/async_seed_replication/FINDINGS.md). This is one targeted diagnostic branch from the already observed failing seed, with no new random seed. Status: completed at training revision `97db93f`; 40 new evaluation cells and 32 reused cells, all provenance checks passed. See [findings](../results/async_seed2_control/FINDINGS.md).
 
 Restore the exact seed-2 parent endpoint at logical 32k: 16k Ukraine supervision and 5k Facebook supervision plus 11k Facebook KD updates. Preserve model weights, AdamW moments/counters, sampling orders/offsets/generators and global RNGs. Use the unchanged `async_extension.train` engine with `arm=ukraine_only`, training seed 2 and data seed 0. Continue Ukraine BCE for 60k updates at LR 0.0005, weight decay 1e-5, clipping norm 1. No Facebook optimizer updates or teacher forwards. Log both source-validation AUC/BCE and original fixed hard-label training probes; save full state every 2k updates. A fixed horizon is intentional, not a convergence claim.
 

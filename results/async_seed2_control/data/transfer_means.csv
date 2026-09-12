@@ -1,0 +1,10 @@
+seed,arm,available_targets,expected_targets,complete,mean_transfer_auc_pct,selection,additional_step,start_fallback
+2,kd_w010_fixed,6,6,True,95.82398809523808,fixed added-update horizon,60000.0,False
+2,kd_w010_selected,6,6,True,95.69353996598639,max Ukraine validation AUC subject to seed-specific Facebook singleton AUC; common exposure grid,56000.0,False
+2,singleton_facebook,6,6,True,87.73448469387755,seed-specific minimum source-validation BCE,,False
+2,singleton_ukraine,6,6,True,95.91113605442177,seed-specific minimum source-validation BCE,,False
+2,ukraine_exposure_fixed,6,6,True,96.00070918367346,match Ukraine exposure to frozen kd_w010_fixed; optimizer updates are not compute,30000.0,False
+2,ukraine_exposure_selected,6,6,True,95.86799149659862,match Ukraine exposure to frozen kd_w010_selected; optimizer updates are not compute,28000.0,False
+2,ukraine_only_selected,6,6,True,95.44024659863945,"max Ukraine validation AUC subject to original seed2 Facebook floor; <=30k added Ukraine updates, 2k grid",0.0,True
+2,ukraine_updates_fixed,6,6,True,95.88435884353741,match optimizer updates to frozen kd_w010_fixed; optimizer updates are not compute,60000.0,False
+2,ukraine_updates_selected,6,6,True,95.70313775510203,match optimizer updates to frozen kd_w010_selected; optimizer updates are not compute,56000.0,False

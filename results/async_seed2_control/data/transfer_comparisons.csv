@@ -1,0 +1,7 @@
+seed,comparison,description,kd_run_id,control_run_id,budget_relationship,control_start_fallback,kd_additional_steps,control_additional_steps,available_targets,expected_targets,complete,status,mean_kd_minus_control_pp,positive_target_deltas
+2,fixed_equal_ukraine_exposure,Fixed KD; same added Ukraine exposure,kd_w010_fixed,ukraine_exposure_fixed,Ukraine input exposure; unequal total updates/compute,False,60000,30000,6,6,True,complete,-0.17672108843537018,2
+2,fixed_equal_optimizer_updates,Fixed KD; same added optimizer updates,kd_w010_fixed,ukraine_updates_fixed,Optimizer updates; unequal Ukraine exposure and teacher compute,False,60000,60000,6,6,True,complete,-0.06037074829931729,2
+2,selected_equal_ukraine_exposure,Frozen-selected KD; same Ukraine exposure,kd_w010_selected,ukraine_exposure_selected,Ukraine input exposure; unequal total updates/compute,False,56000,28000,6,6,True,complete,-0.17445153061224072,2
+2,selected_equal_optimizer_updates,Frozen-selected KD; same optimizer updates,kd_w010_selected,ukraine_updates_selected,Optimizer updates; unequal Ukraine exposure and teacher compute,False,56000,56000,6,6,True,complete,-0.009597789115641428,3
+2,source_selected_recipes,"Separate source-selected recipes
+Ukraine-only selects unchanged parent",kd_w010_selected,ukraine_only_selected,Same source-only selection rule; durations may differ,True,56000,0,6,6,True,complete,0.25329336734693136,5
