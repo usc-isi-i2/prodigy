@@ -49,3 +49,16 @@ Raw sampled IDs, features, edges, projection matrices and cluster centers stay i
 the remote raw/ directory. Completion writes audit.json plus COMPLETE.json.
 Completed roots skip; partial roots refuse to run. No existing graph/cache/run is
 replaced. Figures and the compact JSON are copied into the analysis result folder.
+
+Local rendering (Homebrew Python 3.11):
+
+```bash
+MPLCONFIGDIR=/tmp/mlp-mpl-cache /opt/homebrew/bin/python3.11 scripts/plot_input_shift.py --input results/input_shift_audit/data/audit.json --output results/input_shift_audit
+```
+
+`scripts/compare_input_shift_transfer.py` optionally overlays the already-completed
+interleaving and singleton test tables. It does not rerun evaluation or tune the
+audit. The baseline is the better of the two constituent singleton means on the
+six other active graphs, not a per-target oracle. Pairwise Spearman correlations
+are descriptive: graph pairs share sources and different pairs omit different
+targets. No independence-based confidence intervals or p-values are reported.
