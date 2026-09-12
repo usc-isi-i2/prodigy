@@ -1,6 +1,6 @@
 # Loss switching after asynchronous convergence
 
-Status: literature review and proposed protocol, 2026-09-12. No implementation or new training run is represented by this document. Keep the extended-exposure/stopping control; prioritize loss switching before sampling reweighting, architecture changes, or ForkMerge.
+Status: implemented pilot protocol, 2026-09-12. Run status is recorded by cluster completion artifacts, not assumed from this document. Keep the extended-exposure/stopping control; prioritize loss switching before sampling reweighting, architecture changes, or ForkMerge.
 
 ## Primary sources and scope
 
@@ -70,3 +70,17 @@ Report separately:
 The repeatedly inspected downstream targets are exploratory development evidence. Untouched confirmation requires new reserved evaluation data or graphs; those historical test results cannot become untouched retroactively. No such new confirmation split is claimed here.
 
 ForkMerge remains the fallback if loss switching is insufficient. Its protected target must be declared, merge weights selected on permitted validation data, and optimizer-history/branch-exposure policy stated. A both-source merge constraint would be our modification rather than standard ForkMerge.
+
+
+## Pilot implementation
+
+Run from the isolated experiment worktree:
+bash scripts/run_async_convergence.sh /dataMeR1/phil/gfm/mixture-scaling/state/async_convergence_s0
+
+The implementation exports the three declared endpoints plus both BCE controls at the KD endpoint's exact surviving exposure, when available, before any downstream evaluation. It records absence of a comparable sibling if the KD endpoint precedes that sibling's origin. Endpoint selection is frozen in evaluation_manifest.json.
+
+Exact state rewind plus identical batches makes the rewind-only arm a deterministic replay check of extended BCE, rather than an independent scientific method. The manifest records their parameter difference at matched exposure. The KD-versus-rewind comparison isolates replacement of the training objective.
+
+Singleton reference replays provide dense fixed-probe training BCE curves to complement existing historical best/final checkpoint probes. They end at the original singleton final steps and verify agreement with original checkpoints; a failed agreement check must be reported rather than presented as historical reproduction.
+
+Five synthetic tests cover exact sampler/Adam replay through partial batches and reshuffling, soft-loss replacement and frozen teacher targets, measurement RNG isolation, best-checkpoint versus patience separation, and two successive rewinds with control exports.
