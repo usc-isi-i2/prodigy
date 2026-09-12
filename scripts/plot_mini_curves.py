@@ -31,8 +31,8 @@ for stage,title in TITLES.items():
     handles,labels=axes.flat[0].get_legend_handles_labels()
     fig.legend(handles,labels,loc='outside lower center',ncol=3,frameon=False)
     fig.suptitle(title+' — all nine source models\n'+('Logarithmic error axis; independent panel ranges' if stage=='fr' else 'Train and source validation use 1 positive : 5 negatives; independent panel ranges'),fontsize=15)
-    fig.savefig(ROOT/'figures'/f'{stage}_curves.png',dpi=150)
-    fig.savefig(ROOT/'figures'/f'{stage}_curves.pdf')
+    fig.savefig(ROOT/'figures'/f'{stage}_curves.png',dpi=150,bbox_inches='tight',pad_inches=.15)
+    fig.savefig(ROOT/'figures'/f'{stage}_curves.pdf',bbox_inches='tight',pad_inches=.15)
     plt.close(fig)
 
 def img(name,caption):
