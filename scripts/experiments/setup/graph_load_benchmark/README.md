@@ -39,3 +39,9 @@ source-pool creation, feature transforms, worker spawning, GPU/model operations,
 and the shared-training launcher's full graph-tensor sharing. Mapped results are
 not measurements of cold-disk access or full graph traversal. These scripts are
 diagnostics, not a production cache implementation with invalidation/locking.
+
+`reader_concurrency.py` runs two complete mapped-reader processes sequentially,
+then two concurrently. Supply the same `--graph` and `--cache` arguments as above,
+and a new directory for `--output`. It records wall time including interpreter
+startup and process cleanup, plus each reader's stage timings and result hash.
+This is one paired scheduling trial, not a GPU or training concurrency benchmark.
