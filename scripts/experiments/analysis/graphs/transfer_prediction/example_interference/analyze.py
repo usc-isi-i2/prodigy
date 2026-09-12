@@ -42,10 +42,27 @@ def read_metrics(root: Path) -> dict[tuple[str, str], dict]:
 
 
 def expected_labels(n: int, n_query: int = 4, n_way: int = 2) -> torch.Tensor:
+    """Synthetic-test helper for the ordinary balanced episode ordering."""
     per_episode = torch.arange(n_way).repeat_interleave(n_query)
     if n % len(per_episode):
         raise ValueError(f"query count {n} is not divisible by {len(per_episode)}")
     return per_episode.repeat(n // len(per_episode))
+
+
+def load_labels(root: Path, target: str, n_way: int = 2) -> torch.Tensor:
+    labels = []
+    paths = sorted((root / target / "batches").glob("batch_*.pt"))
+    if not paths:
+        raise ValueError(f"missing cached batches for {target} under {root}")
+    for path in paths:
+        # The internal batch cache contains PyG objects, so weights_only cannot
+        # deserialize it. These trusted files were created by replay.py in the
+        # same experiment directory and are fingerprinted in cache.json.
+        batch = torch.load(path, map_location="cpu", weights_only=False)
+        local_labels = batch[2].argmax(1)
+        query = batch[5].reshape(-1, n_way)[:, 0].bool()
+        labels.append(local_labels[query].cpu())
+    return torch.cat(labels)
 
 
 def load_logits(path: Path) -> dict[str, torch.Tensor]:
@@ -139,7 +156,13 @@ def analyze(singleton_root: Path, pair_root: Path, stream: str) -> tuple[list[di
         pair_logits = load_logits(pair_path)
         pair_metric = pair_metrics[(target, pair_model, "full_model")]
         fingerprints.add((stream, target, pair_metric["episode_fingerprint"]))
-        labels = expected_labels(len(pair_logits["full_model"]))
+        labels = load_labels(pair_root, target)
+        if len(labels) != len(pair_logits["full_model"]):
+            raise ValueError(f"cached label count does not match logits for {target}")
+        singleton_cache = json.loads((singleton_root / target / "cache.json").read_text())
+        pair_cache = json.loads((pair_root / target / "cache.json").read_text())
+        if singleton_cache != pair_cache:
+            raise ValueError(f"singleton/pair cached inputs differ for {target}")
         pair_full_summary = summarize(outcome(pair_logits["full_model"], pair_logits["full_model"], labels))
         verify_accuracy(pair_full_summary, pair_metric, f"{stream}/{target}/{pair_model}")
 
