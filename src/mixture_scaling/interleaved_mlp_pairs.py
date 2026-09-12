@@ -56,7 +56,8 @@ def load_graph(source,config,seed,device):
 
 def train_one(row,config,args,device):
     run_id,a,b=row;run_dir=Path(args.root)/'node_neighbors/lp'/run_id
-    expected=dict(sources=[a,b],seed=args.seed,schedule='alternating_equal_updates',initialization='fresh',
+    mixed=getattr(args,'batch_schedule','alternating')=='mixed'
+    expected=dict(sources=[a,b],seed=args.seed,schedule='balanced_mixed_batches' if mixed else 'alternating_equal_updates',initialization='fresh',
                   max_steps=args.max_steps,validation_interval=args.validation_interval,patience=args.patience,
                   min_delta=1e-4,minimum_steps=2500)
     if (run_dir/'summary.json').exists():
@@ -83,14 +84,24 @@ def train_one(row,config,args,device):
     print(json.dumps(dict(starting=run_id)),flush=True)
     with tracked_run(run_dir,metadata,args) as (run,log):
         for step in range(1,args.max_steps+1):
-            index=(step-1)%2;g=graphs[index];positive=g['positive']
-            if g['offset']>=positive.shape[1]:
-                g['order']=torch.randperm(positive.shape[1],generator=g['order_generator'],device=device);g['offset']=0
-            pos=positive[:,g['order'][g['offset']:g['offset']+1024]];g['offset']+=pos.shape[1]
-            pairs,y=lp.pair_batch(pos,g['sampler'],g['generator'])
-            optimizer.zero_grad(set_to_none=True);loss=F.binary_cross_entropy_with_logits(score(model,g['x'],pairs),y)
+            optimizer.zero_grad(set_to_none=True)
+            indices=(0,1) if mixed else ((step-1)%2,)
+            losses=[]
+            for index in indices:
+                g=graphs[index];positive=g['positive'];need=512 if mixed else 1024;parts=[]
+                while need:
+                    if g['offset']>=positive.shape[1]:
+                        g['order']=torch.randperm(positive.shape[1],generator=g['order_generator'],device=device);g['offset']=0
+                    pos=positive[:,g['order'][g['offset']:g['offset']+need]];g['offset']+=pos.shape[1]
+                    parts.append(pos);need-=pos.shape[1]
+                    if not mixed:break
+                pos=torch.cat(parts,1)
+                pairs,y=lp.pair_batch(pos,g['sampler'],g['generator'])
+                source_loss=F.binary_cross_entropy_with_logits(score(model,g['x'],pairs),y)
+                losses.append(source_loss)
+                totals[index]+=source_loss.detach();counts[index]+=1;updates[index]+=1
+            loss=torch.stack(losses).mean()
             loss.backward();torch.nn.utils.clip_grad_norm_(model.parameters(),1.);optimizer.step()
-            totals[index]+=loss.detach();counts[index]+=1;updates[index]+=1
             if step%args.log_interval==0 or step==args.max_steps:
                 values=[float(totals[i]/counts[i]) for i in (0,1)]
                 if not all(torch.isfinite(torch.tensor(values))):raise FloatingPointError('nonfinite loss')
@@ -144,6 +155,7 @@ def main():
     p.add_argument('--config',default='configs/nonzero_mini_transfer.yaml');p.add_argument('--device',type=int,choices=range(4),default=0);p.add_argument('--seed',type=int,default=0)
     p.add_argument('--max-steps',type=int,default=100000);p.add_argument('--validation-interval',type=int,default=2000);p.add_argument('--patience',type=int,default=3);p.add_argument('--log-interval',type=int,default=100)
     p.add_argument('--wandb-mode',default='offline');p.add_argument('--wandb-project',default='nonzero-mini-transfer');p.add_argument('--wandb-group',default='interleaved-mlp-pairs')
+    p.add_argument('--batch-schedule',choices=['alternating','mixed'],default='alternating')
     p.add_argument('--prodigy-root',default='/dataMeR1/phil/gfm/prodigy-walk-mini-pilot');args=p.parse_args()
     if any(v<=0 or v%2 for v in (args.max_steps,args.validation_interval,args.log_interval)) or args.patience<1:
         p.error('step counts/intervals must be positive and even; patience must be positive')
