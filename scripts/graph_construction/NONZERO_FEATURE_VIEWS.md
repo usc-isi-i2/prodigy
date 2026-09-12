@@ -82,3 +82,53 @@ All edge counts below are stored directed edges. Node counts include isolates.
 Uniform induced node sampling leaves 79.1% of Ukraine-mini and 88.9% of
 COVID-mini isolated. The 500k cap equalizes stored node counts between these
 two views, not their number of connected nodes or training edges.
+
+## Edge-sampled 500k minis
+
+The additional directories `ukr_rus_twitter_mini_500k_edge_sampled_s0` and
+`covid19_twitter_mini_500k_edge_sampled_s0` select endpoints from uniform random
+stored edge-row draws, with replacement, seed 0. Self-loop draws are skipped.
+An edge introducing too many nodes for the exact 500,000-node cap is skipped
+whole; endpoints are never trimmed. After selection, **all** parent edges
+between selected nodes are retained, including unsampled edges and every
+existing static/temporal edge view. Original graph splits are preserved.
+
+The parent is the already verified full nonzero graph, loaded with mmap. Only
+selected features are gathered; full nonzero features are not scanned again.
+Two graph builds can run concurrently with four CPU tensor threads apiece.
+This selection favors high-degree nodes and does not promise one connected
+component. Every selected node has a sampled non-self connection in the full
+mini. The static training-background view can still contain isolates after
+held-out edges are excluded; that count is recorded separately.
+
+`parent_node_ids` maps to the nonzero parent; `original_node_ids` maps through
+that parent to the original unfiltered graph. `selection.pt` records accepted
+parent edge IDs as witnesses for the selected endpoints. Source identities,
+all induced views and aligned attributes, and full mini serialization are
+checked before writing `metadata.json`. The earlier `_mini_500k` directories
+are the uniform-node variants and are retained unchanged.
+
+```bash
+/dataMeR1/phil/conda_envs/prodigy-loadbench/bin/python \
+  scripts/graph_construction/edge_sampled_minis.py --dataset ukr_rus_twitter
+/dataMeR1/phil/conda_envs/prodigy-loadbench/bin/python \
+  scripts/graph_construction/edge_sampled_minis.py --dataset covid19_twitter
+```
+
+Verified results (stored directed edges):
+
+| Edge-sampled mini | Nodes | Full edges | Full isolates | Static-background isolates | Build + verification |
+|---|---:|---:|---:|---:|---:|
+| Ukraine | 500,000 | 25,710,237 | 0 | 7,817 (1.56%) | 23.7 s |
+| COVID | 500,000 | 14,072,647 | 0 | 10,800 (2.16%) | 33.7 s |
+
+Both builds ran concurrently and passed production PyTorch 2.0.1 loading,
+feature/mapping checks and recomputed inventory counts. Times include parent
+loading, sampling, induction, full edge/attribute checks and mini round-trip,
+excluding code preparation and the separate production loading checks. Filesystem
+caches were warm. Receipts are in `data/edge_sampled_minis_*.json`.
+
+These minis contain zero isolates in the **full** graph; existing static holdout
+edges are still excluded from the training background. High-degree selection
+bias is substantial: Ukraine retains 44.4% of parent edges with 6.3% of its nodes;
+COVID retains 16.4% of parent edges with 2.7% of its nodes.

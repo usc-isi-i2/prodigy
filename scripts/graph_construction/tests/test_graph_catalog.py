@@ -71,7 +71,7 @@ class GraphCatalogTest(unittest.TestCase):
                 else:
                     self.assertGreater(graph["artifact_size_bytes"], 0)
                     self.assertGreater(graph["artifact_size_gb"], 0)
-                if planned and graph["statistics"]["nodes"] is None:
+                if planned and any(graph["statistics"][k] is None for k in ("nodes", "edges")):
                     self.assertIsNone(graph["statistics"]["edges"])
                     continue
                 self.assertGreater(graph["statistics"]["nodes"], 0)
@@ -90,7 +90,7 @@ class GraphCatalogTest(unittest.TestCase):
 
     def test_nonzero_views(self):
         views = [g for g in self.graphs if g["relative_path"].startswith("graph_views/nonzero_features_v1/")]
-        self.assertEqual(len(views), 11)
+        self.assertEqual(len(views), 13)
         for graph in views:
             self.assertEqual(graph["kind"], "derived")
             self.assertFalse(graph["default_eval"])

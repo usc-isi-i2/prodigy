@@ -3,7 +3,7 @@
   "data_root": "/dataMeR1/phil/data",
   "last_verified": "2026-09-12",
   "verified_on": "tucker",
-  "notes": "Canonical inventory of graph artifacts. Use canonical_name in prose and dataset_key for compatibility with existing code, configs, and logs. Sizes and graph statistics describe the current graph object on Tucker, not the total size of its source corpus. The 2026-09-07 verification covers the two newly staged official public KG graph tensors and archive integrity; older entries retain their earlier verification evidence. The 2026-09-11 verification covers the corrected Ukraine Suspended graph and the promoted raw-profile COVID Political graph. The 2026-09-12 UTC verification covers eleven nonzero_features_v1 induced views (nine full nonzero graphs and Ukraine/COVID 500k-node minis), including independent checks in production PyTorch 2.0.1.",
+  "notes": "Canonical inventory of graph artifacts. Use canonical_name in prose and dataset_key for compatibility with existing code, configs, and logs. Sizes and graph statistics describe the current graph object on Tucker, not the total size of its source corpus. The 2026-09-07 verification covers the two newly staged official public KG graph tensors and archive integrity; older entries retain their earlier verification evidence. The 2026-09-11 verification covers the corrected Ukraine Suspended graph and the promoted raw-profile COVID Political graph. The 2026-09-12 UTC verification covers eleven nonzero_features_v1 induced views (nine full nonzero graphs and Ukraine/COVID 500k-node minis), including independent checks in production PyTorch 2.0.1. Two additional edge-sampled 500k-node minis were verified on 2026-09-12 UTC; prior uniform-node minis remain unchanged.",
   "field_notes": {
     "artifact_size_gb": "Decimal GB (artifact_size_bytes / 1e9).",
     "tasks.supported": "Implemented and backed by fields/views in the current graph object.",
@@ -1610,12 +1610,25 @@
       "kind": "derived",
       "relative_path": "graph_views/nonzero_features_v1/ukr_rus_twitter_mini_500k_edge_sampled_s0/graph.pt",
       "metadata_path": "graph_views/nonzero_features_v1/ukr_rus_twitter_mini_500k_edge_sampled_s0/metadata.json",
-      "artifact_size_bytes": null,
-      "artifact_size_gb": null,
+      "artifact_size_bytes": 3040607156,
+      "artifact_size_gb": 3.040607156,
       "statistics": {
         "nodes": 500000,
-        "edges": null,
-        "isolated_nodes": null
+        "edges": 25710237,
+        "isolated_nodes": 0,
+        "labeled_nodes": 0,
+        "class_counts": {},
+        "edge_views": {
+          "retweet_all": 25710237,
+          "temporal_history": 9238984,
+          "static_background": 21852202
+        },
+        "target_edge_views": {
+          "temporal_new": 16471253,
+          "static_holdout": 3858035
+        },
+        "nonself_isolated_nodes": 0,
+        "static_background_nonself_isolated_nodes": 7817
       },
       "features": {
         "node_feature_dim": 768,
@@ -1644,14 +1657,41 @@
       },
       "construction": {
         "script": "scripts/graph_construction/edge_sampled_minis.py",
-        "status": "planned",
+        "status": "verified",
         "parent_dataset_key": "ukr_rus_twitter_nonzero_features_v1",
         "source_dataset_key": "ukr_rus_twitter",
         "seed": 0,
         "max_nodes": 500000,
         "induced": true,
         "isolates_retained": true,
-        "sampling": "edge endpoints, then complete induced graph; exclude self-loop draws"
+        "sampling": {
+          "method": "uniform edge-row draws with replacement; collect endpoints; complete induced graph",
+          "seed": 0,
+          "cap": 500000,
+          "skip_self_loops": true,
+          "skip_edges_exceeding_node_cap": true,
+          "draws": 583535,
+          "accepted_witness_edges": 415703,
+          "batch_size": 65536
+        },
+        "code_revision": "53eadb4d3e6c91b0d742e1d543dad8f6d09c188d",
+        "parent_identity": {
+          "path": "/dataMeR1/phil/data/graph_views/nonzero_features_v1/ukr_rus_twitter/graph.pt",
+          "bytes": 28383091309,
+          "mtime_ns": 1789175114948120605
+        },
+        "verification": {
+          "all_induced_edge_views_exact": true,
+          "all_attributes_exact": true,
+          "nonzero_features": true,
+          "no_nonself_isolates": true,
+          "witness_endpoints_equal_selection": true,
+          "serialization_exact_all_fields": true
+        },
+        "production_torch": "2.0.1+cu118",
+        "production_compatibility": true,
+        "original_node_ids": "row in original unfiltered source graph",
+        "parent_node_ids": "row in full nonzero parent"
       },
       "source_data": [
         {
@@ -1668,12 +1708,25 @@
       "kind": "derived",
       "relative_path": "graph_views/nonzero_features_v1/covid19_twitter_mini_500k_edge_sampled_s0/graph.pt",
       "metadata_path": "graph_views/nonzero_features_v1/covid19_twitter_mini_500k_edge_sampled_s0/metadata.json",
-      "artifact_size_bytes": null,
-      "artifact_size_gb": null,
+      "artifact_size_bytes": 2377050484,
+      "artifact_size_gb": 2.377050484,
       "statistics": {
         "nodes": 500000,
-        "edges": null,
-        "isolated_nodes": null
+        "edges": 14072647,
+        "isolated_nodes": 0,
+        "labeled_nodes": 0,
+        "class_counts": {},
+        "edge_views": {
+          "retweet_all": 14072647,
+          "temporal_history": 4572671,
+          "static_background": 11962922
+        },
+        "target_edge_views": {
+          "temporal_new": 9499976,
+          "static_holdout": 2109725
+        },
+        "nonself_isolated_nodes": 0,
+        "static_background_nonself_isolated_nodes": 10800
       },
       "features": {
         "node_feature_dim": 768,
@@ -1702,14 +1755,41 @@
       },
       "construction": {
         "script": "scripts/graph_construction/edge_sampled_minis.py",
-        "status": "planned",
+        "status": "verified",
         "parent_dataset_key": "covid19_twitter_nonzero_features_v1",
         "source_dataset_key": "covid19_twitter",
         "seed": 0,
         "max_nodes": 500000,
         "induced": true,
         "isolates_retained": true,
-        "sampling": "edge endpoints, then complete induced graph; exclude self-loop draws"
+        "sampling": {
+          "method": "uniform edge-row draws with replacement; collect endpoints; complete induced graph",
+          "seed": 0,
+          "cap": 500000,
+          "skip_self_loops": true,
+          "skip_edges_exceeding_node_cap": true,
+          "draws": 410671,
+          "accepted_witness_edges": 374329,
+          "batch_size": 65536
+        },
+        "code_revision": "53eadb4d3e6c91b0d742e1d543dad8f6d09c188d",
+        "parent_identity": {
+          "path": "/dataMeR1/phil/data/graph_views/nonzero_features_v1/covid19_twitter/graph.pt",
+          "bytes": 63029634221,
+          "mtime_ns": 1789175406894180232
+        },
+        "verification": {
+          "all_induced_edge_views_exact": true,
+          "all_attributes_exact": true,
+          "nonzero_features": true,
+          "no_nonself_isolates": true,
+          "witness_endpoints_equal_selection": true,
+          "serialization_exact_all_fields": true
+        },
+        "production_torch": "2.0.1+cu118",
+        "production_compatibility": true,
+        "original_node_ids": "row in original unfiltered source graph",
+        "parent_node_ids": "row in full nonzero parent"
       },
       "source_data": [
         {
