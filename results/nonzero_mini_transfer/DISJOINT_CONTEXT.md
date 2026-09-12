@@ -49,3 +49,6 @@ Training revision: `8f7f90e`, branch `codex/disjoint-neighbor-lp`, Tucker
 worktree `/dataMeR1/phil/gfm/mixture-scaling-disjoint-neighbor`, state root
 `state/disjoint_context_s0`. Four tests passed locally and in production;
 20-step end-to-end smoke results are separate from the full experiment.
+
+[Corrected W&B matrix](https://wandb.ai/eibl-usc/nonzero-mini-transfer/runs/mthmn6a5):
+all nine training histories and all 81 evaluation cells uploaded.
