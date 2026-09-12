@@ -57,8 +57,9 @@ def training_batch(g,trial,source_index):
     return base.lp.pair_batch(g['positive'][:,order],g['sampler'],generator)
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--case',type=int,choices=(0,1),required=True);p.add_argument('--device',type=int,choices=range(4),required=True);p.add_argument('--output',required=True);p.add_argument('--trials',type=int,default=8);p.add_argument('--config',default='configs/nonzero_mini_transfer.yaml');args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--case',type=int,choices=(0,1),required=True);p.add_argument('--device',type=int,choices=range(4),required=True);p.add_argument('--output',required=True);p.add_argument('--trials',type=int,default=8);p.add_argument('--config',default='configs/nonzero_mini_transfer.yaml');p.add_argument('--scales',type=float,nargs='+',default=[1.]);p.add_argument('--states',nargs='+');args=p.parse_args()
     if args.trials<1:p.error('positive trials required')
+    if not all(0<s<=1 for s in args.scales):p.error('scales must lie in (0,1]')
     out=Path(args.output)
     if out.exists():raise FileExistsError(out)
     out.mkdir(parents=True);torch.set_num_threads(4);torch.cuda.set_device(args.device);torch.backends.cuda.matmul.allow_tf32=False
@@ -70,6 +71,8 @@ def main():
     for w in (0,1):
         run=PILOT/f'warm_{a}__and__{b}__rank{w}';summary=json.loads((run/'summary.json').read_text())
         states.extend([(f'rank{w}_best',run/'best.pt',w,summary['best_step']),(f'rank{w}_final',run/'latest.pt',w,summary['final_step'])])
+    if args.states:states=[s for s in states if s[0] in args.states]
+    if not states:raise ValueError('no states selected')
     grow=[];urows=[];receipts=[]
     for state,path,weight,step in states:
         ck=torch.load(path,map_location='cpu',weights_only=False);model,_=snapshot_model(ck,device);group=groups(model)
@@ -97,13 +100,17 @@ def main():
                 for param,g in zip(disposable.parameters(),grad):param.grad=g.clone()
                 preclip=float(torch.nn.utils.clip_grad_norm_(disposable.parameters(),1.));opt.step()
                 delta=[p.detach()-q.detach() for p,q in zip(disposable.parameters(),model.parameters())]
-                for i,(graph,ps) in enumerate(zip(graphs,parts)):
-                    after,_=evaluate(disposable,graph,ps)
-                    geo=geometry(vg[i],delta)
-                    urows.append(dict(state=state,step=step,trial=trial,action=action,validation_source='A' if i==0 else 'B',
-                        bce_before=reports[i]['bce'],bce_after=after['bce'],bce_delta=after['bce']-reports[i]['bce'],
-                        auc_before=reports[i]['auc'],auc_after=after['auc'],auc_delta_pp=100*(after['auc']-reports[i]['auc']),
-                        first_order_bce_delta=geo['dot'],update_norm=geo['norm_right'],validation_gradient_update_cosine=geo['cosine'],preclip_norm=preclip))
+                for scale in args.scales:
+                    scaled_delta=[d*scale for d in delta]
+                    with torch.no_grad():
+                        for p,q,d in zip(disposable.parameters(),model.parameters(),scaled_delta):p.copy_(q+d)
+                    for i,(graph,ps) in enumerate(zip(graphs,parts)):
+                        after,_=evaluate(disposable,graph,ps)
+                        geo=geometry(vg[i],scaled_delta)
+                        urows.append(dict(state=state,step=step,trial=trial,action=action,update_scale=scale,validation_source='A' if i==0 else 'B',
+                            bce_before=reports[i]['bce'],bce_after=after['bce'],bce_delta=after['bce']-reports[i]['bce'],
+                            auc_before=reports[i]['auc'],auc_after=after['auc'],auc_delta_pp=100*(after['auc']-reports[i]['auc']),
+                            first_order_bce_delta=geo['dot'],update_norm=geo['norm_right'],validation_gradient_update_cosine=geo['cosine'],preclip_norm=preclip))
                 del disposable,opt
         print(json.dumps(dict(case=args.case,state=state,step=step,trials=args.trials,validation=reports)),flush=True)
         del model;torch.cuda.empty_cache()
