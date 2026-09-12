@@ -1,5 +1,8 @@
 # Nonzero-mini transfer matrices
 
+**Update:** The overlapping-context neighbor run below is historical. The active
+gallery uses the [corrected disjoint-context retraining](DISJOINT_CONTEXT.md).
+
 Requested sequence: node-only feature reconstruction (FR), node-only LP, then
 node + fixed-10-neighbor LP. Each stage is nine single-source seed-0 models
 against all nine targets. Graphs use `nonzero_features_v1`, with 500k-node

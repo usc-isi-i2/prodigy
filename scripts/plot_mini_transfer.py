@@ -6,7 +6,7 @@ ORDER=['ukr_rus_twitter','covid19_twitter','midterm','covid_political','election
 LABELS=['Ukraine mini','COVID mini','Midterm','COVID Political','Election 2020','Suspended','TwiBot20','China/HK','Facebook']
 def plot(path,metric,title,name):
  d=pd.read_csv(path);a=d.pivot(index='source',columns='target',values=metric).reindex(index=ORDER,columns=ORDER).to_numpy()
- fig,ax=plt.subplots(figsize=(11.8,8.4));limits={'vmin':.5,'vmax':.9} if metric=='auc' else ({'vmin':.65,'vmax':2.8} if metric=='bce' else {});im=ax.imshow(a,cmap='viridis_r' if metric!='auc' else 'viridis',**limits)
+ fig,ax=plt.subplots(figsize=(11.8,8.4));limits={'vmin':.5,'vmax':.9} if metric=='auc' else ({'vmin':.65,'vmax':3.0} if metric=='bce' else {});im=ax.imshow(a,cmap='viridis_r' if metric!='auc' else 'viridis',**limits)
  ax.set_xticks(range(9),LABELS,rotation=35,ha='right');ax.set_yticks(range(9),LABELS)
  ax.set_xlabel('Evaluation target');ax.set_ylabel('Training source');ax.set_title(title,pad=16)
  for i in range(9):
