@@ -1,0 +1,39 @@
+{
+  "protocol": "example_level_source_addition_interference_v1",
+  "stream": "original",
+  "pair_models": 28,
+  "directional_interventions": 56,
+  "stage_rows": 392,
+  "targets": [
+    "covid_political",
+    "facebook_page_reference"
+  ],
+  "queries_per_intervention": [
+    1024,
+    3072
+  ],
+  "stages": [
+    "raw_joint/ridge",
+    "S0_conv_center/ridge",
+    "S0_pool/ridge",
+    "U1_pre_meta/ridge",
+    "M2_post_meta/ridge",
+    "final_input/ridge",
+    "full_model"
+  ],
+  "episode_fingerprints": [
+    [
+      "original",
+      "covid_political",
+      "db497c203ef6c4249fb91b34083c59d3c400dc84b821c0835e3d5426fbbe2750"
+    ],
+    [
+      "original",
+      "facebook_page_reference",
+      "df2330ab1920415c5c98c8ec00ef3e640a961ff90514a04bf5074d09529a0afe"
+    ]
+  ],
+  "scope": "Saved seed-0 classification replays; fixed queries and episode inputs; no new training or inference; target examples are not independent training replicates.",
+  "original_stage_outcomes.csv_sha256": "16dfbc82cdec3af34003c7f1db28f2b9bd2f4252286c2d0733805049e8fd68b8",
+  "original_interference.csv_sha256": "d53208d7dc51e1c10f622467850a3a8ac262c74cf3ec954ca172a5b7fdb9b3c6"
+}
