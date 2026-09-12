@@ -136,7 +136,7 @@ def aggregate(args):
             rows.append(dict(first=a,second=b,target=target,checkpoint_step=d['checkpoint_step'],**d['metrics']['test']))
     with (root/'results/matrix.csv').open('w') as f:
         w=csv.DictWriter(f,fieldnames=rows[0]);w.writeheader();w.writerows(rows)
-    atomic_json(root/'results/COMPLETE.json',dict(status='complete',interleaved_models=28,evaluation_cells=len(rows)))
+    atomic_json(root/'results/COMPLETE.json',dict(status='complete',interleaved_models=len(pair_rows()),evaluation_cells=len(rows)))
 
 
 def main():
