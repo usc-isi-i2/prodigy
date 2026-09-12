@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import time
 import torch
-from nonzero_feature_views import SOURCES, CHUNK, EDGE_CHUNK, HISTORICAL, assert_equal, identity, verify_induced
+from nonzero_feature_views import SOURCES, CHUNK, EDGE_CHUNK, HISTORICAL, assert_equal, identity, verify_induced, nonzero_ids
 
 
 def verify_attributes(source, view, ids):
@@ -66,6 +66,7 @@ def main():
         start = time.monotonic()
         path = Path(c['data_root']) / entries[key]['relative_path']
         source = torch.load(path, map_location='cpu', weights_only=False)
+        eligible = nonzero_ids(source['x'])
         names = [key] + ([key + '_mini_500k'] if key in SOURCES[:2] else [])
         for name in names:
             d = args.root / name
@@ -77,6 +78,10 @@ def main():
             verify_attributes(source, view, ids)
             if meta['sampling']:
                 assert len(ids) == 500000
+                draw = torch.randperm(len(eligible), generator=torch.Generator().manual_seed(meta['sampling']['seed']))[:len(ids)]
+                assert_equal(ids, eligible[draw].sort().values)
+            else:
+                assert_equal(ids, eligible)
             record = {'dataset': name, 'verified': True, 'torch_version': torch.__version__,
                       'source_identity': identity(path), 'artifact_size_bytes': (d / 'graph.pt').stat().st_size,
                       'checks': ['exact features', 'all induced edge views', 'all aligned edge attributes',

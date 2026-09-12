@@ -88,6 +88,16 @@ class GraphCatalogTest(unittest.TestCase):
                 self.assertIn("features", graph)
                 self.assertIn("labels", graph)
 
+    def test_nonzero_views(self):
+        views = [g for g in self.graphs if g["relative_path"].startswith("graph_views/nonzero_features_v1/")]
+        self.assertEqual(len(views), 11)
+        for graph in views:
+            self.assertEqual(graph["kind"], "derived")
+            self.assertFalse(graph["default_eval"])
+            self.assertTrue(graph["construction"]["induced"])
+            self.assertTrue(graph["construction"]["isolates_retained"])
+            self.assertEqual(graph["features"]["node_feature_dim"], 768)
+
     def test_merged_sources_exist(self):
         canonical_names = {graph["canonical_name"] for graph in self.graphs}
         for graph in self.graphs:
