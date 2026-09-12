@@ -1603,6 +1603,122 @@
         }
       ],
       "default_eval": false
+    },
+    {
+      "canonical_name": "ukraine-mini-500k-edge-sampled-nonzero",
+      "dataset_key": "ukr_rus_twitter_mini_500k_edge_sampled_s0_nonzero_features_v1",
+      "kind": "derived",
+      "relative_path": "graph_views/nonzero_features_v1/ukr_rus_twitter_mini_500k_edge_sampled_s0/graph.pt",
+      "metadata_path": "graph_views/nonzero_features_v1/ukr_rus_twitter_mini_500k_edge_sampled_s0/metadata.json",
+      "artifact_size_bytes": null,
+      "artifact_size_gb": null,
+      "statistics": {
+        "nodes": 500000,
+        "edges": null,
+        "isolated_nodes": null
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "Exact nonzero source feature rows; induced graph; unnormalized",
+        "edge_features": [
+          "n_retweets"
+        ]
+      },
+      "labels": {
+        "type": null,
+        "labeled_nodes": 0
+      },
+      "tasks": {
+        "supported": [
+          "neighbor_matching",
+          "temporal_link_prediction",
+          "static_link_prediction",
+          "node_regression"
+        ],
+        "unavailable": [
+          "node_classification"
+        ],
+        "details": {
+          "preservation": "Available source task fields and existing splits retained by induced filtering; no model evaluation performed."
+        }
+      },
+      "construction": {
+        "script": "scripts/graph_construction/edge_sampled_minis.py",
+        "status": "planned",
+        "parent_dataset_key": "ukr_rus_twitter_nonzero_features_v1",
+        "source_dataset_key": "ukr_rus_twitter",
+        "seed": 0,
+        "max_nodes": 500000,
+        "induced": true,
+        "isolates_retained": true,
+        "sampling": "edge endpoints, then complete induced graph; exclude self-loop draws"
+      },
+      "source_data": [
+        {
+          "role": "verified full nonzero parent",
+          "path": "graph_views/nonzero_features_v1/ukr_rus_twitter/graph.pt",
+          "format": "PyTorch"
+        }
+      ],
+      "default_eval": false
+    },
+    {
+      "canonical_name": "covid-mini-500k-edge-sampled-nonzero",
+      "dataset_key": "covid19_twitter_mini_500k_edge_sampled_s0_nonzero_features_v1",
+      "kind": "derived",
+      "relative_path": "graph_views/nonzero_features_v1/covid19_twitter_mini_500k_edge_sampled_s0/graph.pt",
+      "metadata_path": "graph_views/nonzero_features_v1/covid19_twitter_mini_500k_edge_sampled_s0/metadata.json",
+      "artifact_size_bytes": null,
+      "artifact_size_gb": null,
+      "statistics": {
+        "nodes": 500000,
+        "edges": null,
+        "isolated_nodes": null
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "Exact nonzero source feature rows; induced graph; unnormalized",
+        "edge_features": [
+          "n_retweets"
+        ]
+      },
+      "labels": {
+        "type": null,
+        "labeled_nodes": 0
+      },
+      "tasks": {
+        "supported": [
+          "neighbor_matching",
+          "temporal_link_prediction",
+          "static_link_prediction",
+          "node_regression"
+        ],
+        "unavailable": [
+          "node_classification"
+        ],
+        "details": {
+          "preservation": "Available source task fields and existing splits retained by induced filtering; no model evaluation performed."
+        }
+      },
+      "construction": {
+        "script": "scripts/graph_construction/edge_sampled_minis.py",
+        "status": "planned",
+        "parent_dataset_key": "covid19_twitter_nonzero_features_v1",
+        "source_dataset_key": "covid19_twitter",
+        "seed": 0,
+        "max_nodes": 500000,
+        "induced": true,
+        "isolates_retained": true,
+        "sampling": "edge endpoints, then complete induced graph; exclude self-loop draws"
+      },
+      "source_data": [
+        {
+          "role": "verified full nonzero parent",
+          "path": "graph_views/nonzero_features_v1/covid19_twitter/graph.pt",
+          "format": "PyTorch"
+        }
+      ],
+      "default_eval": false
     }
   ]
 }
