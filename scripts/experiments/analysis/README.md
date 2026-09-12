@@ -61,6 +61,7 @@ Setup and launch files remain in `../setup/<name>/`.
 
 - Structural statistics and divergence: [`graph_divergence`](graphs/structure/graph_divergence/)
 - Biography-embedding geometry: [`bio_embedding_geometry`](graphs/features/bio_embedding_geometry/)
+- Political bio provenance and alignment: [`election_covid_alignment_audit`](graphs/features/election_covid_alignment_audit/); operational decision in [`docs/political_bio_provenance_20260911.md`](../../../docs/political_bio_provenance_20260911.md)
 - Structure/feature coupling: [`path_feature_coupling`](graphs/structure_features/path_feature_coupling/)
 - Dataset overlap: [`identity_overlap_audit`](graphs/overlap/identity_overlap_audit/)
 - Similarity as a transfer predictor: [`similarity_vs_transfer`](graphs/transfer_prediction/similarity_vs_transfer/), [`similarity_vs_transfer_v2`](graphs/transfer_prediction/similarity_vs_transfer_v2/)
