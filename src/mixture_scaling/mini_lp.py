@@ -127,7 +127,7 @@ def model_for(view,device): return NodeMLP(768 if view=='node' else 1536,256,256
 
 
 def train(source,config,args,device):
-    root=Path(args.root);run_id='ss_'+source;run_dir=root/args.view/'lp'/run_id
+    root=Path(args.root);run_id=getattr(args,'run_id',None) or 'ss_'+source;run_dir=root/args.view/'lp'/run_id
     if (run_dir/'summary.json').exists():return
     if run_dir.exists():raise FileExistsError(f'partial run: {run_dir}')
     started=time.monotonic();data=prepare(source,config,root,args.seed)
@@ -135,6 +135,13 @@ def train(source,config,args,device):
     positive=data['supervision' if args.view=='node_neighbors' else 'train'].to(device);val=data['validation'].to(device)
     sampler=ExactNonedges(len(x),data['known_keys'].to(device))
     seed_everything(args.seed);model=model_for(args.view,device)
+    warm_start=getattr(args,'warm_start',None)
+    warm_metadata=None
+    if warm_start:
+        checkpoint=torch.load(warm_start,map_location='cpu',weights_only=False)
+        model.load_state_dict(checkpoint['model'],strict=True)
+        warm_metadata=dict(checkpoint=identity(warm_start),step=checkpoint['step'],
+            sources=checkpoint['metadata']['sources'],optimizer_policy='reset AdamW for second stage')
     optimizer=torch.optim.AdamW(model.parameters(),lr=.0005,weight_decay=1e-5)
     generator=torch.Generator(device=device).manual_seed(args.seed+49979687)
     order_generator=torch.Generator(device=device).manual_seed(args.seed+7919)
@@ -149,6 +156,8 @@ def train(source,config,args,device):
         evaluation_pair_background='original 70% train pool for fixed degree-matched pair comparability; model context uses only context subset',
         checkpoint_selection='source validation BCE only; distinct from final-test edges',
         stopping=dict(patience=args.patience,validation_interval=args.validation_interval,min_delta=1e-4,minimum_steps=2500,safety_cap=args.max_steps))
+    if warm_metadata:
+        metadata.update(warm_start=warm_metadata,sources=warm_metadata['sources']+[source],schedule='sequential',stage=2)
     run_dir.mkdir(parents=True);atomic_json(run_dir/'metadata.json',metadata)
     offset=positive.shape[1];best=reference=float('inf');stale=best_step=0;reason='safety_cap'
     total=torch.zeros((),device=device);window=0

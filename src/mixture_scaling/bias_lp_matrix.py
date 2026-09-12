@@ -45,10 +45,10 @@ def evaluate(args,device):
         pairs=pair_module.PairSet(u=a['u'],v=a['v'],label=a['labels'],negative_kind='uniform_both_endpoints_exact_nonedge');nodes=pairs.nodes()
         val=a['validation_mask'];balanced=a['balanced_test_indices'];n=len(data['x'])
         assert not lp.ExactNonedges(n,data['known_keys']).forbidden(torch.from_numpy(np.stack((pairs.u[pairs.label==0],pairs.v[pairs.label==0])))).any()
-        for view in VIEWS:
+        for view in getattr(args,'views',VIEWS):
             x=lp.view_features(target,data,REFERENCE,view,args.seed,device)
-            for source in SOURCE_ORDER:
-                cp=root/view/'lp'/f'ss_{source}'/'best.pt';dest=root/'results'/(view+'_bias')/f'ss_{source}__to__{target}.json'
+            for run_id,source in getattr(args,'model_rows',[(f'ss_{s}',s) for s in SOURCE_ORDER]):
+                cp=root/view/'lp'/run_id/'best.pt';dest=root/'results'/(view+'_bias')/f'{run_id}__to__{target}.json'
                 provenance=dict(checkpoint=identity(cp),pair_reference=identity(ref),split=data['receipt'],decoder='dot_plus_learned_bias',bias_policy='frozen source checkpoint bias')
                 if dest.exists():
                     assert json.loads(dest.read_text())['provenance']==provenance
