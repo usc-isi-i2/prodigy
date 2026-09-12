@@ -123,6 +123,37 @@ query. The strongest current statements are:
 
 ## 7. Task, objective, and architecture tradeoffs
 
+### 7.1 What the MLP program adds
+
+These studies are not PRODIGY runs. They live primarily in the sibling
+`mixture-scaling` worktrees and isolate feature-only or fixed-context learning from
+PRODIGY's sampled GNN/metagraph computation. They belong here because they show that
+source interference survives after message passing, episodic labels, and the metagraph
+are removed. The mechanism is therefore broader than a PRODIGY-specific attention or
+support-reference defect.
+
+| Question | Experiment | Finding | Status / boundary |
+|---|---|---|---|
+| Does graph-specific transfer remain when the encoder cannot message-pass? | [Node-only MLP transfer protocol](/Users/philipp/projects/gfm/mixture-scaling-node-only/docs/node_only_transfer.md) and [specialist–ladder comparison](/Users/philipp/projects/gfm/mixture-scaling/results/mlp_transfer_explains_ladder/FINDINGS.md) | Yes. Source-specialist rankings and target-specific transfer remain with independent endpoint encoding. The cumulative ladder is predicted much better by the best available specialist than by the specialist mean; later UKR/COVID/Midterm declines remain unexplained. | Nine sources, six matched LP targets, one seed; checkpoints/budgets differ and later historical rungs include the defective Suspended artifact. |
+| Does adding fixed neighborhood information uniformly improve a feature MLP? | Nonzero-mini three-view transfer, Tucker `mixture-scaling-input-shift/results/nonzero_mini_transfer/FINDINGS.md` | No. Node+10-neighbor context raises mean LP AUC from .6110 to .6550 and wins 66/81 cells, but improves raw BCE in only 19/81 and lowers same-graph mean AUC from .7409 to .7275. Facebook falls from .8574 to .6903. | Seed 0; larger input also has more parameters. Current LP variants use learned bias and uniform-negative evaluation, so consult the later correction records before quoting a matrix. |
+| Is poor probability behavior an unavoidable representation tradeoff? | Midterm decoder test, Tucker `mixture-scaling-input-shift/results/decoder_bias_midterm/FINDINGS.md` | No. Adding a learned bias lowers held-out BCE from .6177 to .1078 and raises AUC from .9552 to .9822; learned scale adds little. This is a concrete decoder bottleneck that improves both ranking and calibration on one graph. | One graph and seed; no cross-graph claim. Important counterexample to “every change must trade something off.” |
+| Does the cumulative MLP ladder learn additive mixture value? | [MLP ladder explanation](/Users/philipp/projects/gfm/mixture-scaling/results/mlp_transfer_explains_ladder/FINDINGS.md) | Mostly no. Best-specialist gain explains 51.6% of squared error versus a flat baseline (64.6% before Suspended), while every rung-9 target remains 1.42–3.16 AUC points below its best specialist. Target inclusion drives much of the apparent ladder gain. | Descriptive oracle predictor; not a causal mixture decomposition. |
+| Does fixing sparse/dead ReLU activity improve transfer? | [MLP ladder diagnostics](/Users/philipp/projects/gfm/mixture-scaling/results/mlp_ladder_diagnostics_20260911/FINDINGS.md) | Only locally. LeakyReLU improves COVID Political validation BCE, native AUC, and effective rank, while foreign mean AUC falls .16 points; four targets improve and four decline. | Short seed-0 screen; Suspended target was corrupted. |
+| Can loss switching retain one source without sacrificing the stronger source's transfer? | Asynchronous KD, Tucker `mixture-scaling-input-shift/results/async_convergence/FINDINGS.md` | Partly. Replacing converged Facebook BCE with distillation improves all six transfer targets versus matched and extended joint-BCE controls, but still trails the Ukraine singleton on four of six. | Seed-0 pilot; improves the joint-training control, not a preservation guarantee. |
+| If Ukraine training continues, can Facebook retention and Ukraine fitting both reach their singleton floors? | KD extension, Tucker `mixture-scaling-input-shift/results/async_extension/FINDINGS.md` | No observed checkpoint reaches both. At equal 50k Ukraine exposure, retaining Facebook KD buys +3.3545 Facebook AUC points at a −.1247 Ukraine-point cost versus Ukraine-only continuation. | Controlled continuation of one pair/seed; direct retention–fitting frontier. |
+| Does a weaker KD coefficient remove that frontier across seeds? | Seed replication, Tucker `mixture-scaling-input-shift/results/async_seed_replication/FINDINGS.md` | It reliably beats weight 1 in seeds 1 and 2, but exceeds the stronger singleton in only one. Seed 1 improves both source tests; seed 2 degrades both. Source-validation retention does not guarantee source-test retention. | Two new training seeds; repeatedly inspected transfer targets. |
+| What does the failed seed reveal under matched exposure? | Seed-2 Ukraine-only control, Tucker `mixture-scaling-input-shift/results/async_seed2_control/FINDINGS.md` | At matched Ukraine exposure, Facebook KD costs .1767 points of six-target transfer and .0753 Ukraine-test points while retaining 2.9728 more Facebook-test points. Removing KD improves transfer but causes severe Facebook forgetting. | Prespecified matched continuation; isolates continued KD after a shared parent, not the whole original pair deficit. |
+| Can endpoint weight interpolation escape the retention frontier? | Weight-merge grid, Tucker `mixture-scaling-input-shift/results/async_weight_merge/FINDINGS.md` | Not for the 11 declared mixtures. Facebook passes its singleton validation floor only at Ukraine weights 0–.1; Ukraine passes only at .3–1.0. No candidate qualifies for downstream evaluation. | Exact two endpoints and coarse alpha grid; no claim about other merges or layer-wise methods. |
+
+The MLP program sharpens the overall conclusion in two ways. First, interference is
+already present in learned transformations of raw and fixed-context features; a graph
+neural message-passing explanation is insufficient. Second, not every failure is a
+fundamental Pareto limit: the Midterm decoder-bias intervention improved both BCE and
+AUC. The productive distinction is between **correctable parameterization defects** and
+**source-retention frontiers** created by shared learned weights.
+
+### 7.2 Other objective and architecture evidence
+
 | Question | Experiment | Finding | Status / boundary |
 |---|---|---|---|
 | Does combining SSL objectives improve all tasks? | [Multitask SSL](objectives/multitask/multitask_ssl/FINDINGS.md) and [valid LP rescore](objectives/multitask/multitask_ssl/FINDINGS_rescore.md) | No. NM leads classification (.810) and valid LP (.757); MIX loses both (.795/.680) but retains positive mean regression (.097 versus NM −.001). | One training seed; task target sets differ. |
