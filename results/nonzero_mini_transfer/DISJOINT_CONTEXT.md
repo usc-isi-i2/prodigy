@@ -1,3 +1,5 @@
+> Superseded for current LP results by [BIAS_LP.md](BIAS_LP.md): both LP variants have now been retrained with a learned bias. Historical numbers below are preserved.
+
 > LP evaluation has since changed to uniform negatives at 1:5. See [UNIFORM_EVAL.md](UNIFORM_EVAL.md) for current matrices. Numbers below retain the historical evaluation protocol.
 
 # Corrected disjoint-context neighbor LP

@@ -1,3 +1,5 @@
+> Superseded for current LP results by [BIAS_LP.md](BIAS_LP.md): both LP variants have now been retrained with a learned bias. Historical numbers below are preserved.
+
 # Uniform LP evaluation
 
 Frozen checkpoints, evaluated using independently uniform negative endpoints, excluding self-loops and every known undirected edge. Both LP variants use identical pairs. All 2,000 original positives and their calibration/test assignment are preserved. Calibration: 600 positives and 3,000 negatives; final test: 1,400 positives and 7,000 negatives. Training and checkpoint selection are unchanged. FR is unchanged.
