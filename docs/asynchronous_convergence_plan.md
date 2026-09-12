@@ -1,6 +1,6 @@
 # Loss switching after asynchronous convergence
 
-Status: implemented pilot protocol, 2026-09-12. Run status is recorded by cluster completion artifacts, not assumed from this document. Keep the extended-exposure/stopping control; prioritize loss switching before sampling reweighting, architecture changes, or ForkMerge.
+Status: pilot completed, 2026-09-12: three training arms, verified singleton replays, and 40 downstream evaluation cells. [Results and reproducible figures](../results/async_convergence/FINDINGS.md) report improved transfer versus both BCE controls with a remaining deficit versus the stronger constituent singleton. Keep the extended-exposure/stopping control; prioritize loss switching before sampling reweighting, architecture changes, or ForkMerge.
 
 ## Primary sources and scope
 
