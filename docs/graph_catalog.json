@@ -20,22 +20,66 @@
       "metadata_path": "twibot20/graphs/follow_matched.pt.meta.json",
       "artifact_size_bytes": 515853610,
       "artifact_size_gb": 0.51585361,
-      "statistics": {"nodes": 162990, "edges": 161550, "isolated_nodes": null},
-      "features": {"node_feature_dim": 768, "node_features": "Bit-exact reference retweet graph features and node order", "edge_features": ["follow_relation"]},
-      "labels": {"type": "binary node classification", "names": ["human", "bot"], "labeled_nodes": 11826, "class_counts": {"human": 5237, "bot": 6589}},
-      "tasks": {"supported": ["node_classification"], "unavailable": ["neighbor_matching", "static_link_prediction", "temporal_link_prediction"], "details": {"node_classification": "Matched-node diagnostic; episode reconstruction/evaluation not yet completed"}},
+      "statistics": {
+        "nodes": 162990,
+        "edges": 161550,
+        "isolated_nodes": null
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "Bit-exact reference retweet graph features and node order",
+        "edge_features": [
+          "follow_relation"
+        ]
+      },
+      "labels": {
+        "type": "binary node classification",
+        "names": [
+          "human",
+          "bot"
+        ],
+        "labeled_nodes": 11826,
+        "class_counts": {
+          "human": 5237,
+          "bot": 6589
+        }
+      },
+      "tasks": {
+        "supported": [
+          "node_classification"
+        ],
+        "unavailable": [
+          "neighbor_matching",
+          "static_link_prediction",
+          "temporal_link_prediction"
+        ],
+        "details": {
+          "node_classification": "Matched-node diagnostic; episode reconstruction/evaluation not yet completed"
+        }
+      },
       "construction": {
         "script": "scripts/graph_construction/matched_follow_relations.py",
         "code_revision": "ca35a6c3",
         "direction": "follower_to_followed; friend as written, follow reversed",
         "scope": "Induced matched-node graph, not untouched public benchmark",
-        "verified_original_sample_edges": {"friend": 605, "follow": 534},
+        "verified_original_sample_edges": {
+          "friend": 605,
+          "follow": 534
+        },
         "same_node_order_features_labels_splits": true,
         "artifact_sha256": "87d88de9162e4ee2e0cfd8e183304f216d5da264ee1e7b31d8fe74f35c3b5b6b"
       },
       "source_data": [
-        {"role": "exact reference node payload", "path": "twibot20/graphs/retweet_graph.pt", "format": "PyTorch"},
-        {"role": "original converted relation table", "path": "twibot20/raw/Twibot-20/edge.csv", "format": "CSV"}
+        {
+          "role": "exact reference node payload",
+          "path": "twibot20/graphs/retweet_graph.pt",
+          "format": "PyTorch"
+        },
+        {
+          "role": "original converted relation table",
+          "path": "twibot20/raw/Twibot-20/edge.csv",
+          "format": "CSV"
+        }
       ],
       "default_eval": false
     },
@@ -47,20 +91,59 @@
       "metadata_path": "ukr_rus_twitter/graphs/retweet_graph_parquet.meta.json",
       "artifact_size_bytes": 37006016290,
       "artifact_size_gb": 37.006,
-      "statistics": {"nodes": 10400775, "edges": 76851913, "retweet_events": 131970775},
-      "features": {"node_feature_dim": 768, "node_features": "GTE multilingual bio embeddings; missing users are zero-filled", "edge_features": ["n_retweets"]},
-      "labels": {"type": null, "labeled_nodes": 0},
+      "statistics": {
+        "nodes": 10400775,
+        "edges": 76851913,
+        "retweet_events": 131970775
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "GTE multilingual bio embeddings; missing users are zero-filled",
+        "edge_features": [
+          "n_retweets"
+        ]
+      },
+      "labels": {
+        "type": null,
+        "labeled_nodes": 0
+      },
       "tasks": {
-        "supported": ["neighbor_matching", "temporal_link_prediction", "static_link_prediction", "node_regression"],
-        "unavailable": ["node_classification"],
-        "details": {"temporal_link_prediction": "30% history; future target contains new edges", "node_regression": "six user-profile targets where present"}
+        "supported": [
+          "neighbor_matching",
+          "temporal_link_prediction",
+          "static_link_prediction",
+          "node_regression"
+        ],
+        "unavailable": [
+          "node_classification"
+        ],
+        "details": {
+          "temporal_link_prediction": "30% history; future target contains new edges",
+          "node_regression": "six user-profile targets where present"
+        }
       },
       "source_data": [
-        {"role": "tweet/retweet records", "path": "ukr_rus_twitter/parquet", "format": "partitioned Parquet"},
-        {"role": "bio embeddings", "path": "ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001", "format": "Parquet indices plus NumPy shards"}
+        {
+          "role": "tweet/retweet records",
+          "path": "ukr_rus_twitter/parquet",
+          "format": "partitioned Parquet"
+        },
+        {
+          "role": "bio embeddings",
+          "path": "ukr_rus_twitter/bio_embeddings/gte-multilingual-base/version=v001",
+          "format": "Parquet indices plus NumPy shards"
+        }
       ],
-      "construction": {"script": "scripts/graph_construction/generate_ukr_rus_retweet_graph_from_parquet.py"},
-      "eval": {"supports_lp": true, "nm_n_query": 12, "pl_n_query": 12, "val_cap": 500, "test_cap": 500},
+      "construction": {
+        "script": "scripts/graph_construction/generate_ukr_rus_retweet_graph_from_parquet.py"
+      },
+      "eval": {
+        "supports_lp": true,
+        "nm_n_query": 12,
+        "pl_n_query": 12,
+        "val_cap": 500,
+        "test_cap": 500
+      },
       "default_eval": true
     },
     {
@@ -71,20 +154,59 @@
       "metadata_path": "covid19_twitter/graphs/retweet_graph_parquet.meta.json",
       "artifact_size_bytes": 78267044770,
       "artifact_size_gb": 78.267,
-      "statistics": {"nodes": 23012850, "edges": 107222182, "retweet_events": 139573052},
-      "features": {"node_feature_dim": 768, "node_features": "GTE multilingual bio embeddings; missing users are zero-filled", "edge_features": ["n_retweets"]},
-      "labels": {"type": null, "labeled_nodes": 0},
+      "statistics": {
+        "nodes": 23012850,
+        "edges": 107222182,
+        "retweet_events": 139573052
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "GTE multilingual bio embeddings; missing users are zero-filled",
+        "edge_features": [
+          "n_retweets"
+        ]
+      },
+      "labels": {
+        "type": null,
+        "labeled_nodes": 0
+      },
       "tasks": {
-        "supported": ["neighbor_matching", "temporal_link_prediction", "static_link_prediction", "node_regression"],
-        "unavailable": ["node_classification"],
-        "details": {"temporal_link_prediction": "30% history; future target contains new edges", "node_regression": "six user-profile targets where present"}
+        "supported": [
+          "neighbor_matching",
+          "temporal_link_prediction",
+          "static_link_prediction",
+          "node_regression"
+        ],
+        "unavailable": [
+          "node_classification"
+        ],
+        "details": {
+          "temporal_link_prediction": "30% history; future target contains new edges",
+          "node_regression": "six user-profile targets where present"
+        }
       },
       "source_data": [
-        {"role": "tweet/retweet records", "path": "covid19_twitter/parquet", "format": "Parquet"},
-        {"role": "bio embeddings", "path": "covid19_twitter/bio_embeddings/gte-multilingual-base/version=v001", "format": "Parquet indices plus NumPy shards"}
+        {
+          "role": "tweet/retweet records",
+          "path": "covid19_twitter/parquet",
+          "format": "Parquet"
+        },
+        {
+          "role": "bio embeddings",
+          "path": "covid19_twitter/bio_embeddings/gte-multilingual-base/version=v001",
+          "format": "Parquet indices plus NumPy shards"
+        }
       ],
-      "construction": {"script": "scripts/graph_construction/generate_covid19_twitter_retweet_graph_from_parquet.py"},
-      "eval": {"supports_lp": true, "nm_n_query": 12, "pl_n_query": 12, "val_cap": 500, "test_cap": 500},
+      "construction": {
+        "script": "scripts/graph_construction/generate_covid19_twitter_retweet_graph_from_parquet.py"
+      },
+      "eval": {
+        "supports_lp": true,
+        "nm_n_query": 12,
+        "pl_n_query": 12,
+        "val_cap": 500,
+        "test_cap": 500
+      },
       "default_eval": true
     },
     {
@@ -95,20 +217,60 @@
       "metadata_path": "midterm/graphs/retweet_graph_parquet.meta.json",
       "artifact_size_bytes": 1123399802,
       "artifact_size_gb": 1.123,
-      "statistics": {"nodes": 341908, "edges": 899979, "retweet_events": 1059015},
-      "features": {"node_feature_dim": 768, "node_features": "GTE multilingual bio embeddings; missing users are zero-filled", "edge_features": ["n_retweets"]},
-      "labels": {"type": null, "labeled_nodes": 0},
+      "statistics": {
+        "nodes": 341908,
+        "edges": 899979,
+        "retweet_events": 1059015
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "GTE multilingual bio embeddings; missing users are zero-filled",
+        "edge_features": [
+          "n_retweets"
+        ]
+      },
+      "labels": {
+        "type": null,
+        "labeled_nodes": 0
+      },
       "tasks": {
-        "supported": ["neighbor_matching", "temporal_link_prediction", "static_link_prediction", "node_regression"],
-        "unavailable": ["node_classification"],
-        "details": {"temporal_link_prediction": "30% history; future target contains new edges", "node_regression": "six user-profile targets where present"}
+        "supported": [
+          "neighbor_matching",
+          "temporal_link_prediction",
+          "static_link_prediction",
+          "node_regression"
+        ],
+        "unavailable": [
+          "node_classification"
+        ],
+        "details": {
+          "temporal_link_prediction": "30% history; future target contains new edges",
+          "node_regression": "six user-profile targets where present"
+        }
       },
       "source_data": [
-        {"role": "tweet/retweet records", "path": "midterm/parquet", "format": "partitioned Parquet"},
-        {"role": "bio embeddings", "path": "midterm/bio_embeddings/gte-multilingual-base/version=v001", "format": "Parquet indices plus NumPy shards"}
+        {
+          "role": "tweet/retweet records",
+          "path": "midterm/parquet",
+          "format": "partitioned Parquet"
+        },
+        {
+          "role": "bio embeddings",
+          "path": "midterm/bio_embeddings/gte-multilingual-base/version=v001",
+          "format": "Parquet indices plus NumPy shards"
+        }
       ],
-      "construction": {"script": "scripts/graph_construction/generate_midterm_retweet_graph_from_parquet.py", "config": "scripts/graph_construction/configs/midterm_retweet_graph.yaml"},
-      "eval": {"supports_lp": true, "nm_n_query": 12, "pl_n_query": 12, "val_cap": 500, "test_cap": 500},
+      "construction": {
+        "script": "scripts/graph_construction/generate_midterm_retweet_graph_from_parquet.py",
+        "config": "scripts/graph_construction/configs/midterm_retweet_graph.yaml"
+      },
+      "eval": {
+        "supports_lp": true,
+        "nm_n_query": 12,
+        "pl_n_query": 12,
+        "val_cap": 500,
+        "test_cap": 500
+      },
       "default_eval": true
     },
     {
@@ -119,17 +281,72 @@
       "metadata_path": "covid_political/graphs/retweet_graph.meta.json",
       "artifact_size_bytes": 247456395,
       "artifact_size_gb": 0.247,
-      "statistics": {"nodes": 78672, "edges": 180928},
-      "features": {"node_feature_dim": 768, "node_features": "mean-pooled GTE multilingual embeddings of restored raw profile text (raw-profile-v001, promoted 2026-09-11)", "edge_features": ["rt_weight", "mn_weight"], "provenance_note": "docs/political_bio_provenance_20260911.md; cleaned-profile-v001 retained as an immutable legacy snapshot"},
-      "labels": {"type": "binary node classification", "names": ["non_conservative", "conservative"], "labeled_nodes": 78672},
-      "tasks": {"supported": ["neighbor_matching", "node_classification"], "unavailable": ["temporal_link_prediction", "node_regression"]},
+      "statistics": {
+        "nodes": 78672,
+        "edges": 180928
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "mean-pooled GTE multilingual embeddings of restored raw profile text (raw-profile-v001, promoted 2026-09-11)",
+        "edge_features": [
+          "rt_weight",
+          "mn_weight"
+        ],
+        "provenance_note": "docs/political_bio_provenance_20260911.md; cleaned-profile-v001 retained as an immutable legacy snapshot"
+      },
+      "labels": {
+        "type": "binary node classification",
+        "names": [
+          "non_conservative",
+          "conservative"
+        ],
+        "labeled_nodes": 78672
+      },
+      "tasks": {
+        "supported": [
+          "neighbor_matching",
+          "node_classification"
+        ],
+        "unavailable": [
+          "temporal_link_prediction",
+          "node_regression"
+        ]
+      },
       "source_data": [
-        {"role": "interaction graph", "path": "social_llm_data/covid/graph.pickle", "format": "NetworkX pickle"},
-        {"role": "user records and labels", "path": "social_llm_data/covid/user_data.csv", "format": "CSV", "note": "profile contains the restored raw_profile values from full_user_data.csv; row order and labels are unchanged"},
-        {"role": "bio embeddings", "path": "covid_political/embeddings/user_bio_embeddings_gte_multilingual_base.pt", "format": "PyTorch"}
+        {
+          "role": "interaction graph",
+          "path": "social_llm_data/covid/graph.pickle",
+          "format": "NetworkX pickle"
+        },
+        {
+          "role": "user records and labels",
+          "path": "social_llm_data/covid/user_data.csv",
+          "format": "CSV",
+          "note": "profile contains the restored raw_profile values from full_user_data.csv; row order and labels are unchanged"
+        },
+        {
+          "role": "bio embeddings",
+          "path": "covid_political/embeddings/user_bio_embeddings_gte_multilingual_base.pt",
+          "format": "PyTorch"
+        }
       ],
-      "construction": {"script": "data/data/covid_political/scripts/generate_graph.py", "profile_preparation_script": "scripts/social_llm/prepare_covid_raw_profiles.py", "provenance_note": "docs/political_bio_provenance_20260911.md", "feature_version": "raw-profile-v001", "promoted_at": "2026-09-11", "legacy_snapshot": "/dataMeR1/phil/data/covid_political/legacy/cleaned-profile-v001", "build_receipt": "/dataMeR1/phil/gfm/mixture-scaling/results/political_bio_raw_rebuild_20260911/covid_political/verification.json"},
-      "eval": {"supports_lp": false, "nm_n_query": 12, "pl_n_query": 12, "val_cap": 500, "test_cap": 500, "eval_random_query": true},
+      "construction": {
+        "script": "data/data/covid_political/scripts/generate_graph.py",
+        "profile_preparation_script": "scripts/social_llm/prepare_covid_raw_profiles.py",
+        "provenance_note": "docs/political_bio_provenance_20260911.md",
+        "feature_version": "raw-profile-v001",
+        "promoted_at": "2026-09-11",
+        "legacy_snapshot": "/dataMeR1/phil/data/covid_political/legacy/cleaned-profile-v001",
+        "build_receipt": "/dataMeR1/phil/gfm/mixture-scaling/results/political_bio_raw_rebuild_20260911/covid_political/verification.json"
+      },
+      "eval": {
+        "supports_lp": false,
+        "nm_n_query": 12,
+        "pl_n_query": 12,
+        "val_cap": 500,
+        "test_cap": 500,
+        "eval_random_query": true
+      },
       "default_eval": true
     },
     {
@@ -140,17 +357,65 @@
       "metadata_path": "ukr_rus_suspended/graphs/retweet_graph.meta.json",
       "artifact_size_bytes": 182861567,
       "artifact_size_gb": 0.183,
-      "statistics": {"nodes": 56440, "edges": 354209},
-      "features": {"node_feature_dim": 768, "node_features": "GTE multilingual bio embeddings", "edge_features": ["rt_weight", "mn_weight"]},
-      "labels": {"type": "binary node classification", "names": ["non_suspended", "suspended"], "labeled_nodes": 56440},
-      "tasks": {"supported": ["neighbor_matching", "node_classification"], "unavailable": ["temporal_link_prediction", "node_regression"]},
+      "statistics": {
+        "nodes": 56440,
+        "edges": 354209
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "GTE multilingual bio embeddings",
+        "edge_features": [
+          "rt_weight",
+          "mn_weight"
+        ]
+      },
+      "labels": {
+        "type": "binary node classification",
+        "names": [
+          "non_suspended",
+          "suspended"
+        ],
+        "labeled_nodes": 56440
+      },
+      "tasks": {
+        "supported": [
+          "neighbor_matching",
+          "node_classification"
+        ],
+        "unavailable": [
+          "temporal_link_prediction",
+          "node_regression"
+        ]
+      },
       "source_data": [
-        {"role": "interaction graph", "path": "social_llm_data/ukr_rus_suspended/graph.pickle", "format": "NetworkX pickle"},
-        {"role": "user records and labels", "path": "/dataMeR1/phil/gfm/mixture-scaling/results/suspended_csv_repair_20260911_v2/user_data.corrected.csv", "format": "CSV"},
-        {"role": "bio embeddings", "path": "/dataMeR1/phil/gfm/mixture-scaling/results/suspended_csv_repair_20260911_v2/embeddings.corrected.pt", "format": "PyTorch"}
+        {
+          "role": "interaction graph",
+          "path": "social_llm_data/ukr_rus_suspended/graph.pickle",
+          "format": "NetworkX pickle"
+        },
+        {
+          "role": "user records and labels",
+          "path": "/dataMeR1/phil/gfm/mixture-scaling/results/suspended_csv_repair_20260911_v2/user_data.corrected.csv",
+          "format": "CSV"
+        },
+        {
+          "role": "bio embeddings",
+          "path": "/dataMeR1/phil/gfm/mixture-scaling/results/suspended_csv_repair_20260911_v2/embeddings.corrected.pt",
+          "format": "PyTorch"
+        }
       ],
-      "construction": {"script": "scripts/social_llm/generate_graph.py", "repair_note": "docs/ukraine_suspended_repair_20260911.md", "repair_artifact": "/dataMeR1/phil/gfm/mixture-scaling/results/suspended_csv_repair_20260911_v2/graphs/retweet_graph_suspended.pt"},
-      "eval": {"supports_lp": false, "nm_n_query": 1, "pl_n_query": 1, "val_cap": 500, "test_cap": 500},
+      "construction": {
+        "script": "scripts/social_llm/generate_graph.py",
+        "repair_note": "docs/ukraine_suspended_repair_20260911.md",
+        "repair_artifact": "/dataMeR1/phil/gfm/mixture-scaling/results/suspended_csv_repair_20260911_v2/graphs/retweet_graph_suspended.pt"
+      },
+      "eval": {
+        "supports_lp": false,
+        "nm_n_query": 1,
+        "pl_n_query": 1,
+        "val_cap": 500,
+        "test_cap": 500
+      },
       "default_eval": true
     },
     {
@@ -161,17 +426,68 @@
       "metadata_path": "election2020/graphs/retweet_graph.meta.json",
       "artifact_size_bytes": 311565265,
       "artifact_size_gb": 0.312,
-      "statistics": {"nodes": 78932, "edges": 2818603},
-      "features": {"node_feature_dim": 768, "node_features": "mean-pooled GTE multilingual embeddings of upstream-cleaned profile text (cleaned-profile-v001 legacy)", "edge_features": ["rt_weight", "mn_weight"], "provenance_note": "docs/political_bio_provenance_20260911.md; original raw profiles not currently available"},
-      "labels": {"type": "binary node classification", "names": ["non_conservative", "conservative"], "labeled_nodes": 78932},
-      "tasks": {"supported": ["neighbor_matching", "node_classification"], "unavailable": ["temporal_link_prediction", "node_regression"]},
+      "statistics": {
+        "nodes": 78932,
+        "edges": 2818603
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "mean-pooled GTE multilingual embeddings of upstream-cleaned profile text (cleaned-profile-v001 legacy)",
+        "edge_features": [
+          "rt_weight",
+          "mn_weight"
+        ],
+        "provenance_note": "docs/political_bio_provenance_20260911.md; original raw profiles not currently available"
+      },
+      "labels": {
+        "type": "binary node classification",
+        "names": [
+          "non_conservative",
+          "conservative"
+        ],
+        "labeled_nodes": 78932
+      },
+      "tasks": {
+        "supported": [
+          "neighbor_matching",
+          "node_classification"
+        ],
+        "unavailable": [
+          "temporal_link_prediction",
+          "node_regression"
+        ]
+      },
       "source_data": [
-        {"role": "interaction graph", "path": "social_llm_data/election2020/graph.pickle", "format": "NetworkX pickle"},
-        {"role": "user records and labels", "path": "social_llm_data/election2020/user_data.csv", "format": "CSV", "note": "profile is upstream-cleaned; raw_profile source not currently available"},
-        {"role": "bio embeddings", "path": "election2020/embeddings/user_bio_embeddings_gte_multilingual_base.pt", "format": "PyTorch"}
+        {
+          "role": "interaction graph",
+          "path": "social_llm_data/election2020/graph.pickle",
+          "format": "NetworkX pickle"
+        },
+        {
+          "role": "user records and labels",
+          "path": "social_llm_data/election2020/user_data.csv",
+          "format": "CSV",
+          "note": "profile is upstream-cleaned; raw_profile source not currently available"
+        },
+        {
+          "role": "bio embeddings",
+          "path": "election2020/embeddings/user_bio_embeddings_gte_multilingual_base.pt",
+          "format": "PyTorch"
+        }
       ],
-      "construction": {"script": "scripts/social_llm/generate_graph.py", "provenance_note": "docs/political_bio_provenance_20260911.md", "legacy_snapshot": "/dataMeR1/phil/data/election2020/legacy/cleaned-profile-v001", "raw_profile_status": "blocked: original raw profiles not currently available"},
-      "eval": {"supports_lp": false, "nm_n_query": 1, "pl_n_query": 1, "val_cap": 500, "test_cap": 500},
+      "construction": {
+        "script": "scripts/social_llm/generate_graph.py",
+        "provenance_note": "docs/political_bio_provenance_20260911.md",
+        "legacy_snapshot": "/dataMeR1/phil/data/election2020/legacy/cleaned-profile-v001",
+        "raw_profile_status": "blocked: original raw profiles not currently available"
+      },
+      "eval": {
+        "supports_lp": false,
+        "nm_n_query": 1,
+        "pl_n_query": 1,
+        "val_cap": 500,
+        "test_cap": 500
+      },
       "default_eval": true
     },
     {
@@ -182,21 +498,72 @@
       "metadata_path": "twibot20/graphs/retweet_graph.meta.json",
       "artifact_size_bytes": 591854240,
       "artifact_size_gb": 0.592,
-      "statistics": {"nodes": 162990, "edges": 2010925, "retweet_events": 3442595, "isolated_nodes": 1617},
-      "features": {"node_feature_dim": 768, "node_features": "GTE multilingual bio embeddings; missing users are zero-filled", "edge_features": ["n_retweets"]},
-      "labels": {"type": "binary node classification", "names": ["human", "bot"], "labeled_nodes": 11826, "class_counts": {"human": 5237, "bot": 6589}},
+      "statistics": {
+        "nodes": 162990,
+        "edges": 2010925,
+        "retweet_events": 3442595,
+        "isolated_nodes": 1617
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "GTE multilingual bio embeddings; missing users are zero-filled",
+        "edge_features": [
+          "n_retweets"
+        ]
+      },
+      "labels": {
+        "type": "binary node classification",
+        "names": [
+          "human",
+          "bot"
+        ],
+        "labeled_nodes": 11826,
+        "class_counts": {
+          "human": 5237,
+          "bot": 6589
+        }
+      },
       "tasks": {
-        "supported": ["neighbor_matching", "static_link_prediction", "node_classification", "node_regression"],
-        "unavailable": ["temporal_link_prediction"],
-        "details": {"node_regression": "profile targets except favourites_count"}
+        "supported": [
+          "neighbor_matching",
+          "static_link_prediction",
+          "node_classification",
+          "node_regression"
+        ],
+        "unavailable": [
+          "temporal_link_prediction"
+        ],
+        "details": {
+          "node_regression": "profile targets except favourites_count"
+        }
       },
       "source_data": [
-        {"role": "original dataset", "path": "twibot20/raw/Twibot-20", "format": "JSON and CSV"},
-        {"role": "derived retweet edges", "path": "twibot20/graph_build/retweet_edges.parquet", "format": "Parquet"},
-        {"role": "bio embeddings", "path": "twibot20/bio_embeddings/gte-multilingual-base/version=v001", "format": "Parquet indices plus NumPy shards"}
+        {
+          "role": "original dataset",
+          "path": "twibot20/raw/Twibot-20",
+          "format": "JSON and CSV"
+        },
+        {
+          "role": "derived retweet edges",
+          "path": "twibot20/graph_build/retweet_edges.parquet",
+          "format": "Parquet"
+        },
+        {
+          "role": "bio embeddings",
+          "path": "twibot20/bio_embeddings/gte-multilingual-base/version=v001",
+          "format": "Parquet indices plus NumPy shards"
+        }
       ],
-      "construction": {"script": "scripts/graph_construction/generate_twibot20_retweet_graph.py"},
-      "eval": {"supports_lp": false, "nm_n_query": 12, "pl_n_query": 12, "val_cap": 500, "test_cap": 500},
+      "construction": {
+        "script": "scripts/graph_construction/generate_twibot20_retweet_graph.py"
+      },
+      "eval": {
+        "supports_lp": false,
+        "nm_n_query": 12,
+        "pl_n_query": 12,
+        "val_cap": 500,
+        "test_cap": 500
+      },
       "default_eval": true
     },
     {
@@ -207,21 +574,63 @@
       "metadata_path": "cp_hk_twitter/graphs/retweet_graph.meta.json",
       "artifact_size_bytes": 1107820534,
       "artifact_size_gb": 1.108,
-      "statistics": {"nodes": 333800, "edges": 1184379, "retweet_events": 1828701},
-      "features": {"node_feature_dim": 768, "node_features": "GTE multilingual bio embeddings", "edge_features": ["n_retweets"]},
-      "labels": {"type": null, "labeled_nodes": 0},
+      "statistics": {
+        "nodes": 333800,
+        "edges": 1184379,
+        "retweet_events": 1828701
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "GTE multilingual bio embeddings",
+        "edge_features": [
+          "n_retweets"
+        ]
+      },
+      "labels": {
+        "type": null,
+        "labeled_nodes": 0
+      },
       "tasks": {
-        "supported": ["neighbor_matching", "temporal_link_prediction", "static_link_prediction"],
-        "unavailable": ["node_classification", "node_regression"],
-        "details": {"temporal_link_prediction": "70% history; 334,661 future target edges"}
+        "supported": [
+          "neighbor_matching",
+          "temporal_link_prediction",
+          "static_link_prediction"
+        ],
+        "unavailable": [
+          "node_classification",
+          "node_regression"
+        ],
+        "details": {
+          "temporal_link_prediction": "70% history; 334,661 future target edges"
+        }
       },
       "source_data": [
-        {"role": "original records", "path": "cp_hk_twitter/raw", "format": "JSON"},
-        {"role": "staged retweet events", "path": "cp_hk_twitter/parquet", "format": "partitioned Parquet"},
-        {"role": "bio embeddings", "path": "cp_hk_twitter/embeddings/user_bio_embeddings_gte_multilingual_base.pt", "format": "PyTorch"}
+        {
+          "role": "original records",
+          "path": "cp_hk_twitter/raw",
+          "format": "JSON"
+        },
+        {
+          "role": "staged retweet events",
+          "path": "cp_hk_twitter/parquet",
+          "format": "partitioned Parquet"
+        },
+        {
+          "role": "bio embeddings",
+          "path": "cp_hk_twitter/embeddings/user_bio_embeddings_gte_multilingual_base.pt",
+          "format": "PyTorch"
+        }
       ],
-      "construction": {"script": "scripts/graph_construction/generate_cp_hk_retweet_graph_from_parquet.py"},
-      "eval": {"supports_lp": true, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
+      "construction": {
+        "script": "scripts/graph_construction/generate_cp_hk_retweet_graph_from_parquet.py"
+      },
+      "eval": {
+        "supports_lp": true,
+        "nm_n_query": 4,
+        "pl_n_query": 4,
+        "val_cap": 500,
+        "test_cap": 500
+      },
       "default_eval": true
     },
     {
@@ -243,17 +652,33 @@
       "features": {
         "node_feature_dim": 768,
         "node_features": "GTE multilingual page-description embeddings; 486 missing descriptions are zero-filled",
-        "edge_features": ["n_reference_posts", "n_content_reference_posts"]
+        "edge_features": [
+          "n_reference_posts",
+          "n_content_reference_posts"
+        ]
       },
       "labels": {
         "type": "multi-target node classification and regression",
         "primary": "page_category_top30",
         "primary_labeled_nodes": 107613,
-        "classification_targets": ["page_category_top30", "admin_country_top30", "verified"],
-        "regression_targets": ["subscriber_count", "account_age_days"]
+        "classification_targets": [
+          "page_category_top30",
+          "admin_country_top30",
+          "verified"
+        ],
+        "regression_targets": [
+          "subscriber_count",
+          "account_age_days"
+        ]
       },
       "tasks": {
-        "supported": ["neighbor_matching", "temporal_link_prediction", "static_link_prediction", "node_classification", "node_regression"],
+        "supported": [
+          "neighbor_matching",
+          "temporal_link_prediction",
+          "static_link_prediction",
+          "node_classification",
+          "node_regression"
+        ],
         "unavailable": [],
         "details": {
           "structure": "119,228 pages participate in edges; structural_node_mask distinguishes them from 30,772 deterministically selected high-activity attributed isolates",
@@ -304,19 +729,38 @@
       "metadata_path": "cora/graphs/citation_graph.meta.json",
       "artifact_size_bytes": null,
       "artifact_size_gb": null,
-      "statistics": {"nodes": 2708, "edges": null, "source_reported_directed_edges": 10556},
+      "statistics": {
+        "nodes": 2708,
+        "edges": null,
+        "source_reported_directed_edges": 10556
+      },
       "features": {
         "node_feature_dim": 768,
         "node_features": "L2-normalized GTE multilingual embeddings of paper titles and abstracts"
       },
       "labels": {
         "type": "7-class node classification",
-        "names": ["Case Based", "Genetic Algorithms", "Neural Networks", "Probabilistic Methods", "Reinforcement Learning", "Rule Learning", "Theory"],
+        "names": [
+          "Case Based",
+          "Genetic Algorithms",
+          "Neural Networks",
+          "Probabilistic Methods",
+          "Reinforcement Learning",
+          "Rule Learning",
+          "Theory"
+        ],
         "labeled_nodes": 2708
       },
       "tasks": {
-        "supported": ["neighbor_matching", "static_link_prediction", "node_classification"],
-        "unavailable": ["temporal_link_prediction", "node_regression"],
+        "supported": [
+          "neighbor_matching",
+          "static_link_prediction",
+          "node_classification"
+        ],
+        "unavailable": [
+          "temporal_link_prediction",
+          "node_regression"
+        ],
         "details": {
           "static_link_prediction": "Seeded 85/15 split over undirected citation pairs; reverse edges cannot leak across views",
           "node_classification": "Converter retains the source benchmark masks; current episodic loader uses deterministic stratified splits"
@@ -336,7 +780,13 @@
         "embedding_revision": "9bbca17d9273fd0d03d5725c7a4b0f6b45142062",
         "status": "builder and loader implemented; graph artifact not yet built on Tucker"
       },
-      "eval": {"supports_lp": true, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
+      "eval": {
+        "supports_lp": true,
+        "nm_n_query": 4,
+        "pl_n_query": 4,
+        "val_cap": 500,
+        "test_cap": 500
+      },
       "default_eval": false
     },
     {
@@ -347,19 +797,34 @@
       "metadata_path": "pubmed/graphs/citation_graph.meta.json",
       "artifact_size_bytes": null,
       "artifact_size_gb": null,
-      "statistics": {"nodes": 19717, "edges": null, "source_reported_directed_edges": 88648},
+      "statistics": {
+        "nodes": 19717,
+        "edges": null,
+        "source_reported_directed_edges": 88648
+      },
       "features": {
         "node_feature_dim": 768,
         "node_features": "L2-normalized GTE multilingual embeddings of paper titles and abstracts"
       },
       "labels": {
         "type": "3-class node classification",
-        "names": ["Diabetes Mellitus Experimental", "Diabetes Mellitus Type 1", "Diabetes Mellitus Type 2"],
+        "names": [
+          "Diabetes Mellitus Experimental",
+          "Diabetes Mellitus Type 1",
+          "Diabetes Mellitus Type 2"
+        ],
         "labeled_nodes": 19717
       },
       "tasks": {
-        "supported": ["neighbor_matching", "static_link_prediction", "node_classification"],
-        "unavailable": ["temporal_link_prediction", "node_regression"],
+        "supported": [
+          "neighbor_matching",
+          "static_link_prediction",
+          "node_classification"
+        ],
+        "unavailable": [
+          "temporal_link_prediction",
+          "node_regression"
+        ],
         "details": {
           "static_link_prediction": "Seeded 85/15 split over undirected citation pairs; reverse edges cannot leak across views",
           "node_classification": "Converter retains the source benchmark masks; current episodic loader uses deterministic stratified splits"
@@ -379,7 +844,13 @@
         "embedding_revision": "9bbca17d9273fd0d03d5725c7a4b0f6b45142062",
         "status": "builder and loader implemented; graph artifact not yet built on Tucker"
       },
-      "eval": {"supports_lp": true, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
+      "eval": {
+        "supports_lp": true,
+        "nm_n_query": 4,
+        "pl_n_query": 4,
+        "val_cap": 500,
+        "test_cap": 500
+      },
       "default_eval": false
     },
     {
@@ -390,12 +861,42 @@
       "metadata_path": "prodigy_public_original/receipts/Wiki.json",
       "artifact_size_bytes": 140561955,
       "artifact_size_gb": 0.140562,
-      "statistics": {"nodes": 4838243, "edges": 5856692},
-      "features": {"node_feature_dim": 768, "node_features": "Official precomputed MPNet cache; native KG input appends head/tail flags", "edge_features": ["MPNet relation features"]},
-      "labels": {"type": "relation classification", "classes": 639},
-      "tasks": {"supported": [], "unavailable": [], "details": {"pending": "Original upstream cls_nm training; not registered with the social-graph evaluator"}},
-      "source_data": [{"role": "official public archive", "path": "https://snap.stanford.edu/prodigy/Wiki.zip", "format": "ZIP"}],
-      "construction": {"script": "scripts/experiments/setup/public_prodigy_kg/stage_assets.py", "source_revision": "107ba57234d3188227cda5b78a2dbcfb84a1c694", "archive_sha256": "3d2c577794e69791d74108dacf660a6635c9e752805dda3adf9a5789e4d9781d", "status": "Official archive downloaded, CRC-checked and extracted; graph tensor counts verified read-only on Tucker. MPNet cache is present; full native loader execution remains pending.", "license": "Not stated in inspected distribution; redistribution permission unresolved"},
+      "statistics": {
+        "nodes": 4838243,
+        "edges": 5856692
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "Official precomputed MPNet cache; native KG input appends head/tail flags",
+        "edge_features": [
+          "MPNet relation features"
+        ]
+      },
+      "labels": {
+        "type": "relation classification",
+        "classes": 639
+      },
+      "tasks": {
+        "supported": [],
+        "unavailable": [],
+        "details": {
+          "pending": "Original upstream cls_nm training; not registered with the social-graph evaluator"
+        }
+      },
+      "source_data": [
+        {
+          "role": "official public archive",
+          "path": "https://snap.stanford.edu/prodigy/Wiki.zip",
+          "format": "ZIP"
+        }
+      ],
+      "construction": {
+        "script": "scripts/experiments/setup/public_prodigy_kg/stage_assets.py",
+        "source_revision": "107ba57234d3188227cda5b78a2dbcfb84a1c694",
+        "archive_sha256": "3d2c577794e69791d74108dacf660a6635c9e752805dda3adf9a5789e4d9781d",
+        "status": "Official archive downloaded, CRC-checked and extracted; graph tensor counts verified read-only on Tucker. MPNet cache is present; full native loader execution remains pending.",
+        "license": "Not stated in inspected distribution; redistribution permission unresolved"
+      },
       "eval": null,
       "default_eval": false
     },
@@ -407,12 +908,42 @@
       "metadata_path": "prodigy_public_original/receipts/FB15K-237.json",
       "artifact_size_bytes": 6434023,
       "artifact_size_gb": 0.006434,
-      "statistics": {"nodes": 14543, "edges": 268039},
-      "features": {"node_feature_dim": 768, "node_features": "Official precomputed MPNet cache; native KG input appends head/tail flags", "edge_features": ["MPNet relation features"]},
-      "labels": {"type": "relation classification", "classes": 200},
-      "tasks": {"supported": [], "unavailable": [], "details": {"pending": "Original upstream multiway relation evaluation; not binary edge-existence prediction or social node classification"}},
-      "source_data": [{"role": "official public archive", "path": "https://snap.stanford.edu/prodigy/FB15K-237.zip", "format": "ZIP"}],
-      "construction": {"script": "scripts/experiments/setup/public_prodigy_kg/stage_assets.py", "source_revision": "107ba57234d3188227cda5b78a2dbcfb84a1c694", "archive_sha256": "b524ff93c56d063772ee8e18e8e7eb91dadc10b62edf8c3398f2d7bfab8f2732", "status": "Official archive downloaded, CRC-checked and extracted; graph tensor counts verified read-only on Tucker. MPNet cache is present; full native loader execution remains pending.", "license": "Not stated in inspected distribution; redistribution permission unresolved"},
+      "statistics": {
+        "nodes": 14543,
+        "edges": 268039
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "Official precomputed MPNet cache; native KG input appends head/tail flags",
+        "edge_features": [
+          "MPNet relation features"
+        ]
+      },
+      "labels": {
+        "type": "relation classification",
+        "classes": 200
+      },
+      "tasks": {
+        "supported": [],
+        "unavailable": [],
+        "details": {
+          "pending": "Original upstream multiway relation evaluation; not binary edge-existence prediction or social node classification"
+        }
+      },
+      "source_data": [
+        {
+          "role": "official public archive",
+          "path": "https://snap.stanford.edu/prodigy/FB15K-237.zip",
+          "format": "ZIP"
+        }
+      ],
+      "construction": {
+        "script": "scripts/experiments/setup/public_prodigy_kg/stage_assets.py",
+        "source_revision": "107ba57234d3188227cda5b78a2dbcfb84a1c694",
+        "archive_sha256": "b524ff93c56d063772ee8e18e8e7eb91dadc10b62edf8c3398f2d7bfab8f2732",
+        "status": "Official archive downloaded, CRC-checked and extracted; graph tensor counts verified read-only on Tucker. MPNet cache is present; full native loader execution remains pending.",
+        "license": "Not stated in inspected distribution; redistribution permission unresolved"
+      },
       "eval": null,
       "default_eval": false
     },
@@ -424,12 +955,37 @@
       "metadata_path": "merged/graphs/ukr_rus_covid_retweet_graph.meta.json",
       "artifact_size_bytes": 115518646640,
       "artifact_size_gb": 115.519,
-      "statistics": {"nodes": 33413625, "edges": 184074095},
-      "features": {"node_feature_dim": 768, "edge_features": ["n_retweets"]},
-      "tasks": {"supported": ["neighbor_matching"], "notes": "Other task capabilities are not cataloged for merged training artifacts."},
-      "sources": ["ukraine", "covid"],
-      "construction": {"policy": "disjoint_block_concat", "config": "scripts/graph_construction/merge_ukr_rus_covid.yaml"},
-      "eval": {"supports_lp": false, "nm_n_query": 12, "pl_n_query": 12, "val_cap": 500, "test_cap": 500},
+      "statistics": {
+        "nodes": 33413625,
+        "edges": 184074095
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "edge_features": [
+          "n_retweets"
+        ]
+      },
+      "tasks": {
+        "supported": [
+          "neighbor_matching"
+        ],
+        "notes": "Other task capabilities are not cataloged for merged training artifacts."
+      },
+      "sources": [
+        "ukraine",
+        "covid"
+      ],
+      "construction": {
+        "policy": "disjoint_block_concat",
+        "config": "scripts/graph_construction/merge_ukr_rus_covid.yaml"
+      },
+      "eval": {
+        "supports_lp": false,
+        "nm_n_query": 12,
+        "pl_n_query": 12,
+        "val_cap": 500,
+        "test_cap": 500
+      },
       "default_eval": true
     },
     {
@@ -440,12 +996,37 @@
       "metadata_path": "merged/graphs/covid_midterm_retweet_graph.meta.json",
       "artifact_size_bytes": 79535264011,
       "artifact_size_gb": 79.535,
-      "statistics": {"nodes": 23354758, "edges": 108122161},
-      "features": {"node_feature_dim": 768, "edge_features": ["n_retweets"]},
-      "tasks": {"supported": ["neighbor_matching"], "notes": "Other task capabilities are not cataloged for merged training artifacts."},
-      "sources": ["covid", "midterm"],
-      "construction": {"policy": "disjoint_block_concat", "config": "scripts/graph_construction/merge_covid_midterm.yaml"},
-      "eval": {"supports_lp": false, "nm_n_query": 12, "pl_n_query": 12, "val_cap": 500, "test_cap": 500},
+      "statistics": {
+        "nodes": 23354758,
+        "edges": 108122161
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "edge_features": [
+          "n_retweets"
+        ]
+      },
+      "tasks": {
+        "supported": [
+          "neighbor_matching"
+        ],
+        "notes": "Other task capabilities are not cataloged for merged training artifacts."
+      },
+      "sources": [
+        "covid",
+        "midterm"
+      ],
+      "construction": {
+        "policy": "disjoint_block_concat",
+        "config": "scripts/graph_construction/merge_covid_midterm.yaml"
+      },
+      "eval": {
+        "supports_lp": false,
+        "nm_n_query": 12,
+        "pl_n_query": 12,
+        "val_cap": 500,
+        "test_cap": 500
+      },
       "default_eval": true
     },
     {
@@ -456,12 +1037,38 @@
       "metadata_path": "merged/graphs/ukr_rus_covid_midterm_retweet_graph.meta.json",
       "artifact_size_bytes": 116644575712,
       "artifact_size_gb": 116.645,
-      "statistics": {"nodes": 33755533, "edges": 184974074},
-      "features": {"node_feature_dim": 768, "edge_features": ["n_retweets"]},
-      "tasks": {"supported": ["neighbor_matching"], "notes": "Other task capabilities are not cataloged for merged training artifacts."},
-      "sources": ["ukraine", "covid", "midterm"],
-      "construction": {"policy": "disjoint_block_concat", "config": "scripts/graph_construction/merge_ukr_rus_covid_midterm_3way.yaml"},
-      "eval": {"supports_lp": false, "nm_n_query": 12, "pl_n_query": 12, "val_cap": 500, "test_cap": 500},
+      "statistics": {
+        "nodes": 33755533,
+        "edges": 184974074
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "edge_features": [
+          "n_retweets"
+        ]
+      },
+      "tasks": {
+        "supported": [
+          "neighbor_matching"
+        ],
+        "notes": "Other task capabilities are not cataloged for merged training artifacts."
+      },
+      "sources": [
+        "ukraine",
+        "covid",
+        "midterm"
+      ],
+      "construction": {
+        "policy": "disjoint_block_concat",
+        "config": "scripts/graph_construction/merge_ukr_rus_covid_midterm_3way.yaml"
+      },
+      "eval": {
+        "supports_lp": false,
+        "nm_n_query": 12,
+        "pl_n_query": 12,
+        "val_cap": 500,
+        "test_cap": 500
+      },
       "default_eval": false
     },
     {
@@ -472,11 +1079,29 @@
       "metadata_path": "merged/graphs/ukr_rus_covid_midterm_4src_retweet_graph.meta.json",
       "artifact_size_bytes": 109238604209,
       "artifact_size_gb": 109.239,
-      "statistics": {"nodes": 33834205, "edges": 185155002},
-      "features": {"node_feature_dim": 768, "edge_features": []},
-      "tasks": {"supported": ["neighbor_matching"]},
-      "sources": ["ukraine", "covid", "midterm", "covid-political"],
-      "construction": {"policy": "disjoint_block_concat", "config": "scripts/experiments/setup/nm_ladder_fillin/merge_4src.yaml"}
+      "statistics": {
+        "nodes": 33834205,
+        "edges": 185155002
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "edge_features": []
+      },
+      "tasks": {
+        "supported": [
+          "neighbor_matching"
+        ]
+      },
+      "sources": [
+        "ukraine",
+        "covid",
+        "midterm",
+        "covid-political"
+      ],
+      "construction": {
+        "policy": "disjoint_block_concat",
+        "config": "scripts/experiments/setup/nm_ladder_fillin/merge_4src.yaml"
+      }
     },
     {
       "canonical_name": "merged-ukraine-covid-midterm-5src",
@@ -486,11 +1111,30 @@
       "metadata_path": "merged/graphs/ukr_rus_covid_midterm_5src_retweet_graph.meta.json",
       "artifact_size_bytes": 109530775153,
       "artifact_size_gb": 109.531,
-      "statistics": {"nodes": 33913137, "edges": 187973605},
-      "features": {"node_feature_dim": 768, "edge_features": []},
-      "tasks": {"supported": ["neighbor_matching"]},
-      "sources": ["ukraine", "covid", "midterm", "covid-political", "election2020-political"],
-      "construction": {"policy": "disjoint_block_concat", "config": "scripts/experiments/setup/nm_ladder_fillin/merge_5src.yaml"}
+      "statistics": {
+        "nodes": 33913137,
+        "edges": 187973605
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "edge_features": []
+      },
+      "tasks": {
+        "supported": [
+          "neighbor_matching"
+        ]
+      },
+      "sources": [
+        "ukraine",
+        "covid",
+        "midterm",
+        "covid-political",
+        "election2020-political"
+      ],
+      "construction": {
+        "policy": "disjoint_block_concat",
+        "config": "scripts/experiments/setup/nm_ladder_fillin/merge_5src.yaml"
+      }
     },
     {
       "canonical_name": "merged-ukraine-covid-midterm-6src",
@@ -500,11 +1144,31 @@
       "metadata_path": "merged/graphs/ukr_rus_covid_midterm_6src_retweet_graph.meta.json",
       "artifact_size_bytes": 109763090161,
       "artifact_size_gb": 109.763,
-      "statistics": {"nodes": 33985432, "edges": 188327814},
-      "features": {"node_feature_dim": 768, "edge_features": []},
-      "tasks": {"supported": ["neighbor_matching"]},
-      "sources": ["ukraine", "covid", "midterm", "covid-political", "election2020-political", "ukraine-suspended"],
-      "construction": {"policy": "disjoint_block_concat", "config": "scripts/experiments/setup/nm_ladder_fillin/merge_6src.yaml"}
+      "statistics": {
+        "nodes": 33985432,
+        "edges": 188327814
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "edge_features": []
+      },
+      "tasks": {
+        "supported": [
+          "neighbor_matching"
+        ]
+      },
+      "sources": [
+        "ukraine",
+        "covid",
+        "midterm",
+        "covid-political",
+        "election2020-political",
+        "ukraine-suspended"
+      ],
+      "construction": {
+        "policy": "disjoint_block_concat",
+        "config": "scripts/experiments/setup/nm_ladder_fillin/merge_6src.yaml"
+      }
     },
     {
       "canonical_name": "merged-ukraine-covid-midterm-7src",
@@ -514,11 +1178,32 @@
       "metadata_path": "merged/graphs/ukr_rus_covid_midterm_7src_retweet_graph.meta.json",
       "artifact_size_bytes": 110309268977,
       "artifact_size_gb": 110.309,
-      "statistics": {"nodes": 34148422, "edges": 190338739},
-      "features": {"node_feature_dim": 768, "edge_features": []},
-      "tasks": {"supported": ["neighbor_matching"]},
-      "sources": ["ukraine", "covid", "midterm", "covid-political", "election2020-political", "ukraine-suspended", "twibot20"],
-      "construction": {"policy": "disjoint_block_concat", "config": "scripts/experiments/setup/nm_ladder_fillin/merge_7src.yaml"}
+      "statistics": {
+        "nodes": 34148422,
+        "edges": 190338739
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "edge_features": []
+      },
+      "tasks": {
+        "supported": [
+          "neighbor_matching"
+        ]
+      },
+      "sources": [
+        "ukraine",
+        "covid",
+        "midterm",
+        "covid-political",
+        "election2020-political",
+        "ukraine-suspended",
+        "twibot20"
+      ],
+      "construction": {
+        "policy": "disjoint_block_concat",
+        "config": "scripts/experiments/setup/nm_ladder_fillin/merge_7src.yaml"
+      }
     },
     {
       "canonical_name": "merged-all8",
@@ -528,11 +1213,33 @@
       "metadata_path": "merged/graphs/ukr_rus_covid_midterm_all8_retweet_graph.meta.json",
       "artifact_size_bytes": 111386034033,
       "artifact_size_gb": 111.386,
-      "statistics": {"nodes": 34482222, "edges": 191523118},
-      "features": {"node_feature_dim": 768, "edge_features": []},
-      "tasks": {"supported": ["neighbor_matching"]},
-      "sources": ["ukraine", "covid", "midterm", "covid-political", "election2020-political", "ukraine-suspended", "twibot20", "hongkong"],
-      "construction": {"policy": "disjoint_block_concat", "config": "scripts/graph_construction/merge_ukr_rus_covid_midterm_all8.yaml"}
+      "statistics": {
+        "nodes": 34482222,
+        "edges": 191523118
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "edge_features": []
+      },
+      "tasks": {
+        "supported": [
+          "neighbor_matching"
+        ]
+      },
+      "sources": [
+        "ukraine",
+        "covid",
+        "midterm",
+        "covid-political",
+        "election2020-political",
+        "ukraine-suspended",
+        "twibot20",
+        "hongkong"
+      ],
+      "construction": {
+        "policy": "disjoint_block_concat",
+        "config": "scripts/graph_construction/merge_ukr_rus_covid_midterm_all8.yaml"
+      }
     },
     {
       "canonical_name": "merged-all8-static-split",
@@ -541,12 +1248,40 @@
       "relative_path": "merged/graphs/ukr_rus_covid_midterm_all8_static_split_retweet_graph.pt",
       "metadata_path": "merged/graphs/ukr_rus_covid_midterm_all8_static_split_retweet_graph.meta.json",
       "artifact_size_bytes": 114450407108,
-      "artifact_size_gb": 114.450,
-      "statistics": {"nodes": 34482222, "edges": 191523118, "static_background_edges": 162794891, "static_holdout_edges": 28728227},
-      "features": {"node_feature_dim": 768, "edge_features": []},
-      "tasks": {"supported": ["neighbor_matching"], "details": {"neighbor_matching": "Training/context use static_background; validation/test positives use disjoint static_holdout edges."}},
-      "sources": ["ukraine", "covid", "midterm", "covid-political", "election2020-political", "ukraine-suspended", "twibot20", "hongkong"],
-      "construction": {"policy": "disjoint_block_concat_preserve_static_split", "config": "scripts/experiments/setup/nm_ladder_train_test_nhop2/merge_all8_static_split.yaml", "status": "built and read-only verified on Tucker 2026-08-02"}
+      "artifact_size_gb": 114.45,
+      "statistics": {
+        "nodes": 34482222,
+        "edges": 191523118,
+        "static_background_edges": 162794891,
+        "static_holdout_edges": 28728227
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "edge_features": []
+      },
+      "tasks": {
+        "supported": [
+          "neighbor_matching"
+        ],
+        "details": {
+          "neighbor_matching": "Training/context use static_background; validation/test positives use disjoint static_holdout edges."
+        }
+      },
+      "sources": [
+        "ukraine",
+        "covid",
+        "midterm",
+        "covid-political",
+        "election2020-political",
+        "ukraine-suspended",
+        "twibot20",
+        "hongkong"
+      ],
+      "construction": {
+        "policy": "disjoint_block_concat_preserve_static_split",
+        "config": "scripts/experiments/setup/nm_ladder_train_test_nhop2/merge_all8_static_split.yaml",
+        "status": "built and read-only verified on Tucker 2026-08-02"
+      }
     },
     {
       "canonical_name": "synthetic-probe-count-threshold",
@@ -555,12 +1290,40 @@
       "relative_path": "synthetic_probes/graphs/count_threshold.pt",
       "artifact_size_bytes": 12656331,
       "artifact_size_gb": 0.013,
-      "statistics": {"nodes": 4000, "edges": 20158},
-      "features": {"node_feature_dim": 768},
-      "labels": {"type": "binary synthetic rule", "labeled_nodes": 4000},
-      "tasks": {"supported": ["node_classification"], "details": {"rule": "count_threshold"}},
-      "source_data": [{"role": "generator", "root": "repo", "path": "scripts/experiments/setup/topology_feature_ssl/make_probe_graphs.py", "format": "Python"}],
-      "eval": {"supports_lp": false, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
+      "statistics": {
+        "nodes": 4000,
+        "edges": 20158
+      },
+      "features": {
+        "node_feature_dim": 768
+      },
+      "labels": {
+        "type": "binary synthetic rule",
+        "labeled_nodes": 4000
+      },
+      "tasks": {
+        "supported": [
+          "node_classification"
+        ],
+        "details": {
+          "rule": "count_threshold"
+        }
+      },
+      "source_data": [
+        {
+          "role": "generator",
+          "root": "repo",
+          "path": "scripts/experiments/setup/topology_feature_ssl/make_probe_graphs.py",
+          "format": "Python"
+        }
+      ],
+      "eval": {
+        "supports_lp": false,
+        "nm_n_query": 4,
+        "pl_n_query": 4,
+        "val_cap": 500,
+        "test_cap": 500
+      },
       "default_eval": true
     },
     {
@@ -570,12 +1333,40 @@
       "relative_path": "synthetic_probes/graphs/in_degree.pt",
       "artifact_size_bytes": 12654189,
       "artifact_size_gb": 0.013,
-      "statistics": {"nodes": 4000, "edges": 20025},
-      "features": {"node_feature_dim": 768},
-      "labels": {"type": "binary synthetic rule", "labeled_nodes": 4000},
-      "tasks": {"supported": ["node_classification"], "details": {"rule": "in_degree"}},
-      "source_data": [{"role": "generator", "root": "repo", "path": "scripts/experiments/setup/topology_feature_ssl/make_probe_graphs.py", "format": "Python"}],
-      "eval": {"supports_lp": false, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
+      "statistics": {
+        "nodes": 4000,
+        "edges": 20025
+      },
+      "features": {
+        "node_feature_dim": 768
+      },
+      "labels": {
+        "type": "binary synthetic rule",
+        "labeled_nodes": 4000
+      },
+      "tasks": {
+        "supported": [
+          "node_classification"
+        ],
+        "details": {
+          "rule": "in_degree"
+        }
+      },
+      "source_data": [
+        {
+          "role": "generator",
+          "root": "repo",
+          "path": "scripts/experiments/setup/topology_feature_ssl/make_probe_graphs.py",
+          "format": "Python"
+        }
+      ],
+      "eval": {
+        "supports_lp": false,
+        "nm_n_query": 4,
+        "pl_n_query": 4,
+        "val_cap": 500,
+        "test_cap": 500
+      },
       "default_eval": true
     },
     {
@@ -585,12 +1376,40 @@
       "relative_path": "synthetic_probes/graphs/out_degree.pt",
       "artifact_size_bytes": 12650546,
       "artifact_size_gb": 0.013,
-      "statistics": {"nodes": 4000, "edges": 19797},
-      "features": {"node_feature_dim": 768},
-      "labels": {"type": "binary synthetic rule", "labeled_nodes": 4000},
-      "tasks": {"supported": ["node_classification"], "details": {"rule": "out_degree"}},
-      "source_data": [{"role": "generator", "root": "repo", "path": "scripts/experiments/setup/topology_feature_ssl/make_probe_graphs.py", "format": "Python"}],
-      "eval": {"supports_lp": false, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
+      "statistics": {
+        "nodes": 4000,
+        "edges": 19797
+      },
+      "features": {
+        "node_feature_dim": 768
+      },
+      "labels": {
+        "type": "binary synthetic rule",
+        "labeled_nodes": 4000
+      },
+      "tasks": {
+        "supported": [
+          "node_classification"
+        ],
+        "details": {
+          "rule": "out_degree"
+        }
+      },
+      "source_data": [
+        {
+          "role": "generator",
+          "root": "repo",
+          "path": "scripts/experiments/setup/topology_feature_ssl/make_probe_graphs.py",
+          "format": "Python"
+        }
+      ],
+      "eval": {
+        "supports_lp": false,
+        "nm_n_query": 4,
+        "pl_n_query": 4,
+        "val_cap": 500,
+        "test_cap": 500
+      },
       "default_eval": true
     },
     {
@@ -600,12 +1419,40 @@
       "relative_path": "synthetic_probes/graphs/existence.pt",
       "artifact_size_bytes": 12650285,
       "artifact_size_gb": 0.013,
-      "statistics": {"nodes": 4000, "edges": 19782},
-      "features": {"node_feature_dim": 768},
-      "labels": {"type": "binary synthetic rule", "labeled_nodes": 4000},
-      "tasks": {"supported": ["node_classification"], "details": {"rule": "existence"}},
-      "source_data": [{"role": "generator", "root": "repo", "path": "scripts/experiments/setup/topology_feature_ssl/make_probe_graphs.py", "format": "Python"}],
-      "eval": {"supports_lp": false, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
+      "statistics": {
+        "nodes": 4000,
+        "edges": 19782
+      },
+      "features": {
+        "node_feature_dim": 768
+      },
+      "labels": {
+        "type": "binary synthetic rule",
+        "labeled_nodes": 4000
+      },
+      "tasks": {
+        "supported": [
+          "node_classification"
+        ],
+        "details": {
+          "rule": "existence"
+        }
+      },
+      "source_data": [
+        {
+          "role": "generator",
+          "root": "repo",
+          "path": "scripts/experiments/setup/topology_feature_ssl/make_probe_graphs.py",
+          "format": "Python"
+        }
+      ],
+      "eval": {
+        "supports_lp": false,
+        "nm_n_query": 4,
+        "pl_n_query": 4,
+        "val_cap": 500,
+        "test_cap": 500
+      },
       "default_eval": true
     },
     {
@@ -615,12 +1462,40 @@
       "relative_path": "synthetic_probes/graphs/conjunction.pt",
       "artifact_size_bytes": 12653047,
       "artifact_size_gb": 0.013,
-      "statistics": {"nodes": 4000, "edges": 19953},
-      "features": {"node_feature_dim": 768},
-      "labels": {"type": "binary synthetic rule", "labeled_nodes": 4000},
-      "tasks": {"supported": ["node_classification"], "details": {"rule": "conjunction"}},
-      "source_data": [{"role": "generator", "root": "repo", "path": "scripts/experiments/setup/topology_feature_ssl/make_probe_graphs.py", "format": "Python"}],
-      "eval": {"supports_lp": false, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
+      "statistics": {
+        "nodes": 4000,
+        "edges": 19953
+      },
+      "features": {
+        "node_feature_dim": 768
+      },
+      "labels": {
+        "type": "binary synthetic rule",
+        "labeled_nodes": 4000
+      },
+      "tasks": {
+        "supported": [
+          "node_classification"
+        ],
+        "details": {
+          "rule": "conjunction"
+        }
+      },
+      "source_data": [
+        {
+          "role": "generator",
+          "root": "repo",
+          "path": "scripts/experiments/setup/topology_feature_ssl/make_probe_graphs.py",
+          "format": "Python"
+        }
+      ],
+      "eval": {
+        "supports_lp": false,
+        "nm_n_query": 4,
+        "pl_n_query": 4,
+        "val_cap": 500,
+        "test_cap": 500
+      },
       "default_eval": true
     },
     {
@@ -1790,6 +2665,120 @@
         "production_compatibility": true,
         "original_node_ids": "row in original unfiltered source graph",
         "parent_node_ids": "row in full nonzero parent"
+      },
+      "source_data": [
+        {
+          "role": "verified full nonzero parent",
+          "path": "graph_views/nonzero_features_v1/covid19_twitter/graph.pt",
+          "format": "PyTorch"
+        }
+      ],
+      "default_eval": false
+    },
+    {
+      "canonical_name": "ukraine-mini-500k-one-hop-walk-nonzero",
+      "dataset_key": "ukr_rus_twitter_mini_500k_walk1_s0_nonzero_features_v1",
+      "kind": "derived",
+      "relative_path": "graph_views/nonzero_features_v1/ukr_rus_twitter_mini_500k_walk1_s0/graph.pt",
+      "metadata_path": "graph_views/nonzero_features_v1/ukr_rus_twitter_mini_500k_walk1_s0/metadata.json",
+      "artifact_size_bytes": null,
+      "artifact_size_gb": null,
+      "statistics": {
+        "nodes": 500000,
+        "edges": null
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "Exact nonzero source feature rows; induced graph; unnormalized",
+        "edge_features": [
+          "n_retweets"
+        ]
+      },
+      "labels": {
+        "type": null,
+        "labeled_nodes": 0
+      },
+      "tasks": {
+        "supported": [
+          "neighbor_matching",
+          "temporal_link_prediction",
+          "static_link_prediction",
+          "node_regression"
+        ],
+        "unavailable": [
+          "node_classification"
+        ],
+        "details": {
+          "preservation": "Available source task fields and existing splits retained by induced filtering; no model evaluation performed."
+        }
+      },
+      "construction": {
+        "script": "scripts/graph_construction/edge_sampled_minis.py",
+        "status": "planned",
+        "parent_dataset_key": "ukr_rus_twitter_nonzero_features_v1",
+        "source_dataset_key": "ukr_rus_twitter",
+        "seed": 0,
+        "max_nodes": 500000,
+        "induced": true,
+        "isolates_retained": true,
+        "selection": "nonzero_mini_sampling_pilot/walk1_s0.pt"
+      },
+      "source_data": [
+        {
+          "role": "verified full nonzero parent",
+          "path": "graph_views/nonzero_features_v1/ukr_rus_twitter/graph.pt",
+          "format": "PyTorch"
+        }
+      ],
+      "default_eval": false
+    },
+    {
+      "canonical_name": "covid-mini-500k-one-hop-walk-nonzero",
+      "dataset_key": "covid19_twitter_mini_500k_walk1_s0_nonzero_features_v1",
+      "kind": "derived",
+      "relative_path": "graph_views/nonzero_features_v1/covid19_twitter_mini_500k_walk1_s0/graph.pt",
+      "metadata_path": "graph_views/nonzero_features_v1/covid19_twitter_mini_500k_walk1_s0/metadata.json",
+      "artifact_size_bytes": null,
+      "artifact_size_gb": null,
+      "statistics": {
+        "nodes": 500000,
+        "edges": null
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "Exact nonzero source feature rows; induced graph; unnormalized",
+        "edge_features": [
+          "n_retweets"
+        ]
+      },
+      "labels": {
+        "type": null,
+        "labeled_nodes": 0
+      },
+      "tasks": {
+        "supported": [
+          "neighbor_matching",
+          "temporal_link_prediction",
+          "static_link_prediction",
+          "node_regression"
+        ],
+        "unavailable": [
+          "node_classification"
+        ],
+        "details": {
+          "preservation": "Available source task fields and existing splits retained by induced filtering; no model evaluation performed."
+        }
+      },
+      "construction": {
+        "script": "scripts/graph_construction/edge_sampled_minis.py",
+        "status": "planned",
+        "parent_dataset_key": "covid19_twitter_nonzero_features_v1",
+        "source_dataset_key": "covid19_twitter",
+        "seed": 0,
+        "max_nodes": 500000,
+        "induced": true,
+        "isolates_retained": true,
+        "selection": "nonzero_mini_sampling_pilot/walk1_s0.pt"
       },
       "source_data": [
         {

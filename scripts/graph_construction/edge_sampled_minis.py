@@ -56,6 +56,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--dataset', required=True, choices=['ukr_rus_twitter', 'covid19_twitter'])
     p.add_argument('--catalog', type=Path, default=Path('docs/graph_catalog.json'))
+    p.add_argument('--selection', type=Path, help='Verified one-hop pilot selection to materialize')
     p.add_argument('--seed', type=int, default=0)
     p.add_argument('--threads', type=int, default=4)
     args = p.parse_args()
@@ -63,7 +64,8 @@ def main():
     c = json.loads(args.catalog.read_text())
     entry = next(e for e in c['graphs'] if e['dataset_key'] == args.dataset + '_nonzero_features_v1')
     path = Path(c['data_root']) / entry['relative_path']
-    destination = path.parent.parent / (args.dataset + '_mini_500k_edge_sampled_s0')
+    suffix = '_mini_500k_walk1_s0' if args.selection else '_mini_500k_edge_sampled_s0'
+    destination = path.parent.parent / (args.dataset + suffix)
     if args.seed != 0:
         raise ValueError('This registered variant uses seed 0')
     destination.mkdir(exist_ok=False)
@@ -72,7 +74,15 @@ def main():
     print('Loading verified nonzero parent with mmap', flush=True)
     source = torch.load(path, mmap=True, map_location='cpu', weights_only=False)
     print('Sampling endpoints', flush=True)
-    ids, witness, draws = sample_endpoints(source['edge_index'], len(source['x']), 500000, args.seed)
+    if args.selection:
+        selection = torch.load(args.selection, weights_only=False)
+        ids = selection['parent_node_ids']
+        assert ids.dtype == torch.long and len(ids) == 500000
+        assert torch.equal(ids, ids.unique(sorted=True))
+        assert torch.equal(source['original_node_ids'][ids], selection['original_node_ids'])
+        witness, draws = torch.empty(0, dtype=torch.long), 0
+    else:
+        ids, witness, draws = sample_endpoints(source['edge_index'], len(source['x']), 500000, args.seed)
     # Strip only prior-view provenance; aligned attributes stay in the payload.
     payload = {k: v for k, v in source.items() if k not in
                {'original_node_ids', 'num_nodes', 'source_graph_metadata', 'view_metadata'}}
@@ -86,7 +96,8 @@ def main():
     result['source_graph_metadata'] = source.get('source_graph_metadata', {})
     stats = statistics(result)
     stats['nonself_isolated_nodes'] = nonself_isolates(result['edge_index'], len(ids))
-    assert stats['nonself_isolated_nodes'] == 0
+    if not args.selection:
+        assert stats['nonself_isolated_nodes'] == 0
     if 'static_background' in result.get('edge_index_views', {}):
         stats['static_background_nonself_isolated_nodes'] = nonself_isolates(result['edge_index_views']['static_background'], len(ids))
     meta = {'schema_version': 1, 'view': 'nonzero_features_v1',
@@ -102,11 +113,17 @@ def main():
             'verification': {'all_induced_edge_views_exact': True, 'all_attributes_exact': True,
                              'nonzero_features': True, 'no_nonself_isolates': True,
                              'witness_endpoints_equal_selection': True}}
+    if args.selection:
+        import hashlib
+        meta['sampling'] = {'method': 'uniformly restarted one-hop walks; complete induced graph', 'seed': 0, 'cap': 500000, 'selection_identity': identity(args.selection), 'selection_sha256': hashlib.sha256(args.selection.read_bytes()).hexdigest()}
+        meta['verification'].pop('no_nonself_isolates')
+        meta['verification'].pop('witness_endpoints_equal_selection')
+        meta['verification']['pilot_original_ids_exact'] = True
     result['view_metadata'] = meta
     print('Writing and verifying mini only', flush=True)
     artifact = destination / 'graph.pt'
     torch.save(result, artifact)
-    torch.save({'parent_node_ids': ids, 'parent_edge_ids': witness}, destination / 'selection.pt')
+    torch.save({'parent_node_ids': ids, 'original_node_ids': result['original_node_ids']}, destination / 'selection.pt') if args.selection else torch.save({'parent_node_ids': ids, 'parent_edge_ids': witness}, destination / 'selection.pt')
     restored = torch.load(artifact, mmap=True, weights_only=False)
     assert_equal(result, restored)
     assert identity(path) == before
