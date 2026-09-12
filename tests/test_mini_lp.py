@@ -23,3 +23,20 @@ class MiniLPTests(unittest.TestCase):
    for v in row:
     if v>=0:self.assertTrue((u==0 and 1<=v<=20) or (v==0 and 1<=u<=20))
 if __name__=='__main__':unittest.main()
+
+class DisjointContextTests(unittest.TestCase):
+ def test_no_supervised_or_heldout_edge_in_context(self):
+  from mixture_scaling.mini_lp import disjoint_context
+  edges=torch.combinations(torch.arange(12),r=2).T
+  keys,groups=edge_partition(edges,12,0)
+  context,supervision=disjoint_context(groups[0],0)
+  encode=lambda e:set((e[0]*12+e[1]).tolist())
+  self.assertFalse(encode(context)&encode(supervision))
+  self.assertFalse(encode(context)&encode(groups[1]))
+  self.assertFalse(encode(context)&encode(groups[2]))
+  self.assertEqual(encode(context)|encode(supervision),encode(groups[0]))
+  self.assertTrue(torch.equal(context,disjoint_context(groups[0],0)[0]))
+  sampled=fixed_neighbors(context,12,10,0)
+  for u,row in enumerate(sampled.tolist()):
+   for v in row:
+    if v>=0:self.assertIn(min(u,v)*12+max(u,v),encode(context))

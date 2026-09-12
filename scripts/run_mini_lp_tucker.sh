@@ -8,11 +8,11 @@ export PYTHONPATH="$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
 export OMP_NUM_THREADS=4
 ROOT=${1:?fresh LP root required}
 mkdir -p "$ROOT/log"
-for view in node node_neighbors; do
+for view in node_neighbors; do
  for phase in train eval; do
   pids=()
   for gpu in 0 1 2 3; do
-   python -u -m mixture_scaling.mini_lp "$phase" --view "$view" --root "$ROOT" --device "$gpu" --worker-index "$gpu" > "$ROOT/log/${view}_${phase}_gpu${gpu}.log" 2>&1 &
+   python -u -m mixture_scaling.mini_lp "$phase" --view "$view" --root "$ROOT" --device "$gpu" --worker-index "$gpu" --wandb-group disjoint-context-walk1-s0 > "$ROOT/log/${view}_${phase}_gpu${gpu}.log" 2>&1 &
    pids+=("$!")
   done
   failed=0

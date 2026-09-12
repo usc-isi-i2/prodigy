@@ -29,8 +29,15 @@ def edge_partition(edges,n,seed):
     return torch.from_numpy(keys),[torch.from_numpy(np.stack((g//n,g%n))) for g in groups]
 
 
+def disjoint_context(train_edges, seed):
+    # Partition only the original 70% training pool; validation/test stay fixed.
+    order=torch.randperm(train_edges.shape[1],generator=torch.Generator().manual_seed(seed+15485863))
+    cut=train_edges.shape[1]//2
+    return train_edges[:,order[:cut]],train_edges[:,order[cut:]]
+
+
 def prepare(source,config,root,seed):
-    path=config['graphs'][source]['path']; expected=dict(graph=identity(path),seed=seed,split='undirected unique nonself 70/15/15 v1')
+    path=config['graphs'][source]['path']; expected=dict(graph=identity(path),seed=seed,split='undirected unique nonself 70/15/15 v1',context_policy='half original train pool context, half supervision; seed+15485863')
     cache=Path(root)/'_cache'; cache.mkdir(parents=True,exist_ok=True); file=cache/(source+'.pt')
     with file.with_suffix('.lock').open('a') as lock:
         fcntl.flock(lock,fcntl.LOCK_EX)
@@ -41,7 +48,8 @@ def prepare(source,config,root,seed):
         raw=torch.load(path,map_location='cpu',weights_only=False)
         x=raw['x'].float(); edges=raw['edge_index']; keys,groups=edge_partition(edges,len(x),seed)
         if not torch.isfinite(x).all() or not (x!=0).any(1).all(): raise ValueError('nonzero finite features required')
-        data=dict(x=x,known_keys=keys,train=groups[0],validation=groups[1],test=groups[2],receipt=expected)
+        context,supervision=disjoint_context(groups[0],seed)
+        data=dict(x=x,known_keys=keys,train=groups[0],context=context,supervision=supervision,validation=groups[1],test=groups[2],receipt=expected)
         temp=file.with_suffix('.tmp');torch.save(data,temp);temp.replace(file)
         return data
 
@@ -63,13 +71,13 @@ def fixed_neighbors(edges,n,fanout,seed):
 def view_features(source,data,root,view,seed,device):
     x=data['x'].to(device)
     if view=='node': return x
-    file=Path(root)/'_cache'/(source+'_neighbors10.pt')
+    file=Path(root)/'_cache'/(source+'_neighbors10_disjoint50.pt')
     if file.exists():
         cached=torch.load(file,map_location='cpu',weights_only=False)
         if cached['receipt']!=data['receipt']: raise ValueError('context identity mismatch')
         means=cached['means'].to(device)
     else:
-        ids=fixed_neighbors(data['train'],len(x),10,seed)
+        ids=fixed_neighbors(data['context'],len(x),10,seed)
         means=torch.empty_like(x)
         for start in range(0,len(x),2048):
             batch=ids[start:start+2048].to(device); mask=batch>=0
@@ -124,7 +132,7 @@ def train(source,config,args,device):
     if run_dir.exists():raise FileExistsError(f'partial run: {run_dir}')
     started=time.monotonic();data=prepare(source,config,root,args.seed)
     x=view_features(source,data,root,args.view,args.seed,device)
-    positive=data['train'].to(device);val=data['validation'].to(device)
+    positive=data['supervision' if args.view=='node_neighbors' else 'train'].to(device);val=data['validation'].to(device)
     sampler=ExactNonedges(len(x),data['known_keys'].to(device))
     seed_everything(args.seed);model=model_for(args.view,device)
     optimizer=torch.optim.AdamW(model.parameters(),lr=.0005,weight_decay=1e-5)
@@ -136,7 +144,9 @@ def train(source,config,args,device):
         protocol=protocol,seed=args.seed,graph_split_receipt=data['receipt'],
         code_revision=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
         training_negative_sampling='uniform ordered pairs rejecting self-loops and every known edge in either direction',
-        context='fixed up-to-10 distinct neighbors from train edges only; mean; zero for isolates' if args.view=='node_neighbors' else 'none',
+        context='fixed up-to-10 distinct neighbors from disjoint context-only edges; mean; zero for isolates' if args.view=='node_neighbors' else 'none',
+        edge_counts={k:data[k].shape[1] for k in ['train','context','supervision','validation','test']},
+        evaluation_pair_background='original 70% train pool for fixed degree-matched pair comparability; model context uses only context subset',
         checkpoint_selection='source validation BCE only; distinct from final-test edges',
         stopping=dict(patience=args.patience,validation_interval=args.validation_interval,min_delta=1e-4,minimum_steps=2500,safety_cap=args.max_steps))
     run_dir.mkdir(parents=True);atomic_json(run_dir/'metadata.json',metadata)
