@@ -1,0 +1,61 @@
+{
+  "graph": "/dataMeR1/phil/data/merged/graphs/ukr_rus_covid_midterm_all8_retweet_graph.pt",
+  "torch": "2.0.1+cu118",
+  "threads": 4,
+  "note": "OS caches not flushed; graph load plus default-edge CSR only, not full dataset startup",
+  "runs": [
+    {
+      "repeat": 0,
+      "mode": "baseline",
+      "load_s": 135.25837218598463,
+      "adjacency_s": 15.734343106043525,
+      "sharing_s": 1.884132390958257,
+      "total_s": 152.8768476829864
+    },
+    {
+      "repeat": 0,
+      "mode": "cached",
+      "load_s": 77.29679190402385,
+      "adjacency_s": 2.7643322199583054,
+      "sharing_s": 2.0351722000632435,
+      "total_s": 82.0962963240454
+    },
+    {
+      "repeat": 1,
+      "mode": "baseline",
+      "load_s": 73.43107008200604,
+      "adjacency_s": 16.598948130966164,
+      "sharing_s": 1.996517003979534,
+      "total_s": 92.02653521695174
+    },
+    {
+      "repeat": 1,
+      "mode": "cached",
+      "load_s": 72.72883955598809,
+      "adjacency_s": 2.4837863800348714,
+      "sharing_s": 1.912566959974356,
+      "total_s": 77.12519289599732
+    },
+    {
+      "repeat": 2,
+      "mode": "baseline",
+      "load_s": 72.70441586698871,
+      "adjacency_s": 16.570586872985587,
+      "sharing_s": 2.0140142029849812,
+      "total_s": 91.28901694295928
+    },
+    {
+      "repeat": 2,
+      "mode": "cached",
+      "load_s": 73.40138515201397,
+      "adjacency_s": 2.481679373071529,
+      "sharing_s": 1.95723897498101,
+      "total_s": 77.84030350006651
+    }
+  ],
+  "cache_bytes": 6404598691,
+  "save_s": 6.9202486500144005,
+  "exact_csr_roundtrip": true,
+  "nodes": 34482222,
+  "edges": 191523118
+}
