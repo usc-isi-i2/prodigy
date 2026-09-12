@@ -622,6 +622,560 @@
       "source_data": [{"role": "generator", "root": "repo", "path": "scripts/experiments/setup/topology_feature_ssl/make_probe_graphs.py", "format": "Python"}],
       "eval": {"supports_lp": false, "nm_n_query": 4, "pl_n_query": 4, "val_cap": 500, "test_cap": 500},
       "default_eval": true
+    },
+    {
+      "canonical_name": "ukraine-nonzero",
+      "dataset_key": "ukr_rus_twitter_nonzero_features_v1",
+      "kind": "derived",
+      "relative_path": "graph_views/nonzero_features_v1/ukr_rus_twitter/graph.pt",
+      "metadata_path": "graph_views/nonzero_features_v1/ukr_rus_twitter/metadata.json",
+      "artifact_size_bytes": null,
+      "artifact_size_gb": null,
+      "statistics": {
+        "nodes": null,
+        "edges": null,
+        "isolated_nodes": null
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "Exact nonzero source feature rows; induced graph; unnormalized",
+        "edge_features": [
+          "n_retweets"
+        ]
+      },
+      "labels": {
+        "type": null,
+        "labeled_nodes": null
+      },
+      "tasks": {
+        "supported": [],
+        "unavailable": [],
+        "details": {
+          "status": "Planned; source capabilities await filtered-artifact verification"
+        }
+      },
+      "construction": {
+        "script": "scripts/graph_construction/nonzero_feature_views.py",
+        "status": "planned",
+        "source_dataset_key": "ukr_rus_twitter",
+        "seed": null,
+        "max_nodes": null,
+        "induced": true,
+        "zero_filter": "any(x != 0)",
+        "isolates_retained": true
+      },
+      "source_data": [
+        {
+          "role": "original source graph",
+          "path": "ukr_rus_twitter/graphs/retweet_graph_parquet.pt",
+          "format": "PyTorch"
+        }
+      ],
+      "default_eval": false
+    },
+    {
+      "canonical_name": "ukraine-mini-500k-nonzero",
+      "dataset_key": "ukr_rus_twitter_mini_500k_nonzero_features_v1",
+      "kind": "derived",
+      "relative_path": "graph_views/nonzero_features_v1/ukr_rus_twitter_mini_500k/graph.pt",
+      "metadata_path": "graph_views/nonzero_features_v1/ukr_rus_twitter_mini_500k/metadata.json",
+      "artifact_size_bytes": null,
+      "artifact_size_gb": null,
+      "statistics": {
+        "nodes": null,
+        "edges": null,
+        "isolated_nodes": null
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "Exact nonzero source feature rows; induced graph; unnormalized",
+        "edge_features": [
+          "n_retweets"
+        ]
+      },
+      "labels": {
+        "type": null,
+        "labeled_nodes": null
+      },
+      "tasks": {
+        "supported": [],
+        "unavailable": [],
+        "details": {
+          "status": "Planned; source capabilities await filtered-artifact verification"
+        }
+      },
+      "construction": {
+        "script": "scripts/graph_construction/nonzero_feature_views.py",
+        "status": "planned",
+        "source_dataset_key": "ukr_rus_twitter",
+        "seed": 0,
+        "max_nodes": 500000,
+        "induced": true,
+        "zero_filter": "any(x != 0)",
+        "isolates_retained": true
+      },
+      "source_data": [
+        {
+          "role": "original source graph",
+          "path": "ukr_rus_twitter/graphs/retweet_graph_parquet.pt",
+          "format": "PyTorch"
+        }
+      ],
+      "default_eval": false
+    },
+    {
+      "canonical_name": "covid-nonzero",
+      "dataset_key": "covid19_twitter_nonzero_features_v1",
+      "kind": "derived",
+      "relative_path": "graph_views/nonzero_features_v1/covid19_twitter/graph.pt",
+      "metadata_path": "graph_views/nonzero_features_v1/covid19_twitter/metadata.json",
+      "artifact_size_bytes": null,
+      "artifact_size_gb": null,
+      "statistics": {
+        "nodes": null,
+        "edges": null,
+        "isolated_nodes": null
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "Exact nonzero source feature rows; induced graph; unnormalized",
+        "edge_features": [
+          "n_retweets"
+        ]
+      },
+      "labels": {
+        "type": null,
+        "labeled_nodes": null
+      },
+      "tasks": {
+        "supported": [],
+        "unavailable": [],
+        "details": {
+          "status": "Planned; source capabilities await filtered-artifact verification"
+        }
+      },
+      "construction": {
+        "script": "scripts/graph_construction/nonzero_feature_views.py",
+        "status": "planned",
+        "source_dataset_key": "covid19_twitter",
+        "seed": null,
+        "max_nodes": null,
+        "induced": true,
+        "zero_filter": "any(x != 0)",
+        "isolates_retained": true
+      },
+      "source_data": [
+        {
+          "role": "original source graph",
+          "path": "covid19_twitter/graphs/retweet_graph_parquet.pt",
+          "format": "PyTorch"
+        }
+      ],
+      "default_eval": false
+    },
+    {
+      "canonical_name": "covid-mini-500k-nonzero",
+      "dataset_key": "covid19_twitter_mini_500k_nonzero_features_v1",
+      "kind": "derived",
+      "relative_path": "graph_views/nonzero_features_v1/covid19_twitter_mini_500k/graph.pt",
+      "metadata_path": "graph_views/nonzero_features_v1/covid19_twitter_mini_500k/metadata.json",
+      "artifact_size_bytes": null,
+      "artifact_size_gb": null,
+      "statistics": {
+        "nodes": null,
+        "edges": null,
+        "isolated_nodes": null
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "Exact nonzero source feature rows; induced graph; unnormalized",
+        "edge_features": [
+          "n_retweets"
+        ]
+      },
+      "labels": {
+        "type": null,
+        "labeled_nodes": null
+      },
+      "tasks": {
+        "supported": [],
+        "unavailable": [],
+        "details": {
+          "status": "Planned; source capabilities await filtered-artifact verification"
+        }
+      },
+      "construction": {
+        "script": "scripts/graph_construction/nonzero_feature_views.py",
+        "status": "planned",
+        "source_dataset_key": "covid19_twitter",
+        "seed": 0,
+        "max_nodes": 500000,
+        "induced": true,
+        "zero_filter": "any(x != 0)",
+        "isolates_retained": true
+      },
+      "source_data": [
+        {
+          "role": "original source graph",
+          "path": "covid19_twitter/graphs/retweet_graph_parquet.pt",
+          "format": "PyTorch"
+        }
+      ],
+      "default_eval": false
+    },
+    {
+      "canonical_name": "midterm-nonzero",
+      "dataset_key": "midterm_nonzero_features_v1",
+      "kind": "derived",
+      "relative_path": "graph_views/nonzero_features_v1/midterm/graph.pt",
+      "metadata_path": "graph_views/nonzero_features_v1/midterm/metadata.json",
+      "artifact_size_bytes": null,
+      "artifact_size_gb": null,
+      "statistics": {
+        "nodes": null,
+        "edges": null,
+        "isolated_nodes": null
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "Exact nonzero source feature rows; induced graph; unnormalized",
+        "edge_features": [
+          "n_retweets"
+        ]
+      },
+      "labels": {
+        "type": null,
+        "labeled_nodes": null
+      },
+      "tasks": {
+        "supported": [],
+        "unavailable": [],
+        "details": {
+          "status": "Planned; source capabilities await filtered-artifact verification"
+        }
+      },
+      "construction": {
+        "script": "scripts/graph_construction/nonzero_feature_views.py",
+        "status": "planned",
+        "source_dataset_key": "midterm",
+        "seed": null,
+        "max_nodes": null,
+        "induced": true,
+        "zero_filter": "any(x != 0)",
+        "isolates_retained": true
+      },
+      "source_data": [
+        {
+          "role": "original source graph",
+          "path": "midterm/graphs/retweet_graph_parquet.pt",
+          "format": "PyTorch"
+        }
+      ],
+      "default_eval": false
+    },
+    {
+      "canonical_name": "covid-political-nonzero",
+      "dataset_key": "covid_political_nonzero_features_v1",
+      "kind": "derived",
+      "relative_path": "graph_views/nonzero_features_v1/covid_political/graph.pt",
+      "metadata_path": "graph_views/nonzero_features_v1/covid_political/metadata.json",
+      "artifact_size_bytes": null,
+      "artifact_size_gb": null,
+      "statistics": {
+        "nodes": null,
+        "edges": null,
+        "isolated_nodes": null
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "Exact nonzero source feature rows; induced graph; unnormalized",
+        "edge_features": [
+          "rt_weight",
+          "mn_weight"
+        ]
+      },
+      "labels": {
+        "type": "binary node classification",
+        "labeled_nodes": null
+      },
+      "tasks": {
+        "supported": [],
+        "unavailable": [],
+        "details": {
+          "status": "Planned; source capabilities await filtered-artifact verification"
+        }
+      },
+      "construction": {
+        "script": "scripts/graph_construction/nonzero_feature_views.py",
+        "status": "planned",
+        "source_dataset_key": "covid_political",
+        "seed": null,
+        "max_nodes": null,
+        "induced": true,
+        "zero_filter": "any(x != 0)",
+        "isolates_retained": true
+      },
+      "source_data": [
+        {
+          "role": "original source graph",
+          "path": "covid_political/graphs/retweet_graph.pt",
+          "format": "PyTorch"
+        }
+      ],
+      "default_eval": false
+    },
+    {
+      "canonical_name": "ukraine-suspended-nonzero",
+      "dataset_key": "ukr_rus_suspended_nonzero_features_v1",
+      "kind": "derived",
+      "relative_path": "graph_views/nonzero_features_v1/ukr_rus_suspended/graph.pt",
+      "metadata_path": "graph_views/nonzero_features_v1/ukr_rus_suspended/metadata.json",
+      "artifact_size_bytes": null,
+      "artifact_size_gb": null,
+      "statistics": {
+        "nodes": null,
+        "edges": null,
+        "isolated_nodes": null
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "Exact nonzero source feature rows; induced graph; unnormalized",
+        "edge_features": [
+          "rt_weight",
+          "mn_weight"
+        ]
+      },
+      "labels": {
+        "type": "binary node classification",
+        "labeled_nodes": null
+      },
+      "tasks": {
+        "supported": [],
+        "unavailable": [],
+        "details": {
+          "status": "Planned; source capabilities await filtered-artifact verification"
+        }
+      },
+      "construction": {
+        "script": "scripts/graph_construction/nonzero_feature_views.py",
+        "status": "planned",
+        "source_dataset_key": "ukr_rus_suspended",
+        "seed": null,
+        "max_nodes": null,
+        "induced": true,
+        "zero_filter": "any(x != 0)",
+        "isolates_retained": true
+      },
+      "source_data": [
+        {
+          "role": "original source graph",
+          "path": "ukr_rus_suspended/graphs/retweet_graph.pt",
+          "format": "PyTorch"
+        }
+      ],
+      "default_eval": false
+    },
+    {
+      "canonical_name": "election2020-political-nonzero",
+      "dataset_key": "election2020_nonzero_features_v1",
+      "kind": "derived",
+      "relative_path": "graph_views/nonzero_features_v1/election2020/graph.pt",
+      "metadata_path": "graph_views/nonzero_features_v1/election2020/metadata.json",
+      "artifact_size_bytes": null,
+      "artifact_size_gb": null,
+      "statistics": {
+        "nodes": null,
+        "edges": null,
+        "isolated_nodes": null
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "Exact nonzero source feature rows; induced graph; unnormalized",
+        "edge_features": [
+          "rt_weight",
+          "mn_weight"
+        ]
+      },
+      "labels": {
+        "type": "binary node classification",
+        "labeled_nodes": null
+      },
+      "tasks": {
+        "supported": [],
+        "unavailable": [],
+        "details": {
+          "status": "Planned; source capabilities await filtered-artifact verification"
+        }
+      },
+      "construction": {
+        "script": "scripts/graph_construction/nonzero_feature_views.py",
+        "status": "planned",
+        "source_dataset_key": "election2020",
+        "seed": null,
+        "max_nodes": null,
+        "induced": true,
+        "zero_filter": "any(x != 0)",
+        "isolates_retained": true
+      },
+      "source_data": [
+        {
+          "role": "original source graph",
+          "path": "election2020/graphs/retweet_graph.pt",
+          "format": "PyTorch"
+        }
+      ],
+      "default_eval": false
+    },
+    {
+      "canonical_name": "twibot20-nonzero",
+      "dataset_key": "twibot20_nonzero_features_v1",
+      "kind": "derived",
+      "relative_path": "graph_views/nonzero_features_v1/twibot20/graph.pt",
+      "metadata_path": "graph_views/nonzero_features_v1/twibot20/metadata.json",
+      "artifact_size_bytes": null,
+      "artifact_size_gb": null,
+      "statistics": {
+        "nodes": null,
+        "edges": null,
+        "isolated_nodes": null
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "Exact nonzero source feature rows; induced graph; unnormalized",
+        "edge_features": [
+          "n_retweets"
+        ]
+      },
+      "labels": {
+        "type": "binary node classification",
+        "labeled_nodes": null
+      },
+      "tasks": {
+        "supported": [],
+        "unavailable": [],
+        "details": {
+          "status": "Planned; source capabilities await filtered-artifact verification"
+        }
+      },
+      "construction": {
+        "script": "scripts/graph_construction/nonzero_feature_views.py",
+        "status": "planned",
+        "source_dataset_key": "twibot20",
+        "seed": null,
+        "max_nodes": null,
+        "induced": true,
+        "zero_filter": "any(x != 0)",
+        "isolates_retained": true
+      },
+      "source_data": [
+        {
+          "role": "original source graph",
+          "path": "twibot20/graphs/retweet_graph.pt",
+          "format": "PyTorch"
+        }
+      ],
+      "default_eval": false
+    },
+    {
+      "canonical_name": "hongkong-nonzero",
+      "dataset_key": "cp_hk_twitter_nonzero_features_v1",
+      "kind": "derived",
+      "relative_path": "graph_views/nonzero_features_v1/cp_hk_twitter/graph.pt",
+      "metadata_path": "graph_views/nonzero_features_v1/cp_hk_twitter/metadata.json",
+      "artifact_size_bytes": null,
+      "artifact_size_gb": null,
+      "statistics": {
+        "nodes": null,
+        "edges": null,
+        "isolated_nodes": null
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "Exact nonzero source feature rows; induced graph; unnormalized",
+        "edge_features": [
+          "n_retweets"
+        ]
+      },
+      "labels": {
+        "type": null,
+        "labeled_nodes": null
+      },
+      "tasks": {
+        "supported": [],
+        "unavailable": [],
+        "details": {
+          "status": "Planned; source capabilities await filtered-artifact verification"
+        }
+      },
+      "construction": {
+        "script": "scripts/graph_construction/nonzero_feature_views.py",
+        "status": "planned",
+        "source_dataset_key": "cp_hk_twitter",
+        "seed": null,
+        "max_nodes": null,
+        "induced": true,
+        "zero_filter": "any(x != 0)",
+        "isolates_retained": true
+      },
+      "source_data": [
+        {
+          "role": "original source graph",
+          "path": "cp_hk_twitter/graphs/retweet_graph.pt",
+          "format": "PyTorch"
+        }
+      ],
+      "default_eval": false
+    },
+    {
+      "canonical_name": "facebook-page-reference-nonzero",
+      "dataset_key": "facebook_page_reference_nonzero_features_v1",
+      "kind": "derived",
+      "relative_path": "graph_views/nonzero_features_v1/facebook_page_reference/graph.pt",
+      "metadata_path": "graph_views/nonzero_features_v1/facebook_page_reference/metadata.json",
+      "artifact_size_bytes": null,
+      "artifact_size_gb": null,
+      "statistics": {
+        "nodes": null,
+        "edges": null,
+        "isolated_nodes": null
+      },
+      "features": {
+        "node_feature_dim": 768,
+        "node_features": "Exact nonzero source feature rows; induced graph; unnormalized",
+        "edge_features": [
+          "n_reference_posts",
+          "n_content_reference_posts"
+        ]
+      },
+      "labels": {
+        "type": "multi-target node classification and regression",
+        "labeled_nodes": null
+      },
+      "tasks": {
+        "supported": [],
+        "unavailable": [],
+        "details": {
+          "status": "Planned; source capabilities await filtered-artifact verification"
+        }
+      },
+      "construction": {
+        "script": "scripts/graph_construction/nonzero_feature_views.py",
+        "status": "planned",
+        "source_dataset_key": "facebook_page_reference",
+        "seed": null,
+        "max_nodes": null,
+        "induced": true,
+        "zero_filter": "any(x != 0)",
+        "isolates_retained": true
+      },
+      "source_data": [
+        {
+          "role": "original source graph",
+          "path": "facebook_page_reference/graphs/page_reference_graph.pt",
+          "format": "PyTorch"
+        }
+      ],
+      "default_eval": false
     }
   ]
 }
