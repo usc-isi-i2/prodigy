@@ -28,3 +28,25 @@ Run from its dedicated Tucker worktree in tmux:
 
 Model state, optimizer, runtime RNG, graph identity and code revision are saved.
 Exact training resume is not implemented; partial runs refuse overwrite.
+
+## LP stages
+
+`mini_lp` runs `--view node` then `--view node_neighbors` (fanout 10).
+Both share a fresh unique-undirected nonself edge partition: 70% train, 15%
+early-stopping validation, 15% final heldout. Exact CUDA negative sampling rejects
+self-loops and all original edges in either direction, including both heldouts.
+Positive/negative training ratio is 1:5. Features, edge lists, and known-edge
+membership keys stay on GPU. Same 256-dimensional NodeMLP, dot-product score,
+AdamW .0005 and prior clipping/decay/batch/early-stopping settings.
+Neighbor means use a fixed sample of up to ten distinct neighbors, without
+replacement, from the 70% training topology only. Isolates receive zero context.
+The target graph uses its own training-only context at evaluation.
+
+All nine targets use the canonical pair evaluator with 2000 final-heldout
+positives and 2000 degree-matched negatives. The latter reject train, source
+validation and final-test edges. A fixed 30% pair subset selects calibration;
+raw-dot AUC/BCE are reported on the remaining 70%. Final evaluation edges never
+select the source checkpoint. Predictions and metric JSONs retain provenance.
+Fresh caches include graph identity, seed and split protocol and are shared only
+between the two LP views. These redesigned splits and exact negatives mean the
+results are not a rerun of the old matrix under identical data semantics.
