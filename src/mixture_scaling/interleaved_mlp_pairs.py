@@ -1,5 +1,6 @@
 """Equal-update interleaved LP pairs, jointly selected on source validation."""
 import argparse
+import copy
 import csv
 import fcntl
 import itertools
@@ -54,11 +55,24 @@ def load_graph(source,config,seed,device):
                 sampler=lp.ExactNonedges(len(data['x']),data['known_keys'].to(device)),receipt=data['receipt'])
 
 
+def ranking_distillation(student,teacher,n_positive):
+    # Each positive is compared with five sampled nonedges; preserve teacher preferences.
+    def differences(scores):
+        return scores[:n_positive,None]-scores[n_positive:].reshape(n_positive,5)
+    target=torch.sigmoid(differences(teacher.detach()))
+    logits=differences(student)
+    entropy=F.binary_cross_entropy_with_logits(differences(teacher.detach()),target)
+    return F.binary_cross_entropy_with_logits(logits,target)-entropy
+
+
 def train_one(row,config,args,device):
     run_id,a,b=row;run_dir=Path(args.root)/'node_neighbors/lp'/run_id
     expected=dict(sources=[a,b],seed=args.seed,schedule='alternating_equal_updates',initialization='fresh',
                   max_steps=args.max_steps,validation_interval=args.validation_interval,patience=args.patience,
                   min_delta=1e-4,minimum_steps=2500)
+    warm_start=getattr(args,'warm_start',None);rank_weight=getattr(args,'rank_weight',0.)
+    if warm_start:
+        expected.update(initialization='singleton_checkpoint',checkpoint=identity(warm_start),rank_weight=rank_weight,optimizer_policy='preserve')
     if (run_dir/'summary.json').exists():
         summary=json.loads((run_dir/'summary.json').read_text())
         if summary['run_protocol']!=expected:raise ValueError(f'protocol mismatch: {run_dir}')
@@ -67,6 +81,14 @@ def train_one(row,config,args,device):
     started=time.monotonic();graphs=[load_graph(s,config,args.seed,device) for s in (a,b)]
     seed_everything(args.seed);model=BiasMLP('node_neighbors').to(device)
     optimizer=torch.optim.AdamW(model.parameters(),lr=.0005,weight_decay=1e-5)
+    teacher=None
+    if warm_start:
+        checkpoint=torch.load(warm_start,map_location='cpu',weights_only=False)
+        if checkpoint['metadata']['sources']!=[a] or checkpoint['metadata']['seed']!=args.seed:
+            raise ValueError('initial checkpoint must match first source and seed')
+        model.load_state_dict(checkpoint['model']);optimizer.load_state_dict(checkpoint['optimizer'])
+        if rank_weight:
+            teacher=copy.deepcopy(model).eval().requires_grad_(False)
     for g in graphs:
         g.update(generator=torch.Generator(device=device).manual_seed(args.seed+49979687),
                  order_generator=torch.Generator(device=device).manual_seed(args.seed+7919),offset=g['positive'].shape[1])
@@ -82,20 +104,35 @@ def train_one(row,config,args,device):
     best=reference=float('inf');best_step=stale=0;reason='safety_cap'
     print(json.dumps(dict(starting=run_id)),flush=True)
     with tracked_run(run_dir,metadata,args) as (run,log):
+        if warm_start:
+            initial=[validate(model,g,args.seed) for g in graphs]
+            best=reference=sum(r['bce'] for r in initial)/2
+            save_checkpoint(run_dir/'best.pt',model,optimizer,0,metadata)
+            atomic_json(run_dir/'validation'/'step_0.json',dict(mean_bce=best,per_source=dict(zip((a,b),initial))))
+            log(0,{'validation/loss':best,'validation/loss_A':initial[0]['bce'],'validation/loss_B':initial[1]['bce']})
+        rank_total=0.;rank_count=0
         for step in range(1,args.max_steps+1):
             index=(step-1)%2;g=graphs[index];positive=g['positive']
             if g['offset']>=positive.shape[1]:
                 g['order']=torch.randperm(positive.shape[1],generator=g['order_generator'],device=device);g['offset']=0
             pos=positive[:,g['order'][g['offset']:g['offset']+1024]];g['offset']+=pos.shape[1]
             pairs,y=lp.pair_batch(pos,g['sampler'],g['generator'])
-            optimizer.zero_grad(set_to_none=True);loss=F.binary_cross_entropy_with_logits(score(model,g['x'],pairs),y)
+            optimizer.zero_grad(set_to_none=True);logits=score(model,g['x'],pairs)
+            task_loss=F.binary_cross_entropy_with_logits(logits,y);loss=task_loss
+            if teacher is not None and index==0:
+                with torch.no_grad():teacher_scores=score(teacher,g['x'],pairs)
+                penalty=ranking_distillation(logits,teacher_scores,pos.shape[1])
+                loss=loss+rank_weight*penalty
+                rank_total+=float(penalty.detach());rank_count+=1
             loss.backward();torch.nn.utils.clip_grad_norm_(model.parameters(),1.);optimizer.step()
-            totals[index]+=loss.detach();counts[index]+=1;updates[index]+=1
+            totals[index]+=task_loss.detach();counts[index]+=1;updates[index]+=1
             if step%args.log_interval==0 or step==args.max_steps:
                 values=[float(totals[i]/counts[i]) for i in (0,1)]
                 if not all(torch.isfinite(torch.tensor(values))):raise FloatingPointError('nonfinite loss')
                 log(step,{'train/loss':sum(values)/2,'train/loss_A':values[0],'train/loss_B':values[1],
                           'train/updates_A':updates[0],'train/updates_B':updates[1],'train/elapsed_seconds':time.monotonic()-started})
+                if rank_count:log(step,{'train/ranking_kl':rank_total/rank_count,'train/rank_weight':rank_weight})
+                rank_total=0.;rank_count=0
                 totals.zero_();counts=[0,0]
             if step%args.validation_interval==0 or step==args.max_steps:
                 reports=[validate(model,g,args.seed) for g in graphs];value=sum(r['bce'] for r in reports)/2
