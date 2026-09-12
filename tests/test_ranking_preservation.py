@@ -38,3 +38,29 @@ class RankingTests(unittest.TestCase):
     self.assertEqual(json.loads((p/'summary.json').read_text())['updates_per_source'],{'A':2,'B':2})
     self.assertEqual(any('train/ranking_kl' in x for _,x in logged),weight==1)
 if __name__=='__main__':unittest.main()
+
+class RepeatTests(unittest.TestCase):
+ def test_repeat_plan(self):
+  from mixture_scaling.ranking_preservation_repeats import rows
+  plan=rows();self.assertEqual(len(plan),12);self.assertEqual(len({r[0] for r in plan}),12)
+  for seed in (1,2,3):
+   selected=[r for r in plan if r[4]==seed];self.assertEqual(len(selected),4)
+   for a,b in {(r[1],r[2]) for r in selected}:self.assertEqual({r[3] for r in selected if r[1:3]==(a,b)},{0,1})
+ def test_continuation_seed_changes_sampling_not_graph_or_validation(self):
+  with tempfile.TemporaryDirectory() as tmp:
+   model=m.BiasMLP('node_neighbors');opt=torch.optim.AdamW(model.parameters(),lr=.0005,weight_decay=1e-5)
+   cp=Path(tmp)/'source.pt';torch.save(dict(model=model.state_dict(),optimizer=opt.state_dict(),metadata=dict(sources=['A'],seed=0)),cp)
+   captured=[];loaded=[];validation_seeds=[]
+   def load(source,config,seed,device):
+    self.assertEqual(seed,0)
+    g=dict(x=torch.ones(4,1536),positive=torch.tensor([[0,1],[1,2]]),validation=torch.tensor([[0],[1]]),sampler=m.lp.ExactNonedges(4,torch.tensor([1,6])),receipt={});loaded.append(g);return g
+   def validate(model,g,seed):validation_seeds.append(seed);return dict(bce=.3,roc_auc=.8)
+   @contextlib.contextmanager
+   def tracking(*args):yield SimpleNamespace(summary={}),lambda *args:None
+   for seed in (1,2):
+    args=SimpleNamespace(root=tmp,seed=0,continuation_seed=seed,max_steps=2,validation_interval=2,patience=3,log_interval=2,warm_start=str(cp),rank_weight=0)
+    with patch.object(m,'load_graph',side_effect=load),patch.object(m,'tracked_run',side_effect=tracking),patch.object(m,'validate',side_effect=validate):m.train_one((f'pair{seed}','A','B'),{'protocol':{}},args,torch.device('cpu'))
+    for g in loaded[-2:]:
+     self.assertEqual(g['generator'].initial_seed(),seed+49979687);self.assertEqual(g['order_generator'].initial_seed(),seed+7919)
+    s=json.loads((Path(tmp)/f'node_neighbors/lp/pair{seed}/summary.json').read_text());self.assertEqual(s['run_protocol']['continuation_seed'],seed);self.assertEqual(s['seed'],0)
+   self.assertTrue(all(s==0 for s in validation_seeds))

@@ -71,6 +71,8 @@ def train_one(row,config,args,device):
                   max_steps=args.max_steps,validation_interval=args.validation_interval,patience=args.patience,
                   min_delta=1e-4,minimum_steps=2500)
     warm_start=getattr(args,'warm_start',None);rank_weight=getattr(args,'rank_weight',0.)
+    continuation_seed=getattr(args,'continuation_seed',args.seed)
+    if hasattr(args,'continuation_seed'):expected['continuation_seed']=continuation_seed
     if warm_start:
         expected.update(initialization='singleton_checkpoint',checkpoint=identity(warm_start),rank_weight=rank_weight,optimizer_policy='preserve')
     if (run_dir/'summary.json').exists():
@@ -79,7 +81,7 @@ def train_one(row,config,args,device):
         return
     if run_dir.exists():raise FileExistsError(f'partial run: {run_dir}')
     started=time.monotonic();graphs=[load_graph(s,config,args.seed,device) for s in (a,b)]
-    seed_everything(args.seed);model=BiasMLP('node_neighbors').to(device)
+    seed_everything(continuation_seed);model=BiasMLP('node_neighbors').to(device)
     optimizer=torch.optim.AdamW(model.parameters(),lr=.0005,weight_decay=1e-5)
     teacher=None
     if warm_start:
@@ -90,8 +92,8 @@ def train_one(row,config,args,device):
         if rank_weight:
             teacher=copy.deepcopy(model).eval().requires_grad_(False)
     for g in graphs:
-        g.update(generator=torch.Generator(device=device).manual_seed(args.seed+49979687),
-                 order_generator=torch.Generator(device=device).manual_seed(args.seed+7919),offset=g['positive'].shape[1])
+        g.update(generator=torch.Generator(device=device).manual_seed(continuation_seed+49979687),
+                 order_generator=torch.Generator(device=device).manual_seed(continuation_seed+7919),offset=g['positive'].shape[1])
     metadata=dict(run_id=run_id,sources=[a,b],seed=args.seed,objective='lp',architecture='node_mlp',view='node_neighbors',
         run_protocol=expected,protocol=dict(config['protocol'],input_dim=1536,hidden_dim=256,output_dim=256,dropout=0.,
             fanout=10,max_steps=args.max_steps,validation_interval=args.validation_interval,learning_rate=.0005),
