@@ -55,6 +55,8 @@ for repeat in range(a.repeats):
                    csr_load_s=indexed-loaded, sharing_s=shared-indexed,
                    first_210_subgraphs_s=accessed-shared, total_s=accessed-start,
                    sample_sha256=signature)
+        row['rss_kib_after_access'] = int(next(line.split()[1] for line in
+            Path('/proc/self/status').read_text().splitlines() if line.startswith('VmRSS:')))
         rows.append(row)
         print(json.dumps(row), flush=True)
         a.output.write_text(json.dumps(dict(torch=torch.__version__, graph=str(a.graph),
