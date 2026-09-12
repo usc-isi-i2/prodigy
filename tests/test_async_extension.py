@@ -38,13 +38,13 @@ def tracking(*args):
     yield SimpleNamespace(summary={}), lambda *args: None
 
 
-def make_parent(root):
+def make_parent(root, seed=0):
     """A terminal full state with real Adam moments and partial sampler offsets."""
     run = root / 'node_neighbors/lp/async_kd'
     run.mkdir(parents=True)
     graphs = [graph(source) for source in m.ac.SOURCES]
-    m.ac.initialize_sampling(graphs, 0, torch.device('cpu'))
-    m.ac.seed_everything(0)
+    m.ac.initialize_sampling(graphs, seed, torch.device('cpu'))
+    m.ac.seed_everything(seed)
     model = TinyModel()
     optimizer = torch.optim.AdamW(model.parameters(), lr=.0005, weight_decay=1e-5)
     runtime = m.ac.empty_runtime()
@@ -78,12 +78,16 @@ def make_parent(root):
     checkpoint = m.ac.snapshot(model, optimizer, graphs, runtime, {})
     m.ac.save(start_path, checkpoint)
     m.ac.save(run / 'endpoint.pt', checkpoint)
-    summary = dict(seed=0, sources=list(m.ac.SOURCES), surviving_counts=copy.deepcopy(runtime['counts']), logical_step=4,
+    summary = dict(status='complete', seed=seed, training_seed=seed, data_seed=0, probe_seed=0,
+                   stop_reason='all_tasks_converged', sources=list(m.ac.SOURCES),
+                   surviving_counts=copy.deepcopy(runtime['counts']), logical_step=4,
                    physical_steps=6, graph_split_receipts={s: g['receipt'] for s, g in zip(m.ac.SOURCES, graphs)},
                    events=[dict(teacher_checkpoint=str(start_path))], endpoint=report)
     (run / 'summary.json').write_text(json.dumps(summary))
     rows = [dict(logical_step=4, checkpoint=str(start_path), **report)]
     # Create one discarded parent patience-tail checkpoint for exact replay checking.
+    runtime['converged'] = [False, True]
+    runtime['teacher_paths'][0] = None
     for index in (0, 1):
         pairs, labels, npositive = m.ac.next_batch(graphs[index])
         with torch.no_grad():

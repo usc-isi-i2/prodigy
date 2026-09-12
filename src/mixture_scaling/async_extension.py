@@ -62,10 +62,14 @@ def increment(counts, index, npos, kd):
 def load_start(parent):
     run = Path(parent) / 'node_neighbors/lp/async_kd'
     summary = json.loads((run / 'summary.json').read_text())
-    path = Path(summary['events'][-1]['teacher_checkpoint'])
+    if summary.get('stop_reason') not in (None, 'all_tasks_converged'):
+        raise ValueError('continuation requires an all-converged parent, not a capped run')
+    selected = torch.load(summary['events'][-1]['teacher_checkpoint'], map_location='cpu', weights_only=False)
+    path = run / 'endpoint.pt'
     ck = torch.load(path, map_location='cpu', weights_only=False)
-    endpoint = torch.load(run / 'endpoint.pt', map_location='cpu', weights_only=False)
-    if not model_match(ck['model'], endpoint['model'], tolerance=0)['matches']:
+    # The terminal state retains both teacher declarations even if their order
+    # differs from seed0; a raw historical best snapshot need not contain them.
+    if not model_match(selected['model'], ck['model'], tolerance=0)['matches']:
         raise ValueError('start does not match the declared parent endpoint')
     if ck['runtime']['counts'] != summary['surviving_counts'] or ck['step'] != summary['logical_step']:
         raise ValueError('start exposure differs from parent endpoint')
@@ -87,7 +91,8 @@ def train(args, device):
     parent, original, start_path, ck = load_start(args.parent_root)
     config = ac.load_config(args.config)
     ac.base.preflight(config)
-    graphs = [ac.base.load_graph(s, config, args.seed, device) for s in ac.SOURCES]
+    data_seed = ac.optional_seed(args, 'data_seed', original.get('data_seed', original['seed']))
+    graphs = [ac.base.load_graph(s, config, data_seed, device) for s in ac.SOURCES]
     if args.seed != original['seed']:
         raise ValueError('continuation seed must match parent')
     for source, graph in zip(ac.SOURCES, graphs):
@@ -105,7 +110,8 @@ def train(args, device):
     runtime['converged'] = [False, args.arm == 'kd_extended']
     runtime['teacher_paths'] = [None, facebook_teacher if args.arm == 'kd_extended' else None]
     teacher = ac.frozen_teacher(facebook_teacher, device) if args.arm == 'kd_extended' else None
-    metadata = dict(run_id=run_id, sources=list(ac.SOURCES), seed=args.seed, view='node_neighbors',
+    metadata = dict(run_id=run_id, sources=list(ac.SOURCES), seed=args.seed, training_seed=args.seed,
+                    data_seed=data_seed, probe_seed=original.get('probe_seed',original['seed']), view='node_neighbors',
                     architecture='node_mlp', objective='lp',
                     code_revision=subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
                     start_checkpoint=str(start_path), start_sha256=sha256(start_path),
@@ -126,6 +132,7 @@ def train(args, device):
     physical_counts = [ac.empty_counts() for _ in ac.SOURCES]
     original_rows = {r['logical_step']: r for r in read_history(parent / 'history.jsonl')}
     replay_checks = []
+    replay_not_applicable = []
     additional = 0
     started = time.monotonic()
     with ac.tracked_run(run_dir, metadata, args) as (wandb, log):
@@ -143,12 +150,19 @@ def train(args, device):
             if args.arm == 'kd_extended' and kd_weight == 1. and additional and runtime['logical_step'] in original_rows:
                 old = original_rows[runtime['logical_step']]
                 prior = torch.load(old['checkpoint'], map_location='cpu', weights_only=False)
-                check = model_match(saved['model'], prior['model'], tolerance=0)
-                check.update(additional_step=additional, logical_step=runtime['logical_step'],
-                             measurements_identical=all(report[k] == old[k] for k in report))
-                replay_checks.append(check)
-                if not check['matches'] or not check['measurements_identical']:
-                    raise ValueError(f'prior KD replay failed: {check}')
+                prior_state = prior['runtime']
+                same_objective = (prior_state['converged'] == [False, True]
+                                  and prior_state['teacher_paths'][1] == facebook_teacher)
+                if same_objective:
+                    check = model_match(saved['model'], prior['model'], tolerance=0)
+                    check.update(additional_step=additional, logical_step=runtime['logical_step'],
+                                 measurements_identical=all(report[k] == old[k] for k in report))
+                    replay_checks.append(check)
+                    if not check['matches'] or not check['measurements_identical']:
+                        raise ValueError(f'prior KD replay failed: {check}')
+                else:
+                    replay_not_applicable.append(dict(additional_step=additional,
+                        reason='parent trajectory has different active objectives or Facebook teacher'))
             fields = {f'validation/{s}/{k}': v for s, measurement in zip(ac.SOURCES, report['validation']) for k,v in measurement.items()}
             log(additional, fields)
             print(json.dumps(dict(arm=run_id, additional_step=additional, counts=runtime['counts'], **report)), flush=True)
@@ -186,7 +200,8 @@ def train(args, device):
                        surviving_counts=runtime['counts'], physical_counts=physical_counts, endpoint=last,
                        teacher_forward_batches=physical_counts[1]['kd_updates'],
                        teacher_forward_pairs=physical_counts[1]['kd_positive_examples'] + physical_counts[1]['kd_negative_examples'],
-                       elapsed_seconds=time.monotonic()-started, replay_checks=replay_checks)
+                       elapsed_seconds=time.monotonic()-started, replay_checks=replay_checks,
+                       replay_not_applicable=replay_not_applicable)
         atomic_json(run_dir / 'summary.json', summary)
         wandb.summary.update(dict(additional_steps=additional, stop_reason='fixed_horizon'))
 
@@ -280,6 +295,7 @@ def main():
     parser.add_argument('--log-interval', type=int, default=100)
     parser.add_argument('--device', type=int, choices=range(4), default=0)
     parser.add_argument('--seed', type=int, default=0)
+    parser.add_argument('--data-seed', type=int)
     parser.add_argument('--config', default='configs/nonzero_mini_transfer.yaml')
     parser.add_argument('--wandb-mode', default='offline')
     parser.add_argument('--wandb-project', default='nonzero-mini-transfer')

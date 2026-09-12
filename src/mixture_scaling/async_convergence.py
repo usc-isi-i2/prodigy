@@ -14,6 +14,10 @@ from .ladder_tracking import tracked_run
 SOURCES=('ukr_rus_twitter','facebook_page_reference')
 ARMS=('extended_bce','async_kd','rewind_bce')
 
+def optional_seed(args,name,default):
+    value=getattr(args,name,None)
+    return default if value is None else value
+
 def cpu_clone(value):
     if torch.is_tensor(value):return value.detach().cpu().clone()
     if isinstance(value,dict):return {k:cpu_clone(v) for k,v in value.items()}
@@ -107,15 +111,18 @@ def train(args,device):
     if run_dir.exists():raise FileExistsError(run_dir)
     if args.arm=='rewind_bce' and not (root/'first_rewind.pt').exists():raise FileNotFoundError('KD arm has not produced a first rewind')
     config=load_config(args.config);base.preflight(config)
-    graphs=[base.load_graph(s,config,args.seed,device) for s in SOURCES]
+    data_seed=optional_seed(args,'data_seed',args.seed)
+    probe_seed=optional_seed(args,'probe_seed',args.seed)
+    graphs=[base.load_graph(s,config,data_seed,device) for s in SOURCES]
     initialize_sampling(graphs,args.seed,device)
     validation=[diagnostic.validation_pairs(g) for g in graphs]
-    probes=[fixed_probe(g,813719+args.seed+1009*i) for i,g in enumerate(graphs)]
+    probes=[fixed_probe(g,813719+probe_seed+1009*i) for i,g in enumerate(graphs)]
     seed_everything(args.seed)
     model=base.BiasMLP('node_neighbors').to(device);model.train()
     opt=torch.optim.AdamW(model.parameters(),lr=args.learning_rate,weight_decay=1e-5)
     runtime=empty_runtime();physical=0;events=[];teachers={};started=time.monotonic()
-    metadata=dict(run_id=args.arm,sources=list(SOURCES),seed=args.seed,view='node_neighbors',
+    metadata=dict(run_id=args.arm,sources=list(SOURCES),seed=args.seed,training_seed=args.seed,
+                  data_seed=data_seed,probe_seed=probe_seed,view='node_neighbors',
                   architecture='node_mlp',objective='lp',code_revision=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
                   protocol=dict(learning_rate=args.learning_rate,max_physical_steps=args.max_steps,max_logical_steps=args.max_steps,
                                 validation_interval=args.validation_interval,patience=args.patience,min_delta_auc=args.min_delta,
@@ -272,6 +279,7 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('phase',choices=['plan','train','eval','probes','prepare_eval','aggregate'])
     p.add_argument('--root',required=True);p.add_argument('--arm',choices=ARMS,default='extended_bce');p.add_argument('--device',type=int,choices=range(4),default=0)
     p.add_argument('--seed',type=int,default=0);p.add_argument('--config',default='configs/nonzero_mini_transfer.yaml')
+    p.add_argument('--data-seed',type=int);p.add_argument('--probe-seed',type=int)
     p.add_argument('--max-steps',type=int,default=100000);p.add_argument('--validation-interval',type=int,default=2000);p.add_argument('--patience',type=int,default=3)
     p.add_argument('--min-delta',type=float,default=.0001);p.add_argument('--minimum-steps',type=int,default=2500)
     p.add_argument('--learning-rate',type=float,default=.0005);p.add_argument('--log-interval',type=int,default=100)
