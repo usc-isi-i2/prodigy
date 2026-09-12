@@ -71,6 +71,10 @@ def train_one(row,config,args,device):
                   max_steps=args.max_steps,validation_interval=args.validation_interval,patience=args.patience,
                   min_delta=1e-4,minimum_steps=2500)
     warm_start=getattr(args,'warm_start',None);rank_weight=getattr(args,'rank_weight',0.)
+    continuation_lr=getattr(args,'continuation_lr',None)
+    if continuation_lr is not None:
+        if not (0 < continuation_lr < float('inf')):raise ValueError('continuation_lr must be finite and positive')
+        expected['continuation_lr']=continuation_lr
     continuation_seed=getattr(args,'continuation_seed',args.seed)
     if hasattr(args,'continuation_seed'):expected['continuation_seed']=continuation_seed
     if warm_start:
@@ -91,12 +95,14 @@ def train_one(row,config,args,device):
         model.load_state_dict(checkpoint['model']);optimizer.load_state_dict(checkpoint['optimizer'])
         if rank_weight:
             teacher=copy.deepcopy(model).eval().requires_grad_(False)
+    if continuation_lr is not None:
+        for group in optimizer.param_groups:group['lr']=continuation_lr
     for g in graphs:
         g.update(generator=torch.Generator(device=device).manual_seed(continuation_seed+49979687),
                  order_generator=torch.Generator(device=device).manual_seed(continuation_seed+7919),offset=g['positive'].shape[1])
     metadata=dict(run_id=run_id,sources=[a,b],seed=args.seed,objective='lp',architecture='node_mlp',view='node_neighbors',
         run_protocol=expected,protocol=dict(config['protocol'],input_dim=1536,hidden_dim=256,output_dim=256,dropout=0.,
-            fanout=10,max_steps=args.max_steps,validation_interval=args.validation_interval,learning_rate=.0005),
+            fanout=10,max_steps=args.max_steps,validation_interval=args.validation_interval,learning_rate=optimizer.param_groups[0]['lr']),
         graph_split_receipts={s:g['receipt'] for s,g in zip((a,b),graphs)},
         checkpoint_selection='minimum equal-weight mean of A and B source validation BCE',
         optimizer_policy='one shared AdamW, no resets',context='fixed up-to-10 neighbor mean, context disjoint from supervision',

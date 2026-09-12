@@ -19,7 +19,7 @@ class RankingTests(unittest.TestCase):
   self.assertEqual(len(rows()),4)
   for a,b in {(a,b) for _,a,b,w in rows()}:self.assertEqual({w for _,x,y,w in rows() if (x,y)==(a,b)},{0,1})
  def test_warm_start_preserves_optimizer_and_step_zero_candidate(self):
-  for weight in (0,1):
+  for weight,lr in ((0,None),(1,None),(0,5e-5),(1,5e-5)):
    with tempfile.TemporaryDirectory() as tmp:
     model=m.BiasMLP('node_neighbors');opt=torch.optim.AdamW(model.parameters(),lr=.0005,weight_decay=1e-5)
     for param in model.parameters():param.grad=torch.ones_like(param)
@@ -29,10 +29,20 @@ class RankingTests(unittest.TestCase):
     @contextlib.contextmanager
     def tracking(*args):yield SimpleNamespace(summary={}),lambda step,data:logged.append((step,data))
     args=SimpleNamespace(root=tmp,seed=0,max_steps=4,validation_interval=2,patience=3,log_interval=2,warm_start=str(cp),rank_weight=weight)
+    args.continuation_lr=lr
     reports=[dict(bce=v,roc_auc=.8) for v in [.2,.2,.3,.3,.4,.4]]
     with patch.object(m,'load_graph',side_effect=load),patch.object(m,'tracked_run',side_effect=tracking),patch.object(m,'validate',side_effect=reports):m.train_one(('pair','A','B'),{'protocol':{}},args,torch.device('cpu'))
     p=Path(tmp)/'node_neighbors/lp/pair';best=torch.load(p/'best.pt',weights_only=False);last=torch.load(p/'latest.pt',weights_only=False)
     self.assertEqual(best['step'],0)
+    self.assertEqual(best['optimizer']['param_groups'][0]['lr'],lr or .0005)
+    self.assertEqual(last['optimizer']['param_groups'][0]['lr'],lr or .0005)
+    self.assertEqual(best['metadata']['protocol']['learning_rate'],lr or .0005)
+    for key,state in opt.state_dict()['state'].items():
+     for field,value in state.items():self.assertTrue(torch.equal(value,best['optimizer']['state'][key][field]))
+    if lr is not None:
+     self.assertEqual(best['metadata']['run_protocol']['continuation_lr'],lr)
+     args.continuation_lr=lr*2
+     with self.assertRaisesRegex(ValueError,'protocol mismatch'):m.train_one(('pair','A','B'),{'protocol':{}},args,torch.device('cpu'))
     for name,tensor in model.state_dict().items():self.assertTrue(torch.equal(tensor,best['model'][name]))
     for state in last['optimizer']['state'].values():self.assertEqual(float(state['step']),5.)
     self.assertEqual(json.loads((p/'summary.json').read_text())['updates_per_source'],{'A':2,'B':2})

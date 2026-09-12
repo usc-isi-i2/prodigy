@@ -1,5 +1,5 @@
 """Matched warm-start interleaving with/without source-A ranking distillation."""
-import argparse,csv,fcntl,json
+import argparse,csv,fcntl,json,math
 from pathlib import Path
 import torch
 from . import interleaved_mlp_pairs as base
@@ -18,11 +18,13 @@ def main():
     p.add_argument('--config',default='configs/nonzero_mini_transfer.yaml');p.add_argument('--device',type=int,choices=range(4),default=0);p.add_argument('--seed',type=int,default=0)
     p.add_argument('--max-steps',type=int,default=100000);p.add_argument('--validation-interval',type=int,default=2000);p.add_argument('--patience',type=int,default=3);p.add_argument('--log-interval',type=int,default=100)
     p.add_argument('--wandb-mode',default='offline');p.add_argument('--wandb-project',default='nonzero-mini-transfer');p.add_argument('--wandb-group',default='ranking-preservation')
+    p.add_argument('--continuation-lr',type=float,default=None,help='override LR after restoring AdamW state')
     p.add_argument('--prodigy-root',default='/dataMeR1/phil/gfm/prodigy-walk-mini-pilot');args=p.parse_args()
     if any(v<=0 or v%2 for v in (args.max_steps,args.validation_interval,args.log_interval)) or args.patience<1:p.error('positive even step counts and positive patience required')
+    if args.continuation_lr is not None and (not math.isfinite(args.continuation_lr) or args.continuation_lr<=0):p.error('continuation LR must be finite and positive')
     root=Path(args.root)
     if args.phase=='plan':
-        print(json.dumps(dict(inputs=base.preflight(load_config(args.config)),runs=[dict(run_id=r,source_A=a,source_B=b,weight=w,checkpoint=identity(SOURCE_ROOT/f'ss_{a}'/'best.pt')) for r,a,b,w in rows()]),indent=2));return
+        print(json.dumps(dict(continuation_lr=args.continuation_lr,inputs=base.preflight(load_config(args.config)),runs=[dict(run_id=r,source_A=a,source_B=b,weight=w,checkpoint=identity(SOURCE_ROOT/f'ss_{a}'/'best.pt')) for r,a,b,w in rows()]),indent=2));return
     if args.phase=='aggregate':
         results=[]
         for run_id,a,b,w in rows():
