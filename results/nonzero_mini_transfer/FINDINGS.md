@@ -1,3 +1,5 @@
+> LP evaluation has since changed to uniform negatives at 1:5. See [UNIFORM_EVAL.md](UNIFORM_EVAL.md) for current matrices. Numbers below retain the historical evaluation protocol.
+
 # Nonzero-mini transfer matrices
 
 **Update:** The overlapping-context neighbor run below is historical. The active

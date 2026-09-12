@@ -1,3 +1,5 @@
+> LP evaluation has since changed to uniform negatives at 1:5. See [UNIFORM_EVAL.md](UNIFORM_EVAL.md) for current matrices. Numbers below retain the historical evaluation protocol.
+
 # Corrected disjoint-context neighbor LP
 
 Nine corrected models and all 81 transfer cells are complete. All models met
