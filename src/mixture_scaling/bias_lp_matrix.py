@@ -39,7 +39,7 @@ def training(args,device):
 @torch.no_grad()
 def evaluate(args,device):
     pair_module=load_pair_module(Path(args.prodigy_root));root=Path(args.root)
-    for target in SOURCE_ORDER[args.device::4]:
+    for target in getattr(args,'targets',SOURCE_ORDER)[args.device::4]:
         data=torch.load(REFERENCE/'_cache'/f'{target}.pt',map_location='cpu',weights_only=False)
         ref=PAIRS/f'ss_{SOURCE_ORDER[0]}__to__{target}.scores.npz';a=np.load(ref)
         pairs=pair_module.PairSet(u=a['u'],v=a['v'],label=a['labels'],negative_kind='uniform_both_endpoints_exact_nonedge');nodes=pairs.nodes()
