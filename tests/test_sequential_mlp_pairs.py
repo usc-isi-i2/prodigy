@@ -21,17 +21,21 @@ class SequentialTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             cp=Path(tmp)/'first.pt';model=BiasMLP('node_neighbors')
             with torch.no_grad():model.decoder_bias.fill_(-3.25)
-            torch.save(dict(model=model.state_dict(),step=4000,metadata=dict(sources=['A'])),cp)
+            optimizer=torch.optim.AdamW(model.parameters(),lr=.0005,weight_decay=1e-5)
+            for parameter in model.parameters():parameter.grad=torch.ones_like(parameter)
+            optimizer.step()
+            initial_bias=float(model.decoder_bias)
+            torch.save(dict(model=model.state_dict(),optimizer=optimizer.state_dict(),step=4000,metadata=dict(sources=['A'])),cp)
             edges=torch.tensor([[0,1],[1,2]])
             data=dict(x=torch.randn(4,1536),known_keys=torch.tensor([1,6]),receipt={})
             data.update({k:edges for k in ['train','context','supervision','validation','test']})
-            args=SimpleNamespace(root=tmp,run_id='A_then_B',view='node_neighbors',warm_start=str(cp),seed=0,max_steps=1,validation_interval=1,patience=3,log_interval=1)
+            args=SimpleNamespace(root=tmp,run_id='A_then_B',view='node_neighbors',warm_start=str(cp),optimizer_policy='preserve',seed=0,max_steps=1,validation_interval=1,patience=3,log_interval=1)
             captured=[]
             def make_model(view,device):
                 m=BiasMLP(view);captured.append(m);return m
             def scoring(m,x,pairs):
                 self.assertTrue(torch.equal(m.network[0].weight,model.network[0].weight))
-                self.assertEqual(float(m.decoder_bias),-3.25)
+                self.assertEqual(float(m.decoder_bias),initial_bias)
                 return lp_original_score(m,x,pairs)+m.decoder_bias
             lp_original_score=lp.score
             @contextlib.contextmanager
@@ -42,6 +46,8 @@ class SequentialTests(unittest.TestCase):
             self.assertEqual(result['metadata']['sources'],['A','B'])
             self.assertEqual(result['metadata']['warm_start']['step'],4000)
             self.assertEqual(result['metadata']['stage'],2)
-            self.assertNotEqual(float(result['model']['decoder_bias']),-3.25)
+            self.assertNotEqual(float(result['model']['decoder_bias']),initial_bias)
+            self.assertEqual(result['metadata']['warm_start']['optimizer_policy'],'preserve')
+            for state in result['optimizer']['state'].values():self.assertEqual(float(state['step']),2.)
 
 if __name__=='__main__':unittest.main()

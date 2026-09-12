@@ -45,7 +45,7 @@ def train(args,device):
             run=Path(args.root)/'node_neighbors/lp'/args.run_id
             if (run/'summary.json').exists():
                 old=json.loads((run/'summary.json').read_text())
-                if old['warm_start']['checkpoint']!=row['checkpoint'] or old['seed']!=args.seed:
+                if old['warm_start']['checkpoint']!=row['checkpoint'] or old['seed']!=args.seed or old['warm_start']['optimizer_policy']!=args.optimizer_policy:
                     raise ValueError(f'completed run provenance mismatch: {run}')
                 continue
             lp.train(row['second'],config,args,device)
@@ -70,6 +70,7 @@ def main():
     p.add_argument('--max-steps',type=int,default=100000);p.add_argument('--validation-interval',type=int,default=2000);p.add_argument('--patience',type=int,default=3);p.add_argument('--log-interval',type=int,default=100)
     p.add_argument('--wandb-mode',default='offline');p.add_argument('--wandb-project',default='nonzero-mini-transfer');p.add_argument('--wandb-group',default='sequential-mlp-pairs')
     p.add_argument('--prodigy-root',default='/dataMeR1/phil/gfm/prodigy-walk-mini-pilot')
+    p.add_argument('--optimizer-policy',choices=['preserve','reset'],default='preserve')
     args=p.parse_args();args.view='node_neighbors';args.views=('node_neighbors',)
     args.model_rows=[(run_id,a+'->'+b) for run_id,a,b in pair_rows()]
     if args.phase=='plan':print(json.dumps(preflight(args),indent=2));return

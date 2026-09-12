@@ -141,8 +141,10 @@ def train(source,config,args,device):
         checkpoint=torch.load(warm_start,map_location='cpu',weights_only=False)
         model.load_state_dict(checkpoint['model'],strict=True)
         warm_metadata=dict(checkpoint=identity(warm_start),step=checkpoint['step'],
-            sources=checkpoint['metadata']['sources'],optimizer_policy='reset AdamW for second stage')
+            sources=checkpoint['metadata']['sources'],optimizer_policy=getattr(args,'optimizer_policy','reset'))
     optimizer=torch.optim.AdamW(model.parameters(),lr=.0005,weight_decay=1e-5)
+    if warm_start and getattr(args,'optimizer_policy','reset')=='preserve':
+        optimizer.load_state_dict(checkpoint['optimizer'])
     generator=torch.Generator(device=device).manual_seed(args.seed+49979687)
     order_generator=torch.Generator(device=device).manual_seed(args.seed+7919)
     protocol=dict(config['protocol'],input_dim=x.shape[1],max_steps=args.max_steps,
