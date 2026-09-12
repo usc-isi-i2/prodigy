@@ -3,6 +3,7 @@ import argparse
 import copy
 import hashlib
 import json
+import math
 import shutil
 import subprocess
 import time
@@ -43,6 +44,11 @@ def source_index(arm, additional_step):
     return additional_step % 2 if arm == 'kd_extended' else 0
 
 
+def weighted_task_loss(logits, y, teacher_logits=None, kd_weight=1.):
+    loss = ac.task_loss(logits, y, teacher_logits)
+    return loss * kd_weight if teacher_logits is not None and kd_weight != 1. else loss
+
+
 def increment(counts, index, npos, kd):
     item = counts[index]
     prefix = 'kd' if kd else 'supervised'
@@ -71,7 +77,11 @@ def load_start(parent):
 
 
 def train(args, device):
-    run_dir = Path(args.root) / 'node_neighbors/lp' / args.arm
+    run_id = getattr(args, 'run_id', None) or args.arm
+    kd_weight = getattr(args, 'kd_weight', 1.)
+    if not math.isfinite(kd_weight) or kd_weight <= 0:
+        raise ValueError('KD loss weight must be finite and positive')
+    run_dir = Path(args.root) / 'node_neighbors/lp' / run_id
     if run_dir.exists():
         raise FileExistsError(run_dir)
     parent, original, start_path, ck = load_start(args.parent_root)
@@ -95,7 +105,7 @@ def train(args, device):
     runtime['converged'] = [False, args.arm == 'kd_extended']
     runtime['teacher_paths'] = [None, facebook_teacher if args.arm == 'kd_extended' else None]
     teacher = ac.frozen_teacher(facebook_teacher, device) if args.arm == 'kd_extended' else None
-    metadata = dict(run_id=args.arm, sources=list(ac.SOURCES), seed=args.seed, view='node_neighbors',
+    metadata = dict(run_id=run_id, sources=list(ac.SOURCES), seed=args.seed, view='node_neighbors',
                     architecture='node_mlp', objective='lp',
                     code_revision=subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
                     start_checkpoint=str(start_path), start_sha256=sha256(start_path),
@@ -108,7 +118,7 @@ def train(args, device):
                                   schedule='alternating_1_to_1' if teacher is not None else 'ukraine_only',
                                   stopping='fixed added-update horizon; no early stopping or rewinds',
                                   learning_rate=opt.param_groups[0]['lr'], weight_decay=opt.param_groups[0]['weight_decay'],
-                                  optimizer='restored AdamW; no reset', kd_temperature=1., kd_weight=1. if teacher is not None else 0.,
+                                  optimizer='restored AdamW; no reset', kd_temperature=1., kd_weight=kd_weight if teacher is not None else 0.,
                                   selection='fixed endpoints plus source-validation constrained selection on common Ukraine exposure grid'),
                     prefix_physical_updates=original['physical_steps'], prefix_compute_shared=True)
     run_dir.mkdir(parents=True)
@@ -130,7 +140,7 @@ def train(args, device):
                        counts=copy.deepcopy(runtime['counts']), checkpoint=str(path), **report)
             with (run_dir / 'history.jsonl').open('a') as handle:
                 handle.write(json.dumps(row) + '\n')
-            if args.arm == 'kd_extended' and additional and runtime['logical_step'] in original_rows:
+            if args.arm == 'kd_extended' and kd_weight == 1. and additional and runtime['logical_step'] in original_rows:
                 old = original_rows[runtime['logical_step']]
                 prior = torch.load(old['checkpoint'], map_location='cpu', weights_only=False)
                 check = model_match(saved['model'], prior['model'], tolerance=0)
@@ -141,7 +151,7 @@ def train(args, device):
                     raise ValueError(f'prior KD replay failed: {check}')
             fields = {f'validation/{s}/{k}': v for s, measurement in zip(ac.SOURCES, report['validation']) for k,v in measurement.items()}
             log(additional, fields)
-            print(json.dumps(dict(arm=args.arm, additional_step=additional, counts=runtime['counts'], **report)), flush=True)
+            print(json.dumps(dict(arm=run_id, additional_step=additional, counts=runtime['counts'], **report)), flush=True)
             return report
 
         last = validate_save()
@@ -154,7 +164,7 @@ def train(args, device):
             if index == 1 and teacher is not None:
                 with torch.no_grad():
                     teacher_logits = ac.base.score(teacher, graphs[index]['x'], pairs)
-            loss = ac.task_loss(logits, y, teacher_logits)
+            loss = weighted_task_loss(logits, y, teacher_logits, kd_weight)
             if not torch.isfinite(loss):
                 raise FloatingPointError('nonfinite continuation loss')
             loss.backward()
@@ -165,7 +175,10 @@ def train(args, device):
             for counts in (runtime['counts'], physical_counts):
                 increment(counts, index, npos, teacher_logits is not None)
             if additional % args.log_interval == 0:
-                log(additional, {f'train/{ac.SOURCES[index]}/objective':float(loss.detach())})
+                fields = {f'train/{ac.SOURCES[index]}/objective':float(loss.detach())}
+                if teacher_logits is not None:
+                    fields[f'train/{ac.SOURCES[index]}/unweighted_kd_bce'] = float(loss.detach()) / kd_weight
+                log(additional, fields)
             if additional % args.validation_interval == 0 or additional in (args.additional_steps // 2, args.additional_steps):
                 last = validate_save()
         summary = dict(metadata, status='complete', stop_reason='fixed_horizon', budget_steps=args.additional_steps,
@@ -259,6 +272,8 @@ def main():
     parser.add_argument('--root', required=True)
     parser.add_argument('--parent-root', required=True)
     parser.add_argument('--arm', choices=ARMS, default='kd_extended')
+    parser.add_argument('--run-id')
+    parser.add_argument('--kd-weight', type=float, default=1.)
     parser.add_argument('--additional-steps', type=int, default=60000)
     parser.add_argument('--validation-interval', type=int, default=2000)
     parser.add_argument('--selection-grid', type=int, default=2000)
