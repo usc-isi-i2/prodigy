@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
   "data_root": "/dataMeR1/phil/data",
-  "last_verified": "2026-09-11",
+  "last_verified": "2026-09-12",
   "verified_on": "tucker",
-  "notes": "Canonical inventory of graph artifacts. Use canonical_name in prose and dataset_key for compatibility with existing code, configs, and logs. Sizes and graph statistics describe the current graph object on Tucker, not the total size of its source corpus. The 2026-09-07 verification covers the two newly staged official public KG graph tensors and archive integrity; older entries retain their earlier verification evidence. The 2026-09-11 verification covers the corrected Ukraine Suspended graph and the promoted raw-profile COVID Political graph.",
+  "notes": "Canonical inventory of graph artifacts. Use canonical_name in prose and dataset_key for compatibility with existing code, configs, and logs. Sizes and graph statistics describe the current graph object on Tucker, not the total size of its source corpus. The 2026-09-07 verification covers the two newly staged official public KG graph tensors and archive integrity; older entries retain their earlier verification evidence. The 2026-09-11 verification covers the corrected Ukraine Suspended graph and the promoted raw-profile COVID Political graph. The 2026-09-12 UTC verification covers eleven nonzero_features_v1 induced views (nine full nonzero graphs and Ukraine/COVID 500k-node minis), including independent checks in production PyTorch 2.0.1.",
   "field_notes": {
     "artifact_size_gb": "Decimal GB (artifact_size_bytes / 1e9).",
     "tasks.supported": "Implemented and backed by fields/views in the current graph object.",
@@ -629,12 +629,21 @@
       "kind": "derived",
       "relative_path": "graph_views/nonzero_features_v1/ukr_rus_twitter/graph.pt",
       "metadata_path": "graph_views/nonzero_features_v1/ukr_rus_twitter/metadata.json",
-      "artifact_size_bytes": null,
-      "artifact_size_gb": null,
+      "artifact_size_bytes": 28383091309,
+      "artifact_size_gb": 28.383091309,
       "statistics": {
-        "nodes": null,
-        "edges": null,
-        "isolated_nodes": null
+        "nodes": 7973536,
+        "edges": 57964016,
+        "isolated_nodes": 166401,
+        "edge_views": {
+          "retweet_all": 57964016,
+          "temporal_history": 23227314,
+          "static_background": 49265375
+        },
+        "target_edge_views": {
+          "temporal_new": 34736702,
+          "static_holdout": 8698641
+        }
       },
       "features": {
         "node_feature_dim": 768,
@@ -645,24 +654,50 @@
       },
       "labels": {
         "type": null,
-        "labeled_nodes": null
+        "labeled_nodes": 0,
+        "class_counts_by_label_id": {}
       },
       "tasks": {
-        "supported": [],
-        "unavailable": [],
+        "supported": [
+          "neighbor_matching",
+          "temporal_link_prediction",
+          "static_link_prediction",
+          "node_regression"
+        ],
+        "unavailable": [
+          "node_classification"
+        ],
         "details": {
-          "status": "Planned; source capabilities await filtered-artifact verification"
+          "preservation": "Available source task fields and existing splits retained by induced filtering; no model evaluation performed."
         }
       },
       "construction": {
         "script": "scripts/graph_construction/nonzero_feature_views.py",
-        "status": "planned",
+        "status": "verified",
         "source_dataset_key": "ukr_rus_twitter",
         "seed": null,
         "max_nodes": null,
         "induced": true,
         "zero_filter": "any(x != 0)",
-        "isolates_retained": true
+        "isolates_retained": true,
+        "code_revision": "46a4ad61f95c5c5cecd70c6304e4b9f30773a871",
+        "source_identity": {
+          "path": "/dataMeR1/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.pt",
+          "bytes": 37006016290,
+          "mtime_ns": 1783404396703672009
+        },
+        "nonzero_source_nodes": 7973536,
+        "original_node_ids": "view row -> original source row",
+        "verification": {
+          "source_induced_edges_all_views": true,
+          "features_exact": true,
+          "serialization_exact_all_fields": true,
+          "production_torch": "2.0.1+cu118",
+          "production_attributes_exact": true,
+          "complete_nonzero_population_or_seeded_mini": true
+        },
+        "production_verifier_revision": "a1dbcc57",
+        "production_verification_receipt": "graph_views/nonzero_features_v1/production_verification.json"
       },
       "source_data": [
         {
@@ -679,12 +714,21 @@
       "kind": "derived",
       "relative_path": "graph_views/nonzero_features_v1/ukr_rus_twitter_mini_500k/graph.pt",
       "metadata_path": "graph_views/nonzero_features_v1/ukr_rus_twitter_mini_500k/metadata.json",
-      "artifact_size_bytes": null,
-      "artifact_size_gb": null,
+      "artifact_size_bytes": 1584985529,
+      "artifact_size_gb": 1.584985529,
       "statistics": {
-        "nodes": null,
-        "edges": null,
-        "isolated_nodes": null
+        "nodes": 500000,
+        "edges": 218163,
+        "isolated_nodes": 395630,
+        "edge_views": {
+          "retweet_all": 218163,
+          "temporal_history": 87376,
+          "static_background": 185443
+        },
+        "target_edge_views": {
+          "temporal_new": 130787,
+          "static_holdout": 32720
+        }
       },
       "features": {
         "node_feature_dim": 768,
@@ -695,24 +739,50 @@
       },
       "labels": {
         "type": null,
-        "labeled_nodes": null
+        "labeled_nodes": 0,
+        "class_counts_by_label_id": {}
       },
       "tasks": {
-        "supported": [],
-        "unavailable": [],
+        "supported": [
+          "neighbor_matching",
+          "temporal_link_prediction",
+          "static_link_prediction",
+          "node_regression"
+        ],
+        "unavailable": [
+          "node_classification"
+        ],
         "details": {
-          "status": "Planned; source capabilities await filtered-artifact verification"
+          "preservation": "Available source task fields and existing splits retained by induced filtering; no model evaluation performed."
         }
       },
       "construction": {
         "script": "scripts/graph_construction/nonzero_feature_views.py",
-        "status": "planned",
+        "status": "verified",
         "source_dataset_key": "ukr_rus_twitter",
         "seed": 0,
         "max_nodes": 500000,
         "induced": true,
         "zero_filter": "any(x != 0)",
-        "isolates_retained": true
+        "isolates_retained": true,
+        "code_revision": "46a4ad61f95c5c5cecd70c6304e4b9f30773a871",
+        "source_identity": {
+          "path": "/dataMeR1/phil/data/ukr_rus_twitter/graphs/retweet_graph_parquet.pt",
+          "bytes": 37006016290,
+          "mtime_ns": 1783404396703672009
+        },
+        "nonzero_source_nodes": 7973536,
+        "original_node_ids": "view row -> original source row",
+        "verification": {
+          "source_induced_edges_all_views": true,
+          "features_exact": true,
+          "serialization_exact_all_fields": true,
+          "production_torch": "2.0.1+cu118",
+          "production_attributes_exact": true,
+          "complete_nonzero_population_or_seeded_mini": true
+        },
+        "production_verifier_revision": "a1dbcc57",
+        "production_verification_receipt": "graph_views/nonzero_features_v1/production_verification.json"
       },
       "source_data": [
         {
@@ -729,12 +799,21 @@
       "kind": "derived",
       "relative_path": "graph_views/nonzero_features_v1/covid19_twitter/graph.pt",
       "metadata_path": "graph_views/nonzero_features_v1/covid19_twitter/metadata.json",
-      "artifact_size_bytes": null,
-      "artifact_size_gb": null,
+      "artifact_size_bytes": 63029634221,
+      "artifact_size_gb": 63.029634221,
       "statistics": {
-        "nodes": null,
-        "edges": null,
-        "isolated_nodes": null
+        "nodes": 18493966,
+        "edges": 85719134,
+        "isolated_nodes": 384146,
+        "edge_views": {
+          "retweet_all": 85719134,
+          "temporal_history": 27564008,
+          "static_background": 72859333
+        },
+        "target_edge_views": {
+          "temporal_new": 58155126,
+          "static_holdout": 12859801
+        }
       },
       "features": {
         "node_feature_dim": 768,
@@ -745,24 +824,50 @@
       },
       "labels": {
         "type": null,
-        "labeled_nodes": null
+        "labeled_nodes": 0,
+        "class_counts_by_label_id": {}
       },
       "tasks": {
-        "supported": [],
-        "unavailable": [],
+        "supported": [
+          "neighbor_matching",
+          "temporal_link_prediction",
+          "static_link_prediction",
+          "node_regression"
+        ],
+        "unavailable": [
+          "node_classification"
+        ],
         "details": {
-          "status": "Planned; source capabilities await filtered-artifact verification"
+          "preservation": "Available source task fields and existing splits retained by induced filtering; no model evaluation performed."
         }
       },
       "construction": {
         "script": "scripts/graph_construction/nonzero_feature_views.py",
-        "status": "planned",
+        "status": "verified",
         "source_dataset_key": "covid19_twitter",
         "seed": null,
         "max_nodes": null,
         "induced": true,
         "zero_filter": "any(x != 0)",
-        "isolates_retained": true
+        "isolates_retained": true,
+        "code_revision": "46a4ad61f95c5c5cecd70c6304e4b9f30773a871",
+        "source_identity": {
+          "path": "/dataMeR1/phil/data/covid19_twitter/graphs/retweet_graph_parquet.pt",
+          "bytes": 78267044770,
+          "mtime_ns": 1783405201875653888
+        },
+        "nonzero_source_nodes": 18493966,
+        "original_node_ids": "view row -> original source row",
+        "verification": {
+          "source_induced_edges_all_views": true,
+          "features_exact": true,
+          "serialization_exact_all_fields": true,
+          "production_torch": "2.0.1+cu118",
+          "production_attributes_exact": true,
+          "complete_nonzero_population_or_seeded_mini": true
+        },
+        "production_verifier_revision": "a1dbcc57",
+        "production_verification_receipt": "graph_views/nonzero_features_v1/production_verification.json"
       },
       "source_data": [
         {
@@ -779,12 +884,21 @@
       "kind": "derived",
       "relative_path": "graph_views/nonzero_features_v1/covid19_twitter_mini_500k/graph.pt",
       "metadata_path": "graph_views/nonzero_features_v1/covid19_twitter_mini_500k/metadata.json",
-      "artifact_size_bytes": null,
-      "artifact_size_gb": null,
+      "artifact_size_bytes": 1576203897,
+      "artifact_size_gb": 1.576203897,
       "statistics": {
-        "nodes": null,
-        "edges": null,
-        "isolated_nodes": null
+        "nodes": 500000,
+        "edges": 63956,
+        "isolated_nodes": 444405,
+        "edge_views": {
+          "retweet_all": 63956,
+          "temporal_history": 19399,
+          "static_background": 54347
+        },
+        "target_edge_views": {
+          "temporal_new": 44557,
+          "static_holdout": 9609
+        }
       },
       "features": {
         "node_feature_dim": 768,
@@ -795,24 +909,50 @@
       },
       "labels": {
         "type": null,
-        "labeled_nodes": null
+        "labeled_nodes": 0,
+        "class_counts_by_label_id": {}
       },
       "tasks": {
-        "supported": [],
-        "unavailable": [],
+        "supported": [
+          "neighbor_matching",
+          "temporal_link_prediction",
+          "static_link_prediction",
+          "node_regression"
+        ],
+        "unavailable": [
+          "node_classification"
+        ],
         "details": {
-          "status": "Planned; source capabilities await filtered-artifact verification"
+          "preservation": "Available source task fields and existing splits retained by induced filtering; no model evaluation performed."
         }
       },
       "construction": {
         "script": "scripts/graph_construction/nonzero_feature_views.py",
-        "status": "planned",
+        "status": "verified",
         "source_dataset_key": "covid19_twitter",
         "seed": 0,
         "max_nodes": 500000,
         "induced": true,
         "zero_filter": "any(x != 0)",
-        "isolates_retained": true
+        "isolates_retained": true,
+        "code_revision": "46a4ad61f95c5c5cecd70c6304e4b9f30773a871",
+        "source_identity": {
+          "path": "/dataMeR1/phil/data/covid19_twitter/graphs/retweet_graph_parquet.pt",
+          "bytes": 78267044770,
+          "mtime_ns": 1783405201875653888
+        },
+        "nonzero_source_nodes": 18493966,
+        "original_node_ids": "view row -> original source row",
+        "verification": {
+          "source_induced_edges_all_views": true,
+          "features_exact": true,
+          "serialization_exact_all_fields": true,
+          "production_torch": "2.0.1+cu118",
+          "production_attributes_exact": true,
+          "complete_nonzero_population_or_seeded_mini": true
+        },
+        "production_verifier_revision": "a1dbcc57",
+        "production_verification_receipt": "graph_views/nonzero_features_v1/production_verification.json"
       },
       "source_data": [
         {
@@ -829,12 +969,21 @@
       "kind": "derived",
       "relative_path": "graph_views/nonzero_features_v1/midterm/graph.pt",
       "metadata_path": "graph_views/nonzero_features_v1/midterm/metadata.json",
-      "artifact_size_bytes": null,
-      "artifact_size_gb": null,
+      "artifact_size_bytes": 903766777,
+      "artifact_size_gb": 0.903766777,
       "statistics": {
-        "nodes": null,
-        "edges": null,
-        "isolated_nodes": null
+        "nodes": 274361,
+        "edges": 723032,
+        "isolated_nodes": 5100,
+        "edge_views": {
+          "retweet_all": 723032,
+          "temporal_history": 231367,
+          "static_background": 614639
+        },
+        "target_edge_views": {
+          "temporal_new": 491665,
+          "static_holdout": 108393
+        }
       },
       "features": {
         "node_feature_dim": 768,
@@ -845,24 +994,50 @@
       },
       "labels": {
         "type": null,
-        "labeled_nodes": null
+        "labeled_nodes": 0,
+        "class_counts_by_label_id": {}
       },
       "tasks": {
-        "supported": [],
-        "unavailable": [],
+        "supported": [
+          "neighbor_matching",
+          "temporal_link_prediction",
+          "static_link_prediction",
+          "node_regression"
+        ],
+        "unavailable": [
+          "node_classification"
+        ],
         "details": {
-          "status": "Planned; source capabilities await filtered-artifact verification"
+          "preservation": "Available source task fields and existing splits retained by induced filtering; no model evaluation performed."
         }
       },
       "construction": {
         "script": "scripts/graph_construction/nonzero_feature_views.py",
-        "status": "planned",
+        "status": "verified",
         "source_dataset_key": "midterm",
         "seed": null,
         "max_nodes": null,
         "induced": true,
         "zero_filter": "any(x != 0)",
-        "isolates_retained": true
+        "isolates_retained": true,
+        "code_revision": "46a4ad61f95c5c5cecd70c6304e4b9f30773a871",
+        "source_identity": {
+          "path": "/dataMeR1/phil/data/midterm/graphs/retweet_graph_parquet.pt",
+          "bytes": 1123399802,
+          "mtime_ns": 1783404029010983538
+        },
+        "nonzero_source_nodes": 274361,
+        "original_node_ids": "view row -> original source row",
+        "verification": {
+          "source_induced_edges_all_views": true,
+          "features_exact": true,
+          "serialization_exact_all_fields": true,
+          "production_torch": "2.0.1+cu118",
+          "production_attributes_exact": true,
+          "complete_nonzero_population_or_seeded_mini": true
+        },
+        "production_verifier_revision": "a1dbcc57",
+        "production_verification_receipt": "graph_views/nonzero_features_v1/production_verification.json"
       },
       "source_data": [
         {
@@ -879,12 +1054,17 @@
       "kind": "derived",
       "relative_path": "graph_views/nonzero_features_v1/covid_political/graph.pt",
       "metadata_path": "graph_views/nonzero_features_v1/covid_political/metadata.json",
-      "artifact_size_bytes": null,
-      "artifact_size_gb": null,
+      "artifact_size_bytes": 248352762,
+      "artifact_size_gb": 0.248352762,
       "statistics": {
-        "nodes": null,
-        "edges": null,
-        "isolated_nodes": null
+        "nodes": 78672,
+        "edges": 180928,
+        "isolated_nodes": 24930,
+        "edge_views": {
+          "retweet_all": 180928,
+          "temporal_history": 180928
+        },
+        "target_edge_views": {}
       },
       "features": {
         "node_feature_dim": 768,
@@ -896,24 +1076,56 @@
       },
       "labels": {
         "type": "binary node classification",
-        "labeled_nodes": null
+        "labeled_nodes": 78672,
+        "class_counts_by_label_id": {
+          "0": 59276,
+          "1": 19396
+        },
+        "names": [
+          "non_conservative",
+          "conservative"
+        ]
       },
       "tasks": {
-        "supported": [],
-        "unavailable": [],
+        "supported": [
+          "neighbor_matching",
+          "node_classification"
+        ],
+        "unavailable": [
+          "temporal_link_prediction",
+          "node_regression"
+        ],
         "details": {
-          "status": "Planned; source capabilities await filtered-artifact verification"
+          "preservation": "Available source task fields and existing splits retained by induced filtering; no model evaluation performed."
         }
       },
       "construction": {
         "script": "scripts/graph_construction/nonzero_feature_views.py",
-        "status": "planned",
+        "status": "verified",
         "source_dataset_key": "covid_political",
         "seed": null,
         "max_nodes": null,
         "induced": true,
         "zero_filter": "any(x != 0)",
-        "isolates_retained": true
+        "isolates_retained": true,
+        "code_revision": "46a4ad61f95c5c5cecd70c6304e4b9f30773a871",
+        "source_identity": {
+          "path": "/dataMeR1/phil/data/covid_political/graphs/retweet_graph.pt",
+          "bytes": 247456395,
+          "mtime_ns": 1789168869942508712
+        },
+        "nonzero_source_nodes": 78672,
+        "original_node_ids": "view row -> original source row",
+        "verification": {
+          "source_induced_edges_all_views": true,
+          "features_exact": true,
+          "serialization_exact_all_fields": true,
+          "production_torch": "2.0.1+cu118",
+          "production_attributes_exact": true,
+          "complete_nonzero_population_or_seeded_mini": true
+        },
+        "production_verifier_revision": "a1dbcc57",
+        "production_verification_receipt": "graph_views/nonzero_features_v1/production_verification.json"
       },
       "source_data": [
         {
@@ -930,12 +1142,17 @@
       "kind": "derived",
       "relative_path": "graph_views/nonzero_features_v1/ukr_rus_suspended/graph.pt",
       "metadata_path": "graph_views/nonzero_features_v1/ukr_rus_suspended/metadata.json",
-      "artifact_size_bytes": null,
-      "artifact_size_gb": null,
+      "artifact_size_bytes": 142955770,
+      "artifact_size_gb": 0.14295577,
       "statistics": {
-        "nodes": null,
-        "edges": null,
-        "isolated_nodes": null
+        "nodes": 44157,
+        "edges": 251955,
+        "isolated_nodes": 1300,
+        "edge_views": {
+          "retweet_all": 251955,
+          "temporal_history": 251955
+        },
+        "target_edge_views": {}
       },
       "features": {
         "node_feature_dim": 768,
@@ -947,24 +1164,56 @@
       },
       "labels": {
         "type": "binary node classification",
-        "labeled_nodes": null
+        "labeled_nodes": 44157,
+        "class_counts_by_label_id": {
+          "0": 18824,
+          "1": 25333
+        },
+        "names": [
+          "non_suspended",
+          "suspended"
+        ]
       },
       "tasks": {
-        "supported": [],
-        "unavailable": [],
+        "supported": [
+          "neighbor_matching",
+          "node_classification"
+        ],
+        "unavailable": [
+          "temporal_link_prediction",
+          "node_regression"
+        ],
         "details": {
-          "status": "Planned; source capabilities await filtered-artifact verification"
+          "preservation": "Available source task fields and existing splits retained by induced filtering; no model evaluation performed."
         }
       },
       "construction": {
         "script": "scripts/graph_construction/nonzero_feature_views.py",
-        "status": "planned",
+        "status": "verified",
         "source_dataset_key": "ukr_rus_suspended",
         "seed": null,
         "max_nodes": null,
         "induced": true,
         "zero_filter": "any(x != 0)",
-        "isolates_retained": true
+        "isolates_retained": true,
+        "code_revision": "46a4ad61f95c5c5cecd70c6304e4b9f30773a871",
+        "source_identity": {
+          "path": "/dataMeR1/phil/data/ukr_rus_suspended/graphs/retweet_graph.pt",
+          "bytes": 182861567,
+          "mtime_ns": 1789166429574776625
+        },
+        "nonzero_source_nodes": 44157,
+        "original_node_ids": "view row -> original source row",
+        "verification": {
+          "source_induced_edges_all_views": true,
+          "features_exact": true,
+          "serialization_exact_all_fields": true,
+          "production_torch": "2.0.1+cu118",
+          "production_attributes_exact": true,
+          "complete_nonzero_population_or_seeded_mini": true
+        },
+        "production_verifier_revision": "a1dbcc57",
+        "production_verification_receipt": "graph_views/nonzero_features_v1/production_verification.json"
       },
       "source_data": [
         {
@@ -981,12 +1230,17 @@
       "kind": "derived",
       "relative_path": "graph_views/nonzero_features_v1/election2020/graph.pt",
       "metadata_path": "graph_views/nonzero_features_v1/election2020/metadata.json",
-      "artifact_size_bytes": null,
-      "artifact_size_gb": null,
+      "artifact_size_bytes": 312465146,
+      "artifact_size_gb": 0.312465146,
       "statistics": {
-        "nodes": null,
-        "edges": null,
-        "isolated_nodes": null
+        "nodes": 78932,
+        "edges": 2818603,
+        "isolated_nodes": 0,
+        "edge_views": {
+          "retweet_all": 2818603,
+          "temporal_history": 2818603
+        },
+        "target_edge_views": {}
       },
       "features": {
         "node_feature_dim": 768,
@@ -998,24 +1252,56 @@
       },
       "labels": {
         "type": "binary node classification",
-        "labeled_nodes": null
+        "labeled_nodes": 78932,
+        "class_counts_by_label_id": {
+          "0": 36452,
+          "1": 42480
+        },
+        "names": [
+          "non_conservative",
+          "conservative"
+        ]
       },
       "tasks": {
-        "supported": [],
-        "unavailable": [],
+        "supported": [
+          "neighbor_matching",
+          "node_classification"
+        ],
+        "unavailable": [
+          "temporal_link_prediction",
+          "node_regression"
+        ],
         "details": {
-          "status": "Planned; source capabilities await filtered-artifact verification"
+          "preservation": "Available source task fields and existing splits retained by induced filtering; no model evaluation performed."
         }
       },
       "construction": {
         "script": "scripts/graph_construction/nonzero_feature_views.py",
-        "status": "planned",
+        "status": "verified",
         "source_dataset_key": "election2020",
         "seed": null,
         "max_nodes": null,
         "induced": true,
         "zero_filter": "any(x != 0)",
-        "isolates_retained": true
+        "isolates_retained": true,
+        "code_revision": "46a4ad61f95c5c5cecd70c6304e4b9f30773a871",
+        "source_identity": {
+          "path": "/dataMeR1/phil/data/election2020/graphs/retweet_graph.pt",
+          "bytes": 311565265,
+          "mtime_ns": 1781246915525368615
+        },
+        "nonzero_source_nodes": 78932,
+        "original_node_ids": "view row -> original source row",
+        "verification": {
+          "source_induced_edges_all_views": true,
+          "features_exact": true,
+          "serialization_exact_all_fields": true,
+          "production_torch": "2.0.1+cu118",
+          "production_attributes_exact": true,
+          "complete_nonzero_population_or_seeded_mini": true
+        },
+        "production_verifier_revision": "a1dbcc57",
+        "production_verification_receipt": "graph_views/nonzero_features_v1/production_verification.json"
       },
       "source_data": [
         {
@@ -1032,12 +1318,18 @@
       "kind": "derived",
       "relative_path": "graph_views/nonzero_features_v1/twibot20/graph.pt",
       "metadata_path": "graph_views/nonzero_features_v1/twibot20/metadata.json",
-      "artifact_size_bytes": null,
-      "artifact_size_gb": null,
+      "artifact_size_bytes": 524598516,
+      "artifact_size_gb": 0.524598516,
       "statistics": {
-        "nodes": null,
-        "edges": null,
-        "isolated_nodes": null
+        "nodes": 144274,
+        "edges": 1769115,
+        "isolated_nodes": 2041,
+        "edge_views": {
+          "static_background": 1504055
+        },
+        "target_edge_views": {
+          "static_holdout": 265060
+        }
       },
       "features": {
         "node_feature_dim": 768,
@@ -1048,24 +1340,57 @@
       },
       "labels": {
         "type": "binary node classification",
-        "labeled_nodes": null
+        "labeled_nodes": 10303,
+        "class_counts_by_label_id": {
+          "0": 4747,
+          "1": 5556
+        },
+        "names": [
+          "human",
+          "bot"
+        ]
       },
       "tasks": {
-        "supported": [],
-        "unavailable": [],
+        "supported": [
+          "neighbor_matching",
+          "static_link_prediction",
+          "node_classification",
+          "node_regression"
+        ],
+        "unavailable": [
+          "temporal_link_prediction"
+        ],
         "details": {
-          "status": "Planned; source capabilities await filtered-artifact verification"
+          "preservation": "Available source task fields and existing splits retained by induced filtering; no model evaluation performed."
         }
       },
       "construction": {
         "script": "scripts/graph_construction/nonzero_feature_views.py",
-        "status": "planned",
+        "status": "verified",
         "source_dataset_key": "twibot20",
         "seed": null,
         "max_nodes": null,
         "induced": true,
         "zero_filter": "any(x != 0)",
-        "isolates_retained": true
+        "isolates_retained": true,
+        "code_revision": "46a4ad61f95c5c5cecd70c6304e4b9f30773a871",
+        "source_identity": {
+          "path": "/dataMeR1/phil/data/twibot20/graphs/retweet_graph.pt",
+          "bytes": 591854240,
+          "mtime_ns": 1783405269568055742
+        },
+        "nonzero_source_nodes": 144274,
+        "original_node_ids": "view row -> original source row",
+        "verification": {
+          "source_induced_edges_all_views": true,
+          "features_exact": true,
+          "serialization_exact_all_fields": true,
+          "production_torch": "2.0.1+cu118",
+          "production_attributes_exact": true,
+          "complete_nonzero_population_or_seeded_mini": true
+        },
+        "production_verifier_revision": "a1dbcc57",
+        "production_verification_receipt": "graph_views/nonzero_features_v1/production_verification.json"
       },
       "source_data": [
         {
@@ -1082,12 +1407,22 @@
       "kind": "derived",
       "relative_path": "graph_views/nonzero_features_v1/cp_hk_twitter/graph.pt",
       "metadata_path": "graph_views/nonzero_features_v1/cp_hk_twitter/metadata.json",
-      "artifact_size_bytes": null,
-      "artifact_size_gb": null,
+      "artifact_size_bytes": 850013591,
+      "artifact_size_gb": 0.850013591,
       "statistics": {
-        "nodes": null,
-        "edges": null,
-        "isolated_nodes": null
+        "nodes": 256798,
+        "edges": 837495,
+        "isolated_nodes": 28952,
+        "edge_views": {
+          "retweet_all": 837495,
+          "temporal_history": 596084,
+          "static_background": 711835
+        },
+        "target_edge_views": {
+          "temporal_new": 241411,
+          "future": 241411,
+          "static_holdout": 125660
+        }
       },
       "features": {
         "node_feature_dim": 768,
@@ -1098,24 +1433,50 @@
       },
       "labels": {
         "type": null,
-        "labeled_nodes": null
+        "labeled_nodes": 0,
+        "class_counts_by_label_id": {}
       },
       "tasks": {
-        "supported": [],
-        "unavailable": [],
+        "supported": [
+          "neighbor_matching",
+          "temporal_link_prediction",
+          "static_link_prediction"
+        ],
+        "unavailable": [
+          "node_classification",
+          "node_regression"
+        ],
         "details": {
-          "status": "Planned; source capabilities await filtered-artifact verification"
+          "preservation": "Available source task fields and existing splits retained by induced filtering; no model evaluation performed."
         }
       },
       "construction": {
         "script": "scripts/graph_construction/nonzero_feature_views.py",
-        "status": "planned",
+        "status": "verified",
         "source_dataset_key": "cp_hk_twitter",
         "seed": null,
         "max_nodes": null,
         "induced": true,
         "zero_filter": "any(x != 0)",
-        "isolates_retained": true
+        "isolates_retained": true,
+        "code_revision": "46a4ad61f95c5c5cecd70c6304e4b9f30773a871",
+        "source_identity": {
+          "path": "/dataMeR1/phil/data/cp_hk_twitter/graphs/retweet_graph.pt",
+          "bytes": 1107820534,
+          "mtime_ns": 1783405274496085209
+        },
+        "nonzero_source_nodes": 256798,
+        "original_node_ids": "view row -> original source row",
+        "verification": {
+          "source_induced_edges_all_views": true,
+          "features_exact": true,
+          "serialization_exact_all_fields": true,
+          "production_torch": "2.0.1+cu118",
+          "production_attributes_exact": true,
+          "complete_nonzero_population_or_seeded_mini": true
+        },
+        "production_verifier_revision": "a1dbcc57",
+        "production_verification_receipt": "graph_views/nonzero_features_v1/production_verification.json"
       },
       "source_data": [
         {
@@ -1132,12 +1493,22 @@
       "kind": "derived",
       "relative_path": "graph_views/nonzero_features_v1/facebook_page_reference/graph.pt",
       "metadata_path": "graph_views/nonzero_features_v1/facebook_page_reference/metadata.json",
-      "artifact_size_bytes": null,
-      "artifact_size_gb": null,
+      "artifact_size_bytes": 487569312,
+      "artifact_size_gb": 0.487569312,
       "statistics": {
-        "nodes": null,
-        "edges": null,
-        "isolated_nodes": null
+        "nodes": 149514,
+        "edges": 166512,
+        "isolated_nodes": 30888,
+        "edge_views": {
+          "page_reference_all": 166512,
+          "content_only": 155030,
+          "temporal_history": 131219,
+          "static_background": 141535
+        },
+        "target_edge_views": {
+          "temporal_new": 35293,
+          "static_holdout": 24977
+        }
       },
       "features": {
         "node_feature_dim": 768,
@@ -1149,24 +1520,80 @@
       },
       "labels": {
         "type": "multi-target node classification and regression",
-        "labeled_nodes": null
+        "labeled_nodes": 107276,
+        "class_counts_by_label_id": {
+          "0": 11854,
+          "1": 10430,
+          "2": 9181,
+          "3": 9096,
+          "4": 7357,
+          "5": 6432,
+          "6": 5814,
+          "7": 5690,
+          "8": 4343,
+          "9": 3968,
+          "10": 3820,
+          "11": 2779,
+          "12": 2519,
+          "13": 2245,
+          "14": 2189,
+          "15": 1971,
+          "16": 1954,
+          "17": 1922,
+          "18": 1794,
+          "19": 1579,
+          "20": 1276,
+          "21": 1267,
+          "22": 1179,
+          "23": 1094,
+          "24": 1070,
+          "25": 932,
+          "26": 911,
+          "27": 908,
+          "28": 864,
+          "29": 838
+        }
       },
       "tasks": {
-        "supported": [],
+        "supported": [
+          "neighbor_matching",
+          "temporal_link_prediction",
+          "static_link_prediction",
+          "node_classification",
+          "node_regression"
+        ],
         "unavailable": [],
         "details": {
-          "status": "Planned; source capabilities await filtered-artifact verification"
+          "preservation": "Available source task fields and existing splits retained by induced filtering; no model evaluation performed."
         }
       },
       "construction": {
         "script": "scripts/graph_construction/nonzero_feature_views.py",
-        "status": "planned",
+        "status": "verified",
         "source_dataset_key": "facebook_page_reference",
         "seed": null,
         "max_nodes": null,
         "induced": true,
         "zero_filter": "any(x != 0)",
-        "isolates_retained": true
+        "isolates_retained": true,
+        "code_revision": "46a4ad61f95c5c5cecd70c6304e4b9f30773a871",
+        "source_identity": {
+          "path": "/dataMeR1/phil/data/facebook_page_reference/graphs/page_reference_graph.pt",
+          "bytes": 487249867,
+          "mtime_ns": 1785884991471320622
+        },
+        "nonzero_source_nodes": 149514,
+        "original_node_ids": "view row -> original source row",
+        "verification": {
+          "source_induced_edges_all_views": true,
+          "features_exact": true,
+          "serialization_exact_all_fields": true,
+          "production_torch": "2.0.1+cu118",
+          "production_attributes_exact": true,
+          "complete_nonzero_population_or_seeded_mini": true
+        },
+        "production_verifier_revision": "a1dbcc57",
+        "production_verification_receipt": "graph_views/nonzero_features_v1/production_verification.json"
       },
       "source_data": [
         {

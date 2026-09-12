@@ -194,7 +194,7 @@ def main():
     p.add_argument('--catalog', type=Path, default=Path('docs/graph_catalog.json'))
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--datasets', nargs='+', default=list(SOURCES), choices=SOURCES)
-    p.add_argument('--mini-nodes', type=int, default=500000)
+    p.add_argument('--mini-nodes', type=int, choices=[500000], default=500000)
     p.add_argument('--seed', type=int, default=0)
     p.add_argument('--threads', type=int, default=8)
     args = p.parse_args()
