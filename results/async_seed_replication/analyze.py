@@ -25,8 +25,12 @@ ARMS = ("kd_w010_selected", "kd_w100_selected", "kd_w010_fixed", "kd_w100_fixed"
 SINGLETONS = {SOURCES[0]: "singleton_ukraine", SOURCES[1]: "singleton_facebook"}
 COMPARISONS = (
     ("selected_vs_stronger_singleton", "kd_w010_selected", "stronger_singleton"),
+    ("selected_vs_ukraine_singleton", "kd_w010_selected", "singleton_ukraine"),
+    ("selected_vs_facebook_singleton", "kd_w010_selected", "singleton_facebook"),
     ("selected_vs_weight_one", "kd_w010_selected", "kd_w100_selected"),
     ("fixed_vs_stronger_singleton", "kd_w010_fixed", "stronger_singleton"),
+    ("fixed_vs_ukraine_singleton", "kd_w010_fixed", "singleton_ukraine"),
+    ("fixed_vs_facebook_singleton", "kd_w010_fixed", "singleton_facebook"),
     ("fixed_vs_weight_one", "kd_w010_fixed", "kd_w100_fixed"),
 )
 COMPARE_NAMES = {"selected_vs_stronger_singleton": "0.1 selected − stronger singleton",
@@ -136,7 +140,9 @@ def comparison_tables(matrix: pd.DataFrame, output: Path, replication_seeds: lis
             complete = deltas.notna().all()
             comparisons.append({"seed": seed, "phase": phase(seed), "comparison": label,
                                 "arm": arm, "baseline": baseline,
-                                "baseline_selection": "retrospective per-seed mean transfer AUC" if requested_baseline == "stronger_singleton" else "prespecified weight-1 control",
+                                "baseline_selection": ("retrospective per-seed mean transfer AUC" if requested_baseline == "stronger_singleton"
+                                                       else "prespecified same-seed constituent singleton" if baseline in SINGLETONS.values()
+                                                       else "prespecified weight-1 control"),
                                 "available_targets": int(deltas.notna().sum()), "expected_targets": len(TARGETS),
                                 "complete": complete, "mean_delta_pp": deltas.mean() if complete else np.nan,
                                 "positive_target_deltas": int((deltas > 0).sum()) if complete else None})

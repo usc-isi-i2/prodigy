@@ -1,6 +1,6 @@
 # Locked KD-weight replication across training seeds
 
-Authorized 2026-09-12 after the [weight study](async_kd_weights_plan.md). Status: implemented, pending cluster completion. The positive seed-0 result is development evidence. **Seeds 1 and 2 are the fresh training replications; Facebook KD weight stays fixed at 0.1.** Weight 1 and seed-specific singletons are controls, not alternative weights to select on transfer.
+Authorized 2026-09-12 after the [weight study](async_kd_weights_plan.md). Status: completed, all 96 evaluation cells available, no unavailable selections. Training revision `650a57f0c89dc51586dfdea85e8915e17fb585cf`. See [findings](../results/async_seed_replication/FINDINGS.md). The positive seed-0 result is development evidence. **Seeds 1 and 2 are the fresh training replications; Facebook KD weight stays fixed at 0.1.** Weight 1 and seed-specific singletons are controls, not alternative weights to select on transfer.
 
 ## What varies and what stays fixed
 
