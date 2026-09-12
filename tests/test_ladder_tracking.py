@@ -34,3 +34,18 @@ def test_offline_run_writes_syncable_history_without_login(tmp_path, monkeypatch
     rows = [json.loads(line) for line in (tmp_path / "metrics.jsonl").read_text().splitlines()]
     assert [row["optimizer_step"] for row in rows] == [25, 50]
     assert rows[-1]["train/loss"] == 0.4
+
+
+def test_simultaneous_offline_models_have_distinct_runs_and_histories(tmp_path):
+    from contextlib import ExitStack
+    args = SimpleNamespace(wandb_project='ladder-tracking-test',wandb_mode='offline',wandb_group='test',log_interval=25)
+    with ExitStack() as stack:
+        runs=[]
+        for i in range(2):
+            path=tmp_path/str(i);path.mkdir()
+            run,log=stack.enter_context(tracked_run(path,{'run_id':str(i),'sources':['a']},args))
+            runs.append(run);log(25,{'train/loss':i+.25})
+        assert runs[0].id!=runs[1].id
+    for i in range(2):
+        row=json.loads((tmp_path/str(i)/'metrics.jsonl').read_text())
+        assert row['train/loss']==i+.25

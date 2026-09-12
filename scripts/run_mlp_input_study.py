@@ -8,6 +8,9 @@ import numpy as np
 import torch
 from torch import nn
 import torch.nn.functional as F
+from mixture_scaling.binary_metrics import PredictionWindow, log_values, evaluation_report
+from mixture_scaling.evaluation_artifacts import atomic_json, save_scores
+from mixture_scaling.node_only_transfer import save_checkpoint, validate_lp_metrics
 from mixture_scaling.config import load_config
 from mixture_scaling.evaluate_lattice import unwrap
 from mixture_scaling.lattice import SOURCE_ORDER, load_shared_graph
@@ -76,23 +79,41 @@ def run(args,config):
    seed_everything(0);model=InputView(args.method,k,transform).to(args.device);opt=torch.optim.AdamW(model.parameters(),lr=0.0005,weight_decay=1e-5)
    run_id=f'{args.method}_{k}_s0';path=args.root/run_id;path.mkdir(exist_ok=False)
    meta={'run_id':run_id,'sources':list(SOURCE_ORDER),'method':args.method,'input_dim':k,'seed':0,'steps_per_source':args.steps_per_source,'total_steps':limit,'pilot':True,'centering':'source-balanced train-endpoint mean for all arms','selection':'teacher gradient-times-centered-input on training pairs; fixed-budget terminal teacher (900000 updates), not validation-selected','check_split':'second seeded half of canonical held-out edges','parameter_count':sum(p.numel() for p in model.parameters())}
-   (path/'metadata.json').write_text(json.dumps(meta,indent=2));wr,log=stack.enter_context(tracked_run(path,meta,args));arms.append({'model':model,'opt':opt,'path':path,'log':log,'wr':wr,'window':LossWindow(),'best':float('inf'),'best_step':0,'meta':meta})
+   (path/'metadata.json').write_text(json.dumps(meta,indent=2));wr,log=stack.enter_context(tracked_run(path,meta,args));arms.append({'model':model,'opt':opt,'path':path,'log':log,'wr':wr,'window':LossWindow(),'predictions':PredictionWindow(),'best':float('inf'),'best_step':0,'meta':meta})
   batches=stack.enter_context(PrefetchLinks(train,source_schedule(SOURCE_ORDER,limit),args.device,depth=8,workers=4));start=time.monotonic()
   for step,(source,batch) in enumerate(batches,1):
    for a in arms:
-    model=a['model'];a['opt'].zero_grad(set_to_none=True);l=lp_loss(model,batch,args.device)
+    model=a['model'];a['opt'].zero_grad(set_to_none=True);l,logits=lp_loss(model,batch,args.device,return_logits=True)
     if not torch.isfinite(l):raise FloatingPointError('nonfinite training loss')
     l.backward();torch.nn.utils.clip_grad_norm_(model.parameters(),1);a['opt'].step();a['window'].add(source,float(l.detach()),batch.edge_label.numel())
-    if step%250==0:a['log'](step,a['window'].flush())
+    a['predictions'].add(source,batch.edge_label,logits)
+    if step%250==0 or step==limit:a['log'](step,{**a['window'].flush(),**a['predictions'].flush()})
    if step%2500==0:print('PROGRESS',step,'elapsed',time.monotonic()-start,flush=True)
    if step%18000==0 or step==limit:
     for a in arms:
-     losses={s:validate(a['model'],graphs[s],val[s],'lp',args.device,protocol,0) for s in SOURCE_ORDER};value=sum(losses.values())/9;a['log'](step,{'validation/loss':value,**{f'validation/source/{s}/loss':v for s,v in losses.items()}})
+     reports={s:validate_lp_metrics(a['model'],val[s],args.device,20) for s in SOURCE_ORDER}
+     losses={s:r['bce'] for s,r in reports.items()};value=sum(losses.values())/9
+     a['log'](step,{'validation/loss':value,**{f'validation/source/{s}/loss':v for s,v in losses.items()},**{key:v for s,r in reports.items() for key,v in log_values(r,f'validation/source/{s}').items()}})
+     atomic_json(a['path']/'validation'/f'step_{step}.json',reports)
      if value<a['best']:
-      a['best']=value;a['best_step']=step;torch.save({'model':a['model'].state_dict(),'step':step,'metadata':a['meta']},a['path']/'best.pt')
+      a['best']=value;a['best_step']=step;save_checkpoint(a['path']/'best.pt',a['model'],a['opt'],step,{**a['meta'],'best_step':step,'best_validation_bce':value})
+     save_checkpoint(a['path']/'latest.pt',a['model'],a['opt'],step,{**a['meta'],'best_step':a['best_step'],'best_validation_bce':a['best']})
+     save_checkpoint(a['path']/'checkpoints'/f'step_{step}.pt',a['model'],a['opt'],step,a['meta'])
      print('VALIDATION',a['meta']['run_id'],step,value,flush=True)
   for a in arms:
-   a['model'].load_state_dict(torch.load(a['path']/'best.pt',map_location=args.device,weights_only=False)['model']);losses={s:validate(a['model'],graphs[s],check[s],'lp',args.device,protocol,0) for s in SOURCE_ORDER};result={**a['meta'],'status':'complete','best_step':a['best_step'],'validation_bce':a['best'],'check_bce':sum(losses.values())/9,'check_by_source':losses,'elapsed_seconds':time.monotonic()-start}
+   save_checkpoint(a['path']/'terminal.pt',a['model'],a['opt'],limit,{**a['meta'],'best_step':a['best_step']})
+   a['model'].load_state_dict(torch.load(a['path']/'best.pt',map_location=args.device,weights_only=False)['model'])
+   metrics={}
+   for source in SOURCE_ORDER:
+    _,vy,vs=validate_lp_metrics(a['model'],val[source],args.device,20,return_data=True)
+    _,ty,ts=validate_lp_metrics(a['model'],check[source],args.device,20,return_data=True)
+    y=np.concatenate([vy,ty]);scores=np.concatenate([vs,ts]);mask=np.arange(len(y))<len(vy)
+    metrics[source]=evaluation_report(y,scores,mask)
+    save_scores(a['path']/'check'/f'{source}.scores.npz',labels=y,dot_logits=scores,validation_mask=mask)
+    atomic_json(a['path']/'check'/f'{source}.json',metrics[source])
+    a['log'](a['best_step'],log_values(metrics[source]['test'],f'check/source/{source}'))
+   losses={s:r['test']['bce'] for s,r in metrics.items()}
+   result={**a['meta'],'status':'complete','best_step':a['best_step'],'validation_bce':a['best'],'check_bce':sum(losses.values())/9,'check_by_source':losses,'check_metrics':metrics,'elapsed_seconds':time.monotonic()-start}
    a['wr'].summary.update(result);(a['path']/'summary.json').write_text(json.dumps(result,indent=2));print('COMPLETE',json.dumps(result),flush=True)
 
 def main():

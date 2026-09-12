@@ -10,6 +10,9 @@ from pathlib import Path
 
 import torch
 
+from .binary_metrics import PredictionWindow, log_values
+from .evaluation_artifacts import atomic_json, destination
+from .node_only_transfer import validate_lp_metrics
 from .ladder_queue import claimed_rows
 from .prefetch_links import PrefetchLinks
 from .convergence import SourcePlateau
@@ -79,6 +82,7 @@ def train_rung(run_id, sources, graphs, config, args, device):
                      "patience": args.patience, "min_delta": args.min_delta,
                      "max_steps_per_source": args.max_steps_per_source}, "source_sampling": "uniform_round_robin",
         "training_negative_sampling": "source_confined_uniform_approximate_excluding_self_loops",
+        "checkpoint_interval": args.checkpoint_interval,
         "prefetch_depth": args.prefetch_depth, "prefetch_workers": args.prefetch_workers,
         "feature_residency": {s: "gpu" if s in resident else "cpu_direct_pinned" for s in sources},
     }
@@ -88,6 +92,7 @@ def train_rung(run_id, sources, graphs, config, args, device):
             train, source_schedule(sources, limit), device, depth=args.prefetch_depth,
             workers=args.prefetch_workers) as batches:
         window = LossWindow()
+        prediction_window = PredictionWindow()
         started = time.monotonic()
         stopper = SourcePlateau(sources, args.patience, args.min_delta)
         best_value, best_step = float("inf"), 0
@@ -98,48 +103,68 @@ def train_rung(run_id, sources, graphs, config, args, device):
             if batch_source != source:
                 raise RuntimeError("prefetch changed source order")
             optimizer.zero_grad(set_to_none=True)
-            loss = lp_loss(model, batch, device)
+            loss, logits = lp_loss(model, batch, device, return_logits=True)
             if not torch.isfinite(loss):
                 raise FloatingPointError(f"non-finite loss: {run_id} step {step}")
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), float(protocol["gradient_clip_norm"]))
             optimizer.step()
             counts[source] += 1
+            prediction_window.add(source, batch.edge_label, logits)
             window.add(source, float(loss.detach()), batch.edge_label.numel())
             if step % args.log_interval == 0 or step == limit:
-                log(step, {**window.flush(), "train/elapsed_seconds": time.monotonic() - started})
+                log(step, {**window.flush(), **prediction_window.flush(), "train/elapsed_seconds": time.monotonic() - started})
             if step % 250 == 0 or step == limit:
                 print(json.dumps({"run_id": run_id, "step": step, "loss": float(loss),
                     "elapsed_seconds": time.monotonic() - started}), flush=True)
+            if step % args.checkpoint_interval == 0:
+                save_checkpoint(run_dir / "checkpoints" / f"step_{step}.pt", model, optimizer, step,
+                    {**metadata, "source_update_counts": dict(counts), "best_step": best_step,
+                     "best_validation_bce": best_value if best_step else None,
+                     "plateau_state": {"best": dict(stopper.best), "stale": dict(stopper.stale)}})
             if args.convergence and (step % (args.validation_every_per_source * len(sources)) == 0 or step == limit):
-                validation = {s: validate(model, graphs[s], val[s], "lp", device, protocol, args.seed) for s in sources}
+                reports = {s: validate_lp_metrics(model, val[s], device, int(protocol["validation_batches"])) for s in sources}
+                validation = {s: report["bce"] for s, report in reports.items()}
+                atomic_json(run_dir / "validation" / f"step_{step}.json", {"step": step, "score_kind": "raw_dot_product", "negative_kind": "uniform_approximate", "reports": reports})
                 value = sum(validation.values()) / len(validation)
                 plateau = stopper.update(validation, step >= args.minimum_steps_per_source * len(sources))
                 log(step, {"validation/loss": value,
                     **{f"validation/source/{s}/loss": v for s, v in validation.items()},
-                    **{f"validation/source/{s}/stale_checks": n for s, n in stopper.stale.items()}})
+                    **{f"validation/source/{s}/stale_checks": n for s, n in stopper.stale.items()},
+                    **{key: v for s, report in reports.items() for key, v in log_values(report, f"validation/source/{s}").items()}})
                 print(json.dumps({"run_id": run_id, "step": step, "validation_loss": value,
                                   "stale_checks": stopper.stale}), flush=True)
                 if value < best_value:
                     best_value, best_step = value, step
                     save_checkpoint(run_dir / "best.pt", model, optimizer, step,
-                                    {**metadata, "source_update_counts": dict(counts)})
-                # Retain the latest full state without accumulating large checkpoint histories.
+                                    {**metadata, "source_update_counts": dict(counts), "best_step": best_step,
+                                     "best_validation_bce": best_value, "plateau_state": {"best": dict(stopper.best), "stale": dict(stopper.stale)}})
+                # Refresh latest state at every validation check.
                 save_checkpoint(run_dir / "latest.pt", model, optimizer, step,
-                                {**metadata, "source_update_counts": dict(counts)})
+                                {**metadata, "source_update_counts": dict(counts), "best_step": best_step,
+                                     "best_validation_bce": best_value, "plateau_state": {"best": dict(stopper.best), "stale": dict(stopper.stale)}})
                 if plateau:
                     stop_reason = "validation_plateau"
                     break
         training_seconds = time.monotonic() - started
         if window.weights:
-            log(step, window.flush())
+            log(step, {**window.flush(), **prediction_window.flush()})
         if not args.convergence:
-            validation = {s: validate(model, graphs[s], val[s], "lp", device, protocol, args.seed) for s in sources}
+            reports = {s: validate_lp_metrics(model, val[s], device, int(protocol["validation_batches"])) for s in sources}
+            validation = {s: report["bce"] for s, report in reports.items()}
+            atomic_json(run_dir / "validation" / f"step_{step}.json", {"step": step, "score_kind": "raw_dot_product", "negative_kind": "uniform_approximate", "reports": reports})
             log(step, {"validation/loss": sum(validation.values()) / len(validation),
-                **{f"validation/source/{s}/loss": value for s, value in validation.items()}})
+                **{f"validation/source/{s}/loss": value for s, value in validation.items()},
+                **{key: v for s, report in reports.items() for key, v in log_values(report, f"validation/source/{s}").items()}})
             best_step = step
         metadata["source_update_counts"] = counts
+        metadata["best_step"] = best_step
+        metadata["stop_reason"] = stop_reason
+        if args.convergence:
+            metadata["best_validation_bce"] = best_value
+            metadata["plateau_state"] = {"best": dict(stopper.best), "stale": dict(stopper.stale)}
         save_checkpoint(run_dir / "checkpoints" / f"step_{step}.pt", model, optimizer, step, metadata)
+        save_checkpoint(run_dir / "latest.pt", model, optimizer, step, metadata)
         if not args.convergence:
             (run_dir / "best.pt").symlink_to(f"checkpoints/step_{step}.pt")
         summary = {**metadata, "status": "complete", "final_step": step, "best_step": best_step,
@@ -149,9 +174,20 @@ def train_rung(run_id, sources, graphs, config, args, device):
         run.summary.update({"final_step": step, "best_step": best_step,
                             "stop_reason": stop_reason, "converged": summary["converged"],
                             "training_seconds": training_seconds, "status": "complete"})
-    (run_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+    atomic_json(run_dir / "summary.json", summary)
     print(json.dumps({"completed": run_id, "final_step": step, "stop_reason": stop_reason}), flush=True)
 
+
+
+def evaluation_columns(payload):
+    metrics = payload.get("metrics", {})
+    raw = metrics.get("test", {})
+    result = {f"dot_{k}": raw.get(k) for k in ["roc_auc", "average_precision", "bce", "positive_bce", "negative_bce", "brier", "ece_15_equal_width", "n_pairs", "n_positive", "n_negative"]}
+    result.update({f"dot_{k}_at_0_5": raw.get("at_probability_0_5", {}).get(k) for k in ["accuracy", "balanced_accuracy", "precision", "recall", "f1", "mcc", "tp", "tn", "fp", "fn"]})
+    result.update({f"dot_{k}_at_val_threshold": metrics.get("test_at_validation_threshold", {}).get(k) for k in ["accuracy", "balanced_accuracy", "precision", "recall", "f1", "mcc"]})
+    result.update({f"calibrated_{k}": metrics.get("calibrated_test", {}).get(k) for k in ["bce", "brier", "ece_15_equal_width"]})
+    result['cosine_average_precision'] = metrics.get('cosine_test', {}).get('average_precision')
+    return result
 
 
 def aggregate(args):
@@ -160,7 +196,7 @@ def aggregate(args):
         summary = json.loads((Path(args.state_root) / "lp" / run_id / "summary.json").read_text())
         for target in args.targets:
             path = Path(args.output_root) / "lp" / f"{run_id}__to__{target}.json"
-            payload = json.loads(path.read_text())
+            payload = json.loads(destination(path).read_text())
             if payload["sources"] != list(sources) or payload["checkpoint_step"] != summary["best_step"]:
                 raise ValueError(f"unexpected evaluation metadata: {path}")
             if payload["gates"]["holdout_leakage_edges"] != 0 or payload["gates"]["endpoint_sensitivity"] <= 0:
@@ -170,7 +206,8 @@ def aggregate(args):
                 "seed": payload["seed"], "checkpoint_step": payload["checkpoint_step"],
                 "stop_reason": summary.get("stop_reason", "fixed_budget"),
                 "converged": summary.get("converged", False),
-                "final_step": summary["final_step"], "roc_auc": payload["report"]["auc"]})
+                "final_step": summary["final_step"], "roc_auc": payload["report"]["auc"],
+                "roc_auc_score_kind": "validation_oriented_cosine", **evaluation_columns(payload)})
     path = Path(args.output_root) / "ladder_results.csv"
     with path.open("w", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
@@ -199,6 +236,7 @@ def main():
     p.add_argument("--queue", action="store_true")
     p.add_argument("--targets", nargs="+", choices=SOURCE_ORDER, default=list(SOURCE_ORDER))
     p.add_argument("--rungs", help="Comma-separated rung numbers; default all")
+    p.add_argument("--checkpoint-interval", type=int, default=18000, help="Persist numbered checkpoints every N optimizer updates")
     p.add_argument("--prefetch-depth", type=int, default=8)
     p.add_argument("--prefetch-workers", type=int, default=4)
     p.add_argument("--threads", type=int, default=4)
@@ -218,6 +256,8 @@ def main():
             args.validation_every_per_source, args.patience) < 1
             or args.min_delta < 0 or args.minimum_steps_per_source > args.max_steps_per_source):
         p.error("invalid convergence settings")
+    if args.checkpoint_interval < 1:
+        p.error("checkpoint interval must be positive")
     if args.log_interval < 1 or args.wandb_mode not in ("offline", "online", "disabled"):
         p.error("invalid tracking mode or logging interval")
     if args.steps < 1 or not 0 <= args.worker_index < args.workers:
