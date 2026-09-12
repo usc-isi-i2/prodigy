@@ -18,7 +18,7 @@ def plot(path,metric,title,name):
  fig.savefig(out/(name+'.png'),dpi=170);fig.savefig(out/(name+'.pdf'));plt.close(fig)
 if __name__=='__main__':
  plot(ROOT/'fr/feature_reconstruction_matrix.csv','scaled_cosine_error_mean','Node-only feature reconstruction • squared cosine error ↓\nDisjoint final-test nodes · 10 mask repetitions · seed 0','fr_matrix')
- for view,label in [('node','Node-only LP'),('node_neighbors','Node + 10-neighbor LP')]:
+ for view,label in [('node','Node-only LP'),('node_neighbors','Node + 10-neighbor LP'),('node_neighbors_disjoint','Node + 10-neighbor LP · disjoint context')]:
   p=ROOT/view/'matrix.csv'
   if p.exists():
    for metric in ['auc','bce']:plot(p,metric,label+' • raw-dot '+metric.upper()+(' ↑' if metric=='auc' else ' ↓'),view+'_'+metric)

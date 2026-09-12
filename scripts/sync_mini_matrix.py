@@ -31,10 +31,10 @@ filename='feature_reconstruction_matrix.csv' if args.kind=='fr' else 'matrix.csv
 with (results/filename).open() as f:
  reader=csv.DictReader(f);columns=reader.fieldnames;rows=list(reader)
 table=wandb.Table(columns=columns,data=[[float(r[k]) if k not in ('source','target') else r[k] for k in columns] for r in rows])
-with wandb.init(project=project,entity=entity,mode='online',name=f'{args.kind}-transfer-matrix',group=root.name,
+with wandb.init(project=project,entity=entity,mode='online',name=f'{args.kind}-{root.name}-transfer-matrix',group=root.name,
  config={'kind':args.kind,'cells':81,'graphs':'nonzero_features_v1; Ukraine/COVID one-hop minis','root':str(root)}) as run:
  run.log({'transfer_matrix':table})
- artifact=wandb.Artifact(f'{args.kind}-transfer-matrix',type='evaluation')
+ artifact=wandb.Artifact(f'{args.kind}-{root.name}-transfer-matrix',type='evaluation')
  artifact.add_dir(str(results));run.log_artifact(artifact)
  url=run.url
 (root/f'WANDB_{args.kind}.json').write_text(json.dumps(dict(matrix_url=url,training_runs=links),indent=2)+'\n')
