@@ -17,6 +17,8 @@ p.add_argument('--graph', type=Path, required=True)
 p.add_argument('--cache', type=Path, required=True)
 p.add_argument('--output', type=Path, required=True)
 p.add_argument('--repeats', type=int, default=3)
+p.add_argument('--modes', nargs='+', choices=['eager', 'mmap', 'mmap_shared'],
+               default=['eager', 'mmap', 'mmap_shared'])
 a = p.parse_args()
 assert not a.output.exists()
 torch.set_num_threads(4)
@@ -24,7 +26,7 @@ rows = []
 reference = None
 for repeat in range(a.repeats):
     # Alternate order to reduce systematic warm-cache/order bias.
-    modes = ['eager', 'mmap', 'mmap_shared']
+    modes = list(a.modes)
     if repeat % 2:
         modes.reverse()
     for mode in modes:
