@@ -1,6 +1,9 @@
 import importlib.util
 from pathlib import Path
 import unittest
+import sys
+sys.path.insert(0, str(Path(__file__).parents[1]))
+from verify_nonzero_feature_views import verify_attributes
 import torch
 from torch_geometric.data import Data
 
@@ -26,6 +29,7 @@ class NonzeroViewsTest(unittest.TestCase):
         self.assertEqual(ids.tolist(), [1, 2, 4])
         out = v.induced(graph, ids)
         v.verify_induced(graph, out, ids)
+        verify_attributes(graph, out, ids)
         self.assertEqual(out['edge_index'].tolist(), [[0, 1], [1, 0]])
         self.assertEqual(out['edge_attr'].flatten().tolist(), [1., 2.])
         self.assertEqual(out['user_ids'], ['b', 'c', 'e'])

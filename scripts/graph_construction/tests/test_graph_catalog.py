@@ -49,7 +49,13 @@ class GraphCatalogTest(unittest.TestCase):
         for graph in self.graphs:
             path = Path(graph["relative_path"])
             self.assertFalse(path.is_absolute(), graph["dataset_key"])
-            self.assertEqual(path.parent.name, "graphs", graph["dataset_key"])
+            if path.parts[0] == "graph_views":
+                self.assertEqual(path.parts[1], "nonzero_features_v1")
+                self.assertEqual(path.name, "graph.pt")
+                self.assertEqual(graph["kind"], "derived")
+                self.assertFalse(graph["default_eval"])
+            else:
+                self.assertEqual(path.parent.name, "graphs", graph["dataset_key"])
 
     def test_inventory_fields_are_present(self):
         for graph in self.graphs:
@@ -65,6 +71,9 @@ class GraphCatalogTest(unittest.TestCase):
                 else:
                     self.assertGreater(graph["artifact_size_bytes"], 0)
                     self.assertGreater(graph["artifact_size_gb"], 0)
+                if planned and graph["statistics"]["nodes"] is None:
+                    self.assertIsNone(graph["statistics"]["edges"])
+                    continue
                 self.assertGreater(graph["statistics"]["nodes"], 0)
                 self.assertGreater(graph["statistics"]["edges"], 0)
                 self.assertTrue(graph["tasks"]["supported"])
