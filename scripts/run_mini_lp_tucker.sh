@@ -20,4 +20,5 @@ for view in node node_neighbors; do
   if [[ "$failed" == 1 ]]; then exit 1; fi
  done
  python -m mixture_scaling.mini_lp aggregate --view "$view" --root "$ROOT"
+ if [[ "${SYNC_WANDB:-0}" == 1 ]]; then python scripts/sync_mini_matrix.py --root "$ROOT" --kind "$view"; fi
 done
