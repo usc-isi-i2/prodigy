@@ -14,8 +14,10 @@ production reproducible and keep interpretation tied to committed evidence.
 2. Locate the closest existing setup and analysis through
    `scripts/experiments/analysis/README.md`; inspect those before inventing structure.
 3. If the work runs on Tucker, also use the `prodigy-tucker` skill.
-4. Before parsing, merging, or interpreting results, read
-   [repository traps](../../../docs/agent_guides/repo_traps.md).
+4. For a multi-arm ladder, matrix, ablation grid, staged selection, or other campaign,
+   also use `prodigy-controlled-campaigns`.
+5. Before parsing, merging, comparing, or interpreting results, also use
+   `prodigy-evaluation-integrity`.
 
 ## Required outcomes
 
