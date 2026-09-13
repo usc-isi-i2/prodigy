@@ -56,7 +56,7 @@ cd "$REPO_ROOT"
 
 "$PYTHON" \
   scripts/experiments/analysis/synthesis/cross_experiment/native_model_result_matrix/plot_native_mixture_ladder_three_seed.py \
-  --vision "$ANALYSIS_ROOT/data/vision_native_mixture_three_seed_per_target.csv" \
+  --vision "$ANALYSIS_ROOT/data/vision_native_mixture_three_seed_expanded_cells.csv" \
   --output-root "$ANALYSIS_ROOT" \
   > "$STATUS_ROOT/cross_family_analysis.log" 2>&1
 

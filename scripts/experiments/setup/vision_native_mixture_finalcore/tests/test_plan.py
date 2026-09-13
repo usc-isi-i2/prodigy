@@ -3,6 +3,8 @@ from scripts.experiments.setup.vision_native_mixture_finalcore.mixture_plan impo
     build_mixture_models,
 )
 
+from pathlib import Path
+
 
 def test_three_order_odd_rung_plan_is_deduplicated():
     models = build_mixture_models()
@@ -12,3 +14,16 @@ def test_three_order_odd_rung_plan_is_deduplicated():
     all9 = next(model for model in models if model.model_id == "all9")
     assert len(all9.aliases) == 3
     assert RUNGS == (1, 3, 5, 7, 9)
+
+
+def test_postprocess_passes_fingerprinted_cells_to_cross_family_plot():
+    script = (Path(__file__).parents[1] / "postprocess_three_seed_tucker.sh").read_text()
+
+    assert (
+        '--vision "$ANALYSIS_ROOT/data/vision_native_mixture_three_seed_expanded_cells.csv"'
+        in script
+    )
+    assert (
+        '--vision "$ANALYSIS_ROOT/data/vision_native_mixture_three_seed_per_target.csv"'
+        not in script
+    )
