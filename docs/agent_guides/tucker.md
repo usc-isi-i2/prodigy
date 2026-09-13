@@ -34,6 +34,40 @@ the current inventory; the set changes over time.
   A matching branch does not imply that `state/<run>/` exists there. Evaluate in the
   same worktree or pass absolute paths.
 
+### Retirement and top-level hygiene
+
+Close completed worktrees promptly instead of allowing `/dataMeR1/phil/gfm` to
+become a permanent run registry. Keep the top level limited to primary repository
+checkouts, currently active worktrees, and a clearly named archive root.
+
+Before retiring a checkout:
+
+1. Resolve its Git common directory, branch, HEAD, remote, and purpose. Do not infer
+   repository ownership from the directory prefix.
+2. Check tmux and relevant processes, then inspect tracked, untracked, and ignored
+   files separately. Ignored `state/` and `log/` content is often the only copy.
+3. Promote completed scientific output into the repository's canonical analysis
+   tree: qualified findings, small result tables, audit/provenance receipts, and
+   figures. Validate structured evidence and use explicit paths when staging.
+4. Protect every commit on a remote. Give detached heads descriptive archive refs.
+   If the repository is Tucker-only, preserve its full branch history in a private
+   remote and verify a laptop clone before deleting Tucker copies. Uploading requires
+   explicit user authorization; exclude sensitive and oversized runtime data.
+5. Preserve small machine-readable runtime evidence when it is not represented by
+   canonical outputs. Keep private or uncertain material in a restricted dated
+   archive. Checkpoints, W&B directories, dependency trees, caches, and reproduced
+   embeddings may be deleted only after their results are preserved and no resume is
+   needed.
+6. Re-run the job and reachability checks immediately before removal. Use
+   `git worktree remove` for registered worktrees and exact validated paths for other
+   checkouts; never use a broad prefix glob as a deletion target.
+7. Prune worktree metadata, verify the remaining inventory, and report remote refs,
+   archive locations, exclusions, and disk space reclaimed.
+
+When a run is launched, record enough ownership metadata to make this closeout
+possible: repository, worktree, branch/revision, tmux session, run/state/log paths,
+device, and the expected canonical findings location.
+
 ## Environments
 
 Use `prodigy` for training and evaluation. Use `bio-embeddings-v001` for graph

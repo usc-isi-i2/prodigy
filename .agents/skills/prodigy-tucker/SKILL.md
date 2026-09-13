@@ -1,6 +1,6 @@
 ---
 name: prodigy-tucker
-description: Operate PRODIGY training, evaluation, graph construction, embedding generation, checkpoints, logs, worktrees, GPUs, or tmux sessions on the Tucker cluster. Use for Tucker and /dataMeR1 work; do not use for ordinary local-only code edits or plots.
+description: Operate and clean up PRODIGY training, evaluation, graph construction, embedding generation, checkpoints, logs, worktrees, GPUs, or tmux sessions on the Tucker cluster. Use for Tucker and /dataMeR1 work; do not use for ordinary local-only code edits or plots.
 ---
 
 # PRODIGY on Tucker
@@ -43,3 +43,23 @@ checks.
 - Label smoke runs as smoke validation, never as completed experimental evidence.
 - After execution, verify the session/process, log creation, selected device, revision,
   and expected output path. Report the Tucker worktree and branch.
+
+## Worktree retirement
+
+Treat retirement as part of every experiment lifecycle. Read the retirement section
+of [Tucker operations](../../../docs/agent_guides/tucker.md) before removing or
+reorganizing a Tucker checkout.
+
+- Inventory worktrees through their actual Git common directory; similarly named
+  directories may belong to separate repositories or may be plain runtime output.
+- A clean `git status` is insufficient. Audit tracked changes, ordinary untracked
+  files, ignored files, branch reachability, tmux sessions, and relevant processes.
+- Before removal, commit qualified findings plus small canonical tables, receipts,
+  provenance, and figures. Validate evidence according to the evaluation-integrity
+  skill. Do not publish private examples, raw social profiles, credentials, large
+  checkpoints, or caches merely to make a worktree removable.
+- Ensure every head, including detached heads, has a durable named ref on an
+  appropriate remote. For a local-only repository, create a private remote and a
+  laptop clone before cleanup when the user authorizes publishing it.
+- Remove only exact audited paths. Keep uncertain artifacts in a dated archive and
+  report exclusions, retained recovery material, and reclaimed space.
