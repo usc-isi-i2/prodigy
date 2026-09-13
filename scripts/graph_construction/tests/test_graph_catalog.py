@@ -90,7 +90,7 @@ class GraphCatalogTest(unittest.TestCase):
 
     def test_nonzero_views(self):
         views = [g for g in self.graphs if g["relative_path"].startswith("graph_views/nonzero_features_v1/")]
-        self.assertEqual(len(views), 13)
+        self.assertEqual(len(views), 15)
         for graph in views:
             self.assertEqual(graph["kind"], "derived")
             self.assertFalse(graph["default_eval"])
