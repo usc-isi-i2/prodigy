@@ -57,7 +57,7 @@ def model_from_params(params, checkpoint, device):
     return model.to(device).eval()
 
 
-def completed_cell(output,job,target,episodes):
+def completed_cell(output,job,target,episodes,legacy_test_only=False):
     """Reuse a tested cell only after checking checkpoint and validation provenance."""
     p=job['params'];selection=job['selection'];output=Path(output)
     path=output/'cells'/p['prefix']/f'{target}.json'
@@ -69,11 +69,13 @@ def completed_cell(output,job,target,episodes):
                   sources=selection['sources'],flags=selection['flags'],holdout=HOLDOUT,
                   seed=p['seed'],training_revision=p['campaign_revision'])
     if any(old.get(k)!=v for k,v in expected.items()):raise ValueError(f'Resume metadata mismatch: {path}')
+    if bool(old.get('legacy_test_only', False)) != legacy_test_only:
+        raise ValueError(f'Legacy test-only mode mismatch: {path}')
     checksum=hashlib.sha256(Path(selection['checkpoint']).read_bytes()).hexdigest()
     if old.get('checkpoint_sha256')!=checksum:raise ValueError(f'Resume checkpoint content mismatch: {path}')
     if not all(math.isfinite(old[k]) for k in ('roc_auc','accuracy','loss')):
         raise ValueError(f'Non-finite completed cell: {path}')
-    if target in selection['sources']:
+    if target in selection['sources'] and not legacy_test_only:
         replay_path=output/'validation_replay'/p['prefix']/f'{target}.json'
         if not replay_path.exists():raise ValueError(f'Missing prior validation replay: {path}')
         replay=json.loads(replay_path.read_text())
@@ -84,7 +86,8 @@ def completed_cell(output,job,target,episodes):
     return True
 
 
-def worker(dataset,jobs,output,worker_id,episodes,targets,validation_only=False,replay_repeats=1,invocation_id=None):
+def worker(dataset,jobs,output,worker_id,episodes,targets,validation_only=False,replay_repeats=1,
+           invocation_id=None,legacy_test_only=False):
     os.setsid()
     import torch
     from experiments.nm_campaign import atomic_json,materialize,evaluate
@@ -102,38 +105,42 @@ def worker(dataset,jobs,output,worker_id,episodes,targets,validation_only=False,
         for target in targets:
             # Completed cells already passed their gate. Check their immutable
             # provenance, then replay validation only for genuinely pending cells.
-            pending=jobs if validation_only else [j for j in jobs if not completed_cell(output,j,target,episodes)]
+            pending=jobs if validation_only else [
+                j for j in jobs
+                if not completed_cell(output,j,target,episodes,legacy_test_only)
+            ]
             # Replay the trainer's exact validation panel after strict checkpoint
             # reload. This checks model reconstruction AND metric/data parity.
             validation_cache={}
-            for job in pending:
-                if target not in job['selection']['sources']:continue
-                p=job['params'];selection=job['selection'];state=Path(job['state'])
-                protocol=json.loads((state/'validation_protocol.json').read_text())
-                count=protocol['episodes_per_source']
-                if count not in validation_cache:
-                    validation_cache[count]=materialize(dataset,p,target,'val',count)
-                batches,fp=validation_cache[count]
-                if fp!=protocol['fingerprints'][target]:
-                    raise ValueError(f'Validation fingerprint mismatch: {p["prefix"]} {target}')
-                model=model_from_params(p,selection['checkpoint'],device)
-                replays=[evaluate(model,batches,device) for _ in range(replay_repeats)]
-                metrics=replays[0]
-                history=json.loads((state/'validation_history.json').read_text())
-                expected=next(r for r in history if r['step']==selection['best_step'])['per_source'][target]
-                errors={key:max(abs(m[key]-expected[key]) for m in replays) for key in ('roc_auc','accuracy','loss')}
-                # CUDA scatter rounding can swap nearly tied ranks while loss and
-                # decisions agree. AUC tolerance is 100x below the .001 effect
-                # threshold; keep episode identity, accuracy and loss gates strict.
-                tolerances=dict(roc_auc=1e-5,accuracy=1e-6,loss=1e-6)
-                if any(errors[key]>tolerances[key] for key in errors):
-                    raise ValueError(f'Validation checkpoint replay mismatch: {p["prefix"]} {target}: {errors}')
-                atomic_json(output/'validation_replay'/p['prefix']/f'{target}.json',
-                    dict(status='passed',checkpoint=selection['checkpoint'],fingerprint=fp,
-                         errors=errors,tolerances=tolerances,replays=replays,metrics=metrics,
-                         invocation_id=invocation_id,evaluation_revision=revision))
-                print(f'VALIDATION REPLAY PASS {p["prefix"]} {target}',flush=True)
-                del model
+            if not legacy_test_only:
+                for job in pending:
+                    if target not in job['selection']['sources']:continue
+                    p=job['params'];selection=job['selection'];state=Path(job['state'])
+                    protocol=json.loads((state/'validation_protocol.json').read_text())
+                    count=protocol['episodes_per_source']
+                    if count not in validation_cache:
+                        validation_cache[count]=materialize(dataset,p,target,'val',count)
+                    batches,fp=validation_cache[count]
+                    if fp!=protocol['fingerprints'][target]:
+                        raise ValueError(f'Validation fingerprint mismatch: {p["prefix"]} {target}')
+                    model=model_from_params(p,selection['checkpoint'],device)
+                    replays=[evaluate(model,batches,device) for _ in range(replay_repeats)]
+                    metrics=replays[0]
+                    history=json.loads((state/'validation_history.json').read_text())
+                    expected=next(r for r in history if r['step']==selection['best_step'])['per_source'][target]
+                    errors={key:max(abs(m[key]-expected[key]) for m in replays) for key in ('roc_auc','accuracy','loss')}
+                    # CUDA scatter rounding can swap nearly tied ranks while loss and
+                    # decisions agree. AUC tolerance is 100x below the .001 effect
+                    # threshold; keep episode identity, accuracy and loss gates strict.
+                    tolerances=dict(roc_auc=1e-5,accuracy=1e-6,loss=1e-6)
+                    if any(errors[key]>tolerances[key] for key in errors):
+                        raise ValueError(f'Validation checkpoint replay mismatch: {p["prefix"]} {target}: {errors}')
+                    atomic_json(output/'validation_replay'/p['prefix']/f'{target}.json',
+                        dict(status='passed',checkpoint=selection['checkpoint'],fingerprint=fp,
+                             errors=errors,tolerances=tolerances,replays=replays,metrics=metrics,
+                             invocation_id=invocation_id,evaluation_revision=revision))
+                    print(f'VALIDATION REPLAY PASS {p["prefix"]} {target}',flush=True)
+                    del model
             validation_cache.clear()
             if validation_only:continue
             if not pending:
@@ -148,6 +155,7 @@ def worker(dataset,jobs,output,worker_id,episodes,targets,validation_only=False,
                     sha=hashlib.file_digest(f,'sha256').hexdigest() if hasattr(hashlib,'file_digest') else hashlib.sha256(f.read()).hexdigest()
                 payload=dict(protocol='nmi_fixed_nm_v1',model_id=p['prefix'],target=target,
                     invocation_id=invocation_id,
+                    legacy_test_only=legacy_test_only,
                     sources=selection['sources'],holdout=HOLDOUT,seed=p['seed'],
                     flags=selection['flags'],checkpoint=checkpoint,checkpoint_sha256=sha,
                     checkpoint_step=selection['best_step'],training_steps=selection['training_steps'],
@@ -174,6 +182,10 @@ def main():
     a.add_argument('--validation-only',action='store_true',help='Replay selected checkpoints on training-source validation only')
     a.add_argument('--models',nargs='+',help='Exact completed model IDs to evaluate')
     a.add_argument('--replay-repeats',type=int,default=1,help='Repeated validation forwards to quantify numerical variation')
+    a.add_argument(
+        '--legacy-test-only', action='store_true',
+        help='Skip training-validation replay for legacy checkpoints whose sampler protocol predates this evaluator.',
+    )
     args=a.parse_args()
     if args.workers_per_gpu<1:a.error('--workers-per-gpu must be positive')
     if args.episodes<1:a.error('--episodes must be positive')
@@ -202,6 +214,7 @@ def main():
             atomic_json(args.output/'history'/f'before_{invocation_id}'/path.name,json.loads(path.read_text()))
     atomic_json(args.output/'plan.json',dict(models=[j['params']['prefix'] for j in jobs],targets=args.targets,
         episodes=args.episodes,validation_only=args.validation_only,replay_repeats=args.replay_repeats,
+        legacy_test_only=args.legacy_test_only,
         invocation_id=invocation_id,gpus=args.gpus,workers_per_gpu=args.workers_per_gpu,
         evaluation_revision=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()))
     started=time.time()
@@ -217,7 +230,10 @@ def main():
         for i,gpu in enumerate(slots):
             selected=jobs[i::len(slots)]
             if not selected:continue
-            process=context.Process(target=worker,args=(dataset,selected,str(args.output),i,args.episodes,args.targets,args.validation_only,args.replay_repeats,invocation_id))
+            process=context.Process(target=worker,args=(
+                dataset,selected,str(args.output),i,args.episodes,args.targets,
+                args.validation_only,args.replay_repeats,invocation_id,args.legacy_test_only,
+            ))
             start_on_gpu(process,gpu);processes.append(process)
         for process in processes:process.join()
         failures=[p.exitcode for p in processes if p.exitcode!=0]

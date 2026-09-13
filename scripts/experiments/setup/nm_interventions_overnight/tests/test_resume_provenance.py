@@ -39,5 +39,12 @@ class ResumeProvenanceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'Missing prior validation replay'):
             completed_cell(self.root,self.job,self.target,512)
 
+    def test_legacy_test_only_cell_does_not_require_obsolete_validation_replay(self):
+        self.replay.unlink()
+        path=self.root/'cells'/self.model/f'{self.target}.json'
+        cell=json.loads(path.read_text());cell['legacy_test_only']=True
+        path.write_text(json.dumps(cell))
+        self.assertTrue(completed_cell(self.root,self.job,self.target,512,legacy_test_only=True))
+
 
 if __name__=='__main__':unittest.main()
