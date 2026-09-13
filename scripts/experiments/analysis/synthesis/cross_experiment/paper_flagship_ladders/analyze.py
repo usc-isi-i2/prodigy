@@ -59,6 +59,11 @@ PRACTICAL_DELTA = 0.001
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed0-nm", type=Path, default=SEED0_NM)
+    parser.add_argument(
+        "--seed0-nm-root",
+        type=Path,
+        help="Fresh seed-0 JSON cells evaluated with the replica protocol; overrides --seed0-nm.",
+    )
     parser.add_argument("--replicate-nm-root", type=Path, required=True)
     parser.add_argument("--classification", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, default=HERE)
@@ -104,15 +109,32 @@ def source_tuple(value: object) -> tuple[str, ...]:
     return tuple(part.strip() for part in str(value).split(",") if part.strip())
 
 
-def load_nm(seed0_path: Path, replicate_root: Path) -> pd.DataFrame:
-    seed0 = pd.read_csv(seed0_path)
-    seed0 = seed0[seed0["model_id"].str.fullmatch(MODEL_RE)].copy()
+def json_cells(root: Path) -> pd.DataFrame:
     rows = []
-    for path in sorted(replicate_root.glob("*/*.json")):
+    for path in sorted(root.glob("*/*.json")):
         row = json.loads(path.read_text(encoding="utf-8"))
         if MODEL_RE.fullmatch(str(row.get("model_id", ""))):
             rows.append(row)
-    replicas = pd.DataFrame(rows)
+    return pd.DataFrame(rows)
+
+
+def load_nm(
+    seed0_path: Path,
+    replicate_root: Path,
+    seed0_refresh_root: Path | None = None,
+) -> pd.DataFrame:
+    if seed0_refresh_root is None:
+        seed0 = pd.read_csv(seed0_path)
+        seed0 = seed0[seed0["model_id"].str.fullmatch(MODEL_RE)].copy()
+    else:
+        seed0 = json_cells(seed0_refresh_root)
+        if seed0.empty:
+            raise ValueError(f"no refreshed seed-0 NM cells found beneath {seed0_refresh_root}")
+        parsed_seed = seed0["model_id"].str.extract(MODEL_RE)["seed"].astype(int)
+        if not parsed_seed.eq(0).all():
+            bad = seed0.loc[~parsed_seed.eq(0), "model_id"].unique().tolist()
+            raise ValueError(f"non-seed-0 models in refreshed seed-0 NM cells: {bad[:10]}")
+    replicas = json_cells(replicate_root)
     if replicas.empty:
         raise ValueError(f"no flagship NM cells found beneath {replicate_root}")
     frame = pd.concat([seed0, replicas], ignore_index=True, sort=False)
@@ -631,7 +653,7 @@ def plot_capacity(summary: pd.DataFrame, output: Path) -> None:
 
 def main() -> None:
     args = parse_args()
-    all_nm = load_nm(args.seed0_nm, args.replicate_nm_root)
+    all_nm = load_nm(args.seed0_nm, args.replicate_nm_root, args.seed0_nm_root)
     nm = all_nm[all_nm.arm.isin(ARMS)].copy()
     capacity_nm = all_nm[all_nm.arm.isin(CAPACITY_ARMS)].copy()
     validate_grid(
