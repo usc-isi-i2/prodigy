@@ -1,0 +1,33 @@
+{
+  "source_run": "/dataMeR1/phil/gfm/prodigy-publickg-paired-state/log/publickg_mechanism_fullgraph",
+  "episodes": 500,
+  "checkpoint_sha256": "5e48d5abc0660f7e537d79d6ccd74150aed38eecc8ca90a048adb6dc94aafee7",
+  "upstream": {
+    "head": "107ba57234d3188227cda5b78a2dbcfb84a1c694",
+    "clean": true
+  },
+  "source_protocol_sha256": "9b9868dcd99f64cd967a879f69cb80d670aa4663f163cd889cba0374e5c12672",
+  "source_index_sha256": "d69c0b9263c33e84c732d6710ab4dae6705590ef6d78764817357b555b81b02d",
+  "physical_gpu": 2,
+  "dry_run": false,
+  "parity": {
+    "primary_layer": 0,
+    "parity_atol": 0.0001,
+    "parity_rtol": 0.0,
+    "arms": [
+      "native",
+      "support_context_removed",
+      "query_context_removed",
+      "keys",
+      "values",
+      "joint"
+    ],
+    "decoder_crosses": [
+      "native_queries_changed_references",
+      "changed_queries_native_references"
+    ],
+    "target_tuning": false,
+    "episode_count": 500
+  },
+  "readout": "row-L2 ridge, lambda=1, no intercept, scale=1, support labels only"
+}

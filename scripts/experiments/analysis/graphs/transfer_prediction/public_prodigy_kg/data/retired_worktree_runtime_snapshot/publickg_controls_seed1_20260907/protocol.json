@@ -1,0 +1,16 @@
+{
+  "source": "/dataMeR1/phil/gfm/prodigy-publickg-paired-state/log/publickg_readout_seed1_20260907",
+  "stage_run": null,
+  "geometry_layout": "embedded",
+  "initialization": "/dataMeR1/phil/gfm/prodigy-publickg-seed1/log/publickg_train_seed1_20260907/initial_model.ckpt",
+  "initialization_sha256": "898fd2c8c28a11e94a189d3619fe3c2b1ab41f0f52b854ccecaea7bf6fe301cf",
+  "source_index_sha256": "749be5878ffe0a2a163094ea356a8106a1e5349a7bb1f3023136abd9fdae2502",
+  "episodes": 500,
+  "features": [
+    "trained pre-metagraph",
+    "saved-initialization pre-metagraph",
+    "head-tail text concatenation"
+  ],
+  "readouts": "ridge lambda1, scale1, no intercept; none/support centering then row-L2",
+  "scope": "GFM pretraining control; text embeddings are pretrained in every arm"
+}
