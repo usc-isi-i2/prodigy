@@ -33,13 +33,13 @@ Scope: 29 local mixture-scaling worktrees and 42 registered Tucker worktrees. Th
 | `/Users/philipp/projects/gfm/mixture-scaling` | `codex/social-source-completion` / `7f8ec812d0e8` | Retain: unrelated dirty work preserved | 6 |
 | `/private/tmp/coordinate-ks` | `codex/coordinate-ks` / `e14e39cef561` | Retain: current/other task or not approved in this batch | 3 |
 | `/private/tmp/feature-dimension-ks` | `codex/feature-dimension-ks` / `8ad08fbbdb99` | Retain: current/other task or not approved in this batch | 3 |
-| `/private/tmp/mixture-bias-lp` | `codex/bias-lp-matrices` / `d944d7ba61c0` | Remove redundant checkout after archive is committed | 10 |
-| `/private/tmp/mixture-decoder-test` | `codex/decoder-bias-test` / `c82f8c89ea3d` | Remove redundant checkout after archive is committed | 9 |
-| `/private/tmp/mixture-disjoint` | `codex/disjoint-neighbor-lp` / `0a473096efef` | Remove redundant checkout after archive is committed | 7 |
-| `/private/tmp/mixture-gap-audit` | `codex/lp-gap-audit` / `89ca0a001290` | Remove redundant checkout after archive is committed | 11 |
+| `/private/tmp/mixture-bias-lp` | `codex/bias-lp-matrices` / `d944d7ba61c0` | Removed; pinned branch and evidence preserved | 10 |
+| `/private/tmp/mixture-decoder-test` | `codex/decoder-bias-test` / `c82f8c89ea3d` | Removed; pinned branch and evidence preserved | 9 |
+| `/private/tmp/mixture-disjoint` | `codex/disjoint-neighbor-lp` / `0a473096efef` | Removed; pinned branch and evidence preserved | 7 |
+| `/private/tmp/mixture-gap-audit` | `codex/lp-gap-audit` / `89ca0a001290` | Removed; pinned branch and evidence preserved | 11 |
 | `/private/tmp/mixture-mini-lp` | `codex/mlp-mixed-batch-pilot` / `74419e883a46` | Retain: current/other task or not approved in this batch | 10 |
-| `/private/tmp/mixture-mini-transfer` | `codex/mini-transfer-fast` / `9b54a0ab01d5` | Remove redundant checkout after archive is committed | 5 |
-| `/private/tmp/mixture-uniform-eval` | `codex/uniform-mini-eval` / `0fa26a6e15e9` | Remove redundant checkout after archive is committed | 8 |
+| `/private/tmp/mixture-mini-transfer` | `codex/mini-transfer-fast` / `9b54a0ab01d5` | Removed; pinned branch and evidence preserved | 5 |
+| `/private/tmp/mixture-uniform-eval` | `codex/uniform-mini-eval` / `0fa26a6e15e9` | Removed; pinned branch and evidence preserved | 8 |
 | `/private/tmp/mlp-activation-inspect` | `codex/mlp-activation-inspect` / `86ffcfd88b92` | Retain: current/other task or not approved in this batch | 3 |
 | `/private/tmp/mlp-auc-bce` | `codex/mlp-auc-bce` / `0b6ffeff9e1e` | Retain: current/other task or not approved in this batch | 3 |
 | `/private/tmp/mlp-dimension-ablation` | `codex/mlp-dimension-ablation` / `170ae5ea167f` | Retain: current/other task or not approved in this batch | 3 |
@@ -75,3 +75,9 @@ Pinned commit IDs and current remote containment are recorded in `data/local_wor
 Original dirty worktrees remain dirty: their full changes are recorded, not silently committed into someone else’s branch or discarded. Thus this is an inventory with preserved recovery data, not a claim that every repository is clean. Unreviewed experiment outcomes are retained rather than fabricated. No adaptation-efficiency experiment was run in this conversation; it remains a discussed proposal.
 
 Tucker inventory records runtime sizes and dirty state. No tmux sessions or compute processes were present at inspection. No Tucker worktree, graph artifact, checkpoint or offline run is scheduled for deletion in this batch.
+
+## Completed cleanup
+
+Six local worktrees were removed using `git worktree remove` without force after checking unchanged HEAD, clean status, remote branch containment and preservation of every non-cache ignored file. All branches remain. Reported worktree disk usage before removal totals 598684 KiB (filesystem accounting, not a measured global free-space delta). See `data/cleanup_receipt.json`.
+
+The recovery archive is committed locally only. Automatic approval review rejected a push to Tucker because the broad staged/unstaged/untracked payload may contain sensitive source or results and requires explicit payload/destination approval. Original Tucker state was not deleted.
