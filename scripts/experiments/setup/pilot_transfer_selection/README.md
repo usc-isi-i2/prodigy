@@ -32,6 +32,15 @@ The early checkpoints exist for all 27 specialists. They have not been evaluated
 on a complete nine-target fixed panel. Historical final-core validation evaluated
 models only on their active source distributions and cannot answer this question.
 
+The merged final-core graph was absent when the first Stage-A smoke was attempted
+on 2026-09-12. All nine immutable source artifacts remain present on Tucker, and
+the original deterministic merge recipe is restored in this branch. Before any
+new evaluation, the user should run `recover_final_core_graph_tucker.sh`; it
+refuses overwrite and verifies the exact source order, tensor dimensions, and
+70/15/15 edge counts recorded by the original final-core evaluation. After the
+normal smoke runs, its observed validation episode fingerprints must also agree
+across every checkpoint before results are admitted.
+
 ## Stage A: prerequisite diagnostic
 
 ### Intervention and evaluation
@@ -174,6 +183,16 @@ Tucker production command, after the branch is available in a dedicated worktree
 tmux new-session -d -s pilot-transfer-stage-a \
   'export PATH="/home/mhchu/miniconda3/bin:$PATH"; \
    bash scripts/experiments/setup/pilot_transfer_selection/run_stage_a_tucker.sh'
+```
+
+Reconstruct the missing immutable evaluation artifact first (large CPU/RAM and
+disk operation; intentionally not launched by the agent):
+
+```bash
+tmux new-session -d -s pilot-transfer-graph-recovery \
+  'export PATH="/home/mhchu/miniconda3/bin:$PATH"; \
+   cd /dataMeR1/phil/gfm/prodigy-pilot-transfer-selection; \
+   bash scripts/experiments/setup/pilot_transfer_selection/recover_final_core_graph_tucker.sh'
 ```
 
 The evaluator reuses final-core's materialized CPU replay, strict checkpoint
