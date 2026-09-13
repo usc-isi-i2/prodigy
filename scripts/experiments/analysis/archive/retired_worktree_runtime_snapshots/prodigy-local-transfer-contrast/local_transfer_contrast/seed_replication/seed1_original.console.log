@@ -1,0 +1,1172 @@
+/home/mhchu/miniconda3/lib/python3.12/site-packages/conda/base/context.py:211: FutureWarning: Adding 'defaults' to channel list implicitly is deprecated and will be removed in 25.9.
+
+To remove this warning, please choose a default channel explicitly with conda's regular configuration system, e.g. by adding 'defaults' to the list of channels:
+
+  conda config --add channels defaults
+
+For more information see https://docs.conda.io/projects/conda/en/stable/user-guide/configuration/use-condarc.html
+
+  deprecated.topic(
+{"models": ["ss_covid_political", "ss_covid", "ss_cp_hk", "ss_election2020", "ss_facebook_page_reference", "ss_midterm", "ss_twibot20", "ss_ukr_rus", "ss_ukr_rus_suspended"], "targets": ["covid_political", "facebook_page_reference", "election2020", "twibot20", "ukr_rus_suspended"], "variants": ["baseline"], "episodes": 128}
+Loading covid_political graph from /dataMeR1/phil/data/covid_political/graphs/retweet_graph.pt...
+Applied midterm feature subset 'emb_only': 768 -> 768 dims.
+Using all midterm edge features (2 dims): ['rt_weight', 'mn_weight']
+Graph: 78672 nodes, 180928 edges, 768 node features
+Building neighbor sampler (CSR preprocessing)...
+Neighbor sampler ready.
+wandb: Tracking run with wandb version 0.27.2
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/wandb/offline-run-20260906_193812-y5w1jg9l
+Edge features: 2 dims from edge view 'default'
+[19:38:13] Saved effective config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/wandb/offline-run-20260906_193812-y5w1jg9l/files/effective_config.yaml
+[19:38:13] Saved source config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/wandb/offline-run-20260906_193812-y5w1jg9l/files/training.yaml
+[19:38:13] Command: /home/mhchu/miniconda3/envs/prodigy/bin/python /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/scripts/experiments/setup/target_performance_mechanisms/replay.py --model-list log/local_transfer_contrast/seed_replication/models_seed1.tsv --output log/local_transfer_contrast/seed_replication/seed1_original --datasets covid_political,facebook_page_reference,election2020,twibot20,ukr_rus_suspended --specialists-only --variants baseline --device 0 --batch-count 32 --threads 8 --save-embeddings --training-seed 0 --eval-episode-seed-offset 0 --trace-parity-atol 1e-5
+wandb: WARNING URL not available in offline run
+[19:38:13] Initializing trainer
+---------- Parameters ----------
+  config: scripts/experiments/setup/final_core/training.yaml
+  root: /dataMeR1/phil/data/covid_political/graphs
+  dataset: covid_political
+  csv_filename: twitter_data.csv
+  facebook_pkl_filename: facebook_2022-06-24_2022-06-25_part1.pkl
+  facebook_edges_filename: facebook_2022-06-24_2022-06-25_part1_edges.csv
+  facebook_node_features_filename: facebook_2022-06-24_2022-06-25_part1_node_features.csv
+  facebook_data_source: csv
+  facebook_use_edge_features: False
+  facebook_edge_feature_columns:
+  facebook_source_pkl_path:
+  facebook_embeddings_path:
+  facebook_embedding_ids_path:
+  facebook_text_emb_model:
+  facebook_target_dim: 768
+  facebook_filter_to_uk_ru: True
+  facebook_max_posts: None
+  label_type: verified
+  max_users: None
+  invalidate_cache: False
+  dataset_len_cap: 32
+  val_len_cap: 32
+  test_len_cap: 32
+  shuffle_index: False
+  force_cache: False
+  classification_only: False
+  early_stopping_patience: 20
+  reset_after_layer: None
+  original_features: True
+  override_log: True
+  seed: 0
+  eval_episode_seed_offset: 0
+  metric: Acc
+  learning_rate: 0.002
+  epochs: 1
+  print_epoch: 10
+  eval_epoch: 10
+  checkpoint_epoch: 10
+  print_step: 100
+  eval_step: 100000
+  checkpoint_step: 100000
+  source_diagnostics_interval: 0
+  checkpoint_steps: 100,300,900,2500
+  batch_size: 4
+  weight_decay: 0.001
+  dropout: 0.0
+  text_features_dropout: 0
+  rel_sample_random_seed: None
+  split_train_nodes: False
+  verbose: False
+  detect_anomaly: False
+  loader_start_method:
+  workers: 0
+  device: cuda:0
+  input_dim: 768
+  emb_dim: 256
+  gnn_type: sage
+  n_layer: 1
+  meta_n_layer: 1
+  second_gnn: Atten
+  attention_mask_scheme: causal
+  skip_path: False
+  has_final_back: False
+  layers: S,U,M
+  ignore_label_embeddings: False
+  zero_label_embeddings: False
+  not_freeze_learned_label_embedding: False
+  linear_probe: False
+  fix_datasets_first: False
+  no_bn_metagraph: False
+  no_bn_encoder: False
+  calc_ranks: False
+  save_roc_curve: False
+  eval_only: True
+  eval_only_split: test
+  eval_test_before_train: False
+  eval_val_before_train: False
+  eval_after_train: False
+  meta_gnn_pos_only: False
+  task_name: classification
+  zero_shot: False
+  no_split_labels: True
+  all_test: False
+  train_cap: None
+  label_set: None
+  csr_split: False
+  n_way: 2
+  n_shots: 10
+  n_query: 12
+  neighbor_sampling_strategy: strict
+  neighbor_sampling_strata:
+  neighbor_sampling_episode_source: graph_id
+  neighbor_sampling_source_subset:
+  neighbor_sampling_source_sequence:
+  neighbor_sampling_source_sequence_steps:
+  neighbor_sampling_episode_source_weighting: balanced
+  neighbor_sampling_batch_source_mode: independent
+  neighbor_sampling_cross_source_prob: 0.0
+  neighbor_sampling_center_radii:
+  neighbor_sampling_center_radius_weights:
+  neighbor_sampling_center_region_fanout: 64
+  neighbor_sampling_center_region_node_limit: 4096
+  neighbor_sampling_center_region_candidate_limit: 512
+  neighbor_sampling_center_max_attempts: 200
+  neighbor_matching_edge_split: False
+  n_way_upper: -1
+  n_shots_upper: -1
+  n_query_upper: -1
+  max_length: -1
+  augmentation:
+  augment_test: False
+  ablate_features: none
+  ablate_edges: none
+  structural_features: none
+  attr_regression_weight: 0.0
+  fp_mask_ratio: 0.3
+  fp_mask_strategy: zero
+  mix_task_counts: 1,1,1
+  mix_cl_aug: NZ0.2
+  e4_combine: simultaneous
+  e4_weights: 1,1,1
+  e4_task_counts: 1,1,1
+  e4_lp_neg_k: 1
+  prefix: archmatrix_prodigy_eval_replay_s0_step2500_covid_political
+  timestamp: mechanism_replay
+  tags: []
+  log_dir: log/local_transfer_contrast/seed_replication/seed1_original/trainer_logs
+  state_dir: log/local_transfer_contrast/seed_replication/seed1_original/state
+  bert_emb_model: multi-qa-distilbert-cos-v1
+  bert_cache: multi-qa-distilbert-cos-v1
+  label_emb_model:
+  label_emb_texts:
+  label_emb_revision:
+  label_emb_trust_remote_code: True
+  label_emb_normalize: True
+  kg_emb_model:
+  pretrained_model_run:
+  resume_training_checkpoint:
+  n_hop: 2
+  neighbor_sampling_hop_sizes: 9,9
+  neighbor_sampling_node_limit: 101
+  neighbor_matching_walk_hops: 1
+  neighbor_matching_member_policy: lowest_sorted
+  neighbor_matching_member_seed: -1
+  train_episode_audit: False
+  graph_filename: retweet_graph.pt
+  target_feature:
+  target_feature_keep_in_x: False
+  target_transform: none
+  feature_subset: emb_only
+  midterm_label_downsample:
+  eval_random_query: True
+  edge_view: default
+  target_edge_view: default
+  edge_feature_subset: all
+  midterm_lp_neg_ratio: 1
+  hard_negatives: True
+  use_edge_features: False
+  midterm_debug_print_episodes: 0
+  debug_print_predictions: 0
+  export_predictions: False
+  prediction_context_neighbors: 3
+  prediction_support_per_label: 3
+  small_dataset: False
+  experiment_type: metagraph
+  exp_name: archmatrix_prodigy_eval_replay_s0_step2500_covid_political_mechanism_replay
+--------------------------------
+[trainer] WARNING: --checkpoint_steps [100, 300, 900, 2500] exceed the step budget 32 (epochs x dataset_len_cap) and will never be written. Raise --epochs or --dataset_len_cap.
+[19:38:13] Checkpoint schedule (explicit): [100, 300, 900, 2500]
+/home/mhchu/miniconda3/envs/prodigy/lib/python3.11/site-packages/torch/_utils.py:776: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+  return self.fget.__get__(instance, owner)()
+SingleLayerGeneralGNN(
+  (layer_list): ModuleList(
+    (0): MultiLayerGNN(
+      (module_list): ModuleList(
+        (0): SAGEConvSelfLoops()
+      )
+      (act): ReLU()
+      (reset_mlp): Linear(in_features=512, out_features=256, bias=True)
+      (reset_mlp_c): Linear(in_features=256, out_features=256, bias=True)
+      (reset_mlp_m): Linear(in_features=256, out_features=256, bias=True)
+    )
+    (1): BgGraphToSupernodePropagator()
+    (2): MetaGNN(
+      (gnn_layers): ModuleList(
+        (0): MetaGNNLayer()
+      )
+      (gnn_non_linear): GELU(approximate='none')
+    )
+  )
+  (cos): CosineSimilarity()
+  (initial_label_mlp): Linear(in_features=768, out_features=256, bias=True)
+  (initial_input_mlp): Identity()
+  (final_label_mlp): Identity()
+  (final_input_mlp): Identity()
+  (learned_label_embedding): Embedding(1000, 256)
+  (txt_dropout): Dropout(p=0, inplace=False)
+)
+Number of trainable parameters of the model: 1640514
+{"accuracy": 0.82421875, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_covid_political_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "db497c203ef6c4249fb91b34083c59d3c400dc84b821c0835e3d5426fbbe2750", "episodes": 128, "f1": 0.70620239390642, "label_interface_diagnostic": {}, "model_id": "ss_covid_political", "nll": 0.48934265971183777, "queries": 3072, "roc_auc": 0.8948782461660879, "sources": ["covid_political"], "variant": "baseline", "weights_sha256": "e0dfe820b4e1d9ffafd72dbdf633cefa1174955e8dfd05a5fd01427f1a1e4ccd"}
+{"accuracy": 0.8684895833333334, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_covid_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "db497c203ef6c4249fb91b34083c59d3c400dc84b821c0835e3d5426fbbe2750", "episodes": 128, "f1": 0.7730337078651686, "label_interface_diagnostic": {}, "model_id": "ss_covid", "nll": 0.548940122127533, "queries": 3072, "roc_auc": 0.9280008386682581, "sources": ["covid"], "variant": "baseline", "weights_sha256": "67f53140f0f398ec2a2eddd3cd2a5c4e436e253929a5b1ef0bf6c770bdc2baf2"}
+{"accuracy": 0.6305338541666666, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_cp_hk_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "db497c203ef6c4249fb91b34083c59d3c400dc84b821c0835e3d5426fbbe2750", "episodes": 128, "f1": 0.5126663804207815, "label_interface_diagnostic": {}, "model_id": "ss_cp_hk", "nll": 1.2739907503128052, "queries": 3072, "roc_auc": 0.7372945149739583, "sources": ["cp_hk"], "variant": "baseline", "weights_sha256": "2cf9baa8ec71437ea5627eb2f659316c5b99af0fa74659f910d2e6980b6cf062"}
+{"accuracy": 0.8860677083333334, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_election2020_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "db497c203ef6c4249fb91b34083c59d3c400dc84b821c0835e3d5426fbbe2750", "episodes": 128, "f1": 0.7965116279069767, "label_interface_diagnostic": {}, "model_id": "ss_election2020", "nll": 0.3913847506046295, "queries": 3072, "roc_auc": 0.9369351422345196, "sources": ["election2020"], "variant": "baseline", "weights_sha256": "fc4b0e64654fbdef99dbb8e6018c68eeef8533eb7a03a716d5183cf88d7e39da"}
+{"accuracy": 0.6103515625, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_facebook_page_reference_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "db497c203ef6c4249fb91b34083c59d3c400dc84b821c0835e3d5426fbbe2750", "episodes": 128, "f1": 0.46917960088691796, "label_interface_diagnostic": {}, "model_id": "ss_facebook_page_reference", "nll": 1.7821406126022339, "queries": 3072, "roc_auc": 0.6881982308846931, "sources": ["facebook_page_reference"], "variant": "baseline", "weights_sha256": "ab1ec850e46f1a6d5736934488a041ebb5564cc4b2e072d556e1e6e8212725a0"}
+{"accuracy": 0.7701822916666666, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_midterm_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "db497c203ef6c4249fb91b34083c59d3c400dc84b821c0835e3d5426fbbe2750", "episodes": 128, "f1": 0.6529006882989183, "label_interface_diagnostic": {}, "model_id": "ss_midterm", "nll": 1.114484429359436, "queries": 3072, "roc_auc": 0.887857507776331, "sources": ["midterm"], "variant": "baseline", "weights_sha256": "5253d32baf44f8a1e99ff04e94223ab79683795a8291bdb75927a0bc2d9be354"}
+{"accuracy": 0.7799479166666666, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_twibot20_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "db497c203ef6c4249fb91b34083c59d3c400dc84b821c0835e3d5426fbbe2750", "episodes": 128, "f1": 0.6718446601941748, "label_interface_diagnostic": {}, "model_id": "ss_twibot20", "nll": 0.7617926001548767, "queries": 3072, "roc_auc": 0.9172699539749709, "sources": ["twibot20"], "variant": "baseline", "weights_sha256": "8ab970c93cb3ce37452cfd593752c75b82490a08eccada31dba62d9bb49b4f33"}
+{"accuracy": 0.8759765625, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_ukr_rus_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "db497c203ef6c4249fb91b34083c59d3c400dc84b821c0835e3d5426fbbe2750", "episodes": 128, "f1": 0.7831531018782015, "label_interface_diagnostic": {}, "model_id": "ss_ukr_rus", "nll": 0.42693233489990234, "queries": 3072, "roc_auc": 0.9311088279441551, "sources": ["ukr_rus"], "variant": "baseline", "weights_sha256": "93c206fd40e4af733a6ec1abe0360a8dd05b88c1c5c31d04e160258aa3cd4c6e"}
+{"accuracy": 0.6949869791666666, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_ukr_rus_suspended_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "db497c203ef6c4249fb91b34083c59d3c400dc84b821c0835e3d5426fbbe2750", "episodes": 128, "f1": 0.5162622612287042, "label_interface_diagnostic": {}, "model_id": "ss_ukr_rus_suspended", "nll": 0.7797531485557556, "queries": 3072, "roc_auc": 0.7260612205222801, "sources": ["ukr_rus_suspended"], "variant": "baseline", "weights_sha256": "347e3146a75434e4c462977de6e8b3509ea3c19085b6846f99257dd29cdf28fb"}
+wandb:
+wandb: Run summary:
+wandb:               command /home/mhchu/minicond...
+wandb: effective_config_file effective_config.yam...
+wandb:            num_params 1640514
+wandb:    source_config_file /dataMeR1/phil/gfm/p...
+wandb:
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/wandb/offline-run-20260906_193812-y5w1jg9l
+wandb: Find logs at: ./wandb/offline-run-20260906_193812-y5w1jg9l/logs
+Loading ukr_rus_twitter graph from /dataMeR1/phil/data/facebook_page_reference/graphs/page_reference_graph.pt...
+Applied midterm feature subset 'emb_only': 768 -> 768 dims.
+Using all midterm edge features (2 dims): ['n_reference_posts', 'n_content_reference_posts']
+Graph: 150000 nodes, 167622 edges, 768 node features
+Building neighbor sampler (CSR preprocessing)...
+Neighbor sampler ready.
+wandb: Tracking run with wandb version 0.27.2
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/wandb/offline-run-20260906_193833-q6fq96sj
+Edge features: 2 dims from edge view 'default'
+[19:38:33] Saved effective config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/wandb/offline-run-20260906_193833-q6fq96sj/files/effective_config.yaml
+[19:38:33] Saved source config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/wandb/offline-run-20260906_193833-q6fq96sj/files/training.yaml
+[19:38:33] Command: /home/mhchu/miniconda3/envs/prodigy/bin/python /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/scripts/experiments/setup/target_performance_mechanisms/replay.py --model-list log/local_transfer_contrast/seed_replication/models_seed1.tsv --output log/local_transfer_contrast/seed_replication/seed1_original --datasets covid_political,facebook_page_reference,election2020,twibot20,ukr_rus_suspended --specialists-only --variants baseline --device 0 --batch-count 32 --threads 8 --save-embeddings --training-seed 0 --eval-episode-seed-offset 0 --trace-parity-atol 1e-5
+wandb: WARNING URL not available in offline run
+[19:38:33] Initializing trainer
+---------- Parameters ----------
+  config: scripts/experiments/setup/final_core/training.yaml
+  root: /dataMeR1/phil/data/facebook_page_reference/graphs
+  dataset: facebook_page_reference
+  csv_filename: twitter_data.csv
+  facebook_pkl_filename: facebook_2022-06-24_2022-06-25_part1.pkl
+  facebook_edges_filename: facebook_2022-06-24_2022-06-25_part1_edges.csv
+  facebook_node_features_filename: facebook_2022-06-24_2022-06-25_part1_node_features.csv
+  facebook_data_source: csv
+  facebook_use_edge_features: False
+  facebook_edge_feature_columns:
+  facebook_source_pkl_path:
+  facebook_embeddings_path:
+  facebook_embedding_ids_path:
+  facebook_text_emb_model:
+  facebook_target_dim: 768
+  facebook_filter_to_uk_ru: True
+  facebook_max_posts: None
+  label_type: verified
+  max_users: None
+  invalidate_cache: False
+  dataset_len_cap: 32
+  val_len_cap: 32
+  test_len_cap: 32
+  shuffle_index: False
+  force_cache: False
+  classification_only: False
+  early_stopping_patience: 20
+  reset_after_layer: None
+  original_features: True
+  override_log: True
+  seed: 0
+  eval_episode_seed_offset: 0
+  metric: Acc
+  learning_rate: 0.002
+  epochs: 1
+  print_epoch: 10
+  eval_epoch: 10
+  checkpoint_epoch: 10
+  print_step: 100
+  eval_step: 100000
+  checkpoint_step: 100000
+  source_diagnostics_interval: 0
+  checkpoint_steps: 100,300,900,2500
+  batch_size: 4
+  weight_decay: 0.001
+  dropout: 0.0
+  text_features_dropout: 0
+  rel_sample_random_seed: None
+  split_train_nodes: False
+  verbose: False
+  detect_anomaly: False
+  loader_start_method:
+  workers: 0
+  device: cuda:0
+  input_dim: 768
+  emb_dim: 256
+  gnn_type: sage
+  n_layer: 1
+  meta_n_layer: 1
+  second_gnn: Atten
+  attention_mask_scheme: causal
+  skip_path: False
+  has_final_back: False
+  layers: S,U,M
+  ignore_label_embeddings: False
+  zero_label_embeddings: False
+  not_freeze_learned_label_embedding: False
+  linear_probe: False
+  fix_datasets_first: False
+  no_bn_metagraph: False
+  no_bn_encoder: False
+  calc_ranks: False
+  save_roc_curve: False
+  eval_only: True
+  eval_only_split: test
+  eval_test_before_train: False
+  eval_val_before_train: False
+  eval_after_train: False
+  meta_gnn_pos_only: False
+  task_name: classification
+  zero_shot: False
+  no_split_labels: True
+  all_test: False
+  train_cap: None
+  label_set: None
+  csr_split: False
+  n_way: 2
+  n_shots: 10
+  n_query: 4
+  neighbor_sampling_strategy: strict
+  neighbor_sampling_strata:
+  neighbor_sampling_episode_source: graph_id
+  neighbor_sampling_source_subset:
+  neighbor_sampling_source_sequence:
+  neighbor_sampling_source_sequence_steps:
+  neighbor_sampling_episode_source_weighting: balanced
+  neighbor_sampling_batch_source_mode: independent
+  neighbor_sampling_cross_source_prob: 0.0
+  neighbor_sampling_center_radii:
+  neighbor_sampling_center_radius_weights:
+  neighbor_sampling_center_region_fanout: 64
+  neighbor_sampling_center_region_node_limit: 4096
+  neighbor_sampling_center_region_candidate_limit: 512
+  neighbor_sampling_center_max_attempts: 200
+  neighbor_matching_edge_split: False
+  n_way_upper: -1
+  n_shots_upper: -1
+  n_query_upper: -1
+  max_length: -1
+  augmentation:
+  augment_test: False
+  ablate_features: none
+  ablate_edges: none
+  structural_features: none
+  attr_regression_weight: 0.0
+  fp_mask_ratio: 0.3
+  fp_mask_strategy: zero
+  mix_task_counts: 1,1,1
+  mix_cl_aug: NZ0.2
+  e4_combine: simultaneous
+  e4_weights: 1,1,1
+  e4_task_counts: 1,1,1
+  e4_lp_neg_k: 1
+  prefix: archmatrix_prodigy_eval_replay_s0_step2500_facebook_page_reference
+  timestamp: mechanism_replay
+  tags: []
+  log_dir: log/local_transfer_contrast/seed_replication/seed1_original/trainer_logs
+  state_dir: log/local_transfer_contrast/seed_replication/seed1_original/state
+  bert_emb_model: multi-qa-distilbert-cos-v1
+  bert_cache: multi-qa-distilbert-cos-v1
+  label_emb_model:
+  label_emb_texts:
+  label_emb_revision:
+  label_emb_trust_remote_code: True
+  label_emb_normalize: True
+  kg_emb_model:
+  pretrained_model_run:
+  resume_training_checkpoint:
+  n_hop: 2
+  neighbor_sampling_hop_sizes: 9,9
+  neighbor_sampling_node_limit: 101
+  neighbor_matching_walk_hops: 1
+  neighbor_matching_member_policy: lowest_sorted
+  neighbor_matching_member_seed: -1
+  train_episode_audit: False
+  graph_filename: page_reference_graph.pt
+  target_feature:
+  target_feature_keep_in_x: False
+  target_transform: none
+  feature_subset: emb_only
+  midterm_label_downsample:
+  eval_random_query: False
+  edge_view: default
+  target_edge_view: default
+  edge_feature_subset: all
+  midterm_lp_neg_ratio: 1
+  hard_negatives: True
+  use_edge_features: False
+  midterm_debug_print_episodes: 0
+  debug_print_predictions: 0
+  export_predictions: False
+  prediction_context_neighbors: 3
+  prediction_support_per_label: 3
+  small_dataset: False
+  experiment_type: metagraph
+  exp_name: archmatrix_prodigy_eval_replay_s0_step2500_facebook_page_reference_mechanism_replay
+--------------------------------
+[trainer] WARNING: --checkpoint_steps [100, 300, 900, 2500] exceed the step budget 32 (epochs x dataset_len_cap) and will never be written. Raise --epochs or --dataset_len_cap.
+[19:38:33] Checkpoint schedule (explicit): [100, 300, 900, 2500]
+SingleLayerGeneralGNN(
+  (layer_list): ModuleList(
+    (0): MultiLayerGNN(
+      (module_list): ModuleList(
+        (0): SAGEConvSelfLoops()
+      )
+      (act): ReLU()
+      (reset_mlp): Linear(in_features=512, out_features=256, bias=True)
+      (reset_mlp_c): Linear(in_features=256, out_features=256, bias=True)
+      (reset_mlp_m): Linear(in_features=256, out_features=256, bias=True)
+    )
+    (1): BgGraphToSupernodePropagator()
+    (2): MetaGNN(
+      (gnn_layers): ModuleList(
+        (0): MetaGNNLayer()
+      )
+      (gnn_non_linear): GELU(approximate='none')
+    )
+  )
+  (cos): CosineSimilarity()
+  (initial_label_mlp): Linear(in_features=768, out_features=256, bias=True)
+  (initial_input_mlp): Identity()
+  (final_label_mlp): Identity()
+  (final_input_mlp): Identity()
+  (learned_label_embedding): Embedding(1000, 256)
+  (txt_dropout): Dropout(p=0, inplace=False)
+)
+Number of trainable parameters of the model: 1640514
+{"accuracy": 0.6484375, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_covid_political_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "df2330ab1920415c5c98c8ec00ef3e640a961ff90514a04bf5074d09529a0afe", "episodes": 128, "f1": 0.6511627906976745, "label_interface_diagnostic": {}, "model_id": "ss_covid_political", "nll": 1.02485191822052, "queries": 1024, "roc_auc": 0.6887168884277344, "sources": ["covid_political"], "variant": "baseline", "weights_sha256": "e0dfe820b4e1d9ffafd72dbdf633cefa1174955e8dfd05a5fd01427f1a1e4ccd"}
+{"accuracy": 0.6787109375, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_covid_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "df2330ab1920415c5c98c8ec00ef3e640a961ff90514a04bf5074d09529a0afe", "episodes": 128, "f1": 0.6719840478564307, "label_interface_diagnostic": {}, "model_id": "ss_covid", "nll": 0.8188309669494629, "queries": 1024, "roc_auc": 0.7590980529785156, "sources": ["covid"], "variant": "baseline", "weights_sha256": "67f53140f0f398ec2a2eddd3cd2a5c4e436e253929a5b1ef0bf6c770bdc2baf2"}
+{"accuracy": 0.62890625, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_cp_hk_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "df2330ab1920415c5c98c8ec00ef3e640a961ff90514a04bf5074d09529a0afe", "episodes": 128, "f1": 0.6353166986564299, "label_interface_diagnostic": {}, "model_id": "ss_cp_hk", "nll": 0.987215518951416, "queries": 1024, "roc_auc": 0.6828460693359375, "sources": ["cp_hk"], "variant": "baseline", "weights_sha256": "2cf9baa8ec71437ea5627eb2f659316c5b99af0fa74659f910d2e6980b6cf062"}
+{"accuracy": 0.599609375, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_election2020_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "df2330ab1920415c5c98c8ec00ef3e640a961ff90514a04bf5074d09529a0afe", "episodes": 128, "f1": 0.599609375, "label_interface_diagnostic": {}, "model_id": "ss_election2020", "nll": 0.7355445623397827, "queries": 1024, "roc_auc": 0.6411781311035156, "sources": ["election2020"], "variant": "baseline", "weights_sha256": "fc4b0e64654fbdef99dbb8e6018c68eeef8533eb7a03a716d5183cf88d7e39da"}
+{"accuracy": 0.654296875, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_facebook_page_reference_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "df2330ab1920415c5c98c8ec00ef3e640a961ff90514a04bf5074d09529a0afe", "episodes": 128, "f1": 0.6589595375722543, "label_interface_diagnostic": {}, "model_id": "ss_facebook_page_reference", "nll": 2.0547187328338623, "queries": 1024, "roc_auc": 0.716400146484375, "sources": ["facebook_page_reference"], "variant": "baseline", "weights_sha256": "ab1ec850e46f1a6d5736934488a041ebb5564cc4b2e072d556e1e6e8212725a0"}
+{"accuracy": 0.6435546875, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_midterm_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "df2330ab1920415c5c98c8ec00ef3e640a961ff90514a04bf5074d09529a0afe", "episodes": 128, "f1": 0.6500479386385427, "label_interface_diagnostic": {}, "model_id": "ss_midterm", "nll": 0.7827224731445312, "queries": 1024, "roc_auc": 0.7097396850585938, "sources": ["midterm"], "variant": "baseline", "weights_sha256": "5253d32baf44f8a1e99ff04e94223ab79683795a8291bdb75927a0bc2d9be354"}
+{"accuracy": 0.708984375, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_twibot20_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "df2330ab1920415c5c98c8ec00ef3e640a961ff90514a04bf5074d09529a0afe", "episodes": 128, "f1": 0.7043650793650794, "label_interface_diagnostic": {}, "model_id": "ss_twibot20", "nll": 0.722025990486145, "queries": 1024, "roc_auc": 0.783599853515625, "sources": ["twibot20"], "variant": "baseline", "weights_sha256": "8ab970c93cb3ce37452cfd593752c75b82490a08eccada31dba62d9bb49b4f33"}
+{"accuracy": 0.669921875, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_ukr_rus_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "df2330ab1920415c5c98c8ec00ef3e640a961ff90514a04bf5074d09529a0afe", "episodes": 128, "f1": 0.6692759295499021, "label_interface_diagnostic": {}, "model_id": "ss_ukr_rus", "nll": 0.8661298155784607, "queries": 1024, "roc_auc": 0.7413578033447266, "sources": ["ukr_rus"], "variant": "baseline", "weights_sha256": "93c206fd40e4af733a6ec1abe0360a8dd05b88c1c5c31d04e160258aa3cd4c6e"}
+{"accuracy": 0.607421875, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_ukr_rus_suspended_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "df2330ab1920415c5c98c8ec00ef3e640a961ff90514a04bf5074d09529a0afe", "episodes": 128, "f1": 0.6178707224334601, "label_interface_diagnostic": {}, "model_id": "ss_ukr_rus_suspended", "nll": 1.1324232816696167, "queries": 1024, "roc_auc": 0.6451835632324219, "sources": ["ukr_rus_suspended"], "variant": "baseline", "weights_sha256": "347e3146a75434e4c462977de6e8b3509ea3c19085b6846f99257dd29cdf28fb"}
+wandb:
+wandb: Run summary:
+wandb:               command /home/mhchu/minicond...
+wandb: effective_config_file effective_config.yam...
+wandb:            num_params 1640514
+wandb:    source_config_file /dataMeR1/phil/gfm/p...
+wandb:
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/wandb/offline-run-20260906_193833-q6fq96sj
+wandb: Find logs at: ./wandb/offline-run-20260906_193833-q6fq96sj/logs
+Loading election2020 graph from /dataMeR1/phil/data/election2020/graphs/retweet_graph.pt...
+Applied midterm feature subset 'emb_only': 768 -> 768 dims.
+Using all midterm edge features (2 dims): ['rt_weight', 'mn_weight']
+Graph: 78932 nodes, 2818603 edges, 768 node features  labels=['non_conservative', 'conservative']
+Building neighbor sampler...
+Neighbor sampler ready.
+wandb: Tracking run with wandb version 0.27.2
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/wandb/offline-run-20260906_193848-4kxdvfsk
+Edge features: 2 dims from 'default'
+[19:38:48] Saved effective config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/wandb/offline-run-20260906_193848-4kxdvfsk/files/effective_config.yaml
+[19:38:48] Saved source config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/wandb/offline-run-20260906_193848-4kxdvfsk/files/training.yaml
+[19:38:48] Command: /home/mhchu/miniconda3/envs/prodigy/bin/python /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/scripts/experiments/setup/target_performance_mechanisms/replay.py --model-list log/local_transfer_contrast/seed_replication/models_seed1.tsv --output log/local_transfer_contrast/seed_replication/seed1_original --datasets covid_political,facebook_page_reference,election2020,twibot20,ukr_rus_suspended --specialists-only --variants baseline --device 0 --batch-count 32 --threads 8 --save-embeddings --training-seed 0 --eval-episode-seed-offset 0 --trace-parity-atol 1e-5
+wandb: WARNING URL not available in offline run
+[19:38:48] Initializing trainer
+---------- Parameters ----------
+  config: scripts/experiments/setup/final_core/training.yaml
+  root: /dataMeR1/phil/data/election2020/graphs
+  dataset: election2020
+  csv_filename: twitter_data.csv
+  facebook_pkl_filename: facebook_2022-06-24_2022-06-25_part1.pkl
+  facebook_edges_filename: facebook_2022-06-24_2022-06-25_part1_edges.csv
+  facebook_node_features_filename: facebook_2022-06-24_2022-06-25_part1_node_features.csv
+  facebook_data_source: csv
+  facebook_use_edge_features: False
+  facebook_edge_feature_columns:
+  facebook_source_pkl_path:
+  facebook_embeddings_path:
+  facebook_embedding_ids_path:
+  facebook_text_emb_model:
+  facebook_target_dim: 768
+  facebook_filter_to_uk_ru: True
+  facebook_max_posts: None
+  label_type: verified
+  max_users: None
+  invalidate_cache: False
+  dataset_len_cap: 32
+  val_len_cap: 32
+  test_len_cap: 32
+  shuffle_index: False
+  force_cache: False
+  classification_only: False
+  early_stopping_patience: 20
+  reset_after_layer: None
+  original_features: True
+  override_log: True
+  seed: 0
+  eval_episode_seed_offset: 0
+  metric: Acc
+  learning_rate: 0.002
+  epochs: 1
+  print_epoch: 10
+  eval_epoch: 10
+  checkpoint_epoch: 10
+  print_step: 100
+  eval_step: 100000
+  checkpoint_step: 100000
+  source_diagnostics_interval: 0
+  checkpoint_steps: 100,300,900,2500
+  batch_size: 4
+  weight_decay: 0.001
+  dropout: 0.0
+  text_features_dropout: 0
+  rel_sample_random_seed: None
+  split_train_nodes: False
+  verbose: False
+  detect_anomaly: False
+  loader_start_method:
+  workers: 0
+  device: cuda:0
+  input_dim: 768
+  emb_dim: 256
+  gnn_type: sage
+  n_layer: 1
+  meta_n_layer: 1
+  second_gnn: Atten
+  attention_mask_scheme: causal
+  skip_path: False
+  has_final_back: False
+  layers: S,U,M
+  ignore_label_embeddings: False
+  zero_label_embeddings: False
+  not_freeze_learned_label_embedding: False
+  linear_probe: False
+  fix_datasets_first: False
+  no_bn_metagraph: False
+  no_bn_encoder: False
+  calc_ranks: False
+  save_roc_curve: False
+  eval_only: True
+  eval_only_split: test
+  eval_test_before_train: False
+  eval_val_before_train: False
+  eval_after_train: False
+  meta_gnn_pos_only: False
+  task_name: classification
+  zero_shot: False
+  no_split_labels: True
+  all_test: False
+  train_cap: None
+  label_set: None
+  csr_split: False
+  n_way: 2
+  n_shots: 10
+  n_query: 1
+  neighbor_sampling_strategy: strict
+  neighbor_sampling_strata:
+  neighbor_sampling_episode_source: graph_id
+  neighbor_sampling_source_subset:
+  neighbor_sampling_source_sequence:
+  neighbor_sampling_source_sequence_steps:
+  neighbor_sampling_episode_source_weighting: balanced
+  neighbor_sampling_batch_source_mode: independent
+  neighbor_sampling_cross_source_prob: 0.0
+  neighbor_sampling_center_radii:
+  neighbor_sampling_center_radius_weights:
+  neighbor_sampling_center_region_fanout: 64
+  neighbor_sampling_center_region_node_limit: 4096
+  neighbor_sampling_center_region_candidate_limit: 512
+  neighbor_sampling_center_max_attempts: 200
+  neighbor_matching_edge_split: False
+  n_way_upper: -1
+  n_shots_upper: -1
+  n_query_upper: -1
+  max_length: -1
+  augmentation:
+  augment_test: False
+  ablate_features: none
+  ablate_edges: none
+  structural_features: none
+  attr_regression_weight: 0.0
+  fp_mask_ratio: 0.3
+  fp_mask_strategy: zero
+  mix_task_counts: 1,1,1
+  mix_cl_aug: NZ0.2
+  e4_combine: simultaneous
+  e4_weights: 1,1,1
+  e4_task_counts: 1,1,1
+  e4_lp_neg_k: 1
+  prefix: archmatrix_prodigy_eval_replay_s0_step2500_election2020
+  timestamp: mechanism_replay
+  tags: []
+  log_dir: log/local_transfer_contrast/seed_replication/seed1_original/trainer_logs
+  state_dir: log/local_transfer_contrast/seed_replication/seed1_original/state
+  bert_emb_model: multi-qa-distilbert-cos-v1
+  bert_cache: multi-qa-distilbert-cos-v1
+  label_emb_model:
+  label_emb_texts:
+  label_emb_revision:
+  label_emb_trust_remote_code: True
+  label_emb_normalize: True
+  kg_emb_model:
+  pretrained_model_run:
+  resume_training_checkpoint:
+  n_hop: 2
+  neighbor_sampling_hop_sizes: 9,9
+  neighbor_sampling_node_limit: 101
+  neighbor_matching_walk_hops: 1
+  neighbor_matching_member_policy: lowest_sorted
+  neighbor_matching_member_seed: -1
+  train_episode_audit: False
+  graph_filename: retweet_graph.pt
+  target_feature:
+  target_feature_keep_in_x: False
+  target_transform: none
+  feature_subset: emb_only
+  midterm_label_downsample:
+  eval_random_query: False
+  edge_view: default
+  target_edge_view: default
+  edge_feature_subset: all
+  midterm_lp_neg_ratio: 1
+  hard_negatives: True
+  use_edge_features: False
+  midterm_debug_print_episodes: 0
+  debug_print_predictions: 0
+  export_predictions: False
+  prediction_context_neighbors: 3
+  prediction_support_per_label: 3
+  small_dataset: False
+  experiment_type: metagraph
+  exp_name: archmatrix_prodigy_eval_replay_s0_step2500_election2020_mechanism_replay
+--------------------------------
+[trainer] WARNING: --checkpoint_steps [100, 300, 900, 2500] exceed the step budget 32 (epochs x dataset_len_cap) and will never be written. Raise --epochs or --dataset_len_cap.
+[19:38:48] Checkpoint schedule (explicit): [100, 300, 900, 2500]
+SingleLayerGeneralGNN(
+  (layer_list): ModuleList(
+    (0): MultiLayerGNN(
+      (module_list): ModuleList(
+        (0): SAGEConvSelfLoops()
+      )
+      (act): ReLU()
+      (reset_mlp): Linear(in_features=512, out_features=256, bias=True)
+      (reset_mlp_c): Linear(in_features=256, out_features=256, bias=True)
+      (reset_mlp_m): Linear(in_features=256, out_features=256, bias=True)
+    )
+    (1): BgGraphToSupernodePropagator()
+    (2): MetaGNN(
+      (gnn_layers): ModuleList(
+        (0): MetaGNNLayer()
+      )
+      (gnn_non_linear): GELU(approximate='none')
+    )
+  )
+  (cos): CosineSimilarity()
+  (initial_label_mlp): Linear(in_features=768, out_features=256, bias=True)
+  (initial_input_mlp): Identity()
+  (final_label_mlp): Identity()
+  (final_input_mlp): Identity()
+  (learned_label_embedding): Embedding(1000, 256)
+  (txt_dropout): Dropout(p=0, inplace=False)
+)
+Number of trainable parameters of the model: 1640514
+{"accuracy": 0.97265625, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_covid_political_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "4b5288ebc0896afebadb04ad14ebc9ec53fb1a88beeae490bd1d31ace91f14ef", "episodes": 128, "f1": 0.973384030418251, "label_interface_diagnostic": {}, "model_id": "ss_covid_political", "nll": 0.2850503921508789, "queries": 256, "roc_auc": 0.97552490234375, "sources": ["covid_political"], "variant": "baseline", "weights_sha256": "e0dfe820b4e1d9ffafd72dbdf633cefa1174955e8dfd05a5fd01427f1a1e4ccd"}
+{"accuracy": 0.98046875, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_covid_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "4b5288ebc0896afebadb04ad14ebc9ec53fb1a88beeae490bd1d31ace91f14ef", "episodes": 128, "f1": 0.9808429118773946, "label_interface_diagnostic": {}, "model_id": "ss_covid", "nll": 0.1043427586555481, "queries": 256, "roc_auc": 0.98675537109375, "sources": ["covid"], "variant": "baseline", "weights_sha256": "67f53140f0f398ec2a2eddd3cd2a5c4e436e253929a5b1ef0bf6c770bdc2baf2"}
+{"accuracy": 0.921875, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_cp_hk_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "4b5288ebc0896afebadb04ad14ebc9ec53fb1a88beeae490bd1d31ace91f14ef", "episodes": 128, "f1": 0.9236641221374046, "label_interface_diagnostic": {}, "model_id": "ss_cp_hk", "nll": 0.34016937017440796, "queries": 256, "roc_auc": 0.96746826171875, "sources": ["cp_hk"], "variant": "baseline", "weights_sha256": "2cf9baa8ec71437ea5627eb2f659316c5b99af0fa74659f910d2e6980b6cf062"}
+{"accuracy": 0.97265625, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_election2020_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "4b5288ebc0896afebadb04ad14ebc9ec53fb1a88beeae490bd1d31ace91f14ef", "episodes": 128, "f1": 0.973384030418251, "label_interface_diagnostic": {}, "model_id": "ss_election2020", "nll": 0.1147235780954361, "queries": 256, "roc_auc": 0.986083984375, "sources": ["election2020"], "variant": "baseline", "weights_sha256": "fc4b0e64654fbdef99dbb8e6018c68eeef8533eb7a03a716d5183cf88d7e39da"}
+{"accuracy": 0.96875, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_facebook_page_reference_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "4b5288ebc0896afebadb04ad14ebc9ec53fb1a88beeae490bd1d31ace91f14ef", "episodes": 128, "f1": 0.9689922480620154, "label_interface_diagnostic": {}, "model_id": "ss_facebook_page_reference", "nll": 0.16606968641281128, "queries": 256, "roc_auc": 0.97900390625, "sources": ["facebook_page_reference"], "variant": "baseline", "weights_sha256": "ab1ec850e46f1a6d5736934488a041ebb5564cc4b2e072d556e1e6e8212725a0"}
+{"accuracy": 0.984375, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_midterm_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "4b5288ebc0896afebadb04ad14ebc9ec53fb1a88beeae490bd1d31ace91f14ef", "episodes": 128, "f1": 0.9846153846153847, "label_interface_diagnostic": {}, "model_id": "ss_midterm", "nll": 0.1399560272693634, "queries": 256, "roc_auc": 0.98211669921875, "sources": ["midterm"], "variant": "baseline", "weights_sha256": "5253d32baf44f8a1e99ff04e94223ab79683795a8291bdb75927a0bc2d9be354"}
+{"accuracy": 0.97265625, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_twibot20_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "4b5288ebc0896afebadb04ad14ebc9ec53fb1a88beeae490bd1d31ace91f14ef", "episodes": 128, "f1": 0.973384030418251, "label_interface_diagnostic": {}, "model_id": "ss_twibot20", "nll": 0.11631843447685242, "queries": 256, "roc_auc": 0.989990234375, "sources": ["twibot20"], "variant": "baseline", "weights_sha256": "8ab970c93cb3ce37452cfd593752c75b82490a08eccada31dba62d9bb49b4f33"}
+{"accuracy": 0.98046875, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_ukr_rus_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "4b5288ebc0896afebadb04ad14ebc9ec53fb1a88beeae490bd1d31ace91f14ef", "episodes": 128, "f1": 0.9808429118773946, "label_interface_diagnostic": {}, "model_id": "ss_ukr_rus", "nll": 0.09805428981781006, "queries": 256, "roc_auc": 0.9853515625, "sources": ["ukr_rus"], "variant": "baseline", "weights_sha256": "93c206fd40e4af733a6ec1abe0360a8dd05b88c1c5c31d04e160258aa3cd4c6e"}
+{"accuracy": 0.92578125, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_ukr_rus_suspended_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "4b5288ebc0896afebadb04ad14ebc9ec53fb1a88beeae490bd1d31ace91f14ef", "episodes": 128, "f1": 0.9243027888446215, "label_interface_diagnostic": {}, "model_id": "ss_ukr_rus_suspended", "nll": 0.21075257658958435, "queries": 256, "roc_auc": 0.97344970703125, "sources": ["ukr_rus_suspended"], "variant": "baseline", "weights_sha256": "347e3146a75434e4c462977de6e8b3509ea3c19085b6846f99257dd29cdf28fb"}
+wandb:
+wandb: Run summary:
+wandb:               command /home/mhchu/minicond...
+wandb: effective_config_file effective_config.yam...
+wandb:            num_params 1640514
+wandb:    source_config_file /dataMeR1/phil/gfm/p...
+wandb:
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/wandb/offline-run-20260906_193848-4kxdvfsk
+wandb: Find logs at: ./wandb/offline-run-20260906_193848-4kxdvfsk/logs
+Loading twibot20 graph from /dataMeR1/phil/data/twibot20/graphs/retweet_graph.pt...
+Applied midterm feature subset 'emb_only': 768 -> 768 dims.
+Using all midterm edge features (1 dims): ['n_retweets']
+Graph: 162990 nodes, 2010925 edges, 768 node features  labels=['human', 'bot']
+Building neighbor sampler...
+Neighbor sampler ready.
+wandb: Tracking run with wandb version 0.27.2
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/wandb/offline-run-20260906_193909-b7l43xc4
+Edge features: 1 dims from 'default'
+[19:39:09] Saved effective config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/wandb/offline-run-20260906_193909-b7l43xc4/files/effective_config.yaml
+[19:39:09] Saved source config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/wandb/offline-run-20260906_193909-b7l43xc4/files/training.yaml
+[19:39:09] Command: /home/mhchu/miniconda3/envs/prodigy/bin/python /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/scripts/experiments/setup/target_performance_mechanisms/replay.py --model-list log/local_transfer_contrast/seed_replication/models_seed1.tsv --output log/local_transfer_contrast/seed_replication/seed1_original --datasets covid_political,facebook_page_reference,election2020,twibot20,ukr_rus_suspended --specialists-only --variants baseline --device 0 --batch-count 32 --threads 8 --save-embeddings --training-seed 0 --eval-episode-seed-offset 0 --trace-parity-atol 1e-5
+wandb: WARNING URL not available in offline run
+[19:39:09] Initializing trainer
+---------- Parameters ----------
+  config: scripts/experiments/setup/final_core/training.yaml
+  root: /dataMeR1/phil/data/twibot20/graphs
+  dataset: twibot20
+  csv_filename: twitter_data.csv
+  facebook_pkl_filename: facebook_2022-06-24_2022-06-25_part1.pkl
+  facebook_edges_filename: facebook_2022-06-24_2022-06-25_part1_edges.csv
+  facebook_node_features_filename: facebook_2022-06-24_2022-06-25_part1_node_features.csv
+  facebook_data_source: csv
+  facebook_use_edge_features: False
+  facebook_edge_feature_columns:
+  facebook_source_pkl_path:
+  facebook_embeddings_path:
+  facebook_embedding_ids_path:
+  facebook_text_emb_model:
+  facebook_target_dim: 768
+  facebook_filter_to_uk_ru: True
+  facebook_max_posts: None
+  label_type: verified
+  max_users: None
+  invalidate_cache: False
+  dataset_len_cap: 32
+  val_len_cap: 32
+  test_len_cap: 32
+  shuffle_index: False
+  force_cache: False
+  classification_only: False
+  early_stopping_patience: 20
+  reset_after_layer: None
+  original_features: True
+  override_log: True
+  seed: 0
+  eval_episode_seed_offset: 0
+  metric: Acc
+  learning_rate: 0.002
+  epochs: 1
+  print_epoch: 10
+  eval_epoch: 10
+  checkpoint_epoch: 10
+  print_step: 100
+  eval_step: 100000
+  checkpoint_step: 100000
+  source_diagnostics_interval: 0
+  checkpoint_steps: 100,300,900,2500
+  batch_size: 4
+  weight_decay: 0.001
+  dropout: 0.0
+  text_features_dropout: 0
+  rel_sample_random_seed: None
+  split_train_nodes: False
+  verbose: False
+  detect_anomaly: False
+  loader_start_method:
+  workers: 0
+  device: cuda:0
+  input_dim: 768
+  emb_dim: 256
+  gnn_type: sage
+  n_layer: 1
+  meta_n_layer: 1
+  second_gnn: Atten
+  attention_mask_scheme: causal
+  skip_path: False
+  has_final_back: False
+  layers: S,U,M
+  ignore_label_embeddings: False
+  zero_label_embeddings: False
+  not_freeze_learned_label_embedding: False
+  linear_probe: False
+  fix_datasets_first: False
+  no_bn_metagraph: False
+  no_bn_encoder: False
+  calc_ranks: False
+  save_roc_curve: False
+  eval_only: True
+  eval_only_split: test
+  eval_test_before_train: False
+  eval_val_before_train: False
+  eval_after_train: False
+  meta_gnn_pos_only: False
+  task_name: classification
+  zero_shot: False
+  no_split_labels: True
+  all_test: False
+  train_cap: None
+  label_set: None
+  csr_split: False
+  n_way: 2
+  n_shots: 10
+  n_query: 12
+  neighbor_sampling_strategy: strict
+  neighbor_sampling_strata:
+  neighbor_sampling_episode_source: graph_id
+  neighbor_sampling_source_subset:
+  neighbor_sampling_source_sequence:
+  neighbor_sampling_source_sequence_steps:
+  neighbor_sampling_episode_source_weighting: balanced
+  neighbor_sampling_batch_source_mode: independent
+  neighbor_sampling_cross_source_prob: 0.0
+  neighbor_sampling_center_radii:
+  neighbor_sampling_center_radius_weights:
+  neighbor_sampling_center_region_fanout: 64
+  neighbor_sampling_center_region_node_limit: 4096
+  neighbor_sampling_center_region_candidate_limit: 512
+  neighbor_sampling_center_max_attempts: 200
+  neighbor_matching_edge_split: False
+  n_way_upper: -1
+  n_shots_upper: -1
+  n_query_upper: -1
+  max_length: -1
+  augmentation:
+  augment_test: False
+  ablate_features: none
+  ablate_edges: none
+  structural_features: none
+  attr_regression_weight: 0.0
+  fp_mask_ratio: 0.3
+  fp_mask_strategy: zero
+  mix_task_counts: 1,1,1
+  mix_cl_aug: NZ0.2
+  e4_combine: simultaneous
+  e4_weights: 1,1,1
+  e4_task_counts: 1,1,1
+  e4_lp_neg_k: 1
+  prefix: archmatrix_prodigy_eval_replay_s0_step2500_twibot20
+  timestamp: mechanism_replay
+  tags: []
+  log_dir: log/local_transfer_contrast/seed_replication/seed1_original/trainer_logs
+  state_dir: log/local_transfer_contrast/seed_replication/seed1_original/state
+  bert_emb_model: multi-qa-distilbert-cos-v1
+  bert_cache: multi-qa-distilbert-cos-v1
+  label_emb_model:
+  label_emb_texts:
+  label_emb_revision:
+  label_emb_trust_remote_code: True
+  label_emb_normalize: True
+  kg_emb_model:
+  pretrained_model_run:
+  resume_training_checkpoint:
+  n_hop: 2
+  neighbor_sampling_hop_sizes: 9,9
+  neighbor_sampling_node_limit: 101
+  neighbor_matching_walk_hops: 1
+  neighbor_matching_member_policy: lowest_sorted
+  neighbor_matching_member_seed: -1
+  train_episode_audit: False
+  graph_filename: retweet_graph.pt
+  target_feature:
+  target_feature_keep_in_x: False
+  target_transform: none
+  feature_subset: emb_only
+  midterm_label_downsample:
+  eval_random_query: False
+  edge_view: default
+  target_edge_view: default
+  edge_feature_subset: all
+  midterm_lp_neg_ratio: 1
+  hard_negatives: True
+  use_edge_features: False
+  midterm_debug_print_episodes: 0
+  debug_print_predictions: 0
+  export_predictions: False
+  prediction_context_neighbors: 3
+  prediction_support_per_label: 3
+  small_dataset: False
+  experiment_type: metagraph
+  exp_name: archmatrix_prodigy_eval_replay_s0_step2500_twibot20_mechanism_replay
+--------------------------------
+[trainer] WARNING: --checkpoint_steps [100, 300, 900, 2500] exceed the step budget 32 (epochs x dataset_len_cap) and will never be written. Raise --epochs or --dataset_len_cap.
+[19:39:09] Checkpoint schedule (explicit): [100, 300, 900, 2500]
+SingleLayerGeneralGNN(
+  (layer_list): ModuleList(
+    (0): MultiLayerGNN(
+      (module_list): ModuleList(
+        (0): SAGEConvSelfLoops()
+      )
+      (act): ReLU()
+      (reset_mlp): Linear(in_features=512, out_features=256, bias=True)
+      (reset_mlp_c): Linear(in_features=256, out_features=256, bias=True)
+      (reset_mlp_m): Linear(in_features=256, out_features=256, bias=True)
+    )
+    (1): BgGraphToSupernodePropagator()
+    (2): MetaGNN(
+      (gnn_layers): ModuleList(
+        (0): MetaGNNLayer()
+      )
+      (gnn_non_linear): GELU(approximate='none')
+    )
+  )
+  (cos): CosineSimilarity()
+  (initial_label_mlp): Linear(in_features=768, out_features=256, bias=True)
+  (initial_input_mlp): Identity()
+  (final_label_mlp): Identity()
+  (final_input_mlp): Identity()
+  (learned_label_embedding): Embedding(1000, 256)
+  (txt_dropout): Dropout(p=0, inplace=False)
+)
+Number of trainable parameters of the model: 1640514
+{"accuracy": 0.521484375, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_covid_political_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "c52eedbda4ef0539387be507588f0477560fc57987270d62405daeda5fe6d92d", "episodes": 128, "f1": 0.5103264490339774, "label_interface_diagnostic": {}, "model_id": "ss_covid_political", "nll": 1.1406824588775635, "queries": 3072, "roc_auc": 0.5379094017876519, "sources": ["covid_political"], "variant": "baseline", "weights_sha256": "e0dfe820b4e1d9ffafd72dbdf633cefa1174955e8dfd05a5fd01427f1a1e4ccd"}
+{"accuracy": 0.5859375, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_covid_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "c52eedbda4ef0539387be507588f0477560fc57987270d62405daeda5fe6d92d", "episodes": 128, "f1": 0.592568866111467, "label_interface_diagnostic": {}, "model_id": "ss_covid", "nll": 1.0203351974487305, "queries": 3072, "roc_auc": 0.6124019622802734, "sources": ["covid"], "variant": "baseline", "weights_sha256": "67f53140f0f398ec2a2eddd3cd2a5c4e436e253929a5b1ef0bf6c770bdc2baf2"}
+{"accuracy": 0.5930989583333334, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_cp_hk_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "c52eedbda4ef0539387be507588f0477560fc57987270d62405daeda5fe6d92d", "episodes": 128, "f1": 0.6295198577356254, "label_interface_diagnostic": {}, "model_id": "ss_cp_hk", "nll": 1.1050134897232056, "queries": 3072, "roc_auc": 0.6243377261691623, "sources": ["cp_hk"], "variant": "baseline", "weights_sha256": "2cf9baa8ec71437ea5627eb2f659316c5b99af0fa74659f910d2e6980b6cf062"}
+{"accuracy": 0.6087239583333334, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_election2020_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "c52eedbda4ef0539387be507588f0477560fc57987270d62405daeda5fe6d92d", "episodes": 128, "f1": 0.5922659430122117, "label_interface_diagnostic": {}, "model_id": "ss_election2020", "nll": 0.7342546582221985, "queries": 3072, "roc_auc": 0.6488181220160592, "sources": ["election2020"], "variant": "baseline", "weights_sha256": "fc4b0e64654fbdef99dbb8e6018c68eeef8533eb7a03a716d5183cf88d7e39da"}
+{"accuracy": 0.4951171875, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_facebook_page_reference_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "c52eedbda4ef0539387be507588f0477560fc57987270d62405daeda5fe6d92d", "episodes": 128, "f1": 0.5130298273155416, "label_interface_diagnostic": {}, "model_id": "ss_facebook_page_reference", "nll": 3.504201650619507, "queries": 3072, "roc_auc": 0.5024952358669705, "sources": ["facebook_page_reference"], "variant": "baseline", "weights_sha256": "ab1ec850e46f1a6d5736934488a041ebb5564cc4b2e072d556e1e6e8212725a0"}
+{"accuracy": 0.5413411458333334, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_midterm_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "c52eedbda4ef0539387be507588f0477560fc57987270d62405daeda5fe6d92d", "episodes": 128, "f1": 0.5450435905715209, "label_interface_diagnostic": {}, "model_id": "ss_midterm", "nll": 1.2845243215560913, "queries": 3072, "roc_auc": 0.5484962463378906, "sources": ["midterm"], "variant": "baseline", "weights_sha256": "5253d32baf44f8a1e99ff04e94223ab79683795a8291bdb75927a0bc2d9be354"}
+{"accuracy": 0.5862630208333334, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_twibot20_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "c52eedbda4ef0539387be507588f0477560fc57987270d62405daeda5fe6d92d", "episodes": 128, "f1": 0.6049114081442337, "label_interface_diagnostic": {}, "model_id": "ss_twibot20", "nll": 1.0681489706039429, "queries": 3072, "roc_auc": 0.6146477593315972, "sources": ["twibot20"], "variant": "baseline", "weights_sha256": "8ab970c93cb3ce37452cfd593752c75b82490a08eccada31dba62d9bb49b4f33"}
+{"accuracy": 0.5856119791666666, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_ukr_rus_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "c52eedbda4ef0539387be507588f0477560fc57987270d62405daeda5fe6d92d", "episodes": 128, "f1": 0.590543583145706, "label_interface_diagnostic": {}, "model_id": "ss_ukr_rus", "nll": 0.8871181011199951, "queries": 3072, "roc_auc": 0.6085325876871744, "sources": ["ukr_rus"], "variant": "baseline", "weights_sha256": "93c206fd40e4af733a6ec1abe0360a8dd05b88c1c5c31d04e160258aa3cd4c6e"}
+{"accuracy": 0.5791015625, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_ukr_rus_suspended_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "c52eedbda4ef0539387be507588f0477560fc57987270d62405daeda5fe6d92d", "episodes": 128, "f1": 0.6168888888888889, "label_interface_diagnostic": {}, "model_id": "ss_ukr_rus_suspended", "nll": 0.8940579295158386, "queries": 3072, "roc_auc": 0.616430918375651, "sources": ["ukr_rus_suspended"], "variant": "baseline", "weights_sha256": "347e3146a75434e4c462977de6e8b3509ea3c19085b6846f99257dd29cdf28fb"}
+wandb:
+wandb: Run summary:
+wandb:               command /home/mhchu/minicond...
+wandb: effective_config_file effective_config.yam...
+wandb:            num_params 1640514
+wandb:    source_config_file /dataMeR1/phil/gfm/p...
+wandb:
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/wandb/offline-run-20260906_193909-b7l43xc4
+wandb: Find logs at: ./wandb/offline-run-20260906_193909-b7l43xc4/logs
+Loading ukr_rus_suspended graph from /dataMeR1/phil/data/ukr_rus_suspended/graphs/retweet_graph.pt...
+Applied midterm feature subset 'emb_only': 768 -> 768 dims.
+Using all midterm edge features (2 dims): ['rt_weight', 'mn_weight']
+Graph: 72295 nodes, 354209 edges, 768 node features  labels=['non_suspended', 'suspended']
+Building neighbor sampler...
+Neighbor sampler ready.
+wandb: Tracking run with wandb version 0.27.2
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/wandb/offline-run-20260906_193934-8xbriuqd
+Edge features: 2 dims from 'default'
+[19:39:34] Saved effective config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/wandb/offline-run-20260906_193934-8xbriuqd/files/effective_config.yaml
+[19:39:34] Saved source config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/wandb/offline-run-20260906_193934-8xbriuqd/files/training.yaml
+[19:39:34] Command: /home/mhchu/miniconda3/envs/prodigy/bin/python /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/scripts/experiments/setup/target_performance_mechanisms/replay.py --model-list log/local_transfer_contrast/seed_replication/models_seed1.tsv --output log/local_transfer_contrast/seed_replication/seed1_original --datasets covid_political,facebook_page_reference,election2020,twibot20,ukr_rus_suspended --specialists-only --variants baseline --device 0 --batch-count 32 --threads 8 --save-embeddings --training-seed 0 --eval-episode-seed-offset 0 --trace-parity-atol 1e-5
+wandb: WARNING URL not available in offline run
+[19:39:34] Initializing trainer
+---------- Parameters ----------
+  config: scripts/experiments/setup/final_core/training.yaml
+  root: /dataMeR1/phil/data/ukr_rus_suspended/graphs
+  dataset: ukr_rus_suspended
+  csv_filename: twitter_data.csv
+  facebook_pkl_filename: facebook_2022-06-24_2022-06-25_part1.pkl
+  facebook_edges_filename: facebook_2022-06-24_2022-06-25_part1_edges.csv
+  facebook_node_features_filename: facebook_2022-06-24_2022-06-25_part1_node_features.csv
+  facebook_data_source: csv
+  facebook_use_edge_features: False
+  facebook_edge_feature_columns:
+  facebook_source_pkl_path:
+  facebook_embeddings_path:
+  facebook_embedding_ids_path:
+  facebook_text_emb_model:
+  facebook_target_dim: 768
+  facebook_filter_to_uk_ru: True
+  facebook_max_posts: None
+  label_type: verified
+  max_users: None
+  invalidate_cache: False
+  dataset_len_cap: 32
+  val_len_cap: 32
+  test_len_cap: 32
+  shuffle_index: False
+  force_cache: False
+  classification_only: False
+  early_stopping_patience: 20
+  reset_after_layer: None
+  original_features: True
+  override_log: True
+  seed: 0
+  eval_episode_seed_offset: 0
+  metric: Acc
+  learning_rate: 0.002
+  epochs: 1
+  print_epoch: 10
+  eval_epoch: 10
+  checkpoint_epoch: 10
+  print_step: 100
+  eval_step: 100000
+  checkpoint_step: 100000
+  source_diagnostics_interval: 0
+  checkpoint_steps: 100,300,900,2500
+  batch_size: 4
+  weight_decay: 0.001
+  dropout: 0.0
+  text_features_dropout: 0
+  rel_sample_random_seed: None
+  split_train_nodes: False
+  verbose: False
+  detect_anomaly: False
+  loader_start_method:
+  workers: 0
+  device: cuda:0
+  input_dim: 768
+  emb_dim: 256
+  gnn_type: sage
+  n_layer: 1
+  meta_n_layer: 1
+  second_gnn: Atten
+  attention_mask_scheme: causal
+  skip_path: False
+  has_final_back: False
+  layers: S,U,M
+  ignore_label_embeddings: False
+  zero_label_embeddings: False
+  not_freeze_learned_label_embedding: False
+  linear_probe: False
+  fix_datasets_first: False
+  no_bn_metagraph: False
+  no_bn_encoder: False
+  calc_ranks: False
+  save_roc_curve: False
+  eval_only: True
+  eval_only_split: test
+  eval_test_before_train: False
+  eval_val_before_train: False
+  eval_after_train: False
+  meta_gnn_pos_only: False
+  task_name: classification
+  zero_shot: False
+  no_split_labels: True
+  all_test: False
+  train_cap: None
+  label_set: None
+  csr_split: False
+  n_way: 2
+  n_shots: 10
+  n_query: 1
+  neighbor_sampling_strategy: strict
+  neighbor_sampling_strata:
+  neighbor_sampling_episode_source: graph_id
+  neighbor_sampling_source_subset:
+  neighbor_sampling_source_sequence:
+  neighbor_sampling_source_sequence_steps:
+  neighbor_sampling_episode_source_weighting: balanced
+  neighbor_sampling_batch_source_mode: independent
+  neighbor_sampling_cross_source_prob: 0.0
+  neighbor_sampling_center_radii:
+  neighbor_sampling_center_radius_weights:
+  neighbor_sampling_center_region_fanout: 64
+  neighbor_sampling_center_region_node_limit: 4096
+  neighbor_sampling_center_region_candidate_limit: 512
+  neighbor_sampling_center_max_attempts: 200
+  neighbor_matching_edge_split: False
+  n_way_upper: -1
+  n_shots_upper: -1
+  n_query_upper: -1
+  max_length: -1
+  augmentation:
+  augment_test: False
+  ablate_features: none
+  ablate_edges: none
+  structural_features: none
+  attr_regression_weight: 0.0
+  fp_mask_ratio: 0.3
+  fp_mask_strategy: zero
+  mix_task_counts: 1,1,1
+  mix_cl_aug: NZ0.2
+  e4_combine: simultaneous
+  e4_weights: 1,1,1
+  e4_task_counts: 1,1,1
+  e4_lp_neg_k: 1
+  prefix: archmatrix_prodigy_eval_replay_s0_step2500_ukr_rus_suspended
+  timestamp: mechanism_replay
+  tags: []
+  log_dir: log/local_transfer_contrast/seed_replication/seed1_original/trainer_logs
+  state_dir: log/local_transfer_contrast/seed_replication/seed1_original/state
+  bert_emb_model: multi-qa-distilbert-cos-v1
+  bert_cache: multi-qa-distilbert-cos-v1
+  label_emb_model:
+  label_emb_texts:
+  label_emb_revision:
+  label_emb_trust_remote_code: True
+  label_emb_normalize: True
+  kg_emb_model:
+  pretrained_model_run:
+  resume_training_checkpoint:
+  n_hop: 2
+  neighbor_sampling_hop_sizes: 9,9
+  neighbor_sampling_node_limit: 101
+  neighbor_matching_walk_hops: 1
+  neighbor_matching_member_policy: lowest_sorted
+  neighbor_matching_member_seed: -1
+  train_episode_audit: False
+  graph_filename: retweet_graph.pt
+  target_feature:
+  target_feature_keep_in_x: False
+  target_transform: none
+  feature_subset: emb_only
+  midterm_label_downsample:
+  eval_random_query: False
+  edge_view: default
+  target_edge_view: default
+  edge_feature_subset: all
+  midterm_lp_neg_ratio: 1
+  hard_negatives: True
+  use_edge_features: False
+  midterm_debug_print_episodes: 0
+  debug_print_predictions: 0
+  export_predictions: False
+  prediction_context_neighbors: 3
+  prediction_support_per_label: 3
+  small_dataset: False
+  experiment_type: metagraph
+  exp_name: archmatrix_prodigy_eval_replay_s0_step2500_ukr_rus_suspended_mechanism_replay
+--------------------------------
+[trainer] WARNING: --checkpoint_steps [100, 300, 900, 2500] exceed the step budget 32 (epochs x dataset_len_cap) and will never be written. Raise --epochs or --dataset_len_cap.
+[19:39:34] Checkpoint schedule (explicit): [100, 300, 900, 2500]
+SingleLayerGeneralGNN(
+  (layer_list): ModuleList(
+    (0): MultiLayerGNN(
+      (module_list): ModuleList(
+        (0): SAGEConvSelfLoops()
+      )
+      (act): ReLU()
+      (reset_mlp): Linear(in_features=512, out_features=256, bias=True)
+      (reset_mlp_c): Linear(in_features=256, out_features=256, bias=True)
+      (reset_mlp_m): Linear(in_features=256, out_features=256, bias=True)
+    )
+    (1): BgGraphToSupernodePropagator()
+    (2): MetaGNN(
+      (gnn_layers): ModuleList(
+        (0): MetaGNNLayer()
+      )
+      (gnn_non_linear): GELU(approximate='none')
+    )
+  )
+  (cos): CosineSimilarity()
+  (initial_label_mlp): Linear(in_features=768, out_features=256, bias=True)
+  (initial_input_mlp): Identity()
+  (final_label_mlp): Identity()
+  (final_input_mlp): Identity()
+  (learned_label_embedding): Embedding(1000, 256)
+  (txt_dropout): Dropout(p=0, inplace=False)
+)
+Number of trainable parameters of the model: 1640514
+{"accuracy": 0.46484375, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_covid_political_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c4b969d4c4f558104e8052335698b2ea62a3f94fa5af7e021a7bf0d46e2e3347", "episodes": 128, "f1": 0.4669260700389105, "label_interface_diagnostic": {}, "model_id": "ss_covid_political", "nll": 0.8092355132102966, "queries": 256, "roc_auc": 0.48760986328125, "sources": ["covid_political"], "variant": "baseline", "weights_sha256": "e0dfe820b4e1d9ffafd72dbdf633cefa1174955e8dfd05a5fd01427f1a1e4ccd"}
+{"accuracy": 0.47265625, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_covid_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c4b969d4c4f558104e8052335698b2ea62a3f94fa5af7e021a7bf0d46e2e3347", "episodes": 128, "f1": 0.46215139442231074, "label_interface_diagnostic": {}, "model_id": "ss_covid", "nll": 1.0222371816635132, "queries": 256, "roc_auc": 0.4664306640625, "sources": ["covid"], "variant": "baseline", "weights_sha256": "67f53140f0f398ec2a2eddd3cd2a5c4e436e253929a5b1ef0bf6c770bdc2baf2"}
+{"accuracy": 0.5078125, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_cp_hk_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c4b969d4c4f558104e8052335698b2ea62a3f94fa5af7e021a7bf0d46e2e3347", "episodes": 128, "f1": 0.5078125, "label_interface_diagnostic": {}, "model_id": "ss_cp_hk", "nll": 1.067826271057129, "queries": 256, "roc_auc": 0.4962158203125, "sources": ["cp_hk"], "variant": "baseline", "weights_sha256": "2cf9baa8ec71437ea5627eb2f659316c5b99af0fa74659f910d2e6980b6cf062"}
+{"accuracy": 0.55078125, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_election2020_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c4b969d4c4f558104e8052335698b2ea62a3f94fa5af7e021a7bf0d46e2e3347", "episodes": 128, "f1": 0.5490196078431373, "label_interface_diagnostic": {}, "model_id": "ss_election2020", "nll": 0.7632356882095337, "queries": 256, "roc_auc": 0.53753662109375, "sources": ["election2020"], "variant": "baseline", "weights_sha256": "fc4b0e64654fbdef99dbb8e6018c68eeef8533eb7a03a716d5183cf88d7e39da"}
+{"accuracy": 0.484375, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_facebook_page_reference_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c4b969d4c4f558104e8052335698b2ea62a3f94fa5af7e021a7bf0d46e2e3347", "episodes": 128, "f1": 0.5147058823529411, "label_interface_diagnostic": {}, "model_id": "ss_facebook_page_reference", "nll": 3.9221153259277344, "queries": 256, "roc_auc": 0.463531494140625, "sources": ["facebook_page_reference"], "variant": "baseline", "weights_sha256": "ab1ec850e46f1a6d5736934488a041ebb5564cc4b2e072d556e1e6e8212725a0"}
+{"accuracy": 0.47265625, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_midterm_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c4b969d4c4f558104e8052335698b2ea62a3f94fa5af7e021a7bf0d46e2e3347", "episodes": 128, "f1": 0.4444444444444444, "label_interface_diagnostic": {}, "model_id": "ss_midterm", "nll": 1.0618057250976562, "queries": 256, "roc_auc": 0.4735107421875, "sources": ["midterm"], "variant": "baseline", "weights_sha256": "5253d32baf44f8a1e99ff04e94223ab79683795a8291bdb75927a0bc2d9be354"}
+{"accuracy": 0.53125, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_twibot20_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c4b969d4c4f558104e8052335698b2ea62a3f94fa5af7e021a7bf0d46e2e3347", "episodes": 128, "f1": 0.5419847328244275, "label_interface_diagnostic": {}, "model_id": "ss_twibot20", "nll": 0.8510362505912781, "queries": 256, "roc_auc": 0.51611328125, "sources": ["twibot20"], "variant": "baseline", "weights_sha256": "8ab970c93cb3ce37452cfd593752c75b82490a08eccada31dba62d9bb49b4f33"}
+{"accuracy": 0.515625, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_ukr_rus_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c4b969d4c4f558104e8052335698b2ea62a3f94fa5af7e021a7bf0d46e2e3347", "episodes": 128, "f1": 0.5, "label_interface_diagnostic": {}, "model_id": "ss_ukr_rus", "nll": 0.8728082180023193, "queries": 256, "roc_auc": 0.5140380859375, "sources": ["ukr_rus"], "variant": "baseline", "weights_sha256": "93c206fd40e4af733a6ec1abe0360a8dd05b88c1c5c31d04e160258aa3cd4c6e"}
+{"accuracy": 0.48828125, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_ukr_rus_suspended_s1_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c4b969d4c4f558104e8052335698b2ea62a3f94fa5af7e021a7bf0d46e2e3347", "episodes": 128, "f1": 0.49808429118773945, "label_interface_diagnostic": {}, "model_id": "ss_ukr_rus_suspended", "nll": 1.1747519969940186, "queries": 256, "roc_auc": 0.48529052734375, "sources": ["ukr_rus_suspended"], "variant": "baseline", "weights_sha256": "347e3146a75434e4c462977de6e8b3509ea3c19085b6846f99257dd29cdf28fb"}
+wandb:
+wandb: Run summary:
+wandb:               command /home/mhchu/minicond...
+wandb: effective_config_file effective_config.yam...
+wandb:            num_params 1640514
+wandb:    source_config_file /dataMeR1/phil/gfm/p...
+wandb:
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /dataMeR1/phil/gfm/prodigy-local-transfer-contrast/wandb/offline-run-20260906_193934-8xbriuqd
+wandb: Find logs at: ./wandb/offline-run-20260906_193934-8xbriuqd/logs

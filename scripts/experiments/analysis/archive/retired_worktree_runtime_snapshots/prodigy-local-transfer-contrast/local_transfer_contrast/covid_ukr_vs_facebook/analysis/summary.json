@@ -1,0 +1,77 @@
+{
+  "discovery_stream": "original",
+  "interpretation_constraints": [
+    "raw cross-model losses are not comparable without calibration",
+    "fresh episodes are a held-out episode stream, not a training seed or held-out domain",
+    "routers use target query outcomes and are diagnostic upper bounds, not deployable methods",
+    "input clusters are selected by discovery-stream silhouette without outcome labels"
+  ],
+  "model_b": "ss_ukr_rus",
+  "model_c": "ss_facebook_page_reference",
+  "raw_decoder_logits_bit_identical_between_models": {
+    "fresh": {
+      "raw_center/prototype": true,
+      "raw_center/ridge": true,
+      "raw_context/prototype": true,
+      "raw_context/ridge": true,
+      "raw_joint/prototype": true,
+      "raw_joint/ridge": true
+    },
+    "original": {
+      "raw_center/prototype": true,
+      "raw_center/ridge": true,
+      "raw_context/prototype": true,
+      "raw_context/ridge": true,
+      "raw_joint/prototype": true,
+      "raw_joint/ridge": true
+    }
+  },
+  "streams": {
+    "fresh": {
+      "accuracy_b": 0.8955078125,
+      "accuracy_c": 0.5641276041666666,
+      "auc_b": 0.9408172936716244,
+      "auc_c": 0.5927477330837521,
+      "b_positive_loss_advantage_top10_share": 0.15853543838044806,
+      "c_positive_loss_advantage_top10_share": 0.9996813248052338,
+      "calibrated_nll_b": 0.30224188795663415,
+      "calibrated_nll_c": 0.6812760399251726,
+      "disagreement_rate": 0.412109375,
+      "fraction_c_lower_calibrated_loss": 0.10384114583333333,
+      "n": 3072,
+      "n_b_only": 1142,
+      "n_both_correct": 1609,
+      "n_both_wrong": 197,
+      "n_c_only": 124,
+      "oracle_accuracy": 0.9358723958333334,
+      "raw_nll_b": 0.37296118254690347,
+      "raw_nll_c": 2.7319944177166664
+    },
+    "original": {
+      "accuracy_b": 0.8857421875,
+      "accuracy_c": 0.5511067708333334,
+      "auc_b": 0.9286826625071365,
+      "auc_c": 0.5643202192588967,
+      "b_positive_loss_advantage_top10_share": 0.1622177863160111,
+      "c_positive_loss_advantage_top10_share": 0.9969458757407793,
+      "calibrated_nll_b": 0.33212966537778604,
+      "calibrated_nll_c": 0.6874749909063228,
+      "disagreement_rate": 0.416015625,
+      "fraction_c_lower_calibrated_loss": 0.10970052083333333,
+      "n": 3072,
+      "n_b_only": 1153,
+      "n_both_correct": 1568,
+      "n_both_wrong": 226,
+      "n_c_only": 125,
+      "oracle_accuracy": 0.9264322916666666,
+      "raw_nll_b": 0.42140139455008496,
+      "raw_nll_c": 2.912484829715003
+    }
+  },
+  "target": "covid_political",
+  "temperatures_fitted_on_original": {
+    "ss_facebook_page_reference": 39.86155209093593,
+    "ss_ukr_rus": 2.027920502647527
+  },
+  "validation_stream": "fresh"
+}

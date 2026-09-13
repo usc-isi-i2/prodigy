@@ -1,0 +1,2246 @@
+[
+  {
+    "arm": "baseline",
+    "rung": 8,
+    "seed": 0,
+    "flags": "",
+    "description": "Balanced source-confined NM, shared 256-dimensional encoder",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk",
+      "facebook_page_reference"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/baseline_r8_s0.yaml"
+  },
+  {
+    "arm": "exposure",
+    "rung": 8,
+    "seed": 0,
+    "flags": "proportional",
+    "description": "Source probability proportional to source node count",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk",
+      "facebook_page_reference"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/exposure_r8_s0.yaml"
+  },
+  {
+    "arm": "schedule",
+    "rung": 8,
+    "seed": 0,
+    "flags": "blocked",
+    "description": "64 consecutive episodes per source, cycling over active sources",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk",
+      "facebook_page_reference"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/schedule_r8_s0.yaml"
+  },
+  {
+    "arm": "composition",
+    "rung": 8,
+    "seed": 0,
+    "flags": "cross_graph",
+    "description": "Each class chooses an active source with balanced probability",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk",
+      "facebook_page_reference"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/composition_r8_s0.yaml"
+  },
+  {
+    "arm": "centers",
+    "rung": 8,
+    "seed": 0,
+    "flags": "degree_balanced",
+    "description": "Choose a positive-degree log2 band uniformly, then a center",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk",
+      "facebook_page_reference"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/centers_r8_s0.yaml"
+  },
+  {
+    "arm": "eligibility",
+    "rung": 8,
+    "seed": 0,
+    "flags": "low_degree",
+    "description": "Keep degree-2+ centers; repeat only within disjoint support/query partitions",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk",
+      "facebook_page_reference"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/eligibility_r8_s0.yaml"
+  },
+  {
+    "arm": "positives",
+    "rung": 8,
+    "seed": 0,
+    "flags": "uniform_positive",
+    "description": "Uniform unique one-hop positives instead of sorted random-walk discoveries",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk",
+      "facebook_page_reference"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/positives_r8_s0.yaml"
+  },
+  {
+    "arm": "negatives",
+    "rung": 8,
+    "seed": 0,
+    "flags": "degree_hard",
+    "description": "Competing centers share a log2 degree band; band probability proportional to size",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk",
+      "facebook_page_reference"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/negatives_r8_s0.yaml"
+  },
+  {
+    "arm": "context",
+    "rung": 8,
+    "seed": 0,
+    "flags": "one_hop",
+    "description": "One-hop training context, fanout 100, same 101-node cap; evaluation stays two-hop",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk",
+      "facebook_page_reference"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/context_r8_s0.yaml"
+  },
+  {
+    "arm": "optimization",
+    "rung": 8,
+    "seed": 0,
+    "flags": "grad_normalized",
+    "description": "Normalize each episode gradient to unit global norm before AdamW",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk",
+      "facebook_page_reference"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/optimization_r8_s0.yaml"
+  },
+  {
+    "arm": "alignment",
+    "rung": 8,
+    "seed": 0,
+    "flags": "feature_standardized",
+    "description": "Per-node feature standardization without learned affine parameters",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk",
+      "facebook_page_reference"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/alignment_r8_s0.yaml"
+  },
+  {
+    "arm": "sharing",
+    "rung": 8,
+    "seed": 0,
+    "flags": "source_affine",
+    "description": "Learn a source-specific input affine transform; absent sources remain identity",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk",
+      "facebook_page_reference"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/sharing_r8_s0.yaml"
+  },
+  {
+    "arm": "capacity",
+    "rung": 8,
+    "seed": 0,
+    "flags": "wide",
+    "description": "512-dimensional encoder instead of 256; equal episode cap, report runtime",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk",
+      "facebook_page_reference"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/capacity_r8_s0.yaml"
+  },
+  {
+    "arm": "objective",
+    "rung": 8,
+    "seed": 0,
+    "flags": "aux_reconstruction",
+    "description": "NM plus 0.1 masked-feature reconstruction, masking 15% of sampled real nodes",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk",
+      "facebook_page_reference"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/objective_r8_s0.yaml"
+  },
+  {
+    "arm": "region_adaptive",
+    "rung": 8,
+    "seed": 0,
+    "flags": "region_adaptive",
+    "description": "70% uniform-band / 30% bounded loss-adaptive degree-region sampling",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk",
+      "facebook_page_reference"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/region_adaptive_r8_s0.yaml"
+  },
+  {
+    "arm": "coverage",
+    "rung": 8,
+    "seed": 0,
+    "flags": "coverage_cycle",
+    "description": "Random-start cyclic traversal of eligible center pools",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk",
+      "facebook_page_reference"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/coverage_r8_s0.yaml"
+  },
+  {
+    "arm": "budget",
+    "rung": 8,
+    "seed": 0,
+    "flags": "per_source_budget",
+    "description": "Cap grows by 1250 episodes per source, up to 10000 at rung eight",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk",
+      "facebook_page_reference"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/budget_r8_s0.yaml"
+  },
+  {
+    "arm": "baseline",
+    "rung": 1,
+    "seed": 0,
+    "flags": "",
+    "description": "Balanced source-confined NM, shared 256-dimensional encoder",
+    "sources": [
+      "ukr_rus"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/baseline_r1_s0.yaml"
+  },
+  {
+    "arm": "exposure",
+    "rung": 1,
+    "seed": 0,
+    "flags": "proportional",
+    "description": "Source probability proportional to source node count",
+    "sources": [
+      "ukr_rus"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/exposure_r1_s0.yaml"
+  },
+  {
+    "arm": "schedule",
+    "rung": 1,
+    "seed": 0,
+    "flags": "blocked",
+    "description": "64 consecutive episodes per source, cycling over active sources",
+    "sources": [
+      "ukr_rus"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/schedule_r1_s0.yaml"
+  },
+  {
+    "arm": "composition",
+    "rung": 1,
+    "seed": 0,
+    "flags": "cross_graph",
+    "description": "Each class chooses an active source with balanced probability",
+    "sources": [
+      "ukr_rus"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/composition_r1_s0.yaml"
+  },
+  {
+    "arm": "centers",
+    "rung": 1,
+    "seed": 0,
+    "flags": "degree_balanced",
+    "description": "Choose a positive-degree log2 band uniformly, then a center",
+    "sources": [
+      "ukr_rus"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/centers_r1_s0.yaml"
+  },
+  {
+    "arm": "eligibility",
+    "rung": 1,
+    "seed": 0,
+    "flags": "low_degree",
+    "description": "Keep degree-2+ centers; repeat only within disjoint support/query partitions",
+    "sources": [
+      "ukr_rus"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/eligibility_r1_s0.yaml"
+  },
+  {
+    "arm": "positives",
+    "rung": 1,
+    "seed": 0,
+    "flags": "uniform_positive",
+    "description": "Uniform unique one-hop positives instead of sorted random-walk discoveries",
+    "sources": [
+      "ukr_rus"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/positives_r1_s0.yaml"
+  },
+  {
+    "arm": "negatives",
+    "rung": 1,
+    "seed": 0,
+    "flags": "degree_hard",
+    "description": "Competing centers share a log2 degree band; band probability proportional to size",
+    "sources": [
+      "ukr_rus"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/negatives_r1_s0.yaml"
+  },
+  {
+    "arm": "context",
+    "rung": 1,
+    "seed": 0,
+    "flags": "one_hop",
+    "description": "One-hop training context, fanout 100, same 101-node cap; evaluation stays two-hop",
+    "sources": [
+      "ukr_rus"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/context_r1_s0.yaml"
+  },
+  {
+    "arm": "optimization",
+    "rung": 1,
+    "seed": 0,
+    "flags": "grad_normalized",
+    "description": "Normalize each episode gradient to unit global norm before AdamW",
+    "sources": [
+      "ukr_rus"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/optimization_r1_s0.yaml"
+  },
+  {
+    "arm": "alignment",
+    "rung": 1,
+    "seed": 0,
+    "flags": "feature_standardized",
+    "description": "Per-node feature standardization without learned affine parameters",
+    "sources": [
+      "ukr_rus"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/alignment_r1_s0.yaml"
+  },
+  {
+    "arm": "sharing",
+    "rung": 1,
+    "seed": 0,
+    "flags": "source_affine",
+    "description": "Learn a source-specific input affine transform; absent sources remain identity",
+    "sources": [
+      "ukr_rus"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/sharing_r1_s0.yaml"
+  },
+  {
+    "arm": "capacity",
+    "rung": 1,
+    "seed": 0,
+    "flags": "wide",
+    "description": "512-dimensional encoder instead of 256; equal episode cap, report runtime",
+    "sources": [
+      "ukr_rus"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/capacity_r1_s0.yaml"
+  },
+  {
+    "arm": "objective",
+    "rung": 1,
+    "seed": 0,
+    "flags": "aux_reconstruction",
+    "description": "NM plus 0.1 masked-feature reconstruction, masking 15% of sampled real nodes",
+    "sources": [
+      "ukr_rus"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/objective_r1_s0.yaml"
+  },
+  {
+    "arm": "region_adaptive",
+    "rung": 1,
+    "seed": 0,
+    "flags": "region_adaptive",
+    "description": "70% uniform-band / 30% bounded loss-adaptive degree-region sampling",
+    "sources": [
+      "ukr_rus"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/region_adaptive_r1_s0.yaml"
+  },
+  {
+    "arm": "coverage",
+    "rung": 1,
+    "seed": 0,
+    "flags": "coverage_cycle",
+    "description": "Random-start cyclic traversal of eligible center pools",
+    "sources": [
+      "ukr_rus"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/coverage_r1_s0.yaml"
+  },
+  {
+    "arm": "budget",
+    "rung": 1,
+    "seed": 0,
+    "flags": "per_source_budget",
+    "description": "Cap grows by 1250 episodes per source, up to 10000 at rung eight",
+    "sources": [
+      "ukr_rus"
+    ],
+    "holdout": "twibot20",
+    "cap": 1250,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/budget_r1_s0.yaml"
+  },
+  {
+    "arm": "baseline",
+    "rung": 2,
+    "seed": 0,
+    "flags": "",
+    "description": "Balanced source-confined NM, shared 256-dimensional encoder",
+    "sources": [
+      "ukr_rus",
+      "covid"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/baseline_r2_s0.yaml"
+  },
+  {
+    "arm": "exposure",
+    "rung": 2,
+    "seed": 0,
+    "flags": "proportional",
+    "description": "Source probability proportional to source node count",
+    "sources": [
+      "ukr_rus",
+      "covid"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/exposure_r2_s0.yaml"
+  },
+  {
+    "arm": "schedule",
+    "rung": 2,
+    "seed": 0,
+    "flags": "blocked",
+    "description": "64 consecutive episodes per source, cycling over active sources",
+    "sources": [
+      "ukr_rus",
+      "covid"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/schedule_r2_s0.yaml"
+  },
+  {
+    "arm": "composition",
+    "rung": 2,
+    "seed": 0,
+    "flags": "cross_graph",
+    "description": "Each class chooses an active source with balanced probability",
+    "sources": [
+      "ukr_rus",
+      "covid"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/composition_r2_s0.yaml"
+  },
+  {
+    "arm": "centers",
+    "rung": 2,
+    "seed": 0,
+    "flags": "degree_balanced",
+    "description": "Choose a positive-degree log2 band uniformly, then a center",
+    "sources": [
+      "ukr_rus",
+      "covid"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/centers_r2_s0.yaml"
+  },
+  {
+    "arm": "eligibility",
+    "rung": 2,
+    "seed": 0,
+    "flags": "low_degree",
+    "description": "Keep degree-2+ centers; repeat only within disjoint support/query partitions",
+    "sources": [
+      "ukr_rus",
+      "covid"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/eligibility_r2_s0.yaml"
+  },
+  {
+    "arm": "positives",
+    "rung": 2,
+    "seed": 0,
+    "flags": "uniform_positive",
+    "description": "Uniform unique one-hop positives instead of sorted random-walk discoveries",
+    "sources": [
+      "ukr_rus",
+      "covid"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/positives_r2_s0.yaml"
+  },
+  {
+    "arm": "negatives",
+    "rung": 2,
+    "seed": 0,
+    "flags": "degree_hard",
+    "description": "Competing centers share a log2 degree band; band probability proportional to size",
+    "sources": [
+      "ukr_rus",
+      "covid"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/negatives_r2_s0.yaml"
+  },
+  {
+    "arm": "context",
+    "rung": 2,
+    "seed": 0,
+    "flags": "one_hop",
+    "description": "One-hop training context, fanout 100, same 101-node cap; evaluation stays two-hop",
+    "sources": [
+      "ukr_rus",
+      "covid"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/context_r2_s0.yaml"
+  },
+  {
+    "arm": "optimization",
+    "rung": 2,
+    "seed": 0,
+    "flags": "grad_normalized",
+    "description": "Normalize each episode gradient to unit global norm before AdamW",
+    "sources": [
+      "ukr_rus",
+      "covid"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/optimization_r2_s0.yaml"
+  },
+  {
+    "arm": "alignment",
+    "rung": 2,
+    "seed": 0,
+    "flags": "feature_standardized",
+    "description": "Per-node feature standardization without learned affine parameters",
+    "sources": [
+      "ukr_rus",
+      "covid"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/alignment_r2_s0.yaml"
+  },
+  {
+    "arm": "sharing",
+    "rung": 2,
+    "seed": 0,
+    "flags": "source_affine",
+    "description": "Learn a source-specific input affine transform; absent sources remain identity",
+    "sources": [
+      "ukr_rus",
+      "covid"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/sharing_r2_s0.yaml"
+  },
+  {
+    "arm": "capacity",
+    "rung": 2,
+    "seed": 0,
+    "flags": "wide",
+    "description": "512-dimensional encoder instead of 256; equal episode cap, report runtime",
+    "sources": [
+      "ukr_rus",
+      "covid"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/capacity_r2_s0.yaml"
+  },
+  {
+    "arm": "objective",
+    "rung": 2,
+    "seed": 0,
+    "flags": "aux_reconstruction",
+    "description": "NM plus 0.1 masked-feature reconstruction, masking 15% of sampled real nodes",
+    "sources": [
+      "ukr_rus",
+      "covid"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/objective_r2_s0.yaml"
+  },
+  {
+    "arm": "region_adaptive",
+    "rung": 2,
+    "seed": 0,
+    "flags": "region_adaptive",
+    "description": "70% uniform-band / 30% bounded loss-adaptive degree-region sampling",
+    "sources": [
+      "ukr_rus",
+      "covid"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/region_adaptive_r2_s0.yaml"
+  },
+  {
+    "arm": "coverage",
+    "rung": 2,
+    "seed": 0,
+    "flags": "coverage_cycle",
+    "description": "Random-start cyclic traversal of eligible center pools",
+    "sources": [
+      "ukr_rus",
+      "covid"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/coverage_r2_s0.yaml"
+  },
+  {
+    "arm": "budget",
+    "rung": 2,
+    "seed": 0,
+    "flags": "per_source_budget",
+    "description": "Cap grows by 1250 episodes per source, up to 10000 at rung eight",
+    "sources": [
+      "ukr_rus",
+      "covid"
+    ],
+    "holdout": "twibot20",
+    "cap": 2500,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/budget_r2_s0.yaml"
+  },
+  {
+    "arm": "baseline",
+    "rung": 3,
+    "seed": 0,
+    "flags": "",
+    "description": "Balanced source-confined NM, shared 256-dimensional encoder",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/baseline_r3_s0.yaml"
+  },
+  {
+    "arm": "exposure",
+    "rung": 3,
+    "seed": 0,
+    "flags": "proportional",
+    "description": "Source probability proportional to source node count",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/exposure_r3_s0.yaml"
+  },
+  {
+    "arm": "schedule",
+    "rung": 3,
+    "seed": 0,
+    "flags": "blocked",
+    "description": "64 consecutive episodes per source, cycling over active sources",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/schedule_r3_s0.yaml"
+  },
+  {
+    "arm": "composition",
+    "rung": 3,
+    "seed": 0,
+    "flags": "cross_graph",
+    "description": "Each class chooses an active source with balanced probability",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/composition_r3_s0.yaml"
+  },
+  {
+    "arm": "centers",
+    "rung": 3,
+    "seed": 0,
+    "flags": "degree_balanced",
+    "description": "Choose a positive-degree log2 band uniformly, then a center",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/centers_r3_s0.yaml"
+  },
+  {
+    "arm": "eligibility",
+    "rung": 3,
+    "seed": 0,
+    "flags": "low_degree",
+    "description": "Keep degree-2+ centers; repeat only within disjoint support/query partitions",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/eligibility_r3_s0.yaml"
+  },
+  {
+    "arm": "positives",
+    "rung": 3,
+    "seed": 0,
+    "flags": "uniform_positive",
+    "description": "Uniform unique one-hop positives instead of sorted random-walk discoveries",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/positives_r3_s0.yaml"
+  },
+  {
+    "arm": "negatives",
+    "rung": 3,
+    "seed": 0,
+    "flags": "degree_hard",
+    "description": "Competing centers share a log2 degree band; band probability proportional to size",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/negatives_r3_s0.yaml"
+  },
+  {
+    "arm": "context",
+    "rung": 3,
+    "seed": 0,
+    "flags": "one_hop",
+    "description": "One-hop training context, fanout 100, same 101-node cap; evaluation stays two-hop",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/context_r3_s0.yaml"
+  },
+  {
+    "arm": "optimization",
+    "rung": 3,
+    "seed": 0,
+    "flags": "grad_normalized",
+    "description": "Normalize each episode gradient to unit global norm before AdamW",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/optimization_r3_s0.yaml"
+  },
+  {
+    "arm": "alignment",
+    "rung": 3,
+    "seed": 0,
+    "flags": "feature_standardized",
+    "description": "Per-node feature standardization without learned affine parameters",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/alignment_r3_s0.yaml"
+  },
+  {
+    "arm": "sharing",
+    "rung": 3,
+    "seed": 0,
+    "flags": "source_affine",
+    "description": "Learn a source-specific input affine transform; absent sources remain identity",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/sharing_r3_s0.yaml"
+  },
+  {
+    "arm": "capacity",
+    "rung": 3,
+    "seed": 0,
+    "flags": "wide",
+    "description": "512-dimensional encoder instead of 256; equal episode cap, report runtime",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/capacity_r3_s0.yaml"
+  },
+  {
+    "arm": "objective",
+    "rung": 3,
+    "seed": 0,
+    "flags": "aux_reconstruction",
+    "description": "NM plus 0.1 masked-feature reconstruction, masking 15% of sampled real nodes",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/objective_r3_s0.yaml"
+  },
+  {
+    "arm": "region_adaptive",
+    "rung": 3,
+    "seed": 0,
+    "flags": "region_adaptive",
+    "description": "70% uniform-band / 30% bounded loss-adaptive degree-region sampling",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/region_adaptive_r3_s0.yaml"
+  },
+  {
+    "arm": "coverage",
+    "rung": 3,
+    "seed": 0,
+    "flags": "coverage_cycle",
+    "description": "Random-start cyclic traversal of eligible center pools",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/coverage_r3_s0.yaml"
+  },
+  {
+    "arm": "budget",
+    "rung": 3,
+    "seed": 0,
+    "flags": "per_source_budget",
+    "description": "Cap grows by 1250 episodes per source, up to 10000 at rung eight",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm"
+    ],
+    "holdout": "twibot20",
+    "cap": 3750,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/budget_r3_s0.yaml"
+  },
+  {
+    "arm": "baseline",
+    "rung": 4,
+    "seed": 0,
+    "flags": "",
+    "description": "Balanced source-confined NM, shared 256-dimensional encoder",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/baseline_r4_s0.yaml"
+  },
+  {
+    "arm": "exposure",
+    "rung": 4,
+    "seed": 0,
+    "flags": "proportional",
+    "description": "Source probability proportional to source node count",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/exposure_r4_s0.yaml"
+  },
+  {
+    "arm": "schedule",
+    "rung": 4,
+    "seed": 0,
+    "flags": "blocked",
+    "description": "64 consecutive episodes per source, cycling over active sources",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/schedule_r4_s0.yaml"
+  },
+  {
+    "arm": "composition",
+    "rung": 4,
+    "seed": 0,
+    "flags": "cross_graph",
+    "description": "Each class chooses an active source with balanced probability",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/composition_r4_s0.yaml"
+  },
+  {
+    "arm": "centers",
+    "rung": 4,
+    "seed": 0,
+    "flags": "degree_balanced",
+    "description": "Choose a positive-degree log2 band uniformly, then a center",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/centers_r4_s0.yaml"
+  },
+  {
+    "arm": "eligibility",
+    "rung": 4,
+    "seed": 0,
+    "flags": "low_degree",
+    "description": "Keep degree-2+ centers; repeat only within disjoint support/query partitions",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/eligibility_r4_s0.yaml"
+  },
+  {
+    "arm": "positives",
+    "rung": 4,
+    "seed": 0,
+    "flags": "uniform_positive",
+    "description": "Uniform unique one-hop positives instead of sorted random-walk discoveries",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/positives_r4_s0.yaml"
+  },
+  {
+    "arm": "negatives",
+    "rung": 4,
+    "seed": 0,
+    "flags": "degree_hard",
+    "description": "Competing centers share a log2 degree band; band probability proportional to size",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/negatives_r4_s0.yaml"
+  },
+  {
+    "arm": "context",
+    "rung": 4,
+    "seed": 0,
+    "flags": "one_hop",
+    "description": "One-hop training context, fanout 100, same 101-node cap; evaluation stays two-hop",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/context_r4_s0.yaml"
+  },
+  {
+    "arm": "optimization",
+    "rung": 4,
+    "seed": 0,
+    "flags": "grad_normalized",
+    "description": "Normalize each episode gradient to unit global norm before AdamW",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/optimization_r4_s0.yaml"
+  },
+  {
+    "arm": "alignment",
+    "rung": 4,
+    "seed": 0,
+    "flags": "feature_standardized",
+    "description": "Per-node feature standardization without learned affine parameters",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/alignment_r4_s0.yaml"
+  },
+  {
+    "arm": "sharing",
+    "rung": 4,
+    "seed": 0,
+    "flags": "source_affine",
+    "description": "Learn a source-specific input affine transform; absent sources remain identity",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/sharing_r4_s0.yaml"
+  },
+  {
+    "arm": "capacity",
+    "rung": 4,
+    "seed": 0,
+    "flags": "wide",
+    "description": "512-dimensional encoder instead of 256; equal episode cap, report runtime",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/capacity_r4_s0.yaml"
+  },
+  {
+    "arm": "objective",
+    "rung": 4,
+    "seed": 0,
+    "flags": "aux_reconstruction",
+    "description": "NM plus 0.1 masked-feature reconstruction, masking 15% of sampled real nodes",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/objective_r4_s0.yaml"
+  },
+  {
+    "arm": "region_adaptive",
+    "rung": 4,
+    "seed": 0,
+    "flags": "region_adaptive",
+    "description": "70% uniform-band / 30% bounded loss-adaptive degree-region sampling",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/region_adaptive_r4_s0.yaml"
+  },
+  {
+    "arm": "coverage",
+    "rung": 4,
+    "seed": 0,
+    "flags": "coverage_cycle",
+    "description": "Random-start cyclic traversal of eligible center pools",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/coverage_r4_s0.yaml"
+  },
+  {
+    "arm": "budget",
+    "rung": 4,
+    "seed": 0,
+    "flags": "per_source_budget",
+    "description": "Cap grows by 1250 episodes per source, up to 10000 at rung eight",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political"
+    ],
+    "holdout": "twibot20",
+    "cap": 5000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/budget_r4_s0.yaml"
+  },
+  {
+    "arm": "baseline",
+    "rung": 5,
+    "seed": 0,
+    "flags": "",
+    "description": "Balanced source-confined NM, shared 256-dimensional encoder",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/baseline_r5_s0.yaml"
+  },
+  {
+    "arm": "exposure",
+    "rung": 5,
+    "seed": 0,
+    "flags": "proportional",
+    "description": "Source probability proportional to source node count",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/exposure_r5_s0.yaml"
+  },
+  {
+    "arm": "schedule",
+    "rung": 5,
+    "seed": 0,
+    "flags": "blocked",
+    "description": "64 consecutive episodes per source, cycling over active sources",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/schedule_r5_s0.yaml"
+  },
+  {
+    "arm": "composition",
+    "rung": 5,
+    "seed": 0,
+    "flags": "cross_graph",
+    "description": "Each class chooses an active source with balanced probability",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/composition_r5_s0.yaml"
+  },
+  {
+    "arm": "centers",
+    "rung": 5,
+    "seed": 0,
+    "flags": "degree_balanced",
+    "description": "Choose a positive-degree log2 band uniformly, then a center",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/centers_r5_s0.yaml"
+  },
+  {
+    "arm": "eligibility",
+    "rung": 5,
+    "seed": 0,
+    "flags": "low_degree",
+    "description": "Keep degree-2+ centers; repeat only within disjoint support/query partitions",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/eligibility_r5_s0.yaml"
+  },
+  {
+    "arm": "positives",
+    "rung": 5,
+    "seed": 0,
+    "flags": "uniform_positive",
+    "description": "Uniform unique one-hop positives instead of sorted random-walk discoveries",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/positives_r5_s0.yaml"
+  },
+  {
+    "arm": "negatives",
+    "rung": 5,
+    "seed": 0,
+    "flags": "degree_hard",
+    "description": "Competing centers share a log2 degree band; band probability proportional to size",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/negatives_r5_s0.yaml"
+  },
+  {
+    "arm": "context",
+    "rung": 5,
+    "seed": 0,
+    "flags": "one_hop",
+    "description": "One-hop training context, fanout 100, same 101-node cap; evaluation stays two-hop",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/context_r5_s0.yaml"
+  },
+  {
+    "arm": "optimization",
+    "rung": 5,
+    "seed": 0,
+    "flags": "grad_normalized",
+    "description": "Normalize each episode gradient to unit global norm before AdamW",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/optimization_r5_s0.yaml"
+  },
+  {
+    "arm": "alignment",
+    "rung": 5,
+    "seed": 0,
+    "flags": "feature_standardized",
+    "description": "Per-node feature standardization without learned affine parameters",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/alignment_r5_s0.yaml"
+  },
+  {
+    "arm": "sharing",
+    "rung": 5,
+    "seed": 0,
+    "flags": "source_affine",
+    "description": "Learn a source-specific input affine transform; absent sources remain identity",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/sharing_r5_s0.yaml"
+  },
+  {
+    "arm": "capacity",
+    "rung": 5,
+    "seed": 0,
+    "flags": "wide",
+    "description": "512-dimensional encoder instead of 256; equal episode cap, report runtime",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/capacity_r5_s0.yaml"
+  },
+  {
+    "arm": "objective",
+    "rung": 5,
+    "seed": 0,
+    "flags": "aux_reconstruction",
+    "description": "NM plus 0.1 masked-feature reconstruction, masking 15% of sampled real nodes",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/objective_r5_s0.yaml"
+  },
+  {
+    "arm": "region_adaptive",
+    "rung": 5,
+    "seed": 0,
+    "flags": "region_adaptive",
+    "description": "70% uniform-band / 30% bounded loss-adaptive degree-region sampling",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/region_adaptive_r5_s0.yaml"
+  },
+  {
+    "arm": "coverage",
+    "rung": 5,
+    "seed": 0,
+    "flags": "coverage_cycle",
+    "description": "Random-start cyclic traversal of eligible center pools",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/coverage_r5_s0.yaml"
+  },
+  {
+    "arm": "budget",
+    "rung": 5,
+    "seed": 0,
+    "flags": "per_source_budget",
+    "description": "Cap grows by 1250 episodes per source, up to 10000 at rung eight",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020"
+    ],
+    "holdout": "twibot20",
+    "cap": 6250,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/budget_r5_s0.yaml"
+  },
+  {
+    "arm": "baseline",
+    "rung": 6,
+    "seed": 0,
+    "flags": "",
+    "description": "Balanced source-confined NM, shared 256-dimensional encoder",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/baseline_r6_s0.yaml"
+  },
+  {
+    "arm": "exposure",
+    "rung": 6,
+    "seed": 0,
+    "flags": "proportional",
+    "description": "Source probability proportional to source node count",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/exposure_r6_s0.yaml"
+  },
+  {
+    "arm": "schedule",
+    "rung": 6,
+    "seed": 0,
+    "flags": "blocked",
+    "description": "64 consecutive episodes per source, cycling over active sources",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/schedule_r6_s0.yaml"
+  },
+  {
+    "arm": "composition",
+    "rung": 6,
+    "seed": 0,
+    "flags": "cross_graph",
+    "description": "Each class chooses an active source with balanced probability",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/composition_r6_s0.yaml"
+  },
+  {
+    "arm": "centers",
+    "rung": 6,
+    "seed": 0,
+    "flags": "degree_balanced",
+    "description": "Choose a positive-degree log2 band uniformly, then a center",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/centers_r6_s0.yaml"
+  },
+  {
+    "arm": "eligibility",
+    "rung": 6,
+    "seed": 0,
+    "flags": "low_degree",
+    "description": "Keep degree-2+ centers; repeat only within disjoint support/query partitions",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/eligibility_r6_s0.yaml"
+  },
+  {
+    "arm": "positives",
+    "rung": 6,
+    "seed": 0,
+    "flags": "uniform_positive",
+    "description": "Uniform unique one-hop positives instead of sorted random-walk discoveries",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/positives_r6_s0.yaml"
+  },
+  {
+    "arm": "negatives",
+    "rung": 6,
+    "seed": 0,
+    "flags": "degree_hard",
+    "description": "Competing centers share a log2 degree band; band probability proportional to size",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/negatives_r6_s0.yaml"
+  },
+  {
+    "arm": "context",
+    "rung": 6,
+    "seed": 0,
+    "flags": "one_hop",
+    "description": "One-hop training context, fanout 100, same 101-node cap; evaluation stays two-hop",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/context_r6_s0.yaml"
+  },
+  {
+    "arm": "optimization",
+    "rung": 6,
+    "seed": 0,
+    "flags": "grad_normalized",
+    "description": "Normalize each episode gradient to unit global norm before AdamW",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/optimization_r6_s0.yaml"
+  },
+  {
+    "arm": "alignment",
+    "rung": 6,
+    "seed": 0,
+    "flags": "feature_standardized",
+    "description": "Per-node feature standardization without learned affine parameters",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/alignment_r6_s0.yaml"
+  },
+  {
+    "arm": "sharing",
+    "rung": 6,
+    "seed": 0,
+    "flags": "source_affine",
+    "description": "Learn a source-specific input affine transform; absent sources remain identity",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/sharing_r6_s0.yaml"
+  },
+  {
+    "arm": "capacity",
+    "rung": 6,
+    "seed": 0,
+    "flags": "wide",
+    "description": "512-dimensional encoder instead of 256; equal episode cap, report runtime",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/capacity_r6_s0.yaml"
+  },
+  {
+    "arm": "objective",
+    "rung": 6,
+    "seed": 0,
+    "flags": "aux_reconstruction",
+    "description": "NM plus 0.1 masked-feature reconstruction, masking 15% of sampled real nodes",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/objective_r6_s0.yaml"
+  },
+  {
+    "arm": "region_adaptive",
+    "rung": 6,
+    "seed": 0,
+    "flags": "region_adaptive",
+    "description": "70% uniform-band / 30% bounded loss-adaptive degree-region sampling",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/region_adaptive_r6_s0.yaml"
+  },
+  {
+    "arm": "coverage",
+    "rung": 6,
+    "seed": 0,
+    "flags": "coverage_cycle",
+    "description": "Random-start cyclic traversal of eligible center pools",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/coverage_r6_s0.yaml"
+  },
+  {
+    "arm": "budget",
+    "rung": 6,
+    "seed": 0,
+    "flags": "per_source_budget",
+    "description": "Cap grows by 1250 episodes per source, up to 10000 at rung eight",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended"
+    ],
+    "holdout": "twibot20",
+    "cap": 7500,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/budget_r6_s0.yaml"
+  },
+  {
+    "arm": "baseline",
+    "rung": 7,
+    "seed": 0,
+    "flags": "",
+    "description": "Balanced source-confined NM, shared 256-dimensional encoder",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/baseline_r7_s0.yaml"
+  },
+  {
+    "arm": "exposure",
+    "rung": 7,
+    "seed": 0,
+    "flags": "proportional",
+    "description": "Source probability proportional to source node count",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/exposure_r7_s0.yaml"
+  },
+  {
+    "arm": "schedule",
+    "rung": 7,
+    "seed": 0,
+    "flags": "blocked",
+    "description": "64 consecutive episodes per source, cycling over active sources",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/schedule_r7_s0.yaml"
+  },
+  {
+    "arm": "composition",
+    "rung": 7,
+    "seed": 0,
+    "flags": "cross_graph",
+    "description": "Each class chooses an active source with balanced probability",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/composition_r7_s0.yaml"
+  },
+  {
+    "arm": "centers",
+    "rung": 7,
+    "seed": 0,
+    "flags": "degree_balanced",
+    "description": "Choose a positive-degree log2 band uniformly, then a center",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/centers_r7_s0.yaml"
+  },
+  {
+    "arm": "eligibility",
+    "rung": 7,
+    "seed": 0,
+    "flags": "low_degree",
+    "description": "Keep degree-2+ centers; repeat only within disjoint support/query partitions",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/eligibility_r7_s0.yaml"
+  },
+  {
+    "arm": "positives",
+    "rung": 7,
+    "seed": 0,
+    "flags": "uniform_positive",
+    "description": "Uniform unique one-hop positives instead of sorted random-walk discoveries",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/positives_r7_s0.yaml"
+  },
+  {
+    "arm": "negatives",
+    "rung": 7,
+    "seed": 0,
+    "flags": "degree_hard",
+    "description": "Competing centers share a log2 degree band; band probability proportional to size",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/negatives_r7_s0.yaml"
+  },
+  {
+    "arm": "context",
+    "rung": 7,
+    "seed": 0,
+    "flags": "one_hop",
+    "description": "One-hop training context, fanout 100, same 101-node cap; evaluation stays two-hop",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/context_r7_s0.yaml"
+  },
+  {
+    "arm": "optimization",
+    "rung": 7,
+    "seed": 0,
+    "flags": "grad_normalized",
+    "description": "Normalize each episode gradient to unit global norm before AdamW",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/optimization_r7_s0.yaml"
+  },
+  {
+    "arm": "alignment",
+    "rung": 7,
+    "seed": 0,
+    "flags": "feature_standardized",
+    "description": "Per-node feature standardization without learned affine parameters",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/alignment_r7_s0.yaml"
+  },
+  {
+    "arm": "sharing",
+    "rung": 7,
+    "seed": 0,
+    "flags": "source_affine",
+    "description": "Learn a source-specific input affine transform; absent sources remain identity",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/sharing_r7_s0.yaml"
+  },
+  {
+    "arm": "capacity",
+    "rung": 7,
+    "seed": 0,
+    "flags": "wide",
+    "description": "512-dimensional encoder instead of 256; equal episode cap, report runtime",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/capacity_r7_s0.yaml"
+  },
+  {
+    "arm": "objective",
+    "rung": 7,
+    "seed": 0,
+    "flags": "aux_reconstruction",
+    "description": "NM plus 0.1 masked-feature reconstruction, masking 15% of sampled real nodes",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/objective_r7_s0.yaml"
+  },
+  {
+    "arm": "region_adaptive",
+    "rung": 7,
+    "seed": 0,
+    "flags": "region_adaptive",
+    "description": "70% uniform-band / 30% bounded loss-adaptive degree-region sampling",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/region_adaptive_r7_s0.yaml"
+  },
+  {
+    "arm": "coverage",
+    "rung": 7,
+    "seed": 0,
+    "flags": "coverage_cycle",
+    "description": "Random-start cyclic traversal of eligible center pools",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk"
+    ],
+    "holdout": "twibot20",
+    "cap": 10000,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/coverage_r7_s0.yaml"
+  },
+  {
+    "arm": "budget",
+    "rung": 7,
+    "seed": 0,
+    "flags": "per_source_budget",
+    "description": "Cap grows by 1250 episodes per source, up to 10000 at rung eight",
+    "sources": [
+      "ukr_rus",
+      "covid",
+      "midterm",
+      "covid_political",
+      "election2020",
+      "ukr_rus_suspended",
+      "cp_hk"
+    ],
+    "holdout": "twibot20",
+    "cap": 8750,
+    "config": "scripts/experiments/setup/nm_interventions_overnight/configs/budget_r7_s0.yaml"
+  }
+]
