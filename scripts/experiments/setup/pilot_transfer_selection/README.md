@@ -189,6 +189,9 @@ Reconstruct the missing immutable evaluation artifact first (large CPU/RAM and
 disk operation; intentionally not launched by the agent):
 
 ```bash
+PREFLIGHT_ONLY=1 \
+bash scripts/experiments/setup/pilot_transfer_selection/recover_final_core_graph_tucker.sh
+
 tmux new-session -d -s pilot-transfer-graph-recovery \
   'export PATH="/home/mhchu/miniconda3/bin:$PATH"; \
    cd /dataMeR1/phil/gfm/prodigy-pilot-transfer-selection; \
