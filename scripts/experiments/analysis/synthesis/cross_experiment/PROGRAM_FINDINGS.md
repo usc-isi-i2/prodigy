@@ -1,46 +1,44 @@
 # GFM Retweet-Graph Program — Consolidated Findings
 
-**Can one pretrained encoder give transferable node representations across many
-retweet graphs and many downstream tasks — and does merging sources or engineering
-the SSL objective get us there?** Across ~13 experiments the answer is a qualified
-*mostly no, with two sharp exceptions*: today's Neighbor-Matching (NM) pretext is a
-**feature-content** learner (topology ≈ chance); **merging sources** matches or beats
-single-source transfer but never adds an out-of-distribution bonus and pays a small
-in-domain tax; and the **only** way we have produced an encoder strong on *both*
-feature and topological tasks is **rotating heterogeneous SSL pretexts (NM⊕CL⊕FP)** —
-a hand-engineered multi-head objective (E4) does *not* do it.
+For the current hierarchical program overview, including later experiments, see
+[Experiment overview: June–September 2026](../../EXPERIMENT_OVERVIEW.md).
 
-_Status: umbrella synthesis over the per-experiment write-ups (each linked below).
-**Every headline is 1 seed** — the program has not yet run a seed sweep. Numbers are
-lifted verbatim from each thrust's own `FINDINGS.md`/`RESULTS.md`; absolute values are
-only comparable **within** an experiment (corpus / sampling / checkpoint differ across
-them — see §5.6). Last consolidated 2026-07-20._
+**Can one pretrained encoder transfer across retweet graphs and downstream tasks?**
+The early studies show strong task dependence. NM retrieval relies on neighborhood
+feature content; source composition and episode sampling affect transfer. On the
+corrected static-link evaluator, **NM leads the objective lattice on classification
+and link prediction; rotating NM/CL/FP (MIX) trades some of that performance for
+positive mean regression. There is no emergent three-way link-prediction synergy.**
 
-> **⚠️ Partially superseded (2026-07-23), not yet rewritten.** Every
-> static-link-prediction number in this document — including the headline "MIX is the
-> only generalist / LP is a 3-way synergy" and the 0.42 → 0.32 → 0.76 non-monotonic
-> lattice — came from an evaluator later found invalid. On the rescore of the same
-> frozen checkpoints, **link prediction is a neighbor-matching main effect that
-> rotation dilutes**: NM is the best arm on all 5 datasets and MIX sits near the
-> heuristic floors. There is no synergy. The classification, regression, feature-ablation
-> and NM-transfer sections are unaffected.
->
-> Corrected read: [`../multitask_ssl/FINDINGS.md`](../../objectives/multitask/multitask_ssl/FINDINGS.md) ·
-> defect details: [`../multitask_ssl/FINDINGS_rescore.md`](../../objectives/multitask/multitask_ssl/FINDINGS_rescore.md).
-> Rewriting this synthesis against the valid numbers is still open work.
+_Status: historical synthesis of the early program, originally consolidated
+2026-07-20; static-link correction completed 2026-09-11. This is not a synthesis of
+all experiments completed since July; see the [current analysis index](../../README.md).
+The studies summarized here are single-seed. Compare absolute values only within
+matched experiments; corpora, sampling, checkpoints and evaluation protocols differ._
+
+> **Correction record.** The old episodic static-link evaluator was endpoint-blind,
+> used frozen random class prototypes, and had degree-confounded negatives. Its
+> numbers and derived joint scores have been removed here. Section 4E uses the
+> valid rescore of the same frozen checkpoints; sections 4E-engineering and 4F
+> retain only unaffected classification/regression results because the cited
+> rescore does not cover those arms. Temporal LP has the same defect and remains
+> unrescored in this evidence set. See the
+> [corrected lattice](../../objectives/multitask/multitask_ssl/FINDINGS.md) and
+> [rescore protocol and results](../../objectives/multitask/multitask_ssl/FINDINGS_rescore.md).
 
 ---
 
 ## 1. Executive summary
 
-Five findings recur across the program and are each supported by ≥2 independent thrusts:
+The early studies support the following scoped findings:
 
-- **NM is a neighborhood-*feature-content* matcher, not a topology learner.** Destroying
+- **NM retrieval depends on neighborhood feature content in the tested one-hop setup.** Destroying
   real neighborhood content collapses NM to chance exactly like deleting features, while
   scrambling the feature↔node binding is harmless (feature_ablation). Independently,
   **feature-cloud separability predicts transfer** (proxy-A-distance ρ≈−0.92) while raw
   degree-distribution distance is the weakest predictor (ρ≈−0.6) (similarity_vs_transfer).
-  Two analyses, same conclusion: features carry the signal, topology rides along.
+  These diagnostics do not establish that NM cannot encode adjacency: valid pairwise
+  link prediction shows that it can (§4E).
 
 - **Merged ≥ single-source on transfer, but merging never buys OOD — and taxes small
   graphs in-domain.** The early "single beats merged" *inversion does not reproduce*
@@ -58,26 +56,15 @@ Five findings recur across the program and are each supported by ≥2 independen
   sampling_strat_comparison). A cross-source-probability sweep confirms p=0 (fully
   within-source) is best.
 
-- **⚠️ SUPERSEDED (see banner) — The "learns both feature *and* topology" encoder exists,
-  but only via pretext rotation, and it's a 3-way synergy.** Rotating NM/CL/FP one-per-episode (MIX) is the
-  *only* arm above chance on zero-shot static link prediction (0.76 vs ≤0.47 for every
-  single objective) while staying near-best on classification (multitask_ssl_rotation).
-  **No pair reproduces it** — capability is non-monotonic (singles 0.42 → pairs 0.32 →
-  triple 0.76); the topological transfer is emergent only in the *complete* set
-  (multitask_ssl_pairs).
+- **NM leads the corrected classification/link-prediction comparison.** In the
+  seven-arm objective lattice, NM has mean classification AUC 0.810 and pairwise
+  LP AUC 0.757; MIX has 0.795 and 0.680. MIX retains positive mean regression
+  (0.097 versus NM −0.001), a possible compromise that needs replication.
 
-- **Engineering the objective directly fails; frozen SSL transfers only when the pretext
-  structurally matches the task.** The multi-head E4 (MFR⊕directed-LP⊕structural)
-  *degrades* the encoder below the NM control on both axes (topology_feature_ssl).
-  Frozen-probe matrix: the only objective that clears a floor is **single-source NM →
-  link prediction** (+0.23 AUC, pretext ≈ task); for regression *nothing* beats raw
-  features and pretraining is strictly harmful (pretrain_probe_matrix).
-
-**Where this lands (one line):** we understand *what NM learns* (feature content) and
-*how to combine sources* (within-source, balanced) and *how to get topology* (rotate
-pretexts, don't hand-build a loss) — but every result is single-seed, and no single
-frozen encoder is simultaneously best on classification, regression, and link
-prediction. See §5.
+- **Engineered objectives did not rescue classification/regression in these tests.**
+  E4/E4r underperform the NM control on both retained metrics. In the separate
+  frozen-probe benchmark, raw-feature ridge beats every tested encoder on regression.
+  Neither study's old static-LP results can support an objective ranking.
 
 ---
 
@@ -107,21 +94,23 @@ rest are held-out transfer targets.
 | B | NM merged-vs-single (cross-source shortcut) | [nm_transfer_matrix](../../transfer/matrices/prodigy_nm/merged_vs_single/nm_transfer_matrix/RESULTS.md), [nm_cross_source_shortcut](../../transfer/ablations/prodigy_nm/episode_sampling/nm_cross_source_shortcut/RESULTS.md), [nm_covid_midterm](../../transfer/matrices/prodigy_nm/merged_vs_single/nm_covid_midterm/RESULTS.md), [sampling_strat_comparison](../../transfer/ablations/prodigy_nm/episode_sampling/sampling_strat_comparison/) | Inversion doesn't reproduce; within-source > naive; balanced rescues small domains. |
 | C | NM transfer geometry (8×8 + ladder) | [nm_single_source_matrix](../../transfer/matrices/prodigy_nm/single_source/nm_single_source_matrix/FINDINGS.md), [nm_ladder](../../transfer/ladders/prodigy_nm/baseline/nm_ladder/RESULTS.md) | Specialists beat merged in-domain everywhere; covid/ukr universal donors; cp_hk an island. |
 | D | Features vs topology | [feature_ablation](../../objectives/topology_vs_features/feature_ablation/FINDINGS.md) | NM uses real feature *content*; topology alone ≈ chance at n_hop=1. |
-| E | SSL-objective studies | [topology_feature_ssl](../../objectives/topology_vs_features/topology_feature_ssl/FINDINGS.md), [multitask_ssl](../../objectives/multitask/multitask_ssl/FINDINGS.md) | A multi-head objective (E4) fails. ⚠️ The "MIX is the only generalist / LP is a 3-way synergy" reading is superseded — LP is an NM main effect (see banner). |
-| F | Frozen-probe strategy benchmark | [pretrain_probe_matrix](../../objectives/frozen_probes/pretrain_probe_matrix/FINDINGS.md), [pretrain_strategy_benchmark](../../../setup/pretrain_strategy_benchmark/README.md), [covid_task_transfer_matrix](../../../setup/covid_task_transfer_matrix/README.md) | Only NM→LP clears a floor; raw features beat all pretraining on regression. |
+| E | SSL-objective studies | [topology_feature_ssl](../../objectives/topology_vs_features/topology_feature_ssl/FINDINGS.md), [multitask_ssl](../../objectives/multitask/multitask_ssl/FINDINGS.md) | NM leads the corrected cls/LP lattice; MIX retains positive mean regression. E4 degrades cls/reg; its LP ranking is unverified. |
+| F | Frozen-probe strategy benchmark | [pretrain_probe_matrix](../../objectives/frozen_probes/pretrain_probe_matrix/FINDINGS.md), [pretrain_strategy_benchmark](../../../setup/pretrain_strategy_benchmark/README.md), [covid_task_transfer_matrix](../../../setup/covid_task_transfer_matrix/README.md) | Raw features beat all tested encoders on regression; old LP comparisons are excluded. |
 | G | New downstream tasks (enablers) | [node_regression](../../../setup/node_regression/README.md), [static_link_prediction](../../../setup/static_link_prediction/README.md) | Continuous + edge-level tasks with real headroom; used as the topology/feature axes above. |
 | H | New datasets (enablers) | [twibot20_transfer](../../../setup/twibot20_transfer/README.md), [cp_hk_twitter](../../../setup/cp_hk_twitter/README.md), [cp_hk_transfer_in](../../../setup/cp_hk_transfer_in/README.md) | twibot20 = easy transfer target (~.92 zero-shot); cp_hk = the isolated island. |
 
 ### How to read this document
 
-- **The joint bar is `min(feature_score, topological_score)`, never the mean.** An
-  encoder excellent at one family and useless at another is not a general encoder.
+- **Report task scores separately.** A minimum of classification and valid LP AUC
+  can summarize their tradeoff, but their dataset sets differ and it excludes regression.
   Feature axis = node-classification ROC-AUC (and node-regression Spearman ρ as a
-  secondary, noisy axis); topological axis = 0-shot static-LP ROC-AUC.
+  secondary, noisy axis); adjacency axis = valid pairwise static-LP ROC-AUC. Link prediction alone does
+  not identify whether the signal comes from topology or features.
 - **Floors matter.** "Improves" means *beats a floor* (`raw_feat` ridge with no GNN;
   `random_init` untrained encoder; `raw_degree` leakage control), not *closest to a
   saturated ceiling*.
-- **Matched-40k, 1 seed** unless noted. Treat sub-.02 AUC gaps as noise.
+- **Single seed:** small gaps have no established significance. Historical budget
+  labels may exceed the actual checkpoint step; compare recorded checkpoints.
 
 ---
 
@@ -134,16 +123,20 @@ rest are held-out transfer targets.
   prototypes and collapses to chance, an eval artifact that once made every model look
   random). ROC-AUC is near-ceiling (~.9+) on retweet graphs, so **accuracy is the
   discriminative DV** for NM transfer; AUC is reported for LP/classification.
-- **Frozen-probe eval tasks:** node classification (ROC-AUC, 10-shot), node regression
-  (Spearman ρ, 10-shot, log1p on the 6-target profile panel), static link prediction
-  (ROC-AUC, 0-shot; ~85/15 edge split with held-out edges removed from the background).
-- **Checkpoint hygiene:** the trainer saves no ckpt at the final 0-indexed step, so a
-  "40k budget" lands `state_dict_40000` only with `epochs:5`; the rotation runs are read
-  at their true-highest `state_dict_30000`. Numbers across thrusts use each experiment's
-  stated checkpoint.
-- **Pervasive caveat:** **single seed.** Large, multi-dataset-consistent effects (the
-  ≥.03 ones, the LP synergy, the ablation collapses) are trustworthy; sub-.02 gaps are
-  not. A seed sweep is the top outstanding hardening for the whole program.
+- **Retained node tasks:** classification (ROC-AUC, 10-shot) and regression
+  (Spearman ρ, 10-shot, log1p on the profile panel).
+- **Corrected static LP:** symmetric endpoint-embedding cosine on a background
+  graph with holdout edges removed; validation-locked score orientation; 2,000
+  positive and 2,000 degree-matched negative pairs per dataset, shared across arms.
+  Heuristic and raw-feature floors use the same pairs. Five datasets are scored.
+- **Checkpoint hygiene:** before the 2026-07-26 terminal-save fix, nominal 40k
+  rotation runs ended with a 30k checkpoint. The rescore reuses those checkpoints;
+  it is not new training. Pin actual steps rather than inferring them from budget
+  labels or selecting the highest checkpoint across pre-/post-fix runs.
+- **Uncertainty:** these results have one training seed. Agreement across datasets
+  supports the direction of a comparison but does not supply a seed confidence
+  interval. Evaluation episodes are split-seeded; changing `--seed` does not
+  resample them.
 
 ---
 
@@ -245,7 +238,8 @@ Eval-time input ablation on a fixed NM checkpoint (NM accuracy, chance ≈ 0.033
 **`noise` (distinct but wrong content) collapses NM to chance, matching `zero`; only
 `permute` (real content, scrambled binding) survives** ≈ intact. So NM uses real
 neighborhood feature **content as a permutation-invariant bag**, not node-distinctness
-and not topology. Features are genuinely informative (raw feature→label AUC 0.71–0.95),
+in this one-hop retrieval test; this does not rule out adjacency information
+elsewhere in the representation. Features are informative (raw feature→label AUC 0.71–0.95),
 and **downstream is content-driven too**: `noise` collapses the frozen-rep label probe
 to chance on political graphs (covid_political 0.912→0.535) *with topology fully intact*.
 *Caveat: n_hop=1 stars — whether real multi-hop structure adds signal needs retraining,
@@ -253,69 +247,72 @@ not an eval ablation.*
 
 ### E. SSL-objective studies — can one pretext do both?
 
-**E-rotation (multitask_ssl):** rotate SSL *pretext tasks*
-one-per-episode at matched 40k. Static-LP is the headline (0-shot AUC, chance 0.50):
+**E-rotation (multitask_ssl):** seven objective arms, with the original frozen
+checkpoints rescored on valid pairwise static LP. Classification averages two datasets,
+regression four, and LP five; these means are not measurements on one shared target set.
 
-| arm | k | cls AUC | reg ρ | **static-LP** | min(cls, sLP) |
+| arm | k | cls AUC | reg ρ | valid LP AUC | LP margin over floor |
 |---|---|---:|---:|---:|---:|
-| NM | 1 | **0.810** | −0.001 | 0.467 | 0.467 |
-| CL | 1 | 0.638 | −0.128 | 0.332 | 0.332 |
-| FP | 1 | 0.492 | **0.166** | 0.449 | 0.449 |
-| NMCL | 2 | 0.800 | −0.144 | 0.305 | 0.305 |
-| NMFP | 2 | 0.802 | −0.098 | 0.424 | 0.424 |
-| CLFP | 2 | 0.601 | 0.110 | 0.227 | 0.227 |
-| **MIX** | 3 | 0.795 | 0.097 | **0.759** | **0.759** |
+| NM | 1 | **0.810** | −0.001 | **0.757** | **+0.113** |
+| CL | 1 | 0.638 | −0.128 | 0.543 | −0.101 |
+| FP | 1 | 0.492 | **0.166** | 0.499 | −0.145 |
+| NMCL | 2 | 0.800 | −0.144 | 0.679 | +0.035 |
+| NMFP | 2 | 0.802 | −0.098 | 0.738 | +0.094 |
+| CLFP | 2 | 0.601 | 0.110 | 0.543 | −0.101 |
+| MIX | 3 | 0.795 | 0.097 | 0.680 | +0.036 |
 
-**MIX is the only generalist** — only arm above chance on the topological axis (+0.293
-over the best control on the joint bar), winning all 4 LP datasets (+0.269 mean, incl.
-held-out twibot20), while the controls emit *degenerate constant predictors*. And it is
-a **3-way synergy**: no pair clears chance, capability is non-monotonic (singles 0.42 →
-pairs 0.32 → triple 0.76). Classification is an **NM** property preserved under
-combination; regression a weak **FP** property.
+Source: [valid lattice and data provenance](../../objectives/multitask/multitask_ssl/FINDINGS.md).
+The floor margin is the source's mean margin against the best per-dataset heuristic;
+it is not a comparison with the old random-prototype decoder.
 
-**E-engineering (topology_feature_ssl):** attack topology via architecture / augmentation
-/ objective on the NM base. The capabilities **split by arm** and the multi-head
-objective **fails** (test, matched-40k):
+**NM beats MIX on LP in all five datasets.** NM-containing arms clear the mean
+heuristic floor; arms without NM do not. Adding objectives to NM lowers mean LP
+in these runs, with NMFP retaining more than NMCL or MIX. This does not isolate
+compute dilution from objective interference. MIX's positive regression is a
+possible breadth tradeoff, not evidence of emergent LP capability; its regression
+sign needs replication (one seed, four noisy datasets).
 
-| arm | lever | reg ρ | cls AUC | static-LP | min(cls, sLP) |
-|---|---|---:|---:|---:|---:|
-| B0 | control | −0.00 | 0.793 | 0.675 | 0.675 |
-| B1 | aug (feat-shuffle) | −0.12 | 0.799 | 0.341 | 0.341 |
-| **E1** | directed degree inputs | **0.14** | 0.778 | 0.657 | 0.657 |
-| **E2** | count-aware PNA agg | −0.08 | 0.781 | **0.761** | **0.761** |
-| E2b | E2 drop-BN | −0.00 | 0.784 | 0.401 | 0.401 |
-| E4 | multi-head objective | −0.13 | 0.445 | 0.662 | 0.445 |
-| E4r | multi-head, rotated | −0.12 | 0.643 | 0.234 | 0.234 |
+The corpus replications also rank NM > MIX > CL > FP by mean valid LP:
+all-eight NM/MIX = 0.744/0.692; COVID-only NM/MIX = 0.728/0.652.
+These corroborate the objective ordering, but do not isolate corpus effects.
+The three-source NM arm transfers to held-out TwiBot20 at 0.835 versus a best
+heuristic floor of 0.726. HK remains weak across arms. This is adjacency-prediction
+evidence; a causal topology-versus-feature attribution requires separate controls.
+See the [15-arm rescore](../../objectives/multitask/multitask_ssl/FINDINGS_rescore.md).
 
-**Feature-strong (E1: regression) and topology-strong (E2: static-LP) are *different*
-arms; no engineered arm clears the joint bar.** The augmentation lever backfired (B1
-LP below chance); "representable ≠ usable" (E2b makes counts linearly readable yet
-crashes LP); and **E4 — the multi-head objective meant to unify them — degrades both**
-(the heavy-tailed structural term dominated the loss; MFR's near-zero gradient couldn't
-hold feature content).
+**E-engineering (topology_feature_ssl):** only unaffected node-task values are
+retained from the historical comparison:
 
-> **The reconciliation (§5.5):** rotating heterogeneous *pretext tasks* (MIX) gets the
-> generalist; hand-building a multi-head *objective* (E4) does not. Same goal, opposite
-> outcome — the composition mechanism matters.
+| arm | lever | reg ρ | cls AUC |
+|---|---|---:|---:|
+| B0 | control | −0.00 | 0.793 |
+| B1 | aug (feat-shuffle) | −0.12 | 0.799 |
+| E1 | directed degree inputs | **0.14** | 0.778 |
+| E2 | count-aware PNA agg | −0.08 | 0.781 |
+| E2b | E2 drop-BN | −0.00 | 0.784 |
+| E4 | multi-head objective | −0.13 | 0.445 |
+| E4r | multi-head, rotated | −0.12 | 0.643 |
+
+E1 has the strongest mean regression here; E4/E4r reduce classification and
+regression relative to B0. The old LP columns cannot establish that E2 is the
+best topology arm, that B1 destroys LP, or that no engineered arm clears a joint
+classification/LP bar. Those comparisons require a valid rescore of these specific
+checkpoints. The [source write-up](../../objectives/topology_vs_features/topology_feature_ssl/FINDINGS.md)
+still contains invalid LP claims and is used here only for node-task results.
 
 ### F. Frozen-probe strategy benchmark
 
-Anchored to floors (untrained `random_init`; `features_only` ridge). The prior
-fine-tuning matrix (covid_task_transfer_matrix) was uninterpretable — full adaptation
-drove every cell, including from-scratch, to ceiling — motivating the **frozen** probe.
+The retained regression comparison is `features_only` ridge **0.109**, untrained
+`random_init` **0.022**, and all tested trained encoders ≤0 (NM·COVID −0.053).
+Thus pretraining hurts regression **in this benchmark**, relative to raw features.
+This is not a universal claim about all arms: the separate objective lattice has
+positive regression for FP, CLFP and MIX.
 
-**Static-LP (0-shot AUC):** `NM·covid` **0.612 (+0.229 over floor)**, above floor on all
-5 datasets; every other encoder (CL, FP, **merged-NM 0.352**) sits *below the untrained
-floor*. **Node regression (Spearman ρ):** `features_only` **0.109** ≫ `random_init`
-0.022 ≫ every trained encoder (all ≤0, NM·covid −0.053). **Pretraining is strictly
-harmful for regression; the GNN discards feature signal a plain ridge keeps.**
-
-Takeaways: (1) frozen SSL transfers **only when the pretext structurally matches the
-task** (adjacency prediction → link prediction); (2) **no objective is best across
-tasks** (NM wins LP, is 2nd-worst on regression); (3) **merging destroyed the one thing
-that worked** (merged-NM LP 0.352 vs single-covid 0.612) — consistent with the
-within-source > merged pattern, though note this cuts against thrust B's transfer story
-(see §5.6).
+The old LP ranking, the claimed single-source NM advantage over the random encoder,
+and the claim that merging destroys LP are excluded. These checkpoints are not
+covered by the cited 15-arm rescore, so corrected scores from other runs cannot
+replace them. The [original benchmark](../../objectives/frozen_probes/pretrain_probe_matrix/FINDINGS.md)
+remains a source for regression only until its LP comparison is rescored.
 
 ### G & H. Enablers — new tasks and datasets
 
@@ -336,10 +333,10 @@ within-source > merged pattern, though note this cuts against thrust B's transfe
 
 Cross-cutting, evidence-based headlines (each tied to ≥1 thrust above; all 1 seed):
 
-1. **NM ≙ feature-content matching.** Ablation (D) and similarity-vs-transfer (A)
-   independently show the signal is feature content, not topology — and transfer is
-   predicted by feature-cloud separability, not degree distributions. *This is the single
-   most robust finding in the program (two orthogonal methods).*
+1. **NM retrieval uses neighborhood feature content in the tested setup.**
+   Ablation (D) and similarity-vs-transfer (A) support this restricted conclusion.
+   The corrected LP result shows useful adjacency information; it does not by itself
+   distinguish feature-driven from topology-driven prediction.
 
 2. **Merged ≥ single on transfer, but merging is a robustness trade, not a free lunch.**
    The inversion is dead (B); merging costs ~.006–.04 in-domain (paid by small graphs)
@@ -350,44 +347,37 @@ Cross-cutting, evidence-based headlines (each tied to ≥1 thrust above; all 1 s
    above their own specialist ceiling (B). The cross-source-probability sweep bottoms out
    at p=0.
 
-4. **A both-tasks encoder is achievable only by pretext rotation, and only as a 3-way
-   synergy.** MIX clears the joint bar (0.76); no single or pair does; capability is
-   non-monotonic (E). This is the program's one clean *positive* generalist result.
+4. **The objective lattice favors NM on classification and LP.** NM scores
+   0.810/0.757 versus MIX 0.795/0.680. The prior three-way-synergy interpretation
+   was an evaluator artifact. MIX's positive mean regression is a tentative
+   compromise, not an LP breakthrough.
 
-5. **Composition beats construction.** Rotating existing pretexts (MIX) unlocks
-   topological transfer; a purpose-built multi-head objective (E4) degrades the encoder
-   below the NM control (E). If topology must be *used*, put diverse *tasks* in the
-   rotation — don't hand-weight a structural loss (its heavy-tailed target dominates and
-   the feature anchor is too weak to survive co-training). The follow-up is a
-   **stronger-than-MFR feature-preservation objective** and/or uncertainty weighting.
+5. **The engineering comparison supports a node-task conclusion only.** E4/E4r
+   reduce cls/reg relative to B0. Their invalid LP measurements cannot establish
+   a rotation-versus-joint-loss advantage or justify a topology recommendation.
 
-6. **NM's link-prediction transfer is setup-sensitive — do not compare absolute LP
-   numbers across experiments.** Frozen NM→LP reads 0.612 (single covid, step 11k, F),
-   0.467 (merged, global, 30k, E-rotation), and 0.675 (merged, within-source, 40k,
-   E-engineering B0). Corpus, sampling regime, and checkpoint each move it by >0.1, and
-   F's "merging destroys LP" vs B's "merging ≥ single" are **not** a contradiction —
-   they differ in task (LP vs NM retrieval), corpus, and step. **Only within-experiment
-   contrasts are valid.** Reconciling these under one matched protocol is an open thread.
+6. **Compare valid, matched evaluations.** The rescore supports NM > MIX by mean
+   LP across the three tested corpora. Historical LP values from other evaluators
+   cannot quantify corpus, sampling or checkpoint effects. Re-evaluate the exact
+   engineering/probe checkpoints under one protocol before making those claims.
 
-7. **For node regression, raw features win — pretraining is harmful.** Every frozen
-   encoder underperforms a plain ridge on raw bios (F); NM even anti-scales on regression
-   with budget (E-engineering budget sweep). Regression is the axis where the current
-   stack adds nothing.
+7. **Raw features win regression in the frozen-probe benchmark.** This finding is
+   local to that benchmark; positive regression in the separate lattice prevents
+   a program-wide claim that every pretrained encoder is harmful.
 
-### Where this lands
+### Remaining work for this historical evidence set
 
-The program has mapped the **current NM stack thoroughly**: we know it learns feature
-content, how sources combine, which graphs donate and which are islands, and that
-neither augmentation nor a hand-built multi-task loss makes it topological. The **one
-forward door that opened** is heterogeneous pretext rotation (MIX) — the only encoder
-strong on both feature and topological tasks, emergent from the *complete* {NM,CL,FP}
-set. The **two big caveats gating every claim**: (a) **single seed** everywhere — a seed
-sweep is the top priority; (b) the **causal edge/feature ablation on MIX** (rewire edges
-vs permute features) that would prove its LP win is *topological* rather than a feature
-artifact is teed up but unrun. Secondary open threads: a matched-*per-task* (120k) MIX to
-separate the mixing effect from the ⅓-compute dilution; the interventional single-axis
-similarity sweep; and a unified protocol to reconcile the setup-sensitive NM→LP numbers
-(§5.6).
+- Rescore the engineering and frozen-probe checkpoints before restoring their LP
+  rankings or joint-task scores; revise their own source write-ups accordingly.
+- Treat temporal-LP results as invalid until a valid endpoint-aware rescore exists.
+- Replicate the objective lattice across training seeds, especially its regression
+  signs, and test matched per-objective exposure to distinguish dilution from
+  interference.
+- Use edge/feature interventions on **NM's valid adjacency signal** to establish
+  what drives it; the old proposed test of a MIX-only LP capability has no target.
+
+These are limits of the evidence summarized here, not an inventory of all later
+work. The [analysis index](../../README.md) tracks subsequent experiments.
 
 ---
 
