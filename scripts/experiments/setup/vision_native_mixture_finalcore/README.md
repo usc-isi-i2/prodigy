@@ -14,7 +14,7 @@ fixed downstream CLS episode streams. The three orders provide composition
 replication at each mixture size; this is a fixed-compute study, not a
 convergence-trained comparison.
 
-Run from an isolated Tucker worktree on owned GPUs 2 and 3:
+Run from an isolated Tucker worktree on any two owned GPUs 0--3:
 
 ```bash
 tmux new-session -d -s vision-native-mixture \
@@ -25,5 +25,21 @@ tmux new-session -d -s vision-native-mixture \
 ```
 
 Outputs are worktree-local under `state/vision_native_mixture_finalcore/` and
-`log/vision_native_mixture_finalcore/`. The launcher refuses GPUs other than 2
-or 3 and preserves every checkpoint's downstream trajectory.
+`log/vision_native_mixture_finalcore/`. The launcher refuses GPUs outside the
+owned 0--3 set and preserves every checkpoint's downstream trajectory.
+
+Set `SEED`, `STATE_ROOT`, and `LOG_ROOT` explicitly for additional training-seed
+replicas. The 12 non-all-nine source sets are trained and evaluated in each run;
+the registered seed-matched all-nine checkpoint is joined during analysis.
+The evaluator receives the explicit unsuffixed run name because each replica is
+already isolated by its seed-specific state root. On restart, a result with other
+than five rows is timestamp-archived together with its failed log before that
+checkpoint is evaluated again; complete checkpoints and five-row results are
+never repeated.
+
+After the two replica roots contain `COMPLETE`, run
+`postprocess_three_seed_tucker.sh` from a separate idle worktree. It waits rather
+than reading partial results, preserves the 48 five-target JSONL files from each
+new seed, requires all 780 physical cells, and renders the VISION and
+PRODIGY/VISION/SAMGPT three-seed ladder figures. It writes no checkpoint and uses
+no GPU.

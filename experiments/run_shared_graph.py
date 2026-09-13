@@ -9,6 +9,7 @@ import copy
 import json
 import os
 from pathlib import Path
+import re
 import signal
 import subprocess
 import sys
@@ -27,6 +28,8 @@ n_query n_way_upper n_shots_upper n_query_upper batch_size learning_rate weight_
 emb_dim layers gnn_type n_layer dropout neighbor_sampling_source_subset
 neighbor_sampling_method pinsage_num_walks pinsage_walk_length
 pinsage_restart_prob pinsage_topk
+n_hop neighbor_sampling_hop_sizes neighbor_sampling_node_limit
+neighbor_matching_walk_hops
 neighbor_sampling_source_sequence neighbor_sampling_source_sequence_steps
 neighbor_sampling_source_schedule neighbor_sampling_source_schedule_steps
 neighbor_sampling_source_schedule_seed
@@ -131,6 +134,80 @@ def write_json(path, value):
     temp = path.with_suffix(path.suffix + '.tmp')
     temp.write_text(json.dumps(value, indent=2, default=str) + '\n')
     temp.replace(path)
+
+
+def prepare_interrupted_recovery(run_dir, requested_params, revision):
+    """Reuse audited terminal jobs and restart only interrupted jobs.
+
+    Recovery is intentionally opt-in.  It preserves every scientific parameter
+    from the original manifest, gives restarted jobs a fresh experiment name so
+    partial state cannot be mistaken for a resume, and refuses if a recorded
+    trainer PID is still alive.
+    """
+    run_dir = Path(run_dir)
+    manifest_path = run_dir / 'manifest.json'
+    if not manifest_path.is_file():
+        raise FileNotFoundError(f'Interrupted recovery requires {manifest_path}')
+    plan = json.loads(manifest_path.read_text())
+    stored = plan.get('jobs')
+    if not isinstance(stored, list) or len(stored) != len(requested_params):
+        raise ValueError('Recovery request does not match the original job count')
+    # These fields only name/place a physical attempt.  They do not alter the
+    # model, optimizer, data stream, or campaign treatment.
+    ignored = {'device', 'exp_name', 'timestamp'}
+    for index, (old, new) in enumerate(zip(stored, requested_params)):
+        old_scientific = {k: v for k, v in old.items() if k not in ignored}
+        new_scientific = {k: v for k, v in new.items() if k not in ignored}
+        if old_scientific != new_scientific:
+            differing = sorted(k for k in old_scientific.keys() | new_scientific.keys()
+                               if old_scientific.get(k) != new_scientific.get(k))
+            raise ValueError(f'Recovery job {index} changes parameters: {differing}')
+    status_path = run_dir / 'status.json'
+    if status_path.is_file():
+        status = json.loads(status_path.read_text())
+        if status.get('status') == 'complete':
+            raise ValueError(f'Refusing recovery of completed run {run_dir}')
+
+    stamp = time.strftime('%Y%m%d_%H%M%S')
+    history = run_dir / 'history' / f'interrupted_{stamp}'
+    pending, reused = [], []
+    for index, original in enumerate(stored):
+        job_dir = run_dir / f'job_{index:03d}'
+        result_path = job_dir / 'result.json'
+        result = json.loads(result_path.read_text()) if result_path.is_file() else {}
+        checkpoint_dir = Path(result.get('checkpoint_dir', '')) if result.get('checkpoint_dir') else None
+        checkpoints = [] if checkpoint_dir is None else list(checkpoint_dir.glob('state_dict_*.ckpt'))
+        terminal = result.get('status') == 'complete' and any(
+            path.is_file() and path.stat().st_size > 0 for path in checkpoints
+        )
+        if terminal:
+            reused.append(dict(job=index, exitcode=0, reused_terminal=True))
+            continue
+        pid = result.get('pid')
+        if isinstance(pid, int):
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                pass
+            except PermissionError as error:
+                raise RuntimeError(f'Cannot verify stale trainer PID {pid}') from error
+            else:
+                raise RuntimeError(f'Refusing recovery while recorded trainer PID {pid} is alive')
+        if job_dir.exists():
+            history.mkdir(parents=True, exist_ok=True)
+            job_dir.rename(history / job_dir.name)
+        params = dict(original)
+        params['exp_name'] = f"{original['exp_name']}_recovery_{stamp}"
+        pending.append((index, params))
+    recovery = {
+        'started': time.time(), 'stamp': stamp, 'launcher_revision': revision,
+        'reused_jobs': [row['job'] for row in reused],
+        'restarted_jobs': [index for index, _ in pending],
+        'history': str(history),
+    }
+    plan.setdefault('recoveries', []).append(recovery)
+    write_json(manifest_path, plan)
+    return plan, pending, reused
 
 
 def start_on_gpu(process, gpu):
@@ -255,7 +332,8 @@ def train_one(dataset, params, job_dir, threads):
 def make_plan(args, overrides):
     import torch
     from experiments.params import get_params
-    active = min(len(args.configs), len(args.gpus)*args.models_per_gpu)
+    requested = [(config, seed) for seed in (args.seeds or [None]) for config in args.configs]
+    active = min(len(requested), len(args.gpus)*args.models_per_gpu)
     workers = args.workers_per_model
     if workers is None:
         workers = min(16, args.worker_budget // active)
@@ -265,8 +343,12 @@ def make_plan(args, overrides):
         raise ValueError('Worker budget must allow at least one worker per active model')
     stamp = time.strftime('%Y%m%d_%H%M%S')
     params = []
-    for index, config in enumerate(args.configs):
+    for index, (config, seed) in enumerate(requested):
         p = get_params(['--config', str(Path(config).resolve()), *overrides])
+        if seed is not None:
+            p['seed'] = seed
+            base = re.sub(r'_s\d+$', '', p['prefix'])
+            p['prefix'] = f'{base}_s{seed}'
         if args.smoke_steps and p.get('neighbor_sampling_source_sequence'):
             raise ValueError('Smoke mode requires interleaved configs; do not truncate a blocked-source schedule')
         p.update(device=torch.device(f'cuda:{args.gpus[index % len(args.gpus)]}'),
@@ -291,6 +373,8 @@ def main():
     own, overrides = argv[:split], argv[split+1:]
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--configs', nargs='+', required=True)
+    parser.add_argument('--seeds', nargs='+', type=int,
+                        help='Expand every config once per training seed in one shared graph load')
     parser.add_argument('--gpus', nargs='+', type=int, choices=(0, 1, 2, 3), default=[2])
     parser.add_argument('--models-per-gpu', type=int, default=2)
     parser.add_argument('--worker-budget', type=int, default=32)
@@ -300,6 +384,8 @@ def main():
     parser.add_argument('--smoke-steps', type=int, default=0)
     parser.add_argument('--dry-run', action='store_true')
     parser.add_argument('--preflight-only', action='store_true', help='Check concurrent CUDA contexts without loading a graph')
+    parser.add_argument('--recover-interrupted', action='store_true',
+                        help='Reuse terminal jobs in an interrupted run and restart only incomplete jobs')
     args = parser.parse_args(own)
     if min(args.models_per_gpu, args.threads_per_model) < 1 or args.worker_budget < 0 or args.smoke_steps < 0:
         parser.error('Invalid concurrency, thread, worker, or smoke-step count')
@@ -310,19 +396,36 @@ def main():
     args.run_dir = args.run_dir.resolve()
     params, workers = make_plan(args, overrides)
     slots = [gpu for gpu in args.gpus for _ in range(args.models_per_gpu)]
-    plan = dict(configs=[str(Path(c).resolve()) for c in args.configs], gpus=args.gpus,
+    revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=REPO, text=True).strip()
+    plan = dict(configs=[str(Path(c).resolve()) for c in args.configs], seeds=args.seeds,
+                gpus=args.gpus,
                 models_per_gpu=args.models_per_gpu, workers_per_model=workers,
                 worker_budget=args.worker_budget, mode='smoke' if args.smoke_steps else 'training',
-                revision=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=REPO, text=True).strip(),
+                revision=revision,
                 run_dir=str(args.run_dir), jobs=params)
     print(json.dumps(plan, indent=2, default=str), flush=True)
     if args.dry_run:
         return
-    plan['cuda_preflight'] = cuda_preflight(slots[:min(len(params), len(slots))])
+    reused = []
+    if args.recover_interrupted:
+        plan, indexed_params, reused = prepare_interrupted_recovery(args.run_dir, params, revision)
+    else:
+        indexed_params = list(enumerate(params))
+    if not indexed_params:
+        write_json(args.run_dir/'status.json', dict(status='complete', finished=reused,
+                                                    recovered=True, completed=time.time()))
+        print('ALL SHARED-GRAPH JOBS ALREADY COMPLETE', flush=True)
+        return
+    preflight = cuda_preflight(slots[:min(len(indexed_params), len(slots))])
+    if args.recover_interrupted:
+        plan['recoveries'][-1]['cuda_preflight'] = preflight
+    else:
+        plan['cuda_preflight'] = preflight
     print('Concurrent CUDA preflight passed', flush=True)
     if args.preflight_only:
         return
-    args.run_dir.mkdir(parents=True, exist_ok=False)
+    if not args.recover_interrupted:
+        args.run_dir.mkdir(parents=True, exist_ok=False)
     write_json(args.run_dir/'manifest.json', plan)
     os.environ.setdefault('WANDB_MODE', 'offline')
     os.environ.setdefault('WANDB_DIR', str(args.run_dir))
@@ -330,17 +433,27 @@ def main():
     torch.set_num_threads(4)
     torch.autograd.set_detect_anomaly(False)
     start = time.time()
+    params = [params for _, params in indexed_params]
+    job_indices = [index for index, _ in indexed_params]
     dataset = prepare_shared_dataset(load_dataset(params[0]))
     if torch.cuda.is_initialized():
         raise RuntimeError('Supervisor must remain CPU-only')
     from data.covid19_twitter import resolve_source_subset
     for p in params:
         resolve_source_subset(p['neighbor_sampling_source_subset'], sorted(dataset.source_node_pools), dataset.graph.source_graph_names)
-    plan.update(shared_graph_ready=time.time(), shared_graph_setup_seconds=time.time()-start,
-                shared_storage=shared_storage_report(dataset))
+    shared_ready = time.time()
+    shared_details = dict(
+        shared_graph_ready=shared_ready,
+        shared_graph_setup_seconds=shared_ready-start,
+        shared_storage=shared_storage_report(dataset),
+    )
+    if args.recover_interrupted:
+        plan['recoveries'][-1].update(shared_details)
+    else:
+        plan.update(shared_details)
     write_json(args.run_dir/'manifest.json', plan)
     context = torch.multiprocessing.get_context('spawn')
-    active, finished = {}, []
+    active, finished = {}, list(reused)
     index = 0
     def stop_children():
         for process, _ in active.values():
@@ -362,14 +475,15 @@ def main():
                 if slot in active or index >= len(params):
                     continue
                 p = params[index]
+                job_index = job_indices[index]
                 p['device'] = torch.device(f'cuda:{gpu}')
-                job_dir = args.run_dir/f'job_{index:03d}'
+                job_dir = args.run_dir/f'job_{job_index:03d}'
                 job_dir.mkdir()
                 write_json(job_dir/'effective_config.json', p)
                 process = context.Process(target=train_one, args=(dataset, p, str(job_dir), args.threads_per_model))
                 start_on_gpu(process, gpu)
-                active[slot] = (process, index)
-                print(f"Started job {index} on GPU {gpu}; log {job_dir/'console.log'}", flush=True)
+                active[slot] = (process, job_index)
+                print(f"Started job {job_index} on GPU {gpu}; log {job_dir/'console.log'}", flush=True)
                 index += 1
                 write_json(args.run_dir/'manifest.json', plan)
             for slot, (process, job_index) in list(active.items()):
