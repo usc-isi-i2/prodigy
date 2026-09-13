@@ -2,7 +2,7 @@
 
 ## Artifact warning and current default
 
-**Historical results below used the defective Suspended artifact.** It was replaced at its existing canonical path on September 11. Future direct loads use the corrected graph automatically; see [repair note](../../../../../../../docs/ukraine_suspended_repair_20260911.md). The repair is not a corrected training rerun: rungs 6–9 and all Suspended-target results below must not be presented as clean corrected-artifact results. Merged artifacts and cached full graphs require independent rebuilding. Completed histories are preserved for provenance.
+**Historical results below predate both the Suspended and COVID Political feature repairs.** They are not corrected-artifact training/evaluation results. The defective Suspended artifact was used. It was replaced at its existing canonical path on September 11. Future direct loads use the corrected graph automatically; see [repair note](../../../../../../../docs/ukraine_suspended_repair_20260911.md). The repair is not a corrected training rerun: rungs 6–9 and all Suspended-target results below must not be presented as clean corrected-artifact results. Merged artifacts and cached full graphs require independent rebuilding. Completed histories are preserved for provenance.
 
 ## What was trained
 

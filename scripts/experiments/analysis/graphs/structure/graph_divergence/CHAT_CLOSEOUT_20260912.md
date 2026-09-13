@@ -1,0 +1,23 @@
+# Chat closeout: feature distributions and node MLP ladder
+
+## Preserved evidence
+
+The seven- and nine-graph joint feature MMD analyses are saved in `data/feature_joint_mmd_{seven,nine}.json`, with PNG/PDF figures and `plot_feature_joint_mmd*.py` renderers. The reduced KS figures excluding Election, and excluding both Election and COVID Political, are saved with their renderers. The existing `FEATURE_KS_UPDATED.md` and `FEATURE_MMD_SEVEN.md` specify source provenance and estimation details.
+
+Nine-graph MMD adds repaired COVID Political and original cached Election cleaned-profile features. It keeps the seven-graph bandwidths but resamples subsets, so other cells vary slightly. 2,000 nonzero vectors per graph, 768 raw dimensions, three repeats, three RBF kernels. Runtime 165.40 seconds. COVID Political is closest to Midterm (0.006785); Election is closest to COVID Political (0.016251). Election–Facebook is largest (0.059132). Diagonals are disjoint same-graph unbiased estimates, not self-comparisons; small negative values reflect sampling noise. This is descriptive distribution evidence, not a formal significance test or downstream transfer result.
+
+Historical MLP ladder, 81-target evaluation cells, activation/weight diagnostics, LeakyReLU screening, performance measurements and W&B run IDs were already committed in `transfer/ablations/node_mlp/node_mlp_ladder_20260911/RESULTS.md` and its data/figures. Those model results predate BOTH Suspended and COVID Political repairs; they must not be represented as results trained on the corrected artifacts. The feature repairs do not update historical model results. Source-biography cleaning for repaired COVID Political uses the shared pipeline but max sequence length 512 differs from 8192 recorded for some large graphs.
+
+## User-overlap checks
+
+The saved identity overlap audit distinguishes exact Twitter IDs from row-index namespaces. Direct Tucker inspection during this chat found Election `user_data.csv` contains only `profile,label_conservative`; `graph.pickle` has 78,932 consecutive integer nodes and no node or graph attributes. No full_user_data.csv was present in its source directory. Exact Election user overlap remains unresolved; historical matching biography counts are content proxies, not identity proof.
+
+A bounded COVID Political/COVID check reconstructed 78,669 unique case-insensitive handles from 78,672 political rows using a validated one-to-one join to full_user_data.csv after replacing profile with raw_profile. In only the lexicographically first COVID parquet file (809,324 tweets; 595,658 retweets), 8,520 political handles occurred as retweet authors or original authors (10.83%). This is a one-file handle match, not an immutable-ID overlap census or a validated graph-node intersection. The output was inspected in the chat, not saved as an independent machine-readable run receipt; it should be rerun before use as quantitative publication evidence. No personal identifiers were exported.
+
+## Code integration and retention
+
+Implementation lives in the separate mixture-scaling repository. Its main was advanced to `6de86f1`, merging `codex/feature-dimension-ks`, `codex/suspended-csv-repair` and `codex/mlp-session-findings` with their ancestors. This includes MLP ladder/W&B/scheduling/evaluation, activation checks, LeakyReLU, feature histograms, KS, MMD and repair scripts. Additional historical figures and fixed-budget curves are in that repository's `results/mlp_ladder_diagnostics_20260911/`.
+
+Local integration worktree: `/tmp/chat-distribution-closeout`, branch `codex/chat-distribution-closeout`. Experiment worktrees selected for removal: local `/tmp/feature-dimension-ks` and Tucker `/dataMeR1/phil/gfm/mixture-scaling-feature-dimension-ks`, branch `codex/feature-dimension-ks`. Other experiment worktrees and all main working directories are left intact.
+
+Before removal, all 217 non-cache files in the Tucker checkout, including its three untracked logs, were archived and individually SHA256-verified at `/dataMeR1/phil/gfm/checkout-preservation-20260912/mixture-scaling-feature-dimension-ks/worktree.tar.gz`. The full receipt is `data/chat_closeout_receipt_20260912.json`. This archive and the full feature caches/checkpoints remain Tucker-only, not in Git. Existence of all nine external artifact roots was verified in the receipt; these live outside the removed checkout. Git preserves code and selected research evidence, not bulk tensors. Restore the checkout from commit `8ad08fb` and restore logs from the archive if needed.

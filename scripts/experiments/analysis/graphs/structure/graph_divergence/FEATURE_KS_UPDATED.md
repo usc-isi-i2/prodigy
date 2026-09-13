@@ -11,3 +11,5 @@ Nonzero mean KS for COVID Political, old → new: UKR/RUS 0.0915 → 0.0993; COV
 The earlier MLP ladder, activation diagnostics and LeakyReLU screening predate this COVID Political rebuild. Their numerical results are historical; this distribution update does not update those model results.
 
 Reproduction: mixture-scaling branch `codex/feature-dimension-ks`, commit `053b6be`, `scripts/rerun_covid_political_ks.py`; Tucker results `/dataMeR1/phil/gfm/mixture-scaling/results/feature_dimension_ks_political_updated_s2026`. Existing `elapsed_seconds` in the cumulative JSON is inherited from the original full sweep, not timing for this partial update.
+
+Follow-up: [joint MMD, reduced KS views and September 12 closeout](CHAT_CLOSEOUT_20260912.md).
