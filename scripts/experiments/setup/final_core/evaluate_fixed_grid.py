@@ -330,13 +330,14 @@ def resolved_params(
         "--state_dir", str(args.evaluation_state_root),
         "--log_dir", str(args.evaluation_log_root),
         "--neighbor_sampling_source_subset", target,
+        "--target_edge_view", args.target_edge_view,
         "--pretrained_model_run", str(checkpoint),
         "--eval_only", "True",
-        "--eval_only_split", "test",
+        "--eval_only_split", args.eval_split,
         "--eval_test_before_train", "False",
         "--eval_val_before_train", "False",
         "--batch_size", str(args.batch_size),
-        "--test_len_cap", str(args.batch_count),
+        f"--{args.eval_split}_len_cap", str(args.batch_count),
         "--workers", "0",
         "--override_log", "True",
     ]
@@ -448,18 +449,19 @@ def validate_existing(
     plan_fingerprint: str,
 ) -> None:
     expected = {
-        "protocol": PROTOCOL,
+        "protocol": args.protocol,
         "model_id": job.model.model_id,
         "seed": job.seed,
         "target": target,
-        "checkpoint_step": CHECKPOINT_STEP,
+        "checkpoint_step": args.checkpoint_step,
         "checkpoint": str(checkpoint),
+        "split": args.eval_split,
         "batch_size": args.batch_size,
         "batch_count": args.batch_count,
         "episode_count": EPISODE_COUNT,
         "episode_plan_fingerprint": plan_fingerprint,
         "edge_view": "static_train",
-        "target_edge_view": "static_test",
+        "target_edge_view": args.target_edge_view,
         "metric_contract": METRIC_CONTRACT,
     }
     for key, value in expected.items():
@@ -516,16 +518,22 @@ def evaluate_cell(
     assert_cpu_batches(target_cache["batches"])
     loader = ReplayLoader(target_cache["batches"])
     audited = AuditedLoader(loader, args.batch_size)
-    metrics_path = metric_sidecar_path(trainer.logging_dir, target, CHECKPOINT_STEP)
+    metrics_path = metric_sidecar_path(
+        trainer.logging_dir, target, args.checkpoint_step, args.eval_split
+    )
     metrics_path.unlink(missing_ok=True)
     started = time.monotonic()
     with torch.no_grad():
         trainer.model.eval()
         loss, score, score_std, aux_loss, ranks = trainer.do_eval(
-            audited, split_name=f"test_{target}", step=CHECKPOINT_STEP
+            audited,
+            split_name=f"{args.eval_split}_{target}",
+            step=args.checkpoint_step,
         )
     elapsed = time.monotonic() - started
-    metrics = load_metric_sidecar(trainer.logging_dir, target, CHECKPOINT_STEP)
+    metrics = load_metric_sidecar(
+        trainer.logging_dir, target, args.checkpoint_step, args.eval_split
+    )
     if audited.batch_count != args.batch_count or audited.episode_count != EPISODE_COUNT:
         raise AssertionError(
             f"consumed {audited.batch_count} batches/{audited.episode_count} episodes; "
@@ -552,7 +560,7 @@ def evaluate_cell(
             f"{numeric['score']} versus {numeric['accuracy']}"
         )
     payload = {
-        "protocol": PROTOCOL,
+        "protocol": args.protocol,
         "created_utc": utc_now(),
         "evaluation_commit": git_commit(),
         "worker_index": args.worker_index,
@@ -561,11 +569,11 @@ def evaluate_cell(
         "sources": list(job.model.sources),
         "seed": job.seed,
         "target": target,
-        "checkpoint_step": CHECKPOINT_STEP,
+        "checkpoint_step": args.checkpoint_step,
         "checkpoint": str(checkpoint),
-        "split": "test",
+        "split": args.eval_split,
         "edge_view": "static_train",
-        "target_edge_view": "static_test",
+        "target_edge_view": args.target_edge_view,
         "metric_contract": METRIC_CONTRACT,
         "batch_size": args.batch_size,
         "batch_count": audited.batch_count,
@@ -646,6 +654,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--targets", default=",".join(SOURCES))
     parser.add_argument("--batch-size", default=64, type=int)
     parser.add_argument("--episode-count", default=EPISODE_COUNT, type=int)
+    parser.add_argument("--checkpoint-step", default=CHECKPOINT_STEP, type=int)
+    parser.add_argument("--eval-split", choices=("val", "test"), default="test")
+    parser.add_argument("--protocol", default=PROTOCOL)
     parser.add_argument("--config", type=Path, default=HERE / "training.yaml")
     parser.add_argument(
         "--plan-config", type=Path,
@@ -676,7 +687,16 @@ def parse_args() -> argparse.Namespace:
         parser.error(f"episode-count is frozen at {EPISODE_COUNT}")
     if args.batch_size <= 0 or EPISODE_COUNT % args.batch_size:
         parser.error("batch-size must be a positive divisor of 512")
+    if args.checkpoint_step <= 0:
+        parser.error("checkpoint-step must be positive")
+    if not args.protocol.strip():
+        parser.error("protocol must not be empty")
+    if args.eval_split == "val" and args.reference_fingerprints is not None:
+        parser.error("test reference fingerprints cannot validate a val stream")
     args.batch_count = EPISODE_COUNT // args.batch_size
+    args.target_edge_view = (
+        "static_validation" if args.eval_split == "val" else "static_test"
+    )
     return args
 
 
@@ -769,8 +789,10 @@ def main() -> int:
     dataset = load_dataset(base_params)
     if getattr(dataset, "nm_background_edge_view", None) != "static_train":
         raise AssertionError("message passing is not restricted to static_train")
-    if getattr(dataset, "nm_holdout_edge_view", None) != "static_test":
-        raise AssertionError("test positives are not using static_test")
+    if getattr(dataset, "nm_holdout_edge_view", None) != args.target_edge_view:
+        raise AssertionError(
+            f"{args.eval_split} positives are not using {args.target_edge_view}"
+        )
     wait_at_load_barrier(args)
 
     bootstrap_params = resolved_params(
@@ -791,7 +813,12 @@ def main() -> int:
         # checkpoint/model initialization that happened earlier in this process.
         reset_fixed_eval_rng(target)
         trainer.parameter["neighbor_sampling_source_subset"] = target
-        _, _, _, loader = trainer._build_dataloaders(dataset, trainer.dataset_name)
+        _, _, val_loader, test_loader = trainer._build_dataloaders(
+            dataset, trainer.dataset_name
+        )
+        loader = val_loader if args.eval_split == "val" else test_loader
+        if loader is None:
+            raise AssertionError(f"{args.eval_split} dataloader was not constructed")
         plan_path = (
             args.episode_plan_root / f"{target}.pt"
             if args.episode_plan_root is not None else None
@@ -828,6 +855,7 @@ def main() -> int:
             f"fingerprint={fingerprint}",
             flush=True,
         )
+    trainer.val_dataloader = None
     trainer.test_dataloader = None
 
     if args.plan_config is not None:
@@ -851,6 +879,7 @@ def main() -> int:
             raise AssertionError("custom plan config transition did not enable PinSAGE")
         seed_everything(inference_params)
         trainer = TrainerFS(dataset, inference_params)
+        trainer.val_dataloader = None
         trainer.test_dataloader = None
 
     for target in assigned_targets:
