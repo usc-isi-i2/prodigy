@@ -26,6 +26,7 @@ Read the relevant guide before acting. Repository skills are shared under
 | Create or analyze an experiment, parse logs, or add an eval helper | `.agents/skills/prodigy-experiments/SKILL.md` |
 | Validate, merge, compare, repair, or cite evaluation evidence | `.agents/skills/prodigy-evaluation-integrity/SKILL.md` |
 | Design a ladder, matrix, ablation grid, staged selection, or other multi-arm campaign | `.agents/skills/prodigy-controlled-campaigns/SKILL.md` |
+| Plan, prioritize, or interpret research for a manuscript or decide what work should happen next | `.agents/skills/prodigy-paper-program/SKILL.md` |
 | Add, remove, move, rename, or inventory a graph | `.agents/skills/prodigy-graph-catalog/SKILL.md` |
 | Change the model, sampler, episode format, dataloader, or objective plumbing | `.agents/skills/prodigy-model-plumbing/SKILL.md` |
 | Move tracked evidence, merge result CSVs, or interpret legacy results | `docs/agent_guides/repo_traps.md` |
