@@ -27,13 +27,21 @@ done <<'EOF'
 37006016290 ukr_rus_twitter/graphs/retweet_graph_parquet.pt
 78267044770 covid19_twitter/graphs/retweet_graph_parquet.pt
 1123399802 midterm/graphs/retweet_graph_parquet.pt
-247456395 covid_political/graphs/retweet_graph.pt
+247456401 covid_political/legacy/cleaned-profile-v001/graphs/retweet_graph.pt
 311565265 election2020/graphs/retweet_graph.pt
-182861567 ukr_rus_suspended/graphs/retweet_graph.pt
+231878271 ukr_rus_suspended/graphs.backup_before_csv_repair_20260911/retweet_graph.pt
 591854240 twibot20/graphs/retweet_graph.pt
 1107820534 cp_hk_twitter/graphs/retweet_graph.pt
 394622154 facebook_page_reference/graphs/page_reference_structural.pt
 EOF
+
+printf '%s  %s\n' \
+  '555a94c24824fe88b1fb4d6b1e81c283a942379f834348522f9bda2181c6e7da' \
+  "${DATA_ROOT}/covid_political/legacy/cleaned-profile-v001/graphs/retweet_graph.pt" \
+  'cde95d9e261fd10b765e7feb4018c27730d9fa50c8d72327e4862b386e1c6503' \
+  "${DATA_ROOT}/ukr_rus_suspended/graphs.backup_before_csv_repair_20260911/retweet_graph.pt" \
+  | sha256sum --check --status
+echo "verified hashes for both post-final-core canonical replacements"
 
 available_kib="$(df --output=avail -k "$DATA_ROOT" | tail -n 1 | tr -d ' ')"
 available_mem_kib="$(awk '/^MemAvailable:/ {print $2}' /proc/meminfo)"

@@ -33,13 +33,18 @@ on a complete nine-target fixed panel. Historical final-core validation evaluate
 models only on their active source distributions and cannot answer this question.
 
 The merged final-core graph was absent when the first Stage-A smoke was attempted
-on 2026-09-12. All nine immutable source artifacts remain present on Tucker, and
-the original deterministic merge recipe is restored in this branch. Before any
-new evaluation, the user should run `recover_final_core_graph_tucker.sh`; it
-refuses overwrite and verifies the exact source order, tensor dimensions, and
-70/15/15 edge counts recorded by the original final-core evaluation. After the
-normal smoke runs, its observed validation episode fingerprints must also agree
-across every checkpoint before results are admitted.
+on 2026-09-12. All nine historical source artifacts remain present on Tucker,
+and the original deterministic merge recipe is restored in this branch. Two
+canonical sources were replaced after final-core: COVID Political now uses raw
+profiles, and Ukraine Suspended now has a repaired 56,440-node population. The
+recovery recipe therefore pins the immutable cleaned-profile COVID snapshot and
+the 72,295-node pre-repair Suspended backup actually used by the checkpoints,
+including their SHA-256 identities. Before any new evaluation, the user should
+run `recover_final_core_graph_tucker.sh`; it refuses overwrite and verifies the
+exact source order, tensor dimensions, and 70/15/15 edge counts recorded by the
+original final-core evaluation. After the normal smoke runs, its observed
+validation episode fingerprints must also agree across every checkpoint before
+results are admitted.
 
 ## Stage A: prerequisite diagnostic
 
