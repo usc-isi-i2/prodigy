@@ -1,0 +1,3093 @@
+{
+  "protocol": "canonical_observed_test_membership_accounting_v1",
+  "scope": "Observed test support/query pairs only; incomplete adjacency; undirected membership.",
+  "source_stage_aggregate_sha256": "fdb10f5baf7d312526b44d04267ee9295a71e86637d3e4d4da5600c07f1cd891",
+  "targets": {
+    "cp_hk": {
+      "input_hashes": {
+        "reference": "b555b7a50d44e099a5fa09ed8668de90e70a643cf6dbf76d1ff9deb6ea90f78a",
+        "stages": "f6a7b63a8de19161858a45dbc604b8857500068d183a3dcd38cb7b36366ad4dd",
+        "geometry": "32fffb2e54d7470e26b87bf255b58424c6ec93206b6874cb1d6ca62bddca1c25"
+      },
+      "observed_ordered_test_pairs": 42023,
+      "observed_undirected_test_pairs": 39711,
+      "known_candidate_count_distribution": {
+        "1": 41895,
+        "2": 11735,
+        "3": 4708,
+        "4": 1789,
+        "5": 793,
+        "6": 307,
+        "7": 131,
+        "8": 31,
+        "9": 23,
+        "10": 23,
+        "11": 5
+      },
+      "class_supports": {
+        "classes": 15360,
+        "classes_with_known_rival_support_membership": 11798,
+        "support_occurrences": 46080,
+        "support_occurrences_with_known_rival_membership": 22235,
+        "negative_support_edges": 1336320,
+        "negative_support_edges_with_observed_positive_membership": 49453
+      },
+      "models": {
+        "hk": {
+          "all": {
+            "occurrences": 61440,
+            "queries": 6233,
+            "native": {
+              "correct": 10976,
+              "errors": 50464,
+              "accuracy": 0.17864583333333334,
+              "known_alternative_positive_errors": 2909,
+              "fraction_errors_known_alternative_positive": 0.05764505389980976,
+              "assigned_or_known_positive_rate": 0.22599283854166666,
+              "node_weighted_accuracy": 0.30712766905784267
+            },
+            "encoded": {
+              "correct": 7972,
+              "errors": 53468,
+              "accuracy": 0.12975260416666667,
+              "known_alternative_positive_errors": 5216,
+              "fraction_errors_known_alternative_positive": 0.09755367696566171,
+              "assigned_or_known_positive_rate": 0.2146484375,
+              "node_weighted_accuracy": 0.29643354986695913
+            },
+            "prototype": {
+              "correct": 8014,
+              "errors": 53426,
+              "accuracy": 0.13043619791666666,
+              "known_alternative_positive_errors": 5893,
+              "fraction_errors_known_alternative_positive": 0.11030210010107439,
+              "assigned_or_known_positive_rate": 0.22635091145833333,
+              "node_weighted_accuracy": 0.31159379154256894
+            },
+            "known_candidate_count_mean": 1.5317220052083333,
+            "known_multi_candidate_occurrences": 19545,
+            "query_also_rival_support_occurrences": 7334,
+            "query_also_rival_query_occurrences": 14203,
+            "mean_uniform_candidate_known_positive_rate": 0.051057400173611114,
+            "native_errors_without_observed_positive_match": 47555,
+            "native_errors_without_observed_positive_match_encoded_correct": 3030,
+            "native_errors_without_observed_positive_match_raw_groups": {
+              "undefined": 24361,
+              "rival_closer": 21694,
+              "true_closest": 1498,
+              "tied": 2
+            }
+          },
+          "by_frequency": {
+            "1": {
+              "occurrences": 2137,
+              "queries": 2137,
+              "native": {
+                "correct": 769,
+                "errors": 1368,
+                "accuracy": 0.3598502573701451,
+                "known_alternative_positive_errors": 0,
+                "fraction_errors_known_alternative_positive": 0.0,
+                "assigned_or_known_positive_rate": 0.3598502573701451,
+                "node_weighted_accuracy": 0.3598502573701451
+              },
+              "encoded": {
+                "correct": 776,
+                "errors": 1361,
+                "accuracy": 0.36312587739822183,
+                "known_alternative_positive_errors": 1,
+                "fraction_errors_known_alternative_positive": 0.0007347538574577516,
+                "assigned_or_known_positive_rate": 0.3635938231165185,
+                "node_weighted_accuracy": 0.36312587739822183
+              },
+              "prototype": {
+                "correct": 814,
+                "errors": 1323,
+                "accuracy": 0.38090781469349555,
+                "known_alternative_positive_errors": 0,
+                "fraction_errors_known_alternative_positive": 0.0,
+                "assigned_or_known_positive_rate": 0.38090781469349555,
+                "node_weighted_accuracy": 0.38090781469349555
+              },
+              "known_candidate_count_mean": 1.0060832943378568,
+              "known_multi_candidate_occurrences": 12,
+              "query_also_rival_support_occurrences": 1,
+              "query_also_rival_query_occurrences": 0,
+              "mean_uniform_candidate_known_positive_rate": 0.03353610981126189,
+              "native_errors_without_observed_positive_match": 1368,
+              "native_errors_without_observed_positive_match_encoded_correct": 236,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "undefined": 811,
+                "rival_closer": 481,
+                "true_closest": 76
+              }
+            },
+            "2-4": {
+              "occurrences": 7128,
+              "queries": 2570,
+              "native": {
+                "correct": 2287,
+                "errors": 4841,
+                "accuracy": 0.3208473625140292,
+                "known_alternative_positive_errors": 16,
+                "fraction_errors_known_alternative_positive": 0.003305102251600909,
+                "assigned_or_known_positive_rate": 0.32309203142536475,
+                "node_weighted_accuracy": 0.32114137483787286
+              },
+              "encoded": {
+                "correct": 2245,
+                "errors": 4883,
+                "accuracy": 0.3149551066217733,
+                "known_alternative_positive_errors": 21,
+                "fraction_errors_known_alternative_positive": 0.004300634855621544,
+                "assigned_or_known_positive_rate": 0.31790123456790126,
+                "node_weighted_accuracy": 0.315272373540856
+              },
+              "prototype": {
+                "correct": 2352,
+                "errors": 4776,
+                "accuracy": 0.32996632996632996,
+                "known_alternative_positive_errors": 20,
+                "fraction_errors_known_alternative_positive": 0.0041876046901172526,
+                "assigned_or_known_positive_rate": 0.3327721661054994,
+                "node_weighted_accuracy": 0.33187418936446167
+              },
+              "known_candidate_count_mean": 1.0119248035914703,
+              "known_multi_candidate_occurrences": 84,
+              "query_also_rival_support_occurrences": 8,
+              "query_also_rival_query_occurrences": 2,
+              "mean_uniform_candidate_known_positive_rate": 0.03373082678638235,
+              "native_errors_without_observed_positive_match": 4825,
+              "native_errors_without_observed_positive_match_encoded_correct": 675,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "undefined": 2738,
+                "rival_closer": 1849,
+                "true_closest": 238
+              }
+            },
+            "5-19": {
+              "occurrences": 8815,
+              "queries": 1097,
+              "native": {
+                "correct": 1884,
+                "errors": 6931,
+                "accuracy": 0.2137266023823029,
+                "known_alternative_positive_errors": 66,
+                "fraction_errors_known_alternative_positive": 0.009522435435002164,
+                "assigned_or_known_positive_rate": 0.2212138400453772,
+                "node_weighted_accuracy": 0.23034985655512086
+              },
+              "encoded": {
+                "correct": 1608,
+                "errors": 7207,
+                "accuracy": 0.1824163357912649,
+                "known_alternative_positive_errors": 94,
+                "fraction_errors_known_alternative_positive": 0.013042874982655751,
+                "assigned_or_known_positive_rate": 0.19307997731140103,
+                "node_weighted_accuracy": 0.1982164171771488
+              },
+              "prototype": {
+                "correct": 1713,
+                "errors": 7102,
+                "accuracy": 0.19432785025524674,
+                "known_alternative_positive_errors": 105,
+                "fraction_errors_known_alternative_positive": 0.014784567727400732,
+                "assigned_or_known_positive_rate": 0.20623936471922857,
+                "node_weighted_accuracy": 0.2126510709620147
+              },
+              "known_candidate_count_mean": 1.0498014747589337,
+              "known_multi_candidate_occurrences": 404,
+              "query_also_rival_support_occurrences": 85,
+              "query_also_rival_query_occurrences": 121,
+              "mean_uniform_candidate_known_positive_rate": 0.03499338249196446,
+              "native_errors_without_observed_positive_match": 6865,
+              "native_errors_without_observed_positive_match_encoded_correct": 600,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "undefined": 3647,
+                "rival_closer": 2922,
+                "true_closest": 295,
+                "tied": 1
+              }
+            },
+            "20+": {
+              "occurrences": 43360,
+              "queries": 429,
+              "native": {
+                "correct": 6036,
+                "errors": 37324,
+                "accuracy": 0.13920664206642067,
+                "known_alternative_positive_errors": 2827,
+                "fraction_errors_known_alternative_positive": 0.07574214982317008,
+                "assigned_or_known_positive_rate": 0.20440498154981548,
+                "node_weighted_accuracy": 0.15687560667420167
+              },
+              "encoded": {
+                "correct": 3343,
+                "errors": 40017,
+                "accuracy": 0.07709870848708487,
+                "known_alternative_positive_errors": 5100,
+                "fraction_errors_known_alternative_positive": 0.12744583551990404,
+                "assigned_or_known_positive_rate": 0.19471863468634687,
+                "node_weighted_accuracy": 0.10251027197534744
+              },
+              "prototype": {
+                "correct": 3135,
+                "errors": 40225,
+                "accuracy": 0.07230166051660517,
+                "known_alternative_positive_errors": 5768,
+                "fraction_errors_known_alternative_positive": 0.14339341205717837,
+                "assigned_or_known_positive_rate": 0.20532749077490775,
+                "node_weighted_accuracy": 0.09783032907420833
+              },
+              "known_candidate_count_mean": 1.741051660516605,
+              "known_multi_candidate_occurrences": 19045,
+              "query_also_rival_support_occurrences": 7240,
+              "query_also_rival_query_occurrences": 14080,
+              "mean_uniform_candidate_known_positive_rate": 0.058035055350553505,
+              "native_errors_without_observed_positive_match": 34497,
+              "native_errors_without_observed_positive_match_encoded_correct": 1519,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "undefined": 17165,
+                "rival_closer": 16442,
+                "true_closest": 889,
+                "tied": 1
+              }
+            }
+          },
+          "by_query_rival_support": {
+            "False": {
+              "occurrences": 54106,
+              "queries": 6232,
+              "native": {
+                "correct": 10016,
+                "errors": 44090,
+                "accuracy": 0.1851181015044542,
+                "known_alternative_positive_errors": 1717,
+                "fraction_errors_known_alternative_positive": 0.03894307099115445,
+                "assigned_or_known_positive_rate": 0.21685210512697298,
+                "node_weighted_accuracy": 0.3073957375757255
+              },
+              "encoded": {
+                "correct": 7820,
+                "errors": 46286,
+                "accuracy": 0.14453110560751117,
+                "known_alternative_positive_errors": 1104,
+                "fraction_errors_known_alternative_positive": 0.02385170461910729,
+                "assigned_or_known_positive_rate": 0.16493549698739512,
+                "node_weighted_accuracy": 0.29673182095323564
+              },
+              "prototype": {
+                "correct": 7939,
+                "errors": 46167,
+                "accuracy": 0.1467304919971907,
+                "known_alternative_positive_errors": 1027,
+                "fraction_errors_known_alternative_positive": 0.02224532674854333,
+                "assigned_or_known_positive_rate": 0.165711751007282,
+                "node_weighted_accuracy": 0.3118870897240279
+              },
+              "known_candidate_count_mean": 1.3033120171515173,
+              "known_multi_candidate_occurrences": 12211,
+              "query_also_rival_support_occurrences": 0,
+              "query_also_rival_query_occurrences": 10798,
+              "mean_uniform_candidate_known_positive_rate": 0.04344373390505058,
+              "native_errors_without_observed_positive_match": 42373,
+              "native_errors_without_observed_positive_match_encoded_correct": 2954,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "undefined": 21894,
+                "rival_closer": 19092,
+                "true_closest": 1385,
+                "tied": 2
+              }
+            },
+            "True": {
+              "occurrences": 7334,
+              "queries": 313,
+              "native": {
+                "correct": 960,
+                "errors": 6374,
+                "accuracy": 0.1308971911644396,
+                "known_alternative_positive_errors": 1192,
+                "fraction_errors_known_alternative_positive": 0.18700972701600252,
+                "assigned_or_known_positive_rate": 0.29342787019361877,
+                "node_weighted_accuracy": 0.11496930455288067
+              },
+              "encoded": {
+                "correct": 152,
+                "errors": 7182,
+                "accuracy": 0.02072538860103627,
+                "known_alternative_positive_errors": 4112,
+                "fraction_errors_known_alternative_positive": 0.5725424672793094,
+                "assigned_or_known_positive_rate": 0.5814016907553858,
+                "node_weighted_accuracy": 0.042045605439879105
+              },
+              "prototype": {
+                "correct": 75,
+                "errors": 7259,
+                "accuracy": 0.010226343059721843,
+                "known_alternative_positive_errors": 4866,
+                "fraction_errors_known_alternative_positive": 0.6703402672544427,
+                "assigned_or_known_positive_rate": 0.6737114807744751,
+                "node_weighted_accuracy": 0.023256047720324465
+              },
+              "known_candidate_count_mean": 3.216798472866103,
+              "known_multi_candidate_occurrences": 7334,
+              "query_also_rival_support_occurrences": 7334,
+              "query_also_rival_query_occurrences": 3405,
+              "mean_uniform_candidate_known_positive_rate": 0.10722661576220344,
+              "native_errors_without_observed_positive_match": 5182,
+              "native_errors_without_observed_positive_match_encoded_correct": 76,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 2602,
+                "undefined": 2467,
+                "true_closest": 113
+              }
+            }
+          },
+          "by_query_rival_query": {
+            "False": {
+              "occurrences": 47237,
+              "queries": 6233,
+              "native": {
+                "correct": 9363,
+                "errors": 37874,
+                "accuracy": 0.19821326502529796,
+                "known_alternative_positive_errors": 542,
+                "fraction_errors_known_alternative_positive": 0.014310608860960026,
+                "assigned_or_known_positive_rate": 0.20968732137942714,
+                "node_weighted_accuracy": 0.3074828314744632
+              },
+              "encoded": {
+                "correct": 7126,
+                "errors": 40111,
+                "accuracy": 0.15085632025742532,
+                "known_alternative_positive_errors": 2235,
+                "fraction_errors_known_alternative_positive": 0.0557203759567201,
+                "assigned_or_known_positive_rate": 0.1981709253339543,
+                "node_weighted_accuracy": 0.2964751132008571
+              },
+              "prototype": {
+                "correct": 7234,
+                "errors": 40003,
+                "accuracy": 0.15314266358998244,
+                "known_alternative_positive_errors": 2619,
+                "fraction_errors_known_alternative_positive": 0.06547008974326926,
+                "assigned_or_known_positive_rate": 0.20858648940449223,
+                "node_weighted_accuracy": 0.31169343923064463
+              },
+              "known_candidate_count_mean": 1.1512162076338464,
+              "known_multi_candidate_occurrences": 5342,
+              "query_also_rival_support_occurrences": 3929,
+              "query_also_rival_query_occurrences": 0,
+              "mean_uniform_candidate_known_positive_rate": 0.03837387358779488,
+              "native_errors_without_observed_positive_match": 37332,
+              "native_errors_without_observed_positive_match_encoded_correct": 2647,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "undefined": 19459,
+                "rival_closer": 16621,
+                "true_closest": 1250,
+                "tied": 2
+              }
+            },
+            "True": {
+              "occurrences": 14203,
+              "queries": 393,
+              "native": {
+                "correct": 1613,
+                "errors": 12590,
+                "accuracy": 0.11356755615010913,
+                "known_alternative_positive_errors": 2367,
+                "fraction_errors_known_alternative_positive": 0.1880063542494043,
+                "assigned_or_known_positive_rate": 0.2802224882067169,
+                "node_weighted_accuracy": 0.13160041231891892
+              },
+              "encoded": {
+                "correct": 846,
+                "errors": 13357,
+                "accuracy": 0.059564880659015704,
+                "known_alternative_positive_errors": 2981,
+                "fraction_errors_known_alternative_positive": 0.223178857527888,
+                "assigned_or_known_positive_rate": 0.2694501161726396,
+                "node_weighted_accuracy": 0.09837306165778184
+              },
+              "prototype": {
+                "correct": 780,
+                "errors": 13423,
+                "accuracy": 0.054917975075688234,
+                "known_alternative_positive_errors": 3274,
+                "fraction_errors_known_alternative_positive": 0.24390970721895255,
+                "assigned_or_known_positive_rate": 0.2854326550728719,
+                "node_weighted_accuracy": 0.09275063820967976
+              },
+              "known_candidate_count_mean": 2.7972259381820743,
+              "known_multi_candidate_occurrences": 14203,
+              "query_also_rival_support_occurrences": 3405,
+              "query_also_rival_query_occurrences": 14203,
+              "mean_uniform_candidate_known_positive_rate": 0.09324086460606915,
+              "native_errors_without_observed_positive_match": 10223,
+              "native_errors_without_observed_positive_match_encoded_correct": 383,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 5073,
+                "undefined": 4902,
+                "true_closest": 248
+              }
+            }
+          },
+          "by_known_candidate_count": {
+            "1": {
+              "occurrences": 41895,
+              "queries": 6220,
+              "native": {
+                "correct": 8559,
+                "errors": 33336,
+                "accuracy": 0.20429645542427496,
+                "known_alternative_positive_errors": 0,
+                "fraction_errors_known_alternative_positive": 0.0,
+                "assigned_or_known_positive_rate": 0.20429645542427496,
+                "node_weighted_accuracy": 0.30833310769148453
+              },
+              "encoded": {
+                "correct": 6889,
+                "errors": 35006,
+                "accuracy": 0.16443489676572384,
+                "known_alternative_positive_errors": 0,
+                "fraction_errors_known_alternative_positive": 0.0,
+                "assigned_or_known_positive_rate": 0.16443489676572384,
+                "node_weighted_accuracy": 0.29738812735569564
+              },
+              "prototype": {
+                "correct": 7055,
+                "errors": 34840,
+                "accuracy": 0.16839718343477741,
+                "known_alternative_positive_errors": 0,
+                "fraction_errors_known_alternative_positive": 0.0,
+                "assigned_or_known_positive_rate": 0.16839718343477741,
+                "node_weighted_accuracy": 0.3128665914630514
+              },
+              "known_candidate_count_mean": 1.0,
+              "known_multi_candidate_occurrences": 0,
+              "query_also_rival_support_occurrences": 0,
+              "query_also_rival_query_occurrences": 0,
+              "mean_uniform_candidate_known_positive_rate": 0.03333333333333333,
+              "native_errors_without_observed_positive_match": 33336,
+              "native_errors_without_observed_positive_match_encoded_correct": 2528,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "undefined": 17416,
+                "rival_closer": 14760,
+                "true_closest": 1158,
+                "tied": 2
+              }
+            },
+            "2": {
+              "occurrences": 11735,
+              "queries": 741,
+              "native": {
+                "correct": 1499,
+                "errors": 10236,
+                "accuracy": 0.12773753728163614,
+                "known_alternative_positive_errors": 1358,
+                "fraction_errors_known_alternative_positive": 0.13266901133255177,
+                "assigned_or_known_positive_rate": 0.24345973583297828,
+                "node_weighted_accuracy": 0.13138951011562813
+              },
+              "encoded": {
+                "correct": 815,
+                "errors": 10920,
+                "accuracy": 0.06945036216446528,
+                "known_alternative_positive_errors": 2007,
+                "fraction_errors_known_alternative_positive": 0.1837912087912088,
+                "assigned_or_known_positive_rate": 0.24047720494247976,
+                "node_weighted_accuracy": 0.11286626795130757
+              },
+              "prototype": {
+                "correct": 745,
+                "errors": 10990,
+                "accuracy": 0.06348530038346825,
+                "known_alternative_positive_errors": 2228,
+                "fraction_errors_known_alternative_positive": 0.20272975432211102,
+                "assigned_or_known_positive_rate": 0.2533446953557733,
+                "node_weighted_accuracy": 0.10347493549470159
+              },
+              "known_candidate_count_mean": 2.0,
+              "known_multi_candidate_occurrences": 11735,
+              "query_also_rival_support_occurrences": 2727,
+              "query_also_rival_query_occurrences": 7634,
+              "mean_uniform_candidate_known_positive_rate": 0.06666666666666667,
+              "native_errors_without_observed_positive_match": 8878,
+              "native_errors_without_observed_positive_match_encoded_correct": 388,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "undefined": 4439,
+                "rival_closer": 4219,
+                "true_closest": 220
+              }
+            },
+            "3": {
+              "occurrences": 4708,
+              "queries": 211,
+              "native": {
+                "correct": 572,
+                "errors": 4136,
+                "accuracy": 0.12149532710280374,
+                "known_alternative_positive_errors": 858,
+                "fraction_errors_known_alternative_positive": 0.2074468085106383,
+                "assigned_or_known_positive_rate": 0.3037383177570093,
+                "node_weighted_accuracy": 0.16144682262848234
+              },
+              "encoded": {
+                "correct": 183,
+                "errors": 4525,
+                "accuracy": 0.03887000849617672,
+                "known_alternative_positive_errors": 1481,
+                "fraction_errors_known_alternative_positive": 0.32729281767955803,
+                "assigned_or_known_positive_rate": 0.35344095157179267,
+                "node_weighted_accuracy": 0.06963966085616051
+              },
+              "prototype": {
+                "correct": 156,
+                "errors": 4552,
+                "accuracy": 0.03313508920985556,
+                "known_alternative_positive_errors": 1712,
+                "fraction_errors_known_alternative_positive": 0.37609841827768015,
+                "assigned_or_known_positive_rate": 0.3967714528462192,
+                "node_weighted_accuracy": 0.06033266587288001
+              },
+              "known_candidate_count_mean": 3.0,
+              "known_multi_candidate_occurrences": 4708,
+              "query_also_rival_support_occurrences": 2279,
+              "query_also_rival_query_occurrences": 3838,
+              "mean_uniform_candidate_known_positive_rate": 0.1,
+              "native_errors_without_observed_positive_match": 3278,
+              "native_errors_without_observed_positive_match_encoded_correct": 74,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 1617,
+                "undefined": 1586,
+                "true_closest": 75
+              }
+            },
+            "4": {
+              "occurrences": 1789,
+              "queries": 83,
+              "native": {
+                "correct": 199,
+                "errors": 1590,
+                "accuracy": 0.11123532699832309,
+                "known_alternative_positive_errors": 349,
+                "fraction_errors_known_alternative_positive": 0.21949685534591196,
+                "assigned_or_known_positive_rate": 0.3063163778647289,
+                "node_weighted_accuracy": 0.12893548816535563
+              },
+              "encoded": {
+                "correct": 62,
+                "errors": 1727,
+                "accuracy": 0.03465623253214086,
+                "known_alternative_positive_errors": 814,
+                "fraction_errors_known_alternative_positive": 0.4713375796178344,
+                "assigned_or_known_positive_rate": 0.48965902738960315,
+                "node_weighted_accuracy": 0.044969860513611765
+              },
+              "prototype": {
+                "correct": 45,
+                "errors": 1744,
+                "accuracy": 0.02515371716042482,
+                "known_alternative_positive_errors": 949,
+                "fraction_errors_known_alternative_positive": 0.544151376146789,
+                "assigned_or_known_positive_rate": 0.5556176634991615,
+                "node_weighted_accuracy": 0.02627485730715677
+              },
+              "known_candidate_count_mean": 4.0,
+              "known_multi_candidate_occurrences": 1789,
+              "query_also_rival_support_occurrences": 1216,
+              "query_also_rival_query_occurrences": 1545,
+              "mean_uniform_candidate_known_positive_rate": 0.13333333333333333,
+              "native_errors_without_observed_positive_match": 1241,
+              "native_errors_without_observed_positive_match_encoded_correct": 30,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 630,
+                "undefined": 579,
+                "true_closest": 32
+              }
+            },
+            "5": {
+              "occurrences": 793,
+              "queries": 53,
+              "native": {
+                "correct": 93,
+                "errors": 700,
+                "accuracy": 0.11727616645649433,
+                "known_alternative_positive_errors": 215,
+                "fraction_errors_known_alternative_positive": 0.30714285714285716,
+                "assigned_or_known_positive_rate": 0.3883984867591425,
+                "node_weighted_accuracy": 0.1882074913300931
+              },
+              "encoded": {
+                "correct": 19,
+                "errors": 774,
+                "accuracy": 0.02395964691046658,
+                "known_alternative_positive_errors": 485,
+                "fraction_errors_known_alternative_positive": 0.6266149870801033,
+                "assigned_or_known_positive_rate": 0.6355611601513241,
+                "node_weighted_accuracy": 0.018960482770056984
+              },
+              "prototype": {
+                "correct": 11,
+                "errors": 782,
+                "accuracy": 0.013871374527112233,
+                "known_alternative_positive_errors": 535,
+                "fraction_errors_known_alternative_positive": 0.6841432225063938,
+                "assigned_or_known_positive_rate": 0.6885245901639344,
+                "node_weighted_accuracy": 0.014827056427786799
+              },
+              "known_candidate_count_mean": 5.0,
+              "known_multi_candidate_occurrences": 793,
+              "query_also_rival_support_occurrences": 614,
+              "query_also_rival_query_occurrences": 710,
+              "mean_uniform_candidate_known_positive_rate": 0.16666666666666666,
+              "native_errors_without_observed_positive_match": 485,
+              "native_errors_without_observed_positive_match_encoded_correct": 8,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 266,
+                "undefined": 210,
+                "true_closest": 9
+              }
+            },
+            "6": {
+              "occurrences": 307,
+              "queries": 26,
+              "native": {
+                "correct": 27,
+                "errors": 280,
+                "accuracy": 0.08794788273615635,
+                "known_alternative_positive_errors": 50,
+                "fraction_errors_known_alternative_positive": 0.17857142857142858,
+                "assigned_or_known_positive_rate": 0.250814332247557,
+                "node_weighted_accuracy": 0.12376970855231725
+              },
+              "encoded": {
+                "correct": 3,
+                "errors": 304,
+                "accuracy": 0.009771986970684038,
+                "known_alternative_positive_errors": 229,
+                "fraction_errors_known_alternative_positive": 0.7532894736842105,
+                "assigned_or_known_positive_rate": 0.755700325732899,
+                "node_weighted_accuracy": 0.00641025641025641
+              },
+              "prototype": {
+                "correct": 1,
+                "errors": 306,
+                "accuracy": 0.003257328990228013,
+                "known_alternative_positive_errors": 257,
+                "fraction_errors_known_alternative_positive": 0.8398692810457516,
+                "assigned_or_known_positive_rate": 0.8403908794788274,
+                "node_weighted_accuracy": 0.002747252747252747
+              },
+              "known_candidate_count_mean": 6.0,
+              "known_multi_candidate_occurrences": 307,
+              "query_also_rival_support_occurrences": 285,
+              "query_also_rival_query_occurrences": 276,
+              "mean_uniform_candidate_known_positive_rate": 0.2,
+              "native_errors_without_observed_positive_match": 230,
+              "native_errors_without_observed_positive_match_encoded_correct": 2,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 144,
+                "undefined": 82,
+                "true_closest": 4
+              }
+            },
+            "7": {
+              "occurrences": 131,
+              "queries": 8,
+              "native": {
+                "correct": 19,
+                "errors": 112,
+                "accuracy": 0.1450381679389313,
+                "known_alternative_positive_errors": 50,
+                "fraction_errors_known_alternative_positive": 0.44642857142857145,
+                "assigned_or_known_positive_rate": 0.5267175572519084,
+                "node_weighted_accuracy": 0.21254528985507246
+              },
+              "encoded": {
+                "correct": 0,
+                "errors": 131,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 129,
+                "fraction_errors_known_alternative_positive": 0.9847328244274809,
+                "assigned_or_known_positive_rate": 0.9847328244274809,
+                "node_weighted_accuracy": 0.0
+              },
+              "prototype": {
+                "correct": 0,
+                "errors": 131,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 131,
+                "fraction_errors_known_alternative_positive": 1.0,
+                "assigned_or_known_positive_rate": 1.0,
+                "node_weighted_accuracy": 0.0
+              },
+              "known_candidate_count_mean": 7.0,
+              "known_multi_candidate_occurrences": 131,
+              "query_also_rival_support_occurrences": 131,
+              "query_also_rival_query_occurrences": 122,
+              "mean_uniform_candidate_known_positive_rate": 0.23333333333333334,
+              "native_errors_without_observed_positive_match": 62,
+              "native_errors_without_observed_positive_match_encoded_correct": 0,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "undefined": 33,
+                "rival_closer": 29
+              }
+            },
+            "8": {
+              "occurrences": 31,
+              "queries": 3,
+              "native": {
+                "correct": 4,
+                "errors": 27,
+                "accuracy": 0.12903225806451613,
+                "known_alternative_positive_errors": 10,
+                "fraction_errors_known_alternative_positive": 0.37037037037037035,
+                "assigned_or_known_positive_rate": 0.45161290322580644,
+                "node_weighted_accuracy": 0.20238095238095236
+              },
+              "encoded": {
+                "correct": 0,
+                "errors": 31,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 21,
+                "fraction_errors_known_alternative_positive": 0.6774193548387096,
+                "assigned_or_known_positive_rate": 0.6774193548387096,
+                "node_weighted_accuracy": 0.0
+              },
+              "prototype": {
+                "correct": 0,
+                "errors": 31,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 31,
+                "fraction_errors_known_alternative_positive": 1.0,
+                "assigned_or_known_positive_rate": 1.0,
+                "node_weighted_accuracy": 0.0
+              },
+              "known_candidate_count_mean": 8.0,
+              "known_multi_candidate_occurrences": 31,
+              "query_also_rival_support_occurrences": 31,
+              "query_also_rival_query_occurrences": 28,
+              "mean_uniform_candidate_known_positive_rate": 0.26666666666666666,
+              "native_errors_without_observed_positive_match": 17,
+              "native_errors_without_observed_positive_match_encoded_correct": 0,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 11,
+                "undefined": 6
+              }
+            },
+            "9": {
+              "occurrences": 23,
+              "queries": 2,
+              "native": {
+                "correct": 2,
+                "errors": 21,
+                "accuracy": 0.08695652173913043,
+                "known_alternative_positive_errors": 6,
+                "fraction_errors_known_alternative_positive": 0.2857142857142857,
+                "assigned_or_known_positive_rate": 0.34782608695652173,
+                "node_weighted_accuracy": 0.5227272727272727
+              },
+              "encoded": {
+                "correct": 0,
+                "errors": 23,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 23,
+                "fraction_errors_known_alternative_positive": 1.0,
+                "assigned_or_known_positive_rate": 1.0,
+                "node_weighted_accuracy": 0.0
+              },
+              "prototype": {
+                "correct": 0,
+                "errors": 23,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 23,
+                "fraction_errors_known_alternative_positive": 1.0,
+                "assigned_or_known_positive_rate": 1.0,
+                "node_weighted_accuracy": 0.0
+              },
+              "known_candidate_count_mean": 9.0,
+              "known_multi_candidate_occurrences": 23,
+              "query_also_rival_support_occurrences": 23,
+              "query_also_rival_query_occurrences": 22,
+              "mean_uniform_candidate_known_positive_rate": 0.3,
+              "native_errors_without_observed_positive_match": 15,
+              "native_errors_without_observed_positive_match_encoded_correct": 0,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 15
+              }
+            },
+            "10": {
+              "occurrences": 23,
+              "queries": 2,
+              "native": {
+                "correct": 1,
+                "errors": 22,
+                "accuracy": 0.043478260869565216,
+                "known_alternative_positive_errors": 9,
+                "fraction_errors_known_alternative_positive": 0.4090909090909091,
+                "assigned_or_known_positive_rate": 0.43478260869565216,
+                "node_weighted_accuracy": 0.05555555555555555
+              },
+              "encoded": {
+                "correct": 1,
+                "errors": 22,
+                "accuracy": 0.043478260869565216,
+                "known_alternative_positive_errors": 22,
+                "fraction_errors_known_alternative_positive": 1.0,
+                "assigned_or_known_positive_rate": 1.0,
+                "node_weighted_accuracy": 0.05555555555555555
+              },
+              "prototype": {
+                "correct": 1,
+                "errors": 22,
+                "accuracy": 0.043478260869565216,
+                "known_alternative_positive_errors": 22,
+                "fraction_errors_known_alternative_positive": 1.0,
+                "assigned_or_known_positive_rate": 1.0,
+                "node_weighted_accuracy": 0.05555555555555555
+              },
+              "known_candidate_count_mean": 10.0,
+              "known_multi_candidate_occurrences": 23,
+              "query_also_rival_support_occurrences": 23,
+              "query_also_rival_query_occurrences": 23,
+              "mean_uniform_candidate_known_positive_rate": 0.3333333333333333,
+              "native_errors_without_observed_positive_match": 13,
+              "native_errors_without_observed_positive_match_encoded_correct": 0,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "undefined": 10,
+                "rival_closer": 3
+              }
+            },
+            "11": {
+              "occurrences": 5,
+              "queries": 1,
+              "native": {
+                "correct": 1,
+                "errors": 4,
+                "accuracy": 0.2,
+                "known_alternative_positive_errors": 4,
+                "fraction_errors_known_alternative_positive": 1.0,
+                "assigned_or_known_positive_rate": 1.0,
+                "node_weighted_accuracy": 0.2
+              },
+              "encoded": {
+                "correct": 0,
+                "errors": 5,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 5,
+                "fraction_errors_known_alternative_positive": 1.0,
+                "assigned_or_known_positive_rate": 1.0,
+                "node_weighted_accuracy": 0.0
+              },
+              "prototype": {
+                "correct": 0,
+                "errors": 5,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 5,
+                "fraction_errors_known_alternative_positive": 1.0,
+                "assigned_or_known_positive_rate": 1.0,
+                "node_weighted_accuracy": 0.0
+              },
+              "known_candidate_count_mean": 11.0,
+              "known_multi_candidate_occurrences": 5,
+              "query_also_rival_support_occurrences": 5,
+              "query_also_rival_query_occurrences": 5,
+              "mean_uniform_candidate_known_positive_rate": 0.36666666666666664,
+              "native_errors_without_observed_positive_match": 0,
+              "native_errors_without_observed_positive_match_encoded_correct": 0,
+              "native_errors_without_observed_positive_match_raw_groups": {}
+            }
+          },
+          "classes": {
+            "all_four_wrong": 8843,
+            "all_four_wrong_without_any_known_positive_prediction": 6891,
+            "all_four_wrong_with_any_known_positive_prediction": 1952,
+            "all_four_wrong_with_all_four_known_positive_predictions": 0
+          },
+          "class_support_membership_strata": {
+            "False": {
+              "classes": 3562,
+              "native_accuracy": 0.3175182481751825,
+              "all_four_wrong_fraction": 0.3674901740595171
+            },
+            "True": {
+              "classes": 11798,
+              "native_accuracy": 0.13671808781149347,
+              "all_four_wrong_fraction": 0.6385828106458722
+            }
+          }
+        },
+        "ukr": {
+          "all": {
+            "occurrences": 61440,
+            "queries": 6233,
+            "native": {
+              "correct": 7177,
+              "errors": 54263,
+              "accuracy": 0.11681315104166666,
+              "known_alternative_positive_errors": 2934,
+              "fraction_errors_known_alternative_positive": 0.05406999244420692,
+              "assigned_or_known_positive_rate": 0.16456705729166668,
+              "node_weighted_accuracy": 0.268525575218019
+            },
+            "encoded": {
+              "correct": 6685,
+              "errors": 54755,
+              "accuracy": 0.10880533854166667,
+              "known_alternative_positive_errors": 4115,
+              "fraction_errors_known_alternative_positive": 0.07515295406812163,
+              "assigned_or_known_positive_rate": 0.17578125,
+              "node_weighted_accuracy": 0.24480565577059646
+            },
+            "prototype": {
+              "correct": 7267,
+              "errors": 54173,
+              "accuracy": 0.11827799479166666,
+              "known_alternative_positive_errors": 4806,
+              "fraction_errors_known_alternative_positive": 0.08871578092407657,
+              "assigned_or_known_positive_rate": 0.19650065104166667,
+              "node_weighted_accuracy": 0.2840407784715859
+            },
+            "known_candidate_count_mean": 1.5317220052083333,
+            "known_multi_candidate_occurrences": 19545,
+            "query_also_rival_support_occurrences": 7334,
+            "query_also_rival_query_occurrences": 14203,
+            "mean_uniform_candidate_known_positive_rate": 0.051057400173611114,
+            "native_errors_without_observed_positive_match": 51329,
+            "native_errors_without_observed_positive_match_encoded_correct": 2878,
+            "native_errors_without_observed_positive_match_raw_groups": {
+              "undefined": 26268,
+              "rival_closer": 23534,
+              "true_closest": 1525,
+              "tied": 2
+            }
+          },
+          "by_frequency": {
+            "1": {
+              "occurrences": 2137,
+              "queries": 2137,
+              "native": {
+                "correct": 700,
+                "errors": 1437,
+                "accuracy": 0.32756200280767434,
+                "known_alternative_positive_errors": 1,
+                "fraction_errors_known_alternative_positive": 0.0006958942240779402,
+                "assigned_or_known_positive_rate": 0.328029948525971,
+                "node_weighted_accuracy": 0.32756200280767434
+              },
+              "encoded": {
+                "correct": 638,
+                "errors": 1499,
+                "accuracy": 0.2985493682732803,
+                "known_alternative_positive_errors": 0,
+                "fraction_errors_known_alternative_positive": 0.0,
+                "assigned_or_known_positive_rate": 0.2985493682732803,
+                "node_weighted_accuracy": 0.2985493682732803
+              },
+              "prototype": {
+                "correct": 749,
+                "errors": 1388,
+                "accuracy": 0.35049134300421153,
+                "known_alternative_positive_errors": 0,
+                "fraction_errors_known_alternative_positive": 0.0,
+                "assigned_or_known_positive_rate": 0.35049134300421153,
+                "node_weighted_accuracy": 0.35049134300421153
+              },
+              "known_candidate_count_mean": 1.0060832943378568,
+              "known_multi_candidate_occurrences": 12,
+              "query_also_rival_support_occurrences": 1,
+              "query_also_rival_query_occurrences": 0,
+              "mean_uniform_candidate_known_positive_rate": 0.03353610981126189,
+              "native_errors_without_observed_positive_match": 1436,
+              "native_errors_without_observed_positive_match_encoded_correct": 151,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "undefined": 835,
+                "rival_closer": 529,
+                "true_closest": 72
+              }
+            },
+            "2-4": {
+              "occurrences": 7128,
+              "queries": 2570,
+              "native": {
+                "correct": 2021,
+                "errors": 5107,
+                "accuracy": 0.28352974186307517,
+                "known_alternative_positive_errors": 12,
+                "fraction_errors_known_alternative_positive": 0.002349716075974153,
+                "assigned_or_known_positive_rate": 0.2852132435465769,
+                "node_weighted_accuracy": 0.28576523994811937
+              },
+              "encoded": {
+                "correct": 1803,
+                "errors": 5325,
+                "accuracy": 0.2529461279461279,
+                "known_alternative_positive_errors": 15,
+                "fraction_errors_known_alternative_positive": 0.0028169014084507044,
+                "assigned_or_known_positive_rate": 0.255050505050505,
+                "node_weighted_accuracy": 0.25823605706874186
+              },
+              "prototype": {
+                "correct": 2122,
+                "errors": 5006,
+                "accuracy": 0.29769921436588104,
+                "known_alternative_positive_errors": 20,
+                "fraction_errors_known_alternative_positive": 0.003995205753096284,
+                "assigned_or_known_positive_rate": 0.3005050505050505,
+                "node_weighted_accuracy": 0.3010051880674449
+              },
+              "known_candidate_count_mean": 1.0119248035914703,
+              "known_multi_candidate_occurrences": 84,
+              "query_also_rival_support_occurrences": 8,
+              "query_also_rival_query_occurrences": 2,
+              "mean_uniform_candidate_known_positive_rate": 0.03373082678638235,
+              "native_errors_without_observed_positive_match": 5095,
+              "native_errors_without_observed_positive_match_encoded_correct": 441,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "undefined": 2890,
+                "rival_closer": 2007,
+                "true_closest": 198
+              }
+            },
+            "5-19": {
+              "occurrences": 8815,
+              "queries": 1097,
+              "native": {
+                "correct": 1490,
+                "errors": 7325,
+                "accuracy": 0.16903006239364718,
+                "known_alternative_positive_errors": 67,
+                "fraction_errors_known_alternative_positive": 0.009146757679180887,
+                "assigned_or_known_positive_rate": 0.17663074305161655,
+                "node_weighted_accuracy": 0.18710344126755618
+              },
+              "encoded": {
+                "correct": 1390,
+                "errors": 7425,
+                "accuracy": 0.15768576290414066,
+                "known_alternative_positive_errors": 85,
+                "fraction_errors_known_alternative_positive": 0.011447811447811448,
+                "assigned_or_known_positive_rate": 0.1673284174702212,
+                "node_weighted_accuracy": 0.17423850757432208
+              },
+              "prototype": {
+                "correct": 1540,
+                "errors": 7275,
+                "accuracy": 0.17470221213840045,
+                "known_alternative_positive_errors": 89,
+                "fraction_errors_known_alternative_positive": 0.012233676975945016,
+                "assigned_or_known_positive_rate": 0.18479863868406127,
+                "node_weighted_accuracy": 0.19598344867521147
+              },
+              "known_candidate_count_mean": 1.0498014747589337,
+              "known_multi_candidate_occurrences": 404,
+              "query_also_rival_support_occurrences": 85,
+              "query_also_rival_query_occurrences": 121,
+              "mean_uniform_candidate_known_positive_rate": 0.03499338249196446,
+              "native_errors_without_observed_positive_match": 7258,
+              "native_errors_without_observed_positive_match_encoded_correct": 527,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "undefined": 3820,
+                "rival_closer": 3157,
+                "true_closest": 280,
+                "tied": 1
+              }
+            },
+            "20+": {
+              "occurrences": 43360,
+              "queries": 429,
+              "native": {
+                "correct": 2966,
+                "errors": 40394,
+                "accuracy": 0.06840405904059041,
+                "known_alternative_positive_errors": 2854,
+                "fraction_errors_known_alternative_positive": 0.07065405753329702,
+                "assigned_or_known_positive_rate": 0.13422509225092252,
+                "node_weighted_accuracy": 0.07937242097141486
+              },
+              "encoded": {
+                "correct": 2854,
+                "errors": 40506,
+                "accuracy": 0.0658210332103321,
+                "known_alternative_positive_errors": 4015,
+                "fraction_errors_known_alternative_positive": 0.0991211178590826,
+                "assigned_or_known_positive_rate": 0.1584178966789668,
+                "node_weighted_accuracy": 0.07708005347885666
+              },
+              "prototype": {
+                "correct": 2856,
+                "errors": 40504,
+                "accuracy": 0.06586715867158671,
+                "known_alternative_positive_errors": 4697,
+                "fraction_errors_known_alternative_positive": 0.11596385542168675,
+                "assigned_or_known_positive_rate": 0.17419280442804427,
+                "node_weighted_accuracy": 0.07657108550898509
+              },
+              "known_candidate_count_mean": 1.741051660516605,
+              "known_multi_candidate_occurrences": 19045,
+              "query_also_rival_support_occurrences": 7240,
+              "query_also_rival_query_occurrences": 14080,
+              "mean_uniform_candidate_known_positive_rate": 0.058035055350553505,
+              "native_errors_without_observed_positive_match": 37540,
+              "native_errors_without_observed_positive_match_encoded_correct": 1759,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "undefined": 18723,
+                "rival_closer": 17841,
+                "true_closest": 975,
+                "tied": 1
+              }
+            }
+          },
+          "by_query_rival_support": {
+            "False": {
+              "occurrences": 54106,
+              "queries": 6232,
+              "native": {
+                "correct": 6846,
+                "errors": 47260,
+                "accuracy": 0.12652940524156286,
+                "known_alternative_positive_errors": 1022,
+                "fraction_errors_known_alternative_positive": 0.021625052898857383,
+                "assigned_or_known_positive_rate": 0.14541825305881048,
+                "node_weighted_accuracy": 0.26882198375179767
+              },
+              "encoded": {
+                "correct": 6421,
+                "errors": 47685,
+                "accuracy": 0.1186744538498503,
+                "known_alternative_positive_errors": 1055,
+                "fraction_errors_known_alternative_positive": 0.022124357764496172,
+                "assigned_or_known_positive_rate": 0.1381732155398662,
+                "node_weighted_accuracy": 0.24502447631835442
+              },
+              "prototype": {
+                "correct": 7015,
+                "errors": 47091,
+                "accuracy": 0.12965290355967915,
+                "known_alternative_positive_errors": 1047,
+                "fraction_errors_known_alternative_positive": 0.02223354781168376,
+                "assigned_or_known_positive_rate": 0.14900380734114516,
+                "node_weighted_accuracy": 0.2843062397407944
+              },
+              "known_candidate_count_mean": 1.3033120171515173,
+              "known_multi_candidate_occurrences": 12211,
+              "query_also_rival_support_occurrences": 0,
+              "query_also_rival_query_occurrences": 10798,
+              "mean_uniform_candidate_known_positive_rate": 0.04344373390505058,
+              "native_errors_without_observed_positive_match": 46238,
+              "native_errors_without_observed_positive_match_encoded_correct": 2724,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "undefined": 23828,
+                "rival_closer": 21004,
+                "true_closest": 1404,
+                "tied": 2
+              }
+            },
+            "True": {
+              "occurrences": 7334,
+              "queries": 313,
+              "native": {
+                "correct": 331,
+                "errors": 7003,
+                "accuracy": 0.0451322607035724,
+                "known_alternative_positive_errors": 1912,
+                "fraction_errors_known_alternative_positive": 0.27302584606597174,
+                "assigned_or_known_positive_rate": 0.30583583310608126,
+                "node_weighted_accuracy": 0.04707114504052922
+              },
+              "encoded": {
+                "correct": 264,
+                "errors": 7070,
+                "accuracy": 0.03599672757022089,
+                "known_alternative_positive_errors": 3060,
+                "fraction_errors_known_alternative_positive": 0.4328147100424328,
+                "assigned_or_known_positive_rate": 0.4532315244068721,
+                "node_weighted_accuracy": 0.04871708015254778
+              },
+              "prototype": {
+                "correct": 252,
+                "errors": 7082,
+                "accuracy": 0.034360512680665395,
+                "known_alternative_positive_errors": 3759,
+                "fraction_errors_known_alternative_positive": 0.5307822648969218,
+                "assigned_or_known_positive_rate": 0.5469048268339242,
+                "node_weighted_accuracy": 0.060649546916525236
+              },
+              "known_candidate_count_mean": 3.216798472866103,
+              "known_multi_candidate_occurrences": 7334,
+              "query_also_rival_support_occurrences": 7334,
+              "query_also_rival_query_occurrences": 3405,
+              "mean_uniform_candidate_known_positive_rate": 0.10722661576220344,
+              "native_errors_without_observed_positive_match": 5091,
+              "native_errors_without_observed_positive_match_encoded_correct": 154,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 2530,
+                "undefined": 2440,
+                "true_closest": 121
+              }
+            }
+          },
+          "by_query_rival_query": {
+            "False": {
+              "occurrences": 47237,
+              "queries": 6233,
+              "native": {
+                "correct": 6322,
+                "errors": 40915,
+                "accuracy": 0.13383576433727798,
+                "known_alternative_positive_errors": 1028,
+                "fraction_errors_known_alternative_positive": 0.025125259684712208,
+                "assigned_or_known_positive_rate": 0.15559836568791413,
+                "node_weighted_accuracy": 0.268678369758061
+              },
+              "encoded": {
+                "correct": 5840,
+                "errors": 41397,
+                "accuracy": 0.12363189872345831,
+                "known_alternative_positive_errors": 1731,
+                "fraction_errors_known_alternative_positive": 0.041814624248133925,
+                "assigned_or_known_positive_rate": 0.16027690158138747,
+                "node_weighted_accuracy": 0.24482055571672562
+              },
+              "prototype": {
+                "correct": 6454,
+                "errors": 40783,
+                "accuracy": 0.13663018396595888,
+                "known_alternative_positive_errors": 2077,
+                "fraction_errors_known_alternative_positive": 0.05092808277958954,
+                "assigned_or_known_positive_rate": 0.18059995342633953,
+                "node_weighted_accuracy": 0.2841378923432259
+              },
+              "known_candidate_count_mean": 1.1512162076338464,
+              "known_multi_candidate_occurrences": 5342,
+              "query_also_rival_support_occurrences": 3929,
+              "query_also_rival_query_occurrences": 0,
+              "mean_uniform_candidate_known_positive_rate": 0.03837387358779488,
+              "native_errors_without_observed_positive_match": 39887,
+              "native_errors_without_observed_positive_match_encoded_correct": 2372,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "undefined": 20700,
+                "rival_closer": 17914,
+                "true_closest": 1271,
+                "tied": 2
+              }
+            },
+            "True": {
+              "occurrences": 14203,
+              "queries": 393,
+              "native": {
+                "correct": 855,
+                "errors": 13348,
+                "accuracy": 0.06019854960219672,
+                "known_alternative_positive_errors": 1906,
+                "fraction_errors_known_alternative_positive": 0.1427929277794426,
+                "assigned_or_known_positive_rate": 0.19439555023586566,
+                "node_weighted_accuracy": 0.07549738573820286
+              },
+              "encoded": {
+                "correct": 845,
+                "errors": 13358,
+                "accuracy": 0.05949447299866226,
+                "known_alternative_positive_errors": 2384,
+                "fraction_errors_known_alternative_positive": 0.17846983081299594,
+                "assigned_or_known_positive_rate": 0.2273463352812786,
+                "node_weighted_accuracy": 0.08465834738810524
+              },
+              "prototype": {
+                "correct": 813,
+                "errors": 13390,
+                "accuracy": 0.057241427867351966,
+                "known_alternative_positive_errors": 2729,
+                "fraction_errors_known_alternative_positive": 0.20380881254667663,
+                "assigned_or_known_positive_rate": 0.24938393297190733,
+                "node_weighted_accuracy": 0.08422566207581814
+              },
+              "known_candidate_count_mean": 2.7972259381820743,
+              "known_multi_candidate_occurrences": 14203,
+              "query_also_rival_support_occurrences": 3405,
+              "query_also_rival_query_occurrences": 14203,
+              "mean_uniform_candidate_known_positive_rate": 0.09324086460606915,
+              "native_errors_without_observed_positive_match": 11442,
+              "native_errors_without_observed_positive_match_encoded_correct": 506,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 5620,
+                "undefined": 5568,
+                "true_closest": 254
+              }
+            }
+          },
+          "by_known_candidate_count": {
+            "1": {
+              "occurrences": 41895,
+              "queries": 6220,
+              "native": {
+                "correct": 6030,
+                "errors": 35865,
+                "accuracy": 0.1439312567132116,
+                "known_alternative_positive_errors": 0,
+                "fraction_errors_known_alternative_positive": 0.0,
+                "assigned_or_known_positive_rate": 0.1439312567132116,
+                "node_weighted_accuracy": 0.2696470553772813
+              },
+              "encoded": {
+                "correct": 5596,
+                "errors": 36299,
+                "accuracy": 0.1335720253013486,
+                "known_alternative_positive_errors": 0,
+                "fraction_errors_known_alternative_positive": 0.0,
+                "assigned_or_known_positive_rate": 0.1335720253013486,
+                "node_weighted_accuracy": 0.24543800766380353
+              },
+              "prototype": {
+                "correct": 6202,
+                "errors": 35693,
+                "accuracy": 0.14803675856307436,
+                "known_alternative_positive_errors": 0,
+                "fraction_errors_known_alternative_positive": 0.0,
+                "assigned_or_known_positive_rate": 0.14803675856307436,
+                "node_weighted_accuracy": 0.2851917196765555
+              },
+              "known_candidate_count_mean": 1.0,
+              "known_multi_candidate_occurrences": 0,
+              "query_also_rival_support_occurrences": 0,
+              "query_also_rival_query_occurrences": 0,
+              "mean_uniform_candidate_known_positive_rate": 0.03333333333333333,
+              "native_errors_without_observed_positive_match": 35865,
+              "native_errors_without_observed_positive_match_encoded_correct": 2231,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "undefined": 18652,
+                "rival_closer": 16052,
+                "true_closest": 1159,
+                "tied": 2
+              }
+            },
+            "2": {
+              "occurrences": 11735,
+              "queries": 741,
+              "native": {
+                "correct": 747,
+                "errors": 10988,
+                "accuracy": 0.06365573072006817,
+                "known_alternative_positive_errors": 1209,
+                "fraction_errors_known_alternative_positive": 0.1100291226792865,
+                "assigned_or_known_positive_rate": 0.16668086919471667,
+                "node_weighted_accuracy": 0.09102992991302117
+              },
+              "encoded": {
+                "correct": 743,
+                "errors": 10992,
+                "accuracy": 0.06331487004686834,
+                "known_alternative_positive_errors": 1608,
+                "fraction_errors_known_alternative_positive": 0.1462882096069869,
+                "assigned_or_known_positive_rate": 0.20034086067319984,
+                "node_weighted_accuracy": 0.09455636706867757
+              },
+              "prototype": {
+                "correct": 772,
+                "errors": 10963,
+                "accuracy": 0.0657861099275671,
+                "known_alternative_positive_errors": 1852,
+                "fraction_errors_known_alternative_positive": 0.1689318617166834,
+                "assigned_or_known_positive_rate": 0.2236046016190882,
+                "node_weighted_accuracy": 0.09205673148167563
+              },
+              "known_candidate_count_mean": 2.0,
+              "known_multi_candidate_occurrences": 11735,
+              "query_also_rival_support_occurrences": 2727,
+              "query_also_rival_query_occurrences": 7634,
+              "mean_uniform_candidate_known_positive_rate": 0.06666666666666667,
+              "native_errors_without_observed_positive_match": 9779,
+              "native_errors_without_observed_positive_match_encoded_correct": 445,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "undefined": 4886,
+                "rival_closer": 4642,
+                "true_closest": 251
+              }
+            },
+            "3": {
+              "occurrences": 4708,
+              "queries": 211,
+              "native": {
+                "correct": 254,
+                "errors": 4454,
+                "accuracy": 0.05395072217502124,
+                "known_alternative_positive_errors": 828,
+                "fraction_errors_known_alternative_positive": 0.18590031432420295,
+                "assigned_or_known_positive_rate": 0.22982158028887,
+                "node_weighted_accuracy": 0.07577217921691651
+              },
+              "encoded": {
+                "correct": 228,
+                "errors": 4480,
+                "accuracy": 0.048428207306711976,
+                "known_alternative_positive_errors": 1221,
+                "fraction_errors_known_alternative_positive": 0.27254464285714286,
+                "assigned_or_known_positive_rate": 0.30777400169923536,
+                "node_weighted_accuracy": 0.056380261106745204
+              },
+              "prototype": {
+                "correct": 193,
+                "errors": 4515,
+                "accuracy": 0.04099405267629567,
+                "known_alternative_positive_errors": 1436,
+                "fraction_errors_known_alternative_positive": 0.31805094130675526,
+                "assigned_or_known_positive_rate": 0.34600679694137637,
+                "node_weighted_accuracy": 0.06155504061640922
+              },
+              "known_candidate_count_mean": 3.0,
+              "known_multi_candidate_occurrences": 4708,
+              "query_also_rival_support_occurrences": 2279,
+              "query_also_rival_query_occurrences": 3838,
+              "mean_uniform_candidate_known_positive_rate": 0.1,
+              "native_errors_without_observed_positive_match": 3626,
+              "native_errors_without_observed_positive_match_encoded_correct": 139,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 1784,
+                "undefined": 1760,
+                "true_closest": 82
+              }
+            },
+            "4": {
+              "occurrences": 1789,
+              "queries": 83,
+              "native": {
+                "correct": 87,
+                "errors": 1702,
+                "accuracy": 0.048630519843487985,
+                "known_alternative_positive_errors": 426,
+                "fraction_errors_known_alternative_positive": 0.2502937720329025,
+                "assigned_or_known_positive_rate": 0.2867523756288429,
+                "node_weighted_accuracy": 0.04802674595060406
+              },
+              "encoded": {
+                "correct": 62,
+                "errors": 1727,
+                "accuracy": 0.03465623253214086,
+                "known_alternative_positive_errors": 643,
+                "fraction_errors_known_alternative_positive": 0.3723219455703532,
+                "assigned_or_known_positive_rate": 0.3940749021799888,
+                "node_weighted_accuracy": 0.031161673401398825
+              },
+              "prototype": {
+                "correct": 65,
+                "errors": 1724,
+                "accuracy": 0.03633314700950251,
+                "known_alternative_positive_errors": 769,
+                "fraction_errors_known_alternative_positive": 0.4460556844547564,
+                "assigned_or_known_positive_rate": 0.46618222470653997,
+                "node_weighted_accuracy": 0.042134870221630406
+              },
+              "known_candidate_count_mean": 4.0,
+              "known_multi_candidate_occurrences": 1789,
+              "query_also_rival_support_occurrences": 1216,
+              "query_also_rival_query_occurrences": 1545,
+              "mean_uniform_candidate_known_positive_rate": 0.13333333333333333,
+              "native_errors_without_observed_positive_match": 1276,
+              "native_errors_without_observed_positive_match_encoded_correct": 31,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 638,
+                "undefined": 613,
+                "true_closest": 25
+              }
+            },
+            "5": {
+              "occurrences": 793,
+              "queries": 53,
+              "native": {
+                "correct": 37,
+                "errors": 756,
+                "accuracy": 0.04665825977301387,
+                "known_alternative_positive_errors": 241,
+                "fraction_errors_known_alternative_positive": 0.3187830687830688,
+                "assigned_or_known_positive_rate": 0.3505674653215637,
+                "node_weighted_accuracy": 0.04200142180969936
+              },
+              "encoded": {
+                "correct": 43,
+                "errors": 750,
+                "accuracy": 0.05422446406052964,
+                "known_alternative_positive_errors": 370,
+                "fraction_errors_known_alternative_positive": 0.49333333333333335,
+                "assigned_or_known_positive_rate": 0.5208070617906684,
+                "node_weighted_accuracy": 0.03686847095643306
+              },
+              "prototype": {
+                "correct": 28,
+                "errors": 765,
+                "accuracy": 0.03530895334174023,
+                "known_alternative_positive_errors": 437,
+                "fraction_errors_known_alternative_positive": 0.5712418300653594,
+                "assigned_or_known_positive_rate": 0.5863808322824716,
+                "node_weighted_accuracy": 0.022687416213971558
+              },
+              "known_candidate_count_mean": 5.0,
+              "known_multi_candidate_occurrences": 793,
+              "query_also_rival_support_occurrences": 614,
+              "query_also_rival_query_occurrences": 710,
+              "mean_uniform_candidate_known_positive_rate": 0.16666666666666666,
+              "native_errors_without_observed_positive_match": 515,
+              "native_errors_without_observed_positive_match_encoded_correct": 23,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 278,
+                "undefined": 231,
+                "true_closest": 6
+              }
+            },
+            "6": {
+              "occurrences": 307,
+              "queries": 26,
+              "native": {
+                "correct": 17,
+                "errors": 290,
+                "accuracy": 0.05537459283387622,
+                "known_alternative_positive_errors": 134,
+                "fraction_errors_known_alternative_positive": 0.46206896551724136,
+                "assigned_or_known_positive_rate": 0.49185667752442996,
+                "node_weighted_accuracy": 0.06662187450230928
+              },
+              "encoded": {
+                "correct": 9,
+                "errors": 298,
+                "accuracy": 0.029315960912052116,
+                "known_alternative_positive_errors": 160,
+                "fraction_errors_known_alternative_positive": 0.5369127516778524,
+                "assigned_or_known_positive_rate": 0.5504885993485342,
+                "node_weighted_accuracy": 0.03708028083028084
+              },
+              "prototype": {
+                "correct": 4,
+                "errors": 303,
+                "accuracy": 0.013029315960912053,
+                "known_alternative_positive_errors": 189,
+                "fraction_errors_known_alternative_positive": 0.6237623762376238,
+                "assigned_or_known_positive_rate": 0.6286644951140065,
+                "node_weighted_accuracy": 0.004235347985347985
+              },
+              "known_candidate_count_mean": 6.0,
+              "known_multi_candidate_occurrences": 307,
+              "query_also_rival_support_occurrences": 285,
+              "query_also_rival_query_occurrences": 276,
+              "mean_uniform_candidate_known_positive_rate": 0.2,
+              "native_errors_without_observed_positive_match": 156,
+              "native_errors_without_observed_positive_match_encoded_correct": 6,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 87,
+                "undefined": 68,
+                "true_closest": 1
+              }
+            },
+            "7": {
+              "occurrences": 131,
+              "queries": 8,
+              "native": {
+                "correct": 4,
+                "errors": 127,
+                "accuracy": 0.030534351145038167,
+                "known_alternative_positive_errors": 64,
+                "fraction_errors_known_alternative_positive": 0.5039370078740157,
+                "assigned_or_known_positive_rate": 0.5190839694656488,
+                "node_weighted_accuracy": 0.01970108695652174
+              },
+              "encoded": {
+                "correct": 1,
+                "errors": 130,
+                "accuracy": 0.007633587786259542,
+                "known_alternative_positive_errors": 71,
+                "fraction_errors_known_alternative_positive": 0.5461538461538461,
+                "assigned_or_known_positive_rate": 0.549618320610687,
+                "node_weighted_accuracy": 0.001358695652173913
+              },
+              "prototype": {
+                "correct": 2,
+                "errors": 129,
+                "accuracy": 0.015267175572519083,
+                "known_alternative_positive_errors": 82,
+                "fraction_errors_known_alternative_positive": 0.6356589147286822,
+                "assigned_or_known_positive_rate": 0.6412213740458015,
+                "node_weighted_accuracy": 0.002717391304347826
+              },
+              "known_candidate_count_mean": 7.0,
+              "known_multi_candidate_occurrences": 131,
+              "query_also_rival_support_occurrences": 131,
+              "query_also_rival_query_occurrences": 122,
+              "mean_uniform_candidate_known_positive_rate": 0.23333333333333334,
+              "native_errors_without_observed_positive_match": 63,
+              "native_errors_without_observed_positive_match_encoded_correct": 1,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "undefined": 36,
+                "rival_closer": 26,
+                "true_closest": 1
+              }
+            },
+            "8": {
+              "occurrences": 31,
+              "queries": 3,
+              "native": {
+                "correct": 1,
+                "errors": 30,
+                "accuracy": 0.03225806451612903,
+                "known_alternative_positive_errors": 14,
+                "fraction_errors_known_alternative_positive": 0.4666666666666667,
+                "assigned_or_known_positive_rate": 0.4838709677419355,
+                "node_weighted_accuracy": 0.011904761904761904
+              },
+              "encoded": {
+                "correct": 0,
+                "errors": 31,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 15,
+                "fraction_errors_known_alternative_positive": 0.4838709677419355,
+                "assigned_or_known_positive_rate": 0.4838709677419355,
+                "node_weighted_accuracy": 0.0
+              },
+              "prototype": {
+                "correct": 1,
+                "errors": 30,
+                "accuracy": 0.03225806451612903,
+                "known_alternative_positive_errors": 13,
+                "fraction_errors_known_alternative_positive": 0.43333333333333335,
+                "assigned_or_known_positive_rate": 0.45161290322580644,
+                "node_weighted_accuracy": 0.011904761904761904
+              },
+              "known_candidate_count_mean": 8.0,
+              "known_multi_candidate_occurrences": 31,
+              "query_also_rival_support_occurrences": 31,
+              "query_also_rival_query_occurrences": 28,
+              "mean_uniform_candidate_known_positive_rate": 0.26666666666666666,
+              "native_errors_without_observed_positive_match": 16,
+              "native_errors_without_observed_positive_match_encoded_correct": 0,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 8,
+                "undefined": 8
+              }
+            },
+            "9": {
+              "occurrences": 23,
+              "queries": 2,
+              "native": {
+                "correct": 0,
+                "errors": 23,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 6,
+                "fraction_errors_known_alternative_positive": 0.2608695652173913,
+                "assigned_or_known_positive_rate": 0.2608695652173913,
+                "node_weighted_accuracy": 0.0
+              },
+              "encoded": {
+                "correct": 2,
+                "errors": 21,
+                "accuracy": 0.08695652173913043,
+                "known_alternative_positive_errors": 10,
+                "fraction_errors_known_alternative_positive": 0.47619047619047616,
+                "assigned_or_known_positive_rate": 0.5217391304347826,
+                "node_weighted_accuracy": 0.045454545454545456
+              },
+              "prototype": {
+                "correct": 0,
+                "errors": 23,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 11,
+                "fraction_errors_known_alternative_positive": 0.4782608695652174,
+                "assigned_or_known_positive_rate": 0.4782608695652174,
+                "node_weighted_accuracy": 0.0
+              },
+              "known_candidate_count_mean": 9.0,
+              "known_multi_candidate_occurrences": 23,
+              "query_also_rival_support_occurrences": 23,
+              "query_also_rival_query_occurrences": 22,
+              "mean_uniform_candidate_known_positive_rate": 0.3,
+              "native_errors_without_observed_positive_match": 17,
+              "native_errors_without_observed_positive_match_encoded_correct": 2,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 17
+              }
+            },
+            "10": {
+              "occurrences": 23,
+              "queries": 2,
+              "native": {
+                "correct": 0,
+                "errors": 23,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 8,
+                "fraction_errors_known_alternative_positive": 0.34782608695652173,
+                "assigned_or_known_positive_rate": 0.34782608695652173,
+                "node_weighted_accuracy": 0.0
+              },
+              "encoded": {
+                "correct": 0,
+                "errors": 23,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 13,
+                "fraction_errors_known_alternative_positive": 0.5652173913043478,
+                "assigned_or_known_positive_rate": 0.5652173913043478,
+                "node_weighted_accuracy": 0.0
+              },
+              "prototype": {
+                "correct": 0,
+                "errors": 23,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 13,
+                "fraction_errors_known_alternative_positive": 0.5652173913043478,
+                "assigned_or_known_positive_rate": 0.5652173913043478,
+                "node_weighted_accuracy": 0.0
+              },
+              "known_candidate_count_mean": 10.0,
+              "known_multi_candidate_occurrences": 23,
+              "query_also_rival_support_occurrences": 23,
+              "query_also_rival_query_occurrences": 23,
+              "mean_uniform_candidate_known_positive_rate": 0.3333333333333333,
+              "native_errors_without_observed_positive_match": 15,
+              "native_errors_without_observed_positive_match_encoded_correct": 0,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "undefined": 13,
+                "rival_closer": 2
+              }
+            },
+            "11": {
+              "occurrences": 5,
+              "queries": 1,
+              "native": {
+                "correct": 0,
+                "errors": 5,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 4,
+                "fraction_errors_known_alternative_positive": 0.8,
+                "assigned_or_known_positive_rate": 0.8,
+                "node_weighted_accuracy": 0.0
+              },
+              "encoded": {
+                "correct": 1,
+                "errors": 4,
+                "accuracy": 0.2,
+                "known_alternative_positive_errors": 4,
+                "fraction_errors_known_alternative_positive": 1.0,
+                "assigned_or_known_positive_rate": 1.0,
+                "node_weighted_accuracy": 0.2
+              },
+              "prototype": {
+                "correct": 0,
+                "errors": 5,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 4,
+                "fraction_errors_known_alternative_positive": 0.8,
+                "assigned_or_known_positive_rate": 0.8,
+                "node_weighted_accuracy": 0.0
+              },
+              "known_candidate_count_mean": 11.0,
+              "known_multi_candidate_occurrences": 5,
+              "query_also_rival_support_occurrences": 5,
+              "query_also_rival_query_occurrences": 5,
+              "mean_uniform_candidate_known_positive_rate": 0.36666666666666664,
+              "native_errors_without_observed_positive_match": 1,
+              "native_errors_without_observed_positive_match_encoded_correct": 0,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "undefined": 1
+              }
+            }
+          },
+          "classes": {
+            "all_four_wrong": 11077,
+            "all_four_wrong_without_any_known_positive_prediction": 8828,
+            "all_four_wrong_with_any_known_positive_prediction": 2249,
+            "all_four_wrong_with_all_four_known_positive_predictions": 0
+          },
+          "class_support_membership_strata": {
+            "False": {
+              "classes": 3562,
+              "native_accuracy": 0.26677428411005055,
+              "all_four_wrong_fraction": 0.4584503088152723
+            },
+            "True": {
+              "classes": 11798,
+              "native_accuracy": 0.07153754873707407,
+              "all_four_wrong_fraction": 0.8004746567214782
+            }
+          }
+        }
+      }
+    },
+    "ukr_rus": {
+      "input_hashes": {
+        "reference": "78a401b71a1088a50a7bacf7a53ab1f68033d187a926e83464b2b9ebcbffce8f",
+        "stages": "d1e9c4ca084eb11347b3b160df90387805cb92540dabe01410ab77d57f1f2b5f",
+        "geometry": "9e898002fa3822fa107e36bfa994eb89335a5907cf1f613dc3388e00c70093d7"
+      },
+      "observed_ordered_test_pairs": 105899,
+      "observed_undirected_test_pairs": 105752,
+      "known_candidate_count_distribution": {
+        "1": 59072,
+        "2": 2069,
+        "3": 277,
+        "4": 19,
+        "5": 3
+      },
+      "class_supports": {
+        "classes": 15360,
+        "classes_with_known_rival_support_membership": 2770,
+        "support_occurrences": 46080,
+        "support_occurrences_with_known_rival_membership": 3124,
+        "negative_support_edges": 1336320,
+        "negative_support_edges_with_observed_positive_membership": 3610
+      },
+      "models": {
+        "hk": {
+          "all": {
+            "occurrences": 61440,
+            "queries": 33981,
+            "native": {
+              "correct": 11152,
+              "errors": 50288,
+              "accuracy": 0.18151041666666667,
+              "known_alternative_positive_errors": 371,
+              "fraction_errors_known_alternative_positive": 0.00737750556792873,
+              "assigned_or_known_positive_rate": 0.187548828125,
+              "node_weighted_accuracy": 0.22903520918016532
+            },
+            "encoded": {
+              "correct": 10478,
+              "errors": 50962,
+              "accuracy": 0.17054036458333333,
+              "known_alternative_positive_errors": 631,
+              "fraction_errors_known_alternative_positive": 0.01238177465562576,
+              "assigned_or_known_positive_rate": 0.180810546875,
+              "node_weighted_accuracy": 0.2105204140887083
+            },
+            "prototype": {
+              "correct": 11397,
+              "errors": 50043,
+              "accuracy": 0.185498046875,
+              "known_alternative_positive_errors": 792,
+              "fraction_errors_known_alternative_positive": 0.01582638930519753,
+              "assigned_or_known_positive_rate": 0.198388671875,
+              "node_weighted_accuracy": 0.2331828084475821
+            },
+            "known_candidate_count_mean": 1.0438151041666666,
+            "known_multi_candidate_occurrences": 2368,
+            "query_also_rival_support_occurrences": 933,
+            "query_also_rival_query_occurrences": 1541,
+            "mean_uniform_candidate_known_positive_rate": 0.034793836805555554,
+            "native_errors_without_observed_positive_match": 49917,
+            "native_errors_without_observed_positive_match_encoded_correct": 4747,
+            "native_errors_without_observed_positive_match_raw_groups": {
+              "rival_closer": 25192,
+              "undefined": 15420,
+              "true_closest": 9305
+            }
+          },
+          "by_frequency": {
+            "1": {
+              "occurrences": 27784,
+              "queries": 27784,
+              "native": {
+                "correct": 6666,
+                "errors": 21118,
+                "accuracy": 0.2399222574143392,
+                "known_alternative_positive_errors": 2,
+                "fraction_errors_known_alternative_positive": 9.470593806231651e-05,
+                "assigned_or_known_positive_rate": 0.23999424128995106,
+                "node_weighted_accuracy": 0.2399222574143392
+              },
+              "encoded": {
+                "correct": 6100,
+                "errors": 21684,
+                "accuracy": 0.21955082061618197,
+                "known_alternative_positive_errors": 5,
+                "fraction_errors_known_alternative_positive": 0.0002305847629588637,
+                "assigned_or_known_positive_rate": 0.21973078030521162,
+                "node_weighted_accuracy": 0.21955082061618197
+              },
+              "prototype": {
+                "correct": 6804,
+                "errors": 20980,
+                "accuracy": 0.24488914483155774,
+                "known_alternative_positive_errors": 4,
+                "fraction_errors_known_alternative_positive": 0.00019065776930409913,
+                "assigned_or_known_positive_rate": 0.24503311258278146,
+                "node_weighted_accuracy": 0.24488914483155774
+              },
+              "known_candidate_count_mean": 1.0002519435646415,
+              "known_multi_candidate_occurrences": 7,
+              "query_also_rival_support_occurrences": 7,
+              "query_also_rival_query_occurrences": 0,
+              "mean_uniform_candidate_known_positive_rate": 0.033341731452154716,
+              "native_errors_without_observed_positive_match": 21116,
+              "native_errors_without_observed_positive_match_encoded_correct": 2354,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 9492,
+                "undefined": 6796,
+                "true_closest": 4828
+              }
+            },
+            "2-4": {
+              "occurrences": 11489,
+              "queries": 4674,
+              "native": {
+                "correct": 2198,
+                "errors": 9291,
+                "accuracy": 0.1913134302376186,
+                "known_alternative_positive_errors": 19,
+                "fraction_errors_known_alternative_positive": 0.002044989775051125,
+                "assigned_or_known_positive_rate": 0.19296718600400384,
+                "node_weighted_accuracy": 0.19437312794180572
+              },
+              "encoded": {
+                "correct": 2090,
+                "errors": 9399,
+                "accuracy": 0.18191313430237618,
+                "known_alternative_positive_errors": 20,
+                "fraction_errors_known_alternative_positive": 0.002127885945313331,
+                "assigned_or_known_positive_rate": 0.1836539298459396,
+                "node_weighted_accuracy": 0.18424618456710878
+              },
+              "prototype": {
+                "correct": 2234,
+                "errors": 9255,
+                "accuracy": 0.19444686221603272,
+                "known_alternative_positive_errors": 26,
+                "fraction_errors_known_alternative_positive": 0.0028092922744462454,
+                "assigned_or_known_positive_rate": 0.19670989642266515,
+                "node_weighted_accuracy": 0.195906432748538
+              },
+              "known_candidate_count_mean": 1.0052223866306902,
+              "known_multi_candidate_occurrences": 60,
+              "query_also_rival_support_occurrences": 25,
+              "query_also_rival_query_occurrences": 34,
+              "mean_uniform_candidate_known_positive_rate": 0.03350741288768967,
+              "native_errors_without_observed_positive_match": 9272,
+              "native_errors_without_observed_positive_match_encoded_correct": 950,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 4352,
+                "undefined": 2784,
+                "true_closest": 2136
+              }
+            },
+            "5-19": {
+              "occurrences": 10534,
+              "queries": 1256,
+              "native": {
+                "correct": 1443,
+                "errors": 9091,
+                "accuracy": 0.13698500094930702,
+                "known_alternative_positive_errors": 69,
+                "fraction_errors_known_alternative_positive": 0.007589924100758993,
+                "assigned_or_known_positive_rate": 0.14353521928991836,
+                "node_weighted_accuracy": 0.1492717112170978
+              },
+              "encoded": {
+                "correct": 1369,
+                "errors": 9165,
+                "accuracy": 0.1299601291057528,
+                "known_alternative_positive_errors": 97,
+                "fraction_errors_known_alternative_positive": 0.010583742498636115,
+                "assigned_or_known_positive_rate": 0.1391684070628441,
+                "node_weighted_accuracy": 0.13636477612183698
+              },
+              "prototype": {
+                "correct": 1451,
+                "errors": 9083,
+                "accuracy": 0.13774444655401558,
+                "known_alternative_positive_errors": 130,
+                "fraction_errors_known_alternative_positive": 0.014312451833094793,
+                "assigned_or_known_positive_rate": 0.1500854376305297,
+                "node_weighted_accuracy": 0.14545859199614056
+              },
+              "known_candidate_count_mean": 1.0321815074995253,
+              "known_multi_candidate_occurrences": 327,
+              "query_also_rival_support_occurrences": 140,
+              "query_also_rival_query_occurrences": 190,
+              "mean_uniform_candidate_known_positive_rate": 0.03440605024998418,
+              "native_errors_without_observed_positive_match": 9022,
+              "native_errors_without_observed_positive_match_encoded_correct": 762,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 4899,
+                "undefined": 2660,
+                "true_closest": 1463
+              }
+            },
+            "20+": {
+              "occurrences": 11633,
+              "queries": 267,
+              "native": {
+                "correct": 845,
+                "errors": 10788,
+                "accuracy": 0.07263818447519986,
+                "known_alternative_positive_errors": 281,
+                "fraction_errors_known_alternative_positive": 0.026047460140897292,
+                "assigned_or_known_positive_rate": 0.09679360440127224,
+                "node_weighted_accuracy": 0.07812799199446752
+              },
+              "encoded": {
+                "correct": 919,
+                "errors": 10714,
+                "accuracy": 0.07899939826356056,
+                "known_alternative_positive_errors": 509,
+                "fraction_errors_known_alternative_positive": 0.04750793354489453,
+                "assigned_or_known_positive_rate": 0.1227542336456632,
+                "node_weighted_accuracy": 0.07960062049701638
+              },
+              "prototype": {
+                "correct": 908,
+                "errors": 10725,
+                "accuracy": 0.07805381243015559,
+                "known_alternative_positive_errors": 632,
+                "fraction_errors_known_alternative_positive": 0.05892773892773893,
+                "assigned_or_known_positive_rate": 0.1323820166766956,
+                "node_weighted_accuracy": 0.08023354173583762
+              },
+              "known_candidate_count_mean": 1.1965099286512508,
+              "known_multi_candidate_occurrences": 1974,
+              "query_also_rival_support_occurrences": 761,
+              "query_also_rival_query_occurrences": 1317,
+              "mean_uniform_candidate_known_positive_rate": 0.039883664288375024,
+              "native_errors_without_observed_positive_match": 10507,
+              "native_errors_without_observed_positive_match_encoded_correct": 681,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 6449,
+                "undefined": 3180,
+                "true_closest": 878
+              }
+            }
+          },
+          "by_query_rival_support": {
+            "False": {
+              "occurrences": 60507,
+              "queries": 33974,
+              "native": {
+                "correct": 11111,
+                "errors": 49396,
+                "accuracy": 0.18363164592526485,
+                "known_alternative_positive_errors": 111,
+                "fraction_errors_known_alternative_positive": 0.002247145517855697,
+                "assigned_or_known_positive_rate": 0.18546614441304313,
+                "node_weighted_accuracy": 0.22914753091312537
+              },
+              "encoded": {
+                "correct": 10443,
+                "errors": 50064,
+                "accuracy": 0.17259160097178838,
+                "known_alternative_positive_errors": 113,
+                "fraction_errors_known_alternative_positive": 0.002257110898050495,
+                "assigned_or_known_positive_rate": 0.17445915348637347,
+                "node_weighted_accuracy": 0.21066720888430718
+              },
+              "prototype": {
+                "correct": 11372,
+                "errors": 49135,
+                "accuracy": 0.1879451964235543,
+                "known_alternative_positive_errors": 129,
+                "fraction_errors_known_alternative_positive": 0.0026254197618805334,
+                "assigned_or_known_positive_rate": 0.19007718115259392,
+                "node_weighted_accuracy": 0.23330631457698345
+              },
+              "known_candidate_count_mean": 1.0257821409093162,
+              "known_multi_candidate_occurrences": 1435,
+              "query_also_rival_support_occurrences": 0,
+              "query_also_rival_query_occurrences": 1425,
+              "mean_uniform_candidate_known_positive_rate": 0.03419273803031054,
+              "native_errors_without_observed_positive_match": 49285,
+              "native_errors_without_observed_positive_match_encoded_correct": 4724,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 24764,
+                "undefined": 15258,
+                "true_closest": 9263
+              }
+            },
+            "True": {
+              "occurrences": 933,
+              "queries": 291,
+              "native": {
+                "correct": 41,
+                "errors": 892,
+                "accuracy": 0.04394426580921758,
+                "known_alternative_positive_errors": 260,
+                "fraction_errors_known_alternative_positive": 0.2914798206278027,
+                "assigned_or_known_positive_rate": 0.32261521972132906,
+                "node_weighted_accuracy": 0.052240404992841695
+              },
+              "encoded": {
+                "correct": 35,
+                "errors": 898,
+                "accuracy": 0.03751339764201501,
+                "known_alternative_positive_errors": 518,
+                "fraction_errors_known_alternative_positive": 0.576837416481069,
+                "assigned_or_known_positive_rate": 0.5927116827438371,
+                "node_weighted_accuracy": 0.036370467626784586
+              },
+              "prototype": {
+                "correct": 25,
+                "errors": 908,
+                "accuracy": 0.02679528403001072,
+                "known_alternative_positive_errors": 663,
+                "fraction_errors_known_alternative_positive": 0.7301762114537445,
+                "assigned_or_known_positive_rate": 0.737406216505895,
+                "node_weighted_accuracy": 0.0446428122544961
+              },
+              "known_candidate_count_mean": 2.2132904608788855,
+              "known_multi_candidate_occurrences": 933,
+              "query_also_rival_support_occurrences": 933,
+              "query_also_rival_query_occurrences": 116,
+              "mean_uniform_candidate_known_positive_rate": 0.07377634869596285,
+              "native_errors_without_observed_positive_match": 632,
+              "native_errors_without_observed_positive_match_encoded_correct": 23,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 428,
+                "undefined": 162,
+                "true_closest": 42
+              }
+            }
+          },
+          "by_query_rival_query": {
+            "False": {
+              "occurrences": 59899,
+              "queries": 33975,
+              "native": {
+                "correct": 11042,
+                "errors": 48857,
+                "accuracy": 0.1843436451359789,
+                "known_alternative_positive_errors": 229,
+                "fraction_errors_known_alternative_positive": 0.004687148208035696,
+                "assigned_or_known_positive_rate": 0.18816674735805272,
+                "node_weighted_accuracy": 0.22906300215669723
+              },
+              "encoded": {
+                "correct": 10365,
+                "errors": 49534,
+                "accuracy": 0.1730412861650445,
+                "known_alternative_positive_errors": 458,
+                "fraction_errors_known_alternative_positive": 0.009246174344894416,
+                "assigned_or_known_positive_rate": 0.18068749060919215,
+                "node_weighted_accuracy": 0.21056114575497584
+              },
+              "prototype": {
+                "correct": 11273,
+                "errors": 48626,
+                "accuracy": 0.18820013689711013,
+                "known_alternative_positive_errors": 575,
+                "fraction_errors_known_alternative_positive": 0.011824949615432073,
+                "assigned_or_known_positive_rate": 0.19779962937611648,
+                "node_weighted_accuracy": 0.23321930642981806
+              },
+              "known_candidate_count_mean": 1.0148750396500776,
+              "known_multi_candidate_occurrences": 827,
+              "query_also_rival_support_occurrences": 817,
+              "query_also_rival_query_occurrences": 0,
+              "mean_uniform_candidate_known_positive_rate": 0.03382916798833592,
+              "native_errors_without_observed_positive_match": 48628,
+              "native_errors_without_observed_positive_match_encoded_correct": 4675,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 24391,
+                "undefined": 15025,
+                "true_closest": 9212
+              }
+            },
+            "True": {
+              "occurrences": 1541,
+              "queries": 282,
+              "native": {
+                "correct": 110,
+                "errors": 1431,
+                "accuracy": 0.07138221933809215,
+                "known_alternative_positive_errors": 142,
+                "fraction_errors_known_alternative_positive": 0.0992313067784766,
+                "assigned_or_known_positive_rate": 0.16353017521090202,
+                "node_weighted_accuracy": 0.0899238208461515
+              },
+              "encoded": {
+                "correct": 113,
+                "errors": 1428,
+                "accuracy": 0.07332900713822194,
+                "known_alternative_positive_errors": 173,
+                "fraction_errors_known_alternative_positive": 0.1211484593837535,
+                "assigned_or_known_positive_rate": 0.1855937702790396,
+                "node_weighted_accuracy": 0.0841853504275559
+              },
+              "prototype": {
+                "correct": 124,
+                "errors": 1417,
+                "accuracy": 0.08046722907203115,
+                "known_alternative_positive_errors": 217,
+                "fraction_errors_known_alternative_positive": 0.15314043754410728,
+                "assigned_or_known_positive_rate": 0.22128487994808566,
+                "node_weighted_accuracy": 0.0967654328201161
+              },
+              "known_candidate_count_mean": 2.1687216093445816,
+              "known_multi_candidate_occurrences": 1541,
+              "query_also_rival_support_occurrences": 116,
+              "query_also_rival_query_occurrences": 1541,
+              "mean_uniform_candidate_known_positive_rate": 0.07229072031148605,
+              "native_errors_without_observed_positive_match": 1289,
+              "native_errors_without_observed_positive_match_encoded_correct": 72,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 801,
+                "undefined": 395,
+                "true_closest": 93
+              }
+            }
+          },
+          "by_known_candidate_count": {
+            "1": {
+              "occurrences": 59072,
+              "queries": 33968,
+              "native": {
+                "correct": 11004,
+                "errors": 48068,
+                "accuracy": 0.18628114842903576,
+                "known_alternative_positive_errors": 0,
+                "fraction_errors_known_alternative_positive": 0.0,
+                "assigned_or_known_positive_rate": 0.18628114842903576,
+                "node_weighted_accuracy": 0.22917417617695612
+              },
+              "encoded": {
+                "correct": 10332,
+                "errors": 48740,
+                "accuracy": 0.17490520043336943,
+                "known_alternative_positive_errors": 0,
+                "fraction_errors_known_alternative_positive": 0.0,
+                "assigned_or_known_positive_rate": 0.17490520043336943,
+                "node_weighted_accuracy": 0.21070771657618692
+              },
+              "prototype": {
+                "correct": 11248,
+                "errors": 47824,
+                "accuracy": 0.19041170097508126,
+                "known_alternative_positive_errors": 0,
+                "fraction_errors_known_alternative_positive": 0.0,
+                "assigned_or_known_positive_rate": 0.19041170097508126,
+                "node_weighted_accuracy": 0.23334586450315645
+              },
+              "known_candidate_count_mean": 1.0,
+              "known_multi_candidate_occurrences": 0,
+              "query_also_rival_support_occurrences": 0,
+              "query_also_rival_query_occurrences": 0,
+              "mean_uniform_candidate_known_positive_rate": 0.03333333333333333,
+              "native_errors_without_observed_positive_match": 48068,
+              "native_errors_without_observed_positive_match_encoded_correct": 4653,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 24006,
+                "undefined": 14886,
+                "true_closest": 9176
+              }
+            },
+            "2": {
+              "occurrences": 2069,
+              "queries": 445,
+              "native": {
+                "correct": 135,
+                "errors": 1934,
+                "accuracy": 0.0652489125181247,
+                "known_alternative_positive_errors": 304,
+                "fraction_errors_known_alternative_positive": 0.15718717683557393,
+                "assigned_or_known_positive_rate": 0.21217979700338327,
+                "node_weighted_accuracy": 0.07723829436372678
+              },
+              "encoded": {
+                "correct": 133,
+                "errors": 1936,
+                "accuracy": 0.06428226196230062,
+                "known_alternative_positive_errors": 512,
+                "fraction_errors_known_alternative_positive": 0.2644628099173554,
+                "assigned_or_known_positive_rate": 0.31174480425326245,
+                "node_weighted_accuracy": 0.0663748419106405
+              },
+              "prototype": {
+                "correct": 139,
+                "errors": 1930,
+                "accuracy": 0.06718221362977284,
+                "known_alternative_positive_errors": 638,
+                "fraction_errors_known_alternative_positive": 0.3305699481865285,
+                "assigned_or_known_positive_rate": 0.375543740937651,
+                "node_weighted_accuracy": 0.07899845371996524
+              },
+              "known_candidate_count_mean": 2.0,
+              "known_multi_candidate_occurrences": 2069,
+              "query_also_rival_support_occurrences": 755,
+              "query_also_rival_query_occurrences": 1304,
+              "mean_uniform_candidate_known_positive_rate": 0.06666666666666667,
+              "native_errors_without_observed_positive_match": 1630,
+              "native_errors_without_observed_positive_match_encoded_correct": 86,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 1029,
+                "undefined": 485,
+                "true_closest": 116
+              }
+            },
+            "3": {
+              "occurrences": 277,
+              "queries": 64,
+              "native": {
+                "correct": 12,
+                "errors": 265,
+                "accuracy": 0.04332129963898917,
+                "known_alternative_positive_errors": 61,
+                "fraction_errors_known_alternative_positive": 0.23018867924528302,
+                "assigned_or_known_positive_rate": 0.26353790613718414,
+                "node_weighted_accuracy": 0.03231026785714285
+              },
+              "encoded": {
+                "correct": 13,
+                "errors": 264,
+                "accuracy": 0.04693140794223827,
+                "known_alternative_positive_errors": 105,
+                "fraction_errors_known_alternative_positive": 0.3977272727272727,
+                "assigned_or_known_positive_rate": 0.4259927797833935,
+                "node_weighted_accuracy": 0.027033730158730156
+              },
+              "prototype": {
+                "correct": 10,
+                "errors": 267,
+                "accuracy": 0.036101083032490974,
+                "known_alternative_positive_errors": 136,
+                "fraction_errors_known_alternative_positive": 0.5093632958801498,
+                "assigned_or_known_positive_rate": 0.5270758122743683,
+                "node_weighted_accuracy": 0.021999007936507935
+              },
+              "known_candidate_count_mean": 3.0,
+              "known_multi_candidate_occurrences": 277,
+              "query_also_rival_support_occurrences": 160,
+              "query_also_rival_query_occurrences": 217,
+              "mean_uniform_candidate_known_positive_rate": 0.1,
+              "native_errors_without_observed_positive_match": 204,
+              "native_errors_without_observed_positive_match_encoded_correct": 8,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 146,
+                "undefined": 46,
+                "true_closest": 12
+              }
+            },
+            "4": {
+              "occurrences": 19,
+              "queries": 6,
+              "native": {
+                "correct": 1,
+                "errors": 18,
+                "accuracy": 0.05263157894736842,
+                "known_alternative_positive_errors": 6,
+                "fraction_errors_known_alternative_positive": 0.3333333333333333,
+                "assigned_or_known_positive_rate": 0.3684210526315789,
+                "node_weighted_accuracy": 0.020833333333333332
+              },
+              "encoded": {
+                "correct": 0,
+                "errors": 19,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 11,
+                "fraction_errors_known_alternative_positive": 0.5789473684210527,
+                "assigned_or_known_positive_rate": 0.5789473684210527,
+                "node_weighted_accuracy": 0.0
+              },
+              "prototype": {
+                "correct": 0,
+                "errors": 19,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 15,
+                "fraction_errors_known_alternative_positive": 0.7894736842105263,
+                "assigned_or_known_positive_rate": 0.7894736842105263,
+                "node_weighted_accuracy": 0.0
+              },
+              "known_candidate_count_mean": 4.0,
+              "known_multi_candidate_occurrences": 19,
+              "query_also_rival_support_occurrences": 15,
+              "query_also_rival_query_occurrences": 17,
+              "mean_uniform_candidate_known_positive_rate": 0.13333333333333333,
+              "native_errors_without_observed_positive_match": 12,
+              "native_errors_without_observed_positive_match_encoded_correct": 0,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 8,
+                "undefined": 3,
+                "true_closest": 1
+              }
+            },
+            "5": {
+              "occurrences": 3,
+              "queries": 1,
+              "native": {
+                "correct": 0,
+                "errors": 3,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 0,
+                "fraction_errors_known_alternative_positive": 0.0,
+                "assigned_or_known_positive_rate": 0.0,
+                "node_weighted_accuracy": 0.0
+              },
+              "encoded": {
+                "correct": 0,
+                "errors": 3,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 3,
+                "fraction_errors_known_alternative_positive": 1.0,
+                "assigned_or_known_positive_rate": 1.0,
+                "node_weighted_accuracy": 0.0
+              },
+              "prototype": {
+                "correct": 0,
+                "errors": 3,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 3,
+                "fraction_errors_known_alternative_positive": 1.0,
+                "assigned_or_known_positive_rate": 1.0,
+                "node_weighted_accuracy": 0.0
+              },
+              "known_candidate_count_mean": 5.0,
+              "known_multi_candidate_occurrences": 3,
+              "query_also_rival_support_occurrences": 3,
+              "query_also_rival_query_occurrences": 3,
+              "mean_uniform_candidate_known_positive_rate": 0.16666666666666666,
+              "native_errors_without_observed_positive_match": 3,
+              "native_errors_without_observed_positive_match_encoded_correct": 0,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 3
+              }
+            }
+          },
+          "classes": {
+            "all_four_wrong": 8953,
+            "all_four_wrong_without_any_known_positive_prediction": 8661,
+            "all_four_wrong_with_any_known_positive_prediction": 292,
+            "all_four_wrong_with_all_four_known_positive_predictions": 0
+          },
+          "class_support_membership_strata": {
+            "False": {
+              "classes": 12590,
+              "native_accuracy": 0.20210484511517077,
+              "all_four_wrong_fraction": 0.5463860206513106
+            },
+            "True": {
+              "classes": 2770,
+              "native_accuracy": 0.08790613718411552,
+              "all_four_wrong_fraction": 0.7487364620938628
+            }
+          }
+        },
+        "ukr": {
+          "all": {
+            "occurrences": 61440,
+            "queries": 33981,
+            "native": {
+              "correct": 27123,
+              "errors": 34317,
+              "accuracy": 0.441455078125,
+              "known_alternative_positive_errors": 528,
+              "fraction_errors_known_alternative_positive": 0.015385960311216015,
+              "assigned_or_known_positive_rate": 0.450048828125,
+              "node_weighted_accuracy": 0.5283996332550016
+            },
+            "encoded": {
+              "correct": 23894,
+              "errors": 37546,
+              "accuracy": 0.38889973958333335,
+              "known_alternative_positive_errors": 638,
+              "fraction_errors_known_alternative_positive": 0.01699248921323177,
+              "assigned_or_known_positive_rate": 0.3992838541666667,
+              "node_weighted_accuracy": 0.472988856956516
+            },
+            "prototype": {
+              "correct": 25392,
+              "errors": 36048,
+              "accuracy": 0.41328125,
+              "known_alternative_positive_errors": 745,
+              "fraction_errors_known_alternative_positive": 0.02066688859298713,
+              "assigned_or_known_positive_rate": 0.4254069010416667,
+              "node_weighted_accuracy": 0.5089927272173481
+            },
+            "known_candidate_count_mean": 1.0438151041666666,
+            "known_multi_candidate_occurrences": 2368,
+            "query_also_rival_support_occurrences": 933,
+            "query_also_rival_query_occurrences": 1541,
+            "mean_uniform_candidate_known_positive_rate": 0.034793836805555554,
+            "native_errors_without_observed_positive_match": 33789,
+            "native_errors_without_observed_positive_match_encoded_correct": 3455,
+            "native_errors_without_observed_positive_match_raw_groups": {
+              "rival_closer": 20903,
+              "undefined": 10456,
+              "true_closest": 2430
+            }
+          },
+          "by_frequency": {
+            "1": {
+              "occurrences": 27784,
+              "queries": 27784,
+              "native": {
+                "correct": 15093,
+                "errors": 12691,
+                "accuracy": 0.5432263173049237,
+                "known_alternative_positive_errors": 4,
+                "fraction_errors_known_alternative_positive": 0.0003151839886533764,
+                "assigned_or_known_positive_rate": 0.5433702850561474,
+                "node_weighted_accuracy": 0.5432263173049237
+              },
+              "encoded": {
+                "correct": 13543,
+                "errors": 14241,
+                "accuracy": 0.4874388137057299,
+                "known_alternative_positive_errors": 3,
+                "fraction_errors_known_alternative_positive": 0.0002106593638087213,
+                "assigned_or_known_positive_rate": 0.4875467895191477,
+                "node_weighted_accuracy": 0.4874388137057299
+              },
+              "prototype": {
+                "correct": 14617,
+                "errors": 13167,
+                "accuracy": 0.5260941549093003,
+                "known_alternative_positive_errors": 3,
+                "fraction_errors_known_alternative_positive": 0.000227842333105491,
+                "assigned_or_known_positive_rate": 0.5262021307227182,
+                "node_weighted_accuracy": 0.5260941549093003
+              },
+              "known_candidate_count_mean": 1.0002519435646415,
+              "known_multi_candidate_occurrences": 7,
+              "query_also_rival_support_occurrences": 7,
+              "query_also_rival_query_occurrences": 0,
+              "mean_uniform_candidate_known_positive_rate": 0.033341731452154716,
+              "native_errors_without_observed_positive_match": 12687,
+              "native_errors_without_observed_positive_match_encoded_correct": 1551,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 7509,
+                "undefined": 4123,
+                "true_closest": 1055
+              }
+            },
+            "2-4": {
+              "occurrences": 11489,
+              "queries": 4674,
+              "native": {
+                "correct": 5618,
+                "errors": 5871,
+                "accuracy": 0.48898946818696143,
+                "known_alternative_positive_errors": 26,
+                "fraction_errors_known_alternative_positive": 0.004428547095895077,
+                "assigned_or_known_positive_rate": 0.49125250239359386,
+                "node_weighted_accuracy": 0.49588147197261445
+              },
+              "encoded": {
+                "correct": 4976,
+                "errors": 6513,
+                "accuracy": 0.43310993123857605,
+                "known_alternative_positive_errors": 23,
+                "fraction_errors_known_alternative_positive": 0.003531398740979579,
+                "assigned_or_known_positive_rate": 0.43511184611367393,
+                "node_weighted_accuracy": 0.43973755527028946
+              },
+              "prototype": {
+                "correct": 5285,
+                "errors": 6204,
+                "accuracy": 0.46000522238663066,
+                "known_alternative_positive_errors": 31,
+                "fraction_errors_known_alternative_positive": 0.004996776273372018,
+                "assigned_or_known_positive_rate": 0.462703455479154,
+                "node_weighted_accuracy": 0.46813935244615607
+              },
+              "known_candidate_count_mean": 1.0052223866306902,
+              "known_multi_candidate_occurrences": 60,
+              "query_also_rival_support_occurrences": 25,
+              "query_also_rival_query_occurrences": 34,
+              "mean_uniform_candidate_known_positive_rate": 0.03350741288768967,
+              "native_errors_without_observed_positive_match": 5845,
+              "native_errors_without_observed_positive_match_encoded_correct": 643,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 3552,
+                "undefined": 1783,
+                "true_closest": 510
+              }
+            },
+            "5-19": {
+              "occurrences": 10534,
+              "queries": 1256,
+              "native": {
+                "correct": 3888,
+                "errors": 6646,
+                "accuracy": 0.3690905638883615,
+                "known_alternative_positive_errors": 99,
+                "fraction_errors_known_alternative_positive": 0.014896178152272043,
+                "assigned_or_known_positive_rate": 0.37848870324663,
+                "node_weighted_accuracy": 0.38282333083402503
+              },
+              "encoded": {
+                "correct": 3410,
+                "errors": 7124,
+                "accuracy": 0.32371368900702485,
+                "known_alternative_positive_errors": 110,
+                "fraction_errors_known_alternative_positive": 0.015440763615946098,
+                "assigned_or_known_positive_rate": 0.3341560660717676,
+                "node_weighted_accuracy": 0.33745822314611634
+              },
+              "prototype": {
+                "correct": 3493,
+                "errors": 7041,
+                "accuracy": 0.33159293715587623,
+                "known_alternative_positive_errors": 123,
+                "fraction_errors_known_alternative_positive": 0.017469109501491265,
+                "assigned_or_known_positive_rate": 0.3432694133282704,
+                "node_weighted_accuracy": 0.3500958234646746
+              },
+              "known_candidate_count_mean": 1.0321815074995253,
+              "known_multi_candidate_occurrences": 327,
+              "query_also_rival_support_occurrences": 140,
+              "query_also_rival_query_occurrences": 190,
+              "mean_uniform_candidate_known_positive_rate": 0.03440605024998418,
+              "native_errors_without_observed_positive_match": 6547,
+              "native_errors_without_observed_positive_match_encoded_correct": 670,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 4158,
+                "undefined": 1942,
+                "true_closest": 447
+              }
+            },
+            "20+": {
+              "occurrences": 11633,
+              "queries": 267,
+              "native": {
+                "correct": 2524,
+                "errors": 9109,
+                "accuracy": 0.2169689675921946,
+                "known_alternative_positive_errors": 399,
+                "fraction_errors_known_alternative_positive": 0.043802832363596444,
+                "assigned_or_known_positive_rate": 0.2512679446402476,
+                "node_weighted_accuracy": 0.239594884309634
+              },
+              "encoded": {
+                "correct": 1965,
+                "errors": 9668,
+                "accuracy": 0.16891601478552393,
+                "known_alternative_positive_errors": 502,
+                "fraction_errors_known_alternative_positive": 0.05192387256930078,
+                "assigned_or_known_positive_rate": 0.21206911372818704,
+                "node_weighted_accuracy": 0.1889643694176539
+              },
+              "prototype": {
+                "correct": 1997,
+                "errors": 9636,
+                "accuracy": 0.17166680993724748,
+                "known_alternative_positive_errors": 588,
+                "fraction_errors_known_alternative_positive": 0.06102117061021171,
+                "assigned_or_known_positive_rate": 0.22221267085016763,
+                "node_weighted_accuracy": 0.19205309351213587
+              },
+              "known_candidate_count_mean": 1.1965099286512508,
+              "known_multi_candidate_occurrences": 1974,
+              "query_also_rival_support_occurrences": 761,
+              "query_also_rival_query_occurrences": 1317,
+              "mean_uniform_candidate_known_positive_rate": 0.039883664288375024,
+              "native_errors_without_observed_positive_match": 8710,
+              "native_errors_without_observed_positive_match_encoded_correct": 591,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 5684,
+                "undefined": 2608,
+                "true_closest": 418
+              }
+            }
+          },
+          "by_query_rival_support": {
+            "False": {
+              "occurrences": 60507,
+              "queries": 33974,
+              "native": {
+                "correct": 26955,
+                "errors": 33552,
+                "accuracy": 0.4454856462888591,
+                "known_alternative_positive_errors": 294,
+                "fraction_errors_known_alternative_positive": 0.008762517882689556,
+                "assigned_or_known_positive_rate": 0.45034458822946105,
+                "node_weighted_accuracy": 0.5285718878802145
+              },
+              "encoded": {
+                "correct": 23816,
+                "errors": 36691,
+                "accuracy": 0.39360735121556184,
+                "known_alternative_positive_errors": 238,
+                "fraction_errors_known_alternative_positive": 0.006486604344389632,
+                "assigned_or_known_positive_rate": 0.3975407804055729,
+                "node_weighted_accuracy": 0.4731718681789347
+              },
+              "prototype": {
+                "correct": 25332,
+                "errors": 35175,
+                "accuracy": 0.4186623035351282,
+                "known_alternative_positive_errors": 233,
+                "fraction_errors_known_alternative_positive": 0.006624022743425728,
+                "assigned_or_known_positive_rate": 0.4225130976581222,
+                "node_weighted_accuracy": 0.5092312673099326
+              },
+              "known_candidate_count_mean": 1.0257821409093162,
+              "known_multi_candidate_occurrences": 1435,
+              "query_also_rival_support_occurrences": 0,
+              "query_also_rival_query_occurrences": 1425,
+              "mean_uniform_candidate_known_positive_rate": 0.03419273803031054,
+              "native_errors_without_observed_positive_match": 33258,
+              "native_errors_without_observed_positive_match_encoded_correct": 3440,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 20522,
+                "undefined": 10331,
+                "true_closest": 2405
+              }
+            },
+            "True": {
+              "occurrences": 933,
+              "queries": 291,
+              "native": {
+                "correct": 168,
+                "errors": 765,
+                "accuracy": 0.18006430868167203,
+                "known_alternative_positive_errors": 234,
+                "fraction_errors_known_alternative_positive": 0.3058823529411765,
+                "assigned_or_known_positive_rate": 0.43086816720257237,
+                "node_weighted_accuracy": 0.20844132365388107
+              },
+              "encoded": {
+                "correct": 78,
+                "errors": 855,
+                "accuracy": 0.08360128617363344,
+                "known_alternative_positive_errors": 400,
+                "fraction_errors_known_alternative_positive": 0.4678362573099415,
+                "assigned_or_known_positive_rate": 0.5123258306538049,
+                "node_weighted_accuracy": 0.11378780102073095
+              },
+              "prototype": {
+                "correct": 60,
+                "errors": 873,
+                "accuracy": 0.06430868167202572,
+                "known_alternative_positive_errors": 512,
+                "fraction_errors_known_alternative_positive": 0.586483390607102,
+                "assigned_or_known_positive_rate": 0.6130760986066452,
+                "node_weighted_accuracy": 0.08814759409388566
+              },
+              "known_candidate_count_mean": 2.2132904608788855,
+              "known_multi_candidate_occurrences": 933,
+              "query_also_rival_support_occurrences": 933,
+              "query_also_rival_query_occurrences": 116,
+              "mean_uniform_candidate_known_positive_rate": 0.07377634869596285,
+              "native_errors_without_observed_positive_match": 531,
+              "native_errors_without_observed_positive_match_encoded_correct": 15,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 381,
+                "undefined": 125,
+                "true_closest": 25
+              }
+            }
+          },
+          "by_query_rival_query": {
+            "False": {
+              "occurrences": 59899,
+              "queries": 33975,
+              "native": {
+                "correct": 26837,
+                "errors": 33062,
+                "accuracy": 0.44803752984190054,
+                "known_alternative_positive_errors": 196,
+                "fraction_errors_known_alternative_positive": 0.005928256003871514,
+                "assigned_or_known_positive_rate": 0.451309704669527,
+                "node_weighted_accuracy": 0.5285661776872903
+              },
+              "encoded": {
+                "correct": 23668,
+                "errors": 36231,
+                "accuracy": 0.3951318052054291,
+                "known_alternative_positive_errors": 348,
+                "fraction_errors_known_alternative_positive": 0.009605034362838454,
+                "assigned_or_known_positive_rate": 0.4009415850014191,
+                "node_weighted_accuracy": 0.47310107530382217
+              },
+              "prototype": {
+                "correct": 25157,
+                "errors": 34742,
+                "accuracy": 0.41999031703367334,
+                "known_alternative_positive_errors": 450,
+                "fraction_errors_known_alternative_positive": 0.012952622186402625,
+                "assigned_or_known_positive_rate": 0.4275029633215913,
+                "node_weighted_accuracy": 0.5091072933600582
+              },
+              "known_candidate_count_mean": 1.0148750396500776,
+              "known_multi_candidate_occurrences": 827,
+              "query_also_rival_support_occurrences": 817,
+              "query_also_rival_query_occurrences": 0,
+              "mean_uniform_candidate_known_positive_rate": 0.03382916798833592,
+              "native_errors_without_observed_positive_match": 32866,
+              "native_errors_without_observed_positive_match_encoded_correct": 3399,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 20306,
+                "undefined": 10168,
+                "true_closest": 2392
+              }
+            },
+            "True": {
+              "occurrences": 1541,
+              "queries": 282,
+              "native": {
+                "correct": 286,
+                "errors": 1255,
+                "accuracy": 0.1855937702790396,
+                "known_alternative_positive_errors": 332,
+                "fraction_errors_known_alternative_positive": 0.2645418326693227,
+                "assigned_or_known_positive_rate": 0.40103828682673587,
+                "node_weighted_accuracy": 0.22275176934552876
+              },
+              "encoded": {
+                "correct": 226,
+                "errors": 1315,
+                "accuracy": 0.14665801427644387,
+                "known_alternative_positive_errors": 290,
+                "fraction_errors_known_alternative_positive": 0.22053231939163498,
+                "assigned_or_known_positive_rate": 0.3348475016223232,
+                "node_weighted_accuracy": 0.20117209425624955
+              },
+              "prototype": {
+                "correct": 235,
+                "errors": 1306,
+                "accuracy": 0.15249837767683322,
+                "known_alternative_positive_errors": 295,
+                "fraction_errors_known_alternative_positive": 0.22588055130168452,
+                "assigned_or_known_positive_rate": 0.3439325113562622,
+                "node_weighted_accuracy": 0.19518784424187927
+              },
+              "known_candidate_count_mean": 2.1687216093445816,
+              "known_multi_candidate_occurrences": 1541,
+              "query_also_rival_support_occurrences": 116,
+              "query_also_rival_query_occurrences": 1541,
+              "mean_uniform_candidate_known_positive_rate": 0.07229072031148605,
+              "native_errors_without_observed_positive_match": 923,
+              "native_errors_without_observed_positive_match_encoded_correct": 56,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 597,
+                "undefined": 288,
+                "true_closest": 38
+              }
+            }
+          },
+          "by_known_candidate_count": {
+            "1": {
+              "occurrences": 59072,
+              "queries": 33968,
+              "native": {
+                "correct": 26677,
+                "errors": 32395,
+                "accuracy": 0.45160143553629467,
+                "known_alternative_positive_errors": 0,
+                "fraction_errors_known_alternative_positive": 0.0,
+                "assigned_or_known_positive_rate": 0.45160143553629467,
+                "node_weighted_accuracy": 0.5287271736477092
+              },
+              "encoded": {
+                "correct": 23594,
+                "errors": 35478,
+                "accuracy": 0.39941088840736727,
+                "known_alternative_positive_errors": 0,
+                "fraction_errors_known_alternative_positive": 0.0,
+                "assigned_or_known_positive_rate": 0.39941088840736727,
+                "node_weighted_accuracy": 0.4732787795484559
+              },
+              "prototype": {
+                "correct": 25099,
+                "errors": 33973,
+                "accuracy": 0.42488827193932827,
+                "known_alternative_positive_errors": 0,
+                "fraction_errors_known_alternative_positive": 0.0,
+                "assigned_or_known_positive_rate": 0.42488827193932827,
+                "node_weighted_accuracy": 0.5093321973503441
+              },
+              "known_candidate_count_mean": 1.0,
+              "known_multi_candidate_occurrences": 0,
+              "query_also_rival_support_occurrences": 0,
+              "query_also_rival_query_occurrences": 0,
+              "mean_uniform_candidate_known_positive_rate": 0.03333333333333333,
+              "native_errors_without_observed_positive_match": 32395,
+              "native_errors_without_observed_positive_match_encoded_correct": 3384,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 19960,
+                "undefined": 10065,
+                "true_closest": 2370
+              }
+            },
+            "2": {
+              "occurrences": 2069,
+              "queries": 445,
+              "native": {
+                "correct": 406,
+                "errors": 1663,
+                "accuracy": 0.19623006283228614,
+                "known_alternative_positive_errors": 440,
+                "fraction_errors_known_alternative_positive": 0.26458208057727,
+                "assigned_or_known_positive_rate": 0.4088931851135814,
+                "node_weighted_accuracy": 0.23158268323429462
+              },
+              "encoded": {
+                "correct": 278,
+                "errors": 1791,
+                "accuracy": 0.13436442725954567,
+                "known_alternative_positive_errors": 525,
+                "fraction_errors_known_alternative_positive": 0.2931323283082077,
+                "assigned_or_known_positive_rate": 0.38811019816336395,
+                "node_weighted_accuracy": 0.1730159524296277
+              },
+              "prototype": {
+                "correct": 274,
+                "errors": 1795,
+                "accuracy": 0.13243112614789754,
+                "known_alternative_positive_errors": 613,
+                "fraction_errors_known_alternative_positive": 0.3415041782729805,
+                "assigned_or_known_positive_rate": 0.42870952150797487,
+                "node_weighted_accuracy": 0.15727884062571332
+              },
+              "known_candidate_count_mean": 2.0,
+              "known_multi_candidate_occurrences": 2069,
+              "query_also_rival_support_occurrences": 755,
+              "query_also_rival_query_occurrences": 1304,
+              "mean_uniform_candidate_known_positive_rate": 0.06666666666666667,
+              "native_errors_without_observed_positive_match": 1223,
+              "native_errors_without_observed_positive_match_encoded_correct": 62,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 820,
+                "undefined": 351,
+                "true_closest": 52
+              }
+            },
+            "3": {
+              "occurrences": 277,
+              "queries": 64,
+              "native": {
+                "correct": 37,
+                "errors": 240,
+                "accuracy": 0.13357400722021662,
+                "known_alternative_positive_errors": 78,
+                "fraction_errors_known_alternative_positive": 0.325,
+                "assigned_or_known_positive_rate": 0.4151624548736462,
+                "node_weighted_accuracy": 0.16046063311688313
+              },
+              "encoded": {
+                "correct": 21,
+                "errors": 256,
+                "accuracy": 0.07581227436823104,
+                "known_alternative_positive_errors": 98,
+                "fraction_errors_known_alternative_positive": 0.3828125,
+                "assigned_or_known_positive_rate": 0.4296028880866426,
+                "node_weighted_accuracy": 0.07715773809523808
+              },
+              "prototype": {
+                "correct": 19,
+                "errors": 258,
+                "accuracy": 0.06859205776173286,
+                "known_alternative_positive_errors": 115,
+                "fraction_errors_known_alternative_positive": 0.44573643410852715,
+                "assigned_or_known_positive_rate": 0.48375451263537905,
+                "node_weighted_accuracy": 0.06731770833333332
+              },
+              "known_candidate_count_mean": 3.0,
+              "known_multi_candidate_occurrences": 277,
+              "query_also_rival_support_occurrences": 160,
+              "query_also_rival_query_occurrences": 217,
+              "mean_uniform_candidate_known_positive_rate": 0.1,
+              "native_errors_without_observed_positive_match": 162,
+              "native_errors_without_observed_positive_match_encoded_correct": 9,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 118,
+                "undefined": 36,
+                "true_closest": 8
+              }
+            },
+            "4": {
+              "occurrences": 19,
+              "queries": 6,
+              "native": {
+                "correct": 3,
+                "errors": 16,
+                "accuracy": 0.15789473684210525,
+                "known_alternative_positive_errors": 8,
+                "fraction_errors_known_alternative_positive": 0.5,
+                "assigned_or_known_positive_rate": 0.5789473684210527,
+                "node_weighted_accuracy": 0.2916666666666667
+              },
+              "encoded": {
+                "correct": 1,
+                "errors": 18,
+                "accuracy": 0.05263157894736842,
+                "known_alternative_positive_errors": 12,
+                "fraction_errors_known_alternative_positive": 0.6666666666666666,
+                "assigned_or_known_positive_rate": 0.6842105263157895,
+                "node_weighted_accuracy": 0.08333333333333333
+              },
+              "prototype": {
+                "correct": 0,
+                "errors": 19,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 14,
+                "fraction_errors_known_alternative_positive": 0.7368421052631579,
+                "assigned_or_known_positive_rate": 0.7368421052631579,
+                "node_weighted_accuracy": 0.0
+              },
+              "known_candidate_count_mean": 4.0,
+              "known_multi_candidate_occurrences": 19,
+              "query_also_rival_support_occurrences": 15,
+              "query_also_rival_query_occurrences": 17,
+              "mean_uniform_candidate_known_positive_rate": 0.13333333333333333,
+              "native_errors_without_observed_positive_match": 8,
+              "native_errors_without_observed_positive_match_encoded_correct": 0,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 4,
+                "undefined": 4
+              }
+            },
+            "5": {
+              "occurrences": 3,
+              "queries": 1,
+              "native": {
+                "correct": 0,
+                "errors": 3,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 2,
+                "fraction_errors_known_alternative_positive": 0.6666666666666666,
+                "assigned_or_known_positive_rate": 0.6666666666666666,
+                "node_weighted_accuracy": 0.0
+              },
+              "encoded": {
+                "correct": 0,
+                "errors": 3,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 3,
+                "fraction_errors_known_alternative_positive": 1.0,
+                "assigned_or_known_positive_rate": 1.0,
+                "node_weighted_accuracy": 0.0
+              },
+              "prototype": {
+                "correct": 0,
+                "errors": 3,
+                "accuracy": 0.0,
+                "known_alternative_positive_errors": 3,
+                "fraction_errors_known_alternative_positive": 1.0,
+                "assigned_or_known_positive_rate": 1.0,
+                "node_weighted_accuracy": 0.0
+              },
+              "known_candidate_count_mean": 5.0,
+              "known_multi_candidate_occurrences": 3,
+              "query_also_rival_support_occurrences": 3,
+              "query_also_rival_query_occurrences": 3,
+              "mean_uniform_candidate_known_positive_rate": 0.16666666666666666,
+              "native_errors_without_observed_positive_match": 1,
+              "native_errors_without_observed_positive_match_encoded_correct": 0,
+              "native_errors_without_observed_positive_match_raw_groups": {
+                "rival_closer": 1
+              }
+            }
+          },
+          "classes": {
+            "all_four_wrong": 4063,
+            "all_four_wrong_without_any_known_positive_prediction": 3818,
+            "all_four_wrong_with_any_known_positive_prediction": 245,
+            "all_four_wrong_with_all_four_known_positive_predictions": 0
+          },
+          "class_support_membership_strata": {
+            "False": {
+              "classes": 12590,
+              "native_accuracy": 0.4780381254964257,
+              "all_four_wrong_fraction": 0.2307386814932486
+            },
+            "True": {
+              "classes": 2770,
+              "native_accuracy": 0.2751805054151625,
+              "all_four_wrong_fraction": 0.4180505415162455
+            }
+          }
+        }
+      }
+    }
+  }
+}

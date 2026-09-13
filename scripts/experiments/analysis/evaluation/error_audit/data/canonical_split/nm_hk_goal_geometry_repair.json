@@ -1,0 +1,1452 @@
+{
+  "complete": true,
+  "device": "cpu",
+  "threads": 2,
+  "revision": "86ceb0004dd3f8c948f11f284484624c2cde45ae",
+  "protocol_sha256": "0898171a731a76dee4c1631ddaf96e477e822c4dd227fb918eed94c83e272301",
+  "source_receipt_sha256": "7b84830f75151155bac957642d813621ffa4e0d81ea11149907b925db24c5d36",
+  "checkpoints": {
+    "ukr": {
+      "path": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_ukr_rus_s0_20260807/checkpoint/state_dict_2500.ckpt",
+      "sha256": "7f48be21135fe0da537c1b124253009bba9d16d0a9a78f6cdea3bf4a5d3563e8"
+    },
+    "hk": {
+      "path": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_cp_hk_s0_20260807/checkpoint/state_dict_2500.ckpt",
+      "sha256": "c664ff20d14d4fbba03ccdc9a459d67f243195e1cdbf74d3a135931bd6d2cf0d"
+    }
+  },
+  "fitting": false,
+  "graph_loading": false,
+  "encoding": false,
+  "new_sampling": false,
+  "rule": "Equal mean of per-query standardized native and mean-support-cosine scores; population std floor 1e-8",
+  "seconds": 19.257066249847412,
+  "receipt_sha256": "b72236a407a4f3e799cb8b6c5376e0e09da7731e5aa628ff956691e170e7a0b8",
+  "private_output_path": "/private/tmp/nm_hk_goal_geometry_repair",
+  "targets": {
+    "cp_hk": {
+      "models": {
+        "hk": {
+          "all": {
+            "rows": 61440,
+            "distinct_queries": 6233,
+            "native": {
+              "correct": 10976,
+              "accuracy": 0.17864583333333334,
+              "recovered": 0,
+              "lost": 0,
+              "node_weighted_accuracy": 0.30712766905784267
+            },
+            "geometry": {
+              "correct": 7972,
+              "accuracy": 0.12975260416666667,
+              "recovered": 3135,
+              "lost": 6139,
+              "node_weighted_accuracy": 0.29643354986695913
+            },
+            "residual": {
+              "correct": 9753,
+              "accuracy": 0.158740234375,
+              "recovered": 3093,
+              "lost": 4316,
+              "node_weighted_accuracy": 0.31921693200263634
+            },
+            "paired_episode_deltas": {
+              "episodes": 512,
+              "improved": 111,
+              "worsened": 355,
+              "tied": 46,
+              "mean": -0.019905598958333333,
+              "sd": 0.030824658731256522,
+              "quantiles": {
+                "0.0": -0.11666666666666667,
+                "0.1": -0.058333333333333334,
+                "0.5": -0.016666666666666666,
+                "0.9": 0.016666666666666666,
+                "1.0": 0.05
+              },
+              "interpretation": "Descriptive episode variability; repeated nodes and shared trained seed are not independent replications"
+            }
+          },
+          "frequency_groups": {
+            "1": {
+              "rows": 2137,
+              "distinct_queries": 2137,
+              "native": {
+                "correct": 769,
+                "accuracy": 0.3598502573701451,
+                "recovered": 0,
+                "lost": 0,
+                "node_weighted_accuracy": 0.3598502573701451
+              },
+              "geometry": {
+                "correct": 776,
+                "accuracy": 0.36312587739822183,
+                "recovered": 236,
+                "lost": 229,
+                "node_weighted_accuracy": 0.36312587739822183
+              },
+              "residual": {
+                "correct": 814,
+                "accuracy": 0.38090781469349555,
+                "recovered": 152,
+                "lost": 107,
+                "node_weighted_accuracy": 0.38090781469349555
+              },
+              "paired_episode_deltas": {
+                "episodes": 479,
+                "improved": 106,
+                "worsened": 74,
+                "tied": 299,
+                "mean": 0.019012248967748363,
+                "sd": 0.23029211071672015,
+                "quantiles": {
+                  "0.0": -1.0,
+                  "0.1": -0.16666666666666666,
+                  "0.5": 0.0,
+                  "0.9": 0.25,
+                  "1.0": 1.0
+                },
+                "interpretation": "Descriptive episode variability; repeated nodes and shared trained seed are not independent replications"
+              }
+            },
+            "2-4": {
+              "rows": 7128,
+              "distinct_queries": 2570,
+              "native": {
+                "correct": 2287,
+                "accuracy": 0.3208473625140292,
+                "recovered": 0,
+                "lost": 0,
+                "node_weighted_accuracy": 0.32114137483787286
+              },
+              "geometry": {
+                "correct": 2245,
+                "accuracy": 0.3149551066217733,
+                "recovered": 677,
+                "lost": 719,
+                "node_weighted_accuracy": 0.315272373540856
+              },
+              "residual": {
+                "correct": 2394,
+                "accuracy": 0.33585858585858586,
+                "recovered": 481,
+                "lost": 374,
+                "node_weighted_accuracy": 0.33767833981841766
+              },
+              "paired_episode_deltas": {
+                "episodes": 512,
+                "improved": 182,
+                "worsened": 133,
+                "tied": 197,
+                "mean": 0.01457002700954297,
+                "sd": 0.09566842669360717,
+                "quantiles": {
+                  "0.0": -0.3333333333333333,
+                  "0.1": -0.1,
+                  "0.5": 0.0,
+                  "0.9": 0.14190476190476223,
+                  "1.0": 0.3333333333333333
+                },
+                "interpretation": "Descriptive episode variability; repeated nodes and shared trained seed are not independent replications"
+              }
+            },
+            "5-19": {
+              "rows": 8815,
+              "distinct_queries": 1097,
+              "native": {
+                "correct": 1884,
+                "accuracy": 0.2137266023823029,
+                "recovered": 0,
+                "lost": 0,
+                "node_weighted_accuracy": 0.23034985655512086
+              },
+              "geometry": {
+                "correct": 1608,
+                "accuracy": 0.1824163357912649,
+                "recovered": 607,
+                "lost": 883,
+                "node_weighted_accuracy": 0.1982164171771488
+              },
+              "residual": {
+                "correct": 1882,
+                "accuracy": 0.21349971639251275,
+                "recovered": 524,
+                "lost": 526,
+                "node_weighted_accuracy": 0.22930825744540181
+              },
+              "paired_episode_deltas": {
+                "episodes": 512,
+                "improved": 171,
+                "worsened": 189,
+                "tied": 152,
+                "mean": -1.5623733305088726e-05,
+                "sd": 0.08662904494308543,
+                "quantiles": {
+                  "0.0": -0.2727272727272727,
+                  "0.1": -0.10526315789473684,
+                  "0.5": 0.0,
+                  "0.9": 0.11764705882352941,
+                  "1.0": 0.25
+                },
+                "interpretation": "Descriptive episode variability; repeated nodes and shared trained seed are not independent replications"
+              }
+            },
+            "20+": {
+              "rows": 43360,
+              "distinct_queries": 429,
+              "native": {
+                "correct": 6036,
+                "accuracy": 0.13920664206642067,
+                "recovered": 0,
+                "lost": 0,
+                "node_weighted_accuracy": 0.15687560667420167
+              },
+              "geometry": {
+                "correct": 3343,
+                "accuracy": 0.07709870848708487,
+                "recovered": 1615,
+                "lost": 4308,
+                "node_weighted_accuracy": 0.10251027197534744
+              },
+              "residual": {
+                "correct": 4663,
+                "accuracy": 0.10754151291512914,
+                "recovered": 1936,
+                "lost": 3309,
+                "node_weighted_accuracy": 0.13122294970045045
+              },
+              "paired_episode_deltas": {
+                "episodes": 512,
+                "improved": 80,
+                "worsened": 383,
+                "tied": 49,
+                "mean": -0.031724168713245696,
+                "sd": 0.0386567156003153,
+                "quantiles": {
+                  "0.0": -0.14492753623188406,
+                  "0.1": -0.08333333333333333,
+                  "0.5": -0.029137199434229134,
+                  "0.9": 0.015025252525252568,
+                  "1.0": 0.07692307692307693
+                },
+                "interpretation": "Descriptive episode variability; repeated nodes and shared trained seed are not independent replications"
+              }
+            }
+          }
+        },
+        "ukr": {
+          "all": {
+            "rows": 61440,
+            "distinct_queries": 6233,
+            "native": {
+              "correct": 7177,
+              "accuracy": 0.11681315104166666,
+              "recovered": 0,
+              "lost": 0,
+              "node_weighted_accuracy": 0.268525575218019
+            },
+            "geometry": {
+              "correct": 6686,
+              "accuracy": 0.10882161458333334,
+              "recovered": 2976,
+              "lost": 3467,
+              "node_weighted_accuracy": 0.24480612215544229
+            },
+            "residual": {
+              "correct": 7139,
+              "accuracy": 0.11619466145833333,
+              "recovered": 2140,
+              "lost": 2178,
+              "node_weighted_accuracy": 0.26151508310379584
+            },
+            "paired_episode_deltas": {
+              "episodes": 512,
+              "improved": 220,
+              "worsened": 230,
+              "tied": 62,
+              "mean": -0.0006184895833333332,
+              "sd": 0.022995822458693457,
+              "quantiles": {
+                "0.0": -0.09166666666666666,
+                "0.1": -0.025,
+                "0.5": 0.0,
+                "0.9": 0.025,
+                "1.0": 0.06666666666666667
+              },
+              "interpretation": "Descriptive episode variability; repeated nodes and shared trained seed are not independent replications"
+            }
+          },
+          "frequency_groups": {
+            "1": {
+              "rows": 2137,
+              "distinct_queries": 2137,
+              "native": {
+                "correct": 700,
+                "accuracy": 0.32756200280767434,
+                "recovered": 0,
+                "lost": 0,
+                "node_weighted_accuracy": 0.32756200280767434
+              },
+              "geometry": {
+                "correct": 638,
+                "accuracy": 0.2985493682732803,
+                "recovered": 151,
+                "lost": 213,
+                "node_weighted_accuracy": 0.2985493682732803
+              },
+              "residual": {
+                "correct": 673,
+                "accuracy": 0.31492746841366404,
+                "recovered": 91,
+                "lost": 118,
+                "node_weighted_accuracy": 0.31492746841366404
+              },
+              "paired_episode_deltas": {
+                "episodes": 479,
+                "improved": 62,
+                "worsened": 80,
+                "tied": 337,
+                "mean": -0.003889834451036517,
+                "sd": 0.2016597791214503,
+                "quantiles": {
+                  "0.0": -1.0,
+                  "0.1": -0.18545454545454537,
+                  "0.5": 0.0,
+                  "0.9": 0.16666666666666666,
+                  "1.0": 1.0
+                },
+                "interpretation": "Descriptive episode variability; repeated nodes and shared trained seed are not independent replications"
+              }
+            },
+            "2-4": {
+              "rows": 7128,
+              "distinct_queries": 2570,
+              "native": {
+                "correct": 2021,
+                "accuracy": 0.28352974186307517,
+                "recovered": 0,
+                "lost": 0,
+                "node_weighted_accuracy": 0.28576523994811937
+              },
+              "geometry": {
+                "correct": 1803,
+                "accuracy": 0.2529461279461279,
+                "recovered": 441,
+                "lost": 659,
+                "node_weighted_accuracy": 0.25823605706874186
+              },
+              "residual": {
+                "correct": 1971,
+                "accuracy": 0.2765151515151515,
+                "recovered": 312,
+                "lost": 362,
+                "node_weighted_accuracy": 0.2793125810635538
+              },
+              "paired_episode_deltas": {
+                "episodes": 512,
+                "improved": 143,
+                "worsened": 167,
+                "tied": 202,
+                "mean": -0.007454279878210143,
+                "sd": 0.09362167700963868,
+                "quantiles": {
+                  "0.0": -0.5,
+                  "0.1": -0.1111111111111111,
+                  "0.5": 0.0,
+                  "0.9": 0.11052631578947388,
+                  "1.0": 0.3
+                },
+                "interpretation": "Descriptive episode variability; repeated nodes and shared trained seed are not independent replications"
+              }
+            },
+            "5-19": {
+              "rows": 8815,
+              "distinct_queries": 1097,
+              "native": {
+                "correct": 1490,
+                "accuracy": 0.16903006239364718,
+                "recovered": 0,
+                "lost": 0,
+                "node_weighted_accuracy": 0.18710344126755618
+              },
+              "geometry": {
+                "correct": 1390,
+                "accuracy": 0.15768576290414066,
+                "recovered": 533,
+                "lost": 633,
+                "node_weighted_accuracy": 0.17423850757432208
+              },
+              "residual": {
+                "correct": 1496,
+                "accuracy": 0.16971072036301757,
+                "recovered": 402,
+                "lost": 396,
+                "node_weighted_accuracy": 0.18675367490740688
+              },
+              "paired_episode_deltas": {
+                "episodes": 512,
+                "improved": 168,
+                "worsened": 156,
+                "tied": 188,
+                "mean": 0.0003464895238804303,
+                "sd": 0.07662326378838709,
+                "quantiles": {
+                  "0.0": -0.2857142857142857,
+                  "0.1": -0.09523809523809523,
+                  "0.5": 0.0,
+                  "0.9": 0.08695652173913043,
+                  "1.0": 0.5
+                },
+                "interpretation": "Descriptive episode variability; repeated nodes and shared trained seed are not independent replications"
+              }
+            },
+            "20+": {
+              "rows": 43360,
+              "distinct_queries": 429,
+              "native": {
+                "correct": 2966,
+                "accuracy": 0.06840405904059041,
+                "recovered": 0,
+                "lost": 0,
+                "node_weighted_accuracy": 0.07937242097141486
+              },
+              "geometry": {
+                "correct": 2855,
+                "accuracy": 0.06584409594095941,
+                "recovered": 1851,
+                "lost": 1962,
+                "node_weighted_accuracy": 0.07708682964842352
+              },
+              "residual": {
+                "correct": 2999,
+                "accuracy": 0.06916512915129151,
+                "recovered": 1335,
+                "lost": 1302,
+                "node_weighted_accuracy": 0.08000325939207617
+              },
+              "paired_episode_deltas": {
+                "episodes": 512,
+                "improved": 217,
+                "worsened": 208,
+                "tied": 87,
+                "mean": 0.0008790032419524496,
+                "sd": 0.02594045753720399,
+                "quantiles": {
+                  "0.0": -0.10126582278481013,
+                  "0.1": -0.03225806451612903,
+                  "0.5": 0.0,
+                  "0.9": 0.03529411764705882,
+                  "1.0": 0.08536585365853659
+                },
+                "interpretation": "Descriptive episode variability; repeated nodes and shared trained seed are not independent replications"
+              }
+            }
+          }
+        }
+      },
+      "cache_files": [
+        {
+          "file": "batch_000_embeddings_private.pt",
+          "sha256": "df31db2f14ad233514042ed3ebec2a2e09a7cdba0998d7e4bc3613aea8b9c0f0"
+        },
+        {
+          "file": "batch_001_embeddings_private.pt",
+          "sha256": "97d0d1bb4d9ca012ea933b3010fd0077287f18edecc3e3e63631f5588094c15c"
+        },
+        {
+          "file": "batch_002_embeddings_private.pt",
+          "sha256": "0cccf41cac5626cf13a2ef4d7f98b1ac466b46c8ad427148d00b230a6ffb3c12"
+        },
+        {
+          "file": "batch_003_embeddings_private.pt",
+          "sha256": "925f801ebb1f3eeb5e71bda99a6fd2a9d40e0a3219e0eeab1ffc43ee1554d40d"
+        },
+        {
+          "file": "batch_004_embeddings_private.pt",
+          "sha256": "77827e0b572b878131d37231ce1ae2797511d6bc7cd0a0dec717f3ed48f7bb7c"
+        },
+        {
+          "file": "batch_005_embeddings_private.pt",
+          "sha256": "84c843cd7e69a73492ab89e53df37daa3f5bca88ce47e9af43833bc22fcf4849"
+        },
+        {
+          "file": "batch_006_embeddings_private.pt",
+          "sha256": "51e0aca760077bc622396845c822026b1c67afcce4e34618e26bcd9922b73952"
+        },
+        {
+          "file": "batch_007_embeddings_private.pt",
+          "sha256": "bc5a8a4a7f2835d54e0f6f3ac75b53ff9c6c062e76ac8a51491a68e5771bde04"
+        },
+        {
+          "file": "batch_008_embeddings_private.pt",
+          "sha256": "110b4b49ccb2d34e0dc78177873db93e96a589cb58fd979992c53f5c7f0ac377"
+        },
+        {
+          "file": "batch_009_embeddings_private.pt",
+          "sha256": "ed9e6ad27e21cde2299a487ae042652759f7a75b4636fa119ed46db49dd076cb"
+        },
+        {
+          "file": "batch_010_embeddings_private.pt",
+          "sha256": "25835d6bcc9a2bca715cdde2b7038fcc42ac1057ee69693b66248bf23245ad05"
+        },
+        {
+          "file": "batch_011_embeddings_private.pt",
+          "sha256": "a0bf478ce46cc22737616823617bebcccbfc47d869d5c1e554e7b3acb0a809de"
+        },
+        {
+          "file": "batch_012_embeddings_private.pt",
+          "sha256": "d10f2ac720ef05d6cc957610f7970f65f0b3eadf79e270ea2d080161ae5fdbb4"
+        },
+        {
+          "file": "batch_013_embeddings_private.pt",
+          "sha256": "34aefc3330ab271ba508e6d4bfb49c861c3c3acb50ad3b4a1d6453add354bf67"
+        },
+        {
+          "file": "batch_014_embeddings_private.pt",
+          "sha256": "317f02f2299a883682c69637cb87d0d4a0fb790de3dcf5f9a228ad46d9ecb591"
+        },
+        {
+          "file": "batch_015_embeddings_private.pt",
+          "sha256": "b9cbfc17c0d488eb09bcfef432e7cac3efab3dd0bcf3e7a49fd0f307c9b85a81"
+        }
+      ],
+      "csv_sha256": "aed067b857cbc29d142bd8ebd6148d094f753886ab480cf6e755442e2107c461",
+      "canonical_reference_sha256": "f6a7b63a8de19161858a45dbc604b8857500068d183a3dcd38cb7b36366ad4dd",
+      "complete_input_sha256": "f574522b22786449ec17c8a215c56f9181b7e30c562db448e7d69e083f588205",
+      "verification": {
+        "hk": {
+          "geometry_prediction_differences": 0,
+          "geometry_correctness_differences": 0,
+          "repaired_despite_both_original_heads_wrong": 916,
+          "recovered_fraction_of_native_errors": 0.06129121750158529,
+          "lost_fraction_of_native_successes": 0.39322157434402333
+        },
+        "ukr": {
+          "geometry_prediction_differences": 2,
+          "geometry_correctness_differences": 1,
+          "repaired_despite_both_original_heads_wrong": 470,
+          "recovered_fraction_of_native_errors": 0.03943755413449312,
+          "lost_fraction_of_native_successes": 0.3034694161906089
+        }
+      },
+      "numerical_summary": {
+        "episode_cells": 1024,
+        "max_geometry_error": 6.556510925292969e-07,
+        "geometry_argmax_differences": 2,
+        "canonical_native_argmax_differences": 2,
+        "residual_ties_1e6": 0
+      },
+      "source_gaps": {
+        "native": {
+          "accuracy": 0.06183268229166668,
+          "node_weighted_accuracy": 0.03860209383982366
+        },
+        "geometry": {
+          "accuracy": 0.020930989583333337,
+          "node_weighted_accuracy": 0.05162742771151685
+        },
+        "residual": {
+          "accuracy": 0.04254557291666668,
+          "node_weighted_accuracy": 0.0577018488988405
+        }
+      }
+    },
+    "ukr_rus": {
+      "models": {
+        "hk": {
+          "all": {
+            "rows": 61440,
+            "distinct_queries": 33981,
+            "native": {
+              "correct": 11152,
+              "accuracy": 0.18151041666666667,
+              "recovered": 0,
+              "lost": 0,
+              "node_weighted_accuracy": 0.22903520918016532
+            },
+            "geometry": {
+              "correct": 10478,
+              "accuracy": 0.17054036458333333,
+              "recovered": 4763,
+              "lost": 5437,
+              "node_weighted_accuracy": 0.2105204140887083
+            },
+            "residual": {
+              "correct": 11633,
+              "accuracy": 0.18933919270833333,
+              "recovered": 3959,
+              "lost": 3478,
+              "node_weighted_accuracy": 0.23629578454576006
+            },
+            "paired_episode_deltas": {
+              "episodes": 512,
+              "improved": 282,
+              "worsened": 177,
+              "tied": 53,
+              "mean": 0.007828776041666666,
+              "sd": 0.03171872983269977,
+              "quantiles": {
+                "0.0": -0.09166666666666666,
+                "0.1": -0.03333333333333333,
+                "0.5": 0.008333333333333333,
+                "0.9": 0.05,
+                "1.0": 0.08333333333333333
+              },
+              "interpretation": "Descriptive episode variability; repeated nodes and shared trained seed are not independent replications"
+            }
+          },
+          "frequency_groups": {
+            "1": {
+              "rows": 27784,
+              "distinct_queries": 27784,
+              "native": {
+                "correct": 6666,
+                "accuracy": 0.2399222574143392,
+                "recovered": 0,
+                "lost": 0,
+                "node_weighted_accuracy": 0.2399222574143392
+              },
+              "geometry": {
+                "correct": 6100,
+                "accuracy": 0.21955082061618197,
+                "recovered": 2354,
+                "lost": 2920,
+                "node_weighted_accuracy": 0.21955082061618197
+              },
+              "residual": {
+                "correct": 6871,
+                "accuracy": 0.24730060466455514,
+                "recovered": 1932,
+                "lost": 1727,
+                "node_weighted_accuracy": 0.24730060466455514
+              },
+              "paired_episode_deltas": {
+                "episodes": 512,
+                "improved": 247,
+                "worsened": 179,
+                "tied": 86,
+                "mean": 0.007461973234418235,
+                "sd": 0.049000581685772926,
+                "quantiles": {
+                  "0.0": -0.14,
+                  "0.1": -0.05555555555555555,
+                  "0.5": 0.0,
+                  "0.9": 0.07013463892288863,
+                  "1.0": 0.13846153846153847
+                },
+                "interpretation": "Descriptive episode variability; repeated nodes and shared trained seed are not independent replications"
+              }
+            },
+            "2-4": {
+              "rows": 11489,
+              "distinct_queries": 4674,
+              "native": {
+                "correct": 2198,
+                "accuracy": 0.1913134302376186,
+                "recovered": 0,
+                "lost": 0,
+                "node_weighted_accuracy": 0.19437312794180572
+              },
+              "geometry": {
+                "correct": 2090,
+                "accuracy": 0.18191313430237618,
+                "recovered": 951,
+                "lost": 1059,
+                "node_weighted_accuracy": 0.18424618456710878
+              },
+              "residual": {
+                "correct": 2285,
+                "accuracy": 0.1988858908521194,
+                "recovered": 792,
+                "lost": 705,
+                "node_weighted_accuracy": 0.20143346170303808
+              },
+              "paired_episode_deltas": {
+                "episodes": 512,
+                "improved": 208,
+                "worsened": 173,
+                "tied": 131,
+                "mean": 0.006118078646740309,
+                "sd": 0.07753998989789262,
+                "quantiles": {
+                  "0.0": -0.23076923076923078,
+                  "0.1": -0.09090909090909091,
+                  "0.5": 0.0,
+                  "0.9": 0.1,
+                  "1.0": 0.26666666666666666
+                },
+                "interpretation": "Descriptive episode variability; repeated nodes and shared trained seed are not independent replications"
+              }
+            },
+            "5-19": {
+              "rows": 10534,
+              "distinct_queries": 1256,
+              "native": {
+                "correct": 1443,
+                "accuracy": 0.13698500094930702,
+                "recovered": 0,
+                "lost": 0,
+                "node_weighted_accuracy": 0.1492717112170978
+              },
+              "geometry": {
+                "correct": 1369,
+                "accuracy": 0.1299601291057528,
+                "recovered": 765,
+                "lost": 839,
+                "node_weighted_accuracy": 0.13636477612183698
+              },
+              "residual": {
+                "correct": 1537,
+                "accuracy": 0.14590848680463261,
+                "recovered": 668,
+                "lost": 574,
+                "node_weighted_accuracy": 0.15481857036672558
+              },
+              "paired_episode_deltas": {
+                "episodes": 512,
+                "improved": 219,
+                "worsened": 177,
+                "tied": 116,
+                "mean": 0.009281503397621538,
+                "sd": 0.07604836896761324,
+                "quantiles": {
+                  "0.0": -0.23529411764705882,
+                  "0.1": -0.0831081081081081,
+                  "0.5": 0.0,
+                  "0.9": 0.1,
+                  "1.0": 0.3333333333333333
+                },
+                "interpretation": "Descriptive episode variability; repeated nodes and shared trained seed are not independent replications"
+              }
+            },
+            "20+": {
+              "rows": 11633,
+              "distinct_queries": 267,
+              "native": {
+                "correct": 845,
+                "accuracy": 0.07263818447519986,
+                "recovered": 0,
+                "lost": 0,
+                "node_weighted_accuracy": 0.07812799199446752
+              },
+              "geometry": {
+                "correct": 919,
+                "accuracy": 0.07899939826356056,
+                "recovered": 693,
+                "lost": 619,
+                "node_weighted_accuracy": 0.07960062049701638
+              },
+              "residual": {
+                "correct": 940,
+                "accuracy": 0.08080460758187914,
+                "recovered": 567,
+                "lost": 472,
+                "node_weighted_accuracy": 0.08470011336653346
+              },
+              "paired_episode_deltas": {
+                "episodes": 512,
+                "improved": 206,
+                "worsened": 152,
+                "tied": 154,
+                "mean": 0.008930052663775227,
+                "sd": 0.06587584185959301,
+                "quantiles": {
+                  "0.0": -0.3076923076923077,
+                  "0.1": -0.0625,
+                  "0.5": 0.0,
+                  "0.9": 0.09508928571428577,
+                  "1.0": 0.2727272727272727
+                },
+                "interpretation": "Descriptive episode variability; repeated nodes and shared trained seed are not independent replications"
+              }
+            }
+          }
+        },
+        "ukr": {
+          "all": {
+            "rows": 61440,
+            "distinct_queries": 33981,
+            "native": {
+              "correct": 27123,
+              "accuracy": 0.441455078125,
+              "recovered": 0,
+              "lost": 0,
+              "node_weighted_accuracy": 0.5283996332550016
+            },
+            "geometry": {
+              "correct": 23894,
+              "accuracy": 0.38889973958333335,
+              "recovered": 3485,
+              "lost": 6714,
+              "node_weighted_accuracy": 0.472988856956516
+            },
+            "residual": {
+              "correct": 26277,
+              "accuracy": 0.427685546875,
+              "recovered": 2517,
+              "lost": 3363,
+              "node_weighted_accuracy": 0.5135790316330817
+            },
+            "paired_episode_deltas": {
+              "episodes": 512,
+              "improved": 129,
+              "worsened": 328,
+              "tied": 55,
+              "mean": -0.013769531249999998,
+              "sd": 0.029353300897488437,
+              "quantiles": {
+                "0.0": -0.1,
+                "0.1": -0.05,
+                "0.5": -0.016666666666666666,
+                "0.9": 0.025,
+                "1.0": 0.075
+              },
+              "interpretation": "Descriptive episode variability; repeated nodes and shared trained seed are not independent replications"
+            }
+          },
+          "frequency_groups": {
+            "1": {
+              "rows": 27784,
+              "distinct_queries": 27784,
+              "native": {
+                "correct": 15093,
+                "accuracy": 0.5432263173049237,
+                "recovered": 0,
+                "lost": 0,
+                "node_weighted_accuracy": 0.5432263173049237
+              },
+              "geometry": {
+                "correct": 13543,
+                "accuracy": 0.4874388137057299,
+                "recovered": 1552,
+                "lost": 3102,
+                "node_weighted_accuracy": 0.4874388137057299
+              },
+              "residual": {
+                "correct": 14673,
+                "accuracy": 0.5281097034264325,
+                "recovered": 1102,
+                "lost": 1522,
+                "node_weighted_accuracy": 0.5281097034264325
+              },
+              "paired_episode_deltas": {
+                "episodes": 512,
+                "improved": 154,
+                "worsened": 293,
+                "tied": 65,
+                "mean": -0.014636863552302619,
+                "sd": 0.04538833937550417,
+                "quantiles": {
+                  "0.0": -0.14545454545454545,
+                  "0.1": -0.07542452830188678,
+                  "0.5": -0.017857142857142856,
+                  "0.9": 0.04081632653061224,
+                  "1.0": 0.12962962962962962
+                },
+                "interpretation": "Descriptive episode variability; repeated nodes and shared trained seed are not independent replications"
+              }
+            },
+            "2-4": {
+              "rows": 11489,
+              "distinct_queries": 4674,
+              "native": {
+                "correct": 5618,
+                "accuracy": 0.48898946818696143,
+                "recovered": 0,
+                "lost": 0,
+                "node_weighted_accuracy": 0.49588147197261445
+              },
+              "geometry": {
+                "correct": 4976,
+                "accuracy": 0.43310993123857605,
+                "recovered": 647,
+                "lost": 1289,
+                "node_weighted_accuracy": 0.43973755527028946
+              },
+              "residual": {
+                "correct": 5447,
+                "accuracy": 0.4741056662894943,
+                "recovered": 481,
+                "lost": 652,
+                "node_weighted_accuracy": 0.4816181714448723
+              },
+              "paired_episode_deltas": {
+                "episodes": 512,
+                "improved": 135,
+                "worsened": 226,
+                "tied": 151,
+                "mean": -0.015816410349652178,
+                "sd": 0.06990334254228776,
+                "quantiles": {
+                  "0.0": -0.4,
+                  "0.1": -0.0966205837173579,
+                  "0.5": 0.0,
+                  "0.9": 0.0625,
+                  "1.0": 0.2631578947368421
+                },
+                "interpretation": "Descriptive episode variability; repeated nodes and shared trained seed are not independent replications"
+              }
+            },
+            "5-19": {
+              "rows": 10534,
+              "distinct_queries": 1256,
+              "native": {
+                "correct": 3888,
+                "accuracy": 0.3690905638883615,
+                "recovered": 0,
+                "lost": 0,
+                "node_weighted_accuracy": 0.38282333083402503
+              },
+              "geometry": {
+                "correct": 3410,
+                "accuracy": 0.32371368900702485,
+                "recovered": 673,
+                "lost": 1151,
+                "node_weighted_accuracy": 0.33745822314611634
+              },
+              "residual": {
+                "correct": 3768,
+                "accuracy": 0.3576988798177331,
+                "recovered": 473,
+                "lost": 593,
+                "node_weighted_accuracy": 0.3720909465354704
+              },
+              "paired_episode_deltas": {
+                "episodes": 512,
+                "improved": 145,
+                "worsened": 210,
+                "tied": 157,
+                "mean": -0.010827325869795176,
+                "sd": 0.0724200314913347,
+                "quantiles": {
+                  "0.0": -0.21428571428571427,
+                  "0.1": -0.1,
+                  "0.5": 0.0,
+                  "0.9": 0.07663817663817674,
+                  "1.0": 0.2727272727272727
+                },
+                "interpretation": "Descriptive episode variability; repeated nodes and shared trained seed are not independent replications"
+              }
+            },
+            "20+": {
+              "rows": 11633,
+              "distinct_queries": 267,
+              "native": {
+                "correct": 2524,
+                "accuracy": 0.2169689675921946,
+                "recovered": 0,
+                "lost": 0,
+                "node_weighted_accuracy": 0.239594884309634
+              },
+              "geometry": {
+                "correct": 1965,
+                "accuracy": 0.16891601478552393,
+                "recovered": 613,
+                "lost": 1172,
+                "node_weighted_accuracy": 0.1889643694176539
+              },
+              "residual": {
+                "correct": 2389,
+                "accuracy": 0.2053640505458609,
+                "recovered": 461,
+                "lost": 596,
+                "node_weighted_accuracy": 0.22658993161748173
+              },
+              "paired_episode_deltas": {
+                "episodes": 512,
+                "improved": 139,
+                "worsened": 211,
+                "tied": 162,
+                "mean": -0.011175046845138302,
+                "sd": 0.06250494191213508,
+                "quantiles": {
+                  "0.0": -0.20833333333333334,
+                  "0.1": -0.09090909090909091,
+                  "0.5": 0.0,
+                  "0.9": 0.06896551724137931,
+                  "1.0": 0.2
+                },
+                "interpretation": "Descriptive episode variability; repeated nodes and shared trained seed are not independent replications"
+              }
+            }
+          }
+        }
+      },
+      "cache_files": [
+        {
+          "file": "batch_000_embeddings_private.pt",
+          "sha256": "05a217b7a09c5c014c8b48fc1620153e30bf62f399140ba3dba7589ad5b63600"
+        },
+        {
+          "file": "batch_001_embeddings_private.pt",
+          "sha256": "5a38f07a6947d57a8fde16ae3dc1ff1a172d0855d573dab23d1cb5394e5215a5"
+        },
+        {
+          "file": "batch_002_embeddings_private.pt",
+          "sha256": "7bbb880632fdf61c8ccb905f2492ebd3fc1ac6a06cfe45f4b73a04722349ed08"
+        },
+        {
+          "file": "batch_003_embeddings_private.pt",
+          "sha256": "779351f85e94c0da019c47a26323a139fe2a7c1b8ec621b1e764230b69f95b59"
+        },
+        {
+          "file": "batch_004_embeddings_private.pt",
+          "sha256": "a9660fac5fe38ee8ea343e335778162b91a77c9dadeb957ffc70149febb296ad"
+        },
+        {
+          "file": "batch_005_embeddings_private.pt",
+          "sha256": "0e52c4ee413a728fa04ffcc0e5670ba04749615cdd2db535fe20cfc480b5a8cf"
+        },
+        {
+          "file": "batch_006_embeddings_private.pt",
+          "sha256": "f2a8805c08ea6b7fb8a43a3f4b4d520aa57f14b8384a65b71b3763f58d69eb53"
+        },
+        {
+          "file": "batch_007_embeddings_private.pt",
+          "sha256": "86cf60bd66ba7a25f4221ecd5ca0b793fdbd585549e99509d2a5353fb6910f1c"
+        },
+        {
+          "file": "batch_008_embeddings_private.pt",
+          "sha256": "22c48b36706967c981233a9b99365af37fd172c3e270d226cc95aa59a5015dc4"
+        },
+        {
+          "file": "batch_009_embeddings_private.pt",
+          "sha256": "6d09e277266cbdeae4cc3968a6545056b0acb9557f0634d48aa6cab71d959c3b"
+        },
+        {
+          "file": "batch_010_embeddings_private.pt",
+          "sha256": "b82299c8d8706dfad88249c5f165d85d09413ec8d51e9c1bb27c87047204471e"
+        },
+        {
+          "file": "batch_011_embeddings_private.pt",
+          "sha256": "9ae737c9fb6f221f8a5206e7828847a835611353a3caebfd9389a3d51a60528d"
+        },
+        {
+          "file": "batch_012_embeddings_private.pt",
+          "sha256": "9958f37315edc231dea9ec5a1ce63227a4474fe3d2e8b4fd8cbc29a6d678ecf7"
+        },
+        {
+          "file": "batch_013_embeddings_private.pt",
+          "sha256": "0af3feda526f3be6d02fbf08a0ae4f6c384e2faf45ed9daae351d1003ff89653"
+        },
+        {
+          "file": "batch_014_embeddings_private.pt",
+          "sha256": "15631b8f0a7f573da4535d3b1483d15a69023e052142c299d98499c5094c49ae"
+        },
+        {
+          "file": "batch_015_embeddings_private.pt",
+          "sha256": "406fbe53e316f51e00848ffba047192f126789af6b91733934fade25506f7285"
+        }
+      ],
+      "csv_sha256": "8ea208d53336f1b495ce514cb16bf2ad3823e74898311a1ab6b4d476299cadc4",
+      "canonical_reference_sha256": "d1e9c4ca084eb11347b3b160df90387805cb92540dabe01410ab77d57f1f2b5f",
+      "complete_input_sha256": "d3220c031b666f5eea87de0214b4c8b07e5484ff5545b7a24fda9f47b4c67e42",
+      "verification": {
+        "hk": {
+          "geometry_prediction_differences": 1,
+          "geometry_correctness_differences": 0,
+          "repaired_despite_both_original_heads_wrong": 717,
+          "recovered_fraction_of_native_errors": 0.07872653515749284,
+          "lost_fraction_of_native_successes": 0.3118723098995696
+        },
+        "ukr": {
+          "geometry_prediction_differences": 0,
+          "geometry_correctness_differences": 0,
+          "repaired_despite_both_original_heads_wrong": 354,
+          "recovered_fraction_of_native_errors": 0.07334557216539907,
+          "lost_fraction_of_native_successes": 0.1239907089923681
+        }
+      },
+      "numerical_summary": {
+        "episode_cells": 1024,
+        "max_geometry_error": 6.556510925292969e-07,
+        "geometry_argmax_differences": 1,
+        "canonical_native_argmax_differences": 0,
+        "residual_ties_1e6": 1
+      },
+      "source_gaps": {
+        "native": {
+          "accuracy": 0.25994466145833334,
+          "node_weighted_accuracy": 0.2993644240748363
+        },
+        "geometry": {
+          "accuracy": 0.21835937500000002,
+          "node_weighted_accuracy": 0.2624684428678077
+        },
+        "residual": {
+          "accuracy": 0.23834635416666666,
+          "node_weighted_accuracy": 0.27728324708732166
+        }
+      }
+    }
+  },
+  "selected": {
+    "groups": {
+      "diverse": {
+        "failed": {
+          "rows": 100,
+          "native": {
+            "correct": 15,
+            "accuracy": 0.15,
+            "recovered": 0,
+            "lost": 0
+          },
+          "geometry": {
+            "correct": 17,
+            "accuracy": 0.17,
+            "recovered": 12,
+            "lost": 10
+          },
+          "residual": {
+            "correct": 21,
+            "accuracy": 0.21,
+            "recovered": 11,
+            "lost": 5
+          },
+          "cases": 100,
+          "comparison": "Recovery/loss uses native on the same original or modified inputs; accuracy remains selected-case/draw conditional"
+        },
+        "correct": {
+          "rows": 100,
+          "native": {
+            "correct": 25,
+            "accuracy": 0.25,
+            "recovered": 0,
+            "lost": 0
+          },
+          "geometry": {
+            "correct": 31,
+            "accuracy": 0.31,
+            "recovered": 16,
+            "lost": 10
+          },
+          "residual": {
+            "correct": 27,
+            "accuracy": 0.27,
+            "recovered": 7,
+            "lost": 5
+          },
+          "cases": 100,
+          "comparison": "Recovery/loss uses native on the same original or modified inputs; accuracy remains selected-case/draw conditional"
+        },
+        "persistent": {
+          "rows": 71,
+          "native": {
+            "correct": 2,
+            "accuracy": 0.028169014084507043,
+            "recovered": 0,
+            "lost": 0
+          },
+          "geometry": {
+            "correct": 6,
+            "accuracy": 0.08450704225352113,
+            "recovered": 5,
+            "lost": 1
+          },
+          "residual": {
+            "correct": 6,
+            "accuracy": 0.08450704225352113,
+            "recovered": 5,
+            "lost": 1
+          },
+          "cases": 71,
+          "comparison": "Recovery/loss uses native on the same original or modified inputs; accuracy remains selected-case/draw conditional"
+        }
+      },
+      "farthest": {
+        "failed": {
+          "rows": 100,
+          "native": {
+            "correct": 2,
+            "accuracy": 0.02,
+            "recovered": 0,
+            "lost": 0
+          },
+          "geometry": {
+            "correct": 10,
+            "accuracy": 0.1,
+            "recovered": 9,
+            "lost": 1
+          },
+          "residual": {
+            "correct": 9,
+            "accuracy": 0.09,
+            "recovered": 8,
+            "lost": 1
+          },
+          "cases": 100,
+          "comparison": "Recovery/loss uses native on the same original or modified inputs; accuracy remains selected-case/draw conditional"
+        },
+        "correct": {
+          "rows": 100,
+          "native": {
+            "correct": 10,
+            "accuracy": 0.1,
+            "recovered": 0,
+            "lost": 0
+          },
+          "geometry": {
+            "correct": 16,
+            "accuracy": 0.16,
+            "recovered": 9,
+            "lost": 3
+          },
+          "residual": {
+            "correct": 13,
+            "accuracy": 0.13,
+            "recovered": 3,
+            "lost": 0
+          },
+          "cases": 100,
+          "comparison": "Recovery/loss uses native on the same original or modified inputs; accuracy remains selected-case/draw conditional"
+        },
+        "persistent": {
+          "rows": 71,
+          "native": {
+            "correct": 0,
+            "accuracy": 0.0,
+            "recovered": 0,
+            "lost": 0
+          },
+          "geometry": {
+            "correct": 3,
+            "accuracy": 0.04225352112676056,
+            "recovered": 3,
+            "lost": 0
+          },
+          "residual": {
+            "correct": 3,
+            "accuracy": 0.04225352112676056,
+            "recovered": 3,
+            "lost": 0
+          },
+          "cases": 71,
+          "comparison": "Recovery/loss uses native on the same original or modified inputs; accuracy remains selected-case/draw conditional"
+        }
+      },
+      "nearest": {
+        "failed": {
+          "rows": 100,
+          "native": {
+            "correct": 25,
+            "accuracy": 0.25,
+            "recovered": 0,
+            "lost": 0
+          },
+          "geometry": {
+            "correct": 62,
+            "accuracy": 0.62,
+            "recovered": 38,
+            "lost": 1
+          },
+          "residual": {
+            "correct": 53,
+            "accuracy": 0.53,
+            "recovered": 28,
+            "lost": 0
+          },
+          "cases": 100,
+          "comparison": "Recovery/loss uses native on the same original or modified inputs; accuracy remains selected-case/draw conditional"
+        },
+        "correct": {
+          "rows": 100,
+          "native": {
+            "correct": 46,
+            "accuracy": 0.46,
+            "recovered": 0,
+            "lost": 0
+          },
+          "geometry": {
+            "correct": 67,
+            "accuracy": 0.67,
+            "recovered": 23,
+            "lost": 2
+          },
+          "residual": {
+            "correct": 60,
+            "accuracy": 0.6,
+            "recovered": 14,
+            "lost": 0
+          },
+          "cases": 100,
+          "comparison": "Recovery/loss uses native on the same original or modified inputs; accuracy remains selected-case/draw conditional"
+        },
+        "persistent": {
+          "rows": 71,
+          "native": {
+            "correct": 5,
+            "accuracy": 0.07042253521126761,
+            "recovered": 0,
+            "lost": 0
+          },
+          "geometry": {
+            "correct": 36,
+            "accuracy": 0.5070422535211268,
+            "recovered": 31,
+            "lost": 0
+          },
+          "residual": {
+            "correct": 27,
+            "accuracy": 0.38028169014084506,
+            "recovered": 22,
+            "lost": 0
+          },
+          "cases": 71,
+          "comparison": "Recovery/loss uses native on the same original or modified inputs; accuracy remains selected-case/draw conditional"
+        }
+      },
+      "original": {
+        "failed": {
+          "rows": 100,
+          "native": {
+            "correct": 0,
+            "accuracy": 0.0,
+            "recovered": 0,
+            "lost": 0
+          },
+          "geometry": {
+            "correct": 0,
+            "accuracy": 0.0,
+            "recovered": 0,
+            "lost": 0
+          },
+          "residual": {
+            "correct": 1,
+            "accuracy": 0.01,
+            "recovered": 1,
+            "lost": 0
+          },
+          "cases": 100,
+          "comparison": "Recovery/loss uses native on the same original or modified inputs; accuracy remains selected-case/draw conditional"
+        },
+        "correct": {
+          "rows": 100,
+          "native": {
+            "correct": 100,
+            "accuracy": 1.0,
+            "recovered": 0,
+            "lost": 0
+          },
+          "geometry": {
+            "correct": 31,
+            "accuracy": 0.31,
+            "recovered": 0,
+            "lost": 69
+          },
+          "residual": {
+            "correct": 54,
+            "accuracy": 0.54,
+            "recovered": 0,
+            "lost": 46
+          },
+          "cases": 100,
+          "comparison": "Recovery/loss uses native on the same original or modified inputs; accuracy remains selected-case/draw conditional"
+        },
+        "persistent": {
+          "rows": 71,
+          "native": {
+            "correct": 0,
+            "accuracy": 0.0,
+            "recovered": 0,
+            "lost": 0
+          },
+          "geometry": {
+            "correct": 0,
+            "accuracy": 0.0,
+            "recovered": 0,
+            "lost": 0
+          },
+          "residual": {
+            "correct": 1,
+            "accuracy": 0.014084507042253521,
+            "recovered": 1,
+            "lost": 0
+          },
+          "cases": 71,
+          "comparison": "Recovery/loss uses native on the same original or modified inputs; accuracy remains selected-case/draw conditional"
+        }
+      },
+      "random": {
+        "failed": {
+          "rows": 500,
+          "native": {
+            "correct": 62,
+            "accuracy": 0.124,
+            "recovered": 0,
+            "lost": 0
+          },
+          "geometry": {
+            "correct": 128,
+            "accuracy": 0.256,
+            "recovered": 93,
+            "lost": 27
+          },
+          "residual": {
+            "correct": 120,
+            "accuracy": 0.24,
+            "recovered": 73,
+            "lost": 15
+          },
+          "cases": 100,
+          "comparison": "Recovery/loss uses native on the same original or modified inputs; accuracy remains selected-case/draw conditional"
+        },
+        "correct": {
+          "rows": 500,
+          "native": {
+            "correct": 170,
+            "accuracy": 0.34,
+            "recovered": 0,
+            "lost": 0
+          },
+          "geometry": {
+            "correct": 198,
+            "accuracy": 0.396,
+            "recovered": 75,
+            "lost": 47
+          },
+          "residual": {
+            "correct": 189,
+            "accuracy": 0.378,
+            "recovered": 42,
+            "lost": 23
+          },
+          "cases": 100,
+          "comparison": "Recovery/loss uses native on the same original or modified inputs; accuracy remains selected-case/draw conditional"
+        },
+        "persistent": {
+          "rows": 355,
+          "native": {
+            "correct": 9,
+            "accuracy": 0.02535211267605634,
+            "recovered": 0,
+            "lost": 0
+          },
+          "geometry": {
+            "correct": 65,
+            "accuracy": 0.18309859154929578,
+            "recovered": 61,
+            "lost": 5
+          },
+          "residual": {
+            "correct": 47,
+            "accuracy": 0.1323943661971831,
+            "recovered": 41,
+            "lost": 3
+          },
+          "cases": 71,
+          "comparison": "Recovery/loss uses native on the same original or modified inputs; accuracy remains selected-case/draw conditional"
+        }
+      }
+    },
+    "csv_sha256": "4a646e3e432ad9715cf6bd51e5af6ef2608224e20505b2db7ac5487131f03150",
+    "original_cache_sha256": "31e6ed19ee05f595fe24cddb1cb00a0d853ccacb844af81b49d920df2f7b7d5b",
+    "bank_sha256": "6fb99073c6981b6db97d9bc3771f6aa096cf374ba3732bf16953d7243fb6545a"
+  },
+  "selected_numpy_verification": {
+    "predictions_checked": 1800,
+    "prediction_differences": 0,
+    "input_sha256": "2450e457a197b437b5bcfd58c1a8b20c88e9bbc57438f75c4cca041e48d4ca40",
+    "method": "Independent float64 NumPy score standardization and averaging"
+  }
+}

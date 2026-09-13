@@ -352,3 +352,27 @@ example/representative files. Neither raw bios nor per-node prediction rows are
 committed to the public aggregate evidence folder.
 Both paths are **Tucker-only**. Reproduction instructions are in
 [the split-audit setup](../../../setup/nm_error_audit_split/README.md).
+
+## Complete sampled-input follow-up
+
+[Complete-input analysis](FINDINGS_NM_COMPLETE_INPUTS.md) reconstructs every
+query/support neighborhood and verifies both full-input hashes exactly. Native
+accuracy is 82.35% / 25.39% on Ukraine and 37.70% / 15.22% on HK when the true
+class is closest / a rival is closer in mean sampled-neighborhood feature space.
+The all-candidate nonzero-feature comparison covers 69.03% / 48.36% of test
+occurrences. Degree-stratified and within-query comparisons retain the association;
+this is not a causal explanation or a demonstrated support-selection remedy.
+Full node/edge/mapping archives remain on Tucker and are recoverable using the
+specified backing feature artifact.
+
+The [fixed-query support-geometry follow-up](FINDINGS_NM_SUPPORT_GEOMETRY.md)
+finds that Ukraine rescues usually improve raw neighborhood-feature separation,
+whereas HK support flips have a much less consistent relationship to that score.
+This limits a universal geometric explanation of the earlier association.
+
+The [HK encoder/readout diagnostic](FINDINGS_NM_HK_MECHANISM.md) replays all
+2,200 selected decisions exactly using standalone HK features. Native accuracy
+beats a fixed prototype head on original supports (50.0% vs 19.0% in the balanced
+diagnostic sample), but falls below it under replacement (22.4% vs 33.6%). This
+localizes some replacement sensitivity to the learned readout; it is not a
+full-benchmark improvement or proof that the original failures are all decoder errors.
