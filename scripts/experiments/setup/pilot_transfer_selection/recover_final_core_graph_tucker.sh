@@ -15,6 +15,16 @@ cd "$REPO_ROOT"
 [[ ! -e "$MERGED" ]] || { echo "refusing to overwrite $MERGED" >&2; exit 2; }
 [[ ! -e "$SPLIT" ]] || { echo "refusing to overwrite $SPLIT" >&2; exit 2; }
 
+printf '%s  %s\n' \
+  'bd0f60078d647158c2223092bd7d3a4b61a709866b6b3d415e2fa2df7d675d33' \
+  'scripts/graph_construction/merge_disjoint_graph_pt.py' \
+  'af75acdef87bd65594634951873aa25a1f05145bf181607ecfe1a3326ce11ac4' \
+  'scripts/graph_construction/benchmark_targets.py' \
+  '7858d47eab0524852d9860c9914906c262e87236e50dc8957c63071aba4d17b3' \
+  'scripts/experiments/setup/final_core/build_split_artifact_tucker.py' \
+  | sha256sum --check --status
+echo "verified historical merge and split implementation hashes"
+
 while read -r expected relative; do
   source_path="${DATA_ROOT}/${relative}"
   [[ -f "$source_path" ]] || { echo "missing immutable source $source_path" >&2; exit 2; }

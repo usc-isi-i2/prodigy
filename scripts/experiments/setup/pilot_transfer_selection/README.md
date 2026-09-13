@@ -39,12 +39,14 @@ canonical sources were replaced after final-core: COVID Political now uses raw
 profiles, and Ukraine Suspended now has a repaired 56,440-node population. The
 recovery recipe therefore pins the immutable cleaned-profile COVID snapshot and
 the 72,295-node pre-repair Suspended backup actually used by the checkpoints,
-including their SHA-256 identities. Before any new evaluation, the user should
-run `recover_final_core_graph_tucker.sh`; it refuses overwrite and verifies the
-exact source order, tensor dimensions, and 70/15/15 edge counts recorded by the
-original final-core evaluation. After the normal smoke runs, its observed
-validation episode fingerprints must also agree across every checkpoint before
-results are admitted.
+including their SHA-256 identities. The merge implementation is unchanged since
+2026-08-02 and the split function is unchanged since final-core was introduced;
+the recovery preflight pins their code hashes as well. Before any new evaluation,
+the user should run `recover_final_core_graph_tucker.sh`; it refuses overwrite
+and verifies the exact source order, tensor dimensions, and 70/15/15 edge counts
+recorded by the original final-core evaluation. After the normal smoke runs, its
+observed validation episode fingerprints must also agree across every checkpoint
+before results are admitted.
 
 ## Stage A: prerequisite diagnostic
 
