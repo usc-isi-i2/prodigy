@@ -94,6 +94,7 @@ Setup and launch files remain in `../setup/<name>/`.
 - HK NM failure localization: [membership ambiguity and class-reference construction](evaluation/error_audit/FINDINGS_NM_HK_FAILURE_LOCALIZATION.md), using complete cached edges and saved-score interventions.
 - Canonical NM source-by-stage comparison: [common encoded heads versus final decisions](evaluation/error_audit/FINDINGS_NM_SOURCE_STAGES.md), with full-stream and query-weighted accounting for Ukraine/HK.
 - Static-link evaluator repair: [`static_link_prediction_repair`](evaluation/static_link_prediction_repair/)
+- Same-pair small-graph LP baseline pilot: [`hk_lp_baselines`](evaluation/lp_baselines/hk_lp_baselines/FINDINGS.md)
 - Shared append-only task tables: [`node_classification`](evaluation/task_tables/node_classification/), [`node_regression`](evaluation/task_tables/node_regression/), [`static_link_prediction`](evaluation/task_tables/static_link_prediction/)
 
 ## Synthesis and archive
