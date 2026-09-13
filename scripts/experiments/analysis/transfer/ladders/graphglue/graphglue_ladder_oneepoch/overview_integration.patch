@@ -1,0 +1,19 @@
+--- a/scripts/experiments/analysis/EXPERIMENT_OVERVIEW.md
++++ b/scripts/experiments/analysis/EXPERIMENT_OVERVIEW.md
+@@ -146,6 +146,7 @@
+ | Node-only MLP source ladder | Nine source rungs, one seed, fixed 2,500 updates; six LP targets. Included and unseen targets must remain separate. Protocol record; completion not inferred here. | [Protocol](/Users/philipp/projects/gfm/mixture-scaling-mlp-ladder/docs/node_mlp_ladder.md) |
+ | Topology-only GIN | Three-seed Ukraine-Suspended control: constant-feature GIN .5707 AUC does not beat log-degree .5764; degree-preserving rewiring changes little. No evidence of a useful beyond-degree topology gain. | [Results](/Users/philipp/projects/gfm/gin-topology/RESULTS.md) |
+ | GraphGlue source-addition pilot | 21 models / 210 target evaluations, three seeds, Computers 1-shot. Neither addition path is monotonic; baseline parity with the paper is not established, so this is not a refutation of its reported regime. | [Final report](/Users/philipp/projects/gfm/GraphGlue-results/FINAL_REPORT.md) |
++| GraphGlue one-full-epoch ladder | Seven models / 70 paired evaluations, one seed. Baseline 49.68%; official final 48.31%, adversarial final 45.62%. Neither mean trajectory is monotonic. Paper reproduction gap and baseline repeat discrepancy remain unresolved. | [Final one-epoch findings](transfer/ladders/graphglue/graphglue_ladder_oneepoch/FINDINGS.md) |
+ 
+ ## 4. Graph properties and transfer prediction
+ 
+@@ -881,7 +882,7 @@
+ |---|---|---|
+ | GraphSAGE/GraphMAE/MLP mixture studies | `mixture-scaling`, `mixture-scaling-graphmae`, `mixture-scaling-balanced-pilot`, `mixture-scaling-node-only`, `mixture-scaling-mlp-ladder` | [Study](../../../../mixture-scaling-graphmae/results/STRICT_STUDY.md), [lattice](../../../../mixture-scaling-graphmae/docs/social9_source_lattice.md), experiment-specific protocol links in §3.4 |
+ | SAMGPT native and downstream studies | `samgpt-social`, `samgpt-social-lattice`, `samgpt-cls-matrix`, `samgpt-table4` | [Order C](../../../../samgpt-social/analysis/mixture_order_c/FINDINGS.md), [weak-to-strong](../../../../samgpt-social/analysis/mixture_weak_to_strong/FINDINGS.md), [lattice](../../../../samgpt-social-lattice/analysis/source_lattice/FINDINGS.md) |
+-| GraphGlue reproduction/pilot | `GraphGlue-official`, `GraphGlue-pilot`, `GraphGlue-resume`, `GraphGlue-eval-tolerance`, `GraphGlue-epoch-eval`, `GraphGlue-full-baseline`, `GraphGlue-ladder-oneepoch`, `GraphGlue-wandb`, `GraphGlue-results` | [Three-seed final report](../../../../GraphGlue-results/FINAL_REPORT.md), [earlier report](../../../../GraphGlue-results/REPORT.md); additional checkout completion not inferred |
++| GraphGlue reproduction/pilot | `GraphGlue-official`, `GraphGlue-pilot`, `GraphGlue-resume`, `GraphGlue-eval-tolerance`, `GraphGlue-epoch-eval`, `GraphGlue-full-baseline`, `GraphGlue-ladder-oneepoch`, `GraphGlue-wandb`, `GraphGlue-results` | [Three-seed final report](../../../../GraphGlue-results/FINAL_REPORT.md), [earlier report](../../../../GraphGlue-results/REPORT.md); [completed one-epoch ladder](transfer/ladders/graphglue/graphglue_ladder_oneepoch/FINDINGS.md) |
+ | Topology controls | `gin-topology`, `gin-topology-main`, `powerful-gnns` | [GIN result](../../../../gin-topology/RESULTS.md); upstream code presence is not a separate completed study |
+ | Proxy-A null | `proxy-a-null-20260909` | [Null-control findings](../../../../proxy-a-null-20260909/FINDINGS.md) |
+ 

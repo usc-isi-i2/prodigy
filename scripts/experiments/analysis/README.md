@@ -23,6 +23,8 @@ Setup and launch files remain in `../setup/<name>/`.
 
 ### Ladders
 
+- **GraphGlue:** [one-epoch source ladder](transfer/ladders/graphglue/graphglue_ladder_oneepoch/FINDINGS.md) — seven models, 70 paired evaluations; provisional results, neither mean trajectory monotonic, baseline reproduction gap unresolved.
+
 - **PRODIGY / neighbor matching**
   - Canonical ladder: [`nm_ladder`](transfer/ladders/prodigy_nm/baseline/nm_ladder/)
   - Order and graph-set extensions: [`nm_ladder_order_robustness`](transfer/ladders/prodigy_nm/robustness/nm_ladder_order_robustness/), [`nm_ladder_facebook`](transfer/ladders/prodigy_nm/robustness/nm_ladder_facebook/)
