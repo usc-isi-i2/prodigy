@@ -9,6 +9,10 @@ and to the exact bio-selection policy used at graph construction.  It writes:
 
 ## Findings
 
+- [Cloud-chat HK NM consolidated handoff](FINDINGS_NM_HK_CLOUD_CONSOLIDATED.md):
+  cached 20-episode valid-anchor probe results, the corrected first-failure case,
+  evidence labels, provenance caveats, and recommended follow-up tests. This is a
+  narrative handoff, not a substitute for its external tensor and prediction archives.
 - [HK NM mechanism and bounded repair](FINDINGS_NM_HK_GOAL.md): controlled
   key/value and direction/magnitude interventions, followed by a fixed geometry
   residual that improves selected modified cases but fails on original HK NM.
