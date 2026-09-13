@@ -1,0 +1,28 @@
+{
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "samples": 40000,
+  "graphs": [
+    "covid19_twitter",
+    "ukr_rus_twitter",
+    "midterm",
+    "cp_hk_twitter",
+    "twibot20",
+    "election2020",
+    "covid_political",
+    "ukr_rus_suspended",
+    "facebook_page_reference"
+  ],
+  "policies": [
+    "legacy_sorted",
+    "uniform"
+  ],
+  "pair_fits": 216,
+  "feature_space": "raw, no PCA or normalization",
+  "classifier": "LogisticRegression C=1 max_iter=1000; stratified 70/30 split",
+  "note": "Joint node-sampling and split variability; seeds do not replay historical split RNG. Each unordered pair fitted once.",
+  "commit": "020c7f396e96cd3ab5cf574cc0f74b86f5e7bfd0"
+}
