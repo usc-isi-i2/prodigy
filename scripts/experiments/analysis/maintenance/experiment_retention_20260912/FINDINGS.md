@@ -80,4 +80,4 @@ Tucker inventory records runtime sizes and dirty state. No tmux sessions or comp
 
 Six local worktrees were removed using `git worktree remove` without force after checking unchanged HEAD, clean status, remote branch containment and preservation of every non-cache ignored file. All branches remain. Reported worktree disk usage before removal totals 598684 KiB (filesystem accounting, not a measured global free-space delta). See `data/cleanup_receipt.json`.
 
-The recovery archive is committed locally only. Automatic approval review rejected a push to Tucker because the broad staged/unstaged/untracked payload may contain sensitive source or results and requires explicit payload/destination approval. Original Tucker state was not deleted.
+The user explicitly approved the recovery payload and destination after the initial automatic-review rejection. Archive commit 701b62c was successfully pushed to `tucker:/dataMeR1/phil/gfm/mixture-scaling.git`, branch `codex/experiment-retention-audit`. Original Tucker state remains intact.
