@@ -1,0 +1,817 @@
+{
+  "protocol": "nm_broad_stage_aggregate_v1",
+  "source_protocol": "nm_broad_source_stage_v1",
+  "randomized_published_fixed_test": true,
+  "seed": 0,
+  "receipt_sha256": "24c4c3472bdbc31cf74b4c02288a2d907607c0cc5e2cce376be8f4a0256b9b04",
+  "targets": {
+    "ukr_rus": {
+      "native_model": "ukr_rus",
+      "csv_sha256": "10f2771c5011b9a491543b4441dc0749d6e2c4ca02d2d186de96fbc7cea3416a",
+      "cells": {
+        "ukr_rus": {
+          "rows": 61440,
+          "unique_queries": 33981,
+          "pre_accuracy": 0.38889973958333335,
+          "final_accuracy": 0.441455078125,
+          "net_readout_accuracy": 0.05255533854166666,
+          "correct_to_wrong": 3485,
+          "wrong_to_correct": 6714,
+          "both_wrong": 30832,
+          "both_correct": 20409,
+          "mean_pre_rank": 4.440901692708334,
+          "mean_final_rank": 3.9184895833333333,
+          "mean_rank_improvement": 0.522412109375
+        },
+        "covid": {
+          "rows": 61440,
+          "unique_queries": 33981,
+          "pre_accuracy": 0.3494466145833333,
+          "final_accuracy": 0.38409830729166666,
+          "net_readout_accuracy": 0.03465169270833335,
+          "correct_to_wrong": 3679,
+          "wrong_to_correct": 5808,
+          "both_wrong": 34162,
+          "both_correct": 17791,
+          "mean_pre_rank": 5.367919921875,
+          "mean_final_rank": 4.929524739583333,
+          "mean_rank_improvement": 0.4383951822916667
+        },
+        "midterm": {
+          "rows": 61440,
+          "unique_queries": 33981,
+          "pre_accuracy": 0.19417317708333334,
+          "final_accuracy": 0.21995442708333332,
+          "net_readout_accuracy": 0.025781249999999978,
+          "correct_to_wrong": 5260,
+          "wrong_to_correct": 6844,
+          "both_wrong": 42666,
+          "both_correct": 6670,
+          "mean_pre_rank": 7.820947265625,
+          "mean_final_rank": 7.301009114583334,
+          "mean_rank_improvement": 0.5199381510416666
+        },
+        "cp_hk": {
+          "rows": 61440,
+          "unique_queries": 33981,
+          "pre_accuracy": 0.17054036458333333,
+          "final_accuracy": 0.18151041666666667,
+          "net_readout_accuracy": 0.010970052083333348,
+          "correct_to_wrong": 4763,
+          "wrong_to_correct": 5437,
+          "both_wrong": 45525,
+          "both_correct": 5715,
+          "mean_pre_rank": 8.361702473958333,
+          "mean_final_rank": 8.249527994791666,
+          "mean_rank_improvement": 0.11217447916666666
+        }
+      },
+      "native_vs_foreign_cohorts": {
+        "covid": {
+          "native_only": {
+            "rows": 7439,
+            "native_pre_correct_fraction": 0.5117623336469955,
+            "foreign_pre_correct_fraction": 0.245463099879016,
+            "native_mean_pre_rank": 2.2458663798897702,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 4.1954563785455035,
+            "foreign_mean_final_rank": 3.9385670116951204,
+            "native_better_pre_rank_fraction": 0.5617690549805081,
+            "equal_pre_rank_fraction": 0.3282699287538648
+          },
+          "foreign_only": {
+            "rows": 3915,
+            "native_pre_correct_fraction": 0.29987228607918265,
+            "foreign_pre_correct_fraction": 0.46360153256704983,
+            "native_mean_pre_rank": 2.9943805874840357,
+            "native_mean_final_rank": 3.1246487867177524,
+            "foreign_mean_pre_rank": 2.509833971902937,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.18646232439335889,
+            "equal_pre_rank_fraction": 0.40434227330779055
+          },
+          "both_correct": {
+            "rows": 19684,
+            "native_pre_correct_fraction": 0.8434261328998172,
+            "foreign_pre_correct_fraction": 0.8116236537289169,
+            "native_mean_pre_rank": 1.27306441780126,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 1.4284698232066653,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.11948790896159317,
+            "equal_pre_rank_fraction": 0.8043588701483438
+          },
+          "both_wrong": {
+            "rows": 30402,
+            "native_pre_correct_fraction": 0.07601473587263996,
+            "foreign_pre_correct_fraction": 0.060949937504111575,
+            "native_mean_pre_rank": 7.215314781922242,
+            "native_mean_final_rank": 6.6244326031182155,
+            "foreign_mean_pre_rank": 8.573482007762648,
+            "foreign_mean_final_rank": 8.222222222222221,
+            "native_better_pre_rank_fraction": 0.4970067758700086,
+            "equal_pre_rank_fraction": 0.19666469311229523
+          }
+        },
+        "midterm": {
+          "native_only": {
+            "rows": 16869,
+            "native_pre_correct_fraction": 0.6764479222241983,
+            "foreign_pre_correct_fraction": 0.1831169601043334,
+            "native_mean_pre_rank": 1.7370324263441816,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 6.653091469559547,
+            "foreign_mean_final_rank": 6.594581777224494,
+            "native_better_pre_rank_fraction": 0.7567727784693817,
+            "equal_pre_rank_fraction": 0.1874444246843322
+          },
+          "foreign_only": {
+            "rows": 3260,
+            "native_pre_correct_fraction": 0.21901840490797547,
+            "foreign_pre_correct_fraction": 0.30460122699386505,
+            "native_mean_pre_rank": 4.196625766871166,
+            "native_mean_final_rank": 4.251533742331288,
+            "foreign_mean_pre_rank": 5.434662576687116,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.4254601226993865,
+            "equal_pre_rank_fraction": 0.21441717791411044
+          },
+          "both_correct": {
+            "rows": 10254,
+            "native_pre_correct_fraction": 0.8775112151355569,
+            "foreign_pre_correct_fraction": 0.5536376048371368,
+            "native_mean_pre_rank": 1.215525648527404,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 2.9885898186073727,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.42061634484103766,
+            "equal_pre_rank_fraction": 0.5423249463623951
+          },
+          "both_wrong": {
+            "rows": 31057,
+            "native_pre_correct_fraction": 0.08922304150433075,
+            "foreign_pre_correct_fraction": 0.06990372540812055,
+            "native_mean_pre_rank": 7.000096596580481,
+            "native_mean_final_rank": 6.432334095373024,
+            "foreign_mean_pre_rank": 10.301252535660238,
+            "foreign_mean_final_rank": 10.426506101684,
+            "native_better_pre_rank_fraction": 0.6260424380976913,
+            "equal_pre_rank_fraction": 0.08732330875487007
+          }
+        },
+        "cp_hk": {
+          "native_only": {
+            "rows": 18881,
+            "native_pre_correct_fraction": 0.695408082199036,
+            "foreign_pre_correct_fraction": 0.1500979820984058,
+            "native_mean_pre_rank": 1.688258037180234,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 7.322546475292622,
+            "foreign_mean_final_rank": 7.952703776283036,
+            "native_better_pre_rank_fraction": 0.804459509559875,
+            "equal_pre_rank_fraction": 0.1574069170065145
+          },
+          "foreign_only": {
+            "rows": 2910,
+            "native_pre_correct_fraction": 0.21477663230240548,
+            "foreign_pre_correct_fraction": 0.33505154639175255,
+            "native_mean_pre_rank": 3.989003436426117,
+            "native_mean_final_rank": 4.233333333333333,
+            "foreign_mean_pre_rank": 3.9580756013745706,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.3687285223367698,
+            "equal_pre_rank_fraction": 0.218213058419244
+          },
+          "both_correct": {
+            "rows": 8242,
+            "native_pre_correct_fraction": 0.8831594273234652,
+            "foreign_pre_correct_fraction": 0.5751031303081776,
+            "native_mean_pre_rank": 1.1999514680902694,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 2.3244358165493813,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.3942004367871876,
+            "equal_pre_rank_fraction": 0.5629701528755157
+          },
+          "both_wrong": {
+            "rows": 31407,
+            "native_pre_correct_fraction": 0.09106250199000222,
+            "foreign_pre_correct_fraction": 0.06141942878976024,
+            "native_mean_pre_rank": 6.988091826662846,
+            "native_mean_final_rank": 6.409717578883688,
+            "foreign_mean_pre_rank": 10.97876269621422,
+            "foreign_mean_final_rank": 11.002133282389277,
+            "native_better_pre_rank_fraction": 0.664406024134747,
+            "equal_pre_rank_fraction": 0.08055529022192505
+          }
+        }
+      }
+    },
+    "covid": {
+      "native_model": "covid",
+      "csv_sha256": "6d859f1ee0a88dba3e59744c58fde05b226d2f94a20ccdb798e585a0ba3ae372",
+      "cells": {
+        "ukr_rus": {
+          "rows": 61440,
+          "unique_queries": 43733,
+          "pre_accuracy": 0.5034505208333333,
+          "final_accuracy": 0.5533365885416667,
+          "net_readout_accuracy": 0.04988606770833337,
+          "correct_to_wrong": 3788,
+          "wrong_to_correct": 6853,
+          "both_wrong": 23655,
+          "both_correct": 27144,
+          "mean_pre_rank": 2.846549479166667,
+          "mean_final_rank": 2.6848958333333335,
+          "mean_rank_improvement": 0.16165364583333333
+        },
+        "covid": {
+          "rows": 61440,
+          "unique_queries": 43733,
+          "pre_accuracy": 0.5362141927083334,
+          "final_accuracy": 0.5807942708333333,
+          "net_readout_accuracy": 0.04458007812499998,
+          "correct_to_wrong": 3610,
+          "wrong_to_correct": 6349,
+          "both_wrong": 22146,
+          "both_correct": 29335,
+          "mean_pre_rank": 2.7509440104166667,
+          "mean_final_rank": 2.518115234375,
+          "mean_rank_improvement": 0.23282877604166666
+        },
+        "midterm": {
+          "rows": 61440,
+          "unique_queries": 43733,
+          "pre_accuracy": 0.2999186197916667,
+          "final_accuracy": 0.33811848958333335,
+          "net_readout_accuracy": 0.038199869791666674,
+          "correct_to_wrong": 6561,
+          "wrong_to_correct": 8908,
+          "both_wrong": 34105,
+          "both_correct": 11866,
+          "mean_pre_rank": 5.259375,
+          "mean_final_rank": 4.40078125,
+          "mean_rank_improvement": 0.85859375
+        },
+        "cp_hk": {
+          "rows": 61440,
+          "unique_queries": 43733,
+          "pre_accuracy": 0.24231770833333333,
+          "final_accuracy": 0.265380859375,
+          "net_readout_accuracy": 0.023063151041666674,
+          "correct_to_wrong": 6242,
+          "wrong_to_correct": 7659,
+          "both_wrong": 38893,
+          "both_correct": 8646,
+          "mean_pre_rank": 5.772639973958333,
+          "mean_final_rank": 5.592529296875,
+          "mean_rank_improvement": 0.18011067708333334
+        }
+      },
+      "native_vs_foreign_cohorts": {
+        "ukr_rus": {
+          "native_only": {
+            "rows": 6110,
+            "native_pre_correct_fraction": 0.5363338788870704,
+            "foreign_pre_correct_fraction": 0.2834697217675941,
+            "native_mean_pre_rank": 1.9297872340425533,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 2.77430441898527,
+            "foreign_mean_final_rank": 2.880851063829787,
+            "native_better_pre_rank_fraction": 0.48625204582651393,
+            "equal_pre_rank_fraction": 0.4217675941080196
+          },
+          "foreign_only": {
+            "rows": 4423,
+            "native_pre_correct_fraction": 0.3511191498982591,
+            "foreign_pre_correct_fraction": 0.527696133845806,
+            "native_mean_pre_rank": 2.5333484060592357,
+            "native_mean_final_rank": 2.7366041148541713,
+            "foreign_mean_pre_rank": 1.9427990052000905,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.14221116888989374,
+            "equal_pre_rank_fraction": 0.4912955007913181
+          },
+          "both_correct": {
+            "rows": 29574,
+            "native_pre_correct_fraction": 0.8811117873808074,
+            "foreign_pre_correct_fraction": 0.8389125583282613,
+            "native_mean_pre_rank": 1.1907756813417192,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 1.267532291878001,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.1028268073307635,
+            "equal_pre_rank_fraction": 0.846655846351525
+          },
+          "both_wrong": {
+            "rows": 21333,
+            "native_pre_correct_fraction": 0.09642338161533774,
+            "foreign_pre_correct_fraction": 0.09637650588290442,
+            "native_mean_pre_rank": 5.194112408006375,
+            "native_mean_final_rank": 5.012187690432663,
+            "foreign_mean_pre_rank": 5.24361318145596,
+            "foreign_mean_final_rank": 5.313879904373506,
+            "native_better_pre_rank_fraction": 0.3628650447663245,
+            "equal_pre_rank_fraction": 0.3449116392443632
+          }
+        },
+        "midterm": {
+          "native_only": {
+            "rows": 18780,
+            "native_pre_correct_fraction": 0.7542066027689031,
+            "foreign_pre_correct_fraction": 0.23040468583599574,
+            "native_mean_pre_rank": 1.45580404685836,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 5.288924387646432,
+            "foreign_mean_final_rank": 4.865867944621939,
+            "native_better_pre_rank_fraction": 0.7072417465388712,
+            "equal_pre_rank_fraction": 0.23998935037273694
+          },
+          "foreign_only": {
+            "rows": 3870,
+            "native_pre_correct_fraction": 0.23953488372093024,
+            "foreign_pre_correct_fraction": 0.39328165374677004,
+            "native_mean_pre_rank": 3.1565891472868217,
+            "native_mean_final_rank": 3.229715762273902,
+            "foreign_mean_pre_rank": 3.385529715762274,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.3385012919896641,
+            "equal_pre_rank_fraction": 0.26640826873385015
+          },
+          "both_correct": {
+            "rows": 16904,
+            "native_pre_correct_fraction": 0.897479886417416,
+            "foreign_pre_correct_fraction": 0.6119261713203975,
+            "native_mean_pre_rank": 1.1634524372929484,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 2.347669190724089,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.36186701372456226,
+            "equal_pre_rank_fraction": 0.5919309039280644
+          },
+          "both_wrong": {
+            "rows": 21886,
+            "native_pre_correct_fraction": 0.1225897834231929,
+            "foreign_pre_correct_fraction": 0.10207438545188705,
+            "native_mean_pre_rank": 5.01667732797222,
+            "native_mean_final_rank": 4.867495202412501,
+            "foreign_mean_pre_rank": 7.814264826829937,
+            "foreign_mean_final_rank": 7.229690212921502,
+            "native_better_pre_rank_fraction": 0.5956776021200768,
+            "equal_pre_rank_fraction": 0.13890158091930915
+          }
+        },
+        "cp_hk": {
+          "native_only": {
+            "rows": 22892,
+            "native_pre_correct_fraction": 0.7795736501834702,
+            "foreign_pre_correct_fraction": 0.18325179101869649,
+            "native_mean_pre_rank": 1.4068233443997904,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 5.710728638825791,
+            "foreign_mean_final_rank": 6.2417875240258605,
+            "native_better_pre_rank_fraction": 0.779267866503582,
+            "equal_pre_rank_fraction": 0.19024113227328324
+          },
+          "foreign_only": {
+            "rows": 3513,
+            "native_pre_correct_fraction": 0.2368346142897808,
+            "foreign_pre_correct_fraction": 0.3774551665243382,
+            "native_mean_pre_rank": 3.2072302875035583,
+            "native_mean_final_rank": 3.3882721320808424,
+            "foreign_mean_pre_rank": 3.1579846285226303,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.3430116709365215,
+            "equal_pre_rank_fraction": 0.26131511528608026
+          },
+          "both_correct": {
+            "rows": 12792,
+            "native_pre_correct_fraction": 0.8981394621638524,
+            "foreign_pre_correct_fraction": 0.5722326454033771,
+            "native_mean_pre_rank": 1.1571294559099436,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 2.2426516572858035,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.40290806754221387,
+            "equal_pre_rank_fraction": 0.5573014383989994
+          },
+          "both_wrong": {
+            "rows": 22243,
+            "native_pre_correct_fraction": 0.12489322483477948,
+            "foreign_pre_correct_fraction": 0.09202895292901138,
+            "native_mean_pre_rank": 4.978824798813109,
+            "native_mean_final_rank": 4.816166883963494,
+            "foreign_mean_pre_rank": 8.279413748145483,
+            "foreign_mean_final_rank": 8.290833071078541,
+            "native_better_pre_rank_fraction": 0.6625455199388571,
+            "equal_pre_rank_fraction": 0.10983230679314841
+          }
+        }
+      }
+    },
+    "midterm": {
+      "native_model": "midterm",
+      "csv_sha256": "7305d9ee9510e1e753b5dc6270e8143b76e8551a7e7ccf2ab4b6fbfa4ac7ecb5",
+      "cells": {
+        "ukr_rus": {
+          "rows": 61440,
+          "unique_queries": 13778,
+          "pre_accuracy": 0.2033203125,
+          "final_accuracy": 0.21189778645833332,
+          "net_readout_accuracy": 0.008577473958333331,
+          "correct_to_wrong": 4618,
+          "wrong_to_correct": 5145,
+          "both_wrong": 43803,
+          "both_correct": 7874,
+          "mean_pre_rank": 6.42548828125,
+          "mean_final_rank": 6.344270833333334,
+          "mean_rank_improvement": 0.08121744791666667
+        },
+        "covid": {
+          "rows": 61440,
+          "unique_queries": 13778,
+          "pre_accuracy": 0.20504557291666667,
+          "final_accuracy": 0.214697265625,
+          "net_readout_accuracy": 0.009651692708333326,
+          "correct_to_wrong": 4152,
+          "wrong_to_correct": 4745,
+          "both_wrong": 44097,
+          "both_correct": 8446,
+          "mean_pre_rank": 6.448763020833334,
+          "mean_final_rank": 6.276432291666667,
+          "mean_rank_improvement": 0.17233072916666667
+        },
+        "midterm": {
+          "rows": 61440,
+          "unique_queries": 13778,
+          "pre_accuracy": 0.23463541666666668,
+          "final_accuracy": 0.25857747395833336,
+          "net_readout_accuracy": 0.02394205729166668,
+          "correct_to_wrong": 4682,
+          "wrong_to_correct": 6153,
+          "both_wrong": 40871,
+          "both_correct": 9734,
+          "mean_pre_rank": 5.622688802083333,
+          "mean_final_rank": 5.450862630208333,
+          "mean_rank_improvement": 0.171826171875
+        },
+        "cp_hk": {
+          "rows": 61440,
+          "unique_queries": 13778,
+          "pre_accuracy": 0.1576171875,
+          "final_accuracy": 0.16336263020833333,
+          "net_readout_accuracy": 0.005745442708333326,
+          "correct_to_wrong": 4930,
+          "wrong_to_correct": 5283,
+          "both_wrong": 46473,
+          "both_correct": 4754,
+          "mean_pre_rank": 6.978157552083333,
+          "mean_final_rank": 6.825439453125,
+          "mean_rank_improvement": 0.15271809895833333
+        }
+      },
+      "native_vs_foreign_cohorts": {
+        "ukr_rus": {
+          "native_only": {
+            "rows": 8440,
+            "native_pre_correct_fraction": 0.46161137440758293,
+            "foreign_pre_correct_fraction": 0.22026066350710902,
+            "native_mean_pre_rank": 2.6597156398104267,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 4.214336492890995,
+            "foreign_mean_final_rank": 4.740047393364929,
+            "native_better_pre_rank_fraction": 0.55,
+            "equal_pre_rank_fraction": 0.27571090047393365
+          },
+          "foreign_only": {
+            "rows": 5572,
+            "native_pre_correct_fraction": 0.2519741564967696,
+            "foreign_pre_correct_fraction": 0.45136396267049533,
+            "native_mean_pre_rank": 3.5732232591529076,
+            "native_mean_final_rank": 4.155599425699928,
+            "foreign_mean_pre_rank": 2.7887652548456567,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.23133524766690597,
+            "equal_pre_rank_fraction": 0.28248384781048097
+          },
+          "both_correct": {
+            "rows": 7447,
+            "native_pre_correct_fraction": 0.7839398415469316,
+            "foreign_pre_correct_fraction": 0.7196186383778703,
+            "native_mean_pre_rank": 1.478716261581845,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 1.6640257821941722,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.19873774674365516,
+            "equal_pre_rank_fraction": 0.6761111857123674
+          },
+          "both_wrong": {
+            "rows": 39981,
+            "native_pre_correct_fraction": 0.08198894474875566,
+            "foreign_pre_correct_fraction": 0.06900777869488006,
+            "native_mean_pre_rank": 7.305670193341838,
+            "native_mean_final_rank": 7.399989995247743,
+            "foreign_mean_pre_rank": 8.285985843275556,
+            "foreign_mean_final_rank": 8.423176008604086,
+            "native_better_pre_rank_fraction": 0.484655211225332,
+            "equal_pre_rank_fraction": 0.14674470373427378
+          }
+        },
+        "covid": {
+          "native_only": {
+            "rows": 8254,
+            "native_pre_correct_fraction": 0.4563847831354495,
+            "foreign_pre_correct_fraction": 0.1900896535013327,
+            "native_mean_pre_rank": 2.685485825054519,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 4.420038769081657,
+            "foreign_mean_final_rank": 4.705476132784105,
+            "native_better_pre_rank_fraction": 0.5746304821904531,
+            "equal_pre_rank_fraction": 0.2540586382360068
+          },
+          "foreign_only": {
+            "rows": 5558,
+            "native_pre_correct_fraction": 0.26034544800287873,
+            "foreign_pre_correct_fraction": 0.4836272040302267,
+            "native_mean_pre_rank": 3.4973011874775097,
+            "native_mean_final_rank": 4.067650233897085,
+            "foreign_mean_pre_rank": 2.541381792011515,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.1950341849586182,
+            "equal_pre_rank_fraction": 0.30460597337171647
+          },
+          "both_correct": {
+            "rows": 7633,
+            "native_pre_correct_fraction": 0.7817371937639198,
+            "foreign_pre_correct_fraction": 0.7543560854185772,
+            "native_mean_pre_rank": 1.479627931350714,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 1.5522075199790384,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.1619284684920739,
+            "equal_pre_rank_fraction": 0.6972356871479104
+          },
+          "both_wrong": {
+            "rows": 39995,
+            "native_pre_correct_fraction": 0.08088511063882986,
+            "foreign_pre_correct_fraction": 0.06458307288411051,
+            "native_mean_pre_rank": 7.314914364295537,
+            "native_mean_final_rank": 7.4110763845480685,
+            "foreign_mean_pre_rank": 8.344943117889736,
+            "foreign_mean_final_rank": 8.340892611576447,
+            "native_better_pre_rank_fraction": 0.4753594199274909,
+            "equal_pre_rank_fraction": 0.14766845855731967
+          }
+        },
+        "cp_hk": {
+          "native_only": {
+            "rows": 10612,
+            "native_pre_correct_fraction": 0.5343007915567283,
+            "foreign_pre_correct_fraction": 0.17998492272898606,
+            "native_mean_pre_rank": 2.39295137580098,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 5.096117602713909,
+            "foreign_mean_final_rank": 5.391349415755748,
+            "native_better_pre_rank_fraction": 0.6781002638522428,
+            "equal_pre_rank_fraction": 0.20787787410478703
+          },
+          "foreign_only": {
+            "rows": 4762,
+            "native_pre_correct_fraction": 0.19781604367912642,
+            "foreign_pre_correct_fraction": 0.3380932381352373,
+            "native_mean_pre_rank": 4.28202435951281,
+            "native_mean_final_rank": 4.468710625787485,
+            "foreign_mean_pre_rank": 3.744645107097858,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.3114237715245695,
+            "equal_pre_rank_fraction": 0.23183536329273416
+          },
+          "both_correct": {
+            "rows": 5275,
+            "native_pre_correct_fraction": 0.7704265402843602,
+            "foreign_pre_correct_fraction": 0.5960189573459715,
+            "native_mean_pre_rank": 1.5290995260663507,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 2.153175355450237,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.3272037914691943,
+            "equal_pre_rank_fraction": 0.5672037914691943
+          },
+          "both_wrong": {
+            "rows": 40791,
+            "native_pre_correct_fraction": 0.09168689171630998,
+            "foreign_pre_correct_fraction": 0.07403593930033586,
+            "native_mean_pre_rank": 7.1488073349513375,
+            "native_mean_final_rank": 7.299012036968939,
+            "foreign_mean_pre_rank": 8.469221151724645,
+            "foreign_mean_final_rank": 8.631928611703563,
+            "native_better_pre_rank_fraction": 0.5369566816209458,
+            "equal_pre_rank_fraction": 0.1241205167806624
+          }
+        }
+      }
+    },
+    "cp_hk": {
+      "native_model": "cp_hk",
+      "csv_sha256": "b6f280281cf579441144caa11308605b2830acaa1a6bd9e186a456c48a7e400e",
+      "cells": {
+        "ukr_rus": {
+          "rows": 61440,
+          "unique_queries": 6233,
+          "pre_accuracy": 0.10880533854166667,
+          "final_accuracy": 0.11681315104166666,
+          "net_readout_accuracy": 0.008007812499999989,
+          "correct_to_wrong": 2976,
+          "wrong_to_correct": 3468,
+          "both_wrong": 51287,
+          "both_correct": 3709,
+          "mean_pre_rank": 9.964453125,
+          "mean_final_rank": 10.058740234375,
+          "mean_rank_improvement": -0.094287109375
+        },
+        "covid": {
+          "rows": 61440,
+          "unique_queries": 6233,
+          "pre_accuracy": 0.10999348958333334,
+          "final_accuracy": 0.11619466145833333,
+          "net_readout_accuracy": 0.0062011718749999944,
+          "correct_to_wrong": 2992,
+          "wrong_to_correct": 3373,
+          "both_wrong": 51309,
+          "both_correct": 3766,
+          "mean_pre_rank": 10.415348307291667,
+          "mean_final_rank": 10.185172526041667,
+          "mean_rank_improvement": 0.23017578125
+        },
+        "midterm": {
+          "rows": 61440,
+          "unique_queries": 6233,
+          "pre_accuracy": 0.10001627604166667,
+          "final_accuracy": 0.102099609375,
+          "net_readout_accuracy": 0.002083333333333326,
+          "correct_to_wrong": 3288,
+          "wrong_to_correct": 3416,
+          "both_wrong": 51879,
+          "both_correct": 2857,
+          "mean_pre_rank": 9.877783203125,
+          "mean_final_rank": 10.26328125,
+          "mean_rank_improvement": -0.385498046875
+        },
+        "cp_hk": {
+          "rows": 61440,
+          "unique_queries": 6233,
+          "pre_accuracy": 0.12975260416666667,
+          "final_accuracy": 0.17864583333333334,
+          "net_readout_accuracy": 0.04889322916666666,
+          "correct_to_wrong": 3135,
+          "wrong_to_correct": 6139,
+          "both_wrong": 47329,
+          "both_correct": 4837,
+          "mean_pre_rank": 9.773486328125,
+          "mean_final_rank": 7.091064453125,
+          "mean_rank_improvement": 2.682421875
+        }
+      },
+      "native_vs_foreign_cohorts": {
+        "ukr_rus": {
+          "native_only": {
+            "rows": 7565,
+            "native_pre_correct_fraction": 0.33443489755452743,
+            "foreign_pre_correct_fraction": 0.11275611368142763,
+            "native_mean_pre_rank": 4.709715796430932,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 7.91606080634501,
+            "foreign_mean_final_rank": 8.47072042300066,
+            "native_better_pre_rank_fraction": 0.6241903502974223,
+            "equal_pre_rank_fraction": 0.12822207534699273
+          },
+          "foreign_only": {
+            "rows": 3766,
+            "native_pre_correct_fraction": 0.1816250663834307,
+            "foreign_pre_correct_fraction": 0.3680297397769517,
+            "native_mean_pre_rank": 6.4944237918215615,
+            "native_mean_final_rank": 5.470260223048327,
+            "foreign_mean_pre_rank": 4.444237918215613,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.242963356346256,
+            "equal_pre_rank_fraction": 0.19516728624535315
+          },
+          "both_correct": {
+            "rows": 3411,
+            "native_pre_correct_fraction": 0.6763412489006156,
+            "foreign_pre_correct_fraction": 0.6810319554382879,
+            "native_mean_pre_rank": 2.0686015831134563,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 2.207270595133392,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.2019935502785107,
+            "equal_pre_rank_fraction": 0.5816476106713574
+          },
+          "both_wrong": {
+            "rows": 46698,
+            "native_pre_correct_fraction": 0.052486187845303865,
+            "foreign_pre_correct_fraction": 0.045462332433937214,
+            "native_mean_pre_rank": 11.421045869202107,
+            "native_mean_final_rank": 8.653432695190372,
+            "foreign_mean_pre_rank": 11.308085999400403,
+            "foreign_mean_final_rank": 11.708231615915029,
+            "native_better_pre_rank_fraction": 0.4523534198466744,
+            "equal_pre_rank_fraction": 0.07008865476037518
+          }
+        },
+        "covid": {
+          "native_only": {
+            "rows": 7575,
+            "native_pre_correct_fraction": 0.326996699669967,
+            "foreign_pre_correct_fraction": 0.10943894389438943,
+            "native_mean_pre_rank": 4.745874587458746,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 8.90019801980198,
+            "foreign_mean_final_rank": 8.747326732673267,
+            "native_better_pre_rank_fraction": 0.638019801980198,
+            "equal_pre_rank_fraction": 0.12316831683168317
+          },
+          "foreign_only": {
+            "rows": 3738,
+            "native_pre_correct_fraction": 0.19047619047619047,
+            "foreign_pre_correct_fraction": 0.3945960406634564,
+            "native_mean_pre_rank": 6.56474050294275,
+            "native_mean_final_rank": 5.490904226859283,
+            "foreign_mean_pre_rank": 4.1054039593365435,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.22632423756019263,
+            "equal_pre_rank_fraction": 0.19101123595505617
+          },
+          "both_correct": {
+            "rows": 3401,
+            "native_pre_correct_fraction": 0.6939135548368127,
+            "foreign_pre_correct_fraction": 0.673625404292855,
+            "native_mean_pre_rank": 1.98029991179065,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 2.4645692443399,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.21023228462216995,
+            "equal_pre_rank_fraction": 0.5836518670979124
+          },
+          "both_wrong": {
+            "rows": 46726,
+            "native_pre_correct_fraction": 0.051855498009673415,
+            "foreign_pre_correct_fraction": 0.046291144116765826,
+            "native_mean_pre_rank": 11.412468432992338,
+            "native_mean_final_rank": 8.649873731969354,
+            "foreign_mean_pre_rank": 11.744467748148782,
+            "foreign_mean_final_rank": 11.821619655010059,
+            "native_better_pre_rank_fraction": 0.46047168599922955,
+            "equal_pre_rank_fraction": 0.06835594743825707
+          }
+        },
+        "midterm": {
+          "native_only": {
+            "rows": 8105,
+            "native_pre_correct_fraction": 0.35089450956199875,
+            "foreign_pre_correct_fraction": 0.1216533004318322,
+            "native_mean_pre_rank": 4.5584207279457125,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 7.706354102405922,
+            "foreign_mean_final_rank": 8.60407156076496,
+            "native_better_pre_rank_fraction": 0.6287476866132017,
+            "equal_pre_rank_fraction": 0.14571252313386798
+          },
+          "foreign_only": {
+            "rows": 3402,
+            "native_pre_correct_fraction": 0.178424456202234,
+            "foreign_pre_correct_fraction": 0.32333921222810114,
+            "native_mean_pre_rank": 6.8353909465020575,
+            "native_mean_final_rank": 5.632569077013521,
+            "foreign_mean_pre_rank": 4.947089947089947,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.260435038212816,
+            "equal_pre_rank_fraction": 0.21987066431510877
+          },
+          "both_correct": {
+            "rows": 2871,
+            "native_pre_correct_fraction": 0.6941832114245907,
+            "foreign_pre_correct_fraction": 0.6119818878439568,
+            "native_mean_pre_rank": 1.9989550679205852,
+            "native_mean_final_rank": 1.0,
+            "foreign_mean_pre_rank": 2.5357018460466736,
+            "foreign_mean_final_rank": 1.0,
+            "native_better_pre_rank_fraction": 0.2762103796586555,
+            "equal_pre_rank_fraction": 0.5468477882270986
+          },
+          "both_wrong": {
+            "rows": 47062,
+            "native_pre_correct_fraction": 0.05371637414474523,
+            "foreign_pre_correct_fraction": 0.048914198291615314,
+            "native_mean_pre_rank": 11.358293315201223,
+            "native_mean_final_rank": 8.617079597127194,
+            "foreign_mean_pre_rank": 11.056074964939867,
+            "foreign_mean_final_rank": 11.783753346649101,
+            "native_better_pre_rank_fraction": 0.4463261229866984,
+            "equal_pre_rank_fraction": 0.09020016148909948
+          }
+        }
+      }
+    }
+  }
+}

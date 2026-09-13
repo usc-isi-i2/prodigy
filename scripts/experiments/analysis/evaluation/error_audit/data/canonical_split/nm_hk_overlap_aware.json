@@ -1,0 +1,100 @@
+{
+  "complete": true,
+  "revision": "63211b2d5fec6a269bc0f23fc515a6db53cc1ca9",
+  "seconds": 46.51900935173035,
+  "device": "cpu",
+  "threads": 2,
+  "rows": 61440,
+  "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_cp_hk_s0_20260807/checkpoint/state_dict_2500.ckpt",
+  "model_state_sha256": "a15e3f23cb3c7fdfd36a385e76bf366f57865d4d6bc6f2638002aac9c9d18755",
+  "unchanged_model": true,
+  "conditions": {
+    "canonical": {
+      "rows": 61440,
+      "assigned_correct": 10976,
+      "assigned_accuracy": 0.17864583333333334,
+      "multi_correct": 14291,
+      "multi_accuracy": 0.23260091145833334,
+      "unique_rows": 33033,
+      "unique_accuracy": 0.21844821844821846,
+      "mean_valid_candidates": 1.9163736979166666,
+      "mrr": 0.4138897451351911,
+      "hits_at_1": 0.23260091145833334,
+      "hits_at_3": 0.48434244791666664,
+      "hits_at_5": 0.6380859375,
+      "node_weighted_assigned_accuracy": 0.30712766905784267,
+      "node_weighted_multi_accuracy": 0.31431285087403904
+    },
+    "train_mask": {
+      "rows": 61440,
+      "assigned_correct": 10949,
+      "assigned_accuracy": 0.17820638020833332,
+      "multi_correct": 14261,
+      "multi_accuracy": 0.23211263020833334,
+      "unique_rows": 33033,
+      "unique_accuracy": 0.21790330881239972,
+      "mean_valid_candidates": 1.9163736979166666,
+      "mrr": 0.4128447207463307,
+      "hits_at_1": 0.23211263020833334,
+      "hits_at_3": 0.48317057291666665,
+      "hits_at_5": 0.6354817708333333,
+      "assigned_recovered": 508,
+      "assigned_lost": 535,
+      "multi_recovered": 718,
+      "multi_lost": 748,
+      "node_weighted_assigned_accuracy": 0.30609460628711355,
+      "node_weighted_multi_accuracy": 0.3128754824741277
+    },
+    "all_views_mask": {
+      "rows": 61440,
+      "assigned_correct": 10875,
+      "assigned_accuracy": 0.177001953125,
+      "multi_correct": 14146,
+      "multi_accuracy": 0.23024088541666668,
+      "unique_rows": 33033,
+      "unique_accuracy": 0.2171464898737626,
+      "mean_valid_candidates": 1.9163736979166666,
+      "mrr": 0.41118114784317383,
+      "hits_at_1": 0.23024088541666668,
+      "hits_at_3": 0.4802734375,
+      "hits_at_5": 0.633935546875,
+      "assigned_recovered": 634,
+      "assigned_lost": 735,
+      "multi_recovered": 859,
+      "multi_lost": 1004,
+      "node_weighted_assigned_accuracy": 0.3042157724775363,
+      "node_weighted_multi_accuracy": 0.3108785708089616
+    }
+  },
+  "masked_edges": {
+    "train_mask": {
+      "total": 225875,
+      "episodes_with_any": 512,
+      "median_per_episode": 441.0,
+      "max_per_episode": 673
+    },
+    "all_views_mask": {
+      "total": 327310,
+      "episodes_with_any": 512,
+      "median_per_episode": 638.5,
+      "max_per_episode": 1007
+    }
+  },
+  "max_canonical_winner_shortfall": 0.0,
+  "sources": {
+    "/dataMeR1/phil/gfm/error_audit/nm_canonical_split_bios_20260908/cp_hk_twitter/paired_cluster_queries_private.tsv": "b555b7a50d44e099a5fa09ed8668de90e70a643cf6dbf76d1ff9deb6ea90f78a",
+    "/dataMeR1/phil/gfm/error_audit/nm_hk_support_extremes_20260908/hk_canonical_views_private.pt": "b46d5953aff4ba7602fa4e573f4fc1e2d1efa365a4966a40c90780b7bbd43c40",
+    "/dataMeR1/phil/gfm/error_audit/nm_hk_support_extremes_20260908/receipt.json": "b72d3b7475d892c71eea16bdefd66d35e9751935d46f251ea11c58128c75d5cd",
+    "/dataMeR1/phil/gfm/error_audit/nm_canonical_split_20260908/effective_config.json": "3b2a6082a92d15f30f16b6218c2485e49d4a0b442d1537e8c230aba7e75f5137",
+    "/dataMeR1/phil/gfm/error_audit/nm_source_stage_20260908_v4/receipt.json": "7b84830f75151155bac957642d813621ffa4e0d81ea11149907b925db24c5d36",
+    "/dataMeR1/phil/gfm/error_audit/nm_source_stage_20260908_v4/cp_hk/stage_predictions_private.csv": "f6a7b63a8de19161858a45dbc604b8857500068d183a3dcd38cb7b36366ad4dd"
+  },
+  "training": false,
+  "encoding": false,
+  "sampling": false,
+  "limits": [
+    "Train-mask is an inference-only intervention and cannot undo training gradients.",
+    "All-views mask uses validation/test adjacency and is a nondeployable diagnostic upper bound."
+  ],
+  "rows_sha256": "cb5b465517c1e887908b3db80630a90388687195e41c2ea7e57f907c1de10961"
+}

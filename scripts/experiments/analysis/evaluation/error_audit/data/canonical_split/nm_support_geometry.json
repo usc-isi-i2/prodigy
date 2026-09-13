@@ -1,0 +1,2228 @@
+{
+  "protocol": "paired_support_geometry_v1",
+  "receipt": {
+    "complete": true,
+    "no_model_forwards": true,
+    "checks": {
+      "ukr_rus": {
+        "cases": 200,
+        "geometry_draws": 2000,
+        "original_feature_rows_accessed": 1333832,
+        "max_baseline_geometry_error": 7.152557373532598e-07,
+        "all_archives_match_receipt": true,
+        "all_saved_support_features_match_backing_graph": true,
+        "cases_sha256": "f89ac2e87a007e868043f830a1d69729680748893b9fc63994c4b99704fb6797",
+        "draws_sha256": "647cc58ebfa1ebd947ae5eb454e5074e94cfe6ba7e245792e8e5e4799c572cd2"
+      },
+      "cp_hk": {
+        "cases": 200,
+        "geometry_draws": 2000,
+        "original_feature_rows_accessed": 1075738,
+        "max_baseline_geometry_error": 7.152557373966278e-07,
+        "all_archives_match_receipt": true,
+        "all_saved_support_features_match_backing_graph": true,
+        "cases_sha256": "03da5fc95e6fbecd756962196d161d20e7bcfaa39de5eaaba33aea5058f1434e",
+        "draws_sha256": "33adb2e94efd0360bd892f9f54ca67b0d59e61a1ed21f8cd9413d3a53428c107"
+      }
+    },
+    "rows": 8000,
+    "seconds": 17.50100040435791,
+    "results_sha256": "c0e6a37415f0ca56ccce56745593c06f517b5f920b5fa927b874d591d06d94f8",
+    "input_receipt_sha256": "0514d8383fbf67b9710dd3a653839fd717bd57dd0248bbbd6951eef488c3846d",
+    "geometry_sha256": "84c6f00bea619d87f797d6d0a70ca7474db93802ab336fa7f71b39d3dbe820dc"
+  },
+  "targets": {
+    "ukr_rus": {
+      "alternative": {
+        "full_mean": {
+          "total_draws": 1000,
+          "valid_draws": 665,
+          "valid_cases": 135,
+          "excluded_flips": 90,
+          "cohorts": {
+            "native_correct": {
+              "0": {
+                "draws": 128,
+                "cases": 35,
+                "baseline_margin": {
+                  "n": 128,
+                  "mean": -0.0006217826157808242,
+                  "median": -5.6356191635131836e-05
+                },
+                "new_margin": {
+                  "n": 128,
+                  "mean": -0.0059778820723294865,
+                  "median": -0.0034856796264648
+                },
+                "change": {
+                  "n": 128,
+                  "mean": -0.005356099456548665,
+                  "median": -0.0032941699028014504
+                },
+                "improved": 30,
+                "worsened": 98,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 20,
+                "rival_strictly_better_after": 108
+              },
+              "1": {
+                "draws": 216,
+                "cases": 53,
+                "baseline_margin": {
+                  "n": 216,
+                  "mean": 0.008299989280877275,
+                  "median": 0.0030591189861297
+                },
+                "new_margin": {
+                  "n": 216,
+                  "mean": 0.009326968204092075,
+                  "median": 0.0042048096656799
+                },
+                "change": {
+                  "n": 216,
+                  "mean": 0.0010269789232147993,
+                  "median": 0.0009667575359344
+                },
+                "improved": 127,
+                "worsened": 89,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 159,
+                "rival_strictly_better_after": 57
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 18,
+                "mean": 0.008837330948423431,
+                "median": 0.0026871164639790677,
+                "positive": 14,
+                "negative": 4,
+                "numerically_tied": 0
+              }
+            },
+            "native_failed": {
+              "0": {
+                "draws": 251,
+                "cases": 59,
+                "baseline_margin": {
+                  "n": 251,
+                  "mean": -0.007594974629907446,
+                  "median": -0.0038295984268188
+                },
+                "new_margin": {
+                  "n": 251,
+                  "mean": -0.009552299501411437,
+                  "median": -0.0049704313278198
+                },
+                "change": {
+                  "n": 251,
+                  "mean": -0.001957324871503966,
+                  "median": -0.0012267231941223
+                },
+                "improved": 104,
+                "worsened": 147,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 34,
+                "rival_strictly_better_after": 217
+              },
+              "1": {
+                "draws": 70,
+                "cases": 23,
+                "baseline_margin": {
+                  "n": 70,
+                  "mean": -0.010918639387403182,
+                  "median": -0.0044360756874084
+                },
+                "new_margin": {
+                  "n": 70,
+                  "mean": -0.002151433910642354,
+                  "median": 0.0006774663925170499
+                },
+                "change": {
+                  "n": 70,
+                  "mean": 0.008767205476760827,
+                  "median": 0.00648519396781915
+                },
+                "improved": 60,
+                "worsened": 10,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 38,
+                "rival_strictly_better_after": 32
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 17,
+                "mean": 0.008165867013089786,
+                "median": 0.0043850690126419,
+                "positive": 14,
+                "negative": 3,
+                "numerically_tied": 0
+              }
+            }
+          },
+          "small_change_sensitivity": [
+            {
+              "threshold": 0.0001,
+              "draws": 9,
+              "flips": 4,
+              "flip_fraction": 0.4444444444444444,
+              "rescues": 2,
+              "breaks": 2
+            },
+            {
+              "threshold": 0.001,
+              "draws": 109,
+              "flips": 23,
+              "flip_fraction": 0.21100917431192662,
+              "rescues": 5,
+              "breaks": 18
+            },
+            {
+              "threshold": 0.01,
+              "draws": 526,
+              "flips": 146,
+              "flip_fraction": 0.27756653992395436,
+              "rescues": 43,
+              "breaks": 103
+            }
+          ],
+          "transitions": {
+            "native_correct/rival_or_tie->rival_or_tie": {
+              "draws": 98,
+              "accuracy": 0.3673469387755102
+            },
+            "native_correct/rival_or_tie->true": {
+              "draws": 37,
+              "accuracy": 0.8648648648648649
+            },
+            "native_correct/true->rival_or_tie": {
+              "draws": 67,
+              "accuracy": 0.31343283582089554
+            },
+            "native_correct/true->true": {
+              "draws": 142,
+              "accuracy": 0.8943661971830986
+            },
+            "native_failed/rival_or_tie->rival_or_tie": {
+              "draws": 238,
+              "accuracy": 0.13025210084033614
+            },
+            "native_failed/rival_or_tie->true": {
+              "draws": 53,
+              "accuracy": 0.49056603773584906
+            },
+            "native_failed/true->rival_or_tie": {
+              "draws": 11,
+              "accuracy": 0.09090909090909091
+            },
+            "native_failed/true->true": {
+              "draws": 19,
+              "accuracy": 0.631578947368421
+            }
+          }
+        },
+        "full_mean_available_rivals": {
+          "total_draws": 1000,
+          "valid_draws": 948,
+          "valid_cases": 192,
+          "excluded_flips": 14,
+          "cohorts": {
+            "native_correct": {
+              "0": {
+                "draws": 174,
+                "cases": 49,
+                "baseline_margin": {
+                  "n": 174,
+                  "mean": -0.0010216839012058248,
+                  "median": -0.00031584501266475004
+                },
+                "new_margin": {
+                  "n": 174,
+                  "mean": -0.0058225513189688214,
+                  "median": -0.00356483459472655
+                },
+                "change": {
+                  "n": 174,
+                  "mean": -0.004800867417762998,
+                  "median": -0.0029637217521667
+                },
+                "improved": 48,
+                "worsened": 126,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 33,
+                "rival_strictly_better_after": 141
+              },
+              "1": {
+                "draws": 299,
+                "cases": 74,
+                "baseline_margin": {
+                  "n": 299,
+                  "mean": 0.008457697952870127,
+                  "median": 0.0051745176315307
+                },
+                "new_margin": {
+                  "n": 299,
+                  "mean": 0.008378759475057316,
+                  "median": 0.0047603249549865
+                },
+                "change": {
+                  "n": 299,
+                  "mean": -7.893847781281009e-05,
+                  "median": 0.0008900165557861
+                },
+                "improved": 176,
+                "worsened": 123,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 221,
+                "rival_strictly_better_after": 78
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 27,
+                "mean": 0.008075790640748556,
+                "median": 0.0034229606389999754,
+                "positive": 21,
+                "negative": 6,
+                "numerically_tied": 0
+              }
+            },
+            "native_failed": {
+              "0": {
+                "draws": 375,
+                "cases": 87,
+                "baseline_margin": {
+                  "n": 375,
+                  "mean": -0.007123125394185336,
+                  "median": -0.0038362741470336
+                },
+                "new_margin": {
+                  "n": 375,
+                  "mean": -0.00949891424179074,
+                  "median": -0.0049704313278198
+                },
+                "change": {
+                  "n": 375,
+                  "mean": -0.002375788847605383,
+                  "median": -0.0006658434867858
+                },
+                "improved": 168,
+                "worsened": 207,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 48,
+                "rival_strictly_better_after": 327
+              },
+              "1": {
+                "draws": 100,
+                "cases": 35,
+                "baseline_margin": {
+                  "n": 100,
+                  "mean": -0.009464442133903472,
+                  "median": -0.0032910108566284
+                },
+                "new_margin": {
+                  "n": 100,
+                  "mean": -0.0005911201238632279,
+                  "median": 0.0011617243289947
+                },
+                "change": {
+                  "n": 100,
+                  "mean": 0.008873322010040251,
+                  "median": 0.0070950388908386005
+                },
+                "improved": 88,
+                "worsened": 12,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 58,
+                "rival_strictly_better_after": 42
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 26,
+                "mean": 0.006605296180798441,
+                "median": 0.003913022577762588,
+                "positive": 22,
+                "negative": 4,
+                "numerically_tied": 0
+              }
+            }
+          },
+          "small_change_sensitivity": [
+            {
+              "threshold": 0.0001,
+              "draws": 11,
+              "flips": 4,
+              "flip_fraction": 0.36363636363636365,
+              "rescues": 2,
+              "breaks": 2
+            },
+            {
+              "threshold": 0.001,
+              "draws": 152,
+              "flips": 32,
+              "flip_fraction": 0.21052631578947367,
+              "rescues": 8,
+              "breaks": 24
+            },
+            {
+              "threshold": 0.01,
+              "draws": 751,
+              "flips": 208,
+              "flip_fraction": 0.2769640479360852,
+              "rescues": 63,
+              "breaks": 145
+            }
+          ],
+          "transitions": {
+            "native_correct/rival_or_tie->rival_or_tie": {
+              "draws": 133,
+              "accuracy": 0.3609022556390977
+            },
+            "native_correct/rival_or_tie->true": {
+              "draws": 62,
+              "accuracy": 0.7580645161290323
+            },
+            "native_correct/true->rival_or_tie": {
+              "draws": 86,
+              "accuracy": 0.3488372093023256
+            },
+            "native_correct/true->true": {
+              "draws": 192,
+              "accuracy": 0.90625
+            },
+            "native_failed/rival_or_tie->rival_or_tie": {
+              "draws": 349,
+              "accuracy": 0.1174785100286533
+            },
+            "native_failed/rival_or_tie->true": {
+              "draws": 81,
+              "accuracy": 0.5432098765432098
+            },
+            "native_failed/true->rival_or_tie": {
+              "draws": 20,
+              "accuracy": 0.05
+            },
+            "native_failed/true->true": {
+              "draws": 25,
+              "accuracy": 0.56
+            }
+          }
+        },
+        "node_jaccard": {
+          "total_draws": 1000,
+          "valid_draws": 1000,
+          "valid_cases": 200,
+          "excluded_flips": 0,
+          "cohorts": {
+            "native_correct": {
+              "0": {
+                "draws": 180,
+                "cases": 53,
+                "baseline_margin": {
+                  "n": 180,
+                  "mean": -0.006750207707266003,
+                  "median": -0.0088068181818181
+                },
+                "new_margin": {
+                  "n": 180,
+                  "mean": -0.009701024409472557,
+                  "median": -0.00946953016597855
+                },
+                "change": {
+                  "n": 180,
+                  "mean": -0.002950816702206547,
+                  "median": -0.0023002524561605
+                },
+                "improved": 77,
+                "worsened": 101,
+                "numerically_unchanged": 2,
+                "true_strictly_best_after": 28,
+                "rival_strictly_better_after": 148
+              },
+              "1": {
+                "draws": 320,
+                "cases": 78,
+                "baseline_margin": {
+                  "n": 320,
+                  "mean": 0.009381134371318907,
+                  "median": 0.003257328990228
+                },
+                "new_margin": {
+                  "n": 320,
+                  "mean": 0.009335804220861965,
+                  "median": 0.00348584407224315
+                },
+                "change": {
+                  "n": 320,
+                  "mean": -4.533015045694042e-05,
+                  "median": 0.0
+                },
+                "improved": 133,
+                "worsened": 157,
+                "numerically_unchanged": 30,
+                "true_strictly_best_after": 180,
+                "rival_strictly_better_after": 125
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 31,
+                "mean": 0.00252293242030746,
+                "median": 0.0020638506396972837,
+                "positive": 20,
+                "negative": 10,
+                "numerically_tied": 1
+              }
+            },
+            "native_failed": {
+              "0": {
+                "draws": 392,
+                "cases": 90,
+                "baseline_margin": {
+                  "n": 392,
+                  "mean": -0.01033903573825924,
+                  "median": -0.009009009009009
+                },
+                "new_margin": {
+                  "n": 392,
+                  "mean": -0.011324591401069806,
+                  "median": -0.0110446688742898
+                },
+                "change": {
+                  "n": 392,
+                  "mean": -0.0009855556628105557,
+                  "median": -0.0004308194049086
+                },
+                "improved": 159,
+                "worsened": 205,
+                "numerically_unchanged": 28,
+                "true_strictly_best_after": 41,
+                "rival_strictly_better_after": 334
+              },
+              "1": {
+                "draws": 108,
+                "cases": 38,
+                "baseline_margin": {
+                  "n": 108,
+                  "mean": -0.004607840519547929,
+                  "median": -0.0022854477611939
+                },
+                "new_margin": {
+                  "n": 108,
+                  "mean": 0.0012126027658253447,
+                  "median": 0.0
+                },
+                "change": {
+                  "n": 108,
+                  "mean": 0.005820443285373291,
+                  "median": 0.00029856687898085
+                },
+                "improved": 54,
+                "worsened": 42,
+                "numerically_unchanged": 12,
+                "true_strictly_best_after": 42,
+                "rival_strictly_better_after": 51
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 28,
+                "mean": 0.005556251706715296,
+                "median": 0.0017345043953293175,
+                "positive": 19,
+                "negative": 4,
+                "numerically_tied": 5
+              }
+            }
+          },
+          "small_change_sensitivity": [
+            {
+              "threshold": 0.0001,
+              "draws": 79,
+              "flips": 15,
+              "flip_fraction": 0.189873417721519,
+              "rescues": 12,
+              "breaks": 3
+            },
+            {
+              "threshold": 0.001,
+              "draws": 151,
+              "flips": 34,
+              "flip_fraction": 0.2251655629139073,
+              "rescues": 21,
+              "breaks": 13
+            },
+            {
+              "threshold": 0.01,
+              "draws": 696,
+              "flips": 185,
+              "flip_fraction": 0.26580459770114945,
+              "rescues": 71,
+              "breaks": 114
+            }
+          ],
+          "transitions": {
+            "native_correct/rival_or_tie->rival_or_tie": {
+              "draws": 232,
+              "accuracy": 0.4482758620689655
+            },
+            "native_correct/rival_or_tie->true": {
+              "draws": 33,
+              "accuracy": 0.6363636363636364
+            },
+            "native_correct/true->rival_or_tie": {
+              "draws": 60,
+              "accuracy": 0.6
+            },
+            "native_correct/true->true": {
+              "draws": 175,
+              "accuracy": 0.9085714285714286
+            },
+            "native_failed/rival_or_tie->rival_or_tie": {
+              "draws": 376,
+              "accuracy": 0.13829787234042554
+            },
+            "native_failed/rival_or_tie->true": {
+              "draws": 59,
+              "accuracy": 0.576271186440678
+            },
+            "native_failed/true->rival_or_tie": {
+              "draws": 41,
+              "accuracy": 0.34146341463414637
+            },
+            "native_failed/true->true": {
+              "draws": 24,
+              "accuracy": 0.3333333333333333
+            }
+          }
+        }
+      },
+      "same_context": {
+        "full_mean": {
+          "total_draws": 1000,
+          "valid_draws": 675,
+          "valid_cases": 135,
+          "excluded_flips": 28,
+          "cohorts": {
+            "native_correct": {
+              "0": {
+                "draws": 34,
+                "cases": 15,
+                "baseline_margin": {
+                  "n": 34,
+                  "mean": -0.0019873275476343234,
+                  "median": -0.0015863180160522
+                },
+                "new_margin": {
+                  "n": 34,
+                  "mean": -0.0036183087264789913,
+                  "median": -0.00241401791572565
+                },
+                "change": {
+                  "n": 34,
+                  "mean": -0.0016309811788446482,
+                  "median": -0.0013351738452911
+                },
+                "improved": 9,
+                "worsened": 25,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 6,
+                "rival_strictly_better_after": 28
+              },
+              "1": {
+                "draws": 316,
+                "cases": 68,
+                "baseline_margin": {
+                  "n": 316,
+                  "mean": 0.005843901936011965,
+                  "median": 0.0019268989562988
+                },
+                "new_margin": {
+                  "n": 316,
+                  "mean": 0.005622058918204479,
+                  "median": 0.0013048052787780502
+                },
+                "change": {
+                  "n": 316,
+                  "mean": -0.00022184301780748874,
+                  "median": -0.0001237392425537
+                },
+                "improved": 149,
+                "worsened": 167,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 194,
+                "rival_strictly_better_after": 122
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 13,
+                "mean": 0.0022737051431949186,
+                "median": 0.0016097724437713497,
+                "positive": 10,
+                "negative": 3,
+                "numerically_tied": 0
+              }
+            },
+            "native_failed": {
+              "0": {
+                "draws": 299,
+                "cases": 64,
+                "baseline_margin": {
+                  "n": 299,
+                  "mean": -0.009272851274164978,
+                  "median": -0.0039600133895874
+                },
+                "new_margin": {
+                  "n": 299,
+                  "mean": -0.009257877949488165,
+                  "median": -0.0040141344070434
+                },
+                "change": {
+                  "n": 299,
+                  "mean": 1.4973324676817594e-05,
+                  "median": 9.810924530029296e-05
+                },
+                "improved": 155,
+                "worsened": 143,
+                "numerically_unchanged": 1,
+                "true_strictly_best_after": 32,
+                "rival_strictly_better_after": 267
+              },
+              "1": {
+                "draws": 26,
+                "cases": 11,
+                "baseline_margin": {
+                  "n": 26,
+                  "mean": -0.003941320455991266,
+                  "median": -0.0024821758270263
+                },
+                "new_margin": {
+                  "n": 26,
+                  "mean": -0.003656513415850097,
+                  "median": -0.00272604823112485
+                },
+                "change": {
+                  "n": 26,
+                  "mean": 0.00028480704014118463,
+                  "median": -0.0003992319107055
+                },
+                "improved": 11,
+                "worsened": 15,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 6,
+                "rival_strictly_better_after": 20
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 10,
+                "mean": 0.0009310876329739969,
+                "median": 0.0007774829864501847,
+                "positive": 7,
+                "negative": 3,
+                "numerically_tied": 0
+              }
+            }
+          },
+          "small_change_sensitivity": [
+            {
+              "threshold": 0.0001,
+              "draws": 29,
+              "flips": 2,
+              "flip_fraction": 0.06896551724137931,
+              "rescues": 0,
+              "breaks": 2
+            },
+            {
+              "threshold": 0.001,
+              "draws": 223,
+              "flips": 16,
+              "flip_fraction": 0.07174887892376682,
+              "rescues": 7,
+              "breaks": 9
+            },
+            {
+              "threshold": 0.01,
+              "draws": 672,
+              "flips": 59,
+              "flip_fraction": 0.08779761904761904,
+              "rescues": 26,
+              "breaks": 33
+            }
+          ],
+          "transitions": {
+            "native_correct/rival_or_tie->rival_or_tie": {
+              "draws": 118,
+              "accuracy": 0.7796610169491526
+            },
+            "native_correct/rival_or_tie->true": {
+              "draws": 17,
+              "accuracy": 0.8823529411764706
+            },
+            "native_correct/true->rival_or_tie": {
+              "draws": 32,
+              "accuracy": 0.9375
+            },
+            "native_correct/true->true": {
+              "draws": 183,
+              "accuracy": 0.9781420765027322
+            },
+            "native_failed/rival_or_tie->rival_or_tie": {
+              "draws": 279,
+              "accuracy": 0.06810035842293907
+            },
+            "native_failed/rival_or_tie->true": {
+              "draws": 16,
+              "accuracy": 0.125
+            },
+            "native_failed/true->rival_or_tie": {
+              "draws": 8,
+              "accuracy": 0.125
+            },
+            "native_failed/true->true": {
+              "draws": 22,
+              "accuracy": 0.18181818181818182
+            }
+          }
+        },
+        "full_mean_available_rivals": {
+          "total_draws": 1000,
+          "valid_draws": 960,
+          "valid_cases": 192,
+          "excluded_flips": 0,
+          "cohorts": {
+            "native_correct": {
+              "0": {
+                "draws": 46,
+                "cases": 21,
+                "baseline_margin": {
+                  "n": 46,
+                  "mean": -0.0018413248269454146,
+                  "median": -0.0015596151351928
+                },
+                "new_margin": {
+                  "n": 46,
+                  "mean": -0.0030400169932323666,
+                  "median": -0.0020788311958312503
+                },
+                "change": {
+                  "n": 46,
+                  "mean": -0.0011986921662869522,
+                  "median": -0.0010901689529418499
+                },
+                "improved": 16,
+                "worsened": 30,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 9,
+                "rival_strictly_better_after": 37
+              },
+              "1": {
+                "draws": 434,
+                "cases": 94,
+                "baseline_margin": {
+                  "n": 434,
+                  "mean": 0.005803670751334325,
+                  "median": 0.0019268989562988
+                },
+                "new_margin": {
+                  "n": 434,
+                  "mean": 0.005612160066305755,
+                  "median": 0.00145676732063285
+                },
+                "change": {
+                  "n": 434,
+                  "mean": -0.00019151068502856825,
+                  "median": -0.00010013580322264629
+                },
+                "improved": 210,
+                "worsened": 224,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 271,
+                "rival_strictly_better_after": 163
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 19,
+                "mean": 0.001817285753132997,
+                "median": 0.0014648636182148897,
+                "positive": 14,
+                "negative": 5,
+                "numerically_tied": 0
+              }
+            },
+            "native_failed": {
+              "0": {
+                "draws": 438,
+                "cases": 94,
+                "baseline_margin": {
+                  "n": 438,
+                  "mean": -0.008490379814687884,
+                  "median": -0.0040089190006256
+                },
+                "new_margin": {
+                  "n": 438,
+                  "mean": -0.008283096633545303,
+                  "median": -0.0042304694652557
+                },
+                "change": {
+                  "n": 438,
+                  "mean": 0.00020728318114258598,
+                  "median": 0.0001842677593231
+                },
+                "improved": 234,
+                "worsened": 203,
+                "numerically_unchanged": 1,
+                "true_strictly_best_after": 49,
+                "rival_strictly_better_after": 389
+              },
+              "1": {
+                "draws": 42,
+                "cases": 19,
+                "baseline_margin": {
+                  "n": 42,
+                  "mean": -0.003001069738751343,
+                  "median": -0.0024821758270263
+                },
+                "new_margin": {
+                  "n": 42,
+                  "mean": -0.00261630472682769,
+                  "median": -0.00191453099250785
+                },
+                "change": {
+                  "n": 42,
+                  "mean": 0.00038476501192365116,
+                  "median": -8.96751880645752e-05
+                },
+                "improved": 20,
+                "worsened": 22,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 14,
+                "rival_strictly_better_after": 28
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 17,
+                "mean": 0.0006118139215544186,
+                "median": 0.0006455332040786444,
+                "positive": 11,
+                "negative": 6,
+                "numerically_tied": 0
+              }
+            }
+          },
+          "small_change_sensitivity": [
+            {
+              "threshold": 0.0001,
+              "draws": 41,
+              "flips": 5,
+              "flip_fraction": 0.12195121951219512,
+              "rescues": 2,
+              "breaks": 3
+            },
+            {
+              "threshold": 0.001,
+              "draws": 311,
+              "flips": 22,
+              "flip_fraction": 0.0707395498392283,
+              "rescues": 10,
+              "breaks": 12
+            },
+            {
+              "threshold": 0.01,
+              "draws": 956,
+              "flips": 87,
+              "flip_fraction": 0.09100418410041841,
+              "rescues": 42,
+              "breaks": 45
+            }
+          ],
+          "transitions": {
+            "native_correct/rival_or_tie->rival_or_tie": {
+              "draws": 160,
+              "accuracy": 0.79375
+            },
+            "native_correct/rival_or_tie->true": {
+              "draws": 35,
+              "accuracy": 0.8857142857142857
+            },
+            "native_correct/true->rival_or_tie": {
+              "draws": 40,
+              "accuracy": 0.9
+            },
+            "native_correct/true->true": {
+              "draws": 245,
+              "accuracy": 0.9795918367346939
+            },
+            "native_failed/rival_or_tie->rival_or_tie": {
+              "draws": 406,
+              "accuracy": 0.06157635467980296
+            },
+            "native_failed/rival_or_tie->true": {
+              "draws": 29,
+              "accuracy": 0.13793103448275862
+            },
+            "native_failed/true->rival_or_tie": {
+              "draws": 11,
+              "accuracy": 0.2727272727272727
+            },
+            "native_failed/true->true": {
+              "draws": 34,
+              "accuracy": 0.29411764705882354
+            }
+          }
+        },
+        "node_jaccard": {
+          "total_draws": 1000,
+          "valid_draws": 1000,
+          "valid_cases": 200,
+          "excluded_flips": 0,
+          "cohorts": {
+            "native_correct": {
+              "0": {
+                "draws": 46,
+                "cases": 21,
+                "baseline_margin": {
+                  "n": 46,
+                  "mean": -0.009775821239313098,
+                  "median": -0.0095312704008355
+                },
+                "new_margin": {
+                  "n": 46,
+                  "mean": -0.008860950451009318,
+                  "median": -0.00953432091993485
+                },
+                "change": {
+                  "n": 46,
+                  "mean": 0.0009148707883038004,
+                  "median": 0.00138064851724805
+                },
+                "improved": 24,
+                "worsened": 22,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 6,
+                "rival_strictly_better_after": 40
+              },
+              "1": {
+                "draws": 454,
+                "cases": 98,
+                "baseline_margin": {
+                  "n": 454,
+                  "mean": 0.004926461208199499,
+                  "median": 0.0001215930561011
+                },
+                "new_margin": {
+                  "n": 454,
+                  "mean": 0.005049655101680683,
+                  "median": 0.0001113713190697284
+                },
+                "change": {
+                  "n": 454,
+                  "mean": 0.00012319389348118683,
+                  "median": 0.0
+                },
+                "improved": 214,
+                "worsened": 210,
+                "numerically_unchanged": 30,
+                "true_strictly_best_after": 231,
+                "rival_strictly_better_after": 206
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 19,
+                "mean": 0.0022418773145324662,
+                "median": 0.0007532034881528489,
+                "positive": 11,
+                "negative": 8,
+                "numerically_tied": 0
+              }
+            },
+            "native_failed": {
+              "0": {
+                "draws": 458,
+                "cases": 98,
+                "baseline_margin": {
+                  "n": 458,
+                  "mean": -0.00934424304403164,
+                  "median": -0.0076880716891835
+                },
+                "new_margin": {
+                  "n": 458,
+                  "mean": -0.009062233202208718,
+                  "median": -0.00828963823143305
+                },
+                "change": {
+                  "n": 458,
+                  "mean": 0.00028200984182292685,
+                  "median": 0.0
+                },
+                "improved": 205,
+                "worsened": 204,
+                "numerically_unchanged": 49,
+                "true_strictly_best_after": 59,
+                "rival_strictly_better_after": 372
+              },
+              "1": {
+                "draws": 42,
+                "cases": 19,
+                "baseline_margin": {
+                  "n": 42,
+                  "mean": -0.006449654079578777,
+                  "median": -0.00528228595433005
+                },
+                "new_margin": {
+                  "n": 42,
+                  "mean": -0.005180551007668137,
+                  "median": -0.005367764389342
+                },
+                "change": {
+                  "n": 42,
+                  "mean": 0.0012691030719106562,
+                  "median": 0.0
+                },
+                "improved": 20,
+                "worsened": 20,
+                "numerically_unchanged": 2,
+                "true_strictly_best_after": 11,
+                "rival_strictly_better_after": 29
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 17,
+                "mean": -0.0012913730183639312,
+                "median": 0.00039044479610821623,
+                "positive": 9,
+                "negative": 8,
+                "numerically_tied": 0
+              }
+            }
+          },
+          "small_change_sensitivity": [
+            {
+              "threshold": 0.0001,
+              "draws": 106,
+              "flips": 4,
+              "flip_fraction": 0.03773584905660377,
+              "rescues": 3,
+              "breaks": 1
+            },
+            {
+              "threshold": 0.001,
+              "draws": 188,
+              "flips": 13,
+              "flip_fraction": 0.06914893617021277,
+              "rescues": 9,
+              "breaks": 4
+            },
+            {
+              "threshold": 0.01,
+              "draws": 766,
+              "flips": 57,
+              "flip_fraction": 0.07441253263707572,
+              "rescues": 32,
+              "breaks": 25
+            }
+          ],
+          "transitions": {
+            "native_correct/rival_or_tie->rival_or_tie": {
+              "draws": 224,
+              "accuracy": 0.8303571428571429
+            },
+            "native_correct/rival_or_tie->true": {
+              "draws": 41,
+              "accuracy": 0.926829268292683
+            },
+            "native_correct/true->rival_or_tie": {
+              "draws": 39,
+              "accuracy": 0.9487179487179487
+            },
+            "native_correct/true->true": {
+              "draws": 196,
+              "accuracy": 0.9846938775510204
+            },
+            "native_failed/rival_or_tie->rival_or_tie": {
+              "draws": 393,
+              "accuracy": 0.06870229007633588
+            },
+            "native_failed/rival_or_tie->true": {
+              "draws": 42,
+              "accuracy": 0.14285714285714285
+            },
+            "native_failed/true->rival_or_tie": {
+              "draws": 37,
+              "accuracy": 0.10810810810810811
+            },
+            "native_failed/true->true": {
+              "draws": 28,
+              "accuracy": 0.17857142857142858
+            }
+          }
+        }
+      }
+    },
+    "cp_hk": {
+      "alternative": {
+        "full_mean": {
+          "total_draws": 1000,
+          "valid_draws": 421,
+          "valid_cases": 85,
+          "excluded_flips": 236,
+          "cohorts": {
+            "native_correct": {
+              "0": {
+                "draws": 140,
+                "cases": 35,
+                "baseline_margin": {
+                  "n": 140,
+                  "mean": -0.0052916471447263125,
+                  "median": -0.00237637758255
+                },
+                "new_margin": {
+                  "n": 140,
+                  "mean": -0.010129115411213438,
+                  "median": -0.00281903147697445
+                },
+                "change": {
+                  "n": 140,
+                  "mean": -0.004837468266487122,
+                  "median": -0.00018844008445735
+                },
+                "improved": 69,
+                "worsened": 71,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 28,
+                "rival_strictly_better_after": 112
+              },
+              "1": {
+                "draws": 43,
+                "cases": 19,
+                "baseline_margin": {
+                  "n": 43,
+                  "mean": -0.022737468397894547,
+                  "median": -0.003354787826538
+                },
+                "new_margin": {
+                  "n": 43,
+                  "mean": -0.029283854850502885,
+                  "median": -0.0021651983261108
+                },
+                "change": {
+                  "n": 43,
+                  "mean": -0.006546386452608321,
+                  "median": -0.0009129643440246
+                },
+                "improved": 18,
+                "worsened": 25,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 13,
+                "rival_strictly_better_after": 30
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 17,
+                "mean": 0.0019533333240770805,
+                "median": 0.00022402405738837484,
+                "positive": 10,
+                "negative": 7,
+                "numerically_tied": 0
+              }
+            },
+            "native_failed": {
+              "0": {
+                "draws": 216,
+                "cases": 48,
+                "baseline_margin": {
+                  "n": 216,
+                  "mean": -0.0057562167445818135,
+                  "median": -0.0030306577682495
+                },
+                "new_margin": {
+                  "n": 216,
+                  "mean": -0.006034292004726509,
+                  "median": -0.00335934758186335
+                },
+                "change": {
+                  "n": 216,
+                  "mean": -0.00027807526014469623,
+                  "median": 0.0003924667835235
+                },
+                "improved": 115,
+                "worsened": 101,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 15,
+                "rival_strictly_better_after": 201
+              },
+              "1": {
+                "draws": 22,
+                "cases": 13,
+                "baseline_margin": {
+                  "n": 22,
+                  "mean": -0.006809700619090643,
+                  "median": -0.0038979053497314
+                },
+                "new_margin": {
+                  "n": 22,
+                  "mean": -0.01568507064472542,
+                  "median": -0.0047243237495422
+                },
+                "change": {
+                  "n": 22,
+                  "mean": -0.00887537002563476,
+                  "median": -0.0010942220687866
+                },
+                "improved": 9,
+                "worsened": 13,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 4,
+                "rival_strictly_better_after": 18
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 13,
+                "mean": -0.002890075246493028,
+                "median": 0.0004452019929885747,
+                "positive": 9,
+                "negative": 4,
+                "numerically_tied": 0
+              }
+            }
+          },
+          "small_change_sensitivity": [
+            {
+              "threshold": 0.0001,
+              "draws": 8,
+              "flips": 2,
+              "flip_fraction": 0.25,
+              "rescues": 0,
+              "breaks": 2
+            },
+            {
+              "threshold": 0.001,
+              "draws": 83,
+              "flips": 26,
+              "flip_fraction": 0.3132530120481928,
+              "rescues": 2,
+              "breaks": 24
+            },
+            {
+              "threshold": 0.01,
+              "draws": 355,
+              "flips": 134,
+              "flip_fraction": 0.37746478873239436,
+              "rescues": 17,
+              "breaks": 117
+            }
+          ],
+          "transitions": {
+            "native_correct/rival_or_tie->rival_or_tie": {
+              "draws": 119,
+              "accuracy": 0.21008403361344538
+            },
+            "native_correct/rival_or_tie->true": {
+              "draws": 29,
+              "accuracy": 0.2413793103448276
+            },
+            "native_correct/true->rival_or_tie": {
+              "draws": 23,
+              "accuracy": 0.21739130434782608
+            },
+            "native_correct/true->true": {
+              "draws": 12,
+              "accuracy": 0.5
+            },
+            "native_failed/rival_or_tie->rival_or_tie": {
+              "draws": 214,
+              "accuracy": 0.0794392523364486
+            },
+            "native_failed/rival_or_tie->true": {
+              "draws": 19,
+              "accuracy": 0.21052631578947367
+            },
+            "native_failed/true->rival_or_tie": {
+              "draws": 5,
+              "accuracy": 0.2
+            }
+          }
+        },
+        "full_mean_available_rivals": {
+          "total_draws": 1000,
+          "valid_draws": 961,
+          "valid_cases": 194,
+          "excluded_flips": 9,
+          "cohorts": {
+            "native_correct": {
+              "0": {
+                "draws": 329,
+                "cases": 81,
+                "baseline_margin": {
+                  "n": 329,
+                  "mean": -0.005013539798353909,
+                  "median": -0.0029298663139343
+                },
+                "new_margin": {
+                  "n": 329,
+                  "mean": -0.007506837598458578,
+                  "median": -0.0027284026145935
+                },
+                "change": {
+                  "n": 329,
+                  "mean": -0.002493297800104671,
+                  "median": 0.0001114606857299
+                },
+                "improved": 170,
+                "worsened": 159,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 59,
+                "rival_strictly_better_after": 270
+              },
+              "1": {
+                "draws": 139,
+                "cases": 47,
+                "baseline_margin": {
+                  "n": 139,
+                  "mean": -0.01747596049480299,
+                  "median": -0.0023750662803649
+                },
+                "new_margin": {
+                  "n": 139,
+                  "mean": -0.018873990010872144,
+                  "median": -0.0027748346328735
+                },
+                "change": {
+                  "n": 139,
+                  "mean": -0.0013980295160691486,
+                  "median": -0.0001637339591979
+                },
+                "improved": 66,
+                "worsened": 73,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 40,
+                "rival_strictly_better_after": 99
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 33,
+                "mean": 0.0041987171979865606,
+                "median": 0.00022402405738837484,
+                "positive": 18,
+                "negative": 15,
+                "numerically_tied": 0
+              }
+            },
+            "native_failed": {
+              "0": {
+                "draws": 433,
+                "cases": 96,
+                "baseline_margin": {
+                  "n": 433,
+                  "mean": -0.006731906608951514,
+                  "median": -0.0038698315620422
+                },
+                "new_margin": {
+                  "n": 433,
+                  "mean": -0.007081644226717302,
+                  "median": -0.0037108659744262
+                },
+                "change": {
+                  "n": 433,
+                  "mean": -0.00034973761776578875,
+                  "median": 0.0005586147308349
+                },
+                "improved": 241,
+                "worsened": 192,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 36,
+                "rival_strictly_better_after": 397
+              },
+              "1": {
+                "draws": 60,
+                "cases": 26,
+                "baseline_margin": {
+                  "n": 60,
+                  "mean": -0.006005778908729522,
+                  "median": -0.00385048985481255
+                },
+                "new_margin": {
+                  "n": 60,
+                  "mean": -0.006806066632270789,
+                  "median": -0.0023261308670043503
+                },
+                "change": {
+                  "n": 60,
+                  "mean": -0.0008002877235412653,
+                  "median": 0.0018212199211119998
+                },
+                "improved": 33,
+                "worsened": 27,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 19,
+                "rival_strictly_better_after": 41
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 23,
+                "mean": -0.0012926835080851618,
+                "median": 0.0003381967544555495,
+                "positive": 15,
+                "negative": 8,
+                "numerically_tied": 0
+              }
+            }
+          },
+          "small_change_sensitivity": [
+            {
+              "threshold": 0.0001,
+              "draws": 18,
+              "flips": 5,
+              "flip_fraction": 0.2777777777777778,
+              "rescues": 0,
+              "breaks": 5
+            },
+            {
+              "threshold": 0.001,
+              "draws": 190,
+              "flips": 78,
+              "flip_fraction": 0.4105263157894737,
+              "rescues": 9,
+              "breaks": 69
+            },
+            {
+              "threshold": 0.01,
+              "draws": 805,
+              "flips": 336,
+              "flip_fraction": 0.41739130434782606,
+              "rescues": 47,
+              "breaks": 289
+            }
+          ],
+          "transitions": {
+            "native_correct/rival_or_tie->rival_or_tie": {
+              "draws": 316,
+              "accuracy": 0.2689873417721519
+            },
+            "native_correct/rival_or_tie->true": {
+              "draws": 59,
+              "accuracy": 0.2711864406779661
+            },
+            "native_correct/true->rival_or_tie": {
+              "draws": 53,
+              "accuracy": 0.2641509433962264
+            },
+            "native_correct/true->true": {
+              "draws": 40,
+              "accuracy": 0.6
+            },
+            "native_failed/rival_or_tie->rival_or_tie": {
+              "draws": 418,
+              "accuracy": 0.09090909090909091
+            },
+            "native_failed/rival_or_tie->true": {
+              "draws": 45,
+              "accuracy": 0.3111111111111111
+            },
+            "native_failed/true->rival_or_tie": {
+              "draws": 20,
+              "accuracy": 0.15
+            },
+            "native_failed/true->true": {
+              "draws": 10,
+              "accuracy": 0.5
+            }
+          }
+        },
+        "node_jaccard": {
+          "total_draws": 1000,
+          "valid_draws": 1000,
+          "valid_cases": 200,
+          "excluded_flips": 0,
+          "cohorts": {
+            "native_correct": {
+              "0": {
+                "draws": 337,
+                "cases": 84,
+                "baseline_margin": {
+                  "n": 337,
+                  "mean": -0.023269138040934334,
+                  "median": -0.025541920314362
+                },
+                "new_margin": {
+                  "n": 337,
+                  "mean": -0.02769850671065072,
+                  "median": -0.0264887035487454
+                },
+                "change": {
+                  "n": 337,
+                  "mean": -0.004429368669716384,
+                  "median": -0.0025577684017226
+                },
+                "improved": 129,
+                "worsened": 198,
+                "numerically_unchanged": 10,
+                "true_strictly_best_after": 21,
+                "rival_strictly_better_after": 309
+              },
+              "1": {
+                "draws": 163,
+                "cases": 52,
+                "baseline_margin": {
+                  "n": 163,
+                  "mean": -0.021940595063254863,
+                  "median": -0.0212626995645862
+                },
+                "new_margin": {
+                  "n": 163,
+                  "mean": -0.022549829011934242,
+                  "median": -0.0223633098798006
+                },
+                "change": {
+                  "n": 163,
+                  "mean": -0.0006092339486793716,
+                  "median": 0.0
+                },
+                "improved": 72,
+                "worsened": 59,
+                "numerically_unchanged": 32,
+                "true_strictly_best_after": 11,
+                "rival_strictly_better_after": 129
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 36,
+                "mean": -0.0017591916348060764,
+                "median": -0.00013517444708676697,
+                "positive": 13,
+                "negative": 18,
+                "numerically_tied": 5
+              }
+            },
+            "native_failed": {
+              "0": {
+                "draws": 439,
+                "cases": 97,
+                "baseline_margin": {
+                  "n": 439,
+                  "mean": -0.025291845403874896,
+                  "median": -0.025011086474501
+                },
+                "new_margin": {
+                  "n": 439,
+                  "mean": -0.026567568162098626,
+                  "median": -0.0256349805104991
+                },
+                "change": {
+                  "n": 439,
+                  "mean": -0.0012757227582237357,
+                  "median": 0.0
+                },
+                "improved": 206,
+                "worsened": 208,
+                "numerically_unchanged": 25,
+                "true_strictly_best_after": 17,
+                "rival_strictly_better_after": 400
+              },
+              "1": {
+                "draws": 61,
+                "cases": 27,
+                "baseline_margin": {
+                  "n": 61,
+                  "mean": -0.023556194820679728,
+                  "median": -0.0241257193448427
+                },
+                "new_margin": {
+                  "n": 61,
+                  "mean": -0.02306945683160088,
+                  "median": -0.0237455612166125
+                },
+                "change": {
+                  "n": 61,
+                  "mean": 0.00048673798907885896,
+                  "median": -0.0024724356832609
+                },
+                "improved": 20,
+                "worsened": 33,
+                "numerically_unchanged": 8,
+                "true_strictly_best_after": 4,
+                "rival_strictly_better_after": 49
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 24,
+                "mean": -0.0016342484718381105,
+                "median": -0.0009670143367787789,
+                "positive": 5,
+                "negative": 15,
+                "numerically_tied": 4
+              }
+            }
+          },
+          "small_change_sensitivity": [
+            {
+              "threshold": 0.0001,
+              "draws": 83,
+              "flips": 19,
+              "flip_fraction": 0.2289156626506024,
+              "rescues": 8,
+              "breaks": 11
+            },
+            {
+              "threshold": 0.001,
+              "draws": 133,
+              "flips": 39,
+              "flip_fraction": 0.2932330827067669,
+              "rescues": 10,
+              "breaks": 29
+            },
+            {
+              "threshold": 0.01,
+              "draws": 512,
+              "flips": 194,
+              "flip_fraction": 0.37890625,
+              "rescues": 37,
+              "breaks": 157
+            }
+          ],
+          "transitions": {
+            "native_correct/rival_or_tie->rival_or_tie": {
+              "draws": 450,
+              "accuracy": 0.3377777777777778
+            },
+            "native_correct/rival_or_tie->true": {
+              "draws": 20,
+              "accuracy": 0.55
+            },
+            "native_correct/true->rival_or_tie": {
+              "draws": 18,
+              "accuracy": 0.0
+            },
+            "native_correct/true->true": {
+              "draws": 12,
+              "accuracy": 0.0
+            },
+            "native_failed/rival_or_tie->rival_or_tie": {
+              "draws": 455,
+              "accuracy": 0.12527472527472527
+            },
+            "native_failed/rival_or_tie->true": {
+              "draws": 15,
+              "accuracy": 0.26666666666666666
+            },
+            "native_failed/true->rival_or_tie": {
+              "draws": 24,
+              "accuracy": 0.0
+            },
+            "native_failed/true->true": {
+              "draws": 6,
+              "accuracy": 0.0
+            }
+          }
+        }
+      },
+      "same_context": {
+        "full_mean": {
+          "total_draws": 1000,
+          "valid_draws": 425,
+          "valid_cases": 85,
+          "excluded_flips": 48,
+          "cohorts": {
+            "native_correct": {
+              "0": {
+                "draws": 22,
+                "cases": 8,
+                "baseline_margin": {
+                  "n": 22,
+                  "mean": -0.003258182243867305,
+                  "median": -0.00170487165451045
+                },
+                "new_margin": {
+                  "n": 22,
+                  "mean": -0.0034102960066361545,
+                  "median": -0.00190806388854975
+                },
+                "change": {
+                  "n": 22,
+                  "mean": -0.0001521137627688192,
+                  "median": -0.0003299415111541
+                },
+                "improved": 9,
+                "worsened": 13,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 3,
+                "rival_strictly_better_after": 19
+              },
+              "1": {
+                "draws": 163,
+                "cases": 36,
+                "baseline_margin": {
+                  "n": 163,
+                  "mean": -0.011127225094777647,
+                  "median": -0.00237637758255
+                },
+                "new_margin": {
+                  "n": 163,
+                  "mean": -0.010404956487058838,
+                  "median": -0.002013623714447
+                },
+                "change": {
+                  "n": 163,
+                  "mean": 0.0007222686077188065,
+                  "median": 5.161762237548828e-05
+                },
+                "improved": 83,
+                "worsened": 70,
+                "numerically_unchanged": 10,
+                "true_strictly_best_after": 36,
+                "rival_strictly_better_after": 127
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 7,
+                "mean": 0.0013348573730105377,
+                "median": 0.001218994458516415,
+                "positive": 5,
+                "negative": 2,
+                "numerically_tied": 0
+              }
+            },
+            "native_failed": {
+              "0": {
+                "draws": 240,
+                "cases": 48,
+                "baseline_margin": {
+                  "n": 240,
+                  "mean": -0.0058463402092456375,
+                  "median": -0.0031664967536926
+                },
+                "new_margin": {
+                  "n": 240,
+                  "mean": -0.0053252163032690225,
+                  "median": -0.0037128329277038
+                },
+                "change": {
+                  "n": 240,
+                  "mean": 0.0005211239059766115,
+                  "median": 9.733438491820312e-05
+                },
+                "improved": 124,
+                "worsened": 116,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 9,
+                "rival_strictly_better_after": 231
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 0,
+                "mean": null,
+                "median": null,
+                "positive": 0,
+                "negative": 0,
+                "numerically_tied": 0
+              }
+            }
+          },
+          "small_change_sensitivity": [
+            {
+              "threshold": 0.0001,
+              "draws": 24,
+              "flips": 1,
+              "flip_fraction": 0.041666666666666664,
+              "rescues": 0,
+              "breaks": 1
+            },
+            {
+              "threshold": 0.001,
+              "draws": 129,
+              "flips": 7,
+              "flip_fraction": 0.05426356589147287,
+              "rescues": 0,
+              "breaks": 7
+            },
+            {
+              "threshold": 0.01,
+              "draws": 418,
+              "flips": 22,
+              "flip_fraction": 0.05263157894736842,
+              "rescues": 0,
+              "breaks": 22
+            }
+          ],
+          "transitions": {
+            "native_correct/rival_or_tie->rival_or_tie": {
+              "draws": 135,
+              "accuracy": 0.8592592592592593
+            },
+            "native_correct/rival_or_tie->true": {
+              "draws": 15,
+              "accuracy": 0.8
+            },
+            "native_correct/true->rival_or_tie": {
+              "draws": 11,
+              "accuracy": 1.0
+            },
+            "native_correct/true->true": {
+              "draws": 24,
+              "accuracy": 1.0
+            },
+            "native_failed/rival_or_tie->rival_or_tie": {
+              "draws": 227,
+              "accuracy": 0.0
+            },
+            "native_failed/rival_or_tie->true": {
+              "draws": 8,
+              "accuracy": 0.0
+            },
+            "native_failed/true->rival_or_tie": {
+              "draws": 4,
+              "accuracy": 0.0
+            },
+            "native_failed/true->true": {
+              "draws": 1,
+              "accuracy": 0.0
+            }
+          }
+        },
+        "full_mean_available_rivals": {
+          "total_draws": 1000,
+          "valid_draws": 970,
+          "valid_cases": 194,
+          "excluded_flips": 0,
+          "cohorts": {
+            "native_correct": {
+              "0": {
+                "draws": 61,
+                "cases": 24,
+                "baseline_margin": {
+                  "n": 61,
+                  "mean": -0.005115720092273111,
+                  "median": -0.0048775672912597
+                },
+                "new_margin": {
+                  "n": 61,
+                  "mean": -0.005507497513880456,
+                  "median": -0.004148781299591
+                },
+                "change": {
+                  "n": 61,
+                  "mean": -0.0003917774216073298,
+                  "median": -0.0009229779243469
+                },
+                "improved": 20,
+                "worsened": 41,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 7,
+                "rival_strictly_better_after": 54
+              },
+              "1": {
+                "draws": 414,
+                "cases": 93,
+                "baseline_margin": {
+                  "n": 414,
+                  "mean": -0.00990276535352068,
+                  "median": -0.00255629420280455
+                },
+                "new_margin": {
+                  "n": 414,
+                  "mean": -0.009742370838128402,
+                  "median": -0.00240576267242425
+                },
+                "change": {
+                  "n": 414,
+                  "mean": 0.0001603945153922832,
+                  "median": 9.337067604062383e-05
+                },
+                "improved": 210,
+                "worsened": 194,
+                "numerically_unchanged": 10,
+                "true_strictly_best_after": 93,
+                "rival_strictly_better_after": 321
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 22,
+                "mean": 0.0007206657619187227,
+                "median": 0.0008718669414520251,
+                "positive": 15,
+                "negative": 7,
+                "numerically_tied": 0
+              }
+            },
+            "native_failed": {
+              "0": {
+                "draws": 486,
+                "cases": 99,
+                "baseline_margin": {
+                  "n": 486,
+                  "mean": -0.006700588719834965,
+                  "median": -0.0038698315620422
+                },
+                "new_margin": {
+                  "n": 486,
+                  "mean": -0.006169289227866297,
+                  "median": -0.0038912892341612998
+                },
+                "change": {
+                  "n": 486,
+                  "mean": 0.0005312994919686615,
+                  "median": 0.00010517239570615
+                },
+                "improved": 250,
+                "worsened": 236,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 21,
+                "rival_strictly_better_after": 465
+              },
+              "1": {
+                "draws": 9,
+                "cases": 5,
+                "baseline_margin": {
+                  "n": 9,
+                  "mean": -0.003193510903252454,
+                  "median": -0.003885269165039
+                },
+                "new_margin": {
+                  "n": 9,
+                  "mean": -0.00145512157016327,
+                  "median": -0.0018160939216613
+                },
+                "change": {
+                  "n": 9,
+                  "mean": 0.0017383893330891994,
+                  "median": 0.0020691752433776
+                },
+                "improved": 6,
+                "worsened": 3,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 2,
+                "rival_strictly_better_after": 7
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 5,
+                "mean": 0.0004420439402262397,
+                "median": -0.0002301434675852105,
+                "positive": 2,
+                "negative": 3,
+                "numerically_tied": 0
+              }
+            }
+          },
+          "small_change_sensitivity": [
+            {
+              "threshold": 0.0001,
+              "draws": 29,
+              "flips": 2,
+              "flip_fraction": 0.06896551724137931,
+              "rescues": 1,
+              "breaks": 1
+            },
+            {
+              "threshold": 0.001,
+              "draws": 272,
+              "flips": 16,
+              "flip_fraction": 0.058823529411764705,
+              "rescues": 2,
+              "breaks": 14
+            },
+            {
+              "threshold": 0.01,
+              "draws": 939,
+              "flips": 69,
+              "flip_fraction": 0.07348242811501597,
+              "rescues": 9,
+              "breaks": 60
+            }
+          ],
+          "transitions": {
+            "native_correct/rival_or_tie->rival_or_tie": {
+              "draws": 347,
+              "accuracy": 0.861671469740634
+            },
+            "native_correct/rival_or_tie->true": {
+              "draws": 33,
+              "accuracy": 0.8484848484848485
+            },
+            "native_correct/true->rival_or_tie": {
+              "draws": 28,
+              "accuracy": 0.7857142857142857
+            },
+            "native_correct/true->true": {
+              "draws": 67,
+              "accuracy": 0.9701492537313433
+            },
+            "native_failed/rival_or_tie->rival_or_tie": {
+              "draws": 451,
+              "accuracy": 0.011086474501108648
+            },
+            "native_failed/rival_or_tie->true": {
+              "draws": 14,
+              "accuracy": 0.07142857142857142
+            },
+            "native_failed/true->rival_or_tie": {
+              "draws": 21,
+              "accuracy": 0.09523809523809523
+            },
+            "native_failed/true->true": {
+              "draws": 9,
+              "accuracy": 0.1111111111111111
+            }
+          }
+        },
+        "node_jaccard": {
+          "total_draws": 1000,
+          "valid_draws": 1000,
+          "valid_cases": 200,
+          "excluded_flips": 0,
+          "cohorts": {
+            "native_correct": {
+              "0": {
+                "draws": 61,
+                "cases": 24,
+                "baseline_margin": {
+                  "n": 61,
+                  "mean": -0.028438044048706878,
+                  "median": -0.0280452575830523
+                },
+                "new_margin": {
+                  "n": 61,
+                  "mean": -0.035456489092135286,
+                  "median": -0.0300863363363362
+                },
+                "change": {
+                  "n": 61,
+                  "mean": -0.0070184450434284005,
+                  "median": -0.0028311599176389
+                },
+                "improved": 21,
+                "worsened": 38,
+                "numerically_unchanged": 2,
+                "true_strictly_best_after": 1,
+                "rival_strictly_better_after": 60
+              },
+              "1": {
+                "draws": 439,
+                "cases": 98,
+                "baseline_margin": {
+                  "n": 439,
+                  "mean": -0.022057621476387915,
+                  "median": -0.0223850223850222
+                },
+                "new_margin": {
+                  "n": 439,
+                  "mean": -0.023446350604817305,
+                  "median": -0.0227636696408143
+                },
+                "change": {
+                  "n": 439,
+                  "mean": -0.001388729128429392,
+                  "median": 0.0
+                },
+                "improved": 187,
+                "worsened": 197,
+                "numerically_unchanged": 55,
+                "true_strictly_best_after": 28,
+                "rival_strictly_better_after": 381
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 22,
+                "mean": 0.0035903650040085607,
+                "median": 0.002802623313662945,
+                "positive": 13,
+                "negative": 9,
+                "numerically_tied": 0
+              }
+            },
+            "native_failed": {
+              "0": {
+                "draws": 491,
+                "cases": 100,
+                "baseline_margin": {
+                  "n": 491,
+                  "mean": -0.024929136969009523,
+                  "median": -0.0249948885708444
+                },
+                "new_margin": {
+                  "n": 491,
+                  "mean": -0.024575226822911585,
+                  "median": -0.0226316434494872
+                },
+                "change": {
+                  "n": 491,
+                  "mean": 0.00035391014609793483,
+                  "median": 0.0
+                },
+                "improved": 226,
+                "worsened": 231,
+                "numerically_unchanged": 34,
+                "true_strictly_best_after": 18,
+                "rival_strictly_better_after": 443
+              },
+              "1": {
+                "draws": 9,
+                "cases": 5,
+                "baseline_margin": {
+                  "n": 9,
+                  "mean": -0.03331575161987399,
+                  "median": -0.0282258064516129
+                },
+                "new_margin": {
+                  "n": 9,
+                  "mean": -0.03008230027813836,
+                  "median": -0.0282162228045583
+                },
+                "change": {
+                  "n": 9,
+                  "mean": 0.003233451341735622,
+                  "median": 0.0001538146021328
+                },
+                "improved": 5,
+                "worsened": 4,
+                "numerically_unchanged": 0,
+                "true_strictly_best_after": 0,
+                "rival_strictly_better_after": 9
+              },
+              "within_case_correct_minus_wrong": {
+                "n": 5,
+                "mean": -0.0008575266393969674,
+                "median": -0.0019808420062936566,
+                "positive": 1,
+                "negative": 4,
+                "numerically_tied": 0
+              }
+            }
+          },
+          "small_change_sensitivity": [
+            {
+              "threshold": 0.0001,
+              "draws": 107,
+              "flips": 3,
+              "flip_fraction": 0.028037383177570093,
+              "rescues": 0,
+              "breaks": 3
+            },
+            {
+              "threshold": 0.001,
+              "draws": 151,
+              "flips": 7,
+              "flip_fraction": 0.046357615894039736,
+              "rescues": 2,
+              "breaks": 5
+            },
+            {
+              "threshold": 0.01,
+              "draws": 575,
+              "flips": 38,
+              "flip_fraction": 0.06608695652173913,
+              "rescues": 7,
+              "breaks": 31
+            }
+          ],
+          "transitions": {
+            "native_correct/rival_or_tie->rival_or_tie": {
+              "draws": 454,
+              "accuracy": 0.8678414096916299
+            },
+            "native_correct/rival_or_tie->true": {
+              "draws": 16,
+              "accuracy": 0.9375
+            },
+            "native_correct/true->rival_or_tie": {
+              "draws": 17,
+              "accuracy": 1.0
+            },
+            "native_correct/true->true": {
+              "draws": 13,
+              "accuracy": 1.0
+            },
+            "native_failed/rival_or_tie->rival_or_tie": {
+              "draws": 457,
+              "accuracy": 0.019693654266958426
+            },
+            "native_failed/rival_or_tie->true": {
+              "draws": 13,
+              "accuracy": 0.0
+            },
+            "native_failed/true->rival_or_tie": {
+              "draws": 25,
+              "accuracy": 0.0
+            },
+            "native_failed/true->true": {
+              "draws": 5,
+              "accuracy": 0.0
+            }
+          }
+        }
+      }
+    }
+  }
+}

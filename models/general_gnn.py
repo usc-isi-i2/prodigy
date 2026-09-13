@@ -7,6 +7,7 @@ import torch_geometric as pyg
 import numpy as np
 from models.layer_classes import MetagraphLayer, SupernodeAggrLayer, SupernodeToBgGraphLayer, BackgroundGNNLayer
 from models.encoder_solver_objective import ridge_query_loss
+from models.nm_geometry_readout import GeometryResidualReadout, mean_support_cosine
 from experiments.task_families import TASK_FAMILIES, TASK_FAMILY_TO_ID, effective_task_family
 
 
@@ -37,6 +38,13 @@ class SingleLayerGeneralGNN(torch.nn.Module):
         self.encoder_solver_ridge_loss = None
         self.support_label_prototypes = bool(self.params.get("support_label_prototypes", False))
         self.learned_relation_scorer = bool(self.params.get("learned_relation_scorer", False))
+        self.nm_geometry_residual = bool(self.params.get("nm_geometry_residual", False))
+        if self.nm_geometry_residual:
+            if self.params.get("task_name") not in {"nm", "neighbor_matching"}:
+                raise ValueError("The experimental geometry residual is NM-only")
+            if self.params.get("layers") != "S,U,M":
+                raise ValueError("The experimental geometry residual requires S,U,M")
+            self.geometry_readout = GeometryResidualReadout()
         if self.support_label_prototypes:
             self.prototype_adapter = torch.nn.Sequential(
                 torch.nn.Linear(params["emb_dim"], params["emb_dim"]),
@@ -221,6 +229,9 @@ class SingleLayerGeneralGNN(torch.nn.Module):
         # task_mask: Not actually needed here, but is passed here from the dataloader batch output..
         :return: y_true_matrix, y_pred_matrix (for the query set only!)
         '''
+        if self.nm_geometry_residual and self.training:
+            raise ValueError("The experimental geometry residual is an inference-only intervention")
+        geometry_scores = None
         supernode_idx = graph.supernode + graph.ptr[:-1]
         self.encoder_solver_ridge_loss = None
         #center_nodes = torch.zeros([graph.x.shape[0], 1]).to(graph.x.device)
@@ -264,6 +275,22 @@ class SingleLayerGeneralGNN(torch.nn.Module):
         task_conditioned = False
         for module in self.layer_list:
             if isinstance(module, MetagraphLayer):
+                message_edge_index = metagraph_edge_index
+                message_edge_attr = metagraph_edge_attr
+                message_query_mask = query_set_mask
+                message_input_seqs = input_seqs
+                message_query_seqs = query_seqs
+                message_query_seqs_gt = query_seqs_gt
+                if hasattr(graph, "metagraph_message_keep_mask"):
+                    keep = graph.metagraph_message_keep_mask.bool()
+                    if keep.shape != query_set_mask.shape:
+                        raise ValueError("metagraph message mask shape differs from edge mask")
+                    message_edge_index = metagraph_edge_index[:, keep]
+                    message_edge_attr = metagraph_edge_attr[keep]
+                    message_query_mask = query_set_mask[keep]
+                    # Canonical attention does not consume sequence tensors. They
+                    # describe the complete edge layout and cannot be reused after filtering.
+                    message_input_seqs = message_query_seqs = message_query_seqs_gt = None
                 mode = self.params.get("encoder_solver_objective", "native")
                 if self.encoder_solver_training and mode != "native":
                     self.encoder_solver_ridge_loss = ridge_query_loss(
@@ -281,7 +308,14 @@ class SingleLayerGeneralGNN(torch.nn.Module):
                     x_label = self.add_support_prototypes(
                         x_input, x_label, metagraph_edge_index, metagraph_edge_attr, query_set_mask
                     )
-                x_input, new_x_label = self.forward_metagraph(module, x_input, x_label, metagraph_edge_index, metagraph_edge_attr, query_set_mask, input_seqs, query_seqs, query_seqs_gt)
+                if self.nm_geometry_residual:
+                    geometry_scores = mean_support_cosine(x_input, metagraph_edge_index,
+                        metagraph_edge_attr, query_set_mask, y_true_matrix.shape[1])
+                x_input, new_x_label = self.forward_metagraph(
+                    module, x_input, x_label, message_edge_index, message_edge_attr,
+                    message_query_mask, message_input_seqs, message_query_seqs,
+                    message_query_seqs_gt,
+                )
                 if self.params["skip_path"]:
                     x_label = x_label + new_x_label
                 else:
@@ -336,4 +370,8 @@ class SingleLayerGeneralGNN(torch.nn.Module):
                 y_true_matrix.shape)
 
         qry_idx = torch.where(query_set_mask.reshape(-1, y_true_matrix.shape[1])[:, 0] == 1)[0]
+        if self.nm_geometry_residual:
+            if geometry_scores is None:
+                raise ValueError("No pre-metagraph geometry was captured")
+            y_pred_matrix = self.geometry_readout(y_pred_matrix, geometry_scores)
         return y_true_matrix[qry_idx, :], y_pred_matrix[qry_idx, :], graph

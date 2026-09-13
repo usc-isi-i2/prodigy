@@ -1,0 +1,117 @@
+{
+  "protocol": "hk_rescued_draw_cosine_v1",
+  "head_csv_sha256": "18c5032c1cfaa61b4a2c56e0c79bcf728b9056990ce7ec5e5ccb91766daa8750",
+  "geometry_sha256": "84c6f00bea619d87f797d6d0a70ca7474db93802ab336fa7f71b39d3dbe820dc",
+  "definition": "Mean cosine between fixed pre-metagraph query and three support embeddings. Rival supports are fixed, so differences of stored margins equal differences of true-class similarities.",
+  "tolerance": 1e-06,
+  "conditions": {
+    "alternative": {
+      "rescued_queries": 27,
+      "rescued_draws_vs_original": {
+        "n": 61,
+        "higher": 58,
+        "lower": 3,
+        "tied": 0,
+        "mean": 0.17353010399400776,
+        "median": 0.15833621084605717
+      },
+      "within_query_successful_minus_unsuccessful": {
+        "n": 24,
+        "higher": 19,
+        "lower": 5,
+        "tied": 0,
+        "mean": 0.060979418460685664,
+        "median": 0.03476800340124263
+      },
+      "matched_raw_valid_subset": {
+        "draws": 238,
+        "rescued_draws_learned": {
+          "n": 22,
+          "higher": 21,
+          "lower": 1,
+          "tied": 0,
+          "mean": 0.21111295003144354,
+          "median": 0.21705115594672944
+        },
+        "rescued_draws_raw": {
+          "n": 22,
+          "higher": 9,
+          "lower": 13,
+          "tied": 0,
+          "mean": -0.00887537002563476,
+          "median": -0.0010942220687866
+        },
+        "within_query_learned": {
+          "n": 13,
+          "higher": 11,
+          "lower": 2,
+          "tied": 0,
+          "mean": 0.08073398058661255,
+          "median": 0.03150153423233092
+        },
+        "within_query_raw": {
+          "n": 13,
+          "higher": 9,
+          "lower": 4,
+          "tied": 0,
+          "mean": -0.002890075246493028,
+          "median": 0.0004452019929885747
+        }
+      }
+    },
+    "same_context": {
+      "rescued_queries": 5,
+      "rescued_draws_vs_original": {
+        "n": 9,
+        "higher": 7,
+        "lower": 2,
+        "tied": 0,
+        "mean": 0.018777349416246328,
+        "median": 0.019418094949075933
+      },
+      "within_query_successful_minus_unsuccessful": {
+        "n": 5,
+        "higher": 5,
+        "lower": 0,
+        "tied": 0,
+        "mean": 0.01453413655370312,
+        "median": 0.015366337548929826
+      },
+      "matched_raw_valid_subset": {
+        "draws": 240,
+        "rescued_draws_learned": {
+          "n": 0,
+          "higher": 0,
+          "lower": 0,
+          "tied": 0,
+          "mean": null,
+          "median": null
+        },
+        "rescued_draws_raw": {
+          "n": 0,
+          "higher": 0,
+          "lower": 0,
+          "tied": 0,
+          "mean": null,
+          "median": null
+        },
+        "within_query_learned": {
+          "n": 0,
+          "higher": 0,
+          "lower": 0,
+          "tied": 0,
+          "mean": null,
+          "median": null
+        },
+        "within_query_raw": {
+          "n": 0,
+          "higher": 0,
+          "lower": 0,
+          "tied": 0,
+          "mean": null,
+          "median": null
+        }
+      }
+    }
+  }
+}
