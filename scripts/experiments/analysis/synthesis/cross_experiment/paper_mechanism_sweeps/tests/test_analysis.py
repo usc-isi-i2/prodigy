@@ -87,7 +87,15 @@ def test_cross_task_checkpoint_drift_is_rejected():
         raise AssertionError("expected cross-task provenance failure")
 
 
-def test_nm_grid_uses_nm_fingerprint_column_even_with_display_case():
+def test_validation_accepts_task_specific_fingerprint_columns():
     frame = synthetic()
-    nm = frame[frame.task.eq("nm")].drop(columns=["episode_fingerprint"])
+    nm = frame[frame.task.eq("nm")].drop(columns="episode_fingerprint")
+    cls = frame[frame.task.eq("classification")].drop(columns="fingerprint")
+
     analysis.validate_grid(nm, "NM", analysis.NM_TARGETS, tuple(analysis.ARMS))
+    analysis.validate_grid(
+        cls,
+        "classification",
+        analysis.CLS_TARGETS,
+        tuple(name for name, (_, dim) in analysis.ARMS.items() if dim == 256),
+    )
