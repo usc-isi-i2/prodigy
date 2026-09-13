@@ -1,0 +1,15 @@
+{
+  "source": "/dataMeR1/phil/gfm/prodigy-publickg-paired-state/log/publickg_mechanism_fullgraph",
+  "stage_run": "/dataMeR1/phil/gfm/prodigy-publickg-paired-state/log/publickg_stage_readout_20260907",
+  "initialization": "/dataMeR1/phil/gfm/prodigy-publickg-native/log/publickg_train_20260907/initial_model.ckpt",
+  "initialization_sha256": "83ed396209297c880097f96fe84f25f00ed90984ed0cc058670d42cb63bfc4f8",
+  "source_index_sha256": "d69c0b9263c33e84c732d6710ab4dae6705590ef6d78764817357b555b81b02d",
+  "episodes": 500,
+  "features": [
+    "trained pre-metagraph",
+    "saved-initialization pre-metagraph",
+    "head-tail text concatenation"
+  ],
+  "readouts": "ridge lambda1, scale1, no intercept; none/support centering then row-L2",
+  "scope": "GFM pretraining control; text embeddings are pretrained in every arm"
+}

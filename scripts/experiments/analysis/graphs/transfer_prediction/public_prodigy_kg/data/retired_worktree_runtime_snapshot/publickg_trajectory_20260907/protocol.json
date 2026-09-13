@@ -1,0 +1,32 @@
+{
+  "steps": [
+    2000,
+    4000,
+    8000
+  ],
+  "episodes": 128,
+  "source": "/dataMeR1/phil/gfm/prodigy-publickg-paired-state/log/publickg_readout_fresh_20260907",
+  "commit": "40f56ccbb76f0ee6e1465da824aa456d8e742cd2",
+  "effective_params_sha256": "3b784234d30c23a3010b220d484c9eae2dc93685df00394ad61555ade14e5e9e",
+  "checkpoint_sha256": {
+    "2000": "c5a8d16473964a415b4222a55616fb1bc79f400a6ce64a4e4bee3fb515eba263",
+    "4000": "c5b2ae1a91a6b9a77b6f6ecd4ca9138bb92b40a0721712e313259f069209c35b",
+    "8000": "5e48d5abc0660f7e537d79d6ccd74150aed38eecc8ca90a048adb6dc94aafee7"
+  },
+  "checkpoints": {
+    "2000": "/dataMeR1/phil/gfm/prodigy-publickg-native/log/publickg_train_20260907/state/Wiki_PT_PRODIGY_native_train_seed0/checkpoint/state_dict_2000.ckpt",
+    "4000": "/dataMeR1/phil/gfm/prodigy-publickg-native/log/publickg_train_20260907/state/Wiki_PT_PRODIGY_native_train_seed0/checkpoint/state_dict_4000.ckpt",
+    "8000": "/dataMeR1/phil/gfm/prodigy-publickg-native/log/publickg_train_20260907/state/Wiki_PT_PRODIGY_native_train_seed0/checkpoint/state_dict_8000.ckpt"
+  },
+  "source_index_sha256": "60f9317ec226225b4e5a33c47ecc007dac2484573936ef851e087ab5c2778094",
+  "source_protocol_sha256": "d106d339572f1e04c6b4480cc23c89869384d4db8b4c07fe81f930779aef1f34",
+  "upstream": {
+    "head": "107ba57234d3188227cda5b78a2dbcfb84a1c694",
+    "clean": true
+  },
+  "buffers": "Each checkpoint's own buffers reset before every episode; never use captured8k buffers",
+  "shared": "Exact saved inputs, per-module train modes and RNG across checkpoints",
+  "readout": "support-centered rowL2 ridge lambda1 scale1 nointercept",
+  "parity_8k_atol": 0.0001,
+  "selection": "Retrospective fixed trajectory, no checkpoint selection claim"
+}

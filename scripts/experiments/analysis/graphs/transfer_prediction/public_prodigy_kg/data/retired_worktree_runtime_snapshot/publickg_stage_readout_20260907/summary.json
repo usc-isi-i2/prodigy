@@ -1,0 +1,151 @@
+{
+  "episodes": 500,
+  "tasks": 500,
+  "means": {
+    "native": {
+      "accuracy": 0.73795,
+      "macro_f1": 0.7218045814969344,
+      "ovr_auc": 0.9748292763157894,
+      "nll": 0.8736462839256421
+    },
+    "ridge": {
+      "accuracy": 0.7690499999999999,
+      "macro_f1": 0.7444570799625211,
+      "ovr_auc": 0.9745516447368421,
+      "nll": 2.823206072182162
+    },
+    "post_ridge": {
+      "accuracy": 0.70135,
+      "macro_f1": 0.671330888154673,
+      "ovr_auc": 0.9640305921052632,
+      "nll": 2.7523942238319115
+    }
+  },
+  "paired_deltas": {
+    "accuracy": {
+      "mean_delta": 0.031100000000000003,
+      "interval": [
+        0.027149999999999997,
+        0.035
+      ],
+      "positive_episodes": 355,
+      "negative_episodes": 98,
+      "episodes": 500
+    },
+    "macro_f1": {
+      "mean_delta": 0.022652498465586705,
+      "interval": [
+        0.018212289143454588,
+        0.02709751349018628
+      ],
+      "positive_episodes": 334,
+      "negative_episodes": 166,
+      "episodes": 500
+    },
+    "ovr_auc": {
+      "mean_delta": -0.0002776315789473807,
+      "interval": [
+        -0.0009148601973684218,
+        0.00035068256578946823
+      ],
+      "positive_episodes": 231,
+      "negative_episodes": 266,
+      "episodes": 500
+    },
+    "nll": {
+      "mean_delta": 1.9495597882565199,
+      "interval": [
+        1.9269171869322061,
+        1.9720065473197603
+      ],
+      "positive_episodes": 500,
+      "negative_episodes": 0,
+      "episodes": 500
+    }
+  },
+  "uncertainty_scope": "Conditional on this checkpoint and target; recurring entities can induce dependence.",
+  "post_minus_native": {
+    "accuracy": {
+      "mean_delta": -0.0366,
+      "interval": [
+        -0.04015,
+        -0.03302499999999999
+      ],
+      "positive_episodes": 82,
+      "negative_episodes": 391,
+      "episodes": 500
+    },
+    "macro_f1": {
+      "mean_delta": -0.050473693342261455,
+      "interval": [
+        -0.05453202652647061,
+        -0.046245004026675085
+      ],
+      "positive_episodes": 70,
+      "negative_episodes": 430,
+      "episodes": 500
+    },
+    "ovr_auc": {
+      "mean_delta": -0.010798684210526323,
+      "interval": [
+        -0.011443125000000021,
+        -0.010157878289473694
+      ],
+      "positive_episodes": 22,
+      "negative_episodes": 478,
+      "episodes": 500
+    },
+    "nll": {
+      "mean_delta": 1.8787479399062694,
+      "interval": [
+        1.8564551164779886,
+        1.900963769592757
+      ],
+      "positive_episodes": 500,
+      "negative_episodes": 0,
+      "episodes": 500
+    }
+  },
+  "post_minus_pre": {
+    "accuracy": {
+      "mean_delta": -0.0677,
+      "interval": [
+        -0.07160000000000001,
+        -0.06380000000000001
+      ],
+      "positive_episodes": 22,
+      "negative_episodes": 460,
+      "episodes": 500
+    },
+    "macro_f1": {
+      "mean_delta": -0.07312619180784816,
+      "interval": [
+        -0.07775186262958748,
+        -0.06852039780038503
+      ],
+      "positive_episodes": 40,
+      "negative_episodes": 460,
+      "episodes": 500
+    },
+    "ovr_auc": {
+      "mean_delta": -0.010521052631578943,
+      "interval": [
+        -0.011225666118421048,
+        -0.00983519736842105
+      ],
+      "positive_episodes": 34,
+      "negative_episodes": 466,
+      "episodes": 500
+    },
+    "nll": {
+      "mean_delta": -0.07081184835025033,
+      "interval": [
+        -0.07152726576564936,
+        -0.0700973971347306
+      ],
+      "positive_episodes": 0,
+      "negative_episodes": 500,
+      "episodes": 500
+    }
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "episodes": 500,
+  "tasks": 500,
+  "means": {
+    "native": {
+      "accuracy": 0.73795,
+      "macro_f1": 0.7218045814969344,
+      "ovr_auc": 0.9748292763157894,
+      "nll": 0.8736462747199282
+    },
+    "ridge": {
+      "accuracy": 0.7690499999999999,
+      "macro_f1": 0.7444570799625211,
+      "ovr_auc": 0.9745516447368421,
+      "nll": 2.8232060726894344
+    }
+  },
+  "paired_deltas": {
+    "accuracy": {
+      "mean_delta": 0.031100000000000003,
+      "interval": [
+        0.027149999999999997,
+        0.035
+      ],
+      "positive_episodes": 355,
+      "negative_episodes": 98,
+      "episodes": 500
+    },
+    "macro_f1": {
+      "mean_delta": 0.022652498465586705,
+      "interval": [
+        0.018212289143454588,
+        0.02709751349018628
+      ],
+      "positive_episodes": 334,
+      "negative_episodes": 166,
+      "episodes": 500
+    },
+    "ovr_auc": {
+      "mean_delta": -0.0002776315789473807,
+      "interval": [
+        -0.0009148601973684218,
+        0.00035068256578946823
+      ],
+      "positive_episodes": 231,
+      "negative_episodes": 266,
+      "episodes": 500
+    },
+    "nll": {
+      "mean_delta": 1.949559797969506,
+      "interval": [
+        1.9269171888745933,
+        1.972006548735958
+      ],
+      "positive_episodes": 500,
+      "negative_episodes": 0,
+      "episodes": 500
+    }
+  },
+  "uncertainty_scope": "Conditional on this checkpoint and target; recurring entities can induce dependence."
+}
