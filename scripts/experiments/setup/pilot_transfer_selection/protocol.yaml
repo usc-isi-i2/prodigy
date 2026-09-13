@@ -1,0 +1,72 @@
+protocol_id: pilot_transfer_selection_v1
+frozen_date: 2026-09-12
+status: frozen_before_early_cross_target_evaluation
+
+research_question: >-
+  Can target-aware self-supervised transfer measured after 300 updates select
+  previously untrained source mixtures that outperform indiscriminate or heuristic
+  source selection under the same final training budget?
+
+graphs:
+  - ukr_rus
+  - covid
+  - midterm
+  - covid_political
+  - election2020
+  - ukr_rus_suspended
+  - twibot20
+  - cp_hk
+  - facebook_page_reference
+training_seeds: [0, 1, 2]
+pilot_checkpoints: [100, 300, 900]
+selection_checkpoint: 300
+terminal_checkpoint: 2500
+metric_primary: neighbor_matching_accuracy
+metric_secondary: neighbor_matching_roc_auc_ovr_macro
+
+stage_a:
+  split: validation
+  message_passing_view: static_train
+  episodes_per_cell: 512
+  sources: 9
+  targets: 9
+  expected_cells: 729
+  gates:
+    median_all_donor_spearman_min: 0.70
+    median_foreign_only_spearman_min: 0.60
+    mean_terminal_top1_regret_accuracy_points_max: 2.0
+    subset_envelope_regret_accuracy_points_max: 1.0
+    subset_sizes: [3, 5]
+    maximum_seed_failures_per_criterion: 1
+  failure_action: stop_pilot_selection_branch
+
+stage_b:
+  conditional_on: stage_a_pass
+  subset_sizes: [3, 5]
+  arms:
+    - pilot_coverage
+    - global_source_strength
+    - catalog_node_count
+    - frozen_random
+    - order_a_prefix
+  random_seed: 20260912
+  final_updates: 2500
+  sampling: balanced_uniform_sources
+  batch_size: 4
+  evaluation_split: test
+  evaluation_episodes_per_target: 512
+  maximum_models_before_exact_deduplication: 30
+  success_gates:
+    beat_every_matched_k_control_at_both_k: true
+    positive_paired_seed_differences_min: 2
+    worst_target_regret_accuracy_points_max: 1.0
+
+stage_c:
+  conditional_on: stage_b_pass
+  status: requires_frozen_protocol_amendment
+  comparison: pilot_allocated_vs_uniform
+  subset_size: 5
+  training_seeds: [0, 1, 2]
+
+existing_state_root: /dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core
+large_run_launcher: user

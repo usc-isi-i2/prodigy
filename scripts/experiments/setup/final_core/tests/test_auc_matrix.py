@@ -75,6 +75,28 @@ def test_metric_sidecar_requires_all_three_metrics(tmp_path):
         raise AssertionError("missing ROC-AUC must fail")
 
 
+def test_validation_metric_sidecar_is_split_specific(tmp_path):
+    target = "covid"
+    step = 300
+    path = tmp_path / f"metrics_val_{target}_step{step}.json"
+    path.write_text(json.dumps({
+        f"val_{target}_accuracy": 0.3,
+        f"val_{target}_f1": 0.2,
+        f"val_{target}_roc_auc": 0.8,
+    }), encoding="utf-8")
+    assert load_metric_sidecar(tmp_path, target, step, split="val") == {
+        "accuracy": 0.3,
+        "f1_macro": 0.2,
+        "roc_auc_ovr_macro": 0.8,
+    }
+    try:
+        load_metric_sidecar(tmp_path, target, step, split="test")
+    except FileNotFoundError:
+        pass
+    else:
+        raise AssertionError("validation sidecar must not satisfy a test lookup")
+
+
 def test_auc_aggregate_is_exactly_three_seed_9x9(tmp_path):
     results = tmp_path / "results"
     summary = tmp_path / "summary"
