@@ -10,13 +10,19 @@ LOG_ROOT="${LOG_ROOT:-${REPO_ROOT}/log/vision_native_mixture_finalcore}"
 VISION_ROOT="${VISION_ROOT:-/dataMeR1/phil/gfm/upstream/VISION}"
 GPU_A="${GPU_A:-2}"
 GPU_B="${GPU_B:-3}"
+GPU_MAX_USED_MIB="${GPU_MAX_USED_MIB:-2000}"
+GPU_MAX_UTIL_PCT="${GPU_MAX_UTIL_PCT:-10}"
 SEED="${SEED:-0}"
 for gpu in "$GPU_A" "$GPU_B"; do
-  [[ "$gpu" =~ ^[0-3]$ ]] || {
-    echo "refusing GPU $gpu: only owned Tucker GPUs 0-3 are authorized" >&2
+  [[ "$gpu" =~ ^[23]$ ]] || {
+    echo "refusing GPU $gpu: this campaign is restricted to Tucker GPUs 2-3" >&2
     exit 2
   }
 done
+[[ "$GPU_MAX_USED_MIB" =~ ^[0-9]+$ && "$GPU_MAX_UTIL_PCT" =~ ^[0-9]+$ ]] || {
+  echo "GPU occupancy ceilings must be nonnegative integers" >&2
+  exit 2
+}
 
 export PATH="/home/mhchu/miniconda3/bin:$PATH"
 source "$(conda info --base)/etc/profile.d/conda.sh"
@@ -33,7 +39,7 @@ wait_for_gpu() {
   while true; do
     used="$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i "$gpu")"
     util="$(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i "$gpu")"
-    if (( used < 2000 && util < 10 )); then return; fi
+    if (( used < GPU_MAX_USED_MIB && util < GPU_MAX_UTIL_PCT )); then return; fi
     echo "[gpu $gpu] waiting utc=$(date -u +%FT%TZ) used_mib=$used util_pct=$util"
     sleep 60
   done
@@ -56,6 +62,8 @@ mapfile -t PLAN_ROWS < <(
   echo "checkpoint_steps=100,300,900,2500"
   echo "training_seed=$SEED"
   echo "gpus=$GPU_A,$GPU_B"
+  echo "gpu_max_used_mib=$GPU_MAX_USED_MIB"
+  echo "gpu_max_util_pct=$GPU_MAX_UTIL_PCT"
   echo "started_utc=$(date -u +%FT%TZ)"
 } > "$LOG_ROOT/launch/provenance.txt"
 

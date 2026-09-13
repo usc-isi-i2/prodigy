@@ -73,7 +73,7 @@ validate_gpu_list() {
   read -r -a values <<< "$text"
   (( ${#values[@]} >= minimum )) || return 1
   for gpu in "${values[@]}"; do
-    [[ "$gpu" =~ ^[0-3]$ ]] || return 1
+    [[ "$gpu" =~ ^[23]$ ]] || return 1
     [[ -z "${seen[$gpu]:-}" ]] || return 1
     seen[$gpu]=1
   done
