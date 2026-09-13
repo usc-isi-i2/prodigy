@@ -8,6 +8,7 @@ from scripts.experiments.setup.paper_mechanism_sweeps.plan import (
     SEEDS,
     write_configs,
 )
+from scripts.experiments.setup.paper_mechanism_sweeps.models import resolve_arm
 
 
 def test_mechanism_plan_is_exact_and_matched(tmp_path: Path):
@@ -23,3 +24,9 @@ def test_mechanism_plan_is_exact_and_matched(tmp_path: Path):
     assert all(row["early_stopping_patience"] > len(CHECKPOINT_STEPS) for row in rows)
     assert all("twibot20" not in row["neighbor_sampling_source_subset"] for row in rows)
     assert len(ARMS) * len(SEEDS) * len(CHECKPOINT_STEPS) == 90
+
+
+def test_seed_qualified_training_prefixes_are_resolved_exactly():
+    for arm in ARMS:
+        for seed in SEEDS:
+            assert resolve_arm(f"paper_mech_{arm.name}_s{seed}", seed) == arm
