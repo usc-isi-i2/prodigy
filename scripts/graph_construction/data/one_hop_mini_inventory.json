@@ -1,0 +1,108 @@
+[
+  {
+    "schema_version": 1,
+    "view": "nonzero_features_v1",
+    "source_dataset_key": "ukr_rus_twitter",
+    "parent_dataset_key": "ukr_rus_twitter_nonzero_features_v1",
+    "parent_identity": {
+      "path": "/dataMeR1/phil/data/graph_views/nonzero_features_v1/ukr_rus_twitter/graph.pt",
+      "bytes": 28383091309,
+      "mtime_ns": 1789175114948120605
+    },
+    "code_revision": "86535f664491e6bbfaec65af2ae8ad8a2d1f9276",
+    "sampling": {
+      "method": "uniformly restarted one-hop walks; complete induced graph",
+      "seed": 0,
+      "cap": 500000,
+      "selection_identity": {
+        "path": "/dataMeR1/phil/gfm/prodigy-walk-mini-pilot/state/ukraine/walk1_s0.pt",
+        "bytes": 8001502,
+        "mtime_ns": 1789177531074463804
+      },
+      "selection_sha256": "1b17d453d9d266db5edf51fa79ad5ebc4d633baa59772fc9d32c7a9954178eaf"
+    },
+    "statistics": {
+      "nodes": 500000,
+      "edges": 5653956,
+      "isolated_nodes": 7835,
+      "labeled_nodes": 0,
+      "class_counts": {},
+      "edge_views": {
+        "retweet_all": 5653956,
+        "temporal_history": 2192680,
+        "static_background": 4806521
+      },
+      "target_edge_views": {
+        "temporal_new": 3461276,
+        "static_holdout": 847435
+      },
+      "nonself_isolated_nodes": 7835,
+      "static_background_nonself_isolated_nodes": 42619
+    },
+    "parent_node_ids": "row in full nonzero parent",
+    "original_node_ids": "row in original unfiltered source graph",
+    "torch_version": "2.5.1+cpu",
+    "verification": {
+      "all_induced_edge_views_exact": true,
+      "all_attributes_exact": true,
+      "nonzero_features": true,
+      "pilot_original_ids_exact": true,
+      "serialization_exact_all_fields": true
+    },
+    "artifact_size_bytes": 1899951604,
+    "elapsed_seconds": 18.53686223400291
+  },
+  {
+    "schema_version": 1,
+    "view": "nonzero_features_v1",
+    "source_dataset_key": "covid19_twitter",
+    "parent_dataset_key": "covid19_twitter_nonzero_features_v1",
+    "parent_identity": {
+      "path": "/dataMeR1/phil/data/graph_views/nonzero_features_v1/covid19_twitter/graph.pt",
+      "bytes": 63029634221,
+      "mtime_ns": 1789175406894180232
+    },
+    "code_revision": "86535f664491e6bbfaec65af2ae8ad8a2d1f9276",
+    "sampling": {
+      "method": "uniformly restarted one-hop walks; complete induced graph",
+      "seed": 0,
+      "cap": 500000,
+      "selection_identity": {
+        "path": "/dataMeR1/phil/gfm/prodigy-walk-mini-pilot/state/covid/walk1_s0.pt",
+        "bytes": 8001502,
+        "mtime_ns": 1789177544722506973
+      },
+      "selection_sha256": "6cbe8114692ce68edc0e53bf9f4b039d06e59c2bb9e22fc54a97c6528749adec"
+    },
+    "statistics": {
+      "nodes": 500000,
+      "edges": 2647100,
+      "isolated_nodes": 7117,
+      "labeled_nodes": 0,
+      "class_counts": {},
+      "edge_views": {
+        "retweet_all": 2647100,
+        "temporal_history": 889378,
+        "static_background": 2249422
+      },
+      "target_edge_views": {
+        "temporal_new": 1757722,
+        "static_holdout": 397678
+      },
+      "nonself_isolated_nodes": 7117,
+      "static_background_nonself_isolated_nodes": 43418
+    },
+    "parent_node_ids": "row in full nonzero parent",
+    "original_node_ids": "row in original unfiltered source graph",
+    "torch_version": "2.5.1+cpu",
+    "verification": {
+      "all_induced_edge_views_exact": true,
+      "all_attributes_exact": true,
+      "nonzero_features": true,
+      "pilot_original_ids_exact": true,
+      "serialization_exact_all_fields": true
+    },
+    "artifact_size_bytes": 1728486964,
+    "elapsed_seconds": 30.647137955995277
+  }
+]
