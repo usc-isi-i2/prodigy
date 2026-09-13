@@ -24,6 +24,7 @@ Read the relevant guide before acting. Repository skills are shared under
 | --- | --- |
 | Train, evaluate, construct graphs, generate features, or operate on Tucker | `.agents/skills/prodigy-tucker/SKILL.md` |
 | Create or analyze an experiment, parse logs, or add an eval helper | `.agents/skills/prodigy-experiments/SKILL.md` |
+| Plan, prioritize, or interpret research for a manuscript or decide what work should happen next | `.agents/skills/prodigy-paper-program/SKILL.md` |
 | Add, remove, move, rename, or inventory a graph | `.agents/skills/prodigy-graph-catalog/SKILL.md` |
 | Change the model, sampler, episode format, dataloader, or objective plumbing | `docs/agent_guides/model_architecture.md` |
 | Move tracked evidence, merge result CSVs, or interpret legacy results | `docs/agent_guides/repo_traps.md` |
