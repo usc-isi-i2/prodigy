@@ -69,14 +69,15 @@ wins all three seeds for Cora, COVID political, and Ukraine/Russia on all metric
 ## Figures
 
 1. [Adaptation efficiency by mixture size](figures/adaptation-efficiency-by-mixture-size.png)
-2. [Checkpoint trajectories by mixture size](figures/checkpoint-trajectories-by-mixture-size.png)
-3. [Target-by-mixture-size heatmap](figures/target-by-mixture-size-heatmap.png)
-4. [Full transfer matrix at step 2,500](figures/full-transfer-matrix-step2500.png)
-5. [Three-seed leave-one-out versus specialist comparison](figures/three-seed-loo-vs-specialist.png)
-6. [Seed-0 specialist versus leave-one-out SSL loss](figures/ssl-loss-primary-seed0.png)
-7. [Intermediate-mixture SSL loss](figures/ssl-loss-intermediate-mixtures.png)
-8. [Three-seed primary SSL loss](figures/ssl-loss-primary-three-seeds.png)
-9. [Per-source validation loss for seed-0 leave-one-out mixtures](figures/ssl-loss-per-source-seed0-loo.png)
+2. [Adaptation efficiency by mixture size and downstream target](figures/adaptation-efficiency-by-mixture-size-and-target.png)
+3. [Checkpoint trajectories by mixture size](figures/checkpoint-trajectories-by-mixture-size.png)
+4. [Target-by-mixture-size heatmap](figures/target-by-mixture-size-heatmap.png)
+5. [Full transfer matrix at step 2,500](figures/full-transfer-matrix-step2500.png)
+6. [Three-seed leave-one-out versus specialist comparison](figures/three-seed-loo-vs-specialist.png)
+7. [Seed-0 specialist versus leave-one-out SSL loss](figures/ssl-loss-primary-seed0.png)
+8. [Intermediate-mixture SSL loss](figures/ssl-loss-intermediate-mixtures.png)
+9. [Three-seed primary SSL loss](figures/ssl-loss-primary-three-seeds.png)
+10. [Per-source validation loss for seed-0 leave-one-out mixtures](figures/ssl-loss-per-source-seed0-loo.png)
 
 Each figure is available as both PNG and vector PDF under `results/figures/`.
 
