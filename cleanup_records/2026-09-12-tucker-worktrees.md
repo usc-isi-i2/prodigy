@@ -1,5 +1,14 @@
 # Tucker worktree retirement, 2026-09-12
 
+## Final retirement wave
+
+The final twelve experiment worktrees were re-audited for running jobs, tracked
+changes, untracked files, ignored results, and remote reachability. Their small
+canonical result tables and figures were promoted into the analysis tree before
+removal, and completed flagship-ladder and mechanism-sweep conclusions were
+recorded beside the evidence. No experiment process or tmux session was active.
+Ignored caches and W&B runtime metadata were intentionally not promoted.
+
 This cleanup retained the main checkout, all September 8 or later paper/recovery
 worktrees, `prodigy-nm-hk-goal-20260908`, `prodigy-proxy-a-seeds`,
 `prodigy-vision-mixture-seeds`, and `prodigy-walk-mini-pilot`.

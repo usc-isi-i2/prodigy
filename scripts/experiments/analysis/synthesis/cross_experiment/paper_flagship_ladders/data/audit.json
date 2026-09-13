@@ -1,0 +1,42 @@
+{
+  "status": "complete",
+  "nm_cells": 1080,
+  "classification_cells": 600,
+  "capacity_nm_cells": 432,
+  "cross_task_physical_models": 120,
+  "target_effect_cells": 1680,
+  "endpoint_target_rows": 10,
+  "training_seeds": [
+    0,
+    1,
+    2
+  ],
+  "scientific_decision": {
+    "headline": "target_dependent_or_pareto_tradeoff",
+    "universal_winner": null,
+    "endpoint_winners": {
+      "nm_fixed_panel": "composition",
+      "cls_fixed_panel": "objective"
+    },
+    "endpoint_winner_margins": {
+      "nm_fixed_panel": 2.4165955945676387e-05,
+      "cls_fixed_panel": 0.00031900759096503695
+    },
+    "whole_ladder_area_winners": {
+      "nm_fixed_panel": "objective",
+      "cls_fixed_panel": "exposure"
+    },
+    "whole_ladder_area_winner_margins": {
+      "nm_fixed_panel": 0.001362594864428357,
+      "cls_fixed_panel": 0.0013539322679845256
+    },
+    "practical_delta": 0.001,
+    "practical_margins_passed": false,
+    "target_safety": {},
+    "target_safety_passed": false,
+    "alternatives_beating_common_winner_all_three_seeds_at_endpoint": {},
+    "universal_winner_gate_passed": false,
+    "whole_ladder_estimand": "Normalized trapezoidal area over rungs 1-8, computed within each training seed; future-source area uses its seven finite rungs."
+  },
+  "claim_rule": "Treat any design as a universal winner only if the same arm leads the mean endpoint and whole-ladder area on both fixed panels by at least 0.001 ROC-AUC and no alternative beats it by that margin in all three seeds at either endpoint; its worst target must also avoid a mean regression greater than 0.001 against the matched baseline. Otherwise report a target-dependent or Pareto tradeoff."
+}
