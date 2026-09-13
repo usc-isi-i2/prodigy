@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "phase": "mechanism",
+  "events": [
+    {
+      "index": 0,
+      "split": "test",
+      "model_training_before": true,
+      "model_training_after": true,
+      "batch_norm_before": {
+        "layer_list.0.module_list.0.bn": {
+          "training": true,
+          "num_batches_tracked": 8021
+        },
+        "layer_list.0.module_list.1.bn": {
+          "training": true,
+          "num_batches_tracked": 8021
+        },
+        "layer_list.2.gnn_layers.0.bn": {
+          "training": true,
+          "num_batches_tracked": 8021
+        },
+        "layer_list.2.gnn_layers.1.bn": {
+          "training": true,
+          "num_batches_tracked": 8021
+        }
+      },
+      "batch_norm_after": {
+        "layer_list.0.module_list.0.bn": {
+          "training": true,
+          "num_batches_tracked": 8521
+        },
+        "layer_list.0.module_list.1.bn": {
+          "training": true,
+          "num_batches_tracked": 8521
+        },
+        "layer_list.2.gnn_layers.0.bn": {
+          "training": true,
+          "num_batches_tracked": 8521
+        },
+        "layer_list.2.gnn_layers.1.bn": {
+          "training": true,
+          "num_batches_tracked": 8521
+        }
+      },
+      "batches": 500,
+      "episodes": 500,
+      "nominal_query_predictions": 40000,
+      "loss": 0.8736462593078613,
+      "accuracy_fraction": 0.73795,
+      "native_batch_accuracy_std": 0.07279541537761838,
+      "auxiliary_loss": 0.0,
+      "ranks": null,
+      "elapsed_seconds": 162.31077098846436
+    }
+  ],
+  "primary_eval": null,
+  "uncertainty_note": "Native std is across batches/episodes, not a training-seed confidence interval."
+}

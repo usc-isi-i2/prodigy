@@ -1,0 +1,31 @@
+{
+  "steps": [
+    2000,
+    8000
+  ],
+  "episodes": 128,
+  "source": "/dataMeR1/phil/gfm/prodigy-publickg-paired-state/log/publickg_readout_fresh_20260907",
+  "trajectory": "/dataMeR1/phil/gfm/prodigy-publickg-paired-state/log/publickg_trajectory_20260907",
+  "commit": "98ba23d10f474f458af9a0d5fa9b38d7e632034e",
+  "checkpoint_sha256": {
+    "2000": "c5a8d16473964a415b4222a55616fb1bc79f400a6ce64a4e4bee3fb515eba263",
+    "8000": "5e48d5abc0660f7e537d79d6ccd74150aed38eecc8ca90a048adb6dc94aafee7"
+  },
+  "source_index_sha256": "60f9317ec226225b4e5a33c47ecc007dac2484573936ef851e087ab5c2778094",
+  "source_params_sha256": "3b784234d30c23a3010b220d484c9eae2dc93685df00394ad61555ade14e5e9e",
+  "trajectory_summary_sha256": "7881b468f089cc2f2dbe3453dd44a8dc6d2ac4e771bc0300a958948954f5bf3f",
+  "upstream": {
+    "head": "107ba57234d3188227cda5b78a2dbcfb84a1c694",
+    "clean": true
+  },
+  "conditions": [
+    "captured_batch_statistics",
+    "checkpoint_running_statistics"
+  ],
+  "intervention": "Freeze ONLY BatchNorm flags; all other modes/RNG/input identical; own checkpoint buffers",
+  "no_recalibration": true,
+  "no_adaptation": true,
+  "no_u1_clamp": true,
+  "parity_atol": 0.0001,
+  "readout": "Support-centered ridge lambda1 scale1 rowL2 nointercept"
+}

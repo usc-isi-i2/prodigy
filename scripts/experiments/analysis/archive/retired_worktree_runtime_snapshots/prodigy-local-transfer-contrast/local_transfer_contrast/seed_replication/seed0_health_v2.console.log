@@ -1,0 +1,43 @@
+  stream                   scope   metric  n  spearman       pvalue
+   fresh         covid_political accuracy  9  1.000000 0.000000e+00
+   fresh         covid_political      auc  9  0.950000 8.762524e-05
+   fresh            election2020 accuracy  9  0.888921 1.347058e-03
+   fresh            election2020      auc  9  0.764733 1.637769e-02
+   fresh facebook_page_reference accuracy  9  0.733333 2.455415e-02
+   fresh facebook_page_reference      auc  9  0.733333 2.455415e-02
+   fresh                twibot20 accuracy  9  0.583333 9.918582e-02
+   fresh                twibot20      auc  9  0.650000 5.807306e-02
+   fresh       ukr_rus_suspended accuracy  9 -0.331990 3.827543e-01
+   fresh       ukr_rus_suspended      auc  9  0.050000 8.983528e-01
+   fresh    target_centered_pool accuracy 45  0.740345 6.148776e-09
+   fresh    target_centered_pool      auc 45  0.755740 1.959063e-09
+original         covid_political accuracy  9  1.000000 0.000000e+00
+original         covid_political      auc  9  0.950000 8.762524e-05
+original            election2020 accuracy  9  0.927273 3.179532e-04
+original            election2020      auc  9  0.800757 9.508477e-03
+original facebook_page_reference accuracy  9  0.823558 6.363435e-03
+original facebook_page_reference      auc  9  0.750000 1.994213e-02
+original                twibot20 accuracy  9  0.750000 1.994213e-02
+original                twibot20      auc  9  0.800000 9.627925e-03
+original       ukr_rus_suspended accuracy  9 -0.100419 7.971388e-01
+original       ukr_rus_suspended      auc  9 -0.066667 8.646898e-01
+original    target_centered_pool accuracy 45  0.773577 4.666489e-10
+original    target_centered_pool      auc 45  0.788468 1.270972e-10
+
+Selectors
+                  target                     selector              model  fresh_accuracy  fresh_auc  fresh_u1_agreement_rate
+        covid_political                discovery_auc         ss_ukr_rus        0.895508   0.957247                 0.956706
+        covid_political fresh_unlabeled_u1_agreement    ss_election2020        0.900391   0.942838                 0.966797
+        covid_political             fresh_oracle_auc         ss_ukr_rus        0.895508   0.957247                 0.956706
+           election2020                discovery_auc        ss_twibot20        0.972656   0.983765                 0.996094
+           election2020 fresh_unlabeled_u1_agreement           ss_covid        0.976562   0.985718                 1.000000
+           election2020             fresh_oracle_auc         ss_ukr_rus        0.976562   0.987183                 1.000000
+facebook_page_reference                discovery_auc        ss_twibot20        0.680664   0.754139                 0.874023
+facebook_page_reference fresh_unlabeled_u1_agreement         ss_ukr_rus        0.700195   0.767975                 0.883789
+facebook_page_reference             fresh_oracle_auc         ss_ukr_rus        0.700195   0.767975                 0.883789
+               twibot20                discovery_auc         ss_ukr_rus        0.585612   0.615157                 0.812500
+               twibot20 fresh_unlabeled_u1_agreement         ss_ukr_rus        0.585612   0.615157                 0.812500
+               twibot20             fresh_oracle_auc    ss_election2020        0.611328   0.641734                 0.710938
+      ukr_rus_suspended                discovery_auc ss_covid_political        0.531250   0.505737                 0.675781
+      ukr_rus_suspended fresh_unlabeled_u1_agreement           ss_covid        0.496094   0.505920                 0.804688
+      ukr_rus_suspended             fresh_oracle_auc         ss_ukr_rus        0.515625   0.540161                 0.687500

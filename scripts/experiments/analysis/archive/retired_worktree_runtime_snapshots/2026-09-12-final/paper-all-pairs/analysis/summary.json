@@ -1,0 +1,54 @@
+{
+  "status": "complete",
+  "protocol": "paper_all_pairs_fixed_nm_v1",
+  "cells": 972,
+  "pairs": 36,
+  "training_seeds": [
+    0,
+    1,
+    2
+  ],
+  "targets": [
+    "covid",
+    "covid_political",
+    "cp_hk",
+    "election2020",
+    "facebook_page_reference",
+    "midterm",
+    "twibot20",
+    "ukr_rus",
+    "ukr_rus_suspended"
+  ],
+  "pair_evaluation_audit_sha256": "08864415487116affc9d68d96176ec9a8cd1e8eebe4b416f419ee2288940ae82",
+  "specialist_input_sha256": "7f8f2e0ff5ecb11ae2a2bac47cc9a6d54596524295bd506110bbb93e675f744b",
+  "decision": {
+    "rule": "best included specialist must beat mean and LOO global-donor selection in MAE, with positive target-demeaned correlation, in every seed on non-nested held-out cells",
+    "best_specialist_envelope_replicated": true,
+    "seed_checks": {
+      "0": {
+        "best_mae": 0.01649920605495626,
+        "mean_mae": 0.04684627692177561,
+        "global_donor_mae": 0.0204003474128337,
+        "best_target_demeaned_pearson": 0.8582245190400136,
+        "best_beats_both_alternatives": true,
+        "positive_target_demeaned_association": true
+      },
+      "1": {
+        "best_mae": 0.018158070423143085,
+        "mean_mae": 0.04663755875407994,
+        "global_donor_mae": 0.021421193967394857,
+        "best_target_demeaned_pearson": 0.8603452211890041,
+        "best_beats_both_alternatives": true,
+        "positive_target_demeaned_association": true
+      },
+      "2": {
+        "best_mae": 0.016028941343772245,
+        "mean_mae": 0.04454421844299489,
+        "global_donor_mae": 0.017857389197501624,
+        "best_target_demeaned_pearson": 0.8844326677636994,
+        "best_beats_both_alternatives": true,
+        "positive_target_demeaned_association": true
+      }
+    }
+  }
+}

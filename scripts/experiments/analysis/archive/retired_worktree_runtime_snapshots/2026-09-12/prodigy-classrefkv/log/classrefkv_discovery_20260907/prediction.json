@@ -1,0 +1,12 @@
+{
+  "hypothesis": "values_only",
+  "discovery_within_deltas": {
+    "keys_only": 0.012297453703703609,
+    "values_only": 0.05664062500000011,
+    "joint_kv": 0.07248263888888895
+  },
+  "rule": "Select positive singleton exceeding the other by at least 1 AUC point; otherwise joint dependence only when both singletons are nonpositive and joint positive; else stop.",
+  "prediction": "Selected singleton improves within-episode AUC and exceeds the other in EACH 50k stream; joint dependence predicts positive joint and nonpositive singletons in each stream. No pooled substitution.",
+  "practical_separation_auc": 0.01,
+  "not_statistical_significance": true
+}

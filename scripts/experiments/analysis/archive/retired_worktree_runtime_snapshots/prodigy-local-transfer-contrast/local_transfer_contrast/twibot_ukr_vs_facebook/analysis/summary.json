@@ -1,0 +1,77 @@
+{
+  "discovery_stream": "original",
+  "interpretation_constraints": [
+    "raw cross-model losses are not comparable without calibration",
+    "fresh episodes are a held-out episode stream, not a training seed or held-out domain",
+    "routers use target query outcomes and are diagnostic upper bounds, not deployable methods",
+    "input clusters are selected by discovery-stream silhouette without outcome labels"
+  ],
+  "model_b": "ss_ukr_rus",
+  "model_c": "ss_facebook_page_reference",
+  "raw_decoder_logits_bit_identical_between_models": {
+    "fresh": {
+      "raw_center/prototype": true,
+      "raw_center/ridge": true,
+      "raw_context/prototype": true,
+      "raw_context/ridge": true,
+      "raw_joint/prototype": true,
+      "raw_joint/ridge": true
+    },
+    "original": {
+      "raw_center/prototype": true,
+      "raw_center/ridge": true,
+      "raw_context/prototype": true,
+      "raw_context/ridge": true,
+      "raw_joint/prototype": true,
+      "raw_joint/ridge": true
+    }
+  },
+  "streams": {
+    "fresh": {
+      "accuracy_b": 0.5856119791666666,
+      "accuracy_c": 0.5120442708333334,
+      "auc_b": 0.6158010694715712,
+      "auc_c": 0.5180795457628038,
+      "b_positive_loss_advantage_top10_share": 0.3756273495595948,
+      "c_positive_loss_advantage_top10_share": 0.5551176498731321,
+      "calibrated_nll_b": 0.6757695281555586,
+      "calibrated_nll_c": 0.6939689055395739,
+      "disagreement_rate": 0.4563802083333333,
+      "fraction_c_lower_calibrated_loss": 0.4274088541666667,
+      "n": 3072,
+      "n_b_only": 814,
+      "n_both_correct": 985,
+      "n_both_wrong": 685,
+      "n_c_only": 588,
+      "oracle_accuracy": 0.7770182291666666,
+      "raw_nll_b": 0.9413080479762783,
+      "raw_nll_c": 3.637018348826615
+    },
+    "original": {
+      "accuracy_b": 0.6048177083333334,
+      "accuracy_c": 0.5042317708333334,
+      "auc_b": 0.6355069478352865,
+      "auc_c": 0.5146132575141058,
+      "b_positive_loss_advantage_top10_share": 0.35505826349836483,
+      "c_positive_loss_advantage_top10_share": 0.5494137782708407,
+      "calibrated_nll_b": 0.665279180873037,
+      "calibrated_nll_c": 0.6944043347946912,
+      "disagreement_rate": 0.4456380208333333,
+      "fraction_c_lower_calibrated_loss": 0.3984375,
+      "n": 3072,
+      "n_b_only": 839,
+      "n_both_correct": 1019,
+      "n_both_wrong": 684,
+      "n_c_only": 530,
+      "oracle_accuracy": 0.77734375,
+      "raw_nll_b": 0.8777194225696903,
+      "raw_nll_c": 3.826524323541269
+    }
+  },
+  "target": "twibot20",
+  "temperatures_fitted_on_original": {
+    "ss_facebook_page_reference": 54.59687646831285,
+    "ss_ukr_rus": 4.5285029523236435
+  },
+  "validation_stream": "fresh"
+}

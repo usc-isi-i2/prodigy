@@ -1,0 +1,25 @@
+{
+  "conditions": [
+    "intact",
+    "support",
+    "query",
+    "both"
+  ],
+  "steps": [
+    100,
+    2500
+  ],
+  "streams": [
+    "original",
+    "fresh"
+  ],
+  "sources": "all nine corrected single-source checkpoints",
+  "primary": "mean within-episode AUC",
+  "contrast": "(intact + both - support - query)/2",
+  "prediction": "Early one-sided reversals hurt; both exceeds each one-sided arm; matching contrast weakens late.",
+  "recovery_gate": "Early source-mean both AUC minus .5 >= half of intact AUC minus .5, in both streams.",
+  "preserved": "nodes, features, labels, undirected edge slots, pooling edges, metagraph, checkpoint and frozen normalization",
+  "interpretation": "Directed correspondence, not isolated degree mediation or semantic substitution",
+  "new_training": false,
+  "revision": "665469c246c719321ad67fe85d9cb6fe8f5cce06"
+}

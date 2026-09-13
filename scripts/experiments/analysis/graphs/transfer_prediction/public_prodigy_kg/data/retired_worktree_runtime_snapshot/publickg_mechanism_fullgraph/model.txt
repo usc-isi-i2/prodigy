@@ -1,0 +1,29 @@
+SingleLayerGeneralGNN(
+  (layer_list): ModuleList(
+    (0): MultiLayerGNN(
+      (module_list): ModuleList(
+        (0-1): 2 x SAGEConvSelfLoops()
+      )
+      (act): ReLU()
+      (reset_mlp): Linear(in_features=512, out_features=256, bias=True)
+      (reset_mlp_c): Linear(in_features=256, out_features=256, bias=True)
+      (reset_mlp_m): Linear(in_features=256, out_features=256, bias=True)
+    )
+    (1): BgGraphToSupernodePropagatorCat(
+      (proj): Linear(in_features=768, out_features=256, bias=True)
+    )
+    (2): MetaGNN(
+      (gnn_layers): ModuleList(
+        (0-1): 2 x MetaGNNLayer()
+      )
+      (gnn_non_linear): ReLU()
+    )
+  )
+  (cos): CosineSimilarity()
+  (initial_label_mlp): Linear(in_features=768, out_features=256, bias=True)
+  (initial_input_mlp): Identity()
+  (final_label_mlp): Identity()
+  (final_input_mlp): Identity()
+  (learned_label_embedding): Embedding(1000, 256)
+  (txt_dropout): Dropout(p=0, inplace=False)
+)

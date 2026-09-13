@@ -48,6 +48,10 @@ Setup and launch files remain in `../setup/<name>/`.
 - PRODIGY encoder: [`nm_ladder_gatv2`](transfer/ablations/prodigy_nm/encoder_architecture/nm_ladder_gatv2/)
 - Batch construction: [`nm_all9_source_complete_batch`](transfer/ablations/prodigy_nm/batch_construction/nm_all9_source_complete_batch/)
 - Center sampling: [`nm_all9_radius_finalcore`](transfer/ablations/prodigy_nm/center_sampling/nm_all9_radius_finalcore/)
+- Training-role exposure: [`training_role_exposure`](transfer/ablations/prodigy_nm/center_sampling/training_role_exposure/)
+- Social-to-FB15K adapter: [`social_to_fb15k_adapter`](transfer/matrices/prodigy_nm/downstream/social_to_fb15k_adapter/)
+- Supervised raw-feature baseline: [`strong_mlp`](baselines/strong_mlp/)
+- PinSAGE final-core transfer: [`pinsage_finalcore`](graphs/transfer_prediction/pinsage_finalcore/)
 - Ladder downstream transfer: [`nm_ladder_downstream`](transfer/ablations/prodigy_nm/downstream/nm_ladder_downstream/), [`nm_ladder_downstream_nhop2`](transfer/ablations/prodigy_nm/downstream/nm_ladder_downstream_nhop2/)
 - Saturation
   - PRODIGY: [`pretrain_saturation`](transfer/ablations/prodigy_nm/saturation/pretrain_saturation/), [`pretrain_saturation_nhop2`](transfer/ablations/prodigy_nm/saturation/pretrain_saturation_nhop2/)
@@ -97,4 +101,6 @@ Setup and launch files remain in `../setup/<name>/`.
 - Paper-vision downstream evidence and RQ1/RQ2 metrics: [`paper_vision_evidence`](synthesis/cross_experiment/paper_vision_evidence/)
 - Cross-experiment syntheses: [`synthesis/cross_experiment`](synthesis/cross_experiment/)
 - Native-pretext result-matrix coverage: [`native_model_result_matrix`](synthesis/cross_experiment/native_model_result_matrix/)
+- Matched flagship intervention ladders: [`paper_flagship_ladders`](synthesis/cross_experiment/paper_flagship_ladders/)
+- Graph-mixing, scale, and capacity mechanisms: [`paper_mechanism_sweeps`](synthesis/cross_experiment/paper_mechanism_sweeps/)
 - Retired and superseded analyses: [`archive`](archive/)

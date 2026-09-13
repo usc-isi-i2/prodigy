@@ -1,0 +1,257 @@
+[21:05:26] Loading dataset...
+Loading covid19_twitter graph from /dataMeR1/phil/data/merged/graphs/ukr_rus_covid_midterm_all9_facebook_final_core_split_seed0.pt...
+Using all midterm features (768 dims).
+Graph: 34601450 nodes, 134183020 edges, 768 node features
+Building neighbor sampler (CSR preprocessing)...
+Neighbor sampler ready.
+Neighbor-matching edge split: train/context=static_train (134183020 directed edges), validation positives=static_validation (28753761 directed edges), test positives=static_test (28753959 directed edges)
+[21:07:04] Dataset loaded. Initializing trainer...
+wandb: Tracking run with wandb version 0.27.2
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /dataMeR1/phil/gfm/prodigy-trace-schedule/wandb/offline-run-20260906_210704-hg5aobgm
+[21:07:05] Saved effective config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-trace-schedule/wandb/offline-run-20260906_210704-hg5aobgm/files/effective_config.yaml
+[21:07:05] Saved source config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-trace-schedule/wandb/offline-run-20260906_210704-hg5aobgm/files/training.yaml
+[21:07:05] Command: /home/mhchu/miniconda3/envs/prodigy/bin/python experiments/run_single_experiment.py --config /dataMeR1/phil/gfm/prodigy-trace-schedule/scripts/experiments/setup/trace_schedule_scaling/training.yaml --device 0 --seed 0 --prefix tracesched_r2_interleaved_s0 --timestamp 20260907smoke3 --state_dir /dataMeR1/phil/gfm/prodigy-trace-schedule/state/trace_schedule_scaling_smoke --log_dir /dataMeR1/phil/gfm/prodigy-trace-schedule/log/trace_schedule_scaling_smoke --dataset_len_cap 20 --checkpoint_steps 10,20 --neighbor_sampling_source_subset ukr_rus,covid --neighbor_sampling_source_schedule ukr_rus,covid,ukr_rus,covid,ukr_rus,covid,ukr_rus,covid,ukr_rus,covid,ukr_rus,covid,ukr_rus,covid,ukr_rus,covid,ukr_rus,covid,ukr_rus,covid --neighbor_sampling_source_schedule_steps 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 --neighbor_matching_member_seed 380100 --neighbor_sampling_source_schedule_seed 480100
+wandb: WARNING URL not available in offline run
+[21:07:05] Initializing trainer
+---------- Parameters ----------
+  config: /dataMeR1/phil/gfm/prodigy-trace-schedule/scripts/experiments/setup/trace_schedule_scaling/training.yaml
+  root: /dataMeR1/phil/data/merged/graphs
+  dataset: covid19_twitter
+  csv_filename: twitter_data.csv
+  facebook_pkl_filename: facebook_2022-06-24_2022-06-25_part1.pkl
+  facebook_edges_filename: facebook_2022-06-24_2022-06-25_part1_edges.csv
+  facebook_node_features_filename: facebook_2022-06-24_2022-06-25_part1_node_features.csv
+  facebook_data_source: csv
+  facebook_use_edge_features: False
+  facebook_edge_feature_columns:
+  facebook_source_pkl_path:
+  facebook_embeddings_path:
+  facebook_embedding_ids_path:
+  facebook_text_emb_model:
+  facebook_target_dim: 768
+  facebook_filter_to_uk_ru: True
+  facebook_max_posts: None
+  label_type: verified
+  max_users: None
+  invalidate_cache: False
+  dataset_len_cap: 20
+  val_len_cap: 500
+  test_len_cap: 500
+  shuffle_index: False
+  force_cache: False
+  classification_only: False
+  early_stopping_patience: 20
+  reset_after_layer: None
+  original_features: True
+  override_log: False
+  seed: 0
+  eval_episode_seed_offset: 0
+  metric: Acc
+  learning_rate: 0.002
+  epochs: 1
+  print_epoch: 10
+  eval_epoch: 10
+  checkpoint_epoch: 10
+  print_step: 100
+  eval_step: 100000
+  checkpoint_step: 100000
+  source_diagnostics_interval: 0
+  checkpoint_steps: 10,20
+  batch_size: 1
+  weight_decay: 0.001
+  dropout: 0.0
+  text_features_dropout: 0
+  rel_sample_random_seed: None
+  split_train_nodes: False
+  verbose: False
+  detect_anomaly: False
+  loader_start_method:
+  workers: 2
+  device: cuda:0
+  input_dim: 768
+  emb_dim: 256
+  gnn_type: sage
+  n_layer: 1
+  meta_n_layer: 1
+  second_gnn: Atten
+  attention_mask_scheme: causal
+  skip_path: False
+  has_final_back: False
+  layers: S,U,M
+  ignore_label_embeddings: True
+  zero_label_embeddings: False
+  not_freeze_learned_label_embedding: False
+  linear_probe: False
+  fix_datasets_first: False
+  no_bn_metagraph: False
+  no_bn_encoder: False
+  calc_ranks: False
+  save_roc_curve: False
+  eval_only: False
+  eval_only_split: test
+  eval_test_before_train: False
+  eval_val_before_train: False
+  eval_after_train: False
+  meta_gnn_pos_only: False
+  task_name: neighbor_matching
+  zero_shot: False
+  no_split_labels: True
+  all_test: False
+  train_cap: None
+  label_set: None
+  csr_split: False
+  n_way: 30
+  n_shots: 3
+  n_query: 4
+  track_training_user_roles: False
+  neighbor_sampling_strategy: strict
+  neighbor_sampling_strata:
+  neighbor_sampling_episode_source: graph_id
+  neighbor_sampling_source_subset: ukr_rus,covid
+  neighbor_sampling_source_sequence:
+  neighbor_sampling_source_sequence_steps:
+  neighbor_sampling_source_schedule: ukr_rus,covid,ukr_rus,covid,ukr_rus,covid,ukr_rus,covid,ukr_rus,covid,ukr_rus,covid,ukr_rus,covid,ukr_rus,covid,ukr_rus,covid,ukr_rus,covid
+  neighbor_sampling_source_schedule_steps: 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+  neighbor_sampling_source_schedule_seed: 480100
+  neighbor_sampling_episode_source_weighting: balanced
+  neighbor_sampling_batch_source_mode: independent
+  neighbor_sampling_cross_source_prob: 0.0
+  neighbor_sampling_center_radii:
+  neighbor_sampling_center_radius_weights:
+  neighbor_sampling_center_region_fanout: 64
+  neighbor_sampling_center_region_node_limit: 4096
+  neighbor_sampling_center_region_candidate_limit: 512
+  neighbor_sampling_center_max_attempts: 200
+  neighbor_matching_edge_split: True
+  n_way_upper: -1
+  n_shots_upper: -1
+  n_query_upper: -1
+  max_length: -1
+  augmentation:
+  augment_test: False
+  ablate_features: none
+  ablate_edges: none
+  structural_features: none
+  attr_regression_weight: 0.0
+  fp_mask_ratio: 0.3
+  fp_mask_strategy: zero
+  mix_task_counts: 1,1,1
+  mix_cl_aug: NZ0.2
+  e4_combine: simultaneous
+  e4_weights: 1,1,1
+  e4_task_counts: 1,1,1
+  e4_lp_neg_k: 1
+  prefix: tracesched_r2_interleaved_s0
+  timestamp: 20260907smoke3
+  tags: ['trace_schedule_scaling', 'neighbor_matching', 'exact_episode_multiset']
+  log_dir: /dataMeR1/phil/gfm/prodigy-trace-schedule/log/trace_schedule_scaling_smoke
+  state_dir: /dataMeR1/phil/gfm/prodigy-trace-schedule/state/trace_schedule_scaling_smoke
+  bert_emb_model: multi-qa-distilbert-cos-v1
+  bert_cache: multi-qa-distilbert-cos-v1
+  label_emb_model:
+  label_emb_texts:
+  label_emb_revision:
+  label_emb_trust_remote_code: True
+  label_emb_normalize: True
+  kg_emb_model:
+  pretrained_model_run:
+  resume_training_checkpoint:
+  n_hop: 2
+  neighbor_sampling_hop_sizes: 9,9
+  neighbor_sampling_node_limit: 101
+  neighbor_matching_walk_hops: 1
+  neighbor_matching_member_policy: uniform_shuffled
+  neighbor_matching_member_seed: 380100
+  train_episode_audit: True
+  graph_filename: ukr_rus_covid_midterm_all9_facebook_final_core_split_seed0.pt
+  target_feature:
+  target_feature_keep_in_x: False
+  target_transform: none
+  feature_subset: all
+  midterm_label_downsample:
+  eval_random_query: False
+  edge_view: static_train
+  target_edge_view: static_test
+  edge_feature_subset: all
+  midterm_lp_neg_ratio: 1
+  hard_negatives: True
+  use_edge_features: False
+  midterm_debug_print_episodes: 0
+  debug_print_predictions: 0
+  export_predictions: False
+  prediction_context_neighbors: 3
+  prediction_support_per_label: 3
+  small_dataset: False
+  experiment_type: metagraph
+  exp_name: tracesched_r2_interleaved_s0_20260907smoke3
+--------------------------------
+[21:07:05] Checkpoint schedule (explicit): [10, 20]
+SingleLayerGeneralGNN(
+  (layer_list): ModuleList(
+    (0): MultiLayerGNN(
+      (module_list): ModuleList(
+        (0): SAGEConvSelfLoops()
+      )
+      (act): ReLU()
+      (reset_mlp): Linear(in_features=512, out_features=256, bias=True)
+      (reset_mlp_c): Linear(in_features=256, out_features=256, bias=True)
+      (reset_mlp_m): Linear(in_features=256, out_features=256, bias=True)
+    )
+    (1): BgGraphToSupernodePropagator()
+    (2): MetaGNN(
+      (gnn_layers): ModuleList(
+        (0): MetaGNNLayer()
+      )
+      (gnn_non_linear): GELU(approximate='none')
+    )
+  )
+  (cos): CosineSimilarity()
+  (initial_label_mlp): Linear(in_features=768, out_features=256, bias=True)
+  (initial_input_mlp): Identity()
+  (final_label_mlp): Identity()
+  (final_input_mlp): Identity()
+  (learned_label_embedding): Embedding(1000, 256)
+  (txt_dropout): Dropout(p=0, inplace=False)
+)
+Number of trainable parameters of the model: 1640514
+Neighbor sampling graph_id strata (confine-to-one-source) [subset 2/9 sources]: ukr_rus:10400775, covid:23012850
+Neighbor sampling graph_id strata (confine-to-one-source) [subset 2/9 sources]: ukr_rus:10400775, covid:23012850
+Neighbor sampling graph_id strata (confine-to-one-source) [subset 2/9 sources]: ukr_rus:10400775, covid:23012850
+Source schedule: ukr_rus:1, covid:1, ukr_rus:1, covid:1, ukr_rus:1, covid:1, ukr_rus:1, covid:1, ukr_rus:1, covid:1, ukr_rus:1, covid:1, ukr_rus:1, covid:1, ukr_rus:1, covid:1, ukr_rus:1, covid:1, ukr_rus:1, covid:1
+[21:07:12] Trainer initialized. Starting train/eval...
+  0%|          | 0/20 [00:00<?, ?it/s]  0%|          | 0/20 [00:01<?, ?it/s, acc=0.0500, aux=0.0000, load=0.85s, loss=3.5048, step=0.32s]  5%|▌         | 1/20 [00:01<00:22,  1.17s/it, acc=0.0500, aux=0.0000, load=0.85s, loss=3.5048, step=0.32s]  5%|▌         | 1/20 [00:01<00:22,  1.17s/it, acc=0.0583, aux=0.0000, load=0.01s, loss=3.4553, step=0.06s]  5%|▌         | 1/20 [00:01<00:22,  1.17s/it, acc=0.0667, aux=0.0000, load=0.00s, loss=3.4542, step=0.07s] 15%|█▌        | 3/20 [00:01<00:06,  2.80it/s, acc=0.0667, aux=0.0000, load=0.00s, loss=3.4542, step=0.07s] 15%|█▌        | 3/20 [00:01<00:06,  2.80it/s, acc=0.0000, aux=0.0000, load=0.01s, loss=3.5485, step=0.08s] 15%|█▌        | 3/20 [00:01<00:06,  2.80it/s, acc=0.0250, aux=0.0000, load=0.00s, loss=3.4081, step=0.06s] 25%|██▌       | 5/20 [00:01<00:03,  4.73it/s, acc=0.0250, aux=0.0000, load=0.00s, loss=3.4081, step=0.06s] 25%|██▌       | 5/20 [00:01<00:03,  4.73it/s, acc=0.0417, aux=0.0000, load=0.01s, loss=3.4352, step=0.06s] 25%|██▌       | 5/20 [00:01<00:03,  4.73it/s, acc=0.0167, aux=0.0000, load=0.01s, loss=3.4188, step=0.07s] 35%|███▌      | 7/20 [00:01<00:01,  6.60it/s, acc=0.0167, aux=0.0000, load=0.01s, loss=3.4188, step=0.07s] 35%|███▌      | 7/20 [00:01<00:01,  6.60it/s, acc=0.0250, aux=0.0000, load=0.01s, loss=3.4038, step=0.06s] 35%|███▌      | 7/20 [00:01<00:01,  6.60it/s, acc=0.0333, aux=0.0000, load=0.01s, loss=3.3784, step=0.07s] 45%|████▌     | 9/20 [00:01<00:01,  8.22it/s, acc=0.0333, aux=0.0000, load=0.01s, loss=3.3784, step=0.07s] 45%|████▌     | 9/20 [00:01<00:01,  8.22it/s, acc=0.0250, aux=0.0000, load=0.03s, loss=3.4195, step=0.06s]                                                                                                           [21:07:18] [step 10] saving checkpoint...
+ 45%|████▌     | 9/20 [00:01<00:01,  8.22it/s, acc=0.0250, aux=0.0000, load=0.03s, loss=3.4195, step=0.06s] 45%|████▌     | 9/20 [00:01<00:01,  8.22it/s, acc=0.0417, aux=0.0000, load=0.01s, loss=3.4080, step=0.07s] 55%|█████▌    | 11/20 [00:01<00:01,  8.77it/s, acc=0.0417, aux=0.0000, load=0.01s, loss=3.4080, step=0.07s] 55%|█████▌    | 11/20 [00:02<00:01,  8.77it/s, acc=0.0250, aux=0.0000, load=0.01s, loss=3.4214, step=0.06s] 55%|█████▌    | 11/20 [00:02<00:01,  8.77it/s, acc=0.0333, aux=0.0000, load=0.01s, loss=3.4248, step=0.07s] 65%|██████▌   | 13/20 [00:02<00:00,  9.86it/s, acc=0.0333, aux=0.0000, load=0.01s, loss=3.4248, step=0.07s] 65%|██████▌   | 13/20 [00:02<00:00,  9.86it/s, acc=0.0667, aux=0.0000, load=0.04s, loss=3.4366, step=0.06s] 65%|██████▌   | 13/20 [00:02<00:00,  9.86it/s, acc=0.0417, aux=0.0000, load=0.02s, loss=3.3904, step=0.07s] 75%|███████▌  | 15/20 [00:02<00:00, 10.08it/s, acc=0.0417, aux=0.0000, load=0.02s, loss=3.3904, step=0.07s] 75%|███████▌  | 15/20 [00:02<00:00, 10.08it/s, acc=0.0417, aux=0.0000, load=0.03s, loss=3.4333, step=0.06s] 75%|███████▌  | 15/20 [00:03<00:00, 10.08it/s, acc=0.0333, aux=0.0000, load=0.86s, loss=3.3784, step=0.06s] 85%|████████▌ | 17/20 [00:03<00:00,  4.38it/s, acc=0.0333, aux=0.0000, load=0.86s, loss=3.3784, step=0.06s] 85%|████████▌ | 17/20 [00:03<00:00,  4.38it/s, acc=0.0000, aux=0.0000, load=0.04s, loss=3.4201, step=0.06s] 90%|█████████ | 18/20 [00:03<00:00,  4.88it/s, acc=0.0000, aux=0.0000, load=0.04s, loss=3.4201, step=0.06s] 90%|█████████ | 18/20 [00:03<00:00,  4.88it/s, acc=0.0333, aux=0.0000, load=0.01s, loss=3.3926, step=0.07s] 90%|█████████ | 18/20 [00:03<00:00,  4.88it/s, acc=0.0500, aux=0.0000, load=0.03s, loss=3.3908, step=0.05s]                                                                                                            [21:07:20] [step 20] saving checkpoint...
+ 90%|█████████ | 18/20 [00:03<00:00,  4.88it/s, acc=0.0500, aux=0.0000, load=0.03s, loss=3.3908, step=0.05s]100%|██████████| 20/20 [00:03<00:00,  5.85it/s, acc=0.0500, aux=0.0000, load=0.03s, loss=3.3908, step=0.05s]100%|██████████| 20/20 [00:03<00:00,  5.53it/s, acc=0.0500, aux=0.0000, load=0.03s, loss=3.3908, step=0.05s]
+[21:07:20] [step 20] final checkpoint already present, not re-saving
+[21:07:20] Training finished
+  best step:             0
+  best val acc:          -inf
+  best test acc:         -inf
+  test acc @ best val:   0.0000
+Saved best model to /dataMeR1/phil/gfm/prodigy-trace-schedule/state/trace_schedule_scaling_smoke/tracesched_r2_interleaved_s0_20260907smoke3/state_dict
+wandb:
+wandb: Run history:
+wandb:        load_time █▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁
+wandb:        step_time █▁▁▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb:        train_acc ▆▇█▁▄▅▃▄▅▄▅▄▅█▅▅▅▁▅▆
+wandb:   train_aux_loss ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb:       train_loss ▆▄▄█▂▃▃▂▁▃▂▃▃▃▁▃▁▃▂▂
+wandb: train_total_loss ▆▄▄█▂▃▃▂▁▃▂▃▃▃▁▃▁▃▂▂
+wandb:
+wandb: Run summary:
+wandb:             best_step 0
+wandb:         best_test_acc -inf
+wandb:               command /home/mhchu/minicond...
+wandb: effective_config_file effective_config.yam...
+wandb:  final_validation_acc -inf
+wandb:             load_time 0.03334
+wandb:            num_params 1640514
+wandb:    source_config_file /dataMeR1/phil/gfm/p...
+wandb:             step_time 0.05488
+wandb:  test_acc_on_best_val 0
+wandb:                    +4 ...
+wandb:
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /dataMeR1/phil/gfm/prodigy-trace-schedule/wandb/offline-run-20260906_210704-hg5aobgm
+wandb: Find logs at: ./wandb/offline-run-20260906_210704-hg5aobgm/logs

@@ -40,3 +40,19 @@ All paths are relative to `/dataMeR1/phil/gfm/prodigy-facebook` on Tucker. This 
 single training run per condition; the comparison does not establish seed-level
 uncertainty. A batch-9 independent-source control would be needed to separate the
 effect of batch size from forcing all nine sources into every update.
+
+## Short source-gradient diagnostic
+
+The separate seed-0 diagnostic at Tucker revision `9b5ea03c65` ran 200 training
+steps from scratch with balanced complete-source batch 9 and recorded per-source
+gradient norms plus all 36 pairwise cosines at steps 1, 20, ..., 200. The complete
+11-row record is committed as `data/source_diagnostics_200_seed0.jsonl`.
+
+Mean pairwise cosine varies from -0.010 to 0.220 after step 1, with 4 to 22 of 36
+pairs negative at different checkpoints. At step 200 the mean is 0.114 and 5 of 36
+pairs are negative. Initial mean gradient norm is 9.50 and subsequently falls to
+roughly 1.0--1.3.
+
+This validates the diagnostic instrumentation and shows heterogeneous, unstable
+short-horizon alignment. It does not support a durable source ranking, a training
+outcome, or any downstream-performance claim.

@@ -1,0 +1,42 @@
+{
+  "dataset": "cora",
+  "ways": 7,
+  "shots": 3,
+  "queries_per_class": 4,
+  "batch_size": 4,
+  "batches": 32,
+  "episodes": 128,
+  "episode_seed_offset": 400009,
+  "episode_sampler_seed": 400457,
+  "checkpoints": {
+    "blocked": "/dataMeR1/phil/gfm/prodigy-encoder-solver-isolation/log/isolation_full_20260907/state/r4_blocked_s0_native_isolation_v1/checkpoint/state_dict_2500.ckpt",
+    "interleaved": "/dataMeR1/phil/gfm/prodigy-encoder-solver-isolation/log/isolation_full_20260907/state/r4_interleaved_s0_native_isolation_v1/checkpoint/state_dict_2500.ckpt"
+  },
+  "graph": "/dataMeR1/phil/data/cora/graphs/citation_graph.pt",
+  "module_mode": "eval",
+  "ridge_lambda": 1,
+  "ridge_scale": 1,
+  "ridge_intercept": false,
+  "centering": [
+    "none",
+    "support"
+  ],
+  "normalization": "row L2 after centering",
+  "sources": [
+    "ukr_rus",
+    "covid",
+    "midterm",
+    "covid_political"
+  ],
+  "scope": "Cross-domain episodic classification, not standard Cora benchmark",
+  "split": "Native loader custom stratified 60/20/20; supports and queries from test pool",
+  "transduction": "Full graph topology and unlabeled features are available; support-only readout fit",
+  "query_labels": "Scoring only; never read by probe",
+  "trace_parity_atol": 1e-05,
+  "commit": "f5db493d639757908598ef5c13e5b9cebc4475d4",
+  "sha256": {
+    "/dataMeR1/phil/data/cora/graphs/citation_graph.pt": "fdebaee3d6fb44745ebb8c605ec4dcb9bcc894dc0560c03295e3ddcb0b47cefe",
+    "/dataMeR1/phil/gfm/prodigy-encoder-solver-isolation/log/isolation_full_20260907/state/r4_blocked_s0_native_isolation_v1/checkpoint/state_dict_2500.ckpt": "3b244646e0026c7611a937c664c88f397c7c635e4fa5d2579bfc5771b56bbc35",
+    "/dataMeR1/phil/gfm/prodigy-encoder-solver-isolation/log/isolation_full_20260907/state/r4_interleaved_s0_native_isolation_v1/checkpoint/state_dict_2500.ckpt": "669a1d0adb5f2954b26206db2bccf30a9dd0c469d7940a7cb0b117a7eb7d2b53"
+  }
+}

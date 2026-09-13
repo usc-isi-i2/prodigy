@@ -1,0 +1,232 @@
+{"models": ["ss_twibot20", "ss_ukr_rus", "random_init"], "targets": ["facebook_page_reference"], "variants": ["baseline", "shuffle_context", "bn_batch_all"], "episodes": 4}
+Loading ukr_rus_twitter graph from /dataMeR1/phil/data/facebook_page_reference/graphs/page_reference_graph.pt...
+Applied midterm feature subset 'emb_only': 768 -> 768 dims.
+Using all midterm edge features (2 dims): ['n_reference_posts', 'n_content_reference_posts']
+Graph: 150000 nodes, 167622 edges, 768 node features
+Building neighbor sampler (CSR preprocessing)...
+Neighbor sampler ready.
+wandb: Tracking run with wandb version 0.27.2
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260905_214844-lw572upd
+Edge features: 2 dims from edge view 'default'
+[21:48:45] Saved effective config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260905_214844-lw572upd/files/effective_config.yaml
+[21:48:45] Saved source config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260905_214844-lw572upd/files/training.yaml
+[21:48:45] Command: /home/mhchu/miniconda3/envs/prodigy/bin/python /dataMeR1/phil/gfm/prodigy-mechanisms/scripts/experiments/setup/target_performance_mechanisms/replay.py --model-list /dataMeR1/phil/gfm/prodigy-nm-pairs/log/nm_cls_lattice_20260905/model_list.tsv --reference-tsv /dataMeR1/phil/gfm/prodigy-nm-pairs/log/nm_cls_lattice_20260905/classification_long.tsv --output log/target_mechanisms/smoke_cpu_20260906 --model-ids ss_ukr_rus,ss_twibot20 --include-random --datasets facebook_page_reference --variants baseline,shuffle_context,bn_batch_all --batch-count 1 --device 123 --save-embeddings
+wandb: WARNING URL not available in offline run
+[21:48:45] Initializing trainer
+---------- Parameters ----------
+  config: scripts/experiments/setup/final_core/training.yaml
+  root: /dataMeR1/phil/data/facebook_page_reference/graphs
+  dataset: facebook_page_reference
+  csv_filename: twitter_data.csv
+  facebook_pkl_filename: facebook_2022-06-24_2022-06-25_part1.pkl
+  facebook_edges_filename: facebook_2022-06-24_2022-06-25_part1_edges.csv
+  facebook_node_features_filename: facebook_2022-06-24_2022-06-25_part1_node_features.csv
+  facebook_data_source: csv
+  facebook_use_edge_features: False
+  facebook_edge_feature_columns:
+  facebook_source_pkl_path:
+  facebook_embeddings_path:
+  facebook_embedding_ids_path:
+  facebook_text_emb_model:
+  facebook_target_dim: 768
+  facebook_filter_to_uk_ru: True
+  facebook_max_posts: None
+  label_type: verified
+  max_users: None
+  invalidate_cache: False
+  dataset_len_cap: 32
+  val_len_cap: 32
+  test_len_cap: 1
+  shuffle_index: False
+  force_cache: False
+  classification_only: False
+  early_stopping_patience: 20
+  reset_after_layer: None
+  original_features: True
+  override_log: True
+  seed: 0
+  eval_episode_seed_offset: 0
+  metric: Acc
+  learning_rate: 0.002
+  epochs: 1
+  print_epoch: 10
+  eval_epoch: 10
+  checkpoint_epoch: 10
+  print_step: 100
+  eval_step: 100000
+  checkpoint_step: 100000
+  source_diagnostics_interval: 0
+  checkpoint_steps: 100,300,900,2500
+  batch_size: 4
+  weight_decay: 0.001
+  dropout: 0.0
+  text_features_dropout: 0
+  rel_sample_random_seed: None
+  split_train_nodes: False
+  verbose: False
+  detect_anomaly: False
+  loader_start_method:
+  workers: 0
+  device: cpu
+  input_dim: 768
+  emb_dim: 256
+  gnn_type: sage
+  n_layer: 1
+  meta_n_layer: 1
+  second_gnn: Atten
+  attention_mask_scheme: causal
+  skip_path: False
+  has_final_back: False
+  layers: S,U,M
+  ignore_label_embeddings: False
+  zero_label_embeddings: False
+  not_freeze_learned_label_embedding: False
+  linear_probe: False
+  fix_datasets_first: False
+  no_bn_metagraph: False
+  no_bn_encoder: False
+  calc_ranks: False
+  save_roc_curve: False
+  eval_only: True
+  eval_only_split: test
+  eval_test_before_train: False
+  eval_val_before_train: False
+  eval_after_train: False
+  meta_gnn_pos_only: False
+  task_name: classification
+  zero_shot: False
+  no_split_labels: True
+  all_test: False
+  train_cap: None
+  label_set: None
+  csr_split: False
+  n_way: 2
+  n_shots: 10
+  n_query: 4
+  neighbor_sampling_strategy: strict
+  neighbor_sampling_strata:
+  neighbor_sampling_episode_source: graph_id
+  neighbor_sampling_source_subset:
+  neighbor_sampling_source_sequence:
+  neighbor_sampling_source_sequence_steps:
+  neighbor_sampling_episode_source_weighting: balanced
+  neighbor_sampling_batch_source_mode: independent
+  neighbor_sampling_cross_source_prob: 0.0
+  neighbor_sampling_center_radii:
+  neighbor_sampling_center_radius_weights:
+  neighbor_sampling_center_region_fanout: 64
+  neighbor_sampling_center_region_node_limit: 4096
+  neighbor_sampling_center_region_candidate_limit: 512
+  neighbor_sampling_center_max_attempts: 200
+  neighbor_matching_edge_split: False
+  n_way_upper: -1
+  n_shots_upper: -1
+  n_query_upper: -1
+  max_length: -1
+  augmentation:
+  augment_test: False
+  ablate_features: none
+  ablate_edges: none
+  structural_features: none
+  attr_regression_weight: 0.0
+  fp_mask_ratio: 0.3
+  fp_mask_strategy: zero
+  mix_task_counts: 1,1,1
+  mix_cl_aug: NZ0.2
+  e4_combine: simultaneous
+  e4_weights: 1,1,1
+  e4_task_counts: 1,1,1
+  e4_lp_neg_k: 1
+  prefix: archmatrix_prodigy_eval_replay_s0_step2500_facebook_page_reference
+  timestamp: mechanism_replay
+  tags: []
+  log_dir: log/target_mechanisms/smoke_cpu_20260906/trainer_logs
+  state_dir: log/target_mechanisms/smoke_cpu_20260906/state
+  bert_emb_model: multi-qa-distilbert-cos-v1
+  bert_cache: multi-qa-distilbert-cos-v1
+  label_emb_model:
+  label_emb_texts:
+  label_emb_revision:
+  label_emb_trust_remote_code: True
+  label_emb_normalize: True
+  kg_emb_model:
+  pretrained_model_run:
+  resume_training_checkpoint:
+  n_hop: 2
+  neighbor_sampling_hop_sizes: 9,9
+  neighbor_sampling_node_limit: 101
+  neighbor_matching_walk_hops: 1
+  graph_filename: page_reference_graph.pt
+  target_feature:
+  target_feature_keep_in_x: False
+  target_transform: none
+  feature_subset: emb_only
+  midterm_label_downsample:
+  eval_random_query: False
+  edge_view: default
+  target_edge_view: default
+  edge_feature_subset: all
+  midterm_lp_neg_ratio: 1
+  hard_negatives: True
+  use_edge_features: False
+  midterm_debug_print_episodes: 0
+  debug_print_predictions: 0
+  export_predictions: False
+  prediction_context_neighbors: 3
+  prediction_support_per_label: 3
+  small_dataset: False
+  experiment_type: metagraph
+  exp_name: archmatrix_prodigy_eval_replay_s0_step2500_facebook_page_reference_mechanism_replay
+--------------------------------
+[trainer] WARNING: --checkpoint_steps [100, 300, 900, 2500] exceed the step budget 32 (epochs x dataset_len_cap) and will never be written. Raise --epochs or --dataset_len_cap.
+[21:48:45] Checkpoint schedule (explicit): [100, 300, 900, 2500]
+/home/mhchu/miniconda3/envs/prodigy/lib/python3.11/site-packages/torch/_utils.py:776: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+  return self.fget.__get__(instance, owner)()
+SingleLayerGeneralGNN(
+  (layer_list): ModuleList(
+    (0): MultiLayerGNN(
+      (module_list): ModuleList(
+        (0): SAGEConvSelfLoops()
+      )
+      (act): ReLU()
+      (reset_mlp): Linear(in_features=512, out_features=256, bias=True)
+      (reset_mlp_c): Linear(in_features=256, out_features=256, bias=True)
+      (reset_mlp_m): Linear(in_features=256, out_features=256, bias=True)
+    )
+    (1): BgGraphToSupernodePropagator()
+    (2): MetaGNN(
+      (gnn_layers): ModuleList(
+        (0): MetaGNNLayer()
+      )
+      (gnn_non_linear): GELU(approximate='none')
+    )
+  )
+  (cos): CosineSimilarity()
+  (initial_label_mlp): Linear(in_features=768, out_features=256, bias=True)
+  (initial_input_mlp): Identity()
+  (final_label_mlp): Identity()
+  (final_input_mlp): Identity()
+  (learned_label_embedding): Embedding(1000, 256)
+  (txt_dropout): Dropout(p=0, inplace=False)
+)
+Number of trainable parameters of the model: 1640514
+{"accuracy": 0.71875, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_twibot20_s0_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "00e0004d92f3aef135f274fb6a2ada4fc7919731213c4d95507809c5b2d0f812", "episodes": 4, "f1": 0.6896551724137931, "model_id": "ss_twibot20", "nll": 0.6867251992225647, "queries": 32, "roc_auc": 0.89453125, "sources": ["twibot20"], "variant": "baseline", "weights_sha256": "38fd5db6854999a613fa5bf5647ba23362f9c52afb0b45470d1ad01a75f6c429"}
+{"accuracy": 0.75, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_twibot20_s0_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "00e0004d92f3aef135f274fb6a2ada4fc7919731213c4d95507809c5b2d0f812", "episodes": 4, "f1": 0.7142857142857143, "model_id": "ss_twibot20", "nll": 0.5935665369033813, "queries": 32, "roc_auc": 0.80859375, "sources": ["twibot20"], "variant": "shuffle_context", "weights_sha256": "38fd5db6854999a613fa5bf5647ba23362f9c52afb0b45470d1ad01a75f6c429"}
+{"accuracy": 0.78125, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_twibot20_s0_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "00e0004d92f3aef135f274fb6a2ada4fc7919731213c4d95507809c5b2d0f812", "episodes": 4, "f1": 0.7586206896551724, "model_id": "ss_twibot20", "nll": 0.4543136656284332, "queries": 32, "roc_auc": 0.88671875, "sources": ["twibot20"], "variant": "bn_batch_all", "weights_sha256": "38fd5db6854999a613fa5bf5647ba23362f9c52afb0b45470d1ad01a75f6c429"}
+{"accuracy": 0.90625, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_ukr_rus_s0_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "00e0004d92f3aef135f274fb6a2ada4fc7919731213c4d95507809c5b2d0f812", "episodes": 4, "f1": 0.9032258064516129, "model_id": "ss_ukr_rus", "nll": 0.21672701835632324, "queries": 32, "roc_auc": 0.97265625, "sources": ["ukr_rus"], "variant": "baseline", "weights_sha256": "f203cc94aa624776407539869397b585cd3963892d2a2244bb38dfc386466693"}
+{"accuracy": 0.71875, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_ukr_rus_s0_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "00e0004d92f3aef135f274fb6a2ada4fc7919731213c4d95507809c5b2d0f812", "episodes": 4, "f1": 0.7272727272727273, "model_id": "ss_ukr_rus", "nll": 0.5822824835777283, "queries": 32, "roc_auc": 0.77734375, "sources": ["ukr_rus"], "variant": "shuffle_context", "weights_sha256": "f203cc94aa624776407539869397b585cd3963892d2a2244bb38dfc386466693"}
+{"accuracy": 0.9375, "checkpoint": "/dataMeR1/phil/gfm/worktree-runtime-archive-20260812/prodigy-final-core/files/state/final_core/finalcore_ss_ukr_rus_s0_20260807/checkpoint/state_dict_2500.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "00e0004d92f3aef135f274fb6a2ada4fc7919731213c4d95507809c5b2d0f812", "episodes": 4, "f1": 0.9333333333333333, "model_id": "ss_ukr_rus", "nll": 0.24848070740699768, "queries": 32, "roc_auc": 0.9765625, "sources": ["ukr_rus"], "variant": "bn_batch_all", "weights_sha256": "f203cc94aa624776407539869397b585cd3963892d2a2244bb38dfc386466693"}
+{"accuracy": 0.46875, "checkpoint": "None", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "00e0004d92f3aef135f274fb6a2ada4fc7919731213c4d95507809c5b2d0f812", "episodes": 4, "f1": 0.32, "model_id": "random_init", "nll": 0.693323016166687, "queries": 32, "roc_auc": 0.45703125, "sources": [], "variant": "baseline", "weights_sha256": "45bb682d264595f7cc71903e33f8abc9b91954c596e5a0cdce3defb9bba84904"}
+{"accuracy": 0.4375, "checkpoint": "None", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "00e0004d92f3aef135f274fb6a2ada4fc7919731213c4d95507809c5b2d0f812", "episodes": 4, "f1": 0.3076923076923077, "model_id": "random_init", "nll": 0.6932728290557861, "queries": 32, "roc_auc": 0.47265625, "sources": [], "variant": "shuffle_context", "weights_sha256": "45bb682d264595f7cc71903e33f8abc9b91954c596e5a0cdce3defb9bba84904"}
+{"accuracy": 0.53125, "checkpoint": "None", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "00e0004d92f3aef135f274fb6a2ada4fc7919731213c4d95507809c5b2d0f812", "episodes": 4, "f1": 0.5161290322580645, "model_id": "random_init", "nll": 0.6945257782936096, "queries": 32, "roc_auc": 0.46484375, "sources": [], "variant": "bn_batch_all", "weights_sha256": "45bb682d264595f7cc71903e33f8abc9b91954c596e5a0cdce3defb9bba84904"}
+wandb:
+wandb: Run summary:
+wandb:               command /home/mhchu/minicond...
+wandb: effective_config_file effective_config.yam...
+wandb:            num_params 1640514
+wandb:    source_config_file /dataMeR1/phil/gfm/p...
+wandb:
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260905_214844-lw572upd
+wandb: Find logs at: ./wandb/offline-run-20260905_214844-lw572upd/logs

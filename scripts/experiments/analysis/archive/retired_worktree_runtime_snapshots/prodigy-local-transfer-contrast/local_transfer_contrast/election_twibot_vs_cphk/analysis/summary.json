@@ -1,0 +1,77 @@
+{
+  "discovery_stream": "original",
+  "interpretation_constraints": [
+    "raw cross-model losses are not comparable without calibration",
+    "fresh episodes are a held-out episode stream, not a training seed or held-out domain",
+    "routers use target query outcomes and are diagnostic upper bounds, not deployable methods",
+    "input clusters are selected by discovery-stream silhouette without outcome labels"
+  ],
+  "model_b": "ss_twibot20",
+  "model_c": "ss_cp_hk",
+  "raw_decoder_logits_bit_identical_between_models": {
+    "fresh": {
+      "raw_center/prototype": true,
+      "raw_center/ridge": true,
+      "raw_context/prototype": true,
+      "raw_context/ridge": true,
+      "raw_joint/prototype": true,
+      "raw_joint/ridge": true
+    },
+    "original": {
+      "raw_center/prototype": true,
+      "raw_center/ridge": true,
+      "raw_context/prototype": true,
+      "raw_context/ridge": true,
+      "raw_joint/prototype": true,
+      "raw_joint/ridge": true
+    }
+  },
+  "streams": {
+    "fresh": {
+      "accuracy_b": 0.97265625,
+      "accuracy_c": 0.8984375,
+      "auc_b": 0.98370361328125,
+      "auc_c": 0.95751953125,
+      "b_positive_loss_advantage_top10_share": 0.5272460912159469,
+      "c_positive_loss_advantage_top10_share": 1.0,
+      "calibrated_nll_b": 0.10344892465057533,
+      "calibrated_nll_c": 0.2708110759105643,
+      "disagreement_rate": 0.09765625,
+      "fraction_c_lower_calibrated_loss": 0.09375,
+      "n": 256,
+      "n_b_only": 22,
+      "n_both_correct": 227,
+      "n_both_wrong": 4,
+      "n_c_only": 3,
+      "oracle_accuracy": 0.984375,
+      "raw_nll_b": 0.10810016107220824,
+      "raw_nll_c": 0.282475895882635
+    },
+    "original": {
+      "accuracy_b": 0.984375,
+      "accuracy_c": 0.8828125,
+      "auc_b": 0.99072265625,
+      "auc_c": 0.93060302734375,
+      "b_positive_loss_advantage_top10_share": 0.5923040452879532,
+      "c_positive_loss_advantage_top10_share": 0.9999240460228204,
+      "calibrated_nll_b": 0.0824812870460295,
+      "calibrated_nll_c": 0.3308416544964323,
+      "disagreement_rate": 0.109375,
+      "fraction_c_lower_calibrated_loss": 0.10546875,
+      "n": 256,
+      "n_b_only": 27,
+      "n_both_correct": 225,
+      "n_both_wrong": 3,
+      "n_c_only": 1,
+      "oracle_accuracy": 0.98828125,
+      "raw_nll_b": 0.08433934700430669,
+      "raw_nll_c": 0.3333356921264663
+    }
+  },
+  "target": "election2020",
+  "temperatures_fitted_on_original": {
+    "ss_cp_hk": 0.8757998415006415,
+    "ss_twibot20": 1.1402607306234414
+  },
+  "validation_stream": "fresh"
+}

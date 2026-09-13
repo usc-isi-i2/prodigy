@@ -1,0 +1,1268 @@
+{"models": ["nmi_baseline_r8_s0__common6000", "nmi_baseline_r8_s0__source_val_selected", "nmi_exposure_r8_s0__common6000", "nmi_exposure_r8_s0__source_val_selected", "nmi_schedule_r8_s0__common6000", "nmi_schedule_r8_s0__source_val_selected", "nmi_composition_r8_s0__common6000", "nmi_composition_r8_s0__source_val_selected", "nmi_centers_r8_s0__common6000", "nmi_centers_r8_s0__source_val_selected", "nmi_eligibility_r8_s0__common6000", "nmi_eligibility_r8_s0__source_val_selected", "nmi_positives_r8_s0__common6000", "nmi_positives_r8_s0__source_val_selected", "nmi_negatives_r8_s0__common6000", "nmi_negatives_r8_s0__source_val_selected", "nmi_context_r8_s0__common6000", "nmi_context_r8_s0__source_val_selected", "nmi_optimization_r8_s0__common6000", "nmi_optimization_r8_s0__source_val_selected", "nmi_objective_r8_s0__common6000", "nmi_objective_r8_s0__source_val_selected", "nmi_region_adaptive_r8_s0__common6000", "nmi_region_adaptive_r8_s0__source_val_selected", "nmi_coverage_r8_s0__common6000", "nmi_coverage_r8_s0__source_val_selected", "nmi_budget_r8_s0__common6000", "nmi_budget_r8_s0__source_val_selected", "nmi_combined_r8_s0__common6000", "nmi_combined_r8_s0__source_val_selected"], "targets": ["twibot20", "covid_political", "facebook_page_reference", "election2020", "ukr_rus_suspended"], "variants": ["baseline"], "episodes": 128}
+Loading twibot20 graph from /dataMeR1/phil/data/twibot20/graphs/retweet_graph.pt...
+Applied midterm feature subset 'emb_only': 768 -> 768 dims.
+Using all midterm edge features (1 dims): ['n_retweets']
+Graph: 162990 nodes, 2010925 edges, 768 node features  labels=['human', 'bot']
+Building neighbor sampler...
+Neighbor sampler ready.
+Edge features: 1 dims from 'default'
+wandb: Tracking run with wandb version 0.27.2
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260906_000719-qdbvmjqi
+[00:07:20] Saved effective config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260906_000719-qdbvmjqi/files/effective_config.yaml
+[00:07:20] Saved source config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260906_000719-qdbvmjqi/files/training.yaml
+[00:07:20] Command: /home/mhchu/miniconda3/envs/prodigy/bin/python /dataMeR1/phil/gfm/prodigy-mechanisms/scripts/experiments/setup/target_performance_mechanisms/replay.py --model-list log/target_mechanisms/campaign_cls_inputs_20260906/model_list.tsv --datasets twibot20,covid_political,facebook_page_reference,election2020,ukr_rus_suspended --variants baseline --device 123 --threads 4 --eval-episode-seed-offset 100003 --output log/target_mechanisms/campaign_cls_fresh_20260906
+wandb: WARNING URL not available in offline run
+[00:07:20] Initializing trainer
+---------- Parameters ----------
+  config: scripts/experiments/setup/final_core/training.yaml
+  root: /dataMeR1/phil/data/twibot20/graphs
+  dataset: twibot20
+  csv_filename: twitter_data.csv
+  facebook_pkl_filename: facebook_2022-06-24_2022-06-25_part1.pkl
+  facebook_edges_filename: facebook_2022-06-24_2022-06-25_part1_edges.csv
+  facebook_node_features_filename: facebook_2022-06-24_2022-06-25_part1_node_features.csv
+  facebook_data_source: csv
+  facebook_use_edge_features: False
+  facebook_edge_feature_columns:
+  facebook_source_pkl_path:
+  facebook_embeddings_path:
+  facebook_embedding_ids_path:
+  facebook_text_emb_model:
+  facebook_target_dim: 768
+  facebook_filter_to_uk_ru: True
+  facebook_max_posts: None
+  label_type: verified
+  max_users: None
+  invalidate_cache: False
+  dataset_len_cap: 32
+  val_len_cap: 32
+  test_len_cap: 32
+  shuffle_index: False
+  force_cache: False
+  classification_only: False
+  early_stopping_patience: 20
+  reset_after_layer: None
+  original_features: True
+  override_log: True
+  seed: 0
+  eval_episode_seed_offset: 100003
+  metric: Acc
+  learning_rate: 0.002
+  epochs: 1
+  print_epoch: 10
+  eval_epoch: 10
+  checkpoint_epoch: 10
+  print_step: 100
+  eval_step: 100000
+  checkpoint_step: 100000
+  source_diagnostics_interval: 0
+  checkpoint_steps: 100,300,900,2500
+  batch_size: 4
+  weight_decay: 0.001
+  dropout: 0.0
+  text_features_dropout: 0
+  rel_sample_random_seed: None
+  split_train_nodes: False
+  verbose: False
+  detect_anomaly: False
+  loader_start_method:
+  workers: 0
+  device: cpu
+  input_dim: 768
+  emb_dim: 256
+  gnn_type: sage
+  n_layer: 1
+  meta_n_layer: 1
+  second_gnn: Atten
+  attention_mask_scheme: causal
+  skip_path: False
+  has_final_back: False
+  layers: S,U,M
+  ignore_label_embeddings: False
+  zero_label_embeddings: False
+  not_freeze_learned_label_embedding: False
+  linear_probe: False
+  fix_datasets_first: False
+  no_bn_metagraph: False
+  no_bn_encoder: False
+  calc_ranks: False
+  save_roc_curve: False
+  eval_only: True
+  eval_only_split: test
+  eval_test_before_train: False
+  eval_val_before_train: False
+  eval_after_train: False
+  meta_gnn_pos_only: False
+  task_name: classification
+  zero_shot: False
+  no_split_labels: True
+  all_test: False
+  train_cap: None
+  label_set: None
+  csr_split: False
+  n_way: 2
+  n_shots: 10
+  n_query: 12
+  neighbor_sampling_strategy: strict
+  neighbor_sampling_strata:
+  neighbor_sampling_episode_source: graph_id
+  neighbor_sampling_source_subset:
+  neighbor_sampling_source_sequence:
+  neighbor_sampling_source_sequence_steps:
+  neighbor_sampling_episode_source_weighting: balanced
+  neighbor_sampling_batch_source_mode: independent
+  neighbor_sampling_cross_source_prob: 0.0
+  neighbor_sampling_center_radii:
+  neighbor_sampling_center_radius_weights:
+  neighbor_sampling_center_region_fanout: 64
+  neighbor_sampling_center_region_node_limit: 4096
+  neighbor_sampling_center_region_candidate_limit: 512
+  neighbor_sampling_center_max_attempts: 200
+  neighbor_matching_edge_split: False
+  n_way_upper: -1
+  n_shots_upper: -1
+  n_query_upper: -1
+  max_length: -1
+  augmentation:
+  augment_test: False
+  ablate_features: none
+  ablate_edges: none
+  structural_features: none
+  attr_regression_weight: 0.0
+  fp_mask_ratio: 0.3
+  fp_mask_strategy: zero
+  mix_task_counts: 1,1,1
+  mix_cl_aug: NZ0.2
+  e4_combine: simultaneous
+  e4_weights: 1,1,1
+  e4_task_counts: 1,1,1
+  e4_lp_neg_k: 1
+  prefix: archmatrix_prodigy_eval_replay_s0_step2500_twibot20
+  timestamp: mechanism_replay
+  tags: []
+  log_dir: log/target_mechanisms/campaign_cls_fresh_20260906/trainer_logs
+  state_dir: log/target_mechanisms/campaign_cls_fresh_20260906/state
+  bert_emb_model: multi-qa-distilbert-cos-v1
+  bert_cache: multi-qa-distilbert-cos-v1
+  label_emb_model:
+  label_emb_texts:
+  label_emb_revision:
+  label_emb_trust_remote_code: True
+  label_emb_normalize: True
+  kg_emb_model:
+  pretrained_model_run:
+  resume_training_checkpoint:
+  n_hop: 2
+  neighbor_sampling_hop_sizes: 9,9
+  neighbor_sampling_node_limit: 101
+  neighbor_matching_walk_hops: 1
+  neighbor_matching_member_policy: lowest_sorted
+  neighbor_matching_member_seed: -1
+  train_episode_audit: False
+  graph_filename: retweet_graph.pt
+  target_feature:
+  target_feature_keep_in_x: False
+  target_transform: none
+  feature_subset: emb_only
+  midterm_label_downsample:
+  eval_random_query: False
+  edge_view: default
+  target_edge_view: default
+  edge_feature_subset: all
+  midterm_lp_neg_ratio: 1
+  hard_negatives: True
+  use_edge_features: False
+  midterm_debug_print_episodes: 0
+  debug_print_predictions: 0
+  export_predictions: False
+  prediction_context_neighbors: 3
+  prediction_support_per_label: 3
+  small_dataset: False
+  experiment_type: metagraph
+  exp_name: archmatrix_prodigy_eval_replay_s0_step2500_twibot20_mechanism_replay
+--------------------------------
+[trainer] WARNING: --checkpoint_steps [100, 300, 900, 2500] exceed the step budget 32 (epochs x dataset_len_cap) and will never be written. Raise --epochs or --dataset_len_cap.
+[00:07:20] Checkpoint schedule (explicit): [100, 300, 900, 2500]
+SingleLayerGeneralGNN(
+  (layer_list): ModuleList(
+    (0): MultiLayerGNN(
+      (module_list): ModuleList(
+        (0): SAGEConvSelfLoops()
+      )
+      (act): ReLU()
+      (reset_mlp): Linear(in_features=512, out_features=256, bias=True)
+      (reset_mlp_c): Linear(in_features=256, out_features=256, bias=True)
+      (reset_mlp_m): Linear(in_features=256, out_features=256, bias=True)
+    )
+    (1): BgGraphToSupernodePropagator()
+    (2): MetaGNN(
+      (gnn_layers): ModuleList(
+        (0): MetaGNNLayer()
+      )
+      (gnn_non_linear): GELU(approximate='none')
+    )
+  )
+  (cos): CosineSimilarity()
+  (initial_label_mlp): Linear(in_features=768, out_features=256, bias=True)
+  (initial_input_mlp): Identity()
+  (final_label_mlp): Identity()
+  (final_input_mlp): Identity()
+  (learned_label_embedding): Embedding(1000, 256)
+  (txt_dropout): Dropout(p=0, inplace=False)
+)
+Number of trainable parameters of the model: 1640514
+/home/mhchu/miniconda3/envs/prodigy/lib/python3.11/site-packages/torch/_utils.py:776: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+  return self.fget.__get__(instance, owner)()
+{"accuracy": 0.595703125, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_baseline_r8_s0_20260904_023439_000/checkpoint/state_dict_6000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.591715976331361, "model_id": "nmi_baseline_r8_s0__common6000", "nll": 1.0430738925933838, "queries": 3072, "roc_auc": 0.636684841579861, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "aea245a17baa05afcffb9f3e2837b2449e02158c3847edfe4447548506d0ac85"}
+{"accuracy": 0.5953776041666666, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_baseline_r8_s0_20260904_023439_000/checkpoint/state_dict_8000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.5923253525746146, "model_id": "nmi_baseline_r8_s0__source_val_selected", "nll": 1.0298266410827637, "queries": 3072, "roc_auc": 0.6376749674479167, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f9b6a44d07c99d8eb477c7083f92cd17482d56ce1abb2b55f69da9d370c02b52"}
+{"accuracy": 0.5667317708333334, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_exposure_r8_s0_20260904_023439_001/checkpoint/state_dict_6000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.5828893763710435, "model_id": "nmi_exposure_r8_s0__common6000", "nll": 1.1064543724060059, "queries": 3072, "roc_auc": 0.5895464155409071, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "3502cbceccb693f3f2de053ef077af5c60bce974291108adf5d460f43a794f28"}
+{"accuracy": 0.5797526041666666, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_exposure_r8_s0_20260904_023439_001/checkpoint/state_dict_10000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.6060421116875191, "model_id": "nmi_exposure_r8_s0__source_val_selected", "nll": 1.1650723218917847, "queries": 3072, "roc_auc": 0.6098242865668402, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "721fae95bf10a786f85e2841e3806e127e6fd66e1dc2d0ec865dd9ffa11734af"}
+{"accuracy": 0.5462239583333334, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_schedule_r8_s0_20260904_023439_002/checkpoint/state_dict_6000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.5783424077434967, "model_id": "nmi_schedule_r8_s0__common6000", "nll": 1.3067265748977661, "queries": 3072, "roc_auc": 0.5624427795410156, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "a98155339d7182da76c0704c1ef3e995565404de8b4e28608d697573f89de41b"}
+{"accuracy": 0.5462239583333334, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_schedule_r8_s0_20260904_023439_002/checkpoint/state_dict_6000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.5783424077434967, "model_id": "nmi_schedule_r8_s0__source_val_selected", "nll": 1.3067265748977661, "queries": 3072, "roc_auc": 0.5624427795410156, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "a98155339d7182da76c0704c1ef3e995565404de8b4e28608d697573f89de41b"}
+{"accuracy": 0.580078125, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_composition_r8_s0_20260904_023439_003/checkpoint/state_dict_6000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.5811688311688312, "model_id": "nmi_composition_r8_s0__common6000", "nll": 1.0561662912368774, "queries": 3072, "roc_auc": 0.5966771443684895, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "2ec6854f7faf8dcdf310e938bf38d24a0e05fde8f1542e83ac1d201257eb3ac5"}
+{"accuracy": 0.5911458333333334, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_composition_r8_s0_20260904_023439_003/checkpoint/state_dict_8000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.5903457273320287, "model_id": "nmi_composition_r8_s0__source_val_selected", "nll": 0.982130765914917, "queries": 3072, "roc_auc": 0.6250661214192708, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "798a803b9922a0679e7188dd8e5663e672308ed1b71ca796ccfb1ebb4b24a298"}
+{"accuracy": 0.5696614583333334, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_centers_r8_s0_20260904_023439_004/checkpoint/state_dict_6000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.5472602739726027, "model_id": "nmi_centers_r8_s0__common6000", "nll": 0.9372079968452454, "queries": 3072, "roc_auc": 0.5953831142849393, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "bcc610e5f4c543545d44ad2eff754b6a104efb811e05129fe6eaf22d2c750664"}
+{"accuracy": 0.5680338541666666, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_centers_r8_s0_20260904_023439_004/checkpoint/state_dict_4000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.5957965275662503, "model_id": "nmi_centers_r8_s0__source_val_selected", "nll": 1.0446199178695679, "queries": 3072, "roc_auc": 0.6007893880208334, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f3b58dd1eee461f1642d719f36b1e2465c0d461363be287014402e5c9b2e13e3"}
+{"accuracy": 0.5501302083333334, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_eligibility_r8_s0_20260904_023439_005/checkpoint/state_dict_6000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.5721362229102167, "model_id": "nmi_eligibility_r8_s0__common6000", "nll": 1.3189014196395874, "queries": 3072, "roc_auc": 0.5616724226209853, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "b6592cbbd50eeb3bbf67c73e6b4764cdc15eff43064574566f80f83b719ce5c5"}
+{"accuracy": 0.6188151041666666, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_eligibility_r8_s0_20260904_023439_005/checkpoint/state_dict_2000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.6257590284435922, "model_id": "nmi_eligibility_r8_s0__source_val_selected", "nll": 0.8149053454399109, "queries": 3072, "roc_auc": 0.6575402153862847, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "e0fe07ba9a1b20ad4fe59e61ffd2ed782efdff0d7c2473c8bf54418c6ddf0bfa"}
+{"accuracy": 0.5670572916666666, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_positives_r8_s0_20260904_023439_006/checkpoint/state_dict_6000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.5545880776959142, "model_id": "nmi_positives_r8_s0__common6000", "nll": 1.1880861520767212, "queries": 3072, "roc_auc": 0.5965105692545573, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "875d65554e0735133f20df9477c2a9906a3bb36fe0ee437e913f7e5c47fd4e5e"}
+{"accuracy": 0.5885416666666666, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_positives_r8_s0_20260904_023439_006/checkpoint/state_dict_10000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.5749831876260928, "model_id": "nmi_positives_r8_s0__source_val_selected", "nll": 1.0617146492004395, "queries": 3072, "roc_auc": 0.6257803175184462, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "87847ac49a1600e6ca84bbc19383137ab540a99197bb0f1e9bbaf67b6a37018d"}
+{"accuracy": 0.5979817708333334, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_negatives_r8_s0_20260904_023439_007/checkpoint/state_dict_6000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.6115130544196288, "model_id": "nmi_negatives_r8_s0__common6000", "nll": 1.1906414031982422, "queries": 3072, "roc_auc": 0.623038821750217, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "903266d60b92b69c650efedd963fd2ff3b3862b030088a33af2f5bfa12500b9a"}
+{"accuracy": 0.6083984375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_negatives_r8_s0_20260904_023439_007/checkpoint/state_dict_10000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.6044064452482736, "model_id": "nmi_negatives_r8_s0__source_val_selected", "nll": 0.9341476559638977, "queries": 3072, "roc_auc": 0.6374922858344184, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f3da34d8603bfeaa8010cedc5cbe5a43451c82ec10bb4f3d26f883a01d3391a2"}
+{"accuracy": 0.5530598958333334, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_context_r8_s0_20260904_023439_008/checkpoint/state_dict_6000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.578446423088732, "model_id": "nmi_context_r8_s0__common6000", "nll": 0.8398706316947937, "queries": 3072, "roc_auc": 0.5782989925808377, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "d749268ba7964af53dc90346049416eb187225bd1afe512ac5c8860535e314ed"}
+{"accuracy": 0.595703125, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_context_r8_s0_20260904_023439_008/checkpoint/state_dict_8000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.6101694915254238, "model_id": "nmi_context_r8_s0__source_val_selected", "nll": 0.7851040363311768, "queries": 3072, "roc_auc": 0.6281083424886068, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "d5206c21bee9f69733229a90d4aac4b8aae0650c4f7709a1224796de609cb1ff"}
+{"accuracy": 0.5944010416666666, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_optimization_r8_s0_20260904_023439_009/checkpoint/state_dict_6000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.5949284785435631, "model_id": "nmi_optimization_r8_s0__common6000", "nll": 1.363793969154358, "queries": 3072, "roc_auc": 0.6271243625217013, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "d16e16a35b7559e0198ea79bbfc1d142cf75809add9f690e7bedcd4c0af45156"}
+{"accuracy": 0.56640625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_optimization_r8_s0_20260904_023439_009/checkpoint/state_dict_10000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.5618421052631579, "model_id": "nmi_optimization_r8_s0__source_val_selected", "nll": 1.4921070337295532, "queries": 3072, "roc_auc": 0.599108378092448, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "3645bd301d0be7b0251a2e211566cfdbca7322de508c576f7e133507ca84d31f"}
+{"accuracy": 0.609375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_objective_r8_s0_20260904_023439_013/checkpoint/state_dict_6000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.6106424399740429, "model_id": "nmi_objective_r8_s0__common6000", "nll": 0.920859158039093, "queries": 3072, "roc_auc": 0.6438056098090277, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "0f6d0f16ae737ffb9f4f66a893546bcdbb46fb89745bbb24f86da9cbff0d3d4b"}
+{"accuracy": 0.6106770833333334, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_objective_r8_s0_20260904_023439_013/checkpoint/state_dict_10000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.6164207825529185, "model_id": "nmi_objective_r8_s0__source_val_selected", "nll": 1.0163484811782837, "queries": 3072, "roc_auc": 0.6518317328559029, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "91624f06fadaa75de422daa1fc402cab1b16e0c2b0e4a279f30b73bc919f7106"}
+{"accuracy": 0.5615234375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_region_adaptive_r8_s0_20260904_023439_014/checkpoint/state_dict_6000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.5791940018744143, "model_id": "nmi_region_adaptive_r8_s0__common6000", "nll": 1.3751258850097656, "queries": 3072, "roc_auc": 0.5852894253200955, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f54557dc0cf8be8c47e3b052017212843dd41a92207ed37f3b2b1fe016a054f1"}
+{"accuracy": 0.5615234375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_region_adaptive_r8_s0_20260904_023439_014/checkpoint/state_dict_6000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.5791940018744143, "model_id": "nmi_region_adaptive_r8_s0__source_val_selected", "nll": 1.3751258850097656, "queries": 3072, "roc_auc": 0.5852894253200955, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f54557dc0cf8be8c47e3b052017212843dd41a92207ed37f3b2b1fe016a054f1"}
+{"accuracy": 0.58984375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_coverage_r8_s0_20260904_023439_015/checkpoint/state_dict_6000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.5827814569536424, "model_id": "nmi_coverage_r8_s0__common6000", "nll": 1.3103092908859253, "queries": 3072, "roc_auc": 0.6167060004340277, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "4bee8538f41958b53053be8b10a9cbbd6a5e1b372c73b288de5a98e4a3be909b"}
+{"accuracy": 0.5732421875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_coverage_r8_s0_20260904_023439_015/checkpoint/state_dict_10000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.5772331505965818, "model_id": "nmi_coverage_r8_s0__source_val_selected", "nll": 1.0816822052001953, "queries": 3072, "roc_auc": 0.603748533460829, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "9d71e4274cdcaa73bf99797d1d59e7784b3c5f41aad710c4d23e3c34227adf73"}
+{"accuracy": 0.6048177083333334, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_budget_r8_s0_20260904_023439_016/checkpoint/state_dict_6000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.6225124378109452, "model_id": "nmi_budget_r8_s0__common6000", "nll": 1.0037189722061157, "queries": 3072, "roc_auc": 0.6384764777289497, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "40d9e858fb9d808ecd0255a53d7005ee0493588376ea7b9932f20689d10326ec"}
+{"accuracy": 0.5914713541666666, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_budget_r8_s0_20260904_023439_016/checkpoint/state_dict_10000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.5820845820845821, "model_id": "nmi_budget_r8_s0__source_val_selected", "nll": 1.2307217121124268, "queries": 3072, "roc_auc": 0.6198603312174479, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "c4632bd0edb228333a55e4377fbaa50089f506a08c89e9426a56a6437d6a99dc"}
+{"accuracy": 0.5843098958333334, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-combined/log/production/train_selected_recipe_s0/state/nmi_combined_r8_s0_20260904_051010_000/checkpoint/state_dict_6000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.5998119711689126, "model_id": "nmi_combined_r8_s0__common6000", "nll": 1.0361722707748413, "queries": 3072, "roc_auc": 0.6246318817138672, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "d7babf73c812e5242a2ed2748ae615888f3dc0bbca09fa6e5b405afa1e3ad3b7"}
+{"accuracy": 0.5738932291666666, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-combined/log/production/train_selected_recipe_s0/state/nmi_combined_r8_s0_20260904_051010_000/checkpoint/state_dict_10000.ckpt", "dataset": "twibot20", "decoder": "full_model", "episode_fingerprint": "4e5d4a4c73f9d09878ac1c8af923b1317ad461532349220c1580a04092fe9257", "episodes": 128, "f1": 0.5936044706612853, "model_id": "nmi_combined_r8_s0__source_val_selected", "nll": 1.2037636041641235, "queries": 3072, "roc_auc": 0.6035007900661892, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "be2c09fffbe65011274b3e7d8cc9a3468a151fc08e2bdc4b3424fbe6aa39b6d7"}
+wandb:
+wandb: Run summary:
+wandb:               command /home/mhchu/minicond...
+wandb: effective_config_file effective_config.yam...
+wandb:            num_params 1640514
+wandb:    source_config_file /dataMeR1/phil/gfm/p...
+wandb:
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260906_000719-qdbvmjqi
+wandb: Find logs at: ./wandb/offline-run-20260906_000719-qdbvmjqi/logs
+Loading covid_political graph from /dataMeR1/phil/data/covid_political/graphs/retweet_graph.pt...
+Applied midterm feature subset 'emb_only': 768 -> 768 dims.
+Using all midterm edge features (2 dims): ['rt_weight', 'mn_weight']
+Graph: 78672 nodes, 180928 edges, 768 node features
+Building neighbor sampler (CSR preprocessing)...
+Neighbor sampler ready.
+Edge features: 2 dims from edge view 'default'
+wandb: Tracking run with wandb version 0.27.2
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260906_000931-0aongfsv
+[00:09:32] Saved effective config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260906_000931-0aongfsv/files/effective_config.yaml
+[00:09:32] Saved source config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260906_000931-0aongfsv/files/training.yaml
+[00:09:32] Command: /home/mhchu/miniconda3/envs/prodigy/bin/python /dataMeR1/phil/gfm/prodigy-mechanisms/scripts/experiments/setup/target_performance_mechanisms/replay.py --model-list log/target_mechanisms/campaign_cls_inputs_20260906/model_list.tsv --datasets twibot20,covid_political,facebook_page_reference,election2020,ukr_rus_suspended --variants baseline --device 123 --threads 4 --eval-episode-seed-offset 100003 --output log/target_mechanisms/campaign_cls_fresh_20260906
+wandb: WARNING URL not available in offline run
+[00:09:32] Initializing trainer
+---------- Parameters ----------
+  config: scripts/experiments/setup/final_core/training.yaml
+  root: /dataMeR1/phil/data/covid_political/graphs
+  dataset: covid_political
+  csv_filename: twitter_data.csv
+  facebook_pkl_filename: facebook_2022-06-24_2022-06-25_part1.pkl
+  facebook_edges_filename: facebook_2022-06-24_2022-06-25_part1_edges.csv
+  facebook_node_features_filename: facebook_2022-06-24_2022-06-25_part1_node_features.csv
+  facebook_data_source: csv
+  facebook_use_edge_features: False
+  facebook_edge_feature_columns:
+  facebook_source_pkl_path:
+  facebook_embeddings_path:
+  facebook_embedding_ids_path:
+  facebook_text_emb_model:
+  facebook_target_dim: 768
+  facebook_filter_to_uk_ru: True
+  facebook_max_posts: None
+  label_type: verified
+  max_users: None
+  invalidate_cache: False
+  dataset_len_cap: 32
+  val_len_cap: 32
+  test_len_cap: 32
+  shuffle_index: False
+  force_cache: False
+  classification_only: False
+  early_stopping_patience: 20
+  reset_after_layer: None
+  original_features: True
+  override_log: True
+  seed: 0
+  eval_episode_seed_offset: 100003
+  metric: Acc
+  learning_rate: 0.002
+  epochs: 1
+  print_epoch: 10
+  eval_epoch: 10
+  checkpoint_epoch: 10
+  print_step: 100
+  eval_step: 100000
+  checkpoint_step: 100000
+  source_diagnostics_interval: 0
+  checkpoint_steps: 100,300,900,2500
+  batch_size: 4
+  weight_decay: 0.001
+  dropout: 0.0
+  text_features_dropout: 0
+  rel_sample_random_seed: None
+  split_train_nodes: False
+  verbose: False
+  detect_anomaly: False
+  loader_start_method:
+  workers: 0
+  device: cpu
+  input_dim: 768
+  emb_dim: 256
+  gnn_type: sage
+  n_layer: 1
+  meta_n_layer: 1
+  second_gnn: Atten
+  attention_mask_scheme: causal
+  skip_path: False
+  has_final_back: False
+  layers: S,U,M
+  ignore_label_embeddings: False
+  zero_label_embeddings: False
+  not_freeze_learned_label_embedding: False
+  linear_probe: False
+  fix_datasets_first: False
+  no_bn_metagraph: False
+  no_bn_encoder: False
+  calc_ranks: False
+  save_roc_curve: False
+  eval_only: True
+  eval_only_split: test
+  eval_test_before_train: False
+  eval_val_before_train: False
+  eval_after_train: False
+  meta_gnn_pos_only: False
+  task_name: classification
+  zero_shot: False
+  no_split_labels: True
+  all_test: False
+  train_cap: None
+  label_set: None
+  csr_split: False
+  n_way: 2
+  n_shots: 10
+  n_query: 12
+  neighbor_sampling_strategy: strict
+  neighbor_sampling_strata:
+  neighbor_sampling_episode_source: graph_id
+  neighbor_sampling_source_subset:
+  neighbor_sampling_source_sequence:
+  neighbor_sampling_source_sequence_steps:
+  neighbor_sampling_episode_source_weighting: balanced
+  neighbor_sampling_batch_source_mode: independent
+  neighbor_sampling_cross_source_prob: 0.0
+  neighbor_sampling_center_radii:
+  neighbor_sampling_center_radius_weights:
+  neighbor_sampling_center_region_fanout: 64
+  neighbor_sampling_center_region_node_limit: 4096
+  neighbor_sampling_center_region_candidate_limit: 512
+  neighbor_sampling_center_max_attempts: 200
+  neighbor_matching_edge_split: False
+  n_way_upper: -1
+  n_shots_upper: -1
+  n_query_upper: -1
+  max_length: -1
+  augmentation:
+  augment_test: False
+  ablate_features: none
+  ablate_edges: none
+  structural_features: none
+  attr_regression_weight: 0.0
+  fp_mask_ratio: 0.3
+  fp_mask_strategy: zero
+  mix_task_counts: 1,1,1
+  mix_cl_aug: NZ0.2
+  e4_combine: simultaneous
+  e4_weights: 1,1,1
+  e4_task_counts: 1,1,1
+  e4_lp_neg_k: 1
+  prefix: archmatrix_prodigy_eval_replay_s0_step2500_covid_political
+  timestamp: mechanism_replay
+  tags: []
+  log_dir: log/target_mechanisms/campaign_cls_fresh_20260906/trainer_logs
+  state_dir: log/target_mechanisms/campaign_cls_fresh_20260906/state
+  bert_emb_model: multi-qa-distilbert-cos-v1
+  bert_cache: multi-qa-distilbert-cos-v1
+  label_emb_model:
+  label_emb_texts:
+  label_emb_revision:
+  label_emb_trust_remote_code: True
+  label_emb_normalize: True
+  kg_emb_model:
+  pretrained_model_run:
+  resume_training_checkpoint:
+  n_hop: 2
+  neighbor_sampling_hop_sizes: 9,9
+  neighbor_sampling_node_limit: 101
+  neighbor_matching_walk_hops: 1
+  neighbor_matching_member_policy: lowest_sorted
+  neighbor_matching_member_seed: -1
+  train_episode_audit: False
+  graph_filename: retweet_graph.pt
+  target_feature:
+  target_feature_keep_in_x: False
+  target_transform: none
+  feature_subset: emb_only
+  midterm_label_downsample:
+  eval_random_query: True
+  edge_view: default
+  target_edge_view: default
+  edge_feature_subset: all
+  midterm_lp_neg_ratio: 1
+  hard_negatives: True
+  use_edge_features: False
+  midterm_debug_print_episodes: 0
+  debug_print_predictions: 0
+  export_predictions: False
+  prediction_context_neighbors: 3
+  prediction_support_per_label: 3
+  small_dataset: False
+  experiment_type: metagraph
+  exp_name: archmatrix_prodigy_eval_replay_s0_step2500_covid_political_mechanism_replay
+--------------------------------
+[trainer] WARNING: --checkpoint_steps [100, 300, 900, 2500] exceed the step budget 32 (epochs x dataset_len_cap) and will never be written. Raise --epochs or --dataset_len_cap.
+[00:09:32] Checkpoint schedule (explicit): [100, 300, 900, 2500]
+SingleLayerGeneralGNN(
+  (layer_list): ModuleList(
+    (0): MultiLayerGNN(
+      (module_list): ModuleList(
+        (0): SAGEConvSelfLoops()
+      )
+      (act): ReLU()
+      (reset_mlp): Linear(in_features=512, out_features=256, bias=True)
+      (reset_mlp_c): Linear(in_features=256, out_features=256, bias=True)
+      (reset_mlp_m): Linear(in_features=256, out_features=256, bias=True)
+    )
+    (1): BgGraphToSupernodePropagator()
+    (2): MetaGNN(
+      (gnn_layers): ModuleList(
+        (0): MetaGNNLayer()
+      )
+      (gnn_non_linear): GELU(approximate='none')
+    )
+  )
+  (cos): CosineSimilarity()
+  (initial_label_mlp): Linear(in_features=768, out_features=256, bias=True)
+  (initial_input_mlp): Identity()
+  (final_label_mlp): Identity()
+  (final_input_mlp): Identity()
+  (learned_label_embedding): Embedding(1000, 256)
+  (txt_dropout): Dropout(p=0, inplace=False)
+)
+Number of trainable parameters of the model: 1640514
+{"accuracy": 0.8997395833333334, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_baseline_r8_s0_20260904_023439_000/checkpoint/state_dict_6000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8242009132420092, "model_id": "nmi_baseline_r8_s0__common6000", "nll": 0.5484921336174011, "queries": 3072, "roc_auc": 0.9542287190755209, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "aea245a17baa05afcffb9f3e2837b2449e02158c3847edfe4447548506d0ac85"}
+{"accuracy": 0.9026692708333334, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_baseline_r8_s0_20260904_023439_000/checkpoint/state_dict_8000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8260616637579988, "model_id": "nmi_baseline_r8_s0__source_val_selected", "nll": 0.402172327041626, "queries": 3072, "roc_auc": 0.9587978786892362, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f9b6a44d07c99d8eb477c7083f92cd17482d56ce1abb2b55f69da9d370c02b52"}
+{"accuracy": 0.8990885416666666, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_exposure_r8_s0_20260904_023439_001/checkpoint/state_dict_6000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8214285714285714, "model_id": "nmi_exposure_r8_s0__common6000", "nll": 0.37219300866127014, "queries": 3072, "roc_auc": 0.9572098343460649, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "3502cbceccb693f3f2de053ef077af5c60bce974291108adf5d460f43a794f28"}
+{"accuracy": 0.8837890625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_exposure_r8_s0_20260904_023439_001/checkpoint/state_dict_10000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8008923591745678, "model_id": "nmi_exposure_r8_s0__source_val_selected", "nll": 0.3971747159957886, "queries": 3072, "roc_auc": 0.949989601417824, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "721fae95bf10a786f85e2841e3806e127e6fd66e1dc2d0ec865dd9ffa11734af"}
+{"accuracy": 0.830078125, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_schedule_r8_s0_20260904_023439_002/checkpoint/state_dict_6000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.7320328542094456, "model_id": "nmi_schedule_r8_s0__common6000", "nll": 0.5377102494239807, "queries": 3072, "roc_auc": 0.9358322708695023, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "a98155339d7182da76c0704c1ef3e995565404de8b4e28608d697573f89de41b"}
+{"accuracy": 0.830078125, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_schedule_r8_s0_20260904_023439_002/checkpoint/state_dict_6000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.7320328542094456, "model_id": "nmi_schedule_r8_s0__source_val_selected", "nll": 0.5377102494239807, "queries": 3072, "roc_auc": 0.9358322708695023, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "a98155339d7182da76c0704c1ef3e995565404de8b4e28608d697573f89de41b"}
+{"accuracy": 0.8763020833333334, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_composition_r8_s0_20260904_023439_003/checkpoint/state_dict_6000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.7828571428571428, "model_id": "nmi_composition_r8_s0__common6000", "nll": 0.534870445728302, "queries": 3072, "roc_auc": 0.9275354456018519, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "2ec6854f7faf8dcdf310e938bf38d24a0e05fde8f1542e83ac1d201257eb3ac5"}
+{"accuracy": 0.9111328125, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_composition_r8_s0_20260904_023439_003/checkpoint/state_dict_8000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8368200836820083, "model_id": "nmi_composition_r8_s0__source_val_selected", "nll": 0.42752352356910706, "queries": 3072, "roc_auc": 0.9556828251591435, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "798a803b9922a0679e7188dd8e5663e672308ed1b71ca796ccfb1ebb4b24a298"}
+{"accuracy": 0.9241536458333334, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_centers_r8_s0_20260904_023439_004/checkpoint/state_dict_6000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8550093341630367, "model_id": "nmi_centers_r8_s0__common6000", "nll": 0.49797511100769043, "queries": 3072, "roc_auc": 0.9419417204680266, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "bcc610e5f4c543545d44ad2eff754b6a104efb811e05129fe6eaf22d2c750664"}
+{"accuracy": 0.9254557291666666, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_centers_r8_s0_20260904_023439_004/checkpoint/state_dict_4000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8542329726288987, "model_id": "nmi_centers_r8_s0__source_val_selected", "nll": 0.5601444840431213, "queries": 3072, "roc_auc": 0.9274882563838251, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f3b58dd1eee461f1642d719f36b1e2465c0d461363be287014402e5c9b2e13e3"}
+{"accuracy": 0.8610026041666666, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_eligibility_r8_s0_20260904_023439_005/checkpoint/state_dict_6000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.7688142934488359, "model_id": "nmi_eligibility_r8_s0__common6000", "nll": 0.45039644837379456, "queries": 3072, "roc_auc": 0.9475758870442708, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "b6592cbbd50eeb3bbf67c73e6b4764cdc15eff43064574566f80f83b719ce5c5"}
+{"accuracy": 0.9287109375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_eligibility_r8_s0_20260904_023439_005/checkpoint/state_dict_2000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8638906152889994, "model_id": "nmi_eligibility_r8_s0__source_val_selected", "nll": 0.29915955662727356, "queries": 3072, "roc_auc": 0.9560781408239294, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "e0fe07ba9a1b20ad4fe59e61ffd2ed782efdff0d7c2473c8bf54418c6ddf0bfa"}
+{"accuracy": 0.8948567708333334, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_positives_r8_s0_20260904_023439_006/checkpoint/state_dict_6000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8172043010752689, "model_id": "nmi_positives_r8_s0__common6000", "nll": 0.5488280653953552, "queries": 3072, "roc_auc": 0.9583793922706888, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "875d65554e0735133f20df9477c2a9906a3bb36fe0ee437e913f7e5c47fd4e5e"}
+{"accuracy": 0.873046875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_positives_r8_s0_20260904_023439_006/checkpoint/state_dict_10000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.787117903930131, "model_id": "nmi_positives_r8_s0__source_val_selected", "nll": 0.4953455924987793, "queries": 3072, "roc_auc": 0.9570213600441261, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "87847ac49a1600e6ca84bbc19383137ab540a99197bb0f1e9bbaf67b6a37018d"}
+{"accuracy": 0.912109375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_negatives_r8_s0_20260904_023439_007/checkpoint/state_dict_6000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8396674584323041, "model_id": "nmi_negatives_r8_s0__common6000", "nll": 0.4676865339279175, "queries": 3072, "roc_auc": 0.9548029016565395, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "903266d60b92b69c650efedd963fd2ff3b3862b030088a33af2f5bfa12500b9a"}
+{"accuracy": 0.9248046875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_negatives_r8_s0_20260904_023439_007/checkpoint/state_dict_10000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8576709796672828, "model_id": "nmi_negatives_r8_s0__source_val_selected", "nll": 0.39470043778419495, "queries": 3072, "roc_auc": 0.9529955828631366, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f3da34d8603bfeaa8010cedc5cbe5a43451c82ec10bb4f3d26f883a01d3391a2"}
+{"accuracy": 0.9169921875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_context_r8_s0_20260904_023439_008/checkpoint/state_dict_6000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8470305938812237, "model_id": "nmi_context_r8_s0__common6000", "nll": 0.3303004503250122, "queries": 3072, "roc_auc": 0.9439253630461515, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "d749268ba7964af53dc90346049416eb187225bd1afe512ac5c8860535e314ed"}
+{"accuracy": 0.9235026041666666, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_context_r8_s0_20260904_023439_008/checkpoint/state_dict_8000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8567946374162096, "model_id": "nmi_context_r8_s0__source_val_selected", "nll": 0.3502345383167267, "queries": 3072, "roc_auc": 0.9439993964301215, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "d5206c21bee9f69733229a90d4aac4b8aae0650c4f7709a1224796de609cb1ff"}
+{"accuracy": 0.888671875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_optimization_r8_s0_20260904_023439_009/checkpoint/state_dict_6000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8091517857142857, "model_id": "nmi_optimization_r8_s0__common6000", "nll": 0.7109765410423279, "queries": 3072, "roc_auc": 0.9576500786675347, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "d16e16a35b7559e0198ea79bbfc1d142cf75809add9f690e7bedcd4c0af45156"}
+{"accuracy": 0.8932291666666666, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_optimization_r8_s0_20260904_023439_009/checkpoint/state_dict_10000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8127853881278538, "model_id": "nmi_optimization_r8_s0__source_val_selected", "nll": 0.8434882164001465, "queries": 3072, "roc_auc": 0.9550558019567419, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "3645bd301d0be7b0251a2e211566cfdbca7322de508c576f7e133507ca84d31f"}
+{"accuracy": 0.9147135416666666, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_objective_r8_s0_20260904_023439_013/checkpoint/state_dict_6000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8449704142011835, "model_id": "nmi_objective_r8_s0__common6000", "nll": 0.4936697483062744, "queries": 3072, "roc_auc": 0.954295688205295, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "0f6d0f16ae737ffb9f4f66a893546bcdbb46fb89745bbb24f86da9cbff0d3d4b"}
+{"accuracy": 0.9069010416666666, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_objective_r8_s0_20260904_023439_013/checkpoint/state_dict_10000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8327485380116959, "model_id": "nmi_objective_r8_s0__source_val_selected", "nll": 0.5796525478363037, "queries": 3072, "roc_auc": 0.9540046409324364, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "91624f06fadaa75de422daa1fc402cab1b16e0c2b0e4a279f30b73bc919f7106"}
+{"accuracy": 0.8837890625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_region_adaptive_r8_s0_20260904_023439_014/checkpoint/state_dict_6000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8008923591745678, "model_id": "nmi_region_adaptive_r8_s0__common6000", "nll": 0.5745818018913269, "queries": 3072, "roc_auc": 0.9493882921006945, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f54557dc0cf8be8c47e3b052017212843dd41a92207ed37f3b2b1fe016a054f1"}
+{"accuracy": 0.8837890625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_region_adaptive_r8_s0_20260904_023439_014/checkpoint/state_dict_6000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8008923591745678, "model_id": "nmi_region_adaptive_r8_s0__source_val_selected", "nll": 0.5745818018913269, "queries": 3072, "roc_auc": 0.9493882921006945, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f54557dc0cf8be8c47e3b052017212843dd41a92207ed37f3b2b1fe016a054f1"}
+{"accuracy": 0.8779296875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_coverage_r8_s0_20260904_023439_015/checkpoint/state_dict_6000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.7908533184606804, "model_id": "nmi_coverage_r8_s0__common6000", "nll": 0.7529308795928955, "queries": 3072, "roc_auc": 0.9443647596571181, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "4bee8538f41958b53053be8b10a9cbbd6a5e1b372c73b288de5a98e4a3be909b"}
+{"accuracy": 0.9016927083333334, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_coverage_r8_s0_20260904_023439_015/checkpoint/state_dict_10000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8229777256740914, "model_id": "nmi_coverage_r8_s0__source_val_selected", "nll": 0.5727367401123047, "queries": 3072, "roc_auc": 0.9480243259006077, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "9d71e4274cdcaa73bf99797d1d59e7784b3c5f41aad710c4d23e3c34227adf73"}
+{"accuracy": 0.8919270833333334, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_budget_r8_s0_20260904_023439_016/checkpoint/state_dict_6000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8134831460674158, "model_id": "nmi_budget_r8_s0__common6000", "nll": 0.6294983625411987, "queries": 3072, "roc_auc": 0.9528387564199942, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "40d9e858fb9d808ecd0255a53d7005ee0493588376ea7b9932f20689d10326ec"}
+{"accuracy": 0.9072265625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_budget_r8_s0_20260904_023439_016/checkpoint/state_dict_10000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8306595365418895, "model_id": "nmi_budget_r8_s0__source_val_selected", "nll": 0.6561701893806458, "queries": 3072, "roc_auc": 0.9537277221679688, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "c4632bd0edb228333a55e4377fbaa50089f506a08c89e9426a56a6437d6a99dc"}
+{"accuracy": 0.9098307291666666, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-combined/log/production/train_selected_recipe_s0/state/nmi_combined_r8_s0_20260904_051010_000/checkpoint/state_dict_6000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8377270064440538, "model_id": "nmi_combined_r8_s0__common6000", "nll": 0.5945863127708435, "queries": 3072, "roc_auc": 0.9526056360315394, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "d7babf73c812e5242a2ed2748ae615888f3dc0bbca09fa6e5b405afa1e3ad3b7"}
+{"accuracy": 0.916015625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-combined/log/production/train_selected_recipe_s0/state/nmi_combined_r8_s0_20260904_051010_000/checkpoint/state_dict_10000.ckpt", "dataset": "covid_political", "decoder": "full_model", "episode_fingerprint": "720532292f3c73ef63bfc8b0cd8f740ccb248272ffca4b33bc4ef4c649aa6ae7", "episodes": 128, "f1": 0.8438256658595642, "model_id": "nmi_combined_r8_s0__source_val_selected", "nll": 0.6221665740013123, "queries": 3072, "roc_auc": 0.9521744339554399, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "be2c09fffbe65011274b3e7d8cc9a3468a151fc08e2bdc4b3424fbe6aa39b6d7"}
+wandb:
+wandb: Run summary:
+wandb:               command /home/mhchu/minicond...
+wandb: effective_config_file effective_config.yam...
+wandb:            num_params 1640514
+wandb:    source_config_file /dataMeR1/phil/gfm/p...
+wandb:
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260906_000931-0aongfsv
+wandb: Find logs at: ./wandb/offline-run-20260906_000931-0aongfsv/logs
+Loading ukr_rus_twitter graph from /dataMeR1/phil/data/facebook_page_reference/graphs/page_reference_graph.pt...
+Applied midterm feature subset 'emb_only': 768 -> 768 dims.
+Using all midterm edge features (2 dims): ['n_reference_posts', 'n_content_reference_posts']
+Graph: 150000 nodes, 167622 edges, 768 node features
+Building neighbor sampler (CSR preprocessing)...
+Neighbor sampler ready.
+Edge features: 2 dims from edge view 'default'
+wandb: Tracking run with wandb version 0.27.2
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260906_001041-2ei8yv10
+[00:10:41] Saved effective config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260906_001041-2ei8yv10/files/effective_config.yaml
+[00:10:41] Saved source config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260906_001041-2ei8yv10/files/training.yaml
+[00:10:41] Command: /home/mhchu/miniconda3/envs/prodigy/bin/python /dataMeR1/phil/gfm/prodigy-mechanisms/scripts/experiments/setup/target_performance_mechanisms/replay.py --model-list log/target_mechanisms/campaign_cls_inputs_20260906/model_list.tsv --datasets twibot20,covid_political,facebook_page_reference,election2020,ukr_rus_suspended --variants baseline --device 123 --threads 4 --eval-episode-seed-offset 100003 --output log/target_mechanisms/campaign_cls_fresh_20260906
+wandb: WARNING URL not available in offline run
+[00:10:41] Initializing trainer
+---------- Parameters ----------
+  config: scripts/experiments/setup/final_core/training.yaml
+  root: /dataMeR1/phil/data/facebook_page_reference/graphs
+  dataset: facebook_page_reference
+  csv_filename: twitter_data.csv
+  facebook_pkl_filename: facebook_2022-06-24_2022-06-25_part1.pkl
+  facebook_edges_filename: facebook_2022-06-24_2022-06-25_part1_edges.csv
+  facebook_node_features_filename: facebook_2022-06-24_2022-06-25_part1_node_features.csv
+  facebook_data_source: csv
+  facebook_use_edge_features: False
+  facebook_edge_feature_columns:
+  facebook_source_pkl_path:
+  facebook_embeddings_path:
+  facebook_embedding_ids_path:
+  facebook_text_emb_model:
+  facebook_target_dim: 768
+  facebook_filter_to_uk_ru: True
+  facebook_max_posts: None
+  label_type: verified
+  max_users: None
+  invalidate_cache: False
+  dataset_len_cap: 32
+  val_len_cap: 32
+  test_len_cap: 32
+  shuffle_index: False
+  force_cache: False
+  classification_only: False
+  early_stopping_patience: 20
+  reset_after_layer: None
+  original_features: True
+  override_log: True
+  seed: 0
+  eval_episode_seed_offset: 100003
+  metric: Acc
+  learning_rate: 0.002
+  epochs: 1
+  print_epoch: 10
+  eval_epoch: 10
+  checkpoint_epoch: 10
+  print_step: 100
+  eval_step: 100000
+  checkpoint_step: 100000
+  source_diagnostics_interval: 0
+  checkpoint_steps: 100,300,900,2500
+  batch_size: 4
+  weight_decay: 0.001
+  dropout: 0.0
+  text_features_dropout: 0
+  rel_sample_random_seed: None
+  split_train_nodes: False
+  verbose: False
+  detect_anomaly: False
+  loader_start_method:
+  workers: 0
+  device: cpu
+  input_dim: 768
+  emb_dim: 256
+  gnn_type: sage
+  n_layer: 1
+  meta_n_layer: 1
+  second_gnn: Atten
+  attention_mask_scheme: causal
+  skip_path: False
+  has_final_back: False
+  layers: S,U,M
+  ignore_label_embeddings: False
+  zero_label_embeddings: False
+  not_freeze_learned_label_embedding: False
+  linear_probe: False
+  fix_datasets_first: False
+  no_bn_metagraph: False
+  no_bn_encoder: False
+  calc_ranks: False
+  save_roc_curve: False
+  eval_only: True
+  eval_only_split: test
+  eval_test_before_train: False
+  eval_val_before_train: False
+  eval_after_train: False
+  meta_gnn_pos_only: False
+  task_name: classification
+  zero_shot: False
+  no_split_labels: True
+  all_test: False
+  train_cap: None
+  label_set: None
+  csr_split: False
+  n_way: 2
+  n_shots: 10
+  n_query: 4
+  neighbor_sampling_strategy: strict
+  neighbor_sampling_strata:
+  neighbor_sampling_episode_source: graph_id
+  neighbor_sampling_source_subset:
+  neighbor_sampling_source_sequence:
+  neighbor_sampling_source_sequence_steps:
+  neighbor_sampling_episode_source_weighting: balanced
+  neighbor_sampling_batch_source_mode: independent
+  neighbor_sampling_cross_source_prob: 0.0
+  neighbor_sampling_center_radii:
+  neighbor_sampling_center_radius_weights:
+  neighbor_sampling_center_region_fanout: 64
+  neighbor_sampling_center_region_node_limit: 4096
+  neighbor_sampling_center_region_candidate_limit: 512
+  neighbor_sampling_center_max_attempts: 200
+  neighbor_matching_edge_split: False
+  n_way_upper: -1
+  n_shots_upper: -1
+  n_query_upper: -1
+  max_length: -1
+  augmentation:
+  augment_test: False
+  ablate_features: none
+  ablate_edges: none
+  structural_features: none
+  attr_regression_weight: 0.0
+  fp_mask_ratio: 0.3
+  fp_mask_strategy: zero
+  mix_task_counts: 1,1,1
+  mix_cl_aug: NZ0.2
+  e4_combine: simultaneous
+  e4_weights: 1,1,1
+  e4_task_counts: 1,1,1
+  e4_lp_neg_k: 1
+  prefix: archmatrix_prodigy_eval_replay_s0_step2500_facebook_page_reference
+  timestamp: mechanism_replay
+  tags: []
+  log_dir: log/target_mechanisms/campaign_cls_fresh_20260906/trainer_logs
+  state_dir: log/target_mechanisms/campaign_cls_fresh_20260906/state
+  bert_emb_model: multi-qa-distilbert-cos-v1
+  bert_cache: multi-qa-distilbert-cos-v1
+  label_emb_model:
+  label_emb_texts:
+  label_emb_revision:
+  label_emb_trust_remote_code: True
+  label_emb_normalize: True
+  kg_emb_model:
+  pretrained_model_run:
+  resume_training_checkpoint:
+  n_hop: 2
+  neighbor_sampling_hop_sizes: 9,9
+  neighbor_sampling_node_limit: 101
+  neighbor_matching_walk_hops: 1
+  neighbor_matching_member_policy: lowest_sorted
+  neighbor_matching_member_seed: -1
+  train_episode_audit: False
+  graph_filename: page_reference_graph.pt
+  target_feature:
+  target_feature_keep_in_x: False
+  target_transform: none
+  feature_subset: emb_only
+  midterm_label_downsample:
+  eval_random_query: False
+  edge_view: default
+  target_edge_view: default
+  edge_feature_subset: all
+  midterm_lp_neg_ratio: 1
+  hard_negatives: True
+  use_edge_features: False
+  midterm_debug_print_episodes: 0
+  debug_print_predictions: 0
+  export_predictions: False
+  prediction_context_neighbors: 3
+  prediction_support_per_label: 3
+  small_dataset: False
+  experiment_type: metagraph
+  exp_name: archmatrix_prodigy_eval_replay_s0_step2500_facebook_page_reference_mechanism_replay
+--------------------------------
+[trainer] WARNING: --checkpoint_steps [100, 300, 900, 2500] exceed the step budget 32 (epochs x dataset_len_cap) and will never be written. Raise --epochs or --dataset_len_cap.
+[00:10:42] Checkpoint schedule (explicit): [100, 300, 900, 2500]
+SingleLayerGeneralGNN(
+  (layer_list): ModuleList(
+    (0): MultiLayerGNN(
+      (module_list): ModuleList(
+        (0): SAGEConvSelfLoops()
+      )
+      (act): ReLU()
+      (reset_mlp): Linear(in_features=512, out_features=256, bias=True)
+      (reset_mlp_c): Linear(in_features=256, out_features=256, bias=True)
+      (reset_mlp_m): Linear(in_features=256, out_features=256, bias=True)
+    )
+    (1): BgGraphToSupernodePropagator()
+    (2): MetaGNN(
+      (gnn_layers): ModuleList(
+        (0): MetaGNNLayer()
+      )
+      (gnn_non_linear): GELU(approximate='none')
+    )
+  )
+  (cos): CosineSimilarity()
+  (initial_label_mlp): Linear(in_features=768, out_features=256, bias=True)
+  (initial_input_mlp): Identity()
+  (final_label_mlp): Identity()
+  (final_input_mlp): Identity()
+  (learned_label_embedding): Embedding(1000, 256)
+  (txt_dropout): Dropout(p=0, inplace=False)
+)
+Number of trainable parameters of the model: 1640514
+{"accuracy": 0.697265625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_baseline_r8_s0_20260904_023439_000/checkpoint/state_dict_6000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6978557504873294, "model_id": "nmi_baseline_r8_s0__common6000", "nll": 1.0380327701568604, "queries": 1024, "roc_auc": 0.7667140960693359, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "aea245a17baa05afcffb9f3e2837b2449e02158c3847edfe4447548506d0ac85"}
+{"accuracy": 0.689453125, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_baseline_r8_s0_20260904_023439_000/checkpoint/state_dict_8000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6863905325443787, "model_id": "nmi_baseline_r8_s0__source_val_selected", "nll": 0.9892644882202148, "queries": 1024, "roc_auc": 0.7647266387939453, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f9b6a44d07c99d8eb477c7083f92cd17482d56ce1abb2b55f69da9d370c02b52"}
+{"accuracy": 0.69140625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_exposure_r8_s0_20260904_023439_001/checkpoint/state_dict_6000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6871287128712872, "model_id": "nmi_exposure_r8_s0__common6000", "nll": 0.9138966202735901, "queries": 1024, "roc_auc": 0.7516136169433594, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "3502cbceccb693f3f2de053ef077af5c60bce974291108adf5d460f43a794f28"}
+{"accuracy": 0.6845703125, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_exposure_r8_s0_20260904_023439_001/checkpoint/state_dict_10000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6773226773226774, "model_id": "nmi_exposure_r8_s0__source_val_selected", "nll": 0.8993310928344727, "queries": 1024, "roc_auc": 0.7567291259765625, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "721fae95bf10a786f85e2841e3806e127e6fd66e1dc2d0ec865dd9ffa11734af"}
+{"accuracy": 0.6552734375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_schedule_r8_s0_20260904_023439_002/checkpoint/state_dict_6000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6535819430814525, "model_id": "nmi_schedule_r8_s0__common6000", "nll": 1.166372537612915, "queries": 1024, "roc_auc": 0.7144298553466797, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "a98155339d7182da76c0704c1ef3e995565404de8b4e28608d697573f89de41b"}
+{"accuracy": 0.6552734375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_schedule_r8_s0_20260904_023439_002/checkpoint/state_dict_6000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6535819430814525, "model_id": "nmi_schedule_r8_s0__source_val_selected", "nll": 1.166372537612915, "queries": 1024, "roc_auc": 0.7144298553466797, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "a98155339d7182da76c0704c1ef3e995565404de8b4e28608d697573f89de41b"}
+{"accuracy": 0.669921875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_composition_r8_s0_20260904_023439_003/checkpoint/state_dict_6000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6724806201550387, "model_id": "nmi_composition_r8_s0__common6000", "nll": 0.960457444190979, "queries": 1024, "roc_auc": 0.7513885498046875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "2ec6854f7faf8dcdf310e938bf38d24a0e05fde8f1542e83ac1d201257eb3ac5"}
+{"accuracy": 0.681640625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_composition_r8_s0_20260904_023439_003/checkpoint/state_dict_8000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6746506986027944, "model_id": "nmi_composition_r8_s0__source_val_selected", "nll": 0.9198225736618042, "queries": 1024, "roc_auc": 0.7514610290527344, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "798a803b9922a0679e7188dd8e5663e672308ed1b71ca796ccfb1ebb4b24a298"}
+{"accuracy": 0.68359375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_centers_r8_s0_20260904_023439_004/checkpoint/state_dict_6000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6866537717601547, "model_id": "nmi_centers_r8_s0__common6000", "nll": 0.8400033712387085, "queries": 1024, "roc_auc": 0.7351531982421875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "bcc610e5f4c543545d44ad2eff754b6a104efb811e05129fe6eaf22d2c750664"}
+{"accuracy": 0.6611328125, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_centers_r8_s0_20260904_023439_004/checkpoint/state_dict_4000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6526526526526526, "model_id": "nmi_centers_r8_s0__source_val_selected", "nll": 1.2249641418457031, "queries": 1024, "roc_auc": 0.7290248870849609, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f3b58dd1eee461f1642d719f36b1e2465c0d461363be287014402e5c9b2e13e3"}
+{"accuracy": 0.6630859375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_eligibility_r8_s0_20260904_023439_005/checkpoint/state_dict_6000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6573982125124131, "model_id": "nmi_eligibility_r8_s0__common6000", "nll": 0.8841104507446289, "queries": 1024, "roc_auc": 0.7344017028808594, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "b6592cbbd50eeb3bbf67c73e6b4764cdc15eff43064574566f80f83b719ce5c5"}
+{"accuracy": 0.69921875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_eligibility_r8_s0_20260904_023439_005/checkpoint/state_dict_2000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6974459724950884, "model_id": "nmi_eligibility_r8_s0__source_val_selected", "nll": 0.7778828144073486, "queries": 1024, "roc_auc": 0.7656021118164062, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "e0fe07ba9a1b20ad4fe59e61ffd2ed782efdff0d7c2473c8bf54418c6ddf0bfa"}
+{"accuracy": 0.677734375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_positives_r8_s0_20260904_023439_006/checkpoint/state_dict_6000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6751968503937008, "model_id": "nmi_positives_r8_s0__common6000", "nll": 1.0783365964889526, "queries": 1024, "roc_auc": 0.7426700592041016, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "875d65554e0735133f20df9477c2a9906a3bb36fe0ee437e913f7e5c47fd4e5e"}
+{"accuracy": 0.697265625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_positives_r8_s0_20260904_023439_006/checkpoint/state_dict_10000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.693069306930693, "model_id": "nmi_positives_r8_s0__source_val_selected", "nll": 1.100427508354187, "queries": 1024, "roc_auc": 0.7651653289794922, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "87847ac49a1600e6ca84bbc19383137ab540a99197bb0f1e9bbaf67b6a37018d"}
+{"accuracy": 0.6943359375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_negatives_r8_s0_20260904_023439_007/checkpoint/state_dict_6000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6904055390702275, "model_id": "nmi_negatives_r8_s0__common6000", "nll": 0.9231569170951843, "queries": 1024, "roc_auc": 0.7581901550292969, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "903266d60b92b69c650efedd963fd2ff3b3862b030088a33af2f5bfa12500b9a"}
+{"accuracy": 0.6806640625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_negatives_r8_s0_20260904_023439_007/checkpoint/state_dict_10000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6771964461994077, "model_id": "nmi_negatives_r8_s0__source_val_selected", "nll": 0.9089057445526123, "queries": 1024, "roc_auc": 0.7551307678222656, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f3da34d8603bfeaa8010cedc5cbe5a43451c82ec10bb4f3d26f883a01d3391a2"}
+{"accuracy": 0.6962890625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_context_r8_s0_20260904_023439_008/checkpoint/state_dict_6000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6965853658536585, "model_id": "nmi_context_r8_s0__common6000", "nll": 0.9665618538856506, "queries": 1024, "roc_auc": 0.7681770324707031, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "d749268ba7964af53dc90346049416eb187225bd1afe512ac5c8860535e314ed"}
+{"accuracy": 0.6982421875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_context_r8_s0_20260904_023439_008/checkpoint/state_dict_8000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.696165191740413, "model_id": "nmi_context_r8_s0__source_val_selected", "nll": 0.9655924439430237, "queries": 1024, "roc_auc": 0.7676410675048828, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "d5206c21bee9f69733229a90d4aac4b8aae0650c4f7709a1224796de609cb1ff"}
+{"accuracy": 0.6689453125, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_optimization_r8_s0_20260904_023439_009/checkpoint/state_dict_6000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6686217008797654, "model_id": "nmi_optimization_r8_s0__common6000", "nll": 1.0018295049667358, "queries": 1024, "roc_auc": 0.7568836212158203, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "d16e16a35b7559e0198ea79bbfc1d142cf75809add9f690e7bedcd4c0af45156"}
+{"accuracy": 0.6923828125, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_optimization_r8_s0_20260904_023439_009/checkpoint/state_dict_10000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6853146853146853, "model_id": "nmi_optimization_r8_s0__source_val_selected", "nll": 0.9639756679534912, "queries": 1024, "roc_auc": 0.7630672454833984, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "3645bd301d0be7b0251a2e211566cfdbca7322de508c576f7e133507ca84d31f"}
+{"accuracy": 0.7041015625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_objective_r8_s0_20260904_023439_013/checkpoint/state_dict_6000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.7026496565260059, "model_id": "nmi_objective_r8_s0__common6000", "nll": 1.0729351043701172, "queries": 1024, "roc_auc": 0.766357421875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "0f6d0f16ae737ffb9f4f66a893546bcdbb46fb89745bbb24f86da9cbff0d3d4b"}
+{"accuracy": 0.72265625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_objective_r8_s0_20260904_023439_013/checkpoint/state_dict_10000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.7199211045364892, "model_id": "nmi_objective_r8_s0__source_val_selected", "nll": 0.9596753120422363, "queries": 1024, "roc_auc": 0.7845611572265625, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "91624f06fadaa75de422daa1fc402cab1b16e0c2b0e4a279f30b73bc919f7106"}
+{"accuracy": 0.6591796875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_region_adaptive_r8_s0_20260904_023439_014/checkpoint/state_dict_6000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6506506506506506, "model_id": "nmi_region_adaptive_r8_s0__common6000", "nll": 1.374450922012329, "queries": 1024, "roc_auc": 0.7318744659423828, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f54557dc0cf8be8c47e3b052017212843dd41a92207ed37f3b2b1fe016a054f1"}
+{"accuracy": 0.6591796875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_region_adaptive_r8_s0_20260904_023439_014/checkpoint/state_dict_6000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6506506506506506, "model_id": "nmi_region_adaptive_r8_s0__source_val_selected", "nll": 1.374450922012329, "queries": 1024, "roc_auc": 0.7318744659423828, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f54557dc0cf8be8c47e3b052017212843dd41a92207ed37f3b2b1fe016a054f1"}
+{"accuracy": 0.6943359375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_coverage_r8_s0_20260904_023439_015/checkpoint/state_dict_6000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6916256157635468, "model_id": "nmi_coverage_r8_s0__common6000", "nll": 1.0431665182113647, "queries": 1024, "roc_auc": 0.7653713226318359, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "4bee8538f41958b53053be8b10a9cbbd6a5e1b372c73b288de5a98e4a3be909b"}
+{"accuracy": 0.6767578125, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_coverage_r8_s0_20260904_023439_015/checkpoint/state_dict_10000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6777020447906524, "model_id": "nmi_coverage_r8_s0__source_val_selected", "nll": 1.1748480796813965, "queries": 1024, "roc_auc": 0.7352218627929688, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "9d71e4274cdcaa73bf99797d1d59e7784b3c5f41aad710c4d23e3c34227adf73"}
+{"accuracy": 0.697265625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_budget_r8_s0_20260904_023439_016/checkpoint/state_dict_6000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6942800788954635, "model_id": "nmi_budget_r8_s0__common6000", "nll": 1.1351501941680908, "queries": 1024, "roc_auc": 0.7659950256347656, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "40d9e858fb9d808ecd0255a53d7005ee0493588376ea7b9932f20689d10326ec"}
+{"accuracy": 0.703125, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_budget_r8_s0_20260904_023439_016/checkpoint/state_dict_10000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.7037037037037037, "model_id": "nmi_budget_r8_s0__source_val_selected", "nll": 0.9895069599151611, "queries": 1024, "roc_auc": 0.7877006530761719, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "c4632bd0edb228333a55e4377fbaa50089f506a08c89e9426a56a6437d6a99dc"}
+{"accuracy": 0.6982421875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-combined/log/production/train_selected_recipe_s0/state/nmi_combined_r8_s0_20260904_051010_000/checkpoint/state_dict_6000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.696165191740413, "model_id": "nmi_combined_r8_s0__common6000", "nll": 0.9903557896614075, "queries": 1024, "roc_auc": 0.7773323059082031, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "d7babf73c812e5242a2ed2748ae615888f3dc0bbca09fa6e5b405afa1e3ad3b7"}
+{"accuracy": 0.6923828125, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-combined/log/production/train_selected_recipe_s0/state/nmi_combined_r8_s0_20260904_051010_000/checkpoint/state_dict_10000.ckpt", "dataset": "facebook_page_reference", "decoder": "full_model", "episode_fingerprint": "4fd9916241b1f156c0ab0e6dde2a76fd200a53611b2bbd6a5446c5f019e75aa5", "episodes": 128, "f1": 0.6878097125867195, "model_id": "nmi_combined_r8_s0__source_val_selected", "nll": 1.0972670316696167, "queries": 1024, "roc_auc": 0.7765674591064453, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "be2c09fffbe65011274b3e7d8cc9a3468a151fc08e2bdc4b3424fbe6aa39b6d7"}
+wandb:
+wandb: Run summary:
+wandb:               command /home/mhchu/minicond...
+wandb: effective_config_file effective_config.yam...
+wandb:            num_params 1640514
+wandb:    source_config_file /dataMeR1/phil/gfm/p...
+wandb:
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260906_001041-2ei8yv10
+wandb: Find logs at: ./wandb/offline-run-20260906_001041-2ei8yv10/logs
+Loading election2020 graph from /dataMeR1/phil/data/election2020/graphs/retweet_graph.pt...
+Applied midterm feature subset 'emb_only': 768 -> 768 dims.
+Using all midterm edge features (2 dims): ['rt_weight', 'mn_weight']
+Graph: 78932 nodes, 2818603 edges, 768 node features  labels=['non_conservative', 'conservative']
+Building neighbor sampler...
+Neighbor sampler ready.
+Edge features: 2 dims from 'default'
+wandb: Tracking run with wandb version 0.27.2
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260906_001121-8oq6pj60
+[00:11:21] Saved effective config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260906_001121-8oq6pj60/files/effective_config.yaml
+[00:11:21] Saved source config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260906_001121-8oq6pj60/files/training.yaml
+[00:11:21] Command: /home/mhchu/miniconda3/envs/prodigy/bin/python /dataMeR1/phil/gfm/prodigy-mechanisms/scripts/experiments/setup/target_performance_mechanisms/replay.py --model-list log/target_mechanisms/campaign_cls_inputs_20260906/model_list.tsv --datasets twibot20,covid_political,facebook_page_reference,election2020,ukr_rus_suspended --variants baseline --device 123 --threads 4 --eval-episode-seed-offset 100003 --output log/target_mechanisms/campaign_cls_fresh_20260906
+wandb: WARNING URL not available in offline run
+[00:11:21] Initializing trainer
+---------- Parameters ----------
+  config: scripts/experiments/setup/final_core/training.yaml
+  root: /dataMeR1/phil/data/election2020/graphs
+  dataset: election2020
+  csv_filename: twitter_data.csv
+  facebook_pkl_filename: facebook_2022-06-24_2022-06-25_part1.pkl
+  facebook_edges_filename: facebook_2022-06-24_2022-06-25_part1_edges.csv
+  facebook_node_features_filename: facebook_2022-06-24_2022-06-25_part1_node_features.csv
+  facebook_data_source: csv
+  facebook_use_edge_features: False
+  facebook_edge_feature_columns:
+  facebook_source_pkl_path:
+  facebook_embeddings_path:
+  facebook_embedding_ids_path:
+  facebook_text_emb_model:
+  facebook_target_dim: 768
+  facebook_filter_to_uk_ru: True
+  facebook_max_posts: None
+  label_type: verified
+  max_users: None
+  invalidate_cache: False
+  dataset_len_cap: 32
+  val_len_cap: 32
+  test_len_cap: 32
+  shuffle_index: False
+  force_cache: False
+  classification_only: False
+  early_stopping_patience: 20
+  reset_after_layer: None
+  original_features: True
+  override_log: True
+  seed: 0
+  eval_episode_seed_offset: 100003
+  metric: Acc
+  learning_rate: 0.002
+  epochs: 1
+  print_epoch: 10
+  eval_epoch: 10
+  checkpoint_epoch: 10
+  print_step: 100
+  eval_step: 100000
+  checkpoint_step: 100000
+  source_diagnostics_interval: 0
+  checkpoint_steps: 100,300,900,2500
+  batch_size: 4
+  weight_decay: 0.001
+  dropout: 0.0
+  text_features_dropout: 0
+  rel_sample_random_seed: None
+  split_train_nodes: False
+  verbose: False
+  detect_anomaly: False
+  loader_start_method:
+  workers: 0
+  device: cpu
+  input_dim: 768
+  emb_dim: 256
+  gnn_type: sage
+  n_layer: 1
+  meta_n_layer: 1
+  second_gnn: Atten
+  attention_mask_scheme: causal
+  skip_path: False
+  has_final_back: False
+  layers: S,U,M
+  ignore_label_embeddings: False
+  zero_label_embeddings: False
+  not_freeze_learned_label_embedding: False
+  linear_probe: False
+  fix_datasets_first: False
+  no_bn_metagraph: False
+  no_bn_encoder: False
+  calc_ranks: False
+  save_roc_curve: False
+  eval_only: True
+  eval_only_split: test
+  eval_test_before_train: False
+  eval_val_before_train: False
+  eval_after_train: False
+  meta_gnn_pos_only: False
+  task_name: classification
+  zero_shot: False
+  no_split_labels: True
+  all_test: False
+  train_cap: None
+  label_set: None
+  csr_split: False
+  n_way: 2
+  n_shots: 10
+  n_query: 1
+  neighbor_sampling_strategy: strict
+  neighbor_sampling_strata:
+  neighbor_sampling_episode_source: graph_id
+  neighbor_sampling_source_subset:
+  neighbor_sampling_source_sequence:
+  neighbor_sampling_source_sequence_steps:
+  neighbor_sampling_episode_source_weighting: balanced
+  neighbor_sampling_batch_source_mode: independent
+  neighbor_sampling_cross_source_prob: 0.0
+  neighbor_sampling_center_radii:
+  neighbor_sampling_center_radius_weights:
+  neighbor_sampling_center_region_fanout: 64
+  neighbor_sampling_center_region_node_limit: 4096
+  neighbor_sampling_center_region_candidate_limit: 512
+  neighbor_sampling_center_max_attempts: 200
+  neighbor_matching_edge_split: False
+  n_way_upper: -1
+  n_shots_upper: -1
+  n_query_upper: -1
+  max_length: -1
+  augmentation:
+  augment_test: False
+  ablate_features: none
+  ablate_edges: none
+  structural_features: none
+  attr_regression_weight: 0.0
+  fp_mask_ratio: 0.3
+  fp_mask_strategy: zero
+  mix_task_counts: 1,1,1
+  mix_cl_aug: NZ0.2
+  e4_combine: simultaneous
+  e4_weights: 1,1,1
+  e4_task_counts: 1,1,1
+  e4_lp_neg_k: 1
+  prefix: archmatrix_prodigy_eval_replay_s0_step2500_election2020
+  timestamp: mechanism_replay
+  tags: []
+  log_dir: log/target_mechanisms/campaign_cls_fresh_20260906/trainer_logs
+  state_dir: log/target_mechanisms/campaign_cls_fresh_20260906/state
+  bert_emb_model: multi-qa-distilbert-cos-v1
+  bert_cache: multi-qa-distilbert-cos-v1
+  label_emb_model:
+  label_emb_texts:
+  label_emb_revision:
+  label_emb_trust_remote_code: True
+  label_emb_normalize: True
+  kg_emb_model:
+  pretrained_model_run:
+  resume_training_checkpoint:
+  n_hop: 2
+  neighbor_sampling_hop_sizes: 9,9
+  neighbor_sampling_node_limit: 101
+  neighbor_matching_walk_hops: 1
+  neighbor_matching_member_policy: lowest_sorted
+  neighbor_matching_member_seed: -1
+  train_episode_audit: False
+  graph_filename: retweet_graph.pt
+  target_feature:
+  target_feature_keep_in_x: False
+  target_transform: none
+  feature_subset: emb_only
+  midterm_label_downsample:
+  eval_random_query: False
+  edge_view: default
+  target_edge_view: default
+  edge_feature_subset: all
+  midterm_lp_neg_ratio: 1
+  hard_negatives: True
+  use_edge_features: False
+  midterm_debug_print_episodes: 0
+  debug_print_predictions: 0
+  export_predictions: False
+  prediction_context_neighbors: 3
+  prediction_support_per_label: 3
+  small_dataset: False
+  experiment_type: metagraph
+  exp_name: archmatrix_prodigy_eval_replay_s0_step2500_election2020_mechanism_replay
+--------------------------------
+[trainer] WARNING: --checkpoint_steps [100, 300, 900, 2500] exceed the step budget 32 (epochs x dataset_len_cap) and will never be written. Raise --epochs or --dataset_len_cap.
+[00:11:22] Checkpoint schedule (explicit): [100, 300, 900, 2500]
+SingleLayerGeneralGNN(
+  (layer_list): ModuleList(
+    (0): MultiLayerGNN(
+      (module_list): ModuleList(
+        (0): SAGEConvSelfLoops()
+      )
+      (act): ReLU()
+      (reset_mlp): Linear(in_features=512, out_features=256, bias=True)
+      (reset_mlp_c): Linear(in_features=256, out_features=256, bias=True)
+      (reset_mlp_m): Linear(in_features=256, out_features=256, bias=True)
+    )
+    (1): BgGraphToSupernodePropagator()
+    (2): MetaGNN(
+      (gnn_layers): ModuleList(
+        (0): MetaGNNLayer()
+      )
+      (gnn_non_linear): GELU(approximate='none')
+    )
+  )
+  (cos): CosineSimilarity()
+  (initial_label_mlp): Linear(in_features=768, out_features=256, bias=True)
+  (initial_input_mlp): Identity()
+  (final_label_mlp): Identity()
+  (final_input_mlp): Identity()
+  (learned_label_embedding): Embedding(1000, 256)
+  (txt_dropout): Dropout(p=0, inplace=False)
+)
+Number of trainable parameters of the model: 1640514
+{"accuracy": 0.97265625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_baseline_r8_s0_20260904_023439_000/checkpoint/state_dict_6000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9725490196078431, "model_id": "nmi_baseline_r8_s0__common6000", "nll": 0.13498395681381226, "queries": 256, "roc_auc": 0.98486328125, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "aea245a17baa05afcffb9f3e2837b2449e02158c3847edfe4447548506d0ac85"}
+{"accuracy": 0.9765625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_baseline_r8_s0_20260904_023439_000/checkpoint/state_dict_8000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9763779527559056, "model_id": "nmi_baseline_r8_s0__source_val_selected", "nll": 0.13631007075309753, "queries": 256, "roc_auc": 0.98504638671875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f9b6a44d07c99d8eb477c7083f92cd17482d56ce1abb2b55f69da9d370c02b52"}
+{"accuracy": 0.9765625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_exposure_r8_s0_20260904_023439_001/checkpoint/state_dict_6000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9763779527559056, "model_id": "nmi_exposure_r8_s0__common6000", "nll": 0.12541307508945465, "queries": 256, "roc_auc": 0.9874267578125, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "3502cbceccb693f3f2de053ef077af5c60bce974291108adf5d460f43a794f28"}
+{"accuracy": 0.9765625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_exposure_r8_s0_20260904_023439_001/checkpoint/state_dict_10000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9763779527559056, "model_id": "nmi_exposure_r8_s0__source_val_selected", "nll": 0.11881770193576813, "queries": 256, "roc_auc": 0.9873046875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "721fae95bf10a786f85e2841e3806e127e6fd66e1dc2d0ec865dd9ffa11734af"}
+{"accuracy": 0.9765625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_schedule_r8_s0_20260904_023439_002/checkpoint/state_dict_6000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9763779527559056, "model_id": "nmi_schedule_r8_s0__common6000", "nll": 0.09869384765625, "queries": 256, "roc_auc": 0.98651123046875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "a98155339d7182da76c0704c1ef3e995565404de8b4e28608d697573f89de41b"}
+{"accuracy": 0.9765625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_schedule_r8_s0_20260904_023439_002/checkpoint/state_dict_6000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9763779527559056, "model_id": "nmi_schedule_r8_s0__source_val_selected", "nll": 0.09869384765625, "queries": 256, "roc_auc": 0.98651123046875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "a98155339d7182da76c0704c1ef3e995565404de8b4e28608d697573f89de41b"}
+{"accuracy": 0.97265625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_composition_r8_s0_20260904_023439_003/checkpoint/state_dict_6000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9725490196078431, "model_id": "nmi_composition_r8_s0__common6000", "nll": 0.11568343639373779, "queries": 256, "roc_auc": 0.97998046875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "2ec6854f7faf8dcdf310e938bf38d24a0e05fde8f1542e83ac1d201257eb3ac5"}
+{"accuracy": 0.97265625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_composition_r8_s0_20260904_023439_003/checkpoint/state_dict_8000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9725490196078431, "model_id": "nmi_composition_r8_s0__source_val_selected", "nll": 0.13369733095169067, "queries": 256, "roc_auc": 0.986572265625, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "798a803b9922a0679e7188dd8e5663e672308ed1b71ca796ccfb1ebb4b24a298"}
+{"accuracy": 0.9765625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_centers_r8_s0_20260904_023439_004/checkpoint/state_dict_6000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9763779527559056, "model_id": "nmi_centers_r8_s0__common6000", "nll": 0.12567582726478577, "queries": 256, "roc_auc": 0.9776611328125, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "bcc610e5f4c543545d44ad2eff754b6a104efb811e05129fe6eaf22d2c750664"}
+{"accuracy": 0.9765625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_centers_r8_s0_20260904_023439_004/checkpoint/state_dict_4000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9763779527559056, "model_id": "nmi_centers_r8_s0__source_val_selected", "nll": 0.12436030060052872, "queries": 256, "roc_auc": 0.98773193359375, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f3b58dd1eee461f1642d719f36b1e2465c0d461363be287014402e5c9b2e13e3"}
+{"accuracy": 0.96875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_eligibility_r8_s0_20260904_023439_005/checkpoint/state_dict_6000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.96875, "model_id": "nmi_eligibility_r8_s0__common6000", "nll": 0.12094569206237793, "queries": 256, "roc_auc": 0.983154296875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "b6592cbbd50eeb3bbf67c73e6b4764cdc15eff43064574566f80f83b719ce5c5"}
+{"accuracy": 0.97265625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_eligibility_r8_s0_20260904_023439_005/checkpoint/state_dict_2000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9723320158102767, "model_id": "nmi_eligibility_r8_s0__source_val_selected", "nll": 0.10606874525547028, "queries": 256, "roc_auc": 0.98779296875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "e0fe07ba9a1b20ad4fe59e61ffd2ed782efdff0d7c2473c8bf54418c6ddf0bfa"}
+{"accuracy": 0.9765625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_positives_r8_s0_20260904_023439_006/checkpoint/state_dict_6000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9763779527559056, "model_id": "nmi_positives_r8_s0__common6000", "nll": 0.15045621991157532, "queries": 256, "roc_auc": 0.985107421875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "875d65554e0735133f20df9477c2a9906a3bb36fe0ee437e913f7e5c47fd4e5e"}
+{"accuracy": 0.96875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_positives_r8_s0_20260904_023439_006/checkpoint/state_dict_10000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.96875, "model_id": "nmi_positives_r8_s0__source_val_selected", "nll": 0.13929051160812378, "queries": 256, "roc_auc": 0.9825439453125, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "87847ac49a1600e6ca84bbc19383137ab540a99197bb0f1e9bbaf67b6a37018d"}
+{"accuracy": 0.9765625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_negatives_r8_s0_20260904_023439_007/checkpoint/state_dict_6000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9763779527559056, "model_id": "nmi_negatives_r8_s0__common6000", "nll": 0.13987387716770172, "queries": 256, "roc_auc": 0.98236083984375, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "903266d60b92b69c650efedd963fd2ff3b3862b030088a33af2f5bfa12500b9a"}
+{"accuracy": 0.9765625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_negatives_r8_s0_20260904_023439_007/checkpoint/state_dict_10000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9763779527559056, "model_id": "nmi_negatives_r8_s0__source_val_selected", "nll": 0.12209808081388474, "queries": 256, "roc_auc": 0.9786376953125, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f3da34d8603bfeaa8010cedc5cbe5a43451c82ec10bb4f3d26f883a01d3391a2"}
+{"accuracy": 0.96875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_context_r8_s0_20260904_023439_008/checkpoint/state_dict_6000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.96875, "model_id": "nmi_context_r8_s0__common6000", "nll": 0.12012141197919846, "queries": 256, "roc_auc": 0.98089599609375, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "d749268ba7964af53dc90346049416eb187225bd1afe512ac5c8860535e314ed"}
+{"accuracy": 0.9765625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_context_r8_s0_20260904_023439_008/checkpoint/state_dict_8000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9763779527559056, "model_id": "nmi_context_r8_s0__source_val_selected", "nll": 0.10323645174503326, "queries": 256, "roc_auc": 0.981689453125, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "d5206c21bee9f69733229a90d4aac4b8aae0650c4f7709a1224796de609cb1ff"}
+{"accuracy": 0.97265625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_optimization_r8_s0_20260904_023439_009/checkpoint/state_dict_6000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9725490196078431, "model_id": "nmi_optimization_r8_s0__common6000", "nll": 0.18592412769794464, "queries": 256, "roc_auc": 0.9844970703125, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "d16e16a35b7559e0198ea79bbfc1d142cf75809add9f690e7bedcd4c0af45156"}
+{"accuracy": 0.9765625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_optimization_r8_s0_20260904_023439_009/checkpoint/state_dict_10000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9763779527559056, "model_id": "nmi_optimization_r8_s0__source_val_selected", "nll": 0.24963928759098053, "queries": 256, "roc_auc": 0.9832763671875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "3645bd301d0be7b0251a2e211566cfdbca7322de508c576f7e133507ca84d31f"}
+{"accuracy": 0.97265625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_objective_r8_s0_20260904_023439_013/checkpoint/state_dict_6000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9725490196078431, "model_id": "nmi_objective_r8_s0__common6000", "nll": 0.12401953339576721, "queries": 256, "roc_auc": 0.9854736328125, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "0f6d0f16ae737ffb9f4f66a893546bcdbb46fb89745bbb24f86da9cbff0d3d4b"}
+{"accuracy": 0.98046875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_objective_r8_s0_20260904_023439_013/checkpoint/state_dict_10000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9803921568627451, "model_id": "nmi_objective_r8_s0__source_val_selected", "nll": 0.14425422251224518, "queries": 256, "roc_auc": 0.9835205078125, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "91624f06fadaa75de422daa1fc402cab1b16e0c2b0e4a279f30b73bc919f7106"}
+{"accuracy": 0.9765625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_region_adaptive_r8_s0_20260904_023439_014/checkpoint/state_dict_6000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9765625, "model_id": "nmi_region_adaptive_r8_s0__common6000", "nll": 0.10802748799324036, "queries": 256, "roc_auc": 0.98162841796875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f54557dc0cf8be8c47e3b052017212843dd41a92207ed37f3b2b1fe016a054f1"}
+{"accuracy": 0.9765625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_region_adaptive_r8_s0_20260904_023439_014/checkpoint/state_dict_6000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9765625, "model_id": "nmi_region_adaptive_r8_s0__source_val_selected", "nll": 0.10802748799324036, "queries": 256, "roc_auc": 0.98162841796875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f54557dc0cf8be8c47e3b052017212843dd41a92207ed37f3b2b1fe016a054f1"}
+{"accuracy": 0.97265625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_coverage_r8_s0_20260904_023439_015/checkpoint/state_dict_6000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9725490196078431, "model_id": "nmi_coverage_r8_s0__common6000", "nll": 0.1481468677520752, "queries": 256, "roc_auc": 0.986541748046875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "4bee8538f41958b53053be8b10a9cbbd6a5e1b372c73b288de5a98e4a3be909b"}
+{"accuracy": 0.97265625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_coverage_r8_s0_20260904_023439_015/checkpoint/state_dict_10000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9725490196078431, "model_id": "nmi_coverage_r8_s0__source_val_selected", "nll": 0.15198758244514465, "queries": 256, "roc_auc": 0.98394775390625, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "9d71e4274cdcaa73bf99797d1d59e7784b3c5f41aad710c4d23e3c34227adf73"}
+{"accuracy": 0.97265625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_budget_r8_s0_20260904_023439_016/checkpoint/state_dict_6000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9723320158102767, "model_id": "nmi_budget_r8_s0__common6000", "nll": 0.14836260676383972, "queries": 256, "roc_auc": 0.98529052734375, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "40d9e858fb9d808ecd0255a53d7005ee0493588376ea7b9932f20689d10326ec"}
+{"accuracy": 0.9765625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_budget_r8_s0_20260904_023439_016/checkpoint/state_dict_10000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9763779527559056, "model_id": "nmi_budget_r8_s0__source_val_selected", "nll": 0.22647583484649658, "queries": 256, "roc_auc": 0.979400634765625, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "c4632bd0edb228333a55e4377fbaa50089f506a08c89e9426a56a6437d6a99dc"}
+{"accuracy": 0.97265625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-combined/log/production/train_selected_recipe_s0/state/nmi_combined_r8_s0_20260904_051010_000/checkpoint/state_dict_6000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9727626459143969, "model_id": "nmi_combined_r8_s0__common6000", "nll": 0.17957334220409393, "queries": 256, "roc_auc": 0.98419189453125, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "d7babf73c812e5242a2ed2748ae615888f3dc0bbca09fa6e5b405afa1e3ad3b7"}
+{"accuracy": 0.9765625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-combined/log/production/train_selected_recipe_s0/state/nmi_combined_r8_s0_20260904_051010_000/checkpoint/state_dict_10000.ckpt", "dataset": "election2020", "decoder": "full_model", "episode_fingerprint": "fa648ea5a7cab89edacf5cccf7a49a6c24fe2c038cd861dbc9bdddccd34e7cb2", "episodes": 128, "f1": 0.9763779527559056, "model_id": "nmi_combined_r8_s0__source_val_selected", "nll": 0.17318660020828247, "queries": 256, "roc_auc": 0.9830322265625, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "be2c09fffbe65011274b3e7d8cc9a3468a151fc08e2bdc4b3424fbe6aa39b6d7"}
+wandb:
+wandb: Run summary:
+wandb:               command /home/mhchu/minicond...
+wandb: effective_config_file effective_config.yam...
+wandb:            num_params 1640514
+wandb:    source_config_file /dataMeR1/phil/gfm/p...
+wandb:
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260906_001121-8oq6pj60
+wandb: Find logs at: ./wandb/offline-run-20260906_001121-8oq6pj60/logs
+Loading ukr_rus_suspended graph from /dataMeR1/phil/data/ukr_rus_suspended/graphs/retweet_graph.pt...
+Applied midterm feature subset 'emb_only': 768 -> 768 dims.
+Using all midterm edge features (2 dims): ['rt_weight', 'mn_weight']
+Graph: 72295 nodes, 354209 edges, 768 node features  labels=['non_suspended', 'suspended']
+Building neighbor sampler...
+Neighbor sampler ready.
+Edge features: 2 dims from 'default'
+wandb: Tracking run with wandb version 0.27.2
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260906_001314-i5q0ix3i
+[00:13:14] Saved effective config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260906_001314-i5q0ix3i/files/effective_config.yaml
+[00:13:14] Saved source config YAML to W&B files: /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260906_001314-i5q0ix3i/files/training.yaml
+[00:13:14] Command: /home/mhchu/miniconda3/envs/prodigy/bin/python /dataMeR1/phil/gfm/prodigy-mechanisms/scripts/experiments/setup/target_performance_mechanisms/replay.py --model-list log/target_mechanisms/campaign_cls_inputs_20260906/model_list.tsv --datasets twibot20,covid_political,facebook_page_reference,election2020,ukr_rus_suspended --variants baseline --device 123 --threads 4 --eval-episode-seed-offset 100003 --output log/target_mechanisms/campaign_cls_fresh_20260906
+wandb: WARNING URL not available in offline run
+[00:13:14] Initializing trainer
+---------- Parameters ----------
+  config: scripts/experiments/setup/final_core/training.yaml
+  root: /dataMeR1/phil/data/ukr_rus_suspended/graphs
+  dataset: ukr_rus_suspended
+  csv_filename: twitter_data.csv
+  facebook_pkl_filename: facebook_2022-06-24_2022-06-25_part1.pkl
+  facebook_edges_filename: facebook_2022-06-24_2022-06-25_part1_edges.csv
+  facebook_node_features_filename: facebook_2022-06-24_2022-06-25_part1_node_features.csv
+  facebook_data_source: csv
+  facebook_use_edge_features: False
+  facebook_edge_feature_columns:
+  facebook_source_pkl_path:
+  facebook_embeddings_path:
+  facebook_embedding_ids_path:
+  facebook_text_emb_model:
+  facebook_target_dim: 768
+  facebook_filter_to_uk_ru: True
+  facebook_max_posts: None
+  label_type: verified
+  max_users: None
+  invalidate_cache: False
+  dataset_len_cap: 32
+  val_len_cap: 32
+  test_len_cap: 32
+  shuffle_index: False
+  force_cache: False
+  classification_only: False
+  early_stopping_patience: 20
+  reset_after_layer: None
+  original_features: True
+  override_log: True
+  seed: 0
+  eval_episode_seed_offset: 100003
+  metric: Acc
+  learning_rate: 0.002
+  epochs: 1
+  print_epoch: 10
+  eval_epoch: 10
+  checkpoint_epoch: 10
+  print_step: 100
+  eval_step: 100000
+  checkpoint_step: 100000
+  source_diagnostics_interval: 0
+  checkpoint_steps: 100,300,900,2500
+  batch_size: 4
+  weight_decay: 0.001
+  dropout: 0.0
+  text_features_dropout: 0
+  rel_sample_random_seed: None
+  split_train_nodes: False
+  verbose: False
+  detect_anomaly: False
+  loader_start_method:
+  workers: 0
+  device: cpu
+  input_dim: 768
+  emb_dim: 256
+  gnn_type: sage
+  n_layer: 1
+  meta_n_layer: 1
+  second_gnn: Atten
+  attention_mask_scheme: causal
+  skip_path: False
+  has_final_back: False
+  layers: S,U,M
+  ignore_label_embeddings: False
+  zero_label_embeddings: False
+  not_freeze_learned_label_embedding: False
+  linear_probe: False
+  fix_datasets_first: False
+  no_bn_metagraph: False
+  no_bn_encoder: False
+  calc_ranks: False
+  save_roc_curve: False
+  eval_only: True
+  eval_only_split: test
+  eval_test_before_train: False
+  eval_val_before_train: False
+  eval_after_train: False
+  meta_gnn_pos_only: False
+  task_name: classification
+  zero_shot: False
+  no_split_labels: True
+  all_test: False
+  train_cap: None
+  label_set: None
+  csr_split: False
+  n_way: 2
+  n_shots: 10
+  n_query: 1
+  neighbor_sampling_strategy: strict
+  neighbor_sampling_strata:
+  neighbor_sampling_episode_source: graph_id
+  neighbor_sampling_source_subset:
+  neighbor_sampling_source_sequence:
+  neighbor_sampling_source_sequence_steps:
+  neighbor_sampling_episode_source_weighting: balanced
+  neighbor_sampling_batch_source_mode: independent
+  neighbor_sampling_cross_source_prob: 0.0
+  neighbor_sampling_center_radii:
+  neighbor_sampling_center_radius_weights:
+  neighbor_sampling_center_region_fanout: 64
+  neighbor_sampling_center_region_node_limit: 4096
+  neighbor_sampling_center_region_candidate_limit: 512
+  neighbor_sampling_center_max_attempts: 200
+  neighbor_matching_edge_split: False
+  n_way_upper: -1
+  n_shots_upper: -1
+  n_query_upper: -1
+  max_length: -1
+  augmentation:
+  augment_test: False
+  ablate_features: none
+  ablate_edges: none
+  structural_features: none
+  attr_regression_weight: 0.0
+  fp_mask_ratio: 0.3
+  fp_mask_strategy: zero
+  mix_task_counts: 1,1,1
+  mix_cl_aug: NZ0.2
+  e4_combine: simultaneous
+  e4_weights: 1,1,1
+  e4_task_counts: 1,1,1
+  e4_lp_neg_k: 1
+  prefix: archmatrix_prodigy_eval_replay_s0_step2500_ukr_rus_suspended
+  timestamp: mechanism_replay
+  tags: []
+  log_dir: log/target_mechanisms/campaign_cls_fresh_20260906/trainer_logs
+  state_dir: log/target_mechanisms/campaign_cls_fresh_20260906/state
+  bert_emb_model: multi-qa-distilbert-cos-v1
+  bert_cache: multi-qa-distilbert-cos-v1
+  label_emb_model:
+  label_emb_texts:
+  label_emb_revision:
+  label_emb_trust_remote_code: True
+  label_emb_normalize: True
+  kg_emb_model:
+  pretrained_model_run:
+  resume_training_checkpoint:
+  n_hop: 2
+  neighbor_sampling_hop_sizes: 9,9
+  neighbor_sampling_node_limit: 101
+  neighbor_matching_walk_hops: 1
+  neighbor_matching_member_policy: lowest_sorted
+  neighbor_matching_member_seed: -1
+  train_episode_audit: False
+  graph_filename: retweet_graph.pt
+  target_feature:
+  target_feature_keep_in_x: False
+  target_transform: none
+  feature_subset: emb_only
+  midterm_label_downsample:
+  eval_random_query: False
+  edge_view: default
+  target_edge_view: default
+  edge_feature_subset: all
+  midterm_lp_neg_ratio: 1
+  hard_negatives: True
+  use_edge_features: False
+  midterm_debug_print_episodes: 0
+  debug_print_predictions: 0
+  export_predictions: False
+  prediction_context_neighbors: 3
+  prediction_support_per_label: 3
+  small_dataset: False
+  experiment_type: metagraph
+  exp_name: archmatrix_prodigy_eval_replay_s0_step2500_ukr_rus_suspended_mechanism_replay
+--------------------------------
+[trainer] WARNING: --checkpoint_steps [100, 300, 900, 2500] exceed the step budget 32 (epochs x dataset_len_cap) and will never be written. Raise --epochs or --dataset_len_cap.
+[00:13:14] Checkpoint schedule (explicit): [100, 300, 900, 2500]
+SingleLayerGeneralGNN(
+  (layer_list): ModuleList(
+    (0): MultiLayerGNN(
+      (module_list): ModuleList(
+        (0): SAGEConvSelfLoops()
+      )
+      (act): ReLU()
+      (reset_mlp): Linear(in_features=512, out_features=256, bias=True)
+      (reset_mlp_c): Linear(in_features=256, out_features=256, bias=True)
+      (reset_mlp_m): Linear(in_features=256, out_features=256, bias=True)
+    )
+    (1): BgGraphToSupernodePropagator()
+    (2): MetaGNN(
+      (gnn_layers): ModuleList(
+        (0): MetaGNNLayer()
+      )
+      (gnn_non_linear): GELU(approximate='none')
+    )
+  )
+  (cos): CosineSimilarity()
+  (initial_label_mlp): Linear(in_features=768, out_features=256, bias=True)
+  (initial_input_mlp): Identity()
+  (final_label_mlp): Identity()
+  (final_input_mlp): Identity()
+  (learned_label_embedding): Embedding(1000, 256)
+  (txt_dropout): Dropout(p=0, inplace=False)
+)
+Number of trainable parameters of the model: 1640514
+{"accuracy": 0.44921875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_baseline_r8_s0_20260904_023439_000/checkpoint/state_dict_6000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.4426877470355731, "model_id": "nmi_baseline_r8_s0__common6000", "nll": 1.1090294122695923, "queries": 256, "roc_auc": 0.4798583984375, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "aea245a17baa05afcffb9f3e2837b2449e02158c3847edfe4447548506d0ac85"}
+{"accuracy": 0.51171875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_baseline_r8_s0_20260904_023439_000/checkpoint/state_dict_8000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.5136186770428015, "model_id": "nmi_baseline_r8_s0__source_val_selected", "nll": 1.0467872619628906, "queries": 256, "roc_auc": 0.4605712890625, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f9b6a44d07c99d8eb477c7083f92cd17482d56ce1abb2b55f69da9d370c02b52"}
+{"accuracy": 0.484375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_exposure_r8_s0_20260904_023439_001/checkpoint/state_dict_6000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.46774193548387094, "model_id": "nmi_exposure_r8_s0__common6000", "nll": 0.8300070762634277, "queries": 256, "roc_auc": 0.49444580078125, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "3502cbceccb693f3f2de053ef077af5c60bce974291108adf5d460f43a794f28"}
+{"accuracy": 0.4765625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_exposure_r8_s0_20260904_023439_001/checkpoint/state_dict_10000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.45528455284552843, "model_id": "nmi_exposure_r8_s0__source_val_selected", "nll": 0.8841707706451416, "queries": 256, "roc_auc": 0.47784423828125, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "721fae95bf10a786f85e2841e3806e127e6fd66e1dc2d0ec865dd9ffa11734af"}
+{"accuracy": 0.4921875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_schedule_r8_s0_20260904_023439_002/checkpoint/state_dict_6000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.4583333333333333, "model_id": "nmi_schedule_r8_s0__common6000", "nll": 1.1340982913970947, "queries": 256, "roc_auc": 0.479736328125, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "a98155339d7182da76c0704c1ef3e995565404de8b4e28608d697573f89de41b"}
+{"accuracy": 0.4921875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_schedule_r8_s0_20260904_023439_002/checkpoint/state_dict_6000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.4583333333333333, "model_id": "nmi_schedule_r8_s0__source_val_selected", "nll": 1.1340982913970947, "queries": 256, "roc_auc": 0.479736328125, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "a98155339d7182da76c0704c1ef3e995565404de8b4e28608d697573f89de41b"}
+{"accuracy": 0.50390625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_composition_r8_s0_20260904_023439_003/checkpoint/state_dict_6000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.5058365758754864, "model_id": "nmi_composition_r8_s0__common6000", "nll": 0.928807258605957, "queries": 256, "roc_auc": 0.5194091796875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "2ec6854f7faf8dcdf310e938bf38d24a0e05fde8f1542e83ac1d201257eb3ac5"}
+{"accuracy": 0.54296875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_composition_r8_s0_20260904_023439_003/checkpoint/state_dict_8000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.5482625482625483, "model_id": "nmi_composition_r8_s0__source_val_selected", "nll": 0.8526626229286194, "queries": 256, "roc_auc": 0.548583984375, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "798a803b9922a0679e7188dd8e5663e672308ed1b71ca796ccfb1ebb4b24a298"}
+{"accuracy": 0.47265625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_centers_r8_s0_20260904_023439_004/checkpoint/state_dict_6000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.47058823529411764, "model_id": "nmi_centers_r8_s0__common6000", "nll": 0.9397455453872681, "queries": 256, "roc_auc": 0.47723388671875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "bcc610e5f4c543545d44ad2eff754b6a104efb811e05129fe6eaf22d2c750664"}
+{"accuracy": 0.50390625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_centers_r8_s0_20260904_023439_004/checkpoint/state_dict_4000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.4816326530612245, "model_id": "nmi_centers_r8_s0__source_val_selected", "nll": 1.0129127502441406, "queries": 256, "roc_auc": 0.48822021484375, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f3b58dd1eee461f1642d719f36b1e2465c0d461363be287014402e5c9b2e13e3"}
+{"accuracy": 0.484375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_eligibility_r8_s0_20260904_023439_005/checkpoint/state_dict_6000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.4883720930232558, "model_id": "nmi_eligibility_r8_s0__common6000", "nll": 1.1032148599624634, "queries": 256, "roc_auc": 0.46722412109375, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "b6592cbbd50eeb3bbf67c73e6b4764cdc15eff43064574566f80f83b719ce5c5"}
+{"accuracy": 0.49609375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_eligibility_r8_s0_20260904_023439_005/checkpoint/state_dict_2000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.4777327935222672, "model_id": "nmi_eligibility_r8_s0__source_val_selected", "nll": 0.745132327079773, "queries": 256, "roc_auc": 0.510498046875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "e0fe07ba9a1b20ad4fe59e61ffd2ed782efdff0d7c2473c8bf54418c6ddf0bfa"}
+{"accuracy": 0.46875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_positives_r8_s0_20260904_023439_006/checkpoint/state_dict_6000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.456, "model_id": "nmi_positives_r8_s0__common6000", "nll": 1.1063976287841797, "queries": 256, "roc_auc": 0.47625732421875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "875d65554e0735133f20df9477c2a9906a3bb36fe0ee437e913f7e5c47fd4e5e"}
+{"accuracy": 0.484375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_positives_r8_s0_20260904_023439_006/checkpoint/state_dict_10000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.46774193548387094, "model_id": "nmi_positives_r8_s0__source_val_selected", "nll": 1.0640840530395508, "queries": 256, "roc_auc": 0.49774169921875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "87847ac49a1600e6ca84bbc19383137ab540a99197bb0f1e9bbaf67b6a37018d"}
+{"accuracy": 0.47265625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_negatives_r8_s0_20260904_023439_007/checkpoint/state_dict_6000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.4534412955465587, "model_id": "nmi_negatives_r8_s0__common6000", "nll": 0.931938648223877, "queries": 256, "roc_auc": 0.48443603515625, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "903266d60b92b69c650efedd963fd2ff3b3862b030088a33af2f5bfa12500b9a"}
+{"accuracy": 0.484375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_negatives_r8_s0_20260904_023439_007/checkpoint/state_dict_10000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.48031496062992124, "model_id": "nmi_negatives_r8_s0__source_val_selected", "nll": 0.9428020715713501, "queries": 256, "roc_auc": 0.47198486328125, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f3da34d8603bfeaa8010cedc5cbe5a43451c82ec10bb4f3d26f883a01d3391a2"}
+{"accuracy": 0.51171875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_context_r8_s0_20260904_023439_008/checkpoint/state_dict_6000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.5247148288973384, "model_id": "nmi_context_r8_s0__common6000", "nll": 0.8137084245681763, "queries": 256, "roc_auc": 0.514404296875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "d749268ba7964af53dc90346049416eb187225bd1afe512ac5c8860535e314ed"}
+{"accuracy": 0.546875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_context_r8_s0_20260904_023439_008/checkpoint/state_dict_8000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.5572519083969466, "model_id": "nmi_context_r8_s0__source_val_selected", "nll": 0.8247160911560059, "queries": 256, "roc_auc": 0.533203125, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "d5206c21bee9f69733229a90d4aac4b8aae0650c4f7709a1224796de609cb1ff"}
+{"accuracy": 0.48046875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_optimization_r8_s0_20260904_023439_009/checkpoint/state_dict_6000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.48249027237354086, "model_id": "nmi_optimization_r8_s0__common6000", "nll": 1.1194541454315186, "queries": 256, "roc_auc": 0.471923828125, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "d16e16a35b7559e0198ea79bbfc1d142cf75809add9f690e7bedcd4c0af45156"}
+{"accuracy": 0.46484375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_optimization_r8_s0_20260904_023439_009/checkpoint/state_dict_10000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.47104247104247104, "model_id": "nmi_optimization_r8_s0__source_val_selected", "nll": 1.0609610080718994, "queries": 256, "roc_auc": 0.480712890625, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "3645bd301d0be7b0251a2e211566cfdbca7322de508c576f7e133507ca84d31f"}
+{"accuracy": 0.53515625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_objective_r8_s0_20260904_023439_013/checkpoint/state_dict_6000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.5182186234817814, "model_id": "nmi_objective_r8_s0__common6000", "nll": 0.8281707763671875, "queries": 256, "roc_auc": 0.53155517578125, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "0f6d0f16ae737ffb9f4f66a893546bcdbb46fb89745bbb24f86da9cbff0d3d4b"}
+{"accuracy": 0.5234375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_objective_r8_s0_20260904_023439_013/checkpoint/state_dict_10000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.5040650406504065, "model_id": "nmi_objective_r8_s0__source_val_selected", "nll": 0.9940164089202881, "queries": 256, "roc_auc": 0.5379638671875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "91624f06fadaa75de422daa1fc402cab1b16e0c2b0e4a279f30b73bc919f7106"}
+{"accuracy": 0.5, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_region_adaptive_r8_s0_20260904_023439_014/checkpoint/state_dict_6000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.4796747967479675, "model_id": "nmi_region_adaptive_r8_s0__common6000", "nll": 1.0456926822662354, "queries": 256, "roc_auc": 0.49072265625, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f54557dc0cf8be8c47e3b052017212843dd41a92207ed37f3b2b1fe016a054f1"}
+{"accuracy": 0.5, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_region_adaptive_r8_s0_20260904_023439_014/checkpoint/state_dict_6000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.4796747967479675, "model_id": "nmi_region_adaptive_r8_s0__source_val_selected", "nll": 1.0456926822662354, "queries": 256, "roc_auc": 0.49072265625, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "f54557dc0cf8be8c47e3b052017212843dd41a92207ed37f3b2b1fe016a054f1"}
+{"accuracy": 0.484375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_coverage_r8_s0_20260904_023439_015/checkpoint/state_dict_6000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.45454545454545453, "model_id": "nmi_coverage_r8_s0__common6000", "nll": 1.1189649105072021, "queries": 256, "roc_auc": 0.49664306640625, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "4bee8538f41958b53053be8b10a9cbbd6a5e1b372c73b288de5a98e4a3be909b"}
+{"accuracy": 0.484375, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_coverage_r8_s0_20260904_023439_015/checkpoint/state_dict_10000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.44537815126050423, "model_id": "nmi_coverage_r8_s0__source_val_selected", "nll": 0.9739011526107788, "queries": 256, "roc_auc": 0.4901123046875, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "9d71e4274cdcaa73bf99797d1d59e7784b3c5f41aad710c4d23e3c34227adf73"}
+{"accuracy": 0.4921875, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_budget_r8_s0_20260904_023439_016/checkpoint/state_dict_6000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.48412698412698413, "model_id": "nmi_budget_r8_s0__common6000", "nll": 1.1027085781097412, "queries": 256, "roc_auc": 0.49761962890625, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "40d9e858fb9d808ecd0255a53d7005ee0493588376ea7b9932f20689d10326ec"}
+{"accuracy": 0.51953125, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-overnight/log/production/train_20260904_023434/state/nmi_budget_r8_s0_20260904_023439_016/checkpoint/state_dict_10000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.5138339920948617, "model_id": "nmi_budget_r8_s0__source_val_selected", "nll": 0.958614706993103, "queries": 256, "roc_auc": 0.4952392578125, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "c4632bd0edb228333a55e4377fbaa50089f506a08c89e9426a56a6437d6a99dc"}
+{"accuracy": 0.453125, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-combined/log/production/train_selected_recipe_s0/state/nmi_combined_r8_s0_20260904_051010_000/checkpoint/state_dict_6000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.43089430894308944, "model_id": "nmi_combined_r8_s0__common6000", "nll": 0.916271448135376, "queries": 256, "roc_auc": 0.47210693359375, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "d7babf73c812e5242a2ed2748ae615888f3dc0bbca09fa6e5b405afa1e3ad3b7"}
+{"accuracy": 0.47265625, "checkpoint": "/dataMeR1/phil/gfm/prodigy-nmi-combined/log/production/train_selected_recipe_s0/state/nmi_combined_r8_s0_20260904_051010_000/checkpoint/state_dict_10000.ckpt", "dataset": "ukr_rus_suspended", "decoder": "full_model", "episode_fingerprint": "c0c3bb52670b001b5378469c2279dc91ac5fc74c88e8b959dab427aa91a1f9a6", "episodes": 128, "f1": 0.47876447876447875, "model_id": "nmi_combined_r8_s0__source_val_selected", "nll": 1.006951928138733, "queries": 256, "roc_auc": 0.47650146484375, "sources": ["ukr_rus", "covid", "midterm", "covid_political", "election2020", "ukr_rus_suspended", "cp_hk", "facebook_page_reference"], "variant": "baseline", "weights_sha256": "be2c09fffbe65011274b3e7d8cc9a3468a151fc08e2bdc4b3424fbe6aa39b6d7"}
+wandb:
+wandb: Run summary:
+wandb:               command /home/mhchu/minicond...
+wandb: effective_config_file effective_config.yam...
+wandb:            num_params 1640514
+wandb:    source_config_file /dataMeR1/phil/gfm/p...
+wandb:
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /dataMeR1/phil/gfm/prodigy-mechanisms/wandb/offline-run-20260906_001314-i5q0ix3i
+wandb: Find logs at: ./wandb/offline-run-20260906_001314-i5q0ix3i/logs

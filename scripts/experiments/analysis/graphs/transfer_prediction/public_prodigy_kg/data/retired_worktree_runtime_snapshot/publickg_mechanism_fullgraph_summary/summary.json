@@ -1,0 +1,681 @@
+{
+  "episodes": 500,
+  "metrics": {
+    "accuracy": {
+      "means": {
+        "native/logits": 0.73795,
+        "native/reference_only_logits": 0.73795,
+        "native/query_only_logits": 0.73795,
+        "support_context_removed/logits": 0.39925,
+        "support_context_removed/reference_only_logits": 0.44372500000000004,
+        "support_context_removed/query_only_logits": 0.7105499999999999,
+        "query_context_removed/logits": 0.38994999999999996,
+        "query_context_removed/reference_only_logits": 0.7136499999999999,
+        "query_context_removed/query_only_logits": 0.44449999999999995,
+        "keys/logits": 0.7373,
+        "keys/reference_only_logits": 0.7375249999999999,
+        "keys/query_only_logits": 0.7361749999999999,
+        "values/logits": 0.7386,
+        "values/reference_only_logits": 0.737425,
+        "values/query_only_logits": 0.7361500000000001,
+        "joint/logits": 0.7377999999999999,
+        "joint/reference_only_logits": 0.73735,
+        "joint/query_only_logits": 0.735425
+      },
+      "vs_native": {
+        "support_context_removed/logits": {
+          "mean_delta": -0.3387,
+          "episode_bootstrap_95_interval": [
+            -0.34550062499999995,
+            -0.331925
+          ],
+          "positive_episodes": 0,
+          "negative_episodes": 500
+        },
+        "support_context_removed/reference_only_logits": {
+          "mean_delta": -0.294225,
+          "episode_bootstrap_95_interval": [
+            -0.300950625,
+            -0.28747437500000006
+          ],
+          "positive_episodes": 0,
+          "negative_episodes": 500
+        },
+        "support_context_removed/query_only_logits": {
+          "mean_delta": -0.027399999999999997,
+          "episode_bootstrap_95_interval": [
+            -0.030424999999999997,
+            -0.024399999999999998
+          ],
+          "positive_episodes": 80,
+          "negative_episodes": 366
+        },
+        "query_context_removed/logits": {
+          "mean_delta": -0.348,
+          "episode_bootstrap_95_interval": [
+            -0.35475,
+            -0.3414
+          ],
+          "positive_episodes": 0,
+          "negative_episodes": 500
+        },
+        "query_context_removed/reference_only_logits": {
+          "mean_delta": -0.024300000000000006,
+          "episode_bootstrap_95_interval": [
+            -0.027650625000000005,
+            -0.021025000000000002
+          ],
+          "positive_episodes": 103,
+          "negative_episodes": 341
+        },
+        "query_context_removed/query_only_logits": {
+          "mean_delta": -0.29345,
+          "episode_bootstrap_95_interval": [
+            -0.30042499999999994,
+            -0.2865
+          ],
+          "positive_episodes": 0,
+          "negative_episodes": 500
+        },
+        "keys/logits": {
+          "mean_delta": -0.0006499999999999996,
+          "episode_bootstrap_95_interval": [
+            -0.0019250000000000007,
+            0.0006250000000000002
+          ],
+          "positive_episodes": 156,
+          "negative_episodes": 157
+        },
+        "keys/reference_only_logits": {
+          "mean_delta": -0.0004250000000000026,
+          "episode_bootstrap_95_interval": [
+            -0.001725000000000002,
+            0.0008749999999999989
+          ],
+          "positive_episodes": 147,
+          "negative_episodes": 158
+        },
+        "keys/query_only_logits": {
+          "mean_delta": -0.001774999999999998,
+          "episode_bootstrap_95_interval": [
+            -0.002974999999999999,
+            -0.00055
+          ],
+          "positive_episodes": 123,
+          "negative_episodes": 161
+        },
+        "values/logits": {
+          "mean_delta": 0.0006500000000000006,
+          "episode_bootstrap_95_interval": [
+            -0.0007500000000000004,
+            0.0020250000000000003
+          ],
+          "positive_episodes": 173,
+          "negative_episodes": 147
+        },
+        "values/reference_only_logits": {
+          "mean_delta": -0.0005250000000000031,
+          "episode_bootstrap_95_interval": [
+            -0.0019250000000000027,
+            0.0008499999999999952
+          ],
+          "positive_episodes": 167,
+          "negative_episodes": 169
+        },
+        "values/query_only_logits": {
+          "mean_delta": -0.0017999999999999997,
+          "episode_bootstrap_95_interval": [
+            -0.0031249999999999984,
+            -0.0004749999999999996
+          ],
+          "positive_episodes": 129,
+          "negative_episodes": 173
+        },
+        "joint/logits": {
+          "mean_delta": -0.0001500000000000019,
+          "episode_bootstrap_95_interval": [
+            -0.0016750000000000016,
+            0.001324999999999999
+          ],
+          "positive_episodes": 178,
+          "negative_episodes": 166
+        },
+        "joint/reference_only_logits": {
+          "mean_delta": -0.000600000000000004,
+          "episode_bootstrap_95_interval": [
+            -0.002175000000000005,
+            0.0009749999999999955
+          ],
+          "positive_episodes": 163,
+          "negative_episodes": 172
+        },
+        "joint/query_only_logits": {
+          "mean_delta": -0.0025249999999999977,
+          "episode_bootstrap_95_interval": [
+            -0.0039999999999999975,
+            -0.0010999999999999977
+          ],
+          "positive_episodes": 146,
+          "negative_episodes": 192
+        }
+      },
+      "primary_value_minus_key": {
+        "mean_delta": 0.0013000000000000004,
+        "episode_bootstrap_95_interval": [
+          0.00017500000000000005,
+          0.002449999999999999
+        ],
+        "positive_episodes": 160,
+        "negative_episodes": 119
+      }
+    },
+    "macro_f1": {
+      "means": {
+        "native/logits": 0.7218045814969344,
+        "native/reference_only_logits": 0.7218045814969344,
+        "native/query_only_logits": 0.7218045814969344,
+        "support_context_removed/logits": 0.3498459387028243,
+        "support_context_removed/reference_only_logits": 0.4014865800363371,
+        "support_context_removed/query_only_logits": 0.6917028994680929,
+        "query_context_removed/logits": 0.3386030786636658,
+        "query_context_removed/reference_only_logits": 0.6899686325765738,
+        "query_context_removed/query_only_logits": 0.4040263582159304,
+        "keys/logits": 0.7213456174381174,
+        "keys/reference_only_logits": 0.7211882403054463,
+        "keys/query_only_logits": 0.7199467663055897,
+        "values/logits": 0.7222555372405373,
+        "values/reference_only_logits": 0.7210347824397825,
+        "values/query_only_logits": 0.7199006026979557,
+        "joint/logits": 0.7217499703074702,
+        "joint/reference_only_logits": 0.720703546110752,
+        "joint/query_only_logits": 0.7190027938401468
+      },
+      "vs_native": {
+        "support_context_removed/logits": {
+          "mean_delta": -0.3719586427941101,
+          "episode_bootstrap_95_interval": [
+            -0.37916657885130867,
+            -0.3648058381152812
+          ],
+          "positive_episodes": 0,
+          "negative_episodes": 500
+        },
+        "support_context_removed/reference_only_logits": {
+          "mean_delta": -0.3203180014605973,
+          "episode_bootstrap_95_interval": [
+            -0.32754381934176363,
+            -0.31312448471753546
+          ],
+          "positive_episodes": 0,
+          "negative_episodes": 500
+        },
+        "support_context_removed/query_only_logits": {
+          "mean_delta": -0.030101682028841472,
+          "episode_bootstrap_95_interval": [
+            -0.033490331688349494,
+            -0.026808763312775125
+          ],
+          "positive_episodes": 111,
+          "negative_episodes": 389
+        },
+        "query_context_removed/logits": {
+          "mean_delta": -0.3832015028332687,
+          "episode_bootstrap_95_interval": [
+            -0.39048090593217505,
+            -0.3761505357982188
+          ],
+          "positive_episodes": 0,
+          "negative_episodes": 500
+        },
+        "query_context_removed/reference_only_logits": {
+          "mean_delta": -0.03183594892036068,
+          "episode_bootstrap_95_interval": [
+            -0.035570623066067925,
+            -0.028172834599632397
+          ],
+          "positive_episodes": 115,
+          "negative_episodes": 385
+        },
+        "query_context_removed/query_only_logits": {
+          "mean_delta": -0.317778223281004,
+          "episode_bootstrap_95_interval": [
+            -0.32514997017167185,
+            -0.31043923354717107
+          ],
+          "positive_episodes": 0,
+          "negative_episodes": 500
+        },
+        "keys/logits": {
+          "mean_delta": -0.00045896405881700185,
+          "episode_bootstrap_95_interval": [
+            -0.0018470191058941108,
+            0.000954089407732788
+          ],
+          "positive_episodes": 209,
+          "negative_episodes": 231
+        },
+        "keys/reference_only_logits": {
+          "mean_delta": -0.0006163411914882516,
+          "episode_bootstrap_95_interval": [
+            -0.0020512015276390318,
+            0.0008003100339203257
+          ],
+          "positive_episodes": 204,
+          "negative_episodes": 220
+        },
+        "keys/query_only_logits": {
+          "mean_delta": -0.0018578151913446036,
+          "episode_bootstrap_95_interval": [
+            -0.003196875253014961,
+            -0.0005247847716009482
+          ],
+          "positive_episodes": 188,
+          "negative_episodes": 223
+        },
+        "values/logits": {
+          "mean_delta": 0.0004509557436028011,
+          "episode_bootstrap_95_interval": [
+            -0.0010949719753285895,
+            0.001974511701125669
+          ],
+          "positive_episodes": 234,
+          "negative_episodes": 216
+        },
+        "values/reference_only_logits": {
+          "mean_delta": -0.0007697990571520002,
+          "episode_bootstrap_95_interval": [
+            -0.00233137811085973,
+            0.0007704107212232158
+          ],
+          "positive_episodes": 216,
+          "negative_episodes": 221
+        },
+        "values/query_only_logits": {
+          "mean_delta": -0.0019039787989788002,
+          "episode_bootstrap_95_interval": [
+            -0.003357182886557887,
+            -0.0004356203657453672
+          ],
+          "positive_episodes": 186,
+          "negative_episodes": 239
+        },
+        "joint/logits": {
+          "mean_delta": -5.461118946413412e-05,
+          "episode_bootstrap_95_interval": [
+            -0.001733465027211352,
+            0.0015715733037387435
+          ],
+          "positive_episodes": 230,
+          "negative_episodes": 240
+        },
+        "joint/reference_only_logits": {
+          "mean_delta": -0.0011010353861824432,
+          "episode_bootstrap_95_interval": [
+            -0.00287361918800154,
+            0.0006586096105691737
+          ],
+          "positive_episodes": 213,
+          "negative_episodes": 249
+        },
+        "joint/query_only_logits": {
+          "mean_delta": -0.002801787656787656,
+          "episode_bootstrap_95_interval": [
+            -0.0044104995559995554,
+            -0.0012021977744477736
+          ],
+          "positive_episodes": 210,
+          "negative_episodes": 250
+        }
+      },
+      "primary_value_minus_key": {
+        "mean_delta": 0.0009099198024198029,
+        "episode_bootstrap_95_interval": [
+          -0.00034099357586857444,
+          0.0021453257298257302
+        ],
+        "positive_episodes": 212,
+        "negative_episodes": 185
+      }
+    },
+    "ovr_auc": {
+      "means": {
+        "native/logits": 0.9748292763157894,
+        "native/reference_only_logits": 0.9748292763157894,
+        "native/query_only_logits": 0.9748292763157894,
+        "support_context_removed/logits": 0.9020733552631577,
+        "support_context_removed/reference_only_logits": 0.9119026315789475,
+        "support_context_removed/query_only_logits": 0.9723786184210526,
+        "query_context_removed/logits": 0.8979549342105263,
+        "query_context_removed/reference_only_logits": 0.9722042763157894,
+        "query_context_removed/query_only_logits": 0.9148434210526316,
+        "keys/logits": 0.9748559210526316,
+        "keys/reference_only_logits": 0.9747578947368423,
+        "keys/query_only_logits": 0.9748187500000001,
+        "values/logits": 0.9747572368421051,
+        "values/reference_only_logits": 0.9747026315789473,
+        "values/query_only_logits": 0.9747536184210526,
+        "joint/logits": 0.9747328947368421,
+        "joint/reference_only_logits": 0.9746200657894738,
+        "joint/query_only_logits": 0.9747164473684211
+      },
+      "vs_native": {
+        "support_context_removed/logits": {
+          "mean_delta": -0.07275592105263158,
+          "episode_bootstrap_95_interval": [
+            -0.07482845394736842,
+            -0.07076771381578947
+          ],
+          "positive_episodes": 0,
+          "negative_episodes": 500
+        },
+        "support_context_removed/reference_only_logits": {
+          "mean_delta": -0.06292664473684212,
+          "episode_bootstrap_95_interval": [
+            -0.0649230427631579,
+            -0.061037779605263166
+          ],
+          "positive_episodes": 0,
+          "negative_episodes": 500
+        },
+        "support_context_removed/query_only_logits": {
+          "mean_delta": -0.0024506578947368573,
+          "episode_bootstrap_95_interval": [
+            -0.0027407894736842125,
+            -0.0021717023026315944
+          ],
+          "positive_episodes": 99,
+          "negative_episodes": 394
+        },
+        "query_context_removed/logits": {
+          "mean_delta": -0.07687434210526317,
+          "episode_bootstrap_95_interval": [
+            -0.0789539967105263,
+            -0.07487628289473686
+          ],
+          "positive_episodes": 0,
+          "negative_episodes": 500
+        },
+        "query_context_removed/reference_only_logits": {
+          "mean_delta": -0.002625000000000008,
+          "episode_bootstrap_95_interval": [
+            -0.0029362006578947555,
+            -0.0023154523026315856
+          ],
+          "positive_episodes": 100,
+          "negative_episodes": 397
+        },
+        "query_context_removed/query_only_logits": {
+          "mean_delta": -0.0599858552631579,
+          "episode_bootstrap_95_interval": [
+            -0.0618664720394737,
+            -0.05817425164473685
+          ],
+          "positive_episodes": 0,
+          "negative_episodes": 500
+        },
+        "keys/logits": {
+          "mean_delta": 2.6644736842105443e-05,
+          "episode_bootstrap_95_interval": [
+            -6.513980263158885e-05,
+            0.0001217269736842197
+          ],
+          "positive_episodes": 234,
+          "negative_episodes": 241
+        },
+        "keys/reference_only_logits": {
+          "mean_delta": -7.138157894737573e-05,
+          "episode_bootstrap_95_interval": [
+            -0.0001437500000000094,
+            -3.0642155479660783e-18
+          ],
+          "positive_episodes": 213,
+          "negative_episodes": 250
+        },
+        "keys/query_only_logits": {
+          "mean_delta": -1.052631578947616e-05,
+          "episode_bootstrap_95_interval": [
+            -9.111842105263792e-05,
+            6.973684210525292e-05
+          ],
+          "positive_episodes": 222,
+          "negative_episodes": 244
+        },
+        "values/logits": {
+          "mean_delta": -7.203947368421359e-05,
+          "episode_bootstrap_95_interval": [
+            -0.00016579769736842806,
+            2.2376644736839516e-05
+          ],
+          "positive_episodes": 223,
+          "negative_episodes": 258
+        },
+        "values/reference_only_logits": {
+          "mean_delta": -0.0001266447368421102,
+          "episode_bootstrap_95_interval": [
+            -0.00020921052631579578,
+            -4.473684210526785e-05
+          ],
+          "positive_episodes": 214,
+          "negative_episodes": 261
+        },
+        "values/query_only_logits": {
+          "mean_delta": -7.565789473684493e-05,
+          "episode_bootstrap_95_interval": [
+            -0.0001562499999999968,
+            6.258223684204336e-06
+          ],
+          "positive_episodes": 218,
+          "negative_episodes": 263
+        },
+        "joint/logits": {
+          "mean_delta": -9.638157894737342e-05,
+          "episode_bootstrap_95_interval": [
+            -0.00021578947368421043,
+            2.039473684209768e-05
+          ],
+          "positive_episodes": 222,
+          "negative_episodes": 263
+        },
+        "joint/reference_only_logits": {
+          "mean_delta": -0.00020921052631579285,
+          "episode_bootstrap_95_interval": [
+            -0.0003111842105263132,
+            -0.00011085526315789395
+          ],
+          "positive_episodes": 206,
+          "negative_episodes": 262
+        },
+        "joint/query_only_logits": {
+          "mean_delta": -0.00011282894736842764,
+          "episode_bootstrap_95_interval": [
+            -0.00021447368421052934,
+            -1.2500000000005823e-05
+          ],
+          "positive_episodes": 218,
+          "negative_episodes": 261
+        }
+      },
+      "primary_value_minus_key": {
+        "mean_delta": -9.868421052631904e-05,
+        "episode_bootstrap_95_interval": [
+          -0.00016546052631578474,
+          -3.1578947368430904e-05
+        ],
+        "positive_episodes": 203,
+        "negative_episodes": 260
+      }
+    },
+    "nll": {
+      "means": {
+        "native/logits": 0.8736462753562458,
+        "native/reference_only_logits": 0.8736462753562458,
+        "native/query_only_logits": 0.8736462753562458,
+        "support_context_removed/logits": 2.147527843564232,
+        "support_context_removed/reference_only_logits": 1.917580926220649,
+        "support_context_removed/query_only_logits": 0.9759447355325013,
+        "query_context_removed/logits": 2.3476482967771313,
+        "query_context_removed/reference_only_logits": 0.95612996677858,
+        "query_context_removed/query_only_logits": 1.988233066904291,
+        "keys/logits": 0.8711099772618772,
+        "keys/reference_only_logits": 0.8714787911742702,
+        "keys/query_only_logits": 0.8769989497473625,
+        "values/logits": 0.8732300037103141,
+        "values/reference_only_logits": 0.8723200063172952,
+        "values/query_only_logits": 0.8802130946638195,
+        "joint/logits": 0.8722859285513793,
+        "joint/reference_only_logits": 0.872614110881711,
+        "joint/query_only_logits": 0.8824472741331228
+      },
+      "vs_native": {
+        "support_context_removed/logits": {
+          "mean_delta": 1.2738815682079865,
+          "episode_bootstrap_95_interval": [
+            1.245517371268422,
+            1.3034765314792691
+          ],
+          "positive_episodes": 500,
+          "negative_episodes": 0
+        },
+        "support_context_removed/reference_only_logits": {
+          "mean_delta": 1.0439346508644032,
+          "episode_bootstrap_95_interval": [
+            1.018162133263266,
+            1.070949202790192
+          ],
+          "positive_episodes": 500,
+          "negative_episodes": 0
+        },
+        "support_context_removed/query_only_logits": {
+          "mean_delta": 0.1022984601762554,
+          "episode_bootstrap_95_interval": [
+            0.0964946221857851,
+            0.10819122141077128
+          ],
+          "positive_episodes": 471,
+          "negative_episodes": 29
+        },
+        "query_context_removed/logits": {
+          "mean_delta": 1.4740020214208853,
+          "episode_bootstrap_95_interval": [
+            1.444806855215519,
+            1.5040633219463002
+          ],
+          "positive_episodes": 500,
+          "negative_episodes": 0
+        },
+        "query_context_removed/reference_only_logits": {
+          "mean_delta": 0.08248369142233405,
+          "episode_bootstrap_95_interval": [
+            0.07618305348951245,
+            0.0889433432757695
+          ],
+          "positive_episodes": 437,
+          "negative_episodes": 63
+        },
+        "query_context_removed/query_only_logits": {
+          "mean_delta": 1.114586791548045,
+          "episode_bootstrap_95_interval": [
+            1.0883911619665532,
+            1.1409383788196674
+          ],
+          "positive_episodes": 500,
+          "negative_episodes": 0
+        },
+        "keys/logits": {
+          "mean_delta": -0.002536298094368557,
+          "episode_bootstrap_95_interval": [
+            -0.0038760899052598845,
+            -0.0012419189814371768
+          ],
+          "positive_episodes": 220,
+          "negative_episodes": 280
+        },
+        "keys/reference_only_logits": {
+          "mean_delta": -0.0021674841819756987,
+          "episode_bootstrap_95_interval": [
+            -0.0034301438913746235,
+            -0.0008899533506348021
+          ],
+          "positive_episodes": 237,
+          "negative_episodes": 263
+        },
+        "keys/query_only_logits": {
+          "mean_delta": 0.003352674391116756,
+          "episode_bootstrap_95_interval": [
+            0.002188161930303016,
+            0.004511076860152506
+          ],
+          "positive_episodes": 303,
+          "negative_episodes": 197
+        },
+        "values/logits": {
+          "mean_delta": -0.000416271645931649,
+          "episode_bootstrap_95_interval": [
+            -0.001872632372410895,
+            0.0010509425510887014
+          ],
+          "positive_episodes": 248,
+          "negative_episodes": 252
+        },
+        "values/reference_only_logits": {
+          "mean_delta": -0.0013262690389506497,
+          "episode_bootstrap_95_interval": [
+            -0.0028099393076643146,
+            0.0001762128703895881
+          ],
+          "positive_episodes": 245,
+          "negative_episodes": 255
+        },
+        "values/query_only_logits": {
+          "mean_delta": 0.006566819307573669,
+          "episode_bootstrap_95_interval": [
+            0.0052746891915471696,
+            0.00785838218135245
+          ],
+          "positive_episodes": 345,
+          "negative_episodes": 155
+        },
+        "joint/logits": {
+          "mean_delta": -0.0013603468048664937,
+          "episode_bootstrap_95_interval": [
+            -0.0031398559672404566,
+            0.00038736132324470424
+          ],
+          "positive_episodes": 240,
+          "negative_episodes": 260
+        },
+        "joint/reference_only_logits": {
+          "mean_delta": -0.0010321644745348647,
+          "episode_bootstrap_95_interval": [
+            -0.0028226336215251384,
+            0.0007877375678438668
+          ],
+          "positive_episodes": 245,
+          "negative_episodes": 255
+        },
+        "joint/query_only_logits": {
+          "mean_delta": 0.008800998776877055,
+          "episode_bootstrap_95_interval": [
+            0.00713869094675067,
+            0.010464294189993327
+          ],
+          "positive_episodes": 347,
+          "negative_episodes": 153
+        }
+      },
+      "primary_value_minus_key": {
+        "mean_delta": 0.002120026448436908,
+        "episode_bootstrap_95_interval": [
+          0.0011542075929116416,
+          0.0031136312735137424
+        ],
+        "positive_episodes": 289,
+        "negative_episodes": 211
+      }
+    }
+  },
+  "uncertainty_scope": "Episode bootstrap conditional on this checkpoint and target; not training-seed or domain-general uncertainty. Recurring entities can make episodes dependent.",
+  "interpretation": "Crossed decoder inputs are controlled computational contrasts, not an additive mediation decomposition. NLL improvement is negative; other metric improvement is positive.",
+  "source_protocol_sha256": "9b9868dcd99f64cd967a879f69cb80d670aa4663f163cd889cba0374e5c12672",
+  "source_index_sha256": "d69c0b9263c33e84c732d6710ab4dae6705590ef6d78764817357b555b81b02d"
+}

@@ -1,0 +1,132 @@
+{
+  "conditions": [
+    [
+      2000,
+      2000
+    ],
+    [
+      2000,
+      8000
+    ],
+    [
+      8000,
+      2000
+    ],
+    [
+      8000,
+      8000
+    ]
+  ],
+  "episodes": 128,
+  "commit": "9952481025cad46f2eca9f790026cf113e4b4419",
+  "effective_params_sha256": "3b784234d30c23a3010b220d484c9eae2dc93685df00394ad61555ade14e5e9e",
+  "source": "/dataMeR1/phil/gfm/prodigy-publickg-paired-state/log/publickg_readout_fresh_20260907",
+  "trajectory": "/dataMeR1/phil/gfm/prodigy-publickg-paired-state/log/publickg_trajectory_20260907",
+  "source_index_sha256": "60f9317ec226225b4e5a33c47ecc007dac2484573936ef851e087ab5c2778094",
+  "trajectory_summary_sha256": "7881b468f089cc2f2dbe3453dd44a8dc6d2ac4e771bc0300a958948954f5bf3f",
+  "checkpoint_sha256": {
+    "2000": "c5a8d16473964a415b4222a55616fb1bc79f400a6ce64a4e4bee3fb515eba263",
+    "8000": "5e48d5abc0660f7e537d79d6ccd74150aed38eecc8ca90a048adb6dc94aafee7"
+  },
+  "upstream": {
+    "head": "107ba57234d3188227cda5b78a2dbcfb84a1c694",
+    "clean": true
+  },
+  "ownership": {
+    "encoder": [
+      "layer_list.0.",
+      "layer_list.1.",
+      "initial_input_mlp."
+    ],
+    "inference": [
+      "layer_list.2.",
+      "initial_label_mlp.",
+      "learned_label_embedding.",
+      "final_input_mlp.",
+      "final_label_mlp.",
+      "logit_scale"
+    ]
+  },
+  "prediction": "Early inference improves late encoder and late inference hurts early encoder; both crossovers bad means incompatibility, inconclusive",
+  "intervention": "All conditions clamp preM data rows to corresponding saved trajectory U1 after natural parity1e-4; label rows unchanged",
+  "fitting": false,
+  "parity_atol": 0.0001,
+  "state_keys": {
+    "encoder": [
+      "layer_list.0.module_list.0.lin_x.weight",
+      "layer_list.0.module_list.0.lin_x.bias",
+      "layer_list.0.module_list.0.lin_self_loops.weight",
+      "layer_list.0.module_list.0.lin_self_loops.bias",
+      "layer_list.0.module_list.0.lin_edge_attr.weight",
+      "layer_list.0.module_list.0.lin_edge_attr.bias",
+      "layer_list.0.module_list.0.mlp.0.weight",
+      "layer_list.0.module_list.0.mlp.0.bias",
+      "layer_list.0.module_list.0.mlp.2.weight",
+      "layer_list.0.module_list.0.mlp.2.bias",
+      "layer_list.0.module_list.0.bn.weight",
+      "layer_list.0.module_list.0.bn.bias",
+      "layer_list.0.module_list.0.bn.running_mean",
+      "layer_list.0.module_list.0.bn.running_var",
+      "layer_list.0.module_list.0.bn.num_batches_tracked",
+      "layer_list.0.module_list.1.lin_x.weight",
+      "layer_list.0.module_list.1.lin_x.bias",
+      "layer_list.0.module_list.1.lin_self_loops.weight",
+      "layer_list.0.module_list.1.lin_self_loops.bias",
+      "layer_list.0.module_list.1.lin_edge_attr.weight",
+      "layer_list.0.module_list.1.lin_edge_attr.bias",
+      "layer_list.0.module_list.1.mlp.0.weight",
+      "layer_list.0.module_list.1.mlp.0.bias",
+      "layer_list.0.module_list.1.mlp.2.weight",
+      "layer_list.0.module_list.1.mlp.2.bias",
+      "layer_list.0.module_list.1.bn.weight",
+      "layer_list.0.module_list.1.bn.bias",
+      "layer_list.0.module_list.1.bn.running_mean",
+      "layer_list.0.module_list.1.bn.running_var",
+      "layer_list.0.module_list.1.bn.num_batches_tracked",
+      "layer_list.0.reset_mlp.weight",
+      "layer_list.0.reset_mlp.bias",
+      "layer_list.0.reset_mlp_c.weight",
+      "layer_list.0.reset_mlp_c.bias",
+      "layer_list.0.reset_mlp_m.weight",
+      "layer_list.0.reset_mlp_m.bias",
+      "layer_list.1.proj.weight",
+      "layer_list.1.proj.bias"
+    ],
+    "inference": [
+      "logit_scale",
+      "layer_list.2.gnn_layers.0.mlp_kqv.weight",
+      "layer_list.2.gnn_layers.0.mlp_kqv.bias",
+      "layer_list.2.gnn_layers.0.lin_edge.weight",
+      "layer_list.2.gnn_layers.0.lin_edge.bias",
+      "layer_list.2.gnn_layers.0.att_mlp.0.weight",
+      "layer_list.2.gnn_layers.0.att_mlp.0.bias",
+      "layer_list.2.gnn_layers.0.att_mlp.2.weight",
+      "layer_list.2.gnn_layers.0.att_mlp.2.bias",
+      "layer_list.2.gnn_layers.0.out_proj.weight",
+      "layer_list.2.gnn_layers.0.out_proj.bias",
+      "layer_list.2.gnn_layers.0.bn.weight",
+      "layer_list.2.gnn_layers.0.bn.bias",
+      "layer_list.2.gnn_layers.0.bn.running_mean",
+      "layer_list.2.gnn_layers.0.bn.running_var",
+      "layer_list.2.gnn_layers.0.bn.num_batches_tracked",
+      "layer_list.2.gnn_layers.1.mlp_kqv.weight",
+      "layer_list.2.gnn_layers.1.mlp_kqv.bias",
+      "layer_list.2.gnn_layers.1.lin_edge.weight",
+      "layer_list.2.gnn_layers.1.lin_edge.bias",
+      "layer_list.2.gnn_layers.1.att_mlp.0.weight",
+      "layer_list.2.gnn_layers.1.att_mlp.0.bias",
+      "layer_list.2.gnn_layers.1.att_mlp.2.weight",
+      "layer_list.2.gnn_layers.1.att_mlp.2.bias",
+      "layer_list.2.gnn_layers.1.out_proj.weight",
+      "layer_list.2.gnn_layers.1.out_proj.bias",
+      "layer_list.2.gnn_layers.1.bn.weight",
+      "layer_list.2.gnn_layers.1.bn.bias",
+      "layer_list.2.gnn_layers.1.bn.running_mean",
+      "layer_list.2.gnn_layers.1.bn.running_var",
+      "layer_list.2.gnn_layers.1.bn.num_batches_tracked",
+      "initial_label_mlp.weight",
+      "initial_label_mlp.bias",
+      "learned_label_embedding.weight"
+    ]
+  }
+}
