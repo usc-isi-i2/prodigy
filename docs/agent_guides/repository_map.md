@@ -21,6 +21,16 @@ work.
 Cross-experiment conclusions live under
 `scripts/experiments/analysis/synthesis/cross_experiment/`.
 
+## Imported research repositories
+
+- `external/mixture-scaling/` is the history-preserving import of the standalone
+  GraphSAGE and node-MLP mixture-scaling project. Start with
+  `external/mixture-scaling/FINDINGS_INDEX.md`. Its retention snapshots are
+  provenance/recovery material; the index identifies the canonical live findings.
+- Large graph artifacts, checkpoints, W&B runs, and private pair diagnostics named
+  by that project remain at their recorded Tucker paths and were not copied into
+  Git.
+
 ## Archived analyses
 
 Two archive sets are distinct:
