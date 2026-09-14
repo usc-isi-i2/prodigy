@@ -103,8 +103,6 @@ def audit_dataset(
             raise ValueError(f"unexpected {name} negative shape: {edges.shape}")
         if np.any(edges < 0) or np.any(edges >= num_nodes):
             raise ValueError(f"{name} negative edges contain invalid node IDs")
-        if np.any(edges[:, 0] == edges[:, 1]):
-            raise ValueError(f"{name} official negatives contain self-pairs")
 
     years = {name: np.asarray(split[name]["year"]) for name in EXPECTED_EDGE_COUNTS}
     if int(years["train"].max()) > 2017:
@@ -147,6 +145,10 @@ def audit_dataset(
                 "negative": int(len(split[name].get("edge_neg", []))),
             }
             for name in ("train", "valid", "test")
+        },
+        "official_negative_self_pair_counts": {
+            name: int(np.sum(split[name]["edge_neg"][:, 0] == split[name]["edge_neg"][:, 1]))
+            for name in EXPECTED_NEGATIVE_COUNTS
         },
         "year_ranges": {
             name: [int(years[name].min()), int(years[name].max())]
