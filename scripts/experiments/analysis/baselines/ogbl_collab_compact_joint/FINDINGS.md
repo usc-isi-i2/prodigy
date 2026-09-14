@@ -114,3 +114,49 @@ Reproduce the figure with `plot_curves.py`. Reproduce the independent audit with
 `audit_scores.py --runtime <directory containing scores.npz and year2018.npz>
 --evidence data/joint_v1 --out <new audit.json>`. Raw archives/checkpoints remain on
 Tucker; the local private score-audit copy is `/private/tmp/collab-joint-audit.z0oBTp`.
+
+## Post-hoc failure-case diagnosis
+
+The saved2018 scores show that the failed joint model contains complementary signal,
+but uses it too aggressively. Across seeds it recovers2,879--3,037 AA-DC misses while
+losing4,937--5,560 AA-DC hits. The consistent subsets make the distinction clearer:
+2,170 AA-DC misses are recovered by every joint seed, but4,021 AA-DC hits are lost by
+every joint seed. The model is not merely noisy around a few cutoff ties.
+
+The scalar inputs do not cleanly separate the desired and dangerous tail. Of the
+consistently recovered positives,95.2% have zero AA,83.8% have a nonzero length-3
+signal,78.7% have both endpoints recently active,70.6% have cosine at least0.96,
+and66.5% have minimum degree at least10. The16 negatives newly entering every
+joint seed's top50 are also all zero-AA:75.0% have nonzero length-3 signal,81.2%
+have cosine at least0.96, and68.8% have minimum degree at least10. Mutual recent
+activity is the clearest observed difference (43.8% for those promoted negatives),
+but this is descriptive evidence from only16 negatives, not an identified cause.
+
+There is still substantial hard positive headroom:15,764 AA-DC misses remain missed
+by every joint seed. Their median cosine is0.909 and median minimum degree is5, so a
+method that only boosts high-cosine, well-connected pairs cannot close the full gap.
+
+A post-hoc max-score diagnostic preserves AA-DC while admitting sufficiently strong
+joint evidence. Scores are normalized at each model's own50th negative, the combined
+negative cutoff is recomputed, and a common inspected alpha of0.5 gives68.9463%
+mean Hits@50 (69.1299/68.8403/68.8686), versus67.3557% for AA-DC. This is the
+largest gain observed in the fixed diagnostic grid, but alpha was inspected on the
+repeatedly used2018 panel. It is hypothesis-generating, not a selected validation
+result or test estimate. The label-aware union of separate AA-DC and joint hit masks
+contains43,349/43,507/43,467 positives (72.15--72.41%); it is not a realizable score
+or a formal ceiling.
+
+The evidence supports a narrower next hypothesis: keep AA-DC as an explicit anchor;
+learn a conditional correction with a tail-ranking loss that pairs AA-DC-missed
+positives against the highest-scoring negatives; penalize loss of high-confidence
+AA-DC hits; and add pair/path information that can distinguish equally high-cosine,
+high-degree zero-AA pairs. Because the joint model's2017 selection peaked at
+77.17--78.73% but transferred to only62.89--64.19% in2018, selection must also test
+rolling-year robustness rather than reward one historical panel. Do not rerun the
+same direct BCE model with more steps: its selected checkpoints were already early,
+and later training degraded2017 ranking.
+
+Evidence: [failure-case receipt](data/joint_v1/failure_cases.json). Reproduce with
+`failure_cases.py --runtime <assessment directory> --evidence data/joint_v1
+--out <new receipt.json>`. The diagnostic verifies the saved score and panel hashes
+and never reads2019 test data.
