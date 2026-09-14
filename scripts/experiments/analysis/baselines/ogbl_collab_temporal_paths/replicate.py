@@ -57,7 +57,7 @@ def main():
         for (u,v),y in zip(edges[mask],years[mask]):
             key=tuple(sorted((int(u),int(v))));dates[key]=min(int(y),dates.get(key,int(y)))
         nb=lambda u:set(adj.indices[adj.indptr[u]:adj.indptr[u+1]])
-        for k in sorted(cases)[:20]:
+        for k in sorted(k for k in cases if k.startswith('n'))[:10]+sorted(k for k in cases if k.startswith('p'))[:10]:
             u,v=map(int,cases[k]); vv=[]
             if u!=v:
                 for aa in nb(u)-{u,v}:
