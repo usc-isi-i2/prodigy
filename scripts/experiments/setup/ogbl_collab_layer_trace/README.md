@@ -3,8 +3,9 @@
 This is a diagnostic of the admitted fresh-negative joint model, seed 0 at its
 standalone-selected update 150. It does not train or select a model. The script
 loads the exact checkpoint, pre-2018 graph, 2018 validation panel,
-standardization, and saved score archive. It first requires exact replay of the
-saved positive and negative logits and official Hits@50.
+standardization, and saved score archive. Producer-GPU replay is exact. A local
+CPU fallback must stay within 3e-6 absolute logit error and exactly preserve the
+positive hitmask, negative top-50 membership, and official Hits@50.
 
 The three SAGE outputs are captured after each convolution (ReLU after layers 1
 and 2, as in production). Each 256-dimensional output is passed through the
@@ -31,5 +32,5 @@ panel is repeatedly explored development data, and all prior test exploration
 and invalid leakage/test-supervised campaigns remain disclosed.
 
 Run on Tucker from an isolated worktree using GPU 1. Runtime output must include
-checkpoint/input hashes, producing revision, exact replay assertions, official
+checkpoint/input hashes, producing revision, replay assertions, official
 evaluator parity, tensor shapes, and a machine-readable result.

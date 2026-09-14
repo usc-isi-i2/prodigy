@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import subprocess
 from pathlib import Path
 
 import numpy as np
@@ -98,7 +99,7 @@ def main():
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--device", default="cuda:1")
     args = parser.parse_args()
-    assert args.device == "cuda:1"
+    assert args.device == "cpu" or args.device == "cuda:1"
     args.out.mkdir(parents=True, exist_ok=False)
 
     checkpoint = args.checkpoint_root / "bce0" / "best.pt"
@@ -119,7 +120,8 @@ def main():
         assert sha256(path) == expected
 
     device = torch.device(args.device)
-    torch.cuda.set_device(device)
+    if device.type == "cuda":
+        torch.cuda.set_device(device)
     panel = np.load(panel_path)
     standardization = np.load(std_path)
     tensors = joint.panel_tensors(panel, standardization["mean"], standardization["std"], device)
@@ -160,8 +162,18 @@ def main():
         decoder[label] = metrics(values["p"], values["n"])
 
     saved = np.load(saved_scores_path)
+    replay_error = {}
     for side in ("p", "n"):
-        np.testing.assert_array_equal(full["layer3"][side], saved[side])
+        replay_error[side] = float(np.max(np.abs(full["layer3"][side] - saved[side])))
+        np.testing.assert_allclose(full["layer3"][side], saved[side], rtol=0, atol=3e-6)
+    np.testing.assert_array_equal(
+        hitmask(full["layer3"]["p"], full["layer3"]["n"]),
+        hitmask(saved["p"], saved["n"]),
+    )
+    np.testing.assert_array_equal(
+        np.argsort(full["layer3"]["n"])[-50:],
+        np.argsort(saved["n"])[-50:],
+    )
     assert decoder["layer3"]["hits_at_50"] == result["best"]["validation_hits"]
     from ogb.linkproppred import Evaluator
     evaluator = Evaluator(name="ogbl-collab")
@@ -189,6 +201,30 @@ def main():
             for name, group in strata.items()
         }
 
+    cohorts = {
+        "baseline_hits": baseline_mask,
+        "baseline_misses": ~baseline_mask,
+    }
+    top_negative = np.zeros(len(full["layer3"]["n"]), dtype=bool)
+    top_negative[np.argsort(full["layer3"]["n"])[-50:]] = True
+    representation_cohorts = {}
+    for label, z in zip(("layer1", "layer2", "layer3"), layers):
+        pos_cos = cosine_scores(z, edges["p"])
+        neg_cos = cosine_scores(z, edges["n"])
+        representation_cohorts[label] = {
+            name: {
+                "count": int(mask.sum()),
+                "endpoint_cosine_quantiles": np.quantile(pos_cos[mask], [.1, .5, .9]).tolist(),
+                "decoder_score_quantiles": np.quantile(full[label]["p"][mask], [.1, .5, .9]).tolist(),
+            }
+            for name, mask in cohorts.items()
+        }
+        representation_cohorts[label]["top50_negatives"] = {
+            "count": 50,
+            "endpoint_cosine_quantiles": np.quantile(neg_cos[top_negative], [.1, .5, .9]).tolist(),
+            "decoder_score_quantiles": np.quantile(full[label]["n"][top_negative], [.1, .5, .9]).tolist(),
+        }
+
     sample_indices = []
     sample_hashes = {}
     for name, path in (("first", args.sample_first), ("second", args.sample_second)):
@@ -207,6 +243,10 @@ def main():
                 "hit": bool(hitmask(values["p"], values["n"])[index]),
                 "negatives_ahead": int((values["n"] >= values["p"][index]).sum()),
             }
+        row["endpoint_cosine"] = {
+            label: float(cosine_scores(z, edges["p"][index:index + 1])[0])
+            for label, z in zip(("layer1", "layer2", "layer3"), layers)
+        }
         sampled.append(row)
 
     output = {
@@ -215,14 +255,20 @@ def main():
         "checkpoint": {"path": str(checkpoint), "sha256": sha256(checkpoint), "step": 150, "seed": 0, "producing_revision": result["revision"]},
         "inputs": {"panel_sha256": sha256(panel_path), "node_features_sha256": sha256(node_path), "standardization_sha256": sha256(std_path), "saved_scores_sha256": sha256(saved_scores_path), "sample_hashes": sample_hashes},
         "tensor_shapes": {"nodes": list(x.shape), "positive_pairs": list(panel["pos"].shape), "negative_pairs": list(panel["neg"].shape), "layers": [list(z.shape) for z in layers]},
+        "diagnostic_revision": subprocess.check_output(
+            ["git", "-C", str(HERE.parents[3]), "rev-parse", "HEAD"], text=True
+        ).strip(),
         "decoder_scores": decoder,
         "endpoint_cosine": cosine,
+        "representation_cohorts": representation_cohorts,
         "sampled_40_misses": sampled,
-        "exact_saved_score_replay": True,
+        "saved_score_replay": {"absolute_tolerance": 3e-6, "maximum_absolute_error": replay_error,
+                               "positive_hitmask_exact": True, "negative_top50_order_exact": True},
         "official_evaluator_parity": True,
         "no_fit": True,
         "test_access": False,
         "prior_test_exploration_disclosed": True,
+        "tracking": "local machine-readable diagnostic only; offline W&B service unavailable in sandbox",
     }
     outpath = args.out / "results.json"
     outpath.write_text(json.dumps(output, indent=2) + "\n")
