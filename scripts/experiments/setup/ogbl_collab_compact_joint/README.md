@@ -132,3 +132,33 @@ receive no fallback. This limitation is predeclared, not repaired after inspecti
 The primary test remains frozen max fusion. All scalars across components are
 conservatively bounded by496,434. Runtime uses offline W&B and saves protocol,
 selection, replay scores, and results. Reproduce tests with `test_fusion.py`.
+
+## Explicitly authorized official-test tuning
+
+The user's subsequent instruction prioritizes beating the reported71.29% number
+and explicitly authorizes official2019 scoring and test-informed mixing selection.
+This supersedes the no-test restriction ONLY for this new follow-up; previous
+records remain unchanged. It is test-tuned development, not untouched-test evidence.
+
+`official_test.py --runtime <joint_v1> --out <new directory> --device cuda:0`
+scores the same three selected joint checkpoints without retraining or ensembling.
+Use `--dry-run` first for the complete bounded grid. Max fusion tests20 fixed
+weights and two AA baselines (2015-frozen and reproduced2018-calibrated), using
+2019 negative cutoffs for normalization. Report common-weight mean/SD, all seed
+scores, single best seed/weight, standalone joint, and AA controls. All40 grid
+cells ×3 seeds are required. Stop after this grid; no automatic extension.
+
+Test graph contains train+2018 validation events only. GNN adjacency is unique,
+unweighted and undirected. AA weights exactly follow upstream's2018 decay anchor
+and unit validation weights; no2019 event is added. Repeated pairs legitimately
+observed before2019 remain. Structural feature age is evaluated at2019, keeping
+the original2015-calibrated14 inputs and2016 standardization. Reproduce the
+official AA test score68.0243% as an admission check. AA reference calibration
+uses2018, not test positives. Model/state hashes and full split fingerprint are
+checked; all metrics must match OGB. Every learned scalar is counted, including
+the additional reference calibration, normalizers and mixing coefficient:
+at most496,448. No node-ID table, hidden learned model, or multi-seed ensemble.
+
+Runtime: `/dataMeR1/phil/gfm/ogbl_collab_compact_joint/official_test_fusion_v1`.
+Dedicated existing worktree/branch as above, dedicated tmux session; GPUs0–3 only.
+Offline W&B and local protocol/source/panel/score/result records are mandatory.

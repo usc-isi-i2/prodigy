@@ -9,6 +9,22 @@ from run import Model, COUNTS, comparison, gate, numeric_count, sampled_indices,
 
 
 class CompactJointTests(unittest.TestCase):
+    def test_official_test_graph_uses_validation_not_test(self):
+        graph = {'num_nodes': 4, 'edge_index': np.array([[0, 1], [1, 0]]),
+                 'edge_year': np.array([2017, 2017]), 'edge_weight': np.array([2., 2.])}
+        split = {'train': {'edge': np.array([[0, 1]]), 'year': np.array([2017])},
+                 'valid': {'edge': np.array([[1, 2]]), 'year': np.array([2018])},
+                 'test': {'edge': np.array([[2, 3]])}}
+        edges, years, weights, latest = gate.official_test_inputs(graph, split)
+        np.testing.assert_array_equal(edges, [[0, 1], [1, 2]])
+        np.testing.assert_array_equal(years, [2017, 2018])
+        np.testing.assert_allclose(weights, [1.9, 1.])
+        self.assertEqual(latest, 2018)
+        split['test']['edge'] = np.array([[0, 3]])
+        np.testing.assert_array_equal(gate.official_test_inputs(graph, split)[0], edges)
+        with self.assertRaises(ValueError):
+            gate.make_year(None, None, graph, split, 2019, {})
+
     def test_parameter_counts_and_no_node_table(self):
         for arm in COUNTS:
             model = Model(arm)

@@ -101,6 +101,17 @@ def historical_inputs(graph, split, year):
     return train, years, weight, int(gy[gm].max())
 
 
+def official_test_inputs(graph, split):
+    """Explicit test graph: upstream AA weights (reference2018), train+valid only."""
+    assert np.max(graph['edge_year']) <= 2017
+    train, years, weight, _ = historical_inputs(graph, split, 2018)
+    valid = split['valid']['edge']
+    valid_years = np.asarray(split['valid']['year']).flatten()
+    assert np.all(valid_years == 2018)
+    return (np.concatenate([train, valid]), np.concatenate([years, valid_years]),
+            np.concatenate([weight, np.ones(len(valid), dtype=np.float32)]), 2018)
+
+
 def warm_positive_mask(pos, train, n):
     active = np.zeros(n, dtype=bool)
     active[train.flatten()] = True
@@ -127,13 +138,20 @@ def direct_score(model, data):
     return model(features).flatten().masked_fill(selfpair, -1e9)
 
 
-def make_year(aa, shared, graph, split, year, calibration, warm_only=False, symmetric_features=False):
+def make_year(aa, shared, graph, split, year, calibration, warm_only=False, symmetric_features=False,
+              allow_test=False, reference_calibration=None):
     started = time.monotonic()
     n = int(graph['num_nodes'])
     ty = split['train']['year'].flatten()
-    train, years, weight, lookup_max = historical_inputs(graph,split,year)
-    pos = split['valid']['edge'] if year == 2018 else split['train']['edge'][ty == year]
-    neg = split['valid']['edge_neg'] if year == 2018 else negatives(pos, n, year)
+    if year == 2019:
+        if not allow_test or calibration is None or reference_calibration is None:
+            raise ValueError('2019 requires explicit authorization and frozen base/reference calibrations')
+        train, years, weight, lookup_max = official_test_inputs(graph, split)
+        pos, neg = split['test']['edge'], split['test']['edge_neg']
+    else:
+        train, years, weight, lookup_max = historical_inputs(graph,split,year)
+        pos = split['valid']['edge'] if year == 2018 else split['train']['edge'][ty == year]
+        neg = split['valid']['edge_neg'] if year == 2018 else negatives(pos, n, year)
     original_positive_count = len(pos)
     # Generate negatives from ALL target-year positives first, preserving pilot pairs.
     if warm_only and year < 2018:
@@ -188,11 +206,14 @@ def make_year(aa, shared, graph, split, year, calibration, warm_only=False, symm
             output[side+'symmetric'] = .5 * (
                 direct_features(output[side+'features'], output['b'+side]) +
                 direct_features(features(reverse, raw_reverse), base_reverse))
-    if year==2018:
+    if year==2019:
+        own_calibration = reference_calibration
+    if year in (2018, 2019):
         op=calibrated_scores(aa,rp,pos,lcc,own_calibration['gate'],own_calibration['anchor_scale'])
         on=calibrated_scores(aa,rn,neg,lcc,own_calibration['gate'],own_calibration['anchor_scale'])
         output.update(official_bp=op,official_bn=on)
-        assert abs(hits(op,on)-.673557) < 5e-7, ('official AA replay mismatch',hits(op,on))
+        expected = .673557 if year == 2018 else .680243
+        assert abs(hits(op,on)-expected) < 5e-7, ('official AA replay mismatch',hits(op,on))
     meta = {'year':year,'graph_max_year':int(years.max()),'graph_lookup_max_year':lookup_max,
             'graph_events':len(train),'positives':len(pos),'original_positive_count':original_positive_count,
             'warm_only_applied':bool(warm_only and year<2018),
