@@ -1,0 +1,29 @@
+campaign: ogbl_collab_sage_lp
+version: ogb_style_v1
+research_question: Does the official OGB GraphSAGE recipe close the remaining gap to the published OGB baseline?
+arm:
+  name: sage_ogb_style
+  encoder: 3-layer mean GraphSAGE, 256 hidden/output channels
+  decoder: 3-layer MLP over elementwise endpoint product
+  graph: original supplied training adjacency with edge weights and event multiplicity
+  validation_edges_as_input: false
+seeds: [0, 1, 2]
+optimization:
+  optimizer: Adam
+  learning_rate: 0.001
+  weight_decay: 0.0
+  gradient_clip_norm: 1.0 separately for encoder and predictor
+  positive_batch_size: 65536
+  negative_ratio: "1:1"
+  max_epochs: 400
+selection:
+  metric: official validation Hits@50
+  interval_epochs: 1
+  tie_break: earliest epoch
+  test_policy: evaluate once after all 400 epochs and checkpoint selection
+primary_metric: official test Hits@50 mean and sample standard deviation over three seeds
+secondary_metrics: [Hits@10, Hits@100, ROC-AUC, average precision, repeat-versus-novel Hits@K]
+deviations_from_official_example:
+  - three seeds rather than ten
+  - test remains closed until validation checkpoint selection is frozen
+  - deterministic per-epoch permutation and negative stream for auditable reruns
