@@ -198,3 +198,34 @@ official validation panel exposes almost all test-negative identities. The12100
 shared positive pairs are prior2018 events, not added2019 events. Interpret this
 campaign as test-exposed numerical optimization, NOT a clean recency ablation or
 unseen-pair generalization. Preserve this caveat alongside every headline score.
+
+## Validation-selected fresh-negative candidate
+
+The user's revised goal is leaderboard acceptance, not test-tuned number chasing.
+`candidate.py` implements prepare -> select(each seed) -> freeze(all three) ->
+refit(each seed). `launch_candidate.sh <phase> <seed> <gpu>` uses the dedicated
+`candidate_fresh_v1` runtime root. Dry-run prints the contract. No automatic
+supervisor, retry, test-based selection or sweep extension.
+
+Preparation generates100k uniform unique negative pairs for each of2017/2018,
+seed20260000+year, rejecting target-year positives and official validation
+negatives. It does NOT inspect test identities for generation or filtering.
+The loader's existing full-split metadata audit runs then test is discarded.
+Actual accidental test-negative overlap is audited only after final training;
+nonzero overlap aborts scoring without test-driven resampling. Training input
+positive/negative pairs and historical graph features are cached and hashed.
+
+Three fresh2017-trained models select checkpoint and fusion using2018 only:
+2000 updates, every50, same40-cell grid, earliest maximum. All three results freeze
+before2018 refits. Refit from scratch for exactly each seed's selected update count
+using2018 positives and fresh negatives. Final model is saved before opening the
+cached2019 evaluation panel. Alpha, AA base choice, AA scale and neural logit
+offset remain frozen from2018; no test normalization or alpha search. Score each
+final model once, plus descriptive standalone metric; no post-test reselection.
+
+Architecture/loss/optimizer/sampling,2015 feature calibration and2016 scaling
+stay unchanged. All target-year positives are used (no warm-only filter). Scalar
+count remains496,448. This tests a full protocol change, not solely negative reuse.
+Prior extensive test exploration must be disclosed. Alignment with documented OGB
+validation-training allowance does not itself establish maintainer acceptance.
+No submission or maintainer contact is authorized by this experiment launch.

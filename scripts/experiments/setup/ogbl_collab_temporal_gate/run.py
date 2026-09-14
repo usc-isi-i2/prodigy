@@ -139,7 +139,7 @@ def direct_score(model, data):
 
 
 def make_year(aa, shared, graph, split, year, calibration, warm_only=False, symmetric_features=False,
-              allow_test=False, reference_calibration=None):
+              allow_test=False, reference_calibration=None, negative_edges=None):
     started = time.monotonic()
     n = int(graph['num_nodes'])
     ty = split['train']['year'].flatten()
@@ -152,6 +152,10 @@ def make_year(aa, shared, graph, split, year, calibration, warm_only=False, symm
         train, years, weight, lookup_max = historical_inputs(graph,split,year)
         pos = split['valid']['edge'] if year == 2018 else split['train']['edge'][ty == year]
         neg = split['valid']['edge_neg'] if year == 2018 else negatives(pos, n, year)
+    if negative_edges is not None:
+        if year == 2019 or calibration is None:
+            raise ValueError('Custom training negatives require a frozen calibration and year before2019')
+        neg = np.asarray(negative_edges, dtype=np.int64)
     original_positive_count = len(pos)
     # Generate negatives from ALL target-year positives first, preserving pilot pairs.
     if warm_only and year < 2018:
@@ -166,7 +170,7 @@ def make_year(aa, shared, graph, split, year, calibration, warm_only=False, symm
                   use_gate=True,gate_mode='threshold',ext_threshold=.5,ext_penalty=.5,lcc=lcc,
                   use_l3=True,rescue_mode='anchor',anchor_scale=0.,collect_l3=True,show_progress=False)
     rp, rn = aa.score_edges(edges=pos,**common), aa.score_edges(edges=neg,**common)
-    own_calibration = calibrate(aa,rp,rn,pos,neg,lcc) if year in (2015,2018) else None
+    own_calibration = calibrate(aa,rp,rn,pos,neg,lcc) if year in (2015,2018) and negative_edges is None else None
     if calibration is None:
         calibration = own_calibration
     bp = calibrated_scores(aa,rp,pos,lcc,calibration['gate'],calibration['anchor_scale'])
@@ -208,7 +212,7 @@ def make_year(aa, shared, graph, split, year, calibration, warm_only=False, symm
                 direct_features(features(reverse, raw_reverse), base_reverse))
     if year==2019:
         own_calibration = reference_calibration
-    if year in (2018, 2019):
+    if year in (2018, 2019) and negative_edges is None:
         op=calibrated_scores(aa,rp,pos,lcc,own_calibration['gate'],own_calibration['anchor_scale'])
         on=calibrated_scores(aa,rn,neg,lcc,own_calibration['gate'],own_calibration['anchor_scale'])
         output.update(official_bp=op,official_bn=on)
