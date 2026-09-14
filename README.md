@@ -35,6 +35,11 @@ results/       derived tables and figures (not raw checkpoints)
 
 Large graph artifacts, checkpoints, and logs stay on Tucker under `/dataMeR1`.
 
+Start with [FINDINGS_INDEX.md](FINDINGS_INDEX.md) for the consolidated GraphSAGE,
+node-MLP, failure-analysis, intervention, and preservation record. Historical
+worktree narratives are retained for provenance but are not duplicate canonical
+results.
+
 Verified aggregate tables and the current RQ1 interpretation live in
 `results/RESULTS.md`. The later strict 70/15/15 study, including frozen probes,
 supervised and logistic baselines, structural features, and the TwiBot-20 and

@@ -121,20 +121,29 @@ def train_one(row,config,args,device):
             log(0,{'validation/loss':best,'validation/loss_A':initial[0]['bce'],'validation/loss_B':initial[1]['bce']})
         rank_total=0.;rank_count=0
         for step in range(1,args.max_steps+1):
-            index=(step-1)%2;g=graphs[index];positive=g['positive']
-            if g['offset']>=positive.shape[1]:
-                g['order']=torch.randperm(positive.shape[1],generator=g['order_generator'],device=device);g['offset']=0
-            pos=positive[:,g['order'][g['offset']:g['offset']+1024]];g['offset']+=pos.shape[1]
-            pairs,y=lp.pair_batch(pos,g['sampler'],g['generator'])
-            optimizer.zero_grad(set_to_none=True);logits=score(model,g['x'],pairs)
-            task_loss=F.binary_cross_entropy_with_logits(logits,y);loss=task_loss
-            if teacher is not None and index==0:
-                with torch.no_grad():teacher_scores=score(teacher,g['x'],pairs)
-                penalty=ranking_distillation(logits,teacher_scores,pos.shape[1])
-                loss=loss+rank_weight*penalty
-                rank_total+=float(penalty.detach());rank_count+=1
+            optimizer.zero_grad(set_to_none=True)
+            indices=(0,1) if mixed else ((step-1)%2,)
+            losses=[]
+            for index in indices:
+                g=graphs[index];positive=g['positive'];need=512 if mixed else 1024;parts=[]
+                while need:
+                    if g['offset']>=positive.shape[1]:
+                        g['order']=torch.randperm(positive.shape[1],generator=g['order_generator'],device=device);g['offset']=0
+                    part=positive[:,g['order'][g['offset']:g['offset']+need]];g['offset']+=part.shape[1]
+                    parts.append(part);need-=part.shape[1]
+                pos=torch.cat(parts,1)
+                pairs,y=lp.pair_batch(pos,g['sampler'],g['generator'])
+                logits=score(model,g['x'],pairs)
+                task_loss=F.binary_cross_entropy_with_logits(logits,y);source_loss=task_loss
+                if teacher is not None and index==0:
+                    with torch.no_grad():teacher_scores=score(teacher,g['x'],pairs)
+                    penalty=ranking_distillation(logits,teacher_scores,pos.shape[1])
+                    source_loss=source_loss+rank_weight*penalty
+                    rank_total+=float(penalty.detach());rank_count+=1
+                losses.append(source_loss)
+                totals[index]+=task_loss.detach();counts[index]+=1;updates[index]+=1
+            loss=torch.stack(losses).mean()
             loss.backward();torch.nn.utils.clip_grad_norm_(model.parameters(),1.);optimizer.step()
-            totals[index]+=task_loss.detach();counts[index]+=1;updates[index]+=1
             if step%args.log_interval==0 or step==args.max_steps:
                 values=[float(totals[i]/counts[i]) for i in (0,1)]
                 if not all(torch.isfinite(torch.tensor(values))):raise FloatingPointError('nonfinite loss')
