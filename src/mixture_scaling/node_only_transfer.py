@@ -144,12 +144,13 @@ def masked_feature_loss(model, x, mask_rate: float, alpha: float, generator, dev
     return error.clamp_min(0).pow(alpha).mean()
 
 
-def lp_loss(model, batch, device):
+def lp_loss(model, batch, device, return_logits=False):
     batch = batch.to(device)
     embedding = model(batch.x.float())
     src, dst = batch.edge_label_index
     logits = (embedding[src] * embedding[dst]).sum(-1)
-    return F.binary_cross_entropy_with_logits(logits, batch.edge_label.float())
+    loss = F.binary_cross_entropy_with_logits(logits, batch.edge_label.float())
+    return (loss, logits) if return_logits else loss
 
 
 def build_model(objective: str, protocol: dict, device):
@@ -164,8 +165,9 @@ def build_model(objective: str, protocol: dict, device):
 def save_checkpoint(path: Path, model, optimizer, step: int, metadata: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     encoder = model.encoder if isinstance(model, MaskedFeatureMLP) else model
-    torch.save({
-        "model": encoder.state_dict(), "pretrain_model": model.state_dict(),
+    from .checkpointing import atomic_torch_save, runtime_state
+    atomic_torch_save({
+        **runtime_state(), "model": encoder.state_dict(), "pretrain_model": model.state_dict(),
         "optimizer": optimizer.state_dict(), "step": step, "metadata": metadata,
     }, path)
 
@@ -344,3 +346,24 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+@torch.no_grad()
+def validate_lp_metrics(model, loader, device, max_batches=20, return_data=False):
+    """Evaluate fixed loader pairs once; preserve the caller's train/eval mode."""
+    from .binary_metrics import binary_report
+    mode = model.training
+    labels, logits = [], []
+    try:
+        model.eval()
+        for _, batch in zip(range(max_batches), loader):
+            _, scores = lp_loss(model, batch, device, return_logits=True)
+            labels.append(batch.edge_label.cpu().numpy())
+            logits.append(scores.cpu().numpy())
+    finally:
+        model.train(mode)
+    if not labels:
+        raise RuntimeError("validation yielded no batches")
+    y, scores = np.concatenate(labels), np.concatenate(logits)
+    report = binary_report(y, scores)
+    return (report, y, scores) if return_data else report

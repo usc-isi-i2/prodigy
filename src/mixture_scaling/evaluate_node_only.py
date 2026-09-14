@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 from pathlib import Path
 
@@ -8,6 +9,8 @@ import numpy as np
 import torch
 from torch_geometric.data import Data
 
+from .binary_metrics import evaluation_report, SCHEMA_VERSION
+from .evaluation_artifacts import signature, destination, atomic_json, save_scores
 from .config import load_config
 from .evaluate_lattice import LP_TARGETS, cached_lp_views, load_pair_module, unwrap
 from .lattice import SOURCE_ORDER
@@ -90,34 +93,50 @@ def evaluate_lp(target, args, config, rows, device, output_root, pair):
     val_mask = pair.split_val_mask(pairs, rng)
     nodes = pairs.nodes()
     for run_id, _ in rows:
-        output = output_root / "lp" / f"{run_id}__to__{target}.json"
-        if output.is_file():
-            continue
-        checkpoint = torch.load(
-            Path(args.state_root) / "lp" / run_id / "best.pt",
-            map_location="cpu", weights_only=False,
-        )
-        model, _ = load_model(config, checkpoint, "lp", device)
-        table = model(graph.x[nodes].float().to(device)).cpu().numpy()
-        embeddings = pair.NodeEmbeddings(table, nodes, n_nodes)
-        scores = pair.pair_scores(embeddings, pairs, "cosine")
-        report = pair.evaluate_scores("node_mlp_cosine", pairs.label, scores, val_mask).as_dict()
-        payload = {
-            "status": "complete", "task": "static_link_prediction", "target": target,
-            "run_id": run_id, "objective": "lp", "sources": checkpoint["metadata"]["sources"],
-            "checkpoint_step": int(checkpoint["step"]), "seed": args.seed,
-            "input_view": "center_node_features_only", "edge_partition": "canonical_lp_training_cache",
-            "negative_kind": "degree_matched", "n_pairs": len(pairs), "report": report,
-            "gates": {
-                "holdout_leakage_edges": pair.leakage_check(background, pairs),
-                "endpoint_sensitivity": pair.endpoint_sensitivity(embeddings, pairs),
-                "endpoint_permutation_auc": pair.endpoint_permutation_auc(
-                    embeddings, pairs, np.random.default_rng(args.seed + 1)
-                ),
-            },
-        }
-        output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(json.dumps(payload, indent=2) + "\n")
+        primary = output_root / "lp" / f"{run_id}__to__{target}.json"
+        primary.parent.mkdir(parents=True, exist_ok=True)
+        checkpoint_path = Path(args.state_root) / "lp" / run_id / "best.pt"
+        provenance = signature(checkpoint_path, config["graphs"][target]["path"],
+            Path(args.state_root) / "_cache" / f"{target}_edge_split_s{args.seed}.pt",
+            args.seed, int(config["protocol"].get("lp_eval_positives", 2000)))
+        with primary.with_suffix('.lock').open('a') as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            output = destination(primary)
+            if output.is_file():
+                previous = json.loads(output.read_text())
+                if previous.get('provenance') != provenance:
+                    raise ValueError(f"evaluation provenance changed; use a new output root: {output}")
+                if (output.parent / previous['predictions_file']).is_file():
+                    continue
+            checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+            model, _ = load_model(config, checkpoint, "lp", device)
+            table = model(graph.x[nodes].float().to(device)).cpu().numpy()
+            embeddings = pair.NodeEmbeddings(table, nodes, n_nodes)
+            cosine = pair.pair_scores(embeddings, pairs, "cosine")
+            logits = pair.pair_scores(embeddings, pairs, "dot")
+            metrics = evaluation_report(pairs.label, logits, val_mask, cosine)
+            report = pair.evaluate_scores("node_mlp_cosine", pairs.label, cosine, val_mask).as_dict()
+            scores_path = output.with_suffix('.scores.npz')
+            save_scores(scores_path, u=pairs.u, v=pairs.v, labels=pairs.label,
+                        dot_logits=logits, cosine_scores=cosine, validation_mask=val_mask)
+            payload = {
+                "schema_version": SCHEMA_VERSION, "status": "complete", "task": "static_link_prediction", "target": target,
+                "run_id": run_id, "objective": "lp", "sources": checkpoint["metadata"]["sources"],
+                "checkpoint_step": int(checkpoint["step"]), "seed": args.seed,
+                "input_view": "center_node_features_only", "edge_partition": "canonical_lp_training_cache",
+                "negative_kind": "degree_matched", "n_pairs": len(pairs), "report": report,
+                "legacy_report_score_kind": "validation-oriented cosine; hits_at_50 is pooled-pair precision, not per-query retrieval",
+                "metrics": metrics, "provenance": provenance, "predictions_file": scores_path.name,
+                "gates": {
+                    "holdout_leakage_edges": pair.leakage_check(background, pairs),
+                    "endpoint_sensitivity": pair.endpoint_sensitivity(embeddings, pairs),
+                    "endpoint_permutation_auc": pair.endpoint_permutation_auc(
+                        embeddings, pairs, np.random.default_rng(args.seed + 1)),
+                },
+            }
+            if payload['gates']['holdout_leakage_edges'] != 0:
+                raise ValueError('evaluation pair leakage gate failed')
+            atomic_json(output, payload)
 
 
 def main() -> int:

@@ -30,7 +30,7 @@ class LossWindow:
 def tracked_run(run_dir, metadata, args):
     import wandb
     # Explicit mode prevents wandb.init's online default on direct Python launches.
-    with wandb.init(project=args.wandb_project, mode=args.wandb_mode,
+    with wandb.init(project=args.wandb_project, mode=args.wandb_mode, reinit="create_new",
                     group=args.wandb_group or run_dir.parent.parent.name,
                     name=metadata["run_id"], dir=str(run_dir),
                     config={**metadata, "n_sources": len(metadata["sources"]),
@@ -38,10 +38,12 @@ def tracked_run(run_dir, metadata, args):
         run.define_metric("optimizer_step")
         run.define_metric("train/*", step_metric="optimizer_step")
         run.define_metric("validation/*", step_metric="optimizer_step")
+        run.define_metric("check/*", step_metric="optimizer_step")
+        run.define_metric("eval/*", step_metric="optimizer_step")
         receipt = {"id": run.id, "mode": args.wandb_mode, "directory": run.dir,
                    "project": args.wandb_project}
         (run_dir / "wandb_run.json").write_text(json.dumps(receipt, indent=2) + "\n")
-        with (run_dir / "metrics.jsonl").open("w") as handle:
+        with (run_dir / "metrics.jsonl").open("x") as handle:
             def log(step, metrics):
                 row = {"optimizer_step": step, **metrics}
                 handle.write(json.dumps(row) + "\n")

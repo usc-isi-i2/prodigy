@@ -95,6 +95,57 @@ def plot_adaptation_efficiency(data: pd.DataFrame, output_root: Path) -> None:
     save(fig, output_root, "adaptation-efficiency-by-mixture-size")
 
 
+def plot_adaptation_efficiency_by_target(data: pd.DataFrame, output_root: Path) -> None:
+    graph_order = list(TARGET_LABELS)
+    axis_labels = {
+        "covid_political": "COVID\npolitical",
+        "ukr_rus_suspended": "UKR/RUS\nsuspended",
+        "election2020": "Election\n2020",
+        "twibot20": "TwiBot-20",
+        "facebook_page_reference": "Facebook\npages",
+        "cora": "Cora",
+        "pubmed": "PubMed",
+    }
+    fig, axes = plt.subplots(1, 3, figsize=(14.2, 4.45), constrained_layout=True)
+    for ax, metric in zip(axes, METRICS):
+        metric_rows = data[data.metric == metric]
+        for target in TARGET_LABELS:
+            subset = metric_rows[metric_rows.target == target].sort_values("mixture_size")
+            added_sources = subset.sources.str.rsplit(",", n=1).str[-1]
+            x_values = [graph_order.index(source) for source in added_sources]
+            ax.plot(
+                x_values,
+                subset.log_step_aulc,
+                color=GRAPH_COLORS[target],
+                marker="o",
+                linewidth=1.8,
+                markersize=4,
+                label=TARGET_LABELS[target],
+            )
+        ax.set_title(METRIC_LABELS[metric])
+        ax.set_xlabel("Graph added to pretraining mixture")
+        ax.set_ylabel("Adaptation efficiency")
+        ax.set_xticks(
+            range(len(graph_order)),
+            labels=[axis_labels[graph] for graph in graph_order],
+        )
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        title="Held-out downstream target",
+        ncol=4,
+        loc="outside lower center",
+        frameon=False,
+    )
+    fig.suptitle(
+        "GraphSAGE mixture-size effects differ by downstream target",
+        fontsize=12,
+        fontweight="bold",
+    )
+    save(fig, output_root, "adaptation-efficiency-by-mixture-size-and-target")
+
+
 def plot_checkpoint_trajectories(data: pd.DataFrame, output_root: Path) -> None:
     means = data.groupby(["mixture_size", "checkpoint_step"], as_index=False)[METRICS].mean()
     fig, axes = plt.subplots(1, 3, figsize=(10.8, 3.5), constrained_layout=True)
@@ -299,6 +350,7 @@ def main() -> int:
     output = root / "results/figures"
     style()
     plot_adaptation_efficiency(pd.read_csv(analysis / "adaptation_by_size.csv"), output)
+    plot_adaptation_efficiency_by_target(pd.read_csv(analysis / "adaptation_by_target.csv"), output)
     plot_checkpoint_trajectories(pd.read_csv(analysis / "heldout_ladder.csv"), output)
     plot_target_mixture_heatmap(pd.read_csv(analysis / "adaptation_by_target.csv"), output)
     plot_transfer_matrix(pd.read_csv(analysis / "matrix_step2500.csv"), output)
@@ -309,7 +361,7 @@ def main() -> int:
     plot_ladder_losses(loss_history, output)
     plot_three_seed_losses(loss_history, output)
     plot_per_source_losses(per_source_history, output)
-    print(f"wrote 9 figures as PNG and PDF to {output}")
+    print(f"wrote 10 figures as PNG and PDF to {output}")
     return 0
 
 

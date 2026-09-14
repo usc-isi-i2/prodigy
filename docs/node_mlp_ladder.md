@@ -95,3 +95,13 @@ ladder PIDs after that rung's summary and W&B history have finalized, then put
 that GPU on the new queue. It does not rewrite the active checkout. Imported
 models are symlinks to their original completed directories. Pending models
 run in new directories. Evaluation waits for all imported and new models.
+
+## Metrics and checkpoint artifacts (schema 2)
+
+New runs log BCE (including positive/negative components), accuracy at p=0.5, balanced accuracy, precision, recall, specificity, F1, MCC, confusion counts, Brier score, and ECE. Training statistics use bounded logging windows; AUC and average precision are computed at validation/evaluation, not on every training update. Per-source validation JSONs retain the complete reports. W&B remains offline by default; simultaneously trained models get distinct runs.
+
+Final link evaluation saves raw dot-product logits, cosine scores, pair endpoints, labels, and the validation mask in compressed NPZ files. JSON reports distinguish raw-dot metrics from the legacy validation-oriented cosine AUC. Threshold selection and nonnegative affine calibration use validation pairs only; raw and calibrated metrics and constant baselines are stored separately. MRR is explicitly unavailable because this evaluation has no per-query candidate ranking protocol. Training uses 1:5 uniform negatives; final evaluation uses balanced degree-matched pairs, so their BCE and accuracy baselines differ. Validation BCE is weighted by pair count within each source, then macro-averaged across sources.
+
+Best and latest checkpoints, numbered checkpoints every `--checkpoint-interval` updates (default 18000), and a numbered terminal checkpoint are saved atomically. They include model/optimizer state, step, source counts, selection/stopping metadata and Python/NumPy/Torch RNG state. The input study saves best/latest/terminal and numbered validation checkpoints. These support inspection and recovery work, but **exact training resume is not implemented**: sampler iterators and in-flight prefetch batches are not serialized.
+
+Existing results are not silently rewritten. Evaluation writes `.metrics-v2.json` sidecars alongside legacy JSONs; the aggregator reads the new sidecars when present. Checkpoint hashes and graph/split file metadata identify provenance; a mismatched cached evaluation requires a new output directory. Existing completed runs require re-evaluation to acquire these metrics, and missing historical checkpoints cannot be recovered retroactively.
