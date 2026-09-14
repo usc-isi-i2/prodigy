@@ -1,0 +1,20 @@
+{
+  "campaign": "concat_ordered_v1",
+  "classification": "post_hoc_order_sensitive_diagnostic",
+  "research_question": "What happens when concat scoring uses the literal endpoint order stored in the official ogbl-collab split?",
+  "arms": {
+    "concat_linear_ordered": "Linear([x_u,x_v])",
+    "concat_mlp_ordered": "MLP([x_u,x_v]) with 256->256->1 and ReLU"
+  },
+  "endpoint_policy": "Use each official split edge exactly as stored; do not reverse, average, sort, or randomly swap endpoints.",
+  "interpretation_boundary": "ogbl-collab is undirected, so order dependence is not a valid graph symmetry and can exploit serialization artifacts.",
+  "controlled_against_concat_sym_v1": [
+    "official temporal split and supplied 128-dimensional node features",
+    "same architectures and parameter counts",
+    "same deterministic 1:1 random-negative streams",
+    "same optimizer, batch size, update count, validation schedule, patience, and seeds",
+    "same validation-only checkpoint selection and test-once policy"
+  ],
+  "primary_metric": "official test Hits@50 mean and sample standard deviation",
+  "status": "frozen before ordered-concat test outcomes"
+}

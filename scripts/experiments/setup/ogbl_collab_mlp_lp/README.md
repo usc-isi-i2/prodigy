@@ -129,3 +129,17 @@ bash scripts/experiments/setup/ogbl_collab_mlp_lp/run_concat_tucker.sh 0 0
 bash scripts/experiments/setup/ogbl_collab_mlp_lp/run_concat_tucker.sh 1 1
 bash scripts/experiments/setup/ogbl_collab_mlp_lp/run_concat_tucker.sh 2 2
 ```
+
+## Ordered-concatenation diagnostic
+
+The `concat_ordered_v1` diagnostic applies each concat scorer once to the endpoint
+order stored in the official split. It performs no symmetrization and no random swap
+augmentation. Because Collab is undirected, this is intentionally order-sensitive
+and may measure artifacts of dataset serialization rather than a valid undirected
+inductive bias. See [`concat_ordered_protocol.yaml`](concat_ordered_protocol.yaml).
+
+```bash
+bash scripts/experiments/setup/ogbl_collab_mlp_lp/run_concat_ordered_tucker.sh 0 0
+bash scripts/experiments/setup/ogbl_collab_mlp_lp/run_concat_ordered_tucker.sh 1 1
+bash scripts/experiments/setup/ogbl_collab_mlp_lp/run_concat_ordered_tucker.sh 2 2
+```

@@ -13,6 +13,7 @@ EXPECTED_SEEDS = tuple(range(3))
 CAMPAIGN_ARMS = {
     "cosine": ("raw_cosine", "linear_cosine", "nonlinear_mlp_cosine"),
     "concat_sym": ("concat_linear_sym", "concat_mlp_sym"),
+    "concat_ordered": ("concat_linear_ordered", "concat_mlp_ordered"),
 }
 
 
