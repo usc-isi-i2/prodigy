@@ -38,9 +38,27 @@ The combined evidence supports three narrower claims:
 2. A fixed neighbor summary recovers much of that signal without message passing inside the encoder.
 3. Learned message passing is especially useful when endpoint features are absent, but is not uniformly better when endpoint features are present.
 
+## FP is target-dominated; LP has source-target structure
+
+A balanced two-way decomposition sharpens the contrast between the two objectives. For each input view, predict every matrix cell using only its target mean, only its source mean, or the additive source and target means. Report the fraction of total cell variance explained without fitting interaction terms.
+
+| Input view | Objective | Target-only R² | Source-only R² | Additive source + target R² |
+|---|---|---:|---:|---:|
+| Neighborhood only | FP | 0.9935 | 0.0019 | 0.9953 |
+| Node + neighborhood | FP | 0.9965 | 0.0019 | 0.9984 |
+| Neighborhood only | LP | 0.6034 | 0.2253 | 0.8287 |
+| Node + neighborhood | LP | 0.3908 | 0.4189 | 0.8097 |
+
+FP is almost entirely target-dependent in these matrices. Across training sources, the source-mean range is only 0.0110 for neighborhood-only FP and 0.0138 for node + neighborhood FP, compared with target-mean ranges of 0.2433 and 0.2374. The evaluation graph determines nearly all observed variation in reconstruction error.
+
+LP is not target-independent. Rather, it contains substantial variation along both axes. Target identity alone explains 39–60% of LP variance, while source identity alone explains 23–42%. For node + neighborhood LP, the source main effect is slightly larger than the target main effect. This matches the donor, pair, and ladder results: the relation between node features and connectivity changes across graphs, so the training source and its compatibility with the target matter.
+
+The concise conclusion is: **FP transfer is dominated by target difficulty; LP transfer contains strong source-target transfer structure.** The R² values are descriptive decompositions of these balanced seed-0 matrices, not out-of-sample predictive estimates or causal variance components.
+
 ## Limits
 
 - The broad matrix comparison is seed 0 and changes input dimensionality across views.
+- The variance decomposition uses matrix cell variation and does not quantify uncertainty across seeds.
 - Checkpoint selection is view-specific, so it is a system comparison rather than an isolated information intervention.
 - The LP matrix covers six targets, although all nine graphs appear as training sources.
 - These historical runs predate the repaired Suspended artifact audit; results involving that source require the existing provenance caveat.
