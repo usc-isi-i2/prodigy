@@ -1,0 +1,38 @@
+{
+  "steps": 180,
+  "wall_seconds": 0.35163082694634795,
+  "updates_per_second": 511.9005110079968,
+  "host_phase_seconds": {
+    "next_batch": 0.13162301818374544,
+    "zero_grad": 0.006188576458953321,
+    "forward": 0.046285242307931185,
+    "finite_check_sync": 0.018079646746627986,
+    "backward_dispatch": 0.06486193276941776,
+    "gradient_clip_dispatch": 0.04191630380228162,
+    "optimizer_dispatch": 0.029559400747530162,
+    "scalar_log_read": 0.010349273798055947
+  },
+  "host_phase_percent": {
+    "next_batch": 37.43216126037453,
+    "zero_grad": 1.759964139861258,
+    "forward": 13.163021771977181,
+    "finite_check_sync": 5.141655782468296,
+    "backward_dispatch": 18.446031405350713,
+    "gradient_clip_dispatch": 11.920542964419111,
+    "optimizer_dispatch": 8.40637352652825,
+    "scalar_log_read": 2.9432214143258393
+  },
+  "sampling_seconds_in_next_batch": 0.04258938611019403,
+  "parallel_prepare_worker_seconds": {
+    "ukr_rus_twitter": 0.002527048927731812,
+    "midterm": 0.002711560926400125,
+    "covid_political": 0.002785141230560839,
+    "election2020": 0.002404936822131276,
+    "ukr_rus_suspended": 0.002572766738012433,
+    "covid19_twitter": 0.27409681607969105,
+    "twibot20": 0.002417667885310948,
+    "cp_hk_twitter": 0.002393814967945218,
+    "facebook_page_reference": 0.0019454448483884335
+  },
+  "limitations": "Short real-data replay with the production CPU feature representation; host timings include dispatch and waits, not pure GPU kernel durations. Validation/W&B excluded. Other GPUs remain active."
+}

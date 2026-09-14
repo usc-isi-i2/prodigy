@@ -1,0 +1,55 @@
+{
+  "inputs": {
+    "primary_s0": {
+      "path": "results/primary_s0/primary_results.csv",
+      "rows": 56,
+      "sha256": "20d94dc6a6094320a1d29a0b3ec4325b10a2d6862e99a07976a1da090e80e308"
+    },
+    "primary_s1_s2": {
+      "path": "results/primary_s1_s2/primary_results.csv",
+      "rows": 112,
+      "sha256": "9c8644b915adbbb3aa75a0f9dcc4b4d4c39b0953a8ebafdd3f6c59920fd5e239"
+    },
+    "matrix_s0": {
+      "path": "results/matrix_s0/matrix_results.csv",
+      "rows": 392,
+      "sha256": "273dcc614c00e0d179aaecf673adb28f940dc91764f4577bae98010450df9139"
+    },
+    "ladder_s0": {
+      "path": "results/ladder_s0/ladder_results.csv",
+      "rows": 112,
+      "sha256": "ff359190492cff9b035acb728327cc4e5137c03f6b9ef14cd13e9f85ba8c0a88"
+    }
+  },
+  "outputs": {
+    "heldout_ladder.csv": 168,
+    "adaptation_by_target.csv": 126,
+    "adaptation_by_size.csv": 18,
+    "primary_all_seeds.csv": 168,
+    "primary_summary.csv": 168,
+    "primary_contrasts.csv": 84,
+    "matrix_step2500.csv": 98
+  },
+  "invariants": {
+    "graphs": [
+      "covid_political",
+      "ukr_rus_suspended",
+      "election2020",
+      "twibot20",
+      "facebook_page_reference",
+      "cora",
+      "pubmed"
+    ],
+    "steps": [
+      100,
+      300,
+      900,
+      2500
+    ],
+    "labels_per_class": 10,
+    "aggregate_exact_manifest_coverage": true,
+    "aggregate_metrics_finite_and_bounded": true,
+    "heldout_ladder_target_leakage": false,
+    "adaptation_efficiency": "normalized trapezoidal area under score vs log10(checkpoint_step)"
+  }
+}

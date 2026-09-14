@@ -1,0 +1,11 @@
+# Bias-only LP matrix rerun
+
+Run `bash scripts/run_bias_lp_matrix.sh /dataMeR1/phil/gfm/mixture-scaling-bias-lp/state/bias_s0` in its dedicated Tucker worktree, inside tmux. GPUs 0–3 share a lock-protected 18-job training queue. After every training worker succeeds, four workers evaluate targets, then aggregate 162 cells. Offline W&B is explicit.
+
+Encoder: 768→256→256 for node-only, 1536→256→256 for node plus fixed up-to-10 neighbor mean. ReLU after first linear only. Decoder: dot(z_u,z_v)+b. Bias initialized to -log(5), optimized jointly with encoder using AdamW (lr 0.0005, weight decay 1e-5); no learned scale. Source-trained encoder and bias are frozen on all evaluation targets.
+
+Uses the existing validated nonzero-feature graphs and cached disjoint context splits read from `/dataMeR1/phil/gfm/mixture-scaling-disjoint-neighbor/state/disjoint_context_s0`. Node-only trains on the original 70% training edges; neighbor LP trains on half of that pool, with the other half reserved for context. Validation/test positives remain separate. Uniform negative endpoint pairs exclude all known edges and self-loops. One positive to five negatives, batch 1,024 positives; FP32, TF32 off, seed 0. Source validation every 2,000 updates; patience 3 checks, minimum improvement 1e-4, maximum 100,000 updates. Report any cap hit separately from convergence.
+
+Evaluation reads identical pair arrays and masks from the prior uniform evaluation, including its 1,400 positives plus 7,000 negatives per final target test. Calibration uses separate pairs, but headline scores never use target calibration. Historical `dot_logits` score-array key now contains the actual biased prediction logit; `raw_dot_scores` separately preserves pre-bias dot products and `score_kind` identifies semantics.
+
+Original result directories remain intact. Bias result stages are `node_bias` and `node_neighbors_bias`; `bias_curves.json` stores the new histories. `scripts/plot_bias_lp.py` renders new curves, matrices, and the gallery. `gallery_uniform_raw.html` preserves the last gallery before this rerun. The reusable trainer's inherited historical `evaluation_pair_background` metadata describes its old default evaluator; the bias evaluator's pair receipt and this protocol describe the actual uniform evaluation.

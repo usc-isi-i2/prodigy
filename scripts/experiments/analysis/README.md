@@ -19,6 +19,13 @@
 
 **Start here:** [June–September experiment overview](EXPERIMENT_OVERVIEW.md) — hierarchical research questions, current findings, experiment inventory, branch-only results, sibling projects, and the June archive.
 
+The formerly standalone GraphSAGE and node-MLP mixture-scaling repository is now
+preserved, with its Git history, under
+[`external/mixture-scaling`](../../../external/mixture-scaling/). Its
+[consolidated findings index](../../../external/mixture-scaling/FINDINGS_INDEX.md)
+is the entry point for the GTE-graph link-prediction results, failure analyses,
+interventions, and recovery archive.
+
 Analyses are grouped by research question. Each named experiment remains a
 self-contained leaf with its own findings, scripts, `data/`, and `figures/`.
 Setup and launch files remain in `../setup/<name>/`.

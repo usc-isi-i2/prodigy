@@ -1,0 +1,501 @@
+{
+  "status": "complete",
+  "source": "covid19_twitter",
+  "target": "ukr_rus_suspended",
+  "view": "node_neighbors",
+  "checkpoint_step": 56000,
+  "checkpoint_identity": {
+    "path": "/dataMeR1/phil/gfm/mixture-scaling-disjoint-neighbor/state/disjoint_context_s0/node_neighbors/lp/ss_covid19_twitter/best.pt",
+    "bytes": 5540917,
+    "mtime_ns": 1789180769486677174
+  },
+  "graph_split_receipt": {
+    "graph": {
+      "path": "/dataMeR1/phil/data/graph_views/nonzero_features_v1/ukr_rus_suspended/graph.pt",
+      "bytes": 142955770,
+      "mtime_ns": 1789174998639292341
+    },
+    "seed": 0,
+    "split": "undirected unique nonself 70/15/15 v1",
+    "context_policy": "half original train pool context, half supervision; seed+15485863"
+  },
+  "metrics": {
+    "schema_version": 2,
+    "score_kind": "raw_dot_product",
+    "orientation": 1,
+    "validation": {
+      "n_pairs": 1200,
+      "n_positive": 600,
+      "n_negative": 600,
+      "positive_fraction": 0.5,
+      "bce": 0.8370094675556627,
+      "positive_bce": 0.2342656767516866,
+      "negative_bce": 1.4397532583596389,
+      "brier": 0.27519243838400353,
+      "ece_15_equal_width": 0.2429800337105555,
+      "calibration_bins": [
+        {
+          "bin": 1,
+          "n": 2,
+          "mean_probability": 0.1272859264717351,
+          "positive_fraction": 0.5
+        },
+        {
+          "bin": 2,
+          "n": 1,
+          "mean_probability": 0.18038567082991647,
+          "positive_fraction": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 5,
+          "mean_probability": 0.24790879355057846,
+          "positive_fraction": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 5,
+          "mean_probability": 0.31647669450629445,
+          "positive_fraction": 0.2
+        },
+        {
+          "bin": 5,
+          "n": 21,
+          "mean_probability": 0.3679564069058075,
+          "positive_fraction": 0.047619047619047616
+        },
+        {
+          "bin": 6,
+          "n": 64,
+          "mean_probability": 0.4403862182118422,
+          "positive_fraction": 0.171875
+        },
+        {
+          "bin": 7,
+          "n": 117,
+          "mean_probability": 0.5023786966766244,
+          "positive_fraction": 0.26495726495726496
+        },
+        {
+          "bin": 8,
+          "n": 96,
+          "mean_probability": 0.5648751571069096,
+          "positive_fraction": 0.2604166666666667
+        },
+        {
+          "bin": 9,
+          "n": 106,
+          "mean_probability": 0.6349399789710831,
+          "positive_fraction": 0.4339622641509434
+        },
+        {
+          "bin": 10,
+          "n": 127,
+          "mean_probability": 0.6983792838679492,
+          "positive_fraction": 0.5039370078740157
+        },
+        {
+          "bin": 11,
+          "n": 117,
+          "mean_probability": 0.7645933216740354,
+          "positive_fraction": 0.5555555555555556
+        },
+        {
+          "bin": 12,
+          "n": 140,
+          "mean_probability": 0.8316090857364783,
+          "positive_fraction": 0.5571428571428572
+        },
+        {
+          "bin": 13,
+          "n": 162,
+          "mean_probability": 0.9021773106811023,
+          "positive_fraction": 0.6481481481481481
+        },
+        {
+          "bin": 14,
+          "n": 237,
+          "mean_probability": 0.9699449464093481,
+          "positive_fraction": 0.7257383966244726
+        }
+      ],
+      "logit_quantiles": {
+        "min": -1.9572635889053345,
+        "p01": -0.7005860990285874,
+        "median": 1.1947159171104431,
+        "p99": 6.677433090209961,
+        "max": 12.755828857421875
+      },
+      "at_probability_0_5": {
+        "accuracy": 0.5841666666666666,
+        "balanced_accuracy": 0.5841666666666667,
+        "precision": 0.5481410867492851,
+        "recall": 0.9583333333333334,
+        "specificity": 0.21,
+        "f1": 0.6973923590054578,
+        "mcc": 0.2537728494048763,
+        "tp": 575,
+        "tn": 126,
+        "fp": 474,
+        "fn": 25
+      },
+      "roc_auc": 0.7091916666666667,
+      "average_precision": 0.6808079313518203
+    },
+    "test": {
+      "n_pairs": 2800,
+      "n_positive": 1400,
+      "n_negative": 1400,
+      "positive_fraction": 0.5,
+      "bce": 0.8109624702613555,
+      "positive_bce": 0.23329942096300804,
+      "negative_bce": 1.3886255195597028,
+      "brier": 0.27027949587883215,
+      "ece_15_equal_width": 0.2407809005722277,
+      "calibration_bins": [
+        {
+          "bin": 1,
+          "n": 1,
+          "mean_probability": 0.11905200912787497,
+          "positive_fraction": 1.0
+        },
+        {
+          "bin": 2,
+          "n": 2,
+          "mean_probability": 0.18522867316191466,
+          "positive_fraction": 0.5
+        },
+        {
+          "bin": 3,
+          "n": 6,
+          "mean_probability": 0.23258783657695645,
+          "positive_fraction": 0.16666666666666666
+        },
+        {
+          "bin": 4,
+          "n": 12,
+          "mean_probability": 0.29802797591758445,
+          "positive_fraction": 0.16666666666666666
+        },
+        {
+          "bin": 5,
+          "n": 44,
+          "mean_probability": 0.3692576558846785,
+          "positive_fraction": 0.13636363636363635
+        },
+        {
+          "bin": 6,
+          "n": 156,
+          "mean_probability": 0.44096622431545857,
+          "positive_fraction": 0.14743589743589744
+        },
+        {
+          "bin": 7,
+          "n": 269,
+          "mean_probability": 0.5013139193700439,
+          "positive_fraction": 0.26394052044609667
+        },
+        {
+          "bin": 8,
+          "n": 260,
+          "mean_probability": 0.5656960258610214,
+          "positive_fraction": 0.27692307692307694
+        },
+        {
+          "bin": 9,
+          "n": 259,
+          "mean_probability": 0.6338333361727045,
+          "positive_fraction": 0.39768339768339767
+        },
+        {
+          "bin": 10,
+          "n": 325,
+          "mean_probability": 0.7003658887482423,
+          "positive_fraction": 0.47384615384615386
+        },
+        {
+          "bin": 11,
+          "n": 263,
+          "mean_probability": 0.7652067585502077,
+          "positive_fraction": 0.5703422053231939
+        },
+        {
+          "bin": 12,
+          "n": 266,
+          "mean_probability": 0.8321856181390022,
+          "positive_fraction": 0.5451127819548872
+        },
+        {
+          "bin": 13,
+          "n": 363,
+          "mean_probability": 0.9021863362941178,
+          "positive_fraction": 0.6556473829201102
+        },
+        {
+          "bin": 14,
+          "n": 574,
+          "mean_probability": 0.9701141976137954,
+          "positive_fraction": 0.7543554006968641
+        }
+      ],
+      "logit_quantiles": {
+        "min": -2.0014381408691406,
+        "p01": -0.6429482412338257,
+        "median": 1.0905792713165283,
+        "p99": 6.1346731948852185,
+        "max": 16.146045684814453
+      },
+      "at_probability_0_5": {
+        "accuracy": 0.5764285714285714,
+        "balanced_accuracy": 0.5764285714285714,
+        "precision": 0.5436734693877551,
+        "recall": 0.9514285714285714,
+        "specificity": 0.20142857142857143,
+        "f1": 0.691948051948052,
+        "mcc": 0.23109827778278466,
+        "tp": 1332,
+        "tn": 282,
+        "fp": 1118,
+        "fn": 68
+      },
+      "roc_auc": 0.7252066326530613,
+      "average_precision": 0.705632167029927
+    },
+    "decisions": {
+      "threshold": 0.7373927235603333,
+      "predict_all_negative": false,
+      "threshold_policy": "maximize validation balanced accuracy; ties prefer highest threshold",
+      "calibration": {
+        "slope": 0.5149319251303802,
+        "intercept": -0.741593385721214,
+        "kind": "nonnegative affine logit calibration",
+        "fit_split": "validation",
+        "fit_success": true
+      },
+      "validation_prior": 0.5
+    },
+    "test_at_validation_threshold": {
+      "accuracy": 0.6653571428571429,
+      "balanced_accuracy": 0.6653571428571429,
+      "precision": 0.6329695577254452,
+      "recall": 0.7871428571428571,
+      "specificity": 0.5435714285714286,
+      "f1": 0.7016873607131486,
+      "mcc": 0.3409837050564648,
+      "tp": 1102,
+      "tn": 761,
+      "fp": 639,
+      "fn": 298
+    },
+    "calibrated_test": {
+      "n_pairs": 2800,
+      "n_positive": 1400,
+      "n_negative": 1400,
+      "positive_fraction": 0.5,
+      "bce": 0.6221771048397327,
+      "positive_bce": 0.6236720782335625,
+      "negative_bce": 0.6206821314459028,
+      "brier": 0.21538405054506923,
+      "ece_15_equal_width": 0.06148891875772224,
+      "calibration_bins": [
+        {
+          "bin": 2,
+          "n": 4,
+          "mean_probability": 0.17681273178704132,
+          "positive_fraction": 0.5
+        },
+        {
+          "bin": 3,
+          "n": 38,
+          "mean_probability": 0.24361497096615028,
+          "positive_fraction": 0.10526315789473684
+        },
+        {
+          "bin": 4,
+          "n": 403,
+          "mean_probability": 0.30866031142464223,
+          "positive_fraction": 0.22332506203473945
+        },
+        {
+          "bin": 5,
+          "n": 525,
+          "mean_probability": 0.36491179476461905,
+          "positive_fraction": 0.31238095238095237
+        },
+        {
+          "bin": 6,
+          "n": 493,
+          "mean_probability": 0.43096071028476496,
+          "positive_fraction": 0.5091277890466531
+        },
+        {
+          "bin": 7,
+          "n": 333,
+          "mean_probability": 0.49941366589612785,
+          "positive_fraction": 0.5525525525525525
+        },
+        {
+          "bin": 8,
+          "n": 242,
+          "mean_probability": 0.5688537070552763,
+          "positive_fraction": 0.5743801652892562
+        },
+        {
+          "bin": 9,
+          "n": 249,
+          "mean_probability": 0.6315669206142,
+          "positive_fraction": 0.7068273092369478
+        },
+        {
+          "bin": 10,
+          "n": 193,
+          "mean_probability": 0.6988658972308847,
+          "positive_fraction": 0.6528497409326425
+        },
+        {
+          "bin": 11,
+          "n": 147,
+          "mean_probability": 0.7668529880021749,
+          "positive_fraction": 0.8299319727891157
+        },
+        {
+          "bin": 12,
+          "n": 98,
+          "mean_probability": 0.8289212486841692,
+          "positive_fraction": 0.8367346938775511
+        },
+        {
+          "bin": 13,
+          "n": 52,
+          "mean_probability": 0.8923224308443969,
+          "positive_fraction": 0.75
+        },
+        {
+          "bin": 14,
+          "n": 23,
+          "mean_probability": 0.9574341342831374,
+          "positive_fraction": 0.9130434782608695
+        }
+      ],
+      "logit_quantiles": {
+        "min": -1.7721977806283298,
+        "p01": -1.07266796133894,
+        "median": -0.18001930203490685,
+        "p99": 2.4173456925667716,
+        "max": 7.57252100200336
+      },
+      "at_probability_0_5": {
+        "accuracy": 0.6514285714285715,
+        "balanced_accuracy": 0.6514285714285715,
+        "precision": 0.6808873720136519,
+        "recall": 0.57,
+        "specificity": 0.7328571428571429,
+        "f1": 0.6205287713841369,
+        "mcc": 0.30695509786512937,
+        "tp": 798,
+        "tn": 1026,
+        "fp": 374,
+        "fn": 602
+      },
+      "roc_auc": 0.7252066326530613,
+      "average_precision": 0.705632167029927
+    },
+    "baselines": {
+      "constant_0_5": {
+        "n_pairs": 2800,
+        "n_positive": 1400,
+        "n_negative": 1400,
+        "positive_fraction": 0.5,
+        "bce": 0.6931471805599454,
+        "positive_bce": 0.6931471805599454,
+        "negative_bce": 0.6931471805599454,
+        "brier": 0.25,
+        "ece_15_equal_width": 0.0,
+        "calibration_bins": [
+          {
+            "bin": 7,
+            "n": 2800,
+            "mean_probability": 0.5,
+            "positive_fraction": 0.5
+          }
+        ],
+        "logit_quantiles": {
+          "min": 0.0,
+          "p01": 0.0,
+          "median": 0.0,
+          "p99": 0.0,
+          "max": 0.0
+        },
+        "at_probability_0_5": {
+          "accuracy": 0.5,
+          "balanced_accuracy": 0.5,
+          "precision": 0.5,
+          "recall": 1.0,
+          "specificity": 0.0,
+          "f1": 0.6666666666666666,
+          "mcc": 0.0,
+          "tp": 1400,
+          "tn": 0,
+          "fp": 1400,
+          "fn": 0
+        },
+        "roc_auc": 0.5,
+        "average_precision": 0.5
+      },
+      "validation_prior": {
+        "n_pairs": 2800,
+        "n_positive": 1400,
+        "n_negative": 1400,
+        "positive_fraction": 0.5,
+        "bce": 0.6931471805599454,
+        "positive_bce": 0.6931471805599454,
+        "negative_bce": 0.6931471805599454,
+        "brier": 0.25,
+        "ece_15_equal_width": 0.0,
+        "calibration_bins": [
+          {
+            "bin": 7,
+            "n": 2800,
+            "mean_probability": 0.5,
+            "positive_fraction": 0.5
+          }
+        ],
+        "logit_quantiles": {
+          "min": 0.0,
+          "p01": 0.0,
+          "median": 0.0,
+          "p99": 0.0,
+          "max": 0.0
+        },
+        "at_probability_0_5": {
+          "accuracy": 0.5,
+          "balanced_accuracy": 0.5,
+          "precision": 0.5,
+          "recall": 1.0,
+          "specificity": 0.0,
+          "f1": 0.6666666666666666,
+          "mcc": 0.0,
+          "tp": 1400,
+          "tn": 0,
+          "fp": 1400,
+          "fn": 0
+        },
+        "roc_auc": 0.5,
+        "average_precision": 0.5
+      }
+    },
+    "mrr": {
+      "status": "not_applicable",
+      "reason": "ungrouped pair classification; no per-query candidate ranking protocol"
+    },
+    "cosine_test": {
+      "roc_auc": 0.786838775510204,
+      "average_precision": 0.7694668122418997,
+      "score_kind": "cosine"
+    }
+  },
+  "score_kind": "raw dot product",
+  "negative_kind": "degree_matched; all known edges excluded",
+  "split": "final heldout positives distinct from source early-stopping validation; 30% for calibration, 70% final metrics",
+  "holdout_leakage_edges": 0
+}
