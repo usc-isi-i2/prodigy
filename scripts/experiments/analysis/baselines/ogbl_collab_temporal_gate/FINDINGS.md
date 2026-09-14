@@ -1,5 +1,69 @@
 # Temporal residual gate pilot
 
+## Direct-score follow-up: completed, similar mean with lower observed seed spread
+
+The unanchored 14-input, 513-parameter scorer reaches **67.7990%** mean official
+2018 Hits@50 (sample SD 0.0710 percentage points), versus warm_v1's 67.8572%
+(SD 0.6541 points) and official-calibrated AA-DC's 67.3557%. All three direct
+seeds beat that AA-DC reference, but the mean is 0.0583 points below warm_v1.
+The narrower three-seed spread is descriptive, not statistical proof of stability.
+No HyperFusion win is established.
+
+| Seed | Selected step | 2018 Hits@50 | Recovered / lost vs official AA-DC | Hits among 12,185 zero-base positives |
+| --- | ---: | ---: | ---: | ---: |
+| 0 | 400 | 67.8617% | 1794 / 1490 | 12 |
+| 1 | 400 | 67.8134% | 1913 / 1638 | 12 |
+| 2 | 400 | 67.7219% | 1793 / 1573 | 11 |
+
+The original motivation was that these 12,185 positives have a zero frozen-AA-DC
+base; at the warm gate's selected strength and observed negative cutoffs they
+cannot be rescued even by its maximum positive correction. Removing that hard
+anchor allows recovery but rescues only 11--12 under this budget. Thus the anchor
+was not the only practical obstacle. This does not prove the input features lack
+signal: every direct seed selected step 400, the final available checkpoint, and
+the BCE objective, capacity, optimization and input representation remain possible
+limitations. No convergence claim or automatically expanded training followed.
+
+The direct scorer recovers 1,647 official-AA-DC misses consistently across all
+three seeds, while consistently losing 1,346 hits. Unlike warm_v1, repeat pairs
+improve slightly (+106 / +111 / +109 net hits); new pairs gain +198 / +164 / +111.
+There are 22 distinct negatives entering the top 50 across seeds (13 shared by
+all three); overall ranking still reflects a recovery/loss trade-off.
+
+The raw logit is learned directly from the original 13 features plus
+`log1p(frozen_2015_calibrated_AADC)`. It has no base addition, residual tanh bound,
+or eligibility mask. The appended feature is standardized on 2016 with the other
+inputs. Full warm_v1 training, identical BCE/optimizer/mining settings and 400-step
+budget are retained. Input width adds 32 weights. Checkpoint selection uses full
+2017, every 20 steps, earliest ties; no strength search and no baseline fallback.
+Stored strength 1 is only a compatibility sentinel. These changes constitute a
+scoring-family comparison, not a strictly one-parameter ablation.
+
+Eight focused tests passed locally and the Tucker prelaunch test command passed.
+The independent audit verifies all checkpoint/selection hashes, direct-only
+checkpoint argmax and tie rules, all full-panel metrics, zero-base recovery counts,
+and the self-pair rule. The 2015--2018 panels and original features exactly match
+warm_v1; official pairs/features also match recorded fingerprints. All expected
+seeds completed before downstream interpretation. There was no baseline substitution.
+
+Producing revision `110565d0b58f37b5311e2ac4c18f225582d2a743`, branch
+`codex/collab-temporal-gate`; local worktree
+`/Users/philipp/projects/gfm/prodigy-collab-gate`, Tucker worktree
+`/dataMeR1/phil/gfm/prodigy-collab-gate`. Runtime on Tucker:
+`/dataMeR1/phil/gfm/ogbl_collab_temporal_gate/direct_v1`. CPU eight threads,
+76.54 seconds, offline W&B; dedicated tmux `collab-temporal-gate-direct` exited
+normally. Other concurrent Collab jobs ran in a different worktree and were not
+modified. No GPU use or test scores here; the existing dataset identity audit
+continues reading full-split metadata as declared. 2018 remains repeatedly
+inspected development data, not a fresh holdout.
+
+Evidence: [results](data/direct_v1/results.json), [protocol](data/direct_v1/protocol.json),
+[training pool](data/direct_v1/training_pool.json), [selections](data/direct_v1/selection_frozen.json),
+[receipt](data/direct_v1/validation_receipt.json), [audit](data/direct_v1/audit.json),
+[error slices](data/direct_v1/error_overlap.json).
+Reproduce audit with `audit.py --runtime <direct_v1> --evidence <direct_v1>
+--control-runtime <warm_v1> --out <new-audit.json>`.
+
 ## Constrained-rescue follow-up: completed, negative result
 
 Restricting corrections to new pairs with zero AA, and training only within that
