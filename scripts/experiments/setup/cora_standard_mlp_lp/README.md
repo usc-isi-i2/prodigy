@@ -21,6 +21,8 @@ pretraining, node labels, or the repository's earlier LP results.
      node map, L2 normalize, cosine score.
 - Learned arms use a scalar learned logit scale and bias, full-batch Adam,
   learning rate 0.01, weight decay 0.0005, at most 500 epochs, and patience 50.
+- Each learned arm logs every raw epoch value to a separate W&B offline run in
+  the output directory. No smoothing or online synchronization is used.
 - Select each learned arm's checkpoint by validation ROC-AUC (earliest epoch wins
   a tie). Do not compute test metrics until both selections are frozen.
 - Primary metric: test ROC-AUC. Secondary: average precision. Also report the
@@ -43,5 +45,6 @@ python scripts/experiments/setup/cora_standard_mlp_lp/run.py \
 
 The output directory must not already exist. `protocol.json`, `pairs.npz`,
 `selection.json`, `results.json`, and the two selected checkpoints form the run
-record. The analysis copy belongs in
+record. Offline W&B run directories are retained with the Tucker runtime output.
+Render the exact unsmoothed curves with `plot_curves.py`. The analysis copy belongs in
 `scripts/experiments/analysis/baselines/cora_standard_mlp_lp/data/`.

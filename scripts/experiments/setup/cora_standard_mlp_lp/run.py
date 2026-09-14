@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -120,6 +121,10 @@ def evaluate(model: Encoder, x: torch.Tensor, pairs: torch.Tensor, labels: torch
 
 
 def train_arm(arm: str, x: torch.Tensor, campaign: dict[str, np.ndarray], args, out: Path):
+    os.environ["WANDB_MODE"] = "offline"
+    os.environ.setdefault("WANDB_SILENT", "true")
+    import wandb
+
     torch.manual_seed(args.seed)
     model = Encoder(arm, x.shape[1]).to(x.device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
@@ -127,6 +132,23 @@ def train_arm(arm: str, x: torch.Tensor, campaign: dict[str, np.ndarray], args, 
     val_pairs, val_labels = labels_and_pairs(campaign["val_pos"], campaign["val_neg"], x.device)
     best_auc, best_epoch, stale, best_state = -np.inf, -1, 0, None
     history = []
+    run = wandb.init(
+        project=args.wandb_project,
+        name=f"cora_standard_lp_{arm}_s{args.seed}",
+        mode="offline",
+        dir=str(out),
+        reinit=True,
+        config={
+            "arm": arm,
+            "seed": args.seed,
+            "input_dim": int(x.shape[1]),
+            "learning_rate": args.learning_rate,
+            "weight_decay": args.weight_decay,
+            "epochs": args.epochs,
+            "patience": args.patience,
+            "pair_fingerprint": args.pair_fingerprint,
+        },
+    )
     for epoch in range(1, args.epochs + 1):
         model.train()
         logits = model.logits(model(x), train_pairs)
@@ -135,7 +157,16 @@ def train_arm(arm: str, x: torch.Tensor, campaign: dict[str, np.ndarray], args, 
         loss.backward()
         optimizer.step()
         val = evaluate(model, x, val_pairs, val_labels)
-        history.append({"epoch": epoch, "train_loss": float(loss.detach()), **{f"val_{k}": v for k, v in val.items()}})
+        row = {
+            "epoch": epoch,
+            "train_loss": float(loss.detach()),
+            "val_roc_auc": val["roc_auc"],
+            "val_average_precision": val["average_precision"],
+            "logit_scale": float(model.log_scale.detach().exp().clamp(max=100.0)),
+            "logit_bias": float(model.bias.detach()),
+        }
+        history.append(row)
+        run.log(row, step=epoch)
         if val["roc_auc"] > best_auc:
             best_auc, best_epoch, stale = val["roc_auc"], epoch, 0
             best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
@@ -147,6 +178,10 @@ def train_arm(arm: str, x: torch.Tensor, campaign: dict[str, np.ndarray], args, 
     checkpoint = out / f"{arm}.pt"
     torch.save({"arm": arm, "epoch": best_epoch, "state_dict": best_state}, checkpoint)
     model.load_state_dict(best_state)
+    run.summary["best_epoch"] = best_epoch
+    run.summary["best_validation_roc_auc"] = best_auc
+    run.summary["epochs_run"] = len(history)
+    run.finish()
     return model, {"arm": arm, "best_epoch": best_epoch, "best_validation_roc_auc": best_auc,
                    "epochs_run": len(history), "history": history, "checkpoint": str(checkpoint)}
 
@@ -161,6 +196,7 @@ def main() -> None:
     parser.add_argument("--learning-rate", type=float, default=0.01)
     parser.add_argument("--weight-decay", type=float, default=5e-4)
     parser.add_argument("--device", default="cpu")
+    parser.add_argument("--wandb-project", default="cora-standard-mlp-lp")
     args = parser.parse_args()
     if args.out.exists():
         parser.error(f"output directory already exists: {args.out}")
@@ -177,6 +213,7 @@ def main() -> None:
     campaign = make_campaign(edge_index, len(x), args.seed)
     np.savez_compressed(args.out / "pairs.npz", **campaign)
     pair_hash = fingerprint(*(campaign[k] for k in sorted(campaign)))
+    args.pair_fingerprint = pair_hash
     revision = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     protocol = {
         "revision": revision, "graph": str(args.graph), "seed": args.seed, "arms": ARMS,
@@ -187,6 +224,7 @@ def main() -> None:
         "counts": {k: len(v) for k, v in campaign.items()},
         "epochs": args.epochs, "patience": args.patience,
         "learning_rate": args.learning_rate, "weight_decay": args.weight_decay,
+        "wandb": {"mode": "offline", "project": args.wandb_project, "logging": "every epoch, unsmoothed"},
         "selection": "maximum validation ROC-AUC; earliest epoch wins ties; test closed until all selections finish",
     }
     (args.out / "protocol.json").write_text(json.dumps(protocol, indent=2, sort_keys=True) + "\n")
