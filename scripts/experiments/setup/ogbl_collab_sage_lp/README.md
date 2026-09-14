@@ -15,7 +15,8 @@ This is a matched topology ablation, not the official example's stronger and mor
 confounded three-layer GraphSAGE plus three-layer edge MLP. That recipe should be a
 separately named arm if we run it later.
 
-The frozen contract is [`protocol.yaml`](protocol.yaml). Dry-run first:
+The frozen contract is [`protocol.yaml`](protocol.yaml), with operational departures
+recorded append-only in [`DEVIATIONS.md`](DEVIATIONS.md). Dry-run first:
 
 ```bash
 python scripts/experiments/setup/ogbl_collab_sage_lp/run.py \
