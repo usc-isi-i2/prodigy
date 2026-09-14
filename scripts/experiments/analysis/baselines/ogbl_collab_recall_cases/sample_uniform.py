@@ -2,7 +2,7 @@ from pathlib import Path
 import json,hashlib
 import numpy as np
 import argparse
-p=argparse.ArgumentParser();p.add_argument('--runtime',type=Path,required=True);p.add_argument('--panel',type=Path,required=True);p.add_argument('--out',type=Path,required=True);args=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('--runtime',type=Path,required=True);p.add_argument('--panel',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--seed',type=int,default=20260914);p.add_argument('--exclude',type=Path);args=p.parse_args()
 args.out.mkdir(parents=True,exist_ok=False)
 root=args.runtime
 panelpath=args.panel;panel=np.load(panelpath)
@@ -13,9 +13,18 @@ assert sha(root/'bce0/best_scores.npz')==r['files']['best_scores.npz']
 assert sha(panelpath)==next(v for k,v in cfg['files'].items() if k.endswith('assessment/year2018.npz'))
 cutoff=float(np.sort(scores['n'])[-50]);misses=np.flatnonzero(scores['p']<=cutoff)
 assert 1-len(misses)/len(scores['p'])==r['best']['validation_hits']
-seed=20260914
-indices=np.random.Generator(np.random.PCG64(seed)).choice(misses,size=20,replace=False)
+seed=args.seed
+excluded=[]
+if args.exclude:
+ prior=json.loads(args.exclude.read_text())
+ assert prior['panel_sha256']==sha(panelpath) and prior['score_sha256']==sha(root/'bce0/best_scores.npz')
+ excluded=prior['indices']
+ assert len(set(excluded))==len(excluded) and set(excluded)<=set(misses.tolist())
+eligible=np.setdiff1d(misses,excluded)
+indices=np.random.Generator(np.random.PCG64(seed)).choice(eligible,size=20,replace=False)
 manifest=dict(model='fresh-negative joint, seed0, update150',year=2018,definition='All validation positives with score <= 50th largest validation negative score',population=int(len(misses)),total_positives=len(scores['p']),cutoff=cutoff,rng='numpy Generator(PCG64)',seed=seed,sampling='uniform without replacement, first draw, original draw order; no stratification or replacement',indices=indices.tolist(),panel_sha256=sha(panelpath),score_sha256=sha(root/'bce0/best_scores.npz'),test_access=False)
+if args.exclude:
+ manifest.update(excluded_indices=excluded,eligible_population=len(eligible),exclusion_source_sha256=sha(args.exclude),sampling='uniform without replacement from remaining misses, first draw with declared seed, original draw order; no stratification')
 (args.out/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
 other=[np.load(root/f'bce{s}/best_scores.npz') for s in (1,2)]
 warm=np.load(root/'warm0/best_scores.npz')

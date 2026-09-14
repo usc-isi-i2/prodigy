@@ -197,3 +197,11 @@ and 8 scoring below more than 1,000 negatives. These cases temper the earlier
 hand-selected emphasis on structural retention and near-boundary errors.
 See [all 20 cases](UNIFORM_20_MISSES.md) and [sampling evidence](data/uniform_20_misses.json).
 No new model training or test access.
+
+## Second uniform sample
+
+Twenty more misses were drawn uniformly from the remaining 18,777, excluding
+the first sample (PCG64 seed 20260915). Again 16 lack a common collaborator
+and 8 score below more than 1,000 negatives. Frozen AA recovers two; the
+2018-calibrated reference recovers one additional case, disclosed separately.
+See [second set of twenty](UNIFORM_20_MISSES_SECOND.md). No test access.
