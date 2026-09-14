@@ -25,4 +25,3 @@ validation-as-input test setting, not to the stricter no-validation-edge SAGE ar
 - Raw log SHA-256: `30bb1868698fb86009884619c92b23ce7253d59ff74a3154727c188f2c693543`.
 - Runtime artifacts: `/dataMeR1/phil/gfm/ogbl_collab_aadc/official_b499c204/` on Tucker.
 - W&B: <https://wandb.ai/eibl-usc/ogbl-collab-aadc/runs/po2d02y3>.
-
