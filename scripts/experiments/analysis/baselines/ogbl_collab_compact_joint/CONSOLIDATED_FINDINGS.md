@@ -42,6 +42,19 @@ was not run. See ../ogbl_collab_parallel_hypotheses/FINDINGS.md for independent
 audits, full seed results and source qualification. These proposals are no longer
 pending; do not rerun or expand them without a new hypothesis/authorization.
 
+## Recall-focused case discussion
+
+Hits@50 counts positives above the recomputed 50th-negative cutoff; net recovered
+positives, rather than AUC or negative-classification accuracy, is the decision
+metric. Fresh seed 0 nearly saturates repeated-positive recall while missing most
+novel collaborations. Concrete validation cases include true positives that AA-DC
+gets right but the neural scorer loses, and a prior-year collaboration that is the
+highest-scoring target-year negative. These are descriptive examples, not causal
+feature attributions. An AA-anchored residual with hit-retention training remains
+an untested proposal, not a supported fix; renewal and the tested tail loss have
+already failed their selected-performance gates. See
+[recall cases and chat synthesis](../ogbl_collab_recall_cases/FINDINGS.md).
+
 ## Objective and current answer
 
 The explicit objective is to show that a model with fewer than one million learned
