@@ -72,3 +72,27 @@ python scripts/experiments/setup/cora_standard_mlp_lp/run.py \
 ```
 
 This is a revised protocol, not a replacement for the fixed-negative pilot.
+
+## Validation-cadence protocol (v3)
+
+The next iteration keeps the lower learning rate, epoch-wise resampled negatives,
+and fixed seed-0 pair panels from the preceding follow-up. It changes validation
+from every optimizer update to every 5 updates and uses patience 20 validation
+checks (100 updates without improvement). Maximum training remains 1,000 updates.
+
+Validation and test report ROC-AUC, average precision, binary cross-entropy, Brier
+score, accuracy, balanced accuracy, precision, recall, and F1. Thresholded metrics
+use a fixed probability cutoff of 0.5. Because the pair panels are balanced by
+sampling, calibration and thresholded metrics describe that sampled distribution,
+not Cora's natural edge prevalence.
+
+This run uses W&B online because the user explicitly requested immediate monitoring:
+
+```bash
+python scripts/experiments/setup/cora_standard_mlp_lp/run.py \
+  --graph /dataMeR1/phil/data/cora/raw/graph_com_tag/processed_data.pt \
+  --out /dataMeR1/phil/gfm/cora_standard_mlp_lp/seed0_v3_val5 \
+  --learning-rate 0.001 --epochs 1000 --patience 20 --val-interval 5 \
+  --resample-train-negatives --train-negative-seed 1000 \
+  --wandb-mode online --run-tag v3_val5
+```

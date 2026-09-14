@@ -11,7 +11,17 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from sklearn.metrics import average_precision_score, roc_auc_score
+from sklearn.metrics import (
+    accuracy_score,
+    average_precision_score,
+    balanced_accuracy_score,
+    brier_score_loss,
+    f1_score,
+    log_loss,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
 from torch import nn
 from torch.nn import functional as F
 
@@ -105,11 +115,20 @@ def labels_and_pairs(pos: np.ndarray, neg: np.ndarray, device: torch.device):
     return pairs, labels
 
 
-def metrics(labels: np.ndarray, scores: np.ndarray) -> dict[str, float]:
-    assert np.isfinite(scores).all()
+def metrics(labels: np.ndarray, logits: np.ndarray) -> dict[str, float]:
+    assert np.isfinite(logits).all()
+    probability = 1.0 / (1.0 + np.exp(-np.clip(logits, -50.0, 50.0)))
+    prediction = probability >= 0.5
     return {
-        "roc_auc": float(roc_auc_score(labels, scores)),
-        "average_precision": float(average_precision_score(labels, scores)),
+        "roc_auc": float(roc_auc_score(labels, logits)),
+        "average_precision": float(average_precision_score(labels, logits)),
+        "binary_cross_entropy": float(log_loss(labels, probability, labels=[0, 1])),
+        "brier_score": float(brier_score_loss(labels, probability)),
+        "accuracy_at_0_5": float(accuracy_score(labels, prediction)),
+        "balanced_accuracy_at_0_5": float(balanced_accuracy_score(labels, prediction)),
+        "precision_at_0_5": float(precision_score(labels, prediction, zero_division=0)),
+        "recall_at_0_5": float(recall_score(labels, prediction, zero_division=0)),
+        "f1_at_0_5": float(f1_score(labels, prediction, zero_division=0)),
     }
 
 
@@ -121,7 +140,7 @@ def evaluate(model: Encoder, x: torch.Tensor, pairs: torch.Tensor, labels: torch
 
 
 def train_arm(arm: str, x: torch.Tensor, campaign: dict[str, np.ndarray], args, out: Path):
-    os.environ["WANDB_MODE"] = "offline"
+    os.environ["WANDB_MODE"] = args.wandb_mode
     os.environ.setdefault("WANDB_SILENT", "true")
     import wandb
 
@@ -143,7 +162,7 @@ def train_arm(arm: str, x: torch.Tensor, campaign: dict[str, np.ndarray], args, 
     run = wandb.init(
         project=args.wandb_project,
         name=f"cora_standard_lp_{arm}_s{args.seed}_{args.run_tag}",
-        mode="offline",
+        mode=args.wandb_mode,
         dir=str(out),
         reinit=True,
         config={
@@ -158,8 +177,10 @@ def train_arm(arm: str, x: torch.Tensor, campaign: dict[str, np.ndarray], args, 
             "resample_train_negatives": args.resample_train_negatives,
             "train_negative_seed": args.train_negative_seed,
             "run_tag": args.run_tag,
+            "validation_interval": args.val_interval,
         },
     )
+    print(json.dumps({"event": "wandb_initialized", "arm": arm, "url": run.url}), flush=True)
     for epoch in range(1, args.epochs + 1):
         if args.resample_train_negatives:
             train_neg = sample_nonedges(
@@ -175,25 +196,27 @@ def train_arm(arm: str, x: torch.Tensor, campaign: dict[str, np.ndarray], args, 
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
         optimizer.step()
-        val = evaluate(model, x, val_pairs, val_labels)
         row = {
             "epoch": epoch,
             "train_loss": float(loss.detach()),
-            "val_roc_auc": val["roc_auc"],
-            "val_average_precision": val["average_precision"],
             "logit_scale": float(model.log_scale.detach().exp().clamp(max=100.0)),
             "logit_bias": float(model.bias.detach()),
             "train_negative_fingerprint": train_negative_fingerprint,
         }
+        validation_due = epoch % args.val_interval == 0
+        if validation_due:
+            val = evaluate(model, x, val_pairs, val_labels)
+            row.update({f"val_{key}": value for key, value in val.items()})
         history.append(row)
         run.log({k: v for k, v in row.items() if k != "train_negative_fingerprint"}, step=epoch)
-        if val["roc_auc"] > best_auc:
-            best_auc, best_epoch, stale = val["roc_auc"], epoch, 0
-            best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
-        else:
-            stale += 1
-        if stale >= args.patience:
-            break
+        if validation_due:
+            if val["roc_auc"] > best_auc:
+                best_auc, best_epoch, stale = val["roc_auc"], epoch, 0
+                best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+            else:
+                stale += 1
+            if stale >= args.patience:
+                break
     assert best_state is not None
     checkpoint = out / f"{arm}.pt"
     torch.save({"arm": arm, "epoch": best_epoch, "state_dict": best_state}, checkpoint)
@@ -213,10 +236,12 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--epochs", type=int, default=500)
     parser.add_argument("--patience", type=int, default=50)
+    parser.add_argument("--val-interval", type=int, default=1)
     parser.add_argument("--learning-rate", type=float, default=0.01)
     parser.add_argument("--weight-decay", type=float, default=5e-4)
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--wandb-project", default="cora-standard-mlp-lp")
+    parser.add_argument("--wandb-mode", choices=("offline", "online"), default="offline")
     parser.add_argument("--run-tag", default="fixed_negatives")
     parser.add_argument("--resample-train-negatives", action="store_true")
     parser.add_argument("--train-negative-seed", type=int, default=1000)
@@ -246,8 +271,10 @@ def main() -> None:
         "pair_fingerprint": pair_hash,
         "counts": {k: len(v) for k, v in campaign.items()},
         "epochs": args.epochs, "patience": args.patience,
+        "validation_interval": args.val_interval,
+        "patience_unit": "validation checks",
         "learning_rate": args.learning_rate, "weight_decay": args.weight_decay,
-        "wandb": {"mode": "offline", "project": args.wandb_project, "logging": "every epoch, unsmoothed"},
+        "wandb": {"mode": args.wandb_mode, "project": args.wandb_project, "logging": "every epoch, unsmoothed"},
         "run_tag": args.run_tag,
         "training_negatives": (
             f"resampled every epoch from deterministic seed {args.train_negative_seed}; "
@@ -255,7 +282,10 @@ def main() -> None:
             if args.resample_train_negatives
             else "fixed campaign train_neg panel"
         ),
-        "selection": "maximum validation ROC-AUC; earliest epoch wins ties; test closed until all selections finish",
+        "selection": "maximum validation ROC-AUC on scheduled validation checks; earliest epoch wins ties; test closed until all selections finish",
+        "metrics": ["roc_auc", "average_precision", "binary_cross_entropy", "brier_score",
+                    "accuracy_at_0_5", "balanced_accuracy_at_0_5", "precision_at_0_5",
+                    "recall_at_0_5", "f1_at_0_5"],
     }
     (args.out / "protocol.json").write_text(json.dumps(protocol, indent=2, sort_keys=True) + "\n")
 

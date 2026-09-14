@@ -23,7 +23,8 @@ def main():
         arm = record["arm"]
         epochs = [row["epoch"] for row in record["history"]]
         for axis, (field, title, log_scale) in zip(axes, fields):
-            axis.plot(epochs, [row[field] for row in record["history"]], color=colors[arm],
+            points = [(row["epoch"], row[field]) for row in record["history"] if field in row]
+            axis.plot([point[0] for point in points], [point[1] for point in points], color=colors[arm],
                       linewidth=1.5, alpha=0.9, label=labels[arm])
             axis.axvline(record["best_epoch"], color=colors[arm], linestyle="--", linewidth=0.9, alpha=0.7)
             axis.set_title(title)
