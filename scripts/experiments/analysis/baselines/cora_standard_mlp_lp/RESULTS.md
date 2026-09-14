@@ -88,3 +88,28 @@ W&B: [`4pk4b1ja`](https://wandb.ai/eibl-usc/cora-standard-mlp-lp/runs/4pk4b1ja)
 (linear) and [`sbmeg852`](https://wandb.ai/eibl-usc/cora-standard-mlp-lp/runs/sbmeg852)
 (nonlinear). Runtime artifacts are at
 `/dataMeR1/phil/gfm/cora_standard_mlp_lp/seed0_lr1e3_resampled`.
+
+## Validation every five updates (v3)
+
+Protocol v3 retains LR `0.001` and epoch-wise negative resampling, but validates
+only every five optimizer updates and stops after 20 validation checks without
+improvement. It adds BCE, Brier score, accuracy, balanced accuracy, precision,
+recall, and F1 alongside ROC-AUC and AP. Thresholded metrics use 0.5 on the
+balanced sampled test panel.
+
+| Encoder | Selected update | Test AUC | Test AP | BCE | Brier | Accuracy | Precision | Recall | F1 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Raw cosine | — | 0.7984 | 0.8188 | 0.6691 | 0.2381 | 0.5000 | 0.5000 | 1.0000 | 0.6667 |
+| Linear | 245 | **0.9059** | **0.9213** | **0.4633** | **0.1543** | 0.7604 | 0.7007 | **0.9091** | **0.7914** |
+| Nonlinear | 385 | 0.8856 | 0.9009 | 0.4751 | 0.1581 | **0.7623** | **0.7076** | 0.8939 | 0.7900 |
+
+The linear result is identical to the every-update protocol because its selected
+update 245 already lies on the five-update grid. The nonlinear selection moves
+from update 383 to 385 and changes test AUC by -0.03 points, leaving the substantive
+comparison unchanged. Validation computation falls from 345 to 69 checks for the
+linear arm and from 483 to 97 checks for the nonlinear arm.
+
+W&B: [`6nyt7k2f`](https://wandb.ai/eibl-usc/cora-standard-mlp-lp/runs/6nyt7k2f)
+(linear) and [`s0dwcrni`](https://wandb.ai/eibl-usc/cora-standard-mlp-lp/runs/s0dwcrni)
+(nonlinear). Raw curves are in
+[`figures/raw_training_curves_seed0_v3_val5.png`](figures/raw_training_curves_seed0_v3_val5.png).
