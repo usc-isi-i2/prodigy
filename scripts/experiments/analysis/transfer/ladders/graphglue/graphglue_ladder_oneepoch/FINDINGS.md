@@ -1,6 +1,6 @@
 # GraphGlue one-epoch source-addition ladder
 
-Updated September 12, 2026. All seven models and 70 target evaluations completed. **Provisional findings for this one-epoch configuration; not a successful reproduction or refutation of Figure 5.** This report covers the later one-seed/full-epoch experiment, not the earlier three-seed capped pilot in [FINAL_REPORT.md](/Users/philipp/projects/gfm/GraphGlue-results/FINAL_REPORT.md).
+Updated September 12, 2026. All seven models and 70 target evaluations completed. **Provisional findings for this one-epoch configuration; not a successful reproduction or refutation of Figure 5.** This report covers the later one-seed/full-epoch experiment, not the earlier three-seed capped pilot in [FINAL_REPORT.md](https://github.com/philippnoah/graphglue-results/blob/619e1903712f28a4f5deab876567f08a80c36edb/FINAL_REPORT.md).
 
 ## Results
 

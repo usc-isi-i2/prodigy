@@ -1,0 +1,42 @@
+{
+  "campaign": "ogbl_collab_sage_lp",
+  "version": "matched_v1",
+  "research_question": "Does training-graph neighborhood aggregation improve over the matched nonlinear feature-only MLP on official ogbl-collab?",
+  "primary_estimand": "GraphSAGE-cosine minus nonlinear-MLP-cosine official test Hits@50",
+  "arm": {
+    "name": "sage_unique_cosine",
+    "encoder": "SAGEConv(128,256,mean) -> ReLU -> SAGEConv(256,128,mean) -> L2 normalize",
+    "decoder": "positive learned scale * cosine + learned bias",
+    "graph": "unique undirected official training pairs only",
+    "edge_weight": false,
+    "event_multiplicity": false,
+    "validation_edges_as_input": false
+  },
+  "seeds": [0, 1, 2],
+  "optimization": {
+    "optimizer": "Adam",
+    "learning_rate": 0.001,
+    "weight_decay": 0.0005,
+    "gradient_clip_norm": 1.0,
+    "positive_batch_size": 65536,
+    "negative_ratio": "1:1",
+    "negative_sampling": "uniform random node pairs; same deterministic stream definition as MLP campaign",
+    "updates_per_epoch": 18,
+    "max_epochs": 400
+  },
+  "selection": {
+    "metric": "official validation Hits@50",
+    "interval_epochs": 1,
+    "patience_checks": 20,
+    "tie_break": "earliest epoch",
+    "test_policy": "evaluate once after selection is frozen"
+  },
+  "comparison_baseline": {
+    "campaign": "ogbl_collab_mlp_lp/official_v1",
+    "arm": "nonlinear_mlp_cosine",
+    "revision": "6a678c8280b8ea7e898e098ad8439b295bfdd75a"
+  },
+  "primary_metric": "official test Hits@50 mean and sample standard deviation over three seeds",
+  "secondary_metrics": ["Hits@10", "Hits@100", "ROC-AUC", "average precision", "repeat-versus-novel Hits@K"],
+  "scope_note": "This matched topology ablation is not the OGB three-layer GraphSAGE plus edge-MLP recipe."
+}

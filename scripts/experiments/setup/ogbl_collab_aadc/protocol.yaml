@@ -1,0 +1,18 @@
+campaign: ogbl_collab_aadc
+version: official_b499c204
+method: AA-DC
+parameters: 0
+upstream_repository: https://github.com/anmo-fish/aa-dc.git
+upstream_revision: b499c2046cfe76448545dfe08fad9effb58dd076
+dataset: ogbl-collab
+metric: official OGB Hits@50
+graph:
+  validation: time-decayed weighted training graph
+  test: time-decayed weighted train-plus-validation graph
+calibration:
+  gate: progressive, automatically calibrated on validation
+  l3_rescue: anchor, automatically calibrated on validation
+test_policy: evaluated once after validation calibration
+cells: 1
+external_data: false
+

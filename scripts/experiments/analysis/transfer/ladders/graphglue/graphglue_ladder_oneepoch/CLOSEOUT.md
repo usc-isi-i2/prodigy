@@ -5,7 +5,7 @@ Producing ladder code is retained on GraphGlue branch `codex/graphglue-ladder-on
 
 The dedicated local and Tucker `GraphGlue-ladder-oneepoch` worktrees were removed after checking for uncommitted source changes and archiving their contents. Their paths in FINDINGS.md describe provenance and are no longer active checkouts. Archives:
 
-- Local: `/Users/philipp/projects/gfm/GraphGlue-results/worktree_archives/GraphGlue-ladder-oneepoch-20260912.tar.gz`
+- Preserved: [`GraphGlue-ladder-oneepoch-20260912.tar.gz`](https://github.com/philippnoah/graphglue-results/blob/619e1903712f28a4f5deab876567f08a80c36edb/worktree_archives/GraphGlue-ladder-oneepoch-20260912.tar.gz)
 - Tucker: `/dataMeR1/phil/gfm/graphglue-runtime/worktree_archives/GraphGlue-ladder-oneepoch-20260912.tar.gz`
 
 Tucker experiment results/checkpoints remain intact at `/dataMeR1/phil/gfm/graphglue-runtime/ladder-oneepoch/seed_0/`. The reused baseline checkpoint and earlier reports remain at their documented locations. No running tmux jobs were found during closeout.
