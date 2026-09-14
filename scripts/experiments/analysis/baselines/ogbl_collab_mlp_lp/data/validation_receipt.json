@@ -1,0 +1,41 @@
+{
+  "dataset_fingerprint": "07f7af8e654bda27caad60ed74c479f48780343826543dd613d90cb4e979f9f4",
+  "expected_seeds": [0, 1, 2],
+  "runtime_root": "/dataMeR1/phil/gfm/ogbl_collab_mlp_lp",
+  "campaigns": {
+    "official_v1": {
+      "classification": "valid",
+      "complete": true,
+      "revision": "6a678c82",
+      "selection": "official validation Hits@50; test after selection frozen"
+    },
+    "concat_sym_v1": {
+      "classification": "exploratory",
+      "complete": true,
+      "revision": "a1ee4f1f",
+      "selection": "official validation Hits@50; test after selection frozen"
+    },
+    "concat_ordered_v1": {
+      "classification": "diagnostic_only",
+      "complete": true,
+      "revision": "3e8d6f6a",
+      "reason": "order-sensitive scorer on an undirected benchmark",
+      "selection": "official validation Hits@50; test after selection frozen"
+    },
+    "test_oracle_diagnostic_v1": {
+      "classification": "diagnostic_only",
+      "complete": true,
+      "revision": "f49b3c78",
+      "reason": "official test panel scored at every evaluation epoch",
+      "nonlinear_oracle_gain_hits_at_50_by_seed": [0.0, 0.00168361069740336, 0.0]
+    }
+  },
+  "checks": {
+    "all_expected_cells_present": true,
+    "campaign_internal_revision_match": true,
+    "campaign_internal_dataset_fingerprint_match": true,
+    "ordered_campaign_aggregate_complete": true,
+    "runtime_artifacts_retained": true,
+    "wandb_uploaded": true
+  }
+}
