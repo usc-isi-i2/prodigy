@@ -73,3 +73,20 @@ def test_ranking_metrics_include_official_and_secondary_views() -> None:
     assert metrics["hits_at_100"] == 1.0
     assert metrics["roc_auc"] == 1.0
     assert metrics["average_precision"] == 1.0
+
+
+def test_oracle_summary_compares_against_validation_selected_epoch() -> None:
+    history = [
+        {"epoch": 1, "oracle_test_hits_at_50": 0.30},
+        {"epoch": 2, "oracle_test_hits_at_50": 0.36},
+        {"epoch": 3, "oracle_test_hits_at_50": 0.34},
+    ]
+    summary = run.summarize_test_oracle(history, validation_selected_epoch=3)
+    assert summary is not None
+    assert summary["validation_selected_epoch"] == 3
+    assert summary["oracle_best_test_epoch"] == 2
+    assert np.isclose(summary["oracle_inflation_hits_at_50"], 0.02)
+
+
+def test_oracle_summary_is_absent_for_production_history() -> None:
+    assert run.summarize_test_oracle([{"epoch": 1}], validation_selected_epoch=1) is None

@@ -18,3 +18,14 @@ classified as smoke-only and are excluded from aggregation. Production uses
 the same training and evaluation code. Nevertheless, the official test panel
 is no longer literally unseen by the experiment operator, and final findings
 must disclose that qualification.
+
+## 2026-09-13: requested post-hoc test-oracle trajectory
+
+After the frozen `official_v1` campaign completed and its results were reported,
+the experiment operator requested a retrospective diagnostic that evaluates the
+official test panel at every validation epoch. The separately tagged
+`test_oracle_diagnostic_v1` runs preserve validation-only checkpoint selection and
+early stopping, but expose test trajectories during retraining in order to quantify
+the maximum inflation available from test-based epoch selection. All outputs from
+this diagnostic are classified as non-admissible and cannot replace the production
+results.

@@ -287,6 +287,26 @@ def parameter_norm(model: nn.Module) -> float:
     return float(torch.stack(values).sum().sqrt())
 
 
+def summarize_test_oracle(
+    history: list[dict[str, Any]], validation_selected_epoch: int
+) -> dict[str, float | int] | None:
+    rows = [row for row in history if "oracle_test_hits_at_50" in row]
+    if not rows:
+        return None
+    selected = next(row for row in rows if row["epoch"] == validation_selected_epoch)
+    oracle = max(rows, key=lambda row: (row["oracle_test_hits_at_50"], -row["epoch"]))
+    selected_hits = float(selected["oracle_test_hits_at_50"])
+    oracle_hits = float(oracle["oracle_test_hits_at_50"])
+    return {
+        "validation_selected_epoch": validation_selected_epoch,
+        "test_hits_at_50_at_validation_selected_epoch": selected_hits,
+        "oracle_best_test_epoch": int(oracle["epoch"]),
+        "oracle_best_test_hits_at_50": oracle_hits,
+        "oracle_inflation_hits_at_50": oracle_hits - selected_hits,
+        "evaluated_epochs": len(rows),
+    }
+
+
 def train_arm(
     arm: str,
     x: torch.Tensor,
@@ -325,7 +345,12 @@ def train_arm(
             "negative_ratio": "1:1",
             "negative_policy": "uniform random node pairs; deterministic matched stream",
             "validation_interval_epochs": args.val_interval,
-            "test_closed_during_training": True,
+            "test_closed_during_training": not args.diagnostic_test_every_validation,
+            "evidence_classification": (
+                "non_admissible_test_oracle_diagnostic"
+                if args.diagnostic_test_every_validation
+                else "production"
+            ),
             "use_validation_edges": False,
             "revision": args.revision,
             "dataset_fingerprint": args.dataset_fingerprint,
@@ -383,6 +408,13 @@ def train_arm(
                 evaluator, x, split["valid"], model, args.eval_batch_size
             )
             row.update({f"val_{key}": value for key, value in validation.items()})
+            if args.diagnostic_test_every_validation:
+                diagnostic_test = evaluate_split(
+                    evaluator, x, split["test"], model, args.eval_batch_size
+                )
+                row.update(
+                    {f"oracle_test_{key}": value for key, value in diagnostic_test.items()}
+                )
             current = validation["hits_at_50"]
             if current > best_hits:
                 best_hits = current
@@ -406,6 +438,7 @@ def train_arm(
                     "epoch": epoch,
                     "train_loss": row["train_loss"],
                     "val_hits_at_50": row.get("val_hits_at_50"),
+                    "oracle_test_hits_at_50": row.get("oracle_test_hits_at_50"),
                     "best_epoch": best_epoch,
                     "best_validation_hits_at_50": best_hits,
                 }
@@ -435,6 +468,9 @@ def train_arm(
         "wandb_url": run_url,
         "history": history,
     }
+    oracle_summary = summarize_test_oracle(history, best_epoch)
+    if oracle_summary is not None:
+        selection["test_oracle_diagnostic"] = oracle_summary
     run.summary.update(
         {
             "best_epoch": best_epoch,
@@ -443,6 +479,10 @@ def train_arm(
             "optimizer_updates": updates,
         }
     )
+    if oracle_summary is not None:
+        run.summary.update(
+            {f"test_oracle/{key}": value for key, value in oracle_summary.items()}
+        )
     run.finish()
     return model, selection
 
@@ -478,6 +518,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--wandb-project", default="ogbl-collab-mlp-lp")
     parser.add_argument("--wandb-mode", choices=("online", "offline", "disabled"), default="online")
     parser.add_argument("--run-tag", default="official_v1")
+    parser.add_argument(
+        "--diagnostic-test-every-validation",
+        action="store_true",
+        help="non-admissible diagnostic: evaluate the official test panel at every validation",
+    )
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
 
@@ -488,6 +533,8 @@ def main() -> None:
         raise ValueError("seed must be nonnegative")
     if args.epochs < 1 or args.patience < 1 or args.val_interval < 1:
         raise ValueError("epochs, patience, and validation interval must be positive")
+    if args.diagnostic_test_every_validation and "diagnostic" not in args.run_tag:
+        raise ValueError("test-oracle mode requires a run tag containing 'diagnostic'")
 
     graph, split, evaluator, ogb_version = load_official_dataset(args.dataset_root)
     audit = audit_dataset(graph, split, ogb_version)
@@ -527,7 +574,11 @@ def main() -> None:
             key: str(value) if isinstance(value, Path) else value for key, value in vars(args).items()
         },
         "dataset_audit": audit,
-        "test_status": "closed",
+        "test_status": (
+            "open_during_training_non_admissible_diagnostic"
+            if args.diagnostic_test_every_validation
+            else "closed"
+        ),
     }
     (args.out / "protocol.json").write_text(
         json.dumps(resolved_protocol, indent=2, sort_keys=True) + "\n"
@@ -558,7 +609,11 @@ def main() -> None:
         "raw_validation": raw_validation,
         "learned": selections,
         "matched_training_stream_prefix_epochs": common,
-        "test_status": "closed",
+        "test_status": (
+            "open_during_training_non_admissible_diagnostic"
+            if args.diagnostic_test_every_validation
+            else "closed"
+        ),
     }
     (args.out / "selection_frozen.json").write_text(
         json.dumps(frozen, indent=2, sort_keys=True) + "\n"
@@ -590,6 +645,11 @@ def main() -> None:
 
     payload = {
         "complete": True,
+        "evidence_classification": (
+            "non_admissible_test_oracle_diagnostic"
+            if args.diagnostic_test_every_validation
+            else "production"
+        ),
         "completed_at": utc_now(),
         "revision": args.revision,
         "seed": args.seed,
@@ -609,7 +669,9 @@ def main() -> None:
         dir=str(args.out),
         reinit=True,
         config={"dataset": "ogbl-collab", "seed": args.seed, "revision": args.revision,
-                "test_opened_after_selection_freeze": True, "run_tag": args.run_tag},
+                "test_opened_after_selection_freeze": not args.diagnostic_test_every_validation,
+                "evidence_classification": payload["evidence_classification"],
+                "run_tag": args.run_tag},
     )
     for result in results:
         arm = result["arm"]

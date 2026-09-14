@@ -99,3 +99,18 @@ python scripts/experiments/setup/ogbl_collab_mlp_lp/aggregate.py \
 Admitted evidence and findings belong under
 `scripts/experiments/analysis/baselines/ogbl_collab_mlp_lp/` only after the
 completion and provenance checks pass.
+
+## Post-hoc test-oracle diagnostic
+
+The separately tagged `test_oracle_diagnostic_v1` campaign deliberately evaluates
+the official test panel at every validation epoch. It retrains the frozen learned
+arms with unchanged optimization and validation-only early stopping, then measures
+the gap between test Hits@50 at the validation-selected epoch and the maximum test
+Hits@50 that could be chosen retrospectively. These runs are non-admissible as
+benchmark evidence and must never replace `official_v1` results:
+
+```bash
+bash scripts/experiments/setup/ogbl_collab_mlp_lp/run_test_oracle_tucker.sh 0 0
+bash scripts/experiments/setup/ogbl_collab_mlp_lp/run_test_oracle_tucker.sh 1 1
+bash scripts/experiments/setup/ogbl_collab_mlp_lp/run_test_oracle_tucker.sh 2 2
+```
