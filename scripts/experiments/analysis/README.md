@@ -89,6 +89,7 @@ Setup and launch files remain in `../setup/<name>/`.
 
 ## Graphs
 
+- Historical topology-only baseline: [`gin_topology_suspended_20260814`](graphs/structure/gin_topology_suspended_20260814/FINDINGS.md) — admitted as protocol-incomparable evidence on the earlier 72,295-node Ukraine-Suspended artifact; GIN did not beat log-degree and the raw aggregate is unavailable.
 - Nonzero mini sampling: [`nonzero_mini_sampling_pilot`](graphs/structure/nonzero_mini_sampling_pilot/FINDINGS.md) compares uniform nodes, edge endpoints and short walks against parent degree and component structure.
 - Structural statistics and divergence: [`graph_divergence`](graphs/structure/graph_divergence/)
 - Biography-embedding geometry: [`bio_embedding_geometry`](graphs/features/bio_embedding_geometry/)

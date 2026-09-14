@@ -1,0 +1,48 @@
+{
+  "admission_status": "historical_protocol_incomparable",
+  "admitted_at": "2026-09-14",
+  "producing_repository": "https://github.com/philippnoah/gin-topology.git",
+  "producing_branch": "agent/initial-topology-scaffold",
+  "findings_commit": "3f82e42c3357c17283b922757883b48f0375a99a",
+  "recorded_training_revision": "8893072",
+  "task": "node_classification",
+  "dataset_key": "ukr_rus_suspended",
+  "evaluated_graph": {
+    "nodes": 72295,
+    "directed_input_edges": 354209,
+    "symmetric_edges": 676968,
+    "labeled_nodes": 56438
+  },
+  "current_catalog_graph": {
+    "nodes": 56440,
+    "edges": 354209,
+    "catalog_path": "docs/graph_catalog.json"
+  },
+  "split": {
+    "train": 1000,
+    "validation": 500,
+    "test": 1000,
+    "sha256": "7bab95b41c0c456dd3cca3fd37b4c0ae76a1a3173513b672058f3b409ea63082"
+  },
+  "seeds": [0, 1, 2],
+  "metrics_source": "tracked RESULTS.md at findings_commit",
+  "raw_result": {
+    "recorded_path": "/dataMeR1/phil/gfm/gin-topology/runs/ukraine_suspended/results.json",
+    "present_when_checked": false
+  },
+  "validation_checks": {
+    "findings_tracked": true,
+    "findings_revision_resolved": true,
+    "split_fingerprint_recorded": true,
+    "expected_seed_count_reported": 3,
+    "raw_metric_replay_completed": false,
+    "current_graph_identity_match": false
+  },
+  "admitted_claim": "On the historical padded-row graph, topology-only GIN did not outperform log-degree and degree-preserving rewiring left mean AUC nearly unchanged.",
+  "rejected_claims": [
+    "The result evaluates the current repaired Ukraine-Suspended graph.",
+    "GIN exploits structure beyond degree.",
+    "The missing raw aggregate was independently recomputed.",
+    "Uncommitted TwiBot extension code constitutes experimental evidence."
+  ]
+}
