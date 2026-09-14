@@ -1,5 +1,13 @@
+import importlib.util
+from pathlib import Path
+import sys
 import unittest, numpy as np
-from gate import fold_ids, features, FOLDS
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+SPEC = importlib.util.spec_from_file_location("pair_gate", HERE / "gate.py")
+MOD = importlib.util.module_from_spec(SPEC); SPEC.loader.exec_module(MOD)
+fold_ids, features, FOLDS = MOD.fold_ids, MOD.features, MOD.FOLDS
 
 class GateTest(unittest.TestCase):
     def test_fold_is_undirected_and_bounded(self):
