@@ -38,6 +38,13 @@ limitations remain authoritative in the linked files.
    [seed replication](results/async_seed_replication/FINDINGS.md),
    [matched seed-2 control](results/async_seed2_control/FINDINGS.md), and
    [weight merging](results/async_weight_merge/FINDINGS.md).
+8. **Feature-prediction difficulty is mostly target-driven at the example level.**
+   Across the nine repaired Order-C node-only MLP specialists, target-node error
+   rankings are highly concordant (mean Spearman 0.911) and the hardest-quintile
+   sets overlap strongly (mean Jaccard 0.787). This contrasts with the stronger
+   source-target sensitivity observed for link prediction, but does not isolate
+   task from evaluator differences. See the
+   [FP error-overlap analysis](results/mlp_order_c_fp_error_overlap/FINDINGS.md).
 
 ## Current evidence map
 
@@ -48,6 +55,7 @@ limitations remain authoritative in the linked files.
 | Node-only and fixed-context MLP | [nonzero-mini findings](results/nonzero_mini_transfer/FINDINGS.md), [bias update](results/nonzero_mini_transfer/BIAS_LP.md), [uniform evaluation](results/nonzero_mini_transfer/UNIFORM_EVAL.md) | Consult the newest protocol-specific note before quoting a matrix |
 | MLP failure mechanisms | [closeout](scripts/experiments/analysis/transfer/mlp_pair_chat_closeout_20260912/FINDINGS.md) | Consolidated prediction, gradient, and trajectory diagnostics |
 | MLP ladder | [diagnostics](results/mlp_ladder_diagnostics_20260911/FINDINGS.md), [specialist comparison](results/mlp_transfer_explains_ladder/FINDINGS.md) | Historical rungs involving the old Suspended artifact remain qualified |
+| MLP feature-prediction errors | [Order-C overlap](results/mlp_order_c_fp_error_overlap/FINDINGS.md) | Current seed-0, fixed-node diagnostic; not directly commensurate with thresholded LP errors |
 | Preservation audit | [retention index](scripts/experiments/analysis/maintenance/experiment_retention_20260912/FINDINGS.md) | Recovery/archive authority, not a new scientific result |
 
 ## Archive boundary
