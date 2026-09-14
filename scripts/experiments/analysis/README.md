@@ -1,5 +1,6 @@
 # Experiment analysis
 
+- [AA-DC / MLP validation complementarity and negative-tail audit](baselines/ogbl_collab_complementarity/FINDINGS.md)
 - [Standard Cora feature-only LP ladder](baselines/cora_standard_mlp_lp/RESULTS.md)
 - [Matched GraphSAGE-cosine on ogbl-collab](baselines/ogbl_collab_sage_lp/RESULTS.md)
 - [Official AA-DC reproduction on ogbl-collab](baselines/ogbl_collab_aadc/RESULTS.md)
