@@ -1,5 +1,9 @@
 # Compact joint scorer: experiment history and test-exposure findings
 
+For the complete cross-branch research narrative, including AA/MLP diagnostics,
+HyperFusion-protocol experiments, pair gates, evidence classification, and the next
+decision, see [CONSOLIDATED_FINDINGS.md](CONSOLIDATED_FINDINGS.md).
+
 ## Closeout: what is established
 
 This campaign does **not** establish a clean sub-million-parameter win over
