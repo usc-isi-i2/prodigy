@@ -6,6 +6,17 @@ below are historical diagnostics, not authorization for submission or further ru
 Acceptance has not been established. All proposed next experiments are parked;
 see [retirement record](../../../../../cleanup_records/2026-09-14-collab.md).
 
+## Follow-up completed 2026-09-14: equal-logit ensemble rejected
+
+The newly authorized bounded pair experiment is complete. Best pair 0+1 scored
+68.5607% on 2018 versus validation-selected standalone seed 0 at 68.7155%
+(−0.1548 points; 93 fewer hits). All three pairs failed the predeclared validation
+gate, so no new 2019 evaluation occurred. Conservative pair budget: 992,897 scalars.
+The historical proposal below is superseded for this equal-logit experiment;
+do not rerun it or treat it as pending. Other ensemble rules remain untested,
+not automatically authorized. See ../ogbl_collab_fresh_ensemble/FINDINGS.md and
+its data/ receipts. No leaderboard-accepted win has been established.
+
 ## Objective and current answer
 
 The explicit objective is to show that a model with fewer than one million learned

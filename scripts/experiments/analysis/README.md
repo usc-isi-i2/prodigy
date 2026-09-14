@@ -1,4 +1,5 @@
 # Experiment analysis
+- [Fresh-negative two-model ensemble: validation gate failed](baselines/ogbl_collab_fresh_ensemble/FINDINGS.md)
 
 - [Compact joint graph/feature/structure scorer on ogbl-collab](baselines/ogbl_collab_compact_joint/FINDINGS.md)
 - [Validation-frozen compact expert fusion on ogbl-collab](baselines/ogbl_collab_compact_fusion/FINDINGS.md)

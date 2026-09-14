@@ -1,0 +1,29 @@
+{
+  "name": "fresh_ensemble_v1",
+  "revision": "815c126ff7213668e0a2fe29ae49004865282cd6",
+  "pairs": [
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      2
+    ],
+    [
+      1,
+      2
+    ]
+  ],
+  "rule": "equal arithmetic mean of raw joint logits in float64; no normalization or AA fusion",
+  "selection": "maximum validation Hits@50, lexicographically first pair breaks ties; lowest seed breaks standalone ties",
+  "checkpoints": "reuse existing per-seed fusion-selected checkpoints; no new checkpoint search",
+  "gate": "pair validation Hits strictly exceeds best standalone at those checkpoints",
+  "stop": "failed gate: no test access; passed gate: one frozen pair test, no extension",
+  "target": 0.7129,
+  "inference_scalar_bound": 992897,
+  "counting": "2*(496385 neural +63 conservative original auxiliary scalars)+1 fixed averaging coefficient",
+  "qualification": "Post-hoc development; repeated prior test exploration and invalid test-supervised/negative-exposed diagnostics disclosed. Leaderboard acceptance unconfirmed.",
+  "source": "/dataMeR1/phil/gfm/ogbl_collab_compact_joint/candidate_fresh_v1",
+  "validation_panel": "/dataMeR1/phil/gfm/ogbl_collab_compact_joint/joint_v1/assessment/year2018.npz"
+}
