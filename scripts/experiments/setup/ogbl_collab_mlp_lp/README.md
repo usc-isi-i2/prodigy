@@ -114,3 +114,18 @@ bash scripts/experiments/setup/ogbl_collab_mlp_lp/run_test_oracle_tucker.sh 0 0
 bash scripts/experiments/setup/ogbl_collab_mlp_lp/run_test_oracle_tucker.sh 1 1
 bash scripts/experiments/setup/ogbl_collab_mlp_lp/run_test_oracle_tucker.sh 2 2
 ```
+
+## Exploratory symmetric-concatenation comparison
+
+The post-hoc `concat_sym_v1` campaign compares a linear and a one-hidden-layer edge
+scorer over `[x_u, x_v]`. Since Collab is undirected, each score is the average of
+the scorer applied to `[x_u, x_v]` and `[x_v, x_u]`; this prevents arbitrary endpoint
+ordering from becoming a feature. The nonlinear scorer has approximately the same
+parameter count as `nonlinear_mlp_cosine`. Its frozen contract is
+[`concat_protocol.yaml`](concat_protocol.yaml). Launch with:
+
+```bash
+bash scripts/experiments/setup/ogbl_collab_mlp_lp/run_concat_tucker.sh 0 0
+bash scripts/experiments/setup/ogbl_collab_mlp_lp/run_concat_tucker.sh 1 1
+bash scripts/experiments/setup/ogbl_collab_mlp_lp/run_concat_tucker.sh 2 2
+```

@@ -1,0 +1,24 @@
+{
+  "campaign": "concat_sym_v1",
+  "classification": "post_hoc_exploratory_architecture_comparison",
+  "research_question": "Does a learned concatenation edge scorer outperform shared-encoder cosine on feature-only ogbl-collab link prediction?",
+  "arms": {
+    "concat_linear_sym": "mean of Linear([x_u,x_v]) and Linear([x_v,x_u])",
+    "concat_mlp_sym": "mean of MLP([x_u,x_v]) and MLP([x_v,x_u]), with MLP 256->256->1 and ReLU"
+  },
+  "controlled_against_cosine_v1": [
+    "official temporal split",
+    "supplied 128-dimensional node features only",
+    "no graph, node IDs, edge weights, years, or validation-edge reuse",
+    "1:1 deterministic uniform random node-pair negatives",
+    "batch size 65536 and 18 optimizer updates per epoch",
+    "Adam learning rate 0.001 and weight decay 0.0005",
+    "validation every epoch and patience 20",
+    "checkpoint selection by official validation Hits@50 with earliest tie",
+    "test opened only after both arm selections are frozen",
+    "seeds 0, 1, and 2"
+  ],
+  "primary_metric": "official test Hits@50 mean and sample standard deviation",
+  "comparison_note": "The nonlinear concat scorer is capacity-matched within one percent to nonlinear_mlp_cosine.",
+  "status": "frozen before concat test outcomes"
+}

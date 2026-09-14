@@ -10,14 +10,19 @@ import numpy as np
 
 
 EXPECTED_SEEDS = tuple(range(3))
-ARMS = ("raw_cosine", "linear_cosine", "nonlinear_mlp_cosine")
+CAMPAIGN_ARMS = {
+    "cosine": ("raw_cosine", "linear_cosine", "nonlinear_mlp_cosine"),
+    "concat_sym": ("concat_linear_sym", "concat_mlp_sym"),
+}
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--out", type=Path)
+    parser.add_argument("--campaign", choices=tuple(CAMPAIGN_ARMS), default="cosine")
     args = parser.parse_args()
+    arms = CAMPAIGN_ARMS[args.campaign]
 
     missing: list[int] = []
     payloads = []
@@ -29,7 +34,7 @@ def main() -> None:
         payload = json.loads(result_path.read_text())
         if not payload.get("complete") or payload.get("seed") != seed:
             raise ValueError(f"invalid result payload for seed {seed}: {result_path}")
-        if [row["arm"] for row in payload["results"]] != list(ARMS):
+        if [row["arm"] for row in payload["results"]] != list(arms):
             raise ValueError(f"arm mismatch for seed {seed}")
         payloads.append(payload)
     if missing:
@@ -47,9 +52,10 @@ def main() -> None:
         "seeds": list(EXPECTED_SEEDS),
         "revision": next(iter(revisions)),
         "dataset_fingerprint": next(iter(fingerprints)),
+        "campaign": args.campaign,
         "metrics": {},
     }
-    for arm in ARMS:
+    for arm in arms:
         rows = [next(row for row in payload["results"] if row["arm"] == arm) for payload in payloads]
         if arm == "raw_cosine":
             reference = rows[0]
