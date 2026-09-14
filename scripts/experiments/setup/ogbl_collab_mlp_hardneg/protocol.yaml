@@ -1,0 +1,20 @@
+{
+  "campaign": "ogbl_collab_mlp_hardneg_v1",
+  "research_question": "Do pairwise interactions and model-mined hard negatives improve the feature-only MLP on official ogbl-collab Hits@50?",
+  "dataset": "ogbl-collab official temporal split",
+  "baseline": "nonlinear_mlp_cosine_uniform (reuses official_v1)",
+  "grid": {
+    "scorer": ["cosine", "interaction"],
+    "negative_policy": ["uniform", "hard8"],
+    "seeds": [0, 1, 2]
+  },
+  "interaction_scorer": "shared 128-256-128 node MLP; edge MLP on [z_u*z_v, abs(z_u-z_v)]",
+  "hard_negative_policy": "one uniform base negative plus seven additional deterministic uniform candidates per positive; choose the current model's highest-scoring candidate, then recompute it with gradients",
+  "loss": "balanced binary cross entropy on one positive and one selected negative",
+  "selection": "highest official validation Hits@50; earliest epoch breaks ties; test remains closed until selection_frozen.json exists",
+  "primary_estimand": "three-seed mean official test Hits@50 and interaction-by-hard-negative 2x2 contrasts",
+  "secondary_estimands": ["Hits@10", "Hits@100", "ROC-AUC", "average precision", "seen-in-training Hits@50", "novel-vs-training Hits@50"],
+  "controlled": ["split fingerprint", "positive order", "base negative stream", "optimizer", "batch size", "validation cadence", "selection rule"],
+  "stopping": {"max_epochs": 400, "patience": 20},
+  "evidence": "production requires all 12 semantic cells; the baseline cells may be admitted by validated reuse from official_v1"
+}
