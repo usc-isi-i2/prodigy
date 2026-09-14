@@ -24,8 +24,8 @@ from .lattice import SOURCE_ORDER, load_shared_graph, next_batch
 from .node_only_transfer import build_model, lp_loss, make_direct_lp_loader, save_checkpoint, seed_everything, validate
 
 
-def ladder_rows():
-    return [(f"ladder_r{k}", SOURCE_ORDER[:k]) for k in range(1, len(SOURCE_ORDER) + 1)]
+def ladder_rows(source_order=SOURCE_ORDER):
+    return [(f"ladder_r{k}", source_order[:k]) for k in range(1, len(source_order) + 1)]
 
 
 def source_schedule(sources, steps):
@@ -192,7 +192,7 @@ def evaluation_columns(payload):
 
 def aggregate(args):
     rows = []
-    for run_id, sources in ladder_rows():
+    for run_id, sources in ladder_rows(args.source_order):
         summary = json.loads((Path(args.state_root) / "lp" / run_id / "summary.json").read_text())
         for target in args.targets:
             path = Path(args.output_root) / "lp" / f"{run_id}__to__{target}.json"
@@ -235,6 +235,8 @@ def main():
     p.add_argument("--feature-budget-gib", type=float, default=70)
     p.add_argument("--queue", action="store_true")
     p.add_argument("--targets", nargs="+", choices=SOURCE_ORDER, default=list(SOURCE_ORDER))
+    p.add_argument("--source-order", default=",".join(SOURCE_ORDER),
+                   help="Comma-separated permutation of the nine source graph names")
     p.add_argument("--rungs", help="Comma-separated rung numbers; default all")
     p.add_argument("--checkpoint-interval", type=int, default=18000, help="Persist numbered checkpoints every N optimizer updates")
     p.add_argument("--prefetch-depth", type=int, default=8)
@@ -252,6 +254,9 @@ def main():
     p.add_argument("--patience", type=int, default=10)
     p.add_argument("--min-delta", type=float, default=1e-4)
     args = p.parse_args()
+    args.source_order = tuple(value for value in args.source_order.split(",") if value)
+    if len(args.source_order) != len(SOURCE_ORDER) or set(args.source_order) != set(SOURCE_ORDER):
+        p.error("source-order must contain every source graph exactly once")
     if (min(args.max_steps_per_source, args.minimum_steps_per_source,
             args.validation_every_per_source, args.patience) < 1
             or args.min_delta < 0 or args.minimum_steps_per_source > args.max_steps_per_source):
@@ -263,7 +268,7 @@ def main():
     if args.steps < 1 or not 0 <= args.worker_index < args.workers:
         p.error("invalid budget or worker assignment")
     if args.phase == "plan":
-        print(json.dumps({"rows": ladder_rows(), "targets": args.targets, "steps_per_rung": args.steps,
+        print(json.dumps({"rows": ladder_rows(args.source_order), "targets": args.targets, "steps_per_rung": args.steps,
             "total_updates": None if args.convergence else 9 * args.steps, "cells": 9 * len(args.targets),
             "convergence": args.convergence, "max_steps_per_source": args.max_steps_per_source,
             "minimum_steps_per_source": args.minimum_steps_per_source,
@@ -279,7 +284,7 @@ def main():
     device = torch.device(f"cuda:{args.device}")
     if args.phase == "train":
         graphs = {}
-        selected = ladder_rows()
+        selected = ladder_rows(args.source_order)
         if args.rungs:
             wanted = {int(k) for k in args.rungs.split(",")}
             if not wanted or not wanted <= set(range(1, 10)):
@@ -298,7 +303,7 @@ def main():
             train_rung(run_id, sources, graphs, config, args, device)
             torch.cuda.empty_cache()
     else:
-        selected = ladder_rows()
+        selected = ladder_rows(args.source_order)
         if args.rungs:
             wanted = {int(k) for k in args.rungs.split(",")}
             if not wanted or not wanted <= set(range(1, 10)):
