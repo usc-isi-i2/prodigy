@@ -13,6 +13,28 @@ creating a training/evaluation run.
 - Read-only inspection is allowed: list directories, inspect logs and metadata, and
   load graphs without modifying them.
 
+## Capacity and scheduling judgment
+
+Tucker is a high-capacity multi-GPU system, and conservative assumptions imported
+from local development machines can underestimate it by a large margin. Do not turn
+an unmeasured resource guess into campaign design—for example, by serializing work,
+shrinking batches, reducing workers, or cutting a useful sweep before profiling the
+actual workload on Tucker.
+
+- Measure a representative cell first: record startup time, steady-state throughput,
+  GPU memory and utilization, host-memory pressure, data-loader behavior, and any
+  shared-filesystem bottleneck.
+- Use those measurements to choose batch size, worker count, concurrency, and ETA.
+  Distinguish a correctness smoke test from a capacity benchmark.
+- Exploit safe parallelism across the owned GPUs when runs are independent. A single
+  successful job does not establish that one-job-at-a-time scheduling is appropriate;
+  likewise, high nominal capacity does not justify unmeasured oversubscription.
+- Re-check live GPU/process state before launch. Respect the GPU ownership boundary
+  and other active users even when the machine has substantial idle CPU or memory.
+- Report measured utilization and the basis of an ETA. If capacity has not been
+  measured, label the estimate as uncertain rather than silently padding or reducing
+  the experiment.
+
 ## Checkouts and worktrees
 
 The main checkout is `/dataMeR1/phil/gfm/prodigy`. Long experiments use sibling
@@ -72,6 +94,11 @@ device, and the expected canonical findings location.
 
 Use `prodigy` for training and evaluation. Use `bio-embeddings-v001` for graph
 construction and embedding/feature generation.
+
+Substantive runs should initialize W&B in offline mode by default and preserve the
+offline run directory alongside the launcher metadata. Switch to online mode when
+the user requests a live dashboard or shared URL. W&B does not replace the experiment's
+local logs, checkpoints, manifests, or metric artifacts.
 
 Before running a Python experiment script, put conda's binary directory on `PATH`
 before sourcing and activating:

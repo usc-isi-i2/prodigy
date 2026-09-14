@@ -71,6 +71,22 @@ Read the relevant guide before acting. Repository skills are shared under
 - The shared parser skips `--ablate-features` runs. Read their metric JSON files
   directly; do not widen the parser regex without adding the ablation to its dedup key.
 
+### Experiment tracking
+
+- Use Weights & Biases for substantive training and evaluation runs. Default to
+  offline mode so tracking does not depend on network availability or make a run
+  externally visible merely by being launched; use online mode when the user asks
+  for live monitoring or sharing.
+- Log enough to diagnose and compare runs: resolved configuration, revision and run
+  identity, train/validation curves, selection metric and checkpoint, relevant system
+  or throughput measurements, and final metrics. Keep local machine-readable outputs
+  as the authoritative evidence; W&B is a tracking and visualization layer, not the
+  sole copy of results.
+- Give campaigns stable project, group, and run names, and record the offline run
+  directory or online URL in the launcher output. Do not disable W&B for an actual
+  experiment just because a run is small; dry runs, unit tests, and narrowly scoped
+  implementation smoke checks may disable it.
+
 ## Important Paths
 
 - Training engine: `experiments/`
@@ -95,6 +111,8 @@ Read the relevant guide before acting. Repository skills are shared under
 
 - Prefer existing scripts, configs, and harnesses over new one-off command patterns.
 - Use dry runs for large sweeps.
+- Estimate runtime and resource needs from a representative measurement on the target
+  machine rather than intuition carried over from a laptop or a smaller server.
 - Make new evaluation helpers configurable through arguments or environment variables.
 - If a path exists only on Tucker, say so rather than pretending to validate it locally.
 - Keep experiment production and downstream interpretation in their separate setup and
