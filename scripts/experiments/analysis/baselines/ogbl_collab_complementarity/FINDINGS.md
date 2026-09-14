@@ -1,5 +1,62 @@
 # AA-DC and MLP validation complementarity
 
+## Follow-up: zero-self scoring
+
+The user-authorized score intervention confirms the self-pair mechanism. Setting
+the final combined score to zero whenever both endpoints are identical improves
+the best common-weight validation result from **67.6814% to 67.8250%**, versus
+**67.3557%** for AA-DC. The gain over AA-DC is now **0.4693 percentage points**,
+up from 0.3257 points. The best common weight remains alpha = 0.5.
+
+The same 60,084 positive and 100,000 negative pairs remain in evaluation. Only the
+one negative self-pair's final score changes. Every non-self score, original
+normalization constant, checkpoint, and alpha is held fixed. The final combined
+50th-negative threshold is recomputed. The rule is based on endpoint identity,
+not labels, and applies to positive and negative pairs alike; this validation
+panel has no positive self-pairs.
+
+| Alpha | Original mean Hits@50 (%) | Zero-self mean Hits@50 (%) | Zero-self gain over AA-DC (points) |
+| --- | ---: | ---: | ---: |
+| 0 | 67.3557 | 67.3557 | 0.0000 |
+| 0.10 | 66.8104 | 67.4999 | +0.1442 |
+| 0.25 | 66.9829 | 66.9995 | -0.3562 |
+| 0.50 | 67.6814 | 67.8250 | +0.4693 |
+| 0.75 | 67.5094 | 67.7191 | +0.3634 |
+| 1.00 | 67.4306 | 67.6386 | +0.2829 |
+| 1.50 | 66.7088 | 66.7643 | -0.5914 |
+| 2.00 | 66.3205 | 66.3527 | -1.0030 |
+
+At alpha = 0.1, zero-self scoring restores the normalized negative threshold from
+1.1865 to exactly 1 in every seed. No new negative crosses the old threshold.
+The combination recovers 113, 81 and 66 positives for seeds 0, 1 and 2,
+respectively, with **zero lost AA-DC hits**. This isolates the self-pair as the
+cause of the original low-weight penalty.
+
+At alpha = 0.5, the corrected results are:
+
+| Seed | Corrected Hits@50 (%) | Gain over AA-DC (points) | Recovered positives | Lost positives |
+| --- | ---: | ---: | ---: | ---: |
+| 0 | 68.0581 | +0.7024 | 959 | 537 |
+| 1 | 67.6336 | +0.2779 | 731 | 564 |
+| 2 | 67.7834 | +0.4277 | 759 | 502 |
+
+The self-pair is not the whole limitation: at that weight 9--13 additional
+non-self negatives still cross AA-DC's old threshold, and hundreds of positives
+remain lost as a result. Larger rescue weights continue to underperform AA-DC.
+
+For the standalone MLP, applying the rule to its positive exponential score
+changes validation Hits@50 only from 44.8572 to 44.8905 (seed 0), 42.8300 to
+42.8317 (seed 1), and 43.4009 to 43.4042 (seed 2). It does not explain the large
+standalone MLP versus AA-DC performance gap.
+
+This is a local NumPy intervention on the hash-verified archive; no training,
+inference, graph computation, or test scoring was run. All 24 original cells were
+reproduced, all 24 corrected cells completed, and equality of all non-self scores
+was asserted. The executable analysis and source hash are preserved in
+[self_pair_check.py](self_pair_check.py) and [self_pair_check.json](data/self_pair_check.json).
+These results remain post-hoc validation evidence on a panel previously used for
+selection. They do not establish a test-set improvement.
+
 ## Finding
 
 The saved nonlinear feature MLP recovers some validation positives missed by

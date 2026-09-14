@@ -38,3 +38,20 @@ Use `--dry-run` to inspect paths without creating output or scoring. Default W&B
 offline. Score arrays stay under the runtime directory; aggregate JSON, a replay
 receipt and findings belong in analysis/baselines/ogbl_collab_complementarity/.
 Stop after all three seeds and this fixed curve complete; no tuning expansion.
+
+## Authorized follow-up: self-pair scoring rule
+
+After the first diagnostic, the user requested investigation of the self-pair
+effect. Replay the same cached validation scores, three seeds and eight alphas.
+For the corrected variant, set the final nonnegative combined score to zero for
+every pair with identical endpoints, regardless of its label. Keep every pair,
+and hold the original AA-DC and MLP normalization thresholds fixed to isolate the
+scoring change. Recompute the official 50th-negative threshold for each variant.
+Also report the standalone MLP with the same zero-self rule applied to its
+positive exponential score. No checkpoint selection, training or test scoring.
+
+Run `analysis/baselines/ogbl_collab_complementarity/self_pair_check.py` (relative
+to `scripts/experiments`) with `--scores <validation_scores.npz> --out <new.json>`.
+This is local NumPy analysis of existing scores, with no model or graph execution.
+The archive hash and all original curve cells must match the committed evidence;
+all non-self scores must remain identical. Stop after this single scoring rule.
