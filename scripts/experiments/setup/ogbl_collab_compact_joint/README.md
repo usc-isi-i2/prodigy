@@ -162,3 +162,32 @@ at most496,448. No node-ID table, hidden learned model, or multi-seed ensemble.
 Runtime: `/dataMeR1/phil/gfm/ogbl_collab_compact_joint/official_test_fusion_v1`.
 Dedicated existing worktree/branch as above, dedicated tmux session; GPUs0–3 only.
 Offline W&B and local protocol/source/panel/score/result records are mandatory.
+
+##2018 training follow-up
+
+User authorized training the unchanged joint model on2018 instead of2016 and
+selecting checkpoints/fusion on official2019. `train2018.py --runtime <joint_v1>
+--test-runtime <official_test_fusion_v1> --out <train2018_v1> --seed <0|1|2>
+--device cuda:<0|1|2|3>` runs one fresh seed; `--dry-run` prints its contract.
+Three required seeds,2000 updates each, test evaluation every50, no early stopping,
+retry or extension. Reuse saved2018 panel/graph≤2017 and2019 panel/graph≤2018,
+verifying hashes. No test pairs enter gradient updates or graph construction.
+
+Architecture, balanced BCE, Adam, clipping and mined/uniform sampling follow the
+original run. Keep2015 AA feature calibration and2016 standardization unchanged
+to avoid adding a preprocessing intervention. Unlike historical training, the
+official2018 panel is not warm-positive filtered; this is a training-cohort change,
+not identification of calendar recency alone. Test selection itself is also a
+change from the old2017-selected comparator and must be disclosed.
+
+At each checkpoint sweep the same two AA bases ×20 weights. Select per-seed maximum
+test fusion, ties earliest checkpoint then declared base/alpha order. Save all40
+checkpoints, raw test predictions, full grid and training curves for audit. Replay
+selected checkpoint exactly. Report per-seed-selected mean/SD and best individual,
+not an ensemble or a common-hyperparameter mean. Compare with old69.5590% best
+individual/69.4288% common-weight mean, noting the larger test-selection budget.
+Count496,448 total scalars. Offline W&B is mandatory. Fixed root:
+`/dataMeR1/phil/gfm/ogbl_collab_compact_joint/train2018_v1`.
+Same dedicated worktree/branch, one named tmux session per seed. Prior measured
+joint training costs~57–59 seconds/2000 updates and~2.5GB; this run additionally
+saves40 checkpoints and evaluates40 fusion grids. Measure actual elapsed time.
