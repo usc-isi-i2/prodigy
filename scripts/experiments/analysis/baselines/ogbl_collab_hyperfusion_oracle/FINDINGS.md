@@ -60,6 +60,27 @@ per-edge classifier. The supported conclusion is that the pair features make the
 test labels highly learnable and capacity is not the bottleneck. The next scientific
 step is to freeze the identical tree recipe on 2018 labels and apply it once to 2019.
 
+## Forward 2018-to-2019 result
+
+The unchanged shallow-tree recipe was fit on all 2018 positive/negative labels and
+applied once to 2019. Each score's empirical CDF was also fit on 2018 and frozen;
+there was no 2019 label fitting, distribution normalization, arm selection, or
+hyperparameter tuning in this run.
+
+| Seed | Test Hits@50 |
+| --- | ---: |
+| 0 | 0.67459 |
+| 1 | 0.67355 |
+| 2 | 0.68296 |
+| **Mean ± sample SD** | **0.67703 ± 0.00516** |
+
+The predeclared 0.7130 target failed. Performance is effectively at the AA reference
+and dramatically below the 0.84986 cross-fitted test result. Therefore the oracle
+gate learned year-specific test-label structure that does not transfer forward.
+Per the stopping rule, do not tune this gate family further. Beating HyperFusion now
+requires stronger forward-transfer experts or a different temporal training design,
+not another fusion or gate over the current scores.
+
 ## Evidence and provenance
 
 - Producing revision: `482d5346fe6a293e709c482b9e7da03c6f3172e8`.
@@ -74,3 +95,5 @@ step is to freeze the identical tree recipe on 2018 labels and apply it once to 
 - Gate producing revision: `1bb326c39c7848a48122faf9d0d2d2ca8f31b1c5`.
 - Gate runtimes: `/dataMeR1/phil/gfm/ogbl_collab_hyperfusion_oracle/gate_v1` and
   exact replay `gate_v1_repeat`.
+- Forward-gate revision: `27c045c5d2e1f95b1c442b7a03fe3ff7ce6b8fde`.
+- Forward runtime: `/dataMeR1/phil/gfm/ogbl_collab_hyperfusion_oracle/forward_v1`.
