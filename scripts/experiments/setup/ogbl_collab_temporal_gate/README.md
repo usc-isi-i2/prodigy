@@ -1,5 +1,27 @@
 # Temporal residual gate pilot on ogbl-collab
 
+## Warm-endpoint follow-up (warm_v1)
+
+Run with `--warm-only --out /dataMeR1/phil/gfm/ogbl_collab_temporal_gate/warm_v1`.
+The sole intervention is requiring both positive endpoints to have at least one
+strictly earlier graph edge in 2015 calibration, 2016 training, and 2017 selection.
+Graphs remain unchanged. Generate historical negatives BEFORE filtering positives,
+excluding all target-year positives, so the negative arrays exactly match pilot_v1.
+All architecture, optimizer, seed, budget, checkpoint and strength-selection rules
+below remain fixed. Feature standardization is recomputed on the filtered training
+panel as prescribed by the existing algorithm. Calibration is also recomputed.
+Official 2018 assessment remains unchanged; no test scoring. The dataset loader's
+existing full-split identity audit still reads test metadata, not model scores.
+This is post-hoc development, not a pristine validation holdout.
+
+Primary outcome: three-seed mean 2018 Hits@50 versus original pilot and official
+AA-DC, with per-seed recovered/lost positives versus both AA baselines. Require all
+three seeds, matching negative arrays and unchanged assessment pairs/features.
+Stop after this fixed run regardless of outcome. CPU eight threads, offline W&B;
+previous full pilot took 86.52 seconds on Tucker. Use dedicated tmux
+`collab-temporal-gate-warm` in the existing idle gate worktree. Preserve original
+pilot evidence; write new evidence under analysis `data/warm_v1/`.
+
 Objective: test a small, temporally transferable correction to AA-DC as a possible
 route toward HyperFusion's reported 71.29% test Hits@50. This pilot does not open
 test or claim that an improvement on validation beats that test score.

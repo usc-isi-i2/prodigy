@@ -73,14 +73,52 @@ An audit of saved features found a substantial shift:
 
 Historical negatives are deterministic uniform unordered pairs excluding the
 target year's positives; the official validation negatives are used as supplied.
-The positive populations also differ substantially. The cause of the full panel
-shift has not been established. The 2017-to-2018 absolute score jump should not
+The positive populations also differ substantially. The follow-up below explains
+the main positive-population difference. The 2017-to-2018 absolute score jump should not
 be interpreted as training progress or directly comparable difficulty.
 
 Before scaling this approach toward the HyperFusion target, the value of these
 historical panels as a model-selection proxy needs to be established. This pilot
 supports a small transferable correction, not a confident test-score forecast.
 No additional sweep or test evaluation was launched after these outcomes.
+
+### Follow-up: endpoint history explains the structural coverage gap
+
+Read-only inspection of the original Tucker training and validation split files
+confirms that 2017 contains 23,008 positives with neither endpoint previously
+active, 49,068 with only one previously active endpoint, and 47,546 with both.
+All 60,084 official 2018 positives have both endpoints previously active.
+Activity here means at least one training edge strictly before the target year.
+The raw CSV and training split have identical canonical pair-and-year multisets
+(1,179,052 records), ruling out raw/split year misalignment in this check.
+
+| Positive population | Count | Nonzero AA | Previously seen pair |
+| --- | ---: | ---: | ---: |
+| All historical 2017 | 119,622 | 25.92% | 19.28% |
+| Historical 2017, both endpoints previously active | 47,546 | 65.21% | 48.52% |
+| Official 2018 | 60,084 | 64.88% | 46.72% |
+
+Thus 60.25% of historical positives have a cold endpoint, compared with zero
+official validation positives. Conditioning on two previously active endpoints
+reduces the AA-coverage gap from 38.96 points to 0.33 points (opposite direction).
+This is a population mismatch, not evidence that learning improved dramatically
+between years. Other differences, including negative sampling, remain.
+
+[OGB documentation](https://ogb.stanford.edu/docs/linkprop/) specifies year cutoffs
+but does not explain this endpoint-population difference. These observations are
+consistent with warm-endpoint selection, but do not prove the upstream filtering
+algorithm or its intent. No authoritative construction script was established.
+
+The original pilot remains valid for its declared panels, but the unfiltered
+historical panel is a poor population match to official validation. A warm-endpoint
+historical diagnostic is justified; it would be a new, post-hoc protocol, not a
+retroactive replacement of the recorded results. No retraining or test access was
+performed for this audit.
+
+Cached-feature counts and SHA-256 provenance are in [population audit](data/population_audit.json).
+Reproduce with `audit_population.py --cache-root <pilot_v1> --output <output.json>`.
+The raw/split metadata cross-check was a separate read-only Tucker inspection;
+the cache-only helper does not independently repeat that check.
 
 ## Evidence and execution
 

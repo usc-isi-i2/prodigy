@@ -101,13 +101,23 @@ def historical_inputs(graph, split, year):
     return train, years, weight, int(gy[gm].max())
 
 
-def make_year(aa, shared, graph, split, year, calibration):
+def warm_positive_mask(pos, train, n):
+    active = np.zeros(n, dtype=bool)
+    active[train.flatten()] = True
+    return active[pos].all(axis=1)
+
+
+def make_year(aa, shared, graph, split, year, calibration, warm_only=False):
     started = time.monotonic()
     n = int(graph['num_nodes'])
     ty = split['train']['year'].flatten()
     train, years, weight, lookup_max = historical_inputs(graph,split,year)
     pos = split['valid']['edge'] if year == 2018 else split['train']['edge'][ty == year]
     neg = split['valid']['edge_neg'] if year == 2018 else negatives(pos, n, year)
+    original_positive_count = len(pos)
+    # Generate negatives from ALL target-year positives first, preserving pilot pairs.
+    if warm_only and year < 2018:
+        pos = pos[warm_positive_mask(pos, train, n)]
     assert len(pos) and years.max() < year
     assert not np.intersect1d(keys(pos,n),keys(neg,n)).size
     A = aa.build_weighted_adj(n, train, weight)
@@ -154,7 +164,10 @@ def make_year(aa, shared, graph, split, year, calibration):
         output.update(official_bp=op,official_bn=on)
         assert abs(hits(op,on)-.673557) < 5e-7, ('official AA replay mismatch',hits(op,on))
     meta = {'year':year,'graph_max_year':int(years.max()),'graph_lookup_max_year':lookup_max,
-            'graph_events':len(train),'positives':len(pos),'negatives':len(neg),'negative_same_year_collision_count':0,
+            'graph_events':len(train),'positives':len(pos),'original_positive_count':original_positive_count,
+            'warm_only_applied':bool(warm_only and year<2018),
+            'negative_fingerprint':shared.fingerprint(neg),
+            'negatives':len(neg),'negative_same_year_collision_count':0,
             'negative_self_pairs':int((neg[:,0]==neg[:,1]).sum()),
             'pairs_fingerprint':shared.fingerprint(pos,neg),'features_fingerprint':shared.fingerprint(output['pfeatures'],output['nfeatures']),
             'graph_fingerprint':shared.fingerprint(train,years,weight),'elapsed_seconds':time.monotonic()-started,
@@ -170,11 +183,14 @@ def main():
     parser.add_argument('--upstream',type=Path,default=Path('/dataMeR1/phil/gfm/ogbl_collab_aadc/official_b499c204/upstream'))
     parser.add_argument('--threads',type=int,default=8)
     parser.add_argument('--dry-run',action='store_true')
+    parser.add_argument('--warm-only',action='store_true')
     args=parser.parse_args()
     shared=load_module(Path(__file__).parents[1]/'ogbl_collab_mlp_lp/run.py','shared')
     config={'years':{'calibration':2015,'train':2016,'selection':2017,'assessment':2018},'seeds':SEEDS,
             'strengths':STRENGTHS,'steps':400,'hidden':32,'residual_bound':12.,'features':FEATURES,
-            'negative_count':100000,'test_scored':False,'revision':shared.git_revision(),'threads':args.threads}
+            'negative_count':100000,'warm_only':args.warm_only,
+            'negative_policy':'unchanged full-year-positive exclusion before positive filtering',
+            'test_scored':False,'revision':shared.git_revision(),'threads':args.threads}
     print(json.dumps(config),flush=True)
     if args.dry_run:
         return
@@ -189,7 +205,7 @@ def main():
     aa=load_module(source,'aa')
     args.out.mkdir(parents=True,exist_ok=False)
     save(args.out/'protocol.json',config)
-    run=wandb.init(project='ogbl-collab-temporal-gate',group='pilot_v1',name='temporal_gate_seeds012',
+    run=wandb.init(project='ogbl-collab-temporal-gate',group='warm_v1' if args.warm_only else 'pilot_v1',name='temporal_gate_seeds012',
                    mode='offline',dir=str(args.out),config=config)
     begin=time.monotonic()
     graph,split,evaluator,version=shared.load_official_dataset(args.dataset_root)
@@ -199,7 +215,7 @@ def main():
     years,metadata={},[]
     cal=None
     for year in (2015,2016,2017):
-        years[year],meta,cal=make_year(aa,shared,graph,split,year,cal)
+        years[year],meta,cal=make_year(aa,shared,graph,split,year,cal,args.warm_only)
         metadata.append(meta)
         np.savez_compressed(args.out/f'year{year}.npz',**years[year])
         run.log({'year':year,'feature_seconds':meta['elapsed_seconds'],'aadc_hits_at_50':meta['frozen_aadc_hits_at_50']})

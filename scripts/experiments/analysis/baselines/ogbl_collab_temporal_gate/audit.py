@@ -16,10 +16,11 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--runtime',type=Path,required=True)
     p.add_argument('--out',type=Path,required=True)
+    p.add_argument('--evidence',type=Path,default=Path(__file__).parent/'data')
     args=p.parse_args()
     if args.out.exists():
         raise FileExistsError(args.out)
-    data=Path(__file__).parent/'data'
+    data=args.evidence
     receipt=json.loads((data/'validation_receipt.json').read_text())
     result=json.loads((data/'results.json').read_text())
     r=args.runtime
