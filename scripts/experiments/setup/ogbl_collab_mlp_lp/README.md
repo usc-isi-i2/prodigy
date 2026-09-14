@@ -100,6 +100,22 @@ Admitted evidence and findings belong under
 `scripts/experiments/analysis/baselines/ogbl_collab_mlp_lp/` only after the
 completion and provenance checks pass.
 
+## Inspecting frozen-checkpoint mistakes
+
+`inspect_errors.py` re-scores the official test positives and fixed official
+negatives with all three validation-selected nonlinear MLP checkpoints. It exports
+the deepest consensus false negatives separately for recurring and novel test
+pairs, plus the highest-scoring official negatives. The export includes MAG author
+IDs, pair recurrence, endpoint event counts, raw-feature cosine, per-seed scores,
+and the exact per-seed Hits@50 thresholds. It does not retrain or select a model.
+
+```bash
+python scripts/experiments/setup/ogbl_collab_mlp_lp/inspect_errors.py \
+  --campaign-root /dataMeR1/phil/gfm/ogbl_collab_mlp_lp/official_v1 \
+  --out /dataMeR1/phil/gfm/ogbl_collab_mlp_lp/error_examples_v1 \
+  --device cpu --dry-run
+```
+
 ## Post-hoc test-oracle diagnostic
 
 The separately tagged `test_oracle_diagnostic_v1` campaign deliberately evaluates
