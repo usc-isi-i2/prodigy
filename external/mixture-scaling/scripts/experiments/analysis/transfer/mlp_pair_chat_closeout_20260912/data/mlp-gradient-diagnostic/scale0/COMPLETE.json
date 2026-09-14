@@ -1,0 +1,50 @@
+{
+  "status": "complete",
+  "case": 0,
+  "source_A": "ukr_rus_twitter",
+  "source_B": "facebook_page_reference",
+  "trials": 8,
+  "checkpoints": [
+    {
+      "state": "initial",
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling-bias-lp/state/bias_s0/node_neighbors/lp/ss_ukr_rus_twitter/best.pt",
+        "bytes": 5542253,
+        "mtime_ns": 1789183523960079408
+      },
+      "continuation_step": 0,
+      "checkpoint_step": 44000,
+      "validation": [
+        {
+          "bce": 0.07761823572218417,
+          "auc": 0.9897437653541565
+        },
+        {
+          "bce": 0.37319627404212946,
+          "auc": 0.8960884220600128
+        }
+      ]
+    },
+    {
+      "state": "rank0_best",
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling/state/ranking_preservation_s0/node_neighbors/lp/warm_ukr_rus_twitter__and__facebook_page_reference__rank0/best.pt",
+        "bytes": 5542573,
+        "mtime_ns": 1789193879988569814
+      },
+      "continuation_step": 4000,
+      "checkpoint_step": 4000,
+      "validation": [
+        {
+          "bce": 0.0863202128559351,
+          "auc": 0.9874890720844269
+        },
+        {
+          "bce": 0.16715295016765594,
+          "auc": 0.9632002804279327
+        }
+      ]
+    }
+  ],
+  "protocol": "fixed source validation seed0; 8 fresh training-batch probes per state; every AdamW action starts from identical saved weights and optimizer; no checkpoint writes"
+}

@@ -1,0 +1,106 @@
+{
+  "case": 1,
+  "sources": [
+    "covid19_twitter",
+    "midterm"
+  ],
+  "rows": [
+    {
+      "model": "single_covid19_twitter",
+      "source": "covid19_twitter",
+      "step": 42000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling-bias-lp/state/bias_s0/node_neighbors/lp/ss_covid19_twitter/best.pt",
+        "bytes": 5542253,
+        "mtime_ns": 1789183526100093053
+      },
+      "bce": 0.10549267865717411,
+      "auc": 0.9822105708122254
+    },
+    {
+      "model": "single_covid19_twitter",
+      "source": "midterm",
+      "step": 42000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling-bias-lp/state/bias_s0/node_neighbors/lp/ss_covid19_twitter/best.pt",
+        "bytes": 5542253,
+        "mtime_ns": 1789183526100093053
+      },
+      "bce": 0.22349748909473416,
+      "auc": 0.9483046391010284
+    },
+    {
+      "model": "single_midterm",
+      "source": "covid19_twitter",
+      "step": 18000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling-bias-lp/state/bias_s0/node_neighbors/lp/ss_midterm/best.pt",
+        "bytes": 5542189,
+        "mtime_ns": 1789183549968245690
+      },
+      "bce": 0.25994340777397157,
+      "auc": 0.9286032857894897
+    },
+    {
+      "model": "single_midterm",
+      "source": "midterm",
+      "step": 18000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling-bias-lp/state/bias_s0/node_neighbors/lp/ss_midterm/best.pt",
+        "bytes": 5542189,
+        "mtime_ns": 1789183549968245690
+      },
+      "bce": 0.09921725466847417,
+      "auc": 0.984038737297058
+    },
+    {
+      "model": "joint_best",
+      "source": "covid19_twitter",
+      "step": 34000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling/state/interleaved_mlp_pairs_noelec_s0/node_neighbors/lp/interleave_covid19_twitter__and__midterm/best.pt",
+        "bytes": 5542253,
+        "mtime_ns": 1789190618153749527
+      },
+      "bce": 0.11590158864855767,
+      "auc": 0.9789261956214905
+    },
+    {
+      "model": "joint_best",
+      "source": "midterm",
+      "step": 34000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling/state/interleaved_mlp_pairs_noelec_s0/node_neighbors/lp/interleave_covid19_twitter__and__midterm/best.pt",
+        "bytes": 5542253,
+        "mtime_ns": 1789190618153749527
+      },
+      "bce": 0.09506770297884942,
+      "auc": 0.9862176361083984
+    },
+    {
+      "model": "joint_final",
+      "source": "covid19_twitter",
+      "step": 40000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling/state/interleaved_mlp_pairs_noelec_s0/node_neighbors/lp/interleave_covid19_twitter__and__midterm/latest.pt",
+        "bytes": 5542315,
+        "mtime_ns": 1789190627853848638
+      },
+      "bce": 0.11517245545983312,
+      "auc": 0.9790388417243958
+    },
+    {
+      "model": "joint_final",
+      "source": "midterm",
+      "step": 40000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling/state/interleaved_mlp_pairs_noelec_s0/node_neighbors/lp/interleave_covid19_twitter__and__midterm/latest.pt",
+        "bytes": 5542315,
+        "mtime_ns": 1789190627853848638
+      },
+      "bce": 0.09631624519824981,
+      "auc": 0.9858118853569029
+    }
+  ],
+  "protocol": "unchanged singleton and fresh joint checkpoints; original fixed seed-0 source-validation pairs; no test evaluation"
+}

@@ -1,0 +1,600 @@
+{
+  "metadata": {
+    "training_seed": 2,
+    "data_seed": 0,
+    "new_optimizer_updates": 0,
+    "inference_only": true,
+    "formula": "theta=(1-alpha)*KD0.1+alpha*Ukraine_only",
+    "alphas": [
+      0.0,
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9,
+      1.0
+    ],
+    "endpoint_added_optimizer_updates": [
+      60000,
+      60000
+    ],
+    "endpoints": [
+      {
+        "alias": "kd_w010_fixed",
+        "row": {
+          "additional_step": 60000,
+          "logical_step": 92000,
+          "counts": [
+            {
+              "supervised_updates": 46000,
+              "kd_updates": 0,
+              "positive_examples": 47083047,
+              "negative_examples": 235415235,
+              "supervised_positive_examples": 47083047,
+              "supervised_negative_examples": 235415235,
+              "kd_positive_examples": 0,
+              "kd_negative_examples": 0
+            },
+            {
+              "supervised_updates": 5000,
+              "kd_updates": 41000,
+              "positive_examples": 46633519,
+              "negative_examples": 233167595,
+              "supervised_positive_examples": 5069279,
+              "supervised_negative_examples": 25346395,
+              "kd_positive_examples": 41564240,
+              "kd_negative_examples": 207821200
+            }
+          ],
+          "checkpoint": "/dataMeR1/phil/gfm/mixture-scaling/state/async_seed_replication_s12/seed2/continuations/node_neighbors/lp/kd_w010/checkpoints/additional_060000.pt",
+          "validation": [
+            {
+              "bce": 0.079652563855052,
+              "auc": 0.9893345510959625
+            },
+            {
+              "bce": 0.18241953402757644,
+              "auc": 0.9553139212131501
+            }
+          ],
+          "training_probe": [
+            {
+              "bce": 0.07489149607717992,
+              "auc": 0.9913289692401885
+            },
+            {
+              "bce": 0.15150457099080086,
+              "auc": 0.9708042879104615
+            }
+          ]
+        },
+        "sha256": "ca8cc3082adf4b5709756fc487ef0eba23f5e3ca68c2e5160538526752072ce4"
+      },
+      {
+        "alias": "ukraine_updates_fixed",
+        "row": {
+          "additional_step": 60000,
+          "logical_step": 92000,
+          "counts": [
+            {
+              "supervised_updates": 76000,
+              "kd_updates": 0,
+              "positive_examples": 77788471,
+              "negative_examples": 388942355,
+              "supervised_positive_examples": 77788471,
+              "supervised_negative_examples": 388942355,
+              "kd_positive_examples": 0,
+              "kd_negative_examples": 0
+            },
+            {
+              "supervised_updates": 5000,
+              "kd_updates": 11000,
+              "positive_examples": 16220760,
+              "negative_examples": 81103800,
+              "supervised_positive_examples": 5069279,
+              "supervised_negative_examples": 25346395,
+              "kd_positive_examples": 11151481,
+              "kd_negative_examples": 55757405
+            }
+          ],
+          "checkpoint": "/dataMeR1/phil/gfm/mixture-scaling/state/async_seed2_control_s2/node_neighbors/lp/ukraine_only/checkpoints/additional_060000.pt",
+          "validation": [
+            {
+              "bce": 0.07471727728843688,
+              "auc": 0.9901255335807799
+            },
+            {
+              "bce": 0.29060226678848267,
+              "auc": 0.9205999681949615
+            }
+          ],
+          "training_probe": [
+            {
+              "bce": 0.06793565545231105,
+              "auc": 0.9929424335956575
+            },
+            {
+              "bce": 0.2818721026182175,
+              "auc": 0.9247763972282409
+            }
+          ]
+        },
+        "sha256": "b71a312fa9bf18358f0ba18bd329fe35c233463c6961046a3f5ba271fd73f961"
+      }
+    ],
+    "singleton_source_auc": {
+      "ukr_rus_twitter": 0.9896764585971831,
+      "facebook_page_reference": 0.9531494824886322
+    },
+    "code_revision": "e55094548e83b2bc4dfaa5659203b6fccc37791a",
+    "input_provenance": {
+      "ukr_rus_twitter": {
+        "graph": {
+          "path": "/dataMeR1/phil/data/graph_views/nonzero_features_v1/ukr_rus_twitter_mini_500k_walk1_s0/graph.pt",
+          "bytes": 1899951604,
+          "mtime_ns": 1789178911711800397
+        },
+        "split": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-disjoint-neighbor/state/disjoint_context_s0/_cache/ukr_rus_twitter.pt",
+          "bytes": 1733951323,
+          "mtime_ns": 1789180681757042198
+        },
+        "context": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-disjoint-neighbor/state/disjoint_context_s0/_cache/ukr_rus_twitter_neighbors10_disjoint50.pt",
+          "bytes": 1576001635,
+          "mtime_ns": 1789180685437113713
+        },
+        "evaluation_pairs": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-uniform-eval/state/uniform_eval_s0_v2/node_neighbors_disjoint_uniform/ss_ukr_rus_twitter__to__ukr_rus_twitter.scores.npz",
+          "bytes": 175442,
+          "mtime_ns": 1789181738631343228
+        }
+      },
+      "covid19_twitter": {
+        "graph": {
+          "path": "/dataMeR1/phil/data/graph_views/nonzero_features_v1/covid19_twitter_mini_500k_walk1_s0/graph.pt",
+          "bytes": 1728486964,
+          "mtime_ns": 1789178923811850866
+        },
+        "split": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-disjoint-neighbor/state/disjoint_context_s0/_cache/covid19_twitter.pt",
+          "bytes": 1628315227,
+          "mtime_ns": 1789180681105029500
+        },
+        "context": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-disjoint-neighbor/state/disjoint_context_s0/_cache/covid19_twitter_neighbors10_disjoint50.pt",
+          "bytes": 1576001635,
+          "mtime_ns": 1789180684629098035
+        },
+        "evaluation_pairs": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-uniform-eval/state/uniform_eval_s0_v2/node_neighbors_disjoint_uniform/ss_ukr_rus_twitter__to__covid19_twitter.scores.npz",
+          "bytes": 175562,
+          "mtime_ns": 1789181738203338740
+        }
+      },
+      "midterm": {
+        "graph": {
+          "path": "/dataMeR1/phil/data/graph_views/nonzero_features_v1/midterm/graph.pt",
+          "bytes": 903766777,
+          "mtime_ns": 1789174994911265699
+        },
+        "split": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-disjoint-neighbor/state/disjoint_context_s0/_cache/midterm.pt",
+          "bytes": 868158803,
+          "mtime_ns": 1789180679092990257
+        },
+        "context": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-disjoint-neighbor/state/disjoint_context_s0/_cache/midterm_neighbors10_disjoint50.pt",
+          "bytes": 864787395,
+          "mtime_ns": 1789180681273032772
+        },
+        "evaluation_pairs": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-uniform-eval/state/uniform_eval_s0_v2/node_neighbors_disjoint_uniform/ss_ukr_rus_twitter__to__midterm.scores.npz",
+          "bytes": 172350,
+          "mtime_ns": 1789181737327329552
+        }
+      },
+      "covid_political": {
+        "graph": {
+          "path": "/dataMeR1/phil/data/graph_views/nonzero_features_v1/covid_political/graph.pt",
+          "bytes": 248352762,
+          "mtime_ns": 1789174996487276963
+        },
+        "split": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-disjoint-neighbor/state/disjoint_context_s0/_cache/covid_political.pt",
+          "bytes": 248051675,
+          "mtime_ns": 1789180677560960321
+        },
+        "context": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-disjoint-neighbor/state/disjoint_context_s0/_cache/covid_political_neighbors10_disjoint50.pt",
+          "bytes": 247975779,
+          "mtime_ns": 1789180678240973614
+        },
+        "evaluation_pairs": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-uniform-eval/state/uniform_eval_s0_v2/node_neighbors_disjoint_uniform/ss_ukr_rus_twitter__to__covid_political.scores.npz",
+          "bytes": 164452,
+          "mtime_ns": 1789181737015326279
+        }
+      },
+      "ukr_rus_suspended": {
+        "graph": {
+          "path": "/dataMeR1/phil/data/graph_views/nonzero_features_v1/ukr_rus_suspended/graph.pt",
+          "bytes": 142955770,
+          "mtime_ns": 1789174998639292341
+        },
+        "split": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-disjoint-neighbor/state/disjoint_context_s0/_cache/ukr_rus_suspended.pt",
+          "bytes": 144101101,
+          "mtime_ns": 1789180736730083215
+        },
+        "context": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-disjoint-neighbor/state/disjoint_context_s0/_cache/ukr_rus_suspended_neighbors10_disjoint50.pt",
+          "bytes": 139184491,
+          "mtime_ns": 1789180737186091614
+        },
+        "evaluation_pairs": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-uniform-eval/state/uniform_eval_s0_v2/node_neighbors_disjoint_uniform/ss_ukr_rus_twitter__to__ukr_rus_suspended.scores.npz",
+          "bytes": 164264,
+          "mtime_ns": 1789181740907367089
+        }
+      },
+      "twibot20": {
+        "graph": {
+          "path": "/dataMeR1/phil/data/graph_views/nonzero_features_v1/twibot20/graph.pt",
+          "bytes": 524598516,
+          "mtime_ns": 1789175000603306374
+        },
+        "split": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-disjoint-neighbor/state/disjoint_context_s0/_cache/twibot20.pt",
+          "bytes": 504888540,
+          "mtime_ns": 1789180773878755406
+        },
+        "context": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-disjoint-neighbor/state/disjoint_context_s0/_cache/twibot20_neighbors10_disjoint50.pt",
+          "bytes": 454753159,
+          "mtime_ns": 1789180774894773457
+        },
+        "evaluation_pairs": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-uniform-eval/state/uniform_eval_s0_v2/node_neighbors_disjoint_uniform/ss_ukr_rus_twitter__to__twibot20.scores.npz",
+          "bytes": 169512,
+          "mtime_ns": 1789181740195359626
+        }
+      },
+      "cp_hk_twitter": {
+        "graph": {
+          "path": "/dataMeR1/phil/data/graph_views/nonzero_features_v1/cp_hk_twitter/graph.pt",
+          "bytes": 850013591,
+          "mtime_ns": 1789175003719328635
+        },
+        "split": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-disjoint-neighbor/state/disjoint_context_s0/_cache/cp_hk_twitter.pt",
+          "bytes": 818325129,
+          "mtime_ns": 1789180774534767062
+        },
+        "context": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-disjoint-neighbor/state/disjoint_context_s0/_cache/cp_hk_twitter_neighbors10_disjoint50.pt",
+          "bytes": 809428827,
+          "mtime_ns": 1789180776026793550
+        },
+        "evaluation_pairs": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-uniform-eval/state/uniform_eval_s0_v2/node_neighbors_disjoint_uniform/ss_ukr_rus_twitter__to__cp_hk_twitter.scores.npz",
+          "bytes": 170950,
+          "mtime_ns": 1789181740235360045
+        }
+      },
+      "facebook_page_reference": {
+        "graph": {
+          "path": "/dataMeR1/phil/data/graph_views/nonzero_features_v1/facebook_page_reference/graph.pt",
+          "bytes": 487569312,
+          "mtime_ns": 1789175005835343750
+        },
+        "split": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-disjoint-neighbor/state/disjoint_context_s0/_cache/facebook_page_reference.pt",
+          "bytes": 465121315,
+          "mtime_ns": 1789180790947056375
+        },
+        "context": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-disjoint-neighbor/state/disjoint_context_s0/_cache/facebook_page_reference_neighbors10_disjoint50.pt",
+          "bytes": 471269827,
+          "mtime_ns": 1789180791907073161
+        },
+        "evaluation_pairs": {
+          "path": "/dataMeR1/phil/gfm/mixture-scaling-uniform-eval/state/uniform_eval_s0_v2/node_neighbors_disjoint_uniform/ss_ukr_rus_twitter__to__facebook_page_reference.scores.npz",
+          "bytes": 169152,
+          "mtime_ns": 1789181744463404342
+        }
+      }
+    },
+    "shared_parent_sha256": "44ea0874887ef61f3f991a2e8149504f4c6de41b8138a7776a47121a56aaff6f",
+    "endpoint_measurements_reproduced_exactly": true
+  },
+  "rows": [
+    {
+      "alpha": 0.0,
+      "run_id": "merge_00",
+      "checkpoint": "/dataMeR1/phil/gfm/mixture-scaling/state/async_weight_merge_s2/candidates/merge_00.pt",
+      "validation": [
+        {
+          "bce": 0.079652563855052,
+          "auc": 0.9893345510959625
+        },
+        {
+          "bce": 0.18241953402757644,
+          "auc": 0.9553139212131501
+        }
+      ],
+      "training_probe": [
+        {
+          "bce": 0.07489149607717992,
+          "auc": 0.9913289692401885
+        },
+        {
+          "bce": 0.15150457099080086,
+          "auc": 0.9708042879104615
+        }
+      ]
+    },
+    {
+      "alpha": 0.1,
+      "run_id": "merge_01",
+      "checkpoint": "/dataMeR1/phil/gfm/mixture-scaling/state/async_weight_merge_s2/candidates/merge_01.pt",
+      "validation": [
+        {
+          "bce": 0.07871010154485701,
+          "auc": 0.989510225534439
+        },
+        {
+          "bce": 0.18364641442894936,
+          "auc": 0.9542901711463928
+        }
+      ],
+      "training_probe": [
+        {
+          "bce": 0.07381094843149186,
+          "auc": 0.9915573687553405
+        },
+        {
+          "bce": 0.1538384675979614,
+          "auc": 0.9695277843475342
+        }
+      ]
+    },
+    {
+      "alpha": 0.2,
+      "run_id": "merge_02",
+      "checkpoint": "/dataMeR1/phil/gfm/mixture-scaling/state/async_weight_merge_s2/candidates/merge_02.pt",
+      "validation": [
+        {
+          "bce": 0.07788600362837315,
+          "auc": 0.9896524407863617
+        },
+        {
+          "bce": 0.18738764151930812,
+          "auc": 0.9523471467494965
+        }
+      ],
+      "training_probe": [
+        {
+          "bce": 0.0728535335510969,
+          "auc": 0.9917564415931702
+        },
+        {
+          "bce": 0.15909723937511447,
+          "auc": 0.9671839082241058
+        }
+      ]
+    },
+    {
+      "alpha": 0.3,
+      "run_id": "merge_03",
+      "checkpoint": "/dataMeR1/phil/gfm/mixture-scaling/state/async_weight_merge_s2/candidates/merge_03.pt",
+      "validation": [
+        {
+          "bce": 0.07717568725347519,
+          "auc": 0.9897702071666717
+        },
+        {
+          "bce": 0.19335325434803963,
+          "auc": 0.9497138371467592
+        }
+      ],
+      "training_probe": [
+        {
+          "bce": 0.07198934927582741,
+          "auc": 0.9919425125122071
+        },
+        {
+          "bce": 0.16694231405854223,
+          "auc": 0.9639239919185639
+        }
+      ]
+    },
+    {
+      "alpha": 0.4,
+      "run_id": "merge_04",
+      "checkpoint": "/dataMeR1/phil/gfm/mixture-scaling/state/async_weight_merge_s2/candidates/merge_04.pt",
+      "validation": [
+        {
+          "bce": 0.07655103728175162,
+          "auc": 0.9898710362911224
+        },
+        {
+          "bce": 0.2015039436519146,
+          "auc": 0.9465705239772797
+        }
+      ],
+      "training_probe": [
+        {
+          "bce": 0.07119076214730741,
+          "auc": 0.9921208641529085
+        },
+        {
+          "bce": 0.1772624932229519,
+          "auc": 0.9598816921710968
+        }
+      ]
+    },
+    {
+      "alpha": 0.5,
+      "run_id": "merge_05",
+      "checkpoint": "/dataMeR1/phil/gfm/mixture-scaling/state/async_weight_merge_s2/candidates/merge_05.pt",
+      "validation": [
+        {
+          "bce": 0.07596496753394603,
+          "auc": 0.9899671120643616
+        },
+        {
+          "bce": 0.21176174581050872,
+          "auc": 0.9430858814716339
+        }
+      ],
+      "training_probe": [
+        {
+          "bce": 0.07042791619896889,
+          "auc": 0.9923020443916319
+        },
+        {
+          "bce": 0.1899259626865387,
+          "auc": 0.9552606186866759
+        }
+      ]
+    },
+    {
+      "alpha": 0.6,
+      "run_id": "merge_06",
+      "checkpoint": "/dataMeR1/phil/gfm/mixture-scaling/state/async_weight_merge_s2/candidates/merge_06.pt",
+      "validation": [
+        {
+          "bce": 0.07543159089982511,
+          "auc": 0.9900557236671449
+        },
+        {
+          "bce": 0.22412988767027853,
+          "auc": 0.9393252592086792
+        }
+      ],
+      "training_probe": [
+        {
+          "bce": 0.06968307308852673,
+          "auc": 0.9924886660575867
+        },
+        {
+          "bce": 0.20483284294605258,
+          "auc": 0.9501460680961609
+        }
+      ]
+    },
+    {
+      "alpha": 0.7,
+      "run_id": "merge_07",
+      "checkpoint": "/dataMeR1/phil/gfm/mixture-scaling/state/async_weight_merge_s2/candidates/merge_07.pt",
+      "validation": [
+        {
+          "bce": 0.07498314082622529,
+          "auc": 0.9901295454502106
+        },
+        {
+          "bce": 0.23850044682621957,
+          "auc": 0.9353030540943146
+        }
+      ],
+      "training_probe": [
+        {
+          "bce": 0.0689860589802265,
+          "auc": 0.9926627600193024
+        },
+        {
+          "bce": 0.2218681022524834,
+          "auc": 0.9445815649032594
+        }
+      ]
+    },
+    {
+      "alpha": 0.8,
+      "run_id": "merge_08",
+      "checkpoint": "/dataMeR1/phil/gfm/mixture-scaling/state/async_weight_merge_s2/candidates/merge_08.pt",
+      "validation": [
+        {
+          "bce": 0.07466817423701286,
+          "auc": 0.9901758556365965
+        },
+        {
+          "bce": 0.25462460741400716,
+          "auc": 0.9309650747776032
+        }
+      ],
+      "training_probe": [
+        {
+          "bce": 0.06837127730250357,
+          "auc": 0.992809879541397
+        },
+        {
+          "bce": 0.2406602092087269,
+          "auc": 0.9385698783397673
+        }
+      ]
+    },
+    {
+      "alpha": 0.9,
+      "run_id": "merge_09",
+      "checkpoint": "/dataMeR1/phil/gfm/mixture-scaling/state/async_weight_merge_s2/candidates/merge_09.pt",
+      "validation": [
+        {
+          "bce": 0.07455760054290295,
+          "auc": 0.9901781485080718
+        },
+        {
+          "bce": 0.27215209901332854,
+          "auc": 0.9261348123550415
+        }
+      ],
+      "training_probe": [
+        {
+          "bce": 0.06796909701079129,
+          "auc": 0.992910616159439
+        },
+        {
+          "bce": 0.26079177558422095,
+          "auc": 0.9320319688320159
+        }
+      ]
+    },
+    {
+      "alpha": 1.0,
+      "run_id": "merge_10",
+      "checkpoint": "/dataMeR1/phil/gfm/mixture-scaling/state/async_weight_merge_s2/candidates/merge_10.pt",
+      "validation": [
+        {
+          "bce": 0.07471727728843688,
+          "auc": 0.9901255335807799
+        },
+        {
+          "bce": 0.29060226678848267,
+          "auc": 0.9205999681949615
+        }
+      ],
+      "training_probe": [
+        {
+          "bce": 0.06793565545231105,
+          "auc": 0.9929424335956575
+        },
+        {
+          "bce": 0.2818721026182175,
+          "auc": 0.9247763972282409
+        }
+      ]
+    }
+  ],
+  "selection": {
+    "status": "no_feasible_merge",
+    "rule": "both own-singleton validation AUC floors; max Ukraine AUC, then Facebook AUC, then lower alpha",
+    "qualifying_alphas": [],
+    "selected_alpha": null,
+    "candidate_run_id": null,
+    "run_id": null
+  }
+}

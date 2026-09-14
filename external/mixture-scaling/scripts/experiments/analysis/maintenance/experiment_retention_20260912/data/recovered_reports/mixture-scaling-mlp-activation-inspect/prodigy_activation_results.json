@@ -1,0 +1,488 @@
+{
+  "checkpoint": {
+    "model_id": "nmloo_without_covid",
+    "checkpoint": "/dataMeR1/phil/gfm/prodigy-nm-loo/log/nm_leave_one_out_finalcore/shared_seed0_20260905_retry1/state/nmloo_without_covid_20260905_061440_001/checkpoint/state_dict_2500.ckpt",
+    "sources": [
+      "covid_political",
+      "cp_hk",
+      "election2020",
+      "facebook_page_reference",
+      "midterm",
+      "twibot20",
+      "ukr_rus",
+      "ukr_rus_suspended"
+    ],
+    "source_count": 8,
+    "checkpoint_step": 2500,
+    "training_seed": 0,
+    "weights_sha256": "0f905f315d964f505b9597ebf09266300594258259a0b1da2591a4068c35b6c3"
+  },
+  "batch_count": 8,
+  "targets": {
+    "covid_political": {
+      "stages": {
+        "S0_conv_center": {
+          "n": 1408,
+          "zero_fraction": 0.6166853308677673,
+          "never_active": 0,
+          "raw": {
+            "rank": 69.98407820993835,
+            "top1": 0.1130719368282347,
+            "top10": 0.4773015690299763
+          },
+          "normalized": {
+            "rank": 76.03551194569752,
+            "top1": 0.11067627967803555,
+            "top10": 0.4542722306483924
+          }
+        },
+        "S0_pool": {
+          "n": 1408,
+          "zero_fraction": 0.15739025175571442,
+          "never_active": 0,
+          "raw": {
+            "rank": 18.095896213128512,
+            "top1": 0.41978993482908544,
+            "top10": 0.7358519841609259
+          },
+          "normalized": {
+            "rank": 18.25218095242924,
+            "top1": 0.42151426046308266,
+            "top10": 0.7341189464878333
+          }
+        },
+        "U1_pre_meta": {
+          "n": 1408,
+          "zero_fraction": 0.6236988306045532,
+          "never_active": 127,
+          "raw": {
+            "rank": 10.082060874291924,
+            "top1": 0.3249335080280507,
+            "top10": 0.9053305679508195
+          },
+          "normalized": {
+            "rank": 10.091089768983336,
+            "top1": 0.342307407975756,
+            "top10": 0.9020854166174301
+          }
+        },
+        "M2_post_meta": {
+          "n": 1408,
+          "zero_fraction": 0.0,
+          "never_active": 0,
+          "raw": {
+            "rank": 4.162379621115163,
+            "top1": 0.5856976119976854,
+            "top10": 0.9987671232755125
+          },
+          "normalized": {
+            "rank": 4.064870011679571,
+            "top1": 0.6014418165725137,
+            "top10": 0.9984202980645097
+          }
+        },
+        "final_input": {
+          "n": 1408,
+          "zero_fraction": 0.0,
+          "never_active": 0,
+          "raw": {
+            "rank": 4.162379621115163,
+            "top1": 0.5856976119976854,
+            "top10": 0.9987671232755125
+          },
+          "normalized": {
+            "rank": 4.064870011679571,
+            "top1": 0.6014418165725137,
+            "top10": 0.9984202980645097
+          }
+        }
+      },
+      "relu": {
+        "layer_list.0.module_list.0.mlp.1": {
+          "zero_fraction": 0.9790478348731995,
+          "never_active": 416
+        },
+        "layer_list.0.act": {
+          "zero_fraction": 0.6005827784538269,
+          "never_active": 0
+        },
+        "layer_list.2.gnn_layers.0.att_mlp.1": {
+          "zero_fraction": 0.46216297149658203,
+          "never_active": 0
+        }
+      }
+    },
+    "election2020": {
+      "stages": {
+        "S0_conv_center": {
+          "n": 704,
+          "zero_fraction": 0.6837657690048218,
+          "never_active": 0,
+          "raw": {
+            "rank": 39.933775780345606,
+            "top1": 0.20991937945773836,
+            "top10": 0.5906052806187789
+          },
+          "normalized": {
+            "rank": 51.09927761579569,
+            "top1": 0.14765737211971355,
+            "top10": 0.5321548393963057
+          }
+        },
+        "S0_pool": {
+          "n": 704,
+          "zero_fraction": 0.00010542436211835593,
+          "never_active": 0,
+          "raw": {
+            "rank": 5.271494046547765,
+            "top1": 0.5652554862304264,
+            "top10": 0.9208368343314268
+          },
+          "normalized": {
+            "rank": 5.348244663114287,
+            "top1": 0.5661280323909125,
+            "top10": 0.9184661279061644
+          }
+        },
+        "U1_pre_meta": {
+          "n": 704,
+          "zero_fraction": 0.6473111510276794,
+          "never_active": 133,
+          "raw": {
+            "rank": 5.573325839568037,
+            "top1": 0.5623594055934251,
+            "top10": 0.9326246137686434
+          },
+          "normalized": {
+            "rank": 5.6671068835251015,
+            "top1": 0.5602051905261582,
+            "top10": 0.9289292708933443
+          }
+        },
+        "M2_post_meta": {
+          "n": 704,
+          "zero_fraction": 0.0,
+          "never_active": 0,
+          "raw": {
+            "rank": 2.895689755893045,
+            "top1": 0.6250714276055964,
+            "top10": 0.9988222456812018
+          },
+          "normalized": {
+            "rank": 3.0050002600139134,
+            "top1": 0.573275640387752,
+            "top10": 0.9986571130968802
+          }
+        },
+        "final_input": {
+          "n": 704,
+          "zero_fraction": 0.0,
+          "never_active": 0,
+          "raw": {
+            "rank": 2.895689755893045,
+            "top1": 0.6250714276055964,
+            "top10": 0.9988222456812018
+          },
+          "normalized": {
+            "rank": 3.0050002600139134,
+            "top1": 0.573275640387752,
+            "top10": 0.9986571130968802
+          }
+        }
+      },
+      "relu": {
+        "layer_list.0.module_list.0.mlp.1": {
+          "zero_fraction": 0.9726589322090149,
+          "never_active": 452
+        },
+        "layer_list.0.act": {
+          "zero_fraction": 0.5920776724815369,
+          "never_active": 0
+        },
+        "layer_list.2.gnn_layers.0.att_mlp.1": {
+          "zero_fraction": 0.46769091486930847,
+          "never_active": 0
+        }
+      }
+    },
+    "facebook_page_reference": {
+      "stages": {
+        "S0_conv_center": {
+          "n": 896,
+          "zero_fraction": 0.6123395562171936,
+          "never_active": 0,
+          "raw": {
+            "rank": 68.43360131356575,
+            "top1": 0.0845151177879998,
+            "top10": 0.4803460289048781
+          },
+          "normalized": {
+            "rank": 75.0901948369443,
+            "top1": 0.08066329929419232,
+            "top10": 0.44894223166839925
+          }
+        },
+        "S0_pool": {
+          "n": 896,
+          "zero_fraction": 0.2224251925945282,
+          "never_active": 0,
+          "raw": {
+            "rank": 41.89365789318705,
+            "top1": 0.14272336200379862,
+            "top10": 0.6250271477302719
+          },
+          "normalized": {
+            "rank": 45.14036302627943,
+            "top1": 0.13463944975542136,
+            "top10": 0.6042937913604407
+          }
+        },
+        "U1_pre_meta": {
+          "n": 896,
+          "zero_fraction": 0.6410609483718872,
+          "never_active": 127,
+          "raw": {
+            "rank": 12.4090820201258,
+            "top1": 0.195550676581573,
+            "top10": 0.9053848230457683
+          },
+          "normalized": {
+            "rank": 12.953311177246455,
+            "top1": 0.20848830636794036,
+            "top10": 0.8912875652576455
+          }
+        },
+        "M2_post_meta": {
+          "n": 896,
+          "zero_fraction": 0.0,
+          "never_active": 0,
+          "raw": {
+            "rank": 6.274838395930554,
+            "top1": 0.38251775854340464,
+            "top10": 0.9974579170903529
+          },
+          "normalized": {
+            "rank": 6.322971415394766,
+            "top1": 0.38370152601278795,
+            "top10": 0.9968997758527782
+          }
+        },
+        "final_input": {
+          "n": 896,
+          "zero_fraction": 0.0,
+          "never_active": 0,
+          "raw": {
+            "rank": 6.274838395930554,
+            "top1": 0.38251775854340464,
+            "top10": 0.9974579170903529
+          },
+          "normalized": {
+            "rank": 6.322971415394766,
+            "top1": 0.38370152601278795,
+            "top10": 0.9968997758527782
+          }
+        }
+      },
+      "relu": {
+        "layer_list.0.module_list.0.mlp.1": {
+          "zero_fraction": 0.9360896944999695,
+          "never_active": 446
+        },
+        "layer_list.0.act": {
+          "zero_fraction": 0.6282944679260254,
+          "never_active": 0
+        },
+        "layer_list.2.gnn_layers.0.att_mlp.1": {
+          "zero_fraction": 0.4624934196472168,
+          "never_active": 0
+        }
+      }
+    },
+    "twibot20": {
+      "stages": {
+        "S0_conv_center": {
+          "n": 1408,
+          "zero_fraction": 0.6335116028785706,
+          "never_active": 0,
+          "raw": {
+            "rank": 43.24272767856686,
+            "top1": 0.24665865979258816,
+            "top10": 0.5847000977387374
+          },
+          "normalized": {
+            "rank": 50.56423046273538,
+            "top1": 0.18789251905422794,
+            "top10": 0.5569013265390566
+          }
+        },
+        "S0_pool": {
+          "n": 1408,
+          "zero_fraction": 0.08740789443254471,
+          "never_active": 0,
+          "raw": {
+            "rank": 17.362455120993268,
+            "top1": 0.31649968239921017,
+            "top10": 0.8134451848601011
+          },
+          "normalized": {
+            "rank": 18.488615773556976,
+            "top1": 0.3001245625470453,
+            "top10": 0.8015169848342129
+          }
+        },
+        "U1_pre_meta": {
+          "n": 1408,
+          "zero_fraction": 0.6328624486923218,
+          "never_active": 129,
+          "raw": {
+            "rank": 11.351483945968013,
+            "top1": 0.23654788120666362,
+            "top10": 0.9138809661802973
+          },
+          "normalized": {
+            "rank": 12.031526293889483,
+            "top1": 0.22437722030826804,
+            "top10": 0.8995733223711517
+          }
+        },
+        "M2_post_meta": {
+          "n": 1408,
+          "zero_fraction": 0.0,
+          "never_active": 0,
+          "raw": {
+            "rank": 4.378574577606888,
+            "top1": 0.5818890952774183,
+            "top10": 0.9987554260539266
+          },
+          "normalized": {
+            "rank": 4.283484995588629,
+            "top1": 0.5931126930167732,
+            "top10": 0.9982513042520621
+          }
+        },
+        "final_input": {
+          "n": 1408,
+          "zero_fraction": 0.0,
+          "never_active": 0,
+          "raw": {
+            "rank": 4.378574577606888,
+            "top1": 0.5818890952774183,
+            "top10": 0.9987554260539266
+          },
+          "normalized": {
+            "rank": 4.283484995588629,
+            "top1": 0.5931126930167732,
+            "top10": 0.9982513042520621
+          }
+        }
+      },
+      "relu": {
+        "layer_list.0.module_list.0.mlp.1": {
+          "zero_fraction": 0.9480401277542114,
+          "never_active": 442
+        },
+        "layer_list.0.act": {
+          "zero_fraction": 0.5926527380943298,
+          "never_active": 0
+        },
+        "layer_list.2.gnn_layers.0.att_mlp.1": {
+          "zero_fraction": 0.4637451171875,
+          "never_active": 0
+        }
+      }
+    },
+    "ukr_rus_suspended": {
+      "stages": {
+        "S0_conv_center": {
+          "n": 704,
+          "zero_fraction": 0.6529374718666077,
+          "never_active": 0,
+          "raw": {
+            "rank": 58.45951200159291,
+            "top1": 0.13259713559586997,
+            "top10": 0.5199574981784748
+          },
+          "normalized": {
+            "rank": 52.0869945499265,
+            "top1": 0.1922603440091271,
+            "top10": 0.5351285799279387
+          }
+        },
+        "S0_pool": {
+          "n": 704,
+          "zero_fraction": 0.10279984772205353,
+          "never_active": 0,
+          "raw": {
+            "rank": 23.906471702602214,
+            "top1": 0.27467092190195425,
+            "top10": 0.7286744623311154
+          },
+          "normalized": {
+            "rank": 25.61679635543297,
+            "top1": 0.26341980979077967,
+            "top10": 0.7097034002667016
+          }
+        },
+        "U1_pre_meta": {
+          "n": 704,
+          "zero_fraction": 0.6253606677055359,
+          "never_active": 127,
+          "raw": {
+            "rank": 14.874297503306051,
+            "top1": 0.176484832698634,
+            "top10": 0.8664722870374457
+          },
+          "normalized": {
+            "rank": 15.365687412200641,
+            "top1": 0.18216830450634866,
+            "top10": 0.8525265113933113
+          }
+        },
+        "M2_post_meta": {
+          "n": 704,
+          "zero_fraction": 0.0,
+          "never_active": 0,
+          "raw": {
+            "rank": 5.276117232163915,
+            "top1": 0.4511269118796887,
+            "top10": 0.9970246085822343
+          },
+          "normalized": {
+            "rank": 5.188236929390853,
+            "top1": 0.47701556072208534,
+            "top10": 0.9962468749091247
+          }
+        },
+        "final_input": {
+          "n": 704,
+          "zero_fraction": 0.0,
+          "never_active": 0,
+          "raw": {
+            "rank": 5.276117232163915,
+            "top1": 0.4511269118796887,
+            "top10": 0.9970246085822343
+          },
+          "normalized": {
+            "rank": 5.188236929390853,
+            "top1": 0.47701556072208534,
+            "top10": 0.9962468749091247
+          }
+        }
+      },
+      "relu": {
+        "layer_list.0.module_list.0.mlp.1": {
+          "zero_fraction": 0.9401808977127075,
+          "never_active": 451
+        },
+        "layer_list.0.act": {
+          "zero_fraction": 0.6502528786659241,
+          "never_active": 0
+        },
+        "layer_list.2.gnn_layers.0.att_mlp.1": {
+          "zero_fraction": 0.45982757210731506,
+          "never_active": 0
+        }
+      }
+    }
+  }
+}

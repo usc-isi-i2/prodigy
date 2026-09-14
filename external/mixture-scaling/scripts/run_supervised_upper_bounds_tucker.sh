@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"; PY=/home/mhchu/miniconda3/envs/prodigy/bin/python3; OUT="$ROOT/results/supervised_upper_bounds"; LOG="$ROOT/log/supervised_upper_bounds"; mkdir -p "$OUT" "$LOG"; JOBS=()
+for target in twibot20 cora; do for feature in existing structural; do for seed in 0 1 2; do JOBS+=("$target|$feature|$seed"); done; done; done
+worker(){ local wi=$1 gpu=$2 i=0 job target feature seed output; for job in "${JOBS[@]}"; do if ((i%4==wi)); then IFS='|' read -r target feature seed <<<"$job"; output="$OUT/${target}_${feature}_s${seed}.json"; if [[ ! -f "$output" ]]; then PYTHONPATH="$ROOT/src" "$PY" -u -m mixture_scaling.supervised_upper_bound --config "$ROOT/configs/twibot_strict_pilot.yaml" --split-root "$ROOT/state/twibot_strict_pilot/splits" --target "$target" --feature-mode "$feature" --seed "$seed" --device "$gpu" --output "$output" >"$LOG/${target}_${feature}_s${seed}.log" 2>&1; fi; fi; ((i+=1)); done; }
+pids=(); wi=0; for gpu in 2 3; do for slot in 0 1; do worker "$wi" "$gpu" & pids+=("$!"); ((wi+=1)); done; done; status=0; for pid in "${pids[@]}"; do wait "$pid"||status=1; done; ((status==0))||exit "$status"; echo "12 supervised upper bounds complete"

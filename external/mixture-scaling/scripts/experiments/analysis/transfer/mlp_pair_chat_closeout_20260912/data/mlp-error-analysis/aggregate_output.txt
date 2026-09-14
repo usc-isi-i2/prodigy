@@ -1,0 +1,119 @@
+Updating 4a99d53..c1c47e0
+Fast-forward
+ scripts/analyze_pair_errors.py | 83 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 83 insertions(+)
+ create mode 100644 scripts/analyze_pair_errors.py
+                                             auc  auc_delta      bce  positive_bce  negative_bce  calibrated_bce  balanced_accuracy  cosine_auc
+pair                        model                                                                                                              
+COVID political + suspended A            0.81090   -5.02518  0.49854       2.43609       0.11103         0.34349            0.75094     0.76969
+                            A→B          0.87798    1.68285  0.36440       1.89307       0.05867         0.28663            0.80596     0.84019
+                            B            0.86115    0.00000  0.38059       1.96632       0.06345         0.30337            0.78769     0.84199
+                            B→A          0.88375    2.26006  0.34823       1.45627       0.12663         0.27757            0.81807     0.84126
+                            Ensemble     0.88398    2.28297  0.29154           NaN           NaN         0.29154            0.81493         NaN
+                            Interleaved  0.89456    3.34106  0.30517       1.34241       0.09773         0.27231            0.82512     0.86642
+Ukraine + Facebook          A            0.95764    0.00000  0.19884       0.88474       0.06166         0.17700            0.89881     0.90769
+                            A→B          0.93622   -2.14268  0.62568       0.21443       0.70793         0.21394            0.86670     0.89561
+                            B            0.88012   -7.75188  0.43213       0.51205       0.41615         0.28754            0.80298     0.86390
+                            B→A          0.95834    0.06984  0.19627       0.78719       0.07809         0.17702            0.89840     0.91340
+                            Ensemble     0.94893   -0.87113  0.20349           NaN           NaN         0.20349            0.88212         NaN
+                            Interleaved  0.94152   -1.61213  0.21990       0.84159       0.09556         0.20513            0.87269     0.90956
+                       pair                  target validation_selected test_best
+         Ukraine + Facebook         covid19_twitter                   A         A
+         Ukraine + Facebook                 midterm                   A         A
+         Ukraine + Facebook         covid_political                   A         A
+         Ukraine + Facebook       ukr_rus_suspended                   A         A
+         Ukraine + Facebook                twibot20                   A         A
+         Ukraine + Facebook           cp_hk_twitter                   A         A
+COVID political + suspended         ukr_rus_twitter                   B         B
+COVID political + suspended         covid19_twitter                   B         B
+COVID political + suspended                 midterm                   B         A
+COVID political + suspended                twibot20                   B         A
+COVID political + suspended           cp_hk_twitter                   B         B
+COVID political + suspended facebook_page_reference                   B         B
+                                         lost_rate  gained_rate  rank_recovered  rank_damaged
+pair                        model                                                            
+COVID political + suspended A→B            0.08730      0.10557         0.08077       0.06394
+                            B→A            0.08081      0.11119         0.08323       0.06063
+                            Interleaved    0.06962      0.10705         0.08352       0.05011
+Ukraine + Facebook          A→B            0.06014      0.02804         0.01415       0.03557
+                            B→A            0.03248      0.03207         0.01720       0.01650
+                            Interleaved    0.05799      0.03187         0.01707       0.03319
+AGGREGATE_STRATA
+pair,feature,label,bin,rank_delta,bce_delta,lost,gained,n,targets
+COVID political + suspended,context_min_degree,0,Q2,0.04814,0.0106,0.0259,0.10608,2008,1
+COVID political + suspended,context_min_degree,0,Q3,0.04097,0.02295,0.04766,0.09976,16954,4
+COVID political + suspended,context_min_degree,0,Q4,0.03048,0.06646,0.09784,0.11801,23038,6
+COVID political + suspended,context_min_degree,1,Q1,0.04757,-0.8504,0.11343,0.1619,990,3
+COVID political + suspended,context_min_degree,1,Q2,0.04003,-0.62017,0.08574,0.1293,2214,5
+COVID political + suspended,context_min_degree,1,Q3,0.03057,-0.59183,0.0525,0.084,2879,6
+COVID political + suspended,context_min_degree,1,Q4,0.02397,-0.52534,0.02419,0.06532,2317,6
+COVID political + suspended,min_sampled_neighbors,0,0,0.03836,0.00854,0.04631,0.10191,27686,6
+COVID political + suspended,min_sampled_neighbors,0,10,0.05799,0.1726,0.14087,0.19132,443,3
+COVID political + suspended,min_sampled_neighbors,0,1–4,0.01881,0.06113,0.10746,0.1135,12889,6
+COVID political + suspended,min_sampled_neighbors,0,5–9,0.01687,0.33548,0.14389,0.10443,959,4
+COVID political + suspended,min_sampled_neighbors,1,0,0.03101,-0.63476,0.1562,0.14198,2001,6
+COVID political + suspended,min_sampled_neighbors,1,10,0.0248,-0.53497,0.02191,0.06318,3371,6
+COVID political + suspended,min_sampled_neighbors,1,1–4,0.0535,-0.83744,0.08762,0.15625,2004,6
+COVID political + suspended,min_sampled_neighbors,1,5–9,0.03459,-0.64114,0.03039,0.0921,1024,6
+COVID political + suspended,neighbor_cosine,0,Q2,0.04041,0.02304,0.04411,0.10423,3310,1
+COVID political + suspended,neighbor_cosine,0,Q3,0.03899,0.03096,0.05565,0.10151,17516,4
+COVID political + suspended,neighbor_cosine,0,Q4,0.03244,0.07345,0.10206,0.12282,21174,6
+COVID political + suspended,neighbor_cosine,1,Q1,0.04696,-0.83615,0.11781,0.17159,1063,3
+COVID political + suspended,neighbor_cosine,1,Q2,0.04397,-0.6733,0.08518,0.13217,2440,5
+COVID political + suspended,neighbor_cosine,1,Q3,0.02786,-0.59554,0.04201,0.07697,2880,6
+COVID political + suspended,neighbor_cosine,1,Q4,0.01918,-0.45405,0.01619,0.04643,2017,6
+COVID political + suspended,node_cosine,0,Q1,0.02848,0.0208,0.05265,0.07765,10592,6
+COVID political + suspended,node_cosine,0,Q2,0.0289,0.02927,0.06174,0.09498,10449,6
+COVID political + suspended,node_cosine,0,Q3,0.03352,0.03808,0.07597,0.11174,10268,6
+COVID political + suspended,node_cosine,0,Q4,0.0427,0.0492,0.08897,0.14871,10691,6
+COVID political + suspended,node_cosine,1,Q1,0.04936,-0.79339,0.08012,0.14631,2108,6
+COVID political + suspended,node_cosine,1,Q2,0.04212,-0.72319,0.0796,0.12097,2118,6
+COVID political + suspended,node_cosine,1,Q3,0.02433,-0.54033,0.07698,0.09324,2107,6
+COVID political + suspended,node_cosine,1,Q4,0.01664,-0.42692,0.03948,0.06061,2067,6
+COVID political + suspended,node_mean_norm,0,Q1,0.03344,0.02973,0.06857,0.10624,10399,6
+COVID political + suspended,node_mean_norm,0,Q2,0.03348,0.03491,0.07019,0.10977,10356,6
+COVID political + suspended,node_mean_norm,0,Q3,0.03584,0.03872,0.06855,0.11259,10476,6
+COVID political + suspended,node_mean_norm,0,Q4,0.03106,0.03385,0.07258,0.10548,10769,6
+COVID political + suspended,node_mean_norm,1,Q1,0.03831,-0.67611,0.06861,0.11363,2087,6
+COVID political + suspended,node_mean_norm,1,Q2,0.02905,-0.59148,0.06667,0.09043,2171,6
+COVID political + suspended,node_mean_norm,1,Q3,0.03207,-0.62304,0.07608,0.11392,2038,6
+COVID political + suspended,node_mean_norm,1,Q4,0.03417,-0.60393,0.0664,0.10435,2104,6
+Ukraine + Facebook,context_min_degree,0,Q2,-0.00665,0.01587,0.01345,0.01743,2008,1
+Ukraine + Facebook,context_min_degree,0,Q3,-0.00993,0.01694,0.04957,0.01894,16351,4
+Ukraine + Facebook,context_min_degree,0,Q4,-0.02249,0.05378,0.08224,0.04066,23641,6
+Ukraine + Facebook,context_min_degree,1,Q1,-0.03744,-0.15357,0.149,0.0901,769,3
+Ukraine + Facebook,context_min_degree,1,Q2,-0.0289,-0.02617,0.09047,0.05724,2954,6
+Ukraine + Facebook,context_min_degree,1,Q3,-0.00512,-0.04601,0.01681,0.01842,2347,6
+Ukraine + Facebook,context_min_degree,1,Q4,-0.00122,-0.01403,0.00256,0.00579,2330,6
+Ukraine + Facebook,min_sampled_neighbors,0,0,-0.01271,0.02119,0.04733,0.01604,26936,6
+Ukraine + Facebook,min_sampled_neighbors,0,10,-0.04352,0.11036,0.16372,0.04907,389,3
+Ukraine + Facebook,min_sampled_neighbors,0,1–4,-0.02121,0.0547,0.08345,0.04795,13583,6
+Ukraine + Facebook,min_sampled_neighbors,0,5–9,-0.04324,0.14938,0.15408,0.03676,1073,5
+Ukraine + Facebook,min_sampled_neighbors,1,0,-0.03974,-0.14308,0.13805,0.07439,1661,6
+Ukraine + Facebook,min_sampled_neighbors,1,10,-0.00121,-0.01016,0.00334,0.00696,2736,6
+Ukraine + Facebook,min_sampled_neighbors,1,1–4,-0.02211,-0.03612,0.08921,0.05931,2594,6
+Ukraine + Facebook,min_sampled_neighbors,1,5–9,-0.00478,0.02047,0.0203,0.00892,1409,6
+Ukraine + Facebook,neighbor_cosine,0,Q2,-0.00523,0.01415,0.01239,0.0142,3310,1
+Ukraine + Facebook,neighbor_cosine,0,Q3,-0.01081,0.01911,0.05058,0.02121,17600,4
+Ukraine + Facebook,neighbor_cosine,0,Q4,-0.02493,0.06373,0.09741,0.04793,21090,6
+Ukraine + Facebook,neighbor_cosine,1,Q1,-0.03509,-0.13644,0.15768,0.09228,1013,3
+Ukraine + Facebook,neighbor_cosine,1,Q2,-0.02346,-0.05817,0.0773,0.05632,3142,6
+Ukraine + Facebook,neighbor_cosine,1,Q3,-0.00334,-0.01485,0.00659,0.0087,2089,6
+Ukraine + Facebook,neighbor_cosine,1,Q4,-0.00159,-0.0013,0.00042,0.00183,2156,6
+Ukraine + Facebook,node_cosine,0,Q1,-0.00893,0.01652,0.03422,0.0174,10674,6
+Ukraine + Facebook,node_cosine,0,Q2,-0.01245,0.02135,0.0465,0.02266,10517,6
+Ukraine + Facebook,node_cosine,0,Q3,-0.01605,0.0331,0.06223,0.0295,10225,6
+Ukraine + Facebook,node_cosine,0,Q4,-0.027,0.06474,0.10514,0.03978,10584,6
+Ukraine + Facebook,node_cosine,1,Q1,-0.02596,-0.05792,0.07994,0.0571,2087,6
+Ukraine + Facebook,node_cosine,1,Q2,-0.02154,-0.01966,0.06282,0.03793,2087,6
+Ukraine + Facebook,node_cosine,1,Q3,-0.01323,-0.02528,0.05292,0.0263,2157,6
+Ukraine + Facebook,node_cosine,1,Q4,-0.0041,-0.07299,0.01953,0.02428,2069,6
+Ukraine + Facebook,node_mean_norm,0,Q1,-0.01597,0.03278,0.05983,0.0258,10301,6
+Ukraine + Facebook,node_mean_norm,0,Q2,-0.01569,0.03051,0.06399,0.02999,10605,6
+Ukraine + Facebook,node_mean_norm,0,Q3,-0.0163,0.03573,0.06019,0.02465,10460,6
+Ukraine + Facebook,node_mean_norm,0,Q4,-0.01654,0.03649,0.06413,0.02856,10634,6
+Ukraine + Facebook,node_mean_norm,1,Q1,-0.01471,-0.05617,0.05367,0.0367,1978,6
+Ukraine + Facebook,node_mean_norm,1,Q2,-0.01484,-0.03847,0.04918,0.03476,2159,6
+Ukraine + Facebook,node_mean_norm,1,Q3,-0.01856,-0.03392,0.06534,0.03654,2105,6
+Ukraine + Facebook,node_mean_norm,1,Q4,-0.01612,-0.04479,0.04795,0.0375,2158,6
+

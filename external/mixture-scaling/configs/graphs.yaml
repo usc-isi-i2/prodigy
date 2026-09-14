@@ -1,0 +1,38 @@
+graphs:
+  covid_political:
+    path: /dataMeR1/phil/data/covid_political/graphs/retweet_graph.pt
+  ukr_rus_suspended:
+    path: /dataMeR1/phil/data/ukr_rus_suspended/graphs/retweet_graph.pt
+  election2020:
+    path: /dataMeR1/phil/data/election2020/graphs/retweet_graph.pt
+  twibot20:
+    path: /dataMeR1/phil/data/twibot20/graphs/retweet_graph.pt
+  facebook_page_reference:
+    path: /dataMeR1/phil/data/facebook_page_reference/graphs/page_reference_graph.pt
+  cora:
+    path: /dataMeR1/phil/data/cora/graphs/citation_graph.pt
+  pubmed:
+    path: /dataMeR1/phil/data/pubmed/graphs/citation_graph.pt
+
+protocol:
+  seed: 0
+  input_dim: 768
+  hidden_dim: 256
+  output_dim: 256
+  layers: 1
+  dropout: 0.0
+  fanout: 15
+  sampling_backend: torch_sparse
+  ssl_batch_size: 1024
+  negatives_per_positive: 5
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  max_steps: 10000
+  checkpoint_steps: [100, 300, 600, 900, 1500, 2500, 5000, 10000]
+  validation_interval: 250
+  validation_batches: 20
+  minimum_steps: 2500
+  min_relative_improvement: 0.002
+  patience_evaluations: 5
+  labels_per_class: 10
+  evaluated_steps: [100, 300, 900, 2500]
