@@ -1,0 +1,23 @@
+{
+  "records": [
+    {
+      "event": "v1_rejected_source_revision_mismatch",
+      "reason": "Full bundle transfer and follow-up incremental fetch raced: branch ref moved to7ed4a751 while source remainedc9e9801e; no source file edited during run. Source revision field therefore did not describe executed source.",
+      "v1_source_sha256": "347a43b0ea273d639e7930547bfbe79900d8f32d0bfd678422057a9ff79f4b8c",
+      "v1_reported_revision": "7ed4a751f3db060191d22c0ef4f6f919ca5445e9",
+      "v1_elapsed_seconds": 5.599337528925389,
+      "v1_wandb_directory": "/dataMeR1/phil/gfm/ogbl_collab_compact_joint/h3_replication_v1/wandb/offline-run-20260914_020921-1mt5kvqs/files",
+      "exact_scientific_protocol_unchanged": true,
+      "scientific_cohort_outputs_unchanged": true,
+      "exact_source_diff": "- for k in sorted(cases)[:20]:\n+ for k in sorted(k for k in cases if k.startswith('n'))[:10]+sorted(k for k in cases if k.startswith('p'))[:10]:",
+      "outcome_access": "v1 printed full outcomes to its log; operator inspected only tail/provenance before v2, but repeated diagnostic execution is explicitly disclosed."
+    },
+    {
+      "event": "v2_admitted",
+      "source_revision": "7ed4a751f3db060191d22c0ef4f6f919ca5445e9",
+      "source_sha256": "68a965161382d54fd446990b8c3d2c8a11ae334e414ae9ec099485317c1138d7",
+      "clean_worktree_verified": true,
+      "no_criterion_or_cohort_changes": true
+    }
+  ]
+}
