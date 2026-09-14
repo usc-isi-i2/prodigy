@@ -11,6 +11,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--selection", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--title", default="Classic Cora feature-only link prediction — seed 0")
     args = parser.parse_args()
     records = json.loads(args.selection.read_text())
     colors = {"linear_cosine": "#2878B5", "nonlinear_mlp_cosine": "#D95319"}
@@ -32,7 +33,7 @@ def main():
             axis.grid(alpha=0.2)
     axes[0].set_ylabel("Raw unsmoothed value")
     axes[2].legend(frameon=False, loc="lower right")
-    fig.suptitle("Classic Cora feature-only link prediction — seed 0")
+    fig.suptitle(args.title)
     fig.tight_layout()
     args.out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(args.out, dpi=180, bbox_inches="tight")

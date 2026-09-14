@@ -57,3 +57,34 @@ Its W&B run IDs are [`iuopgbrh`](https://wandb.ai/eibl-usc/cora-standard-mlp-lp/
 (nonlinear). The local `.wandb` records remain under that directory's `wandb/`
 tree; both were synced to the `eibl-usc/cora-standard-mlp-lp` project on
 2026-09-13 after the user explicitly requested upload.
+
+## Lower-LR, resampled-negative follow-up
+
+The predeclared revised protocol combined learning rate `0.001` with fresh,
+deterministic training negatives every epoch. The positive split, fixed
+validation/test panels, architectures, initialization seed, and metrics remained
+unchanged. Maximum training increased to 1,000 epochs with patience 100.
+
+| Encoder | Selected epoch | Validation ROC-AUC | Test ROC-AUC | Test AP |
+| --- | ---: | ---: | ---: | ---: |
+| Raw 1,433-D features | — | — | 0.7984 | 0.8188 |
+| Linear 1,433 -> 128 | 245 | 0.9021 | **0.9059** | **0.9213** |
+| Nonlinear 1,433 -> 256 -> 128 | 383 | **0.9059** | 0.8860 | 0.9014 |
+
+Relative to the fixed-negative, LR-0.01 pilot, test ROC-AUC rises by 2.37 points
+for the linear arm and 7.33 points for the nonlinear arm. Because learning rate
+and negative resampling changed together, this run does not identify which change
+caused the improvement. The linear arm remains the best held-out test result.
+
+The raw curves are substantially healthier: neither arm has the early optimizer
+overshoot or later nonlinear instability seen in the first protocol, and training
+loss stays nonzero because every epoch presents a fresh nonedge panel. All 345
+shared epoch prefixes have identical negative-set fingerprints across the two arms;
+every epoch panel is unique within each run.
+
+![Raw curves for lower-LR resampled-negative run](figures/raw_training_curves_seed0_lr1e3_resampled.png)
+
+W&B: [`4pk4b1ja`](https://wandb.ai/eibl-usc/cora-standard-mlp-lp/runs/4pk4b1ja)
+(linear) and [`sbmeg852`](https://wandb.ai/eibl-usc/cora-standard-mlp-lp/runs/sbmeg852)
+(nonlinear). Runtime artifacts are at
+`/dataMeR1/phil/gfm/cora_standard_mlp_lp/seed0_lr1e3_resampled`.

@@ -1,0 +1,34 @@
+{
+  "arms": [
+    "raw_cosine",
+    "linear_cosine",
+    "nonlinear_mlp_cosine"
+  ],
+  "counts": {
+    "test_neg": 528,
+    "test_pos": 528,
+    "train_neg": 4486,
+    "train_pos": 4486,
+    "val_neg": 264,
+    "val_pos": 264
+  },
+  "epochs": 1000,
+  "features": "classic Cora 1433-dimensional binary bag-of-words",
+  "graph": "/dataMeR1/phil/data/cora/raw/graph_com_tag/processed_data.pt",
+  "learning_rate": 0.001,
+  "negatives": "one fixed unique uniform unordered nonedge per positive, disjoint across splits",
+  "pair_fingerprint": "e34c7c545e5671c3ec0dad7df5caee764599358d684941ed2b52863c8ff54fe9",
+  "patience": 100,
+  "revision": "111edbe1ae90f473ce8712e6b8d041238ff60ab8",
+  "run_tag": "lr1e3_resampled",
+  "seed": 0,
+  "selection": "maximum validation ROC-AUC; earliest epoch wins ties; test closed until all selections finish",
+  "split": "unique undirected pairs, seeded 85/5/10",
+  "training_negatives": "resampled every epoch from deterministic seed 1000; unique within epoch and disjoint from fixed validation/test negatives",
+  "wandb": {
+    "logging": "every epoch, unsmoothed",
+    "mode": "offline",
+    "project": "cora-standard-mlp-lp"
+  },
+  "weight_decay": 0.0005
+}
