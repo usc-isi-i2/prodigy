@@ -1,0 +1,25 @@
+{
+  "name": "negative_renewal_v1",
+  "revision": "e7d696ac83a4325e50805dee11a675033e9535ea",
+  "arms": [
+    "fixed",
+    "renew"
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "steps": 2000,
+  "interval": 50,
+  "train_year": 2017,
+  "validation_year": 2018,
+  "renewal": "initial archived fresh pool, then independent pool every50 updates; seed 2026091400+pool_index; target2017 positives and validation negatives excluded; no test exclusions",
+  "negative_count": 100000,
+  "probe": "pool40 masked against union of optimized pools, size recorded; zero training-pair overlap",
+  "selection": "earliest maximum standalone validation Hits@50",
+  "advance": "all3 paired gains positive and mean gain>=0.005; then earlier chronological replication",
+  "invariants": "BCE, Adam.001 wd.0001 clip5;2048positive+1024uniform+1024hard, top2048 mined every10; original mean/std/calibration; matched positive/uniform/index-slot RNG, hard identities necessarily differ",
+  "prior_test_exploration_disclosed": true,
+  "test_access": false
+}
