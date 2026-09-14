@@ -4,6 +4,8 @@
 - [Temporal small-model correction to AA-DC on ogbl-collab](baselines/ogbl_collab_temporal_gate/FINDINGS.md)
 - [AA-DC / MLP validation complementarity and negative-tail audit](baselines/ogbl_collab_complementarity/FINDINGS.md)
 - [Standard Cora feature-only LP ladder](baselines/cora_standard_mlp_lp/RESULTS.md)
+- [Consolidated ogbl-collab baseline findings](synthesis/cross_experiment/ogbl_collab_baselines/FINDINGS.md)
+- [Feature-only MLP and pair-scorer diagnostics on ogbl-collab](baselines/ogbl_collab_mlp_lp/FINDINGS.md)
 - [Matched GraphSAGE-cosine on ogbl-collab](baselines/ogbl_collab_sage_lp/RESULTS.md)
 - [Official AA-DC reproduction on ogbl-collab](baselines/ogbl_collab_aadc/RESULTS.md)
 - [September 11 node-only MLP ladder, activation diagnostics, LeakyReLU screening and Suspended repair](transfer/ablations/node_mlp/node_mlp_ladder_20260911/RESULTS.md)
