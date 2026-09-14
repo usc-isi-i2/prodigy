@@ -33,6 +33,14 @@ class FusionProtocolTest(unittest.TestCase):
         self.assertEqual(len(list(MOD.candidates("joint"))), len(MOD.ALPHAS))
         self.assertEqual(len(list(MOD.candidates("both"))), len(MOD.ALPHAS) ** 2)
 
+    def test_hitmask_uses_negative_top_50_cutoff(self):
+        negative = np.arange(100, dtype=float)
+        positive = np.array([49.0, 50.0, 50.1, 99.0])
+        np.testing.assert_array_equal(
+            MOD.hitmask(positive, negative),
+            np.array([False, False, True, True]),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

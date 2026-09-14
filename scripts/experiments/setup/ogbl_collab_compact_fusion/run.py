@@ -66,6 +66,11 @@ def hits(positive: np.ndarray, negative: np.ndarray) -> float:
     return float(np.mean(positive > cutoff(negative)))
 
 
+def hitmask(positive: np.ndarray, negative: np.ndarray) -> np.ndarray:
+    """Return the per-positive Hits@50 decisions for error accounting."""
+    return positive > cutoff(negative)
+
+
 def contract() -> dict:
     return {
         "name": "compact_fusion_v1",
