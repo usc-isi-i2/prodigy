@@ -1,5 +1,51 @@
 # Temporal residual gate pilot
 
+## Warm-endpoint follow-up: completed
+
+The matched-population follow-up improves mean official 2018 Hits@50 from
+67.5821% to **67.8572%** (+0.2752 percentage points), versus 67.3557% for
+official-calibrated AA-DC (+0.5015 points). Sample standard deviation across the
+three optimization seeds is 0.6541 points. This is a modest development gain,
+not evidence of beating HyperFusion, and seed sensitivity remains substantial.
+
+| Seed | Step / strength | 2018 Hits@50 | Recovered / lost vs official AA-DC |
+| --- | --- | ---: | ---: |
+| 0 | 400 / 0.25 | 68.6040% | 1294 / 544 |
+| 1 | 360 / 0.25 | 67.5821% | 1025 / 889 |
+| 2 | 340 / 0.25 | 67.3857% | 1006 / 988 |
+
+All three exceed the official AA-DC reference, but seed 2 gains only 18 net
+positive hits. Relative to the original gate, paired-seed changes are +0.6741,
++0.0666, and +0.0850 points. Do not select seed 0 retrospectively using 2018.
+The common frozen AA-DC baseline remains 66.8398%; its recomputed calibration
+and final score were unchanged by filtering.
+
+The independent audit verifies exact equality of all historical negative pairs
+and features, historical positive features as precisely the warm-endpoint subsets,
+and unchanged official 2018 positive/negative inputs. Checkpoint and selection
+hashes, selection argmax/tie rules, every final hit count, and self-pair scoring
+pass. All three required cells completed with no expansion or test scoring.
+The full dataset identity audit still reads test metadata, as declared in setup.
+
+Producing revision `7d528e274fd969a0abba5af7d7619e9c384b2190`, branch
+`codex/collab-temporal-gate`; local worktree
+`/Users/philipp/projects/gfm/prodigy-collab-gate`, Tucker worktree
+`/dataMeR1/phil/gfm/prodigy-collab-gate`. Runtime evidence is on Tucker at
+`/dataMeR1/phil/gfm/ogbl_collab_temporal_gate/warm_v1`. CPU only, eight threads,
+78.02 seconds; dedicated tmux `collab-temporal-gate-warm` exited on completion.
+W&B offline directory is recorded in the receipt. No GPU jobs were started.
+
+Evidence: [results](data/warm_v1/results.json), [frozen protocol](data/warm_v1/protocol.json),
+[selections](data/warm_v1/selection_frozen.json), [receipt](data/warm_v1/validation_receipt.json),
+[independent matched-input and score audit](data/warm_v1/audit.json).
+Audit reproduction: `audit.py --runtime <warm_v1> --evidence <warm_v1>
+--control-runtime <pilot_v1> --out <new-audit.json>`.
+
+This intervention jointly changes historical calibration/training/selection
+positive eligibility; it does not identify which stage contributes the gain.
+Official 2018 is repeatedly inspected development data, not a fresh holdout.
+The original pilot below is preserved unchanged as the control.
+
 ## Outcome relative to the objective
 
 The 481-parameter correction improves forward-year validation ranking, but this

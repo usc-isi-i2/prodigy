@@ -1,0 +1,43 @@
+{
+  "years": {
+    "calibration": 2015,
+    "train": 2016,
+    "selection": 2017,
+    "assessment": 2018
+  },
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "strengths": [
+    0.0,
+    0.25,
+    0.5,
+    1.0
+  ],
+  "steps": 400,
+  "hidden": 32,
+  "residual_bound": 12.0,
+  "features": [
+    "log_aa",
+    "log_l3_aa_zero_only",
+    "external_ratio",
+    "lcc_min",
+    "lcc_max",
+    "log_degree_min",
+    "log_degree_max",
+    "raw_cosine",
+    "log_prior_pair_events",
+    "last_event_age_capped20",
+    "log_recent_activity_min",
+    "log_recent_activity_max",
+    "aa_zero"
+  ],
+  "negative_count": 100000,
+  "warm_only": true,
+  "negative_policy": "unchanged full-year-positive exclusion before positive filtering",
+  "test_scored": false,
+  "revision": "7d528e274fd969a0abba5af7d7619e9c384b2190",
+  "threads": 8
+}

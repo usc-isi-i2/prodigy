@@ -17,6 +17,7 @@ def main():
     p.add_argument('--runtime',type=Path,required=True)
     p.add_argument('--out',type=Path,required=True)
     p.add_argument('--evidence',type=Path,default=Path(__file__).parent/'data')
+    p.add_argument('--control-runtime',type=Path)
     args=p.parse_args()
     if args.out.exists():
         raise FileExistsError(args.out)
@@ -68,6 +69,20 @@ def main():
             'source_selection_sha256':sha(r/'selection_frozen.json'),
             'source_assessment_sha256':sha(r/'assessment_scores.npz'),
             'audit_source_sha256':sha(Path(__file__))}
+    if args.control_runtime:
+        checks=[]
+        for y in (2015,2016,2017,2018):
+            current=np.load(r/f'year{y}.npz')
+            control=np.load(args.control_runtime/f'year{y}.npz')
+            for name in ('neg','nfeatures'):
+                assert np.array_equal(current[name],control[name]),(y,name)
+            keep=control['pfeatures'][:,5]>0 if y<2018 else np.ones(len(control['pos']),dtype=bool)
+            for name in ('pos','pfeatures'):
+                assert np.array_equal(current[name],control[name][keep]),(y,name)
+            checks.append({'year':y,'negative_pairs_and_features_identical':True,
+                           'positive_pairs_and_features_exact_expected_subset':True,
+                           'original_positives':len(control['pos']),'retained_positives':len(current['pos'])})
+        report['matched_panel_checks']=checks
     args.out.write_text(json.dumps(report,indent=2)+'\n')
     print(json.dumps(report,indent=2))
 
