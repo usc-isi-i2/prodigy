@@ -1,5 +1,89 @@
 # Compact joint scorer: experiment history and test-exposure findings
 
+## Closeout: what is established
+
+This campaign does **not** establish a clean sub-million-parameter win over
+HyperFusion. Its strongest defensible 2019 result is the validation-selected,
+fresh-negative candidate at 69.7979 ± 0.1786% Hits@50. It improves on the
+explicitly test-tuned 69.4288% fusion result despite not using test labels for
+selection, but remains 1.4921 points below HyperFusion's reported 71.29%.
+The 82.5394% 2019 result is numerically higher but is not admissible evidence of
+generalization because 99,984 of 100,000 official test negatives were also used
+as training negatives.
+
+| Route | Parameters/scalars | Result | Interpretation |
+| --- | ---: | ---: | --- |
+| Original joint scorer, 2018 validation | 496,429 | 63.6831 ± 0.6934% | Negative result; worse than AA-DC and structure-only. |
+| Frozen AA/joint max fusion, 2018 validation | 496,434 | 68.2433 ± 0.7134% | Cleanest positive result; selection and normalization frozen on 2017. |
+| Explicitly test-tuned fusion, 2019 test | 496,448 | 69.4288 ± 0.0563% | Development evidence only; test chose normalization and mixing. |
+| Train on official 2018 panel, 2019 test | 496,448 | 82.5394 ± 0.3345% | Invalid as a clean win because of near-total test-negative reuse. |
+| Fresh-negative select/refit candidate, 2019 test | 496,448 | 69.7979 ± 0.1786% | Best defensible result; validation-selected, zero train-negative overlap with validation/test. |
+
+Failure analysis narrows the modeling problem. The original joint scorer does
+recover roughly 2.9k AA-DC misses per seed, but it simultaneously loses roughly
+4.9k--5.6k AA-DC hits. Simple threshold optimism or recall bias is therefore not
+the fix: the scorer must distinguish rescued positives from the highest-scoring
+negatives and preserve strong AA decisions. Matching on all 14 inputs did not
+reveal a clean path-count or hub separator. Younger path-formation age was the
+most consistent residual clue, but only as a modest post-hoc association.
+
+The released HyperFusion Collab procedure combines AGDN, E2E-GCN and PLNLP base
+predictions through a similarity-derived propagation matrix. Its published code
+constructs that matrix from labeled validation **and test** positive/negative
+prediction partitions, so it is not a validation-frozen comparator of the kind
+needed for an untouched-test claim. This observation is about the released
+evaluation procedure, not proof that the reported score is erroneous. The
+available repository does not include enough base-prediction artifacts and run
+configuration to decompose how much of 71.29% comes from the three strong bases
+versus this fusion rule. See the
+[released Collab implementation](https://github.com/zhangxwww/HyperFusion/blob/master/HyperFusion_collab.py)
+and [OGB leaderboard](https://ogb.stanford.edu/docs/leader_linkprop/).
+
+The fresh-negative protocol selected checkpoints and fusion solely on 2018 after
+training on 2017 fresh negatives, froze all choices, refit from scratch on 2018
+with fresh negatives, then scored 2019 once. The independent audit verified the
+entire stored selection grids, frozen choices, final scores, and zero overlap of
+both training-negative panels with validation and test negatives. Prior extensive
+test exploration still has to be disclosed, and benchmark-maintainer acceptance
+has not been established. The result narrows the remaining gap but does not justify
+another unconstrained sweep.
+
+## Fresh-negative candidate: clean protocol reaches 69.80%, below target
+
+All three predeclared selection and refit cells completed. Each seed selected its
+checkpoint, AA base, mixing coefficient, AA scale, and joint-logit offset using
+2018 only. It was then reinitialized and trained on 2018 positives plus deterministic
+fresh negatives for exactly the selected number of updates before one 2019 score.
+
+| Seed | Selected step | Validation alpha | Fusion test Hits@50 (%) | Standalone joint (%) | Recovered / lost vs AA-DC |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 0 | 150 | 1.50 | 69.6281 | 70.0360 | 1,519 / 776 |
+| 1 | 200 | 0.75 | 69.9842 | 69.3065 | 1,844 / 936 |
+| 2 | 250 | 1.00 | 69.7813 | 70.1569 | 1,458 / 644 |
+
+Mean fusion is **69.7979%**, sample SD 0.1786 points. The reproduced official
+AA-DC test score is 68.0243%, so the candidate adds 1.7735 points on average.
+Every seed has positive net recoveries, although fusion is worse than its standalone
+joint scorer in seeds 0 and 2. Selection validation scores are 69.9654%, 70.0253%,
+and 69.8971%; selected update counts are early (150--250), consistent with the
+earlier overfitting diagnosis.
+
+Both 2017 and 2018 generated training-negative panels contain 100,000 unique pairs,
+have no collision with their target positives, and have **zero** overlap with the
+official validation and test negatives. The audit also confirms the refit used the
+frozen validation choices and that test was not used for selection. This repairs
+the specific 99,984-pair exposure defect in the 82.54% route. It does not erase
+the documented prior test exploration or establish that OGB would accept this
+training/evaluation protocol for a leaderboard entry.
+
+Runtime and full checkpoints remain on Tucker at
+`/dataMeR1/phil/gfm/ogbl_collab_compact_joint/candidate_fresh_v1`. Canonical small
+evidence: [audit summary](data/candidate_fresh_v1/audit_summary.json),
+[frozen selection](data/candidate_fresh_v1/frozen.json), and per-seed selection/
+refit histories and results under `data/candidate_fresh_v1`. Producing model
+revision `bcb778798df0208cf70caffa5866e1309d938802`; independent audit added at
+revision `07a416c2`. Offline W&B directories are recorded in each result.
+
 ##2018 training:82.54% test mean, with near-complete test-negative exposure
 
 The user-authorized2018 training run numerically exceeds the71.29% target with

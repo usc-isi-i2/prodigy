@@ -1,0 +1,24 @@
+{
+  "name": "candidate_fresh_v1",
+  "revision": "bcb778798df0208cf70caffa5866e1309d938802",
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "select_train_year": 2017,
+  "select_validation_year": 2018,
+  "refit_train_year": 2018,
+  "selection_steps": 2000,
+  "selection_interval": 50,
+  "final_year": 2019,
+  "negative_sampling": "uniform unique target-year nonpositives, seed20260000+year; excludes validation negatives; does not inspect test identities",
+  "selection": "per seed highest2018 fusion Hits; earliest step then declared base/alpha order",
+  "final": "fresh initialization, exactly validation-selected update count; alpha and both normalizers frozen from validation; one test evaluation after final checkpoint saved",
+  "unchanged": "496385 neural weights;2015 AA feature calibration;2016 standardization;balanced BCE,Adam.001 wd.0001 clip5,2048pos/1024uniform/1024hard,top2048 refreshed10updates",
+  "total_inference_scalars": 496448,
+  "test_selection": false,
+  "prior_test_exploration_disclosed": true,
+  "eligibility": "candidate aligned with documented protocol; maintainer acceptance not established",
+  "stop": "three selection and three fixed refit cells; no test-tuned expansion"
+}
