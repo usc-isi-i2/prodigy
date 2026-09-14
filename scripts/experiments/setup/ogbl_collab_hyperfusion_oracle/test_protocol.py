@@ -23,5 +23,8 @@ class ProtocolTest(unittest.TestCase):
     def test_parameter_cap(self):
         self.assertLess(M.PARAMETERS, 1_000_000)
 
+    def test_hits_is_not_validation_constant(self):
+        self.assertEqual(M.hits(np.ones(3), np.ones(100)), 0.0)
+
 
 if __name__ == "__main__": unittest.main()
