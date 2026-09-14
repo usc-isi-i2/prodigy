@@ -17,6 +17,19 @@ do not rerun it or treat it as pending. Other ensemble rules remain untested,
 not automatically authorized. See ../ogbl_collab_fresh_ensemble/FINDINGS.md and
 its data/ receipts. No leaderboard-accepted win has been established.
 
+## Follow-up diagnosis: fixed negative population overfit
+
+New saved-checkpoint replay holds 2017 positives and graph fixed while replacing
+training negatives with a disjoint 100k historical negative panel. At step 2000,
+all three models score about 99.9% against training negatives but only 64.8–68.5%
+against separate negatives. This isolates negative-generalization failure without
+a year change; these are deliberately training positives, not benchmark scores.
+No new training or 2019 access occurred. Standalone validation peaks for seeds 1/2
+also preceded their fusion-selected checkpoints. The prioritized hypothesis is
+negative-pool renewal, followed by a controlled tail-ranking objective test;
+temporal path-age features need historical replication before training.
+See ../ogbl_collab_fresh_diagnosis/FINDINGS.md and data/ receipts.
+
 ## Objective and current answer
 
 The explicit objective is to show that a model with fewer than one million learned

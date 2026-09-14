@@ -1,0 +1,241 @@
+{
+  "revision": "4207df99bf04fc821c18c5a58ad7726946efe587",
+  "source": "/dataMeR1/phil/gfm/ogbl_collab_compact_joint/candidate_fresh_v1",
+  "original": "/dataMeR1/phil/gfm/ogbl_collab_compact_joint/joint_v1",
+  "device": "cuda:0",
+  "year": 2017,
+  "checkpoints": [
+    "best",
+    "final"
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "test_access": false,
+  "training": false,
+  "question": "Does negative generalization degrade holding positives, graph, and year fixed?",
+  "qualification": "Training positives in both comparisons; unseen means absent from this model training-negative set, not pristine research holdout.",
+  "rows": [
+    {
+      "seed": 0,
+      "checkpoint": "best",
+      "step": 150,
+      "seen": {
+        "cutoff": 1.02787446975708,
+        "hits": 0.6980070555583421,
+        "warm_hits": 0.7243301224077735,
+        "cold_hits": 0.6806426549753039,
+        "negative_quantiles": [
+          -4.9883809089660645,
+          -0.8621206915378575,
+          0.613023801147957,
+          1.0235655405521789
+        ]
+      },
+      "unseen": {
+        "cutoff": 1.070510745048523,
+        "hits": 0.6916202705188009,
+        "warm_hits": 0.7214276700458503,
+        "cold_hits": 0.6719573783228814,
+        "negative_quantiles": [
+          -4.997478246688843,
+          -0.8395679831504851,
+          0.6889455248117602,
+          1.0676768889427446
+        ]
+      },
+      "checkpoint_sha256": "a8d6bd0c8d5ec6674a511b1570c3882b5210103f1c94841a0f1bc31f73c9fc98",
+      "positive_quantiles": [
+        -0.5760807275772095,
+        2.3319873809814453,
+        7.0355236530304
+      ]
+    },
+    {
+      "seed": 0,
+      "checkpoint": "final",
+      "step": 2000,
+      "seen": {
+        "cutoff": -2.890122413635254,
+        "hits": 0.999180752704352,
+        "warm_hits": 0.9984856770285618,
+        "cold_hits": 0.9996392696598035,
+        "negative_quantiles": [
+          -12.880161762237549,
+          -5.157283034324647,
+          -3.306587427616111,
+          -2.8917469004392475
+        ]
+      },
+      "unseen": {
+        "cutoff": 18.7381591796875,
+        "hits": 0.6481500058517664,
+        "warm_hits": 0.5067934211079796,
+        "cold_hits": 0.7413979688106999,
+        "negative_quantiles": [
+          -12.891834735870361,
+          3.2677680754661558,
+          15.659893761634928,
+          18.635757174492824
+        ]
+      },
+      "checkpoint_sha256": "f0d04b9977d315fb0de028fb3bea940c299d94bd222db4bc6fd6f9ee4dfe1276",
+      "positive_quantiles": [
+        10.708258438110352,
+        21.945313453674316,
+        34.986534118652344
+      ]
+    },
+    {
+      "seed": 1,
+      "checkpoint": "best",
+      "step": 200,
+      "seen": {
+        "cutoff": 0.6880825757980347,
+        "hits": 0.8801140258480882,
+        "warm_hits": 0.8330248601354477,
+        "cold_hits": 0.9111770908485487,
+        "negative_quantiles": [
+          -7.939605474472046,
+          -1.6965784037113218,
+          0.1645874243080841,
+          0.6486800728741934
+        ]
+      },
+      "unseen": {
+        "cutoff": 2.375279188156128,
+        "hits": 0.7458577853572086,
+        "warm_hits": 0.7189037984267866,
+        "cold_hits": 0.7636383817081969,
+        "negative_quantiles": [
+          -7.939401626586914,
+          -1.337396669387826,
+          1.4465694931745618,
+          2.3713148398399717
+        ]
+      },
+      "checkpoint_sha256": "150b61df69a021d9ecf82d9775010bd08412c3fa0fd140bc5ebe2621c8a5a7d8",
+      "positive_quantiles": [
+        0.3296736359596254,
+        4.705728530883789,
+        8.191781997680664
+      ]
+    },
+    {
+      "seed": 1,
+      "checkpoint": "final",
+      "step": 2000,
+      "seen": {
+        "cutoff": -2.3461012840270996,
+        "hits": 0.9991305947066593,
+        "warm_hits": 0.9982122576031632,
+        "cold_hits": 0.9997363893667796,
+        "negative_quantiles": [
+          -12.598588943481445,
+          -5.4561314582824725,
+          -2.9825392646788877,
+          -2.3499641168117167
+        ]
+      },
+      "unseen": {
+        "cutoff": 17.91403579711914,
+        "hits": 0.6852251258129776,
+        "warm_hits": 0.5629075001051613,
+        "cold_hits": 0.7659137577002053,
+        "negative_quantiles": [
+          -12.593280792236328,
+          3.07470645666118,
+          15.121445270538537,
+          17.886196711540478
+        ]
+      },
+      "checkpoint_sha256": "6c32420933cdf9d5dc914c359272cf223b81b757ee1df87e12d33b452ec8a59d",
+      "positive_quantiles": [
+        10.277364158630371,
+        22.03319549560547,
+        36.63075256347656
+      ]
+    },
+    {
+      "seed": 2,
+      "checkpoint": "best",
+      "step": 250,
+      "seen": {
+        "cutoff": 0.847556471824646,
+        "hits": 0.8635451672769223,
+        "warm_hits": 0.826000084129054,
+        "cold_hits": 0.8883123369776347,
+        "negative_quantiles": [
+          -7.749483346939087,
+          -1.324946616888048,
+          0.38325552985072464,
+          0.8252452167274621
+        ]
+      },
+      "unseen": {
+        "cutoff": 2.003523111343384,
+        "hits": 0.7505141194763505,
+        "warm_hits": 0.7395154166491398,
+        "cold_hits": 0.7577695765580776,
+        "negative_quantiles": [
+          -7.759927988052368,
+          -0.9873042714595803,
+          1.3400902962685017,
+          1.9493730348949647
+        ]
+      },
+      "checkpoint_sha256": "74492b5a942cb9e86421121db03d513dec423a4b065b2953071fa297dc7c9ea1",
+      "positive_quantiles": [
+        0.3324973672628403,
+        4.2127296924591064,
+        8.90220775604248
+      ]
+    },
+    {
+      "seed": 2,
+      "checkpoint": "final",
+      "step": 2000,
+      "seen": {
+        "cutoff": -3.297609806060791,
+        "hits": 0.9990887963752487,
+        "warm_hits": 0.9983805157111009,
+        "cold_hits": 0.9995560241966813,
+        "negative_quantiles": [
+          -14.453498363494873,
+          -5.337522010803223,
+          -3.5848259670734404,
+          -3.29763601899147
+        ]
+      },
+      "unseen": {
+        "cutoff": 13.762948989868164,
+        "hits": 0.6741652873217301,
+        "warm_hits": 0.592878475581542,
+        "cold_hits": 0.7277873355902104,
+        "negative_quantiles": [
+          -14.454632759094238,
+          2.0666350722312847,
+          11.548599792480573,
+          13.713920324326013
+        ]
+      },
+      "checkpoint_sha256": "30f1f77fc5b5944f397b046e8b7df40f5dd15b5f1937040ba721509a60e16f95",
+      "positive_quantiles": [
+        8.87458667755127,
+        16.848297119140625,
+        25.914337158203125
+      ]
+    }
+  ],
+  "positive_count": 119622,
+  "warm_positive_count": 47546,
+  "seen_negative_count": 100000,
+  "unseen_negative_count": 100000,
+  "removed_overlap": 0,
+  "elapsed_seconds": 0.8749321040231735,
+  "wandb_directory": "/dataMeR1/phil/gfm/ogbl_collab_compact_joint/fresh_sameyear_probe_v1/wandb/offline-run-20260914_015845-7mpnornr/files",
+  "probe_panel_sha256": "85439e1d8c24569b6bfb9cf2a5a532658255fa36ed1f9c4bddeb979f73165343",
+  "train_panel_sha256": "8c7a3e250528e33a60dab0a4306b9fa510af702d5a38c02157b4256db1c5e686"
+}
