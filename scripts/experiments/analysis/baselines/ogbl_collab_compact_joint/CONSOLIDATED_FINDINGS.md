@@ -6,6 +6,19 @@ below are historical diagnostics, not authorization for submission or further ru
 Acceptance has not been established. All proposed next experiments are parked;
 see [retirement record](../../../../../cleanup_records/2026-09-14-collab.md).
 
+## Frozen model trace: shallower SAGE is not supported
+
+A no-fit seed-0 diagnostic captures every SAGE layer and intervenes on the frozen
+decoder. Endpoint cosine becomes less discriminative through the encoder (AUC
+0.9409 on raw features, 0.9410/0.9251/0.9151 after layers 1/2/3), consistent with
+oversmoothing in cosine geometry. Nevertheless, the unchanged decoder reaches
+66.9879%, 66.9280%, and **68.7155%** Hits@50 from layers 1, 2, and 3. The third
+layer's net benefit is almost entirely novel positives. Zeroing learned pair inputs
+drops to 65.9011%, especially hurting novel and zero-AA recall. Thus the learned
+channel materially helps the hard regime; simply making SAGE shallower is not the
+next supported experiment. See [layer trace](../ogbl_collab_layer_trace/FINDINGS.md).
+No training or 2019 access occurred.
+
 ## Warm-positive joint follow-up: failed
 
 The matched six-cell fresh-negative joint test restricted training positives to two

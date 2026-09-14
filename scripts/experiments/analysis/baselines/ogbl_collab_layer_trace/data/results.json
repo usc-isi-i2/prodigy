@@ -1,0 +1,1867 @@
+{
+  "complete": true,
+  "classification": "post-hoc frozen validation diagnostic; intermediate layers and zero-input ablations are off-distribution",
+  "checkpoint": {
+    "path": "work/warm-runtime/bce0/best.pt",
+    "sha256": "7f1765d55ddc2ae62c89d8b3ac644857ba2d4a3db7e9cd8a121647d856d1dd0f",
+    "step": 150,
+    "seed": 0,
+    "producing_revision": "f6d5856c78f5e177824927b4789e92effd2ab12e"
+  },
+  "inputs": {
+    "panel_sha256": "9427b395e75968e5d49e315f7231cb0ad94c493991535e3cf8b157d0c729b4c4",
+    "node_features_sha256": "c632753f7b557a10aca39190b732b076fea9255f9e8a8b2a7863f78929963818",
+    "standardization_sha256": "5503c2e84d4184dd03c87be18fda8a94c387df9591cf6f979849a47b8cb287bc",
+    "saved_scores_sha256": "bc23c9debc555deeddda63cb2928347747488491093ec7d5ce64b002a5b4de78",
+    "sample_hashes": {
+      "first": "7a19023f4ad1a419733b3bfce380dae9cfbb05f86edc142090d17f1febb72a74",
+      "second": "6c1742bc6947bc772cb0d00b69d65a616537ba2840aae036bde8f00bffda4a39"
+    }
+  },
+  "tensor_shapes": {
+    "nodes": [
+      235868,
+      128
+    ],
+    "positive_pairs": [
+      60084,
+      2
+    ],
+    "negative_pairs": [
+      100000,
+      2
+    ],
+    "layers": [
+      [
+        235868,
+        256
+      ],
+      [
+        235868,
+        256
+      ],
+      [
+        235868,
+        256
+      ]
+    ]
+  },
+  "diagnostic_revision": "d12b712bd59f548115858dffe4f56c07f8df6f78",
+  "decoder_scores": {
+    "layer1": {
+      "hits_at_50": 0.6698788362958524,
+      "auc": 0.9724616309666467,
+      "cutoff": 1.158888578414917,
+      "positive_quantiles": [
+        -8.620100975036621,
+        -1.2585845112800598,
+        3.293043851852417,
+        8.539577865600586,
+        16.82461166381836
+      ],
+      "negative_quantiles": [
+        -1000000000.0,
+        -3.200361728668213,
+        -1.6208244442939757,
+        -0.2346910488605534,
+        7.5411376953125
+      ],
+      "relative_to_full": {
+        "all": {
+          "count": 60084,
+          "hits_at_50": 0.6698788362958524,
+          "recovered": 301,
+          "lost": 1339
+        },
+        "novel": {
+          "count": 32012,
+          "hits_at_50": 0.3807322254154692,
+          "recovered": 301,
+          "lost": 1337
+        },
+        "repeat": {
+          "count": 28072,
+          "hits_at_50": 0.9996081504702194,
+          "recovered": 0,
+          "lost": 2
+        },
+        "zero_aa": {
+          "count": 21101,
+          "hits_at_50": 0.17847495379365907,
+          "recovered": 192,
+          "lost": 789
+        },
+        "nonzero_aa": {
+          "count": 38983,
+          "hits_at_50": 0.935869481568889,
+          "recovered": 109,
+          "lost": 550
+        }
+      }
+    },
+    "layer2": {
+      "hits_at_50": 0.6692796751214966,
+      "auc": 0.9729285511949937,
+      "cutoff": 1.1708701848983765,
+      "positive_quantiles": [
+        -8.58819580078125,
+        -1.1965019583702088,
+        3.2836029529571533,
+        8.539603900909428,
+        16.809207916259766
+      ],
+      "negative_quantiles": [
+        -1000000000.0,
+        -3.2254446744918823,
+        -1.570810043811798,
+        -0.17272306859493414,
+        7.5412068367004395
+      ],
+      "relative_to_full": {
+        "all": {
+          "count": 60084,
+          "hits_at_50": 0.6692796751214966,
+          "recovered": 231,
+          "lost": 1305
+        },
+        "novel": {
+          "count": 32012,
+          "hits_at_50": 0.37960764713232537,
+          "recovered": 231,
+          "lost": 1303
+        },
+        "repeat": {
+          "count": 28072,
+          "hits_at_50": 0.9996081504702194,
+          "recovered": 0,
+          "lost": 2
+        },
+        "zero_aa": {
+          "count": 21101,
+          "hits_at_50": 0.1766267001563907,
+          "recovered": 161,
+          "lost": 797
+        },
+        "nonzero_aa": {
+          "count": 38983,
+          "hits_at_50": 0.9359464381910063,
+          "recovered": 70,
+          "lost": 508
+        }
+      }
+    },
+    "layer3": {
+      "hits_at_50": 0.6871546501564476,
+      "auc": 0.9770455632115039,
+      "cutoff": 0.615729808807373,
+      "positive_quantiles": [
+        -9.683194160461426,
+        -2.3729581117630003,
+        3.5638492107391357,
+        8.969713306427002,
+        17.140888214111328
+      ],
+      "negative_quantiles": [
+        -1000000000.0,
+        -5.121281623840332,
+        -3.065790557861328,
+        -1.4019548702240006,
+        7.823747158050537
+      ],
+      "relative_to_full": {
+        "all": {
+          "count": 60084,
+          "hits_at_50": 0.6871546501564476,
+          "recovered": 0,
+          "lost": 0
+        },
+        "novel": {
+          "count": 32012,
+          "hits_at_50": 0.4130950893414969,
+          "recovered": 0,
+          "lost": 0
+        },
+        "repeat": {
+          "count": 28072,
+          "hits_at_50": 0.9996793958392705,
+          "recovered": 0,
+          "lost": 0
+        },
+        "zero_aa": {
+          "count": 21101,
+          "hits_at_50": 0.2067674517795365,
+          "recovered": 0,
+          "lost": 0
+        },
+        "nonzero_aa": {
+          "count": 38983,
+          "hits_at_50": 0.947182105020137,
+          "recovered": 0,
+          "lost": 0
+        }
+      }
+    },
+    "zero_learned_pair": {
+      "hits_at_50": 0.6590107183276745,
+      "auc": 0.9709948414719393,
+      "cutoff": 1.427303433418274,
+      "positive_quantiles": [
+        -8.01888370513916,
+        -0.8965561509132385,
+        3.3610680103302,
+        8.510018634796143,
+        16.76500701904297
+      ],
+      "negative_quantiles": [
+        -1000000000.0,
+        -2.636775016784668,
+        -1.1790410041809078,
+        0.1840709792077537,
+        7.553874969482422
+      ],
+      "relative_to_full": {
+        "all": {
+          "count": 60084,
+          "hits_at_50": 0.6590107183276745,
+          "recovered": 286,
+          "lost": 1977
+        },
+        "novel": {
+          "count": 32012,
+          "hits_at_50": 0.360333624890666,
+          "recovered": 286,
+          "lost": 1975
+        },
+        "repeat": {
+          "count": 28072,
+          "hits_at_50": 0.9996081504702194,
+          "recovered": 0,
+          "lost": 2
+        },
+        "zero_aa": {
+          "count": 21101,
+          "hits_at_50": 0.1569119946921947,
+          "recovered": 161,
+          "lost": 1213
+        },
+        "nonzero_aa": {
+          "count": 38983,
+          "hits_at_50": 0.930790344509145,
+          "recovered": 125,
+          "lost": 764
+        }
+      }
+    },
+    "zero_structural": {
+      "hits_at_50": 0.03406897010851474,
+      "auc": 0.8625789928267092,
+      "cutoff": -0.49818360805511475,
+      "positive_quantiles": [
+        -4.443384170532227,
+        -2.1442630290985107,
+        -1.5904454588890076,
+        -0.9948296308517451,
+        0.6920328140258789
+      ],
+      "negative_quantiles": [
+        -1000000000.0,
+        -2.4053797721862793,
+        -1.6506905794143676,
+        -1.0719222486019195,
+        0.22506259381771088
+      ],
+      "relative_to_full": {
+        "all": {
+          "count": 60084,
+          "hits_at_50": 0.03406897010851474,
+          "recovered": 86,
+          "lost": 39326
+        },
+        "novel": {
+          "count": 32012,
+          "hits_at_50": 0.021335749094089716,
+          "recovered": 86,
+          "lost": 12627
+        },
+        "repeat": {
+          "count": 28072,
+          "hits_at_50": 0.048589341692789965,
+          "recovered": 0,
+          "lost": 26699
+        },
+        "zero_aa": {
+          "count": 21101,
+          "hits_at_50": 0.004691720771527416,
+          "recovered": 64,
+          "lost": 4328
+        },
+        "nonzero_aa": {
+          "count": 38983,
+          "hits_at_50": 0.04997049996152169,
+          "recovered": 22,
+          "lost": 34998
+        }
+      }
+    }
+  },
+  "endpoint_cosine": {
+    "layer1": {
+      "hits_at_50": 0.25334531655682047,
+      "auc": 0.9409814946574795,
+      "cutoff": 0.9829256534576416,
+      "positive_quantiles": [
+        0.35013484954833984,
+        0.8952295362949372,
+        0.9671227931976318,
+        0.9914647102355957,
+        1.000000238418579
+      ],
+      "negative_quantiles": [
+        0.0959307849407196,
+        0.8017826676368713,
+        0.9211505889892578,
+        0.9632977867126464,
+        1.0
+      ],
+      "node_norm_quantiles": [
+        0.7897824645042419,
+        1.0818892002105713,
+        1.2326691150665283,
+        1.4668935418128968,
+        3.058324098587036
+      ]
+    },
+    "layer2": {
+      "hits_at_50": 0.1967578723120964,
+      "auc": 0.9250545031123094,
+      "cutoff": 0.9957339763641357,
+      "positive_quantiles": [
+        0.44382816553115845,
+        0.9362677037715912,
+        0.9868844747543335,
+        0.997677606344223,
+        1.000000238418579
+      ],
+      "negative_quantiles": [
+        0.25010767579078674,
+        0.8604978024959564,
+        0.9662640750408172,
+        0.9891278231143951,
+        1.0000001192092896
+      ],
+      "node_norm_quantiles": [
+        0.43350750207901,
+        1.0306335926055907,
+        1.2234654426574707,
+        1.500174331665039,
+        2.940253734588623
+      ]
+    },
+    "layer3": {
+      "hits_at_50": 0.16197323746754544,
+      "auc": 0.9151317706877039,
+      "cutoff": 0.9992323517799377,
+      "positive_quantiles": [
+        0.6881747245788574,
+        0.9767171978950501,
+        0.9963200092315674,
+        0.9995328187942505,
+        1.000000238418579
+      ],
+      "negative_quantiles": [
+        0.43691885471343994,
+        0.9445788264274597,
+        0.9904077351093292,
+        0.9976415640115738,
+        1.0
+      ],
+      "node_norm_quantiles": [
+        1.212502121925354,
+        2.546114754676819,
+        2.9336845874786377,
+        3.3760573387146,
+        5.411858081817627
+      ]
+    },
+    "raw_node_features": {
+      "hits_at_50": 0.2955695359829572,
+      "auc": 0.9409197892117702,
+      "cutoff": 0.9690637588500977,
+      "positive_quantiles": [
+        0.3979927599430084,
+        0.873724228143692,
+        0.9509904086589813,
+        0.9852677345275879,
+        1.0000004768371582
+      ],
+      "negative_quantiles": [
+        0.25758033990859985,
+        0.8153524696826935,
+        0.893602067232132,
+        0.9396166306734085,
+        1.0
+      ]
+    }
+  },
+  "representation_cohorts": {
+    "layer1": {
+      "baseline_hits": {
+        "count": 41287,
+        "endpoint_cosine_quantiles": [
+          0.9366486072540283,
+          0.9766274690628052,
+          0.9935139775276184
+        ],
+        "decoder_score_quantiles": [
+          1.705460548400879,
+          5.478909969329834,
+          9.225797271728517
+        ]
+      },
+      "baseline_misses": {
+        "count": 18797,
+        "endpoint_cosine_quantiles": [
+          0.833447527885437,
+          0.9309169054031372,
+          0.9716589212417602
+        ],
+        "decoder_score_quantiles": [
+          -2.461587905883789,
+          -0.6034160852432251,
+          0.6842827796936035
+        ]
+      },
+      "top50_negatives": {
+        "count": 50,
+        "endpoint_cosine_quantiles": [
+          0.9219361007213592,
+          0.9628138542175293,
+          0.9852689743041992
+        ],
+        "decoder_score_quantiles": [
+          0.9307977676391601,
+          1.328615665435791,
+          3.7322705745697027
+        ]
+      }
+    },
+    "layer2": {
+      "baseline_hits": {
+        "count": 41287,
+        "endpoint_cosine_quantiles": [
+          0.9654455780982971,
+          0.9913870692253113,
+          0.9983755469322204
+        ],
+        "decoder_score_quantiles": [
+          1.7041041851043701,
+          5.477408409118652,
+          9.212176704406739
+        ]
+      },
+      "baseline_misses": {
+        "count": 18797,
+        "endpoint_cosine_quantiles": [
+          0.8860363841056824,
+          0.966683030128479,
+          0.9905032634735107
+        ],
+        "decoder_score_quantiles": [
+          -2.4306423664093018,
+          -0.54392009973526,
+          0.6905338287353516
+        ]
+      },
+      "top50_negatives": {
+        "count": 50,
+        "endpoint_cosine_quantiles": [
+          0.9523431897163391,
+          0.9842433929443359,
+          0.9945271849632263
+        ],
+        "decoder_score_quantiles": [
+          0.958707618713379,
+          1.3075814843177795,
+          3.7317284107208257
+        ]
+      }
+    },
+    "layer3": {
+      "baseline_hits": {
+        "count": 41287,
+        "endpoint_cosine_quantiles": [
+          0.988110888004303,
+          0.9977383017539978,
+          0.9996883153915406
+        ],
+        "decoder_score_quantiles": [
+          1.7409910440444947,
+          5.849318981170654,
+          9.612125205993653
+        ]
+      },
+      "baseline_misses": {
+        "count": 18797,
+        "endpoint_cosine_quantiles": [
+          0.9535033822059631,
+          0.9893773794174194,
+          0.9977237224578858
+        ],
+        "decoder_score_quantiles": [
+          -3.9518698692321776,
+          -1.5417299270629883,
+          0.13224003016948704
+        ]
+      },
+      "top50_negatives": {
+        "count": 50,
+        "endpoint_cosine_quantiles": [
+          0.9813053965568542,
+          0.9953782856464386,
+          0.9985714495182038
+        ],
+        "decoder_score_quantiles": [
+          0.7130207657814026,
+          1.044888198375702,
+          3.994713473320008
+        ]
+      }
+    }
+  },
+  "sampled_40_misses": [
+    {
+      "index": 54384,
+      "layer1": {
+        "score": -3.319525957107544,
+        "hit": false,
+        "negatives_ahead": 53893
+      },
+      "layer2": {
+        "score": -3.3506271839141846,
+        "hit": false,
+        "negatives_ahead": 53855
+      },
+      "layer3": {
+        "score": -5.818882465362549,
+        "hit": false,
+        "negatives_ahead": 66430
+      },
+      "zero_learned_pair": {
+        "score": -2.6447055339813232,
+        "hit": false,
+        "negatives_ahead": 50269
+      },
+      "zero_structural": {
+        "score": -3.316345691680908,
+        "hit": false,
+        "negatives_ahead": 86930
+      },
+      "endpoint_cosine": {
+        "layer1": 0.6857520937919617,
+        "layer2": 0.7129418849945068,
+        "layer3": 0.8687775135040283
+      }
+    },
+    {
+      "index": 49538,
+      "layer1": {
+        "score": 0.6116691827774048,
+        "hit": false,
+        "negatives_ahead": 163
+      },
+      "layer2": {
+        "score": 0.672899603843689,
+        "hit": false,
+        "negatives_ahead": 155
+      },
+      "layer3": {
+        "score": -0.39346611499786377,
+        "hit": false,
+        "negatives_ahead": 187
+      },
+      "zero_learned_pair": {
+        "score": 0.6619696617126465,
+        "hit": false,
+        "negatives_ahead": 362
+      },
+      "zero_structural": {
+        "score": -1.7250142097473145,
+        "hit": false,
+        "negatives_ahead": 12799
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9614642262458801,
+        "layer2": 0.9831783771514893,
+        "layer3": 0.9956600666046143
+      }
+    },
+    {
+      "index": 36063,
+      "layer1": {
+        "score": -0.05454917997121811,
+        "hit": false,
+        "negatives_ahead": 694
+      },
+      "layer2": {
+        "score": -0.08899936825037003,
+        "hit": false,
+        "negatives_ahead": 826
+      },
+      "layer3": {
+        "score": -0.967326819896698,
+        "hit": false,
+        "negatives_ahead": 467
+      },
+      "zero_learned_pair": {
+        "score": 0.2892225980758667,
+        "hit": false,
+        "negatives_ahead": 809
+      },
+      "zero_structural": {
+        "score": -2.003309726715088,
+        "hit": false,
+        "negatives_ahead": 26703
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9388636350631714,
+        "layer2": 0.9724434614181519,
+        "layer3": 0.9916709065437317
+      }
+    },
+    {
+      "index": 39280,
+      "layer1": {
+        "score": -1.358507752418518,
+        "hit": false,
+        "negatives_ahead": 6998
+      },
+      "layer2": {
+        "score": -1.3577909469604492,
+        "hit": false,
+        "negatives_ahead": 7555
+      },
+      "layer3": {
+        "score": -2.03487229347229,
+        "hit": false,
+        "negatives_ahead": 2686
+      },
+      "zero_learned_pair": {
+        "score": -1.0199881792068481,
+        "hit": false,
+        "negatives_ahead": 7993
+      },
+      "zero_structural": {
+        "score": -1.1445592641830444,
+        "hit": false,
+        "negatives_ahead": 1358
+      },
+      "endpoint_cosine": {
+        "layer1": 0.883821964263916,
+        "layer2": 0.9691588878631592,
+        "layer3": 0.9940652251243591
+      }
+    },
+    {
+      "index": 20011,
+      "layer1": {
+        "score": -1.3760653734207153,
+        "hit": false,
+        "negatives_ahead": 7181
+      },
+      "layer2": {
+        "score": -1.0741621255874634,
+        "hit": false,
+        "negatives_ahead": 4958
+      },
+      "layer3": {
+        "score": -2.5135393142700195,
+        "hit": false,
+        "negatives_ahead": 5226
+      },
+      "zero_learned_pair": {
+        "score": -0.6865529417991638,
+        "hit": false,
+        "negatives_ahead": 4743
+      },
+      "zero_structural": {
+        "score": -1.7518970966339111,
+        "hit": false,
+        "negatives_ahead": 13934
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9255419969558716,
+        "layer2": 0.9455713033676147,
+        "layer3": 0.9737178087234497
+      }
+    },
+    {
+      "index": 35083,
+      "layer1": {
+        "score": -0.3571036458015442,
+        "hit": false,
+        "negatives_ahead": 1272
+      },
+      "layer2": {
+        "score": -0.17399175465106964,
+        "hit": false,
+        "negatives_ahead": 1003
+      },
+      "layer3": {
+        "score": -1.2924253940582275,
+        "hit": false,
+        "negatives_ahead": 833
+      },
+      "zero_learned_pair": {
+        "score": -0.060114599764347076,
+        "hit": false,
+        "negatives_ahead": 1598
+      },
+      "zero_structural": {
+        "score": -1.9515265226364136,
+        "hit": false,
+        "negatives_ahead": 23833
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9253080487251282,
+        "layer2": 0.9720298051834106,
+        "layer3": 0.9939213991165161
+      }
+    },
+    {
+      "index": 27590,
+      "layer1": {
+        "score": 0.832622766494751,
+        "hit": false,
+        "negatives_ahead": 106
+      },
+      "layer2": {
+        "score": 0.8272995948791504,
+        "hit": false,
+        "negatives_ahead": 116
+      },
+      "layer3": {
+        "score": 0.3026518225669861,
+        "hit": false,
+        "negatives_ahead": 70
+      },
+      "zero_learned_pair": {
+        "score": 1.0188316106796265,
+        "hit": false,
+        "negatives_ahead": 147
+      },
+      "zero_structural": {
+        "score": -1.7955145835876465,
+        "hit": false,
+        "negatives_ahead": 15895
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9752113819122314,
+        "layer2": 0.9886631965637207,
+        "layer3": 0.9959166049957275
+      }
+    },
+    {
+      "index": 19,
+      "layer1": {
+        "score": 1.4566397666931152,
+        "hit": true,
+        "negatives_ahead": 28
+      },
+      "layer2": {
+        "score": 1.510790228843689,
+        "hit": true,
+        "negatives_ahead": 27
+      },
+      "layer3": {
+        "score": 0.3381616175174713,
+        "hit": false,
+        "negatives_ahead": 67
+      },
+      "zero_learned_pair": {
+        "score": 1.8093119859695435,
+        "hit": true,
+        "negatives_ahead": 25
+      },
+      "zero_structural": {
+        "score": -1.77139413356781,
+        "hit": false,
+        "negatives_ahead": 14790
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9600051045417786,
+        "layer2": 0.9787651300430298,
+        "layer3": 0.9933561086654663
+      }
+    },
+    {
+      "index": 14369,
+      "layer1": {
+        "score": 0.2094050496816635,
+        "hit": false,
+        "negatives_ahead": 401
+      },
+      "layer2": {
+        "score": 0.23755532503128052,
+        "hit": false,
+        "negatives_ahead": 413
+      },
+      "layer3": {
+        "score": -0.5173037052154541,
+        "hit": false,
+        "negatives_ahead": 234
+      },
+      "zero_learned_pair": {
+        "score": 0.2781522274017334,
+        "hit": false,
+        "negatives_ahead": 829
+      },
+      "zero_structural": {
+        "score": -1.9405986070632935,
+        "hit": false,
+        "negatives_ahead": 23255
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9211668372154236,
+        "layer2": 0.9595789909362793,
+        "layer3": 0.9852451682090759
+      }
+    },
+    {
+      "index": 49884,
+      "layer1": {
+        "score": -1.9938701391220093,
+        "hit": false,
+        "negatives_ahead": 15962
+      },
+      "layer2": {
+        "score": -1.9028645753860474,
+        "hit": false,
+        "negatives_ahead": 14892
+      },
+      "layer3": {
+        "score": -3.6467790603637695,
+        "hit": false,
+        "negatives_ahead": 17770
+      },
+      "zero_learned_pair": {
+        "score": -1.3487025499343872,
+        "hit": false,
+        "negatives_ahead": 12736
+      },
+      "zero_structural": {
+        "score": -1.9871689081192017,
+        "hit": false,
+        "negatives_ahead": 25788
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9038695693016052,
+        "layer2": 0.9460036754608154,
+        "layer3": 0.9789409637451172
+      }
+    },
+    {
+      "index": 55333,
+      "layer1": {
+        "score": 0.39165812730789185,
+        "hit": false,
+        "negatives_ahead": 267
+      },
+      "layer2": {
+        "score": 0.46238279342651367,
+        "hit": false,
+        "negatives_ahead": 250
+      },
+      "layer3": {
+        "score": -0.25793030858039856,
+        "hit": false,
+        "negatives_ahead": 151
+      },
+      "zero_learned_pair": {
+        "score": 0.5514473915100098,
+        "hit": false,
+        "negatives_ahead": 439
+      },
+      "zero_structural": {
+        "score": -1.6105852127075195,
+        "hit": false,
+        "negatives_ahead": 8654
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9544969201087952,
+        "layer2": 0.9844409823417664,
+        "layer3": 0.9965538382530212
+      }
+    },
+    {
+      "index": 12499,
+      "layer1": {
+        "score": -0.8839683532714844,
+        "hit": false,
+        "negatives_ahead": 3280
+      },
+      "layer2": {
+        "score": -0.8985458612442017,
+        "hit": false,
+        "negatives_ahead": 3747
+      },
+      "layer3": {
+        "score": -2.364927291870117,
+        "hit": false,
+        "negatives_ahead": 4296
+      },
+      "zero_learned_pair": {
+        "score": -0.43362957239151,
+        "hit": false,
+        "negatives_ahead": 3108
+      },
+      "zero_structural": {
+        "score": -2.5665016174316406,
+        "hit": false,
+        "negatives_ahead": 58755
+      },
+      "endpoint_cosine": {
+        "layer1": 0.7936728596687317,
+        "layer2": 0.8217151165008545,
+        "layer3": 0.9324420094490051
+      }
+    },
+    {
+      "index": 17661,
+      "layer1": {
+        "score": -0.32789474725723267,
+        "hit": false,
+        "negatives_ahead": 1187
+      },
+      "layer2": {
+        "score": -0.24797050654888153,
+        "hit": false,
+        "negatives_ahead": 1164
+      },
+      "layer3": {
+        "score": -1.497955322265625,
+        "hit": false,
+        "negatives_ahead": 1156
+      },
+      "zero_learned_pair": {
+        "score": -0.1502392739057541,
+        "hit": false,
+        "negatives_ahead": 1892
+      },
+      "zero_structural": {
+        "score": -2.1076059341430664,
+        "hit": false,
+        "negatives_ahead": 32627
+      },
+      "endpoint_cosine": {
+        "layer1": 0.959823727607727,
+        "layer2": 0.9741695523262024,
+        "layer3": 0.9898045063018799
+      }
+    },
+    {
+      "index": 38312,
+      "layer1": {
+        "score": 0.4852713346481323,
+        "hit": false,
+        "negatives_ahead": 214
+      },
+      "layer2": {
+        "score": 0.4777175486087799,
+        "hit": false,
+        "negatives_ahead": 243
+      },
+      "layer3": {
+        "score": -0.471367210149765,
+        "hit": false,
+        "negatives_ahead": 221
+      },
+      "zero_learned_pair": {
+        "score": 0.8614052534103394,
+        "hit": false,
+        "negatives_ahead": 215
+      },
+      "zero_structural": {
+        "score": -2.0458550453186035,
+        "hit": false,
+        "negatives_ahead": 29046
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9250755906105042,
+        "layer2": 0.9502715468406677,
+        "layer3": 0.9794836044311523
+      }
+    },
+    {
+      "index": 42934,
+      "layer1": {
+        "score": -3.159844160079956,
+        "hit": false,
+        "negatives_ahead": 48629
+      },
+      "layer2": {
+        "score": -3.3134498596191406,
+        "hit": false,
+        "negatives_ahead": 52677
+      },
+      "layer3": {
+        "score": -5.0528059005737305,
+        "hit": false,
+        "negatives_ahead": 48293
+      },
+      "zero_learned_pair": {
+        "score": -2.6974565982818604,
+        "hit": false,
+        "negatives_ahead": 52160
+      },
+      "zero_structural": {
+        "score": -2.3623335361480713,
+        "hit": false,
+        "negatives_ahead": 47460
+      },
+      "endpoint_cosine": {
+        "layer1": 0.8043242692947388,
+        "layer2": 0.8751710653305054,
+        "layer3": 0.9543716907501221
+      }
+    },
+    {
+      "index": 19261,
+      "layer1": {
+        "score": -0.11571069806814194,
+        "hit": false,
+        "negatives_ahead": 785
+      },
+      "layer2": {
+        "score": -0.03807879239320755,
+        "hit": false,
+        "negatives_ahead": 757
+      },
+      "layer3": {
+        "score": -1.3225120306015015,
+        "hit": false,
+        "negatives_ahead": 885
+      },
+      "zero_learned_pair": {
+        "score": 0.1837247908115387,
+        "hit": false,
+        "negatives_ahead": 1001
+      },
+      "zero_structural": {
+        "score": -2.231250286102295,
+        "hit": false,
+        "negatives_ahead": 39820
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9599623680114746,
+        "layer2": 0.95465487241745,
+        "layer3": 0.97828209400177
+      }
+    },
+    {
+      "index": 18619,
+      "layer1": {
+        "score": 0.06200841814279556,
+        "hit": false,
+        "negatives_ahead": 541
+      },
+      "layer2": {
+        "score": 0.1761273890733719,
+        "hit": false,
+        "negatives_ahead": 478
+      },
+      "layer3": {
+        "score": 0.30779746174812317,
+        "hit": false,
+        "negatives_ahead": 69
+      },
+      "zero_learned_pair": {
+        "score": 0.3566232919692993,
+        "hit": false,
+        "negatives_ahead": 702
+      },
+      "zero_structural": {
+        "score": -0.5931194424629211,
+        "hit": false,
+        "negatives_ahead": 88
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9512198567390442,
+        "layer2": 0.9871101975440979,
+        "layer3": 0.9969882965087891
+      }
+    },
+    {
+      "index": 46072,
+      "layer1": {
+        "score": 0.6661761999130249,
+        "hit": false,
+        "negatives_ahead": 148
+      },
+      "layer2": {
+        "score": 0.6820666193962097,
+        "hit": false,
+        "negatives_ahead": 153
+      },
+      "layer3": {
+        "score": 0.4528564214706421,
+        "hit": false,
+        "negatives_ahead": 58
+      },
+      "zero_learned_pair": {
+        "score": 0.9078683257102966,
+        "hit": false,
+        "negatives_ahead": 194
+      },
+      "zero_structural": {
+        "score": -1.7021890878677368,
+        "hit": false,
+        "negatives_ahead": 11871
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9614526033401489,
+        "layer2": 0.9890146851539612,
+        "layer3": 0.997766375541687
+      }
+    },
+    {
+      "index": 40505,
+      "layer1": {
+        "score": -0.0984552726149559,
+        "hit": false,
+        "negatives_ahead": 766
+      },
+      "layer2": {
+        "score": -0.010127266868948936,
+        "hit": false,
+        "negatives_ahead": 721
+      },
+      "layer3": {
+        "score": -0.44134050607681274,
+        "hit": false,
+        "negatives_ahead": 206
+      },
+      "zero_learned_pair": {
+        "score": 0.253512978553772,
+        "hit": false,
+        "negatives_ahead": 867
+      },
+      "zero_structural": {
+        "score": -1.465349555015564,
+        "hit": false,
+        "negatives_ahead": 4934
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9586238861083984,
+        "layer2": 0.9890416860580444,
+        "layer3": 0.9983303546905518
+      }
+    },
+    {
+      "index": 39652,
+      "layer1": {
+        "score": -1.4657198190689087,
+        "hit": false,
+        "negatives_ahead": 8090
+      },
+      "layer2": {
+        "score": -1.3707011938095093,
+        "hit": false,
+        "negatives_ahead": 7703
+      },
+      "layer3": {
+        "score": -2.5885608196258545,
+        "hit": false,
+        "negatives_ahead": 5721
+      },
+      "zero_learned_pair": {
+        "score": -1.131453037261963,
+        "hit": false,
+        "negatives_ahead": 9349
+      },
+      "zero_structural": {
+        "score": -1.931862235069275,
+        "hit": false,
+        "negatives_ahead": 22751
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9067041873931885,
+        "layer2": 0.9486296772956848,
+        "layer3": 0.9838194251060486
+      }
+    },
+    {
+      "index": 11263,
+      "layer1": {
+        "score": 0.959133505821228,
+        "hit": false,
+        "negatives_ahead": 81
+      },
+      "layer2": {
+        "score": 1.0493502616882324,
+        "hit": false,
+        "negatives_ahead": 69
+      },
+      "layer3": {
+        "score": 0.17861568927764893,
+        "hit": false,
+        "negatives_ahead": 81
+      },
+      "zero_learned_pair": {
+        "score": 1.0373320579528809,
+        "hit": false,
+        "negatives_ahead": 142
+      },
+      "zero_structural": {
+        "score": -2.2088563442230225,
+        "hit": false,
+        "negatives_ahead": 38546
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9618140459060669,
+        "layer2": 0.9626834988594055,
+        "layer3": 0.9843342900276184
+      }
+    },
+    {
+      "index": 24678,
+      "layer1": {
+        "score": 0.5061206221580505,
+        "hit": false,
+        "negatives_ahead": 209
+      },
+      "layer2": {
+        "score": 0.3526330292224884,
+        "hit": false,
+        "negatives_ahead": 329
+      },
+      "layer3": {
+        "score": -0.4832402467727661,
+        "hit": false,
+        "negatives_ahead": 224
+      },
+      "zero_learned_pair": {
+        "score": 0.8223268389701843,
+        "hit": false,
+        "negatives_ahead": 239
+      },
+      "zero_structural": {
+        "score": -2.008028268814087,
+        "hit": false,
+        "negatives_ahead": 26951
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9326462745666504,
+        "layer2": 0.931342601776123,
+        "layer3": 0.9677530527114868
+      }
+    },
+    {
+      "index": 16432,
+      "layer1": {
+        "score": 0.6913784146308899,
+        "hit": false,
+        "negatives_ahead": 142
+      },
+      "layer2": {
+        "score": 0.7418174147605896,
+        "hit": false,
+        "negatives_ahead": 137
+      },
+      "layer3": {
+        "score": 0.42925113439559937,
+        "hit": false,
+        "negatives_ahead": 62
+      },
+      "zero_learned_pair": {
+        "score": 0.8263044953346252,
+        "hit": false,
+        "negatives_ahead": 238
+      },
+      "zero_structural": {
+        "score": -1.356991171836853,
+        "hit": false,
+        "negatives_ahead": 3238
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9868191480636597,
+        "layer2": 0.995280921459198,
+        "layer3": 0.9985639452934265
+      }
+    },
+    {
+      "index": 33739,
+      "layer1": {
+        "score": -0.6576610207557678,
+        "hit": false,
+        "negatives_ahead": 2215
+      },
+      "layer2": {
+        "score": -0.6181718111038208,
+        "hit": false,
+        "negatives_ahead": 2328
+      },
+      "layer3": {
+        "score": -3.3460988998413086,
+        "hit": false,
+        "negatives_ahead": 13322
+      },
+      "zero_learned_pair": {
+        "score": 0.3294669985771179,
+        "hit": false,
+        "negatives_ahead": 750
+      },
+      "zero_structural": {
+        "score": -3.191376209259033,
+        "hit": false,
+        "negatives_ahead": 83663
+      },
+      "endpoint_cosine": {
+        "layer1": 0.8024592399597168,
+        "layer2": 0.823543131351471,
+        "layer3": 0.9270341396331787
+      }
+    },
+    {
+      "index": 55417,
+      "layer1": {
+        "score": -0.8832329511642456,
+        "hit": false,
+        "negatives_ahead": 3279
+      },
+      "layer2": {
+        "score": -0.8898955583572388,
+        "hit": false,
+        "negatives_ahead": 3696
+      },
+      "layer3": {
+        "score": -2.3132355213165283,
+        "hit": false,
+        "negatives_ahead": 4027
+      },
+      "zero_learned_pair": {
+        "score": -0.3159826695919037,
+        "hit": false,
+        "negatives_ahead": 2499
+      },
+      "zero_structural": {
+        "score": -1.924544334411621,
+        "hit": false,
+        "negatives_ahead": 22349
+      },
+      "endpoint_cosine": {
+        "layer1": 0.8387241363525391,
+        "layer2": 0.9260116219520569,
+        "layer3": 0.9758408665657043
+      }
+    },
+    {
+      "index": 37442,
+      "layer1": {
+        "score": -3.4764156341552734,
+        "hit": false,
+        "negatives_ahead": 58766
+      },
+      "layer2": {
+        "score": -3.3717708587646484,
+        "hit": false,
+        "negatives_ahead": 54550
+      },
+      "layer3": {
+        "score": -4.531161785125732,
+        "hit": false,
+        "negatives_ahead": 35571
+      },
+      "zero_learned_pair": {
+        "score": -2.994335889816284,
+        "hit": false,
+        "negatives_ahead": 62487
+      },
+      "zero_structural": {
+        "score": -1.2825343608856201,
+        "hit": false,
+        "negatives_ahead": 2380
+      },
+      "endpoint_cosine": {
+        "layer1": 0.855376660823822,
+        "layer2": 0.976740837097168,
+        "layer3": 0.9972057938575745
+      }
+    },
+    {
+      "index": 35678,
+      "layer1": {
+        "score": 0.667654812335968,
+        "hit": false,
+        "negatives_ahead": 148
+      },
+      "layer2": {
+        "score": 0.4978499710559845,
+        "hit": false,
+        "negatives_ahead": 230
+      },
+      "layer3": {
+        "score": -0.5150060653686523,
+        "hit": false,
+        "negatives_ahead": 233
+      },
+      "zero_learned_pair": {
+        "score": 0.9711092710494995,
+        "hit": false,
+        "negatives_ahead": 164
+      },
+      "zero_structural": {
+        "score": -1.9565123319625854,
+        "hit": false,
+        "negatives_ahead": 24111
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9472051858901978,
+        "layer2": 0.9372191429138184,
+        "layer3": 0.971110999584198
+      }
+    },
+    {
+      "index": 55987,
+      "layer1": {
+        "score": 0.5424809455871582,
+        "hit": false,
+        "negatives_ahead": 192
+      },
+      "layer2": {
+        "score": 0.5026184320449829,
+        "hit": false,
+        "negatives_ahead": 228
+      },
+      "layer3": {
+        "score": 0.016761938109993935,
+        "hit": false,
+        "negatives_ahead": 94
+      },
+      "zero_learned_pair": {
+        "score": 0.8302567005157471,
+        "hit": false,
+        "negatives_ahead": 235
+      },
+      "zero_structural": {
+        "score": -1.6293812990188599,
+        "hit": false,
+        "negatives_ahead": 9243
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9681152105331421,
+        "layer2": 0.9838607311248779,
+        "layer3": 0.9945232272148132
+      }
+    },
+    {
+      "index": 55106,
+      "layer1": {
+        "score": -0.2599782943725586,
+        "hit": false,
+        "negatives_ahead": 1039
+      },
+      "layer2": {
+        "score": -0.2533738315105438,
+        "hit": false,
+        "negatives_ahead": 1174
+      },
+      "layer3": {
+        "score": -0.9348642826080322,
+        "hit": false,
+        "negatives_ahead": 448
+      },
+      "zero_learned_pair": {
+        "score": -0.11795017868280411,
+        "hit": false,
+        "negatives_ahead": 1791
+      },
+      "zero_structural": {
+        "score": -1.7401422262191772,
+        "hit": false,
+        "negatives_ahead": 13441
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9317854046821594,
+        "layer2": 0.9686455726623535,
+        "layer3": 0.9926810264587402
+      }
+    },
+    {
+      "index": 14935,
+      "layer1": {
+        "score": -0.4217272400856018,
+        "hit": false,
+        "negatives_ahead": 1447
+      },
+      "layer2": {
+        "score": -0.3598286211490631,
+        "hit": false,
+        "negatives_ahead": 1454
+      },
+      "layer3": {
+        "score": -1.4066569805145264,
+        "hit": false,
+        "negatives_ahead": 1010
+      },
+      "zero_learned_pair": {
+        "score": -0.21419918537139893,
+        "hit": false,
+        "negatives_ahead": 2110
+      },
+      "zero_structural": {
+        "score": -1.84932279586792,
+        "hit": false,
+        "negatives_ahead": 18516
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9695212244987488,
+        "layer2": 0.9835296869277954,
+        "layer3": 0.9934060573577881
+      }
+    },
+    {
+      "index": 3229,
+      "layer1": {
+        "score": 0.40491506457328796,
+        "hit": false,
+        "negatives_ahead": 253
+      },
+      "layer2": {
+        "score": 0.5012617707252502,
+        "hit": false,
+        "negatives_ahead": 228
+      },
+      "layer3": {
+        "score": -0.005402585491538048,
+        "hit": false,
+        "negatives_ahead": 96
+      },
+      "zero_learned_pair": {
+        "score": 0.6445673704147339,
+        "hit": false,
+        "negatives_ahead": 378
+      },
+      "zero_structural": {
+        "score": -1.768416404724121,
+        "hit": false,
+        "negatives_ahead": 14658
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9555584788322449,
+        "layer2": 0.9862216114997864,
+        "layer3": 0.9963306188583374
+      }
+    },
+    {
+      "index": 51078,
+      "layer1": {
+        "score": -0.8630416393280029,
+        "hit": false,
+        "negatives_ahead": 3162
+      },
+      "layer2": {
+        "score": -0.724719762802124,
+        "hit": false,
+        "negatives_ahead": 2818
+      },
+      "layer3": {
+        "score": -0.8868708610534668,
+        "hit": false,
+        "negatives_ahead": 410
+      },
+      "zero_learned_pair": {
+        "score": -0.5914227962493896,
+        "hit": false,
+        "negatives_ahead": 4060
+      },
+      "zero_structural": {
+        "score": -0.7575807571411133,
+        "hit": false,
+        "negatives_ahead": 221
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9717720746994019,
+        "layer2": 0.995164692401886,
+        "layer3": 0.9987478256225586
+      }
+    },
+    {
+      "index": 36462,
+      "layer1": {
+        "score": -0.5099548101425171,
+        "hit": false,
+        "negatives_ahead": 1699
+      },
+      "layer2": {
+        "score": -0.5872606039047241,
+        "hit": false,
+        "negatives_ahead": 2208
+      },
+      "layer3": {
+        "score": -2.067403793334961,
+        "hit": false,
+        "negatives_ahead": 2822
+      },
+      "zero_learned_pair": {
+        "score": 0.032783977687358856,
+        "hit": false,
+        "negatives_ahead": 1347
+      },
+      "zero_structural": {
+        "score": -2.7568507194519043,
+        "hit": false,
+        "negatives_ahead": 67984
+      },
+      "endpoint_cosine": {
+        "layer1": 0.8579555749893188,
+        "layer2": 0.8389970064163208,
+        "layer3": 0.9210681319236755
+      }
+    },
+    {
+      "index": 41424,
+      "layer1": {
+        "score": -0.7831512093544006,
+        "hit": false,
+        "negatives_ahead": 2752
+      },
+      "layer2": {
+        "score": -0.7079614400863647,
+        "hit": false,
+        "negatives_ahead": 2733
+      },
+      "layer3": {
+        "score": -1.411650538444519,
+        "hit": false,
+        "negatives_ahead": 1017
+      },
+      "zero_learned_pair": {
+        "score": -0.417015016078949,
+        "hit": false,
+        "negatives_ahead": 3016
+      },
+      "zero_structural": {
+        "score": -1.234716534614563,
+        "hit": false,
+        "negatives_ahead": 1971
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9487285614013672,
+        "layer2": 0.9702212810516357,
+        "layer3": 0.9790043830871582
+      }
+    },
+    {
+      "index": 31271,
+      "layer1": {
+        "score": -1.2694847583770752,
+        "hit": false,
+        "negatives_ahead": 6078
+      },
+      "layer2": {
+        "score": -1.131163239479065,
+        "hit": false,
+        "negatives_ahead": 5386
+      },
+      "layer3": {
+        "score": -2.705932378768921,
+        "hit": false,
+        "negatives_ahead": 6621
+      },
+      "zero_learned_pair": {
+        "score": -0.8275654911994934,
+        "hit": false,
+        "negatives_ahead": 5978
+      },
+      "zero_structural": {
+        "score": -1.833725929260254,
+        "hit": false,
+        "negatives_ahead": 17751
+      },
+      "endpoint_cosine": {
+        "layer1": 0.93028324842453,
+        "layer2": 0.9724550247192383,
+        "layer3": 0.9902554154396057
+      }
+    },
+    {
+      "index": 11558,
+      "layer1": {
+        "score": -2.113509178161621,
+        "hit": false,
+        "negatives_ahead": 18468
+      },
+      "layer2": {
+        "score": -2.1245930194854736,
+        "hit": false,
+        "negatives_ahead": 19162
+      },
+      "layer3": {
+        "score": -3.407461643218994,
+        "hit": false,
+        "negatives_ahead": 14168
+      },
+      "zero_learned_pair": {
+        "score": -1.7444034814834595,
+        "hit": false,
+        "negatives_ahead": 21189
+      },
+      "zero_structural": {
+        "score": -1.6361706256866455,
+        "hit": false,
+        "negatives_ahead": 9500
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9340450763702393,
+        "layer2": 0.9838923811912537,
+        "layer3": 0.995006263256073
+      }
+    },
+    {
+      "index": 19538,
+      "layer1": {
+        "score": 0.995246946811676,
+        "hit": false,
+        "negatives_ahead": 76
+      },
+      "layer2": {
+        "score": 0.9015702605247498,
+        "hit": false,
+        "negatives_ahead": 103
+      },
+      "layer3": {
+        "score": 0.10420794039964676,
+        "hit": false,
+        "negatives_ahead": 83
+      },
+      "zero_learned_pair": {
+        "score": 1.2445985078811646,
+        "hit": false,
+        "negatives_ahead": 87
+      },
+      "zero_structural": {
+        "score": -2.003657341003418,
+        "hit": false,
+        "negatives_ahead": 26725
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9612501859664917,
+        "layer2": 0.9621486663818359,
+        "layer3": 0.9858477115631104
+      }
+    },
+    {
+      "index": 39115,
+      "layer1": {
+        "score": -0.18163256347179413,
+        "hit": false,
+        "negatives_ahead": 889
+      },
+      "layer2": {
+        "score": -0.1652342975139618,
+        "hit": false,
+        "negatives_ahead": 986
+      },
+      "layer3": {
+        "score": -1.0147689580917358,
+        "hit": false,
+        "negatives_ahead": 507
+      },
+      "zero_learned_pair": {
+        "score": -0.016102707013487816,
+        "hit": false,
+        "negatives_ahead": 1464
+      },
+      "zero_structural": {
+        "score": -1.6317672729492188,
+        "hit": false,
+        "negatives_ahead": 9345
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9755964875221252,
+        "layer2": 0.9914866089820862,
+        "layer3": 0.9982709884643555
+      }
+    },
+    {
+      "index": 45056,
+      "layer1": {
+        "score": -0.40635010600090027,
+        "hit": false,
+        "negatives_ahead": 1394
+      },
+      "layer2": {
+        "score": -0.3356192708015442,
+        "hit": false,
+        "negatives_ahead": 1382
+      },
+      "layer3": {
+        "score": -1.0992648601531982,
+        "hit": false,
+        "negatives_ahead": 588
+      },
+      "zero_learned_pair": {
+        "score": -0.25273963809013367,
+        "hit": false,
+        "negatives_ahead": 2252
+      },
+      "zero_structural": {
+        "score": -1.737630844116211,
+        "hit": false,
+        "negatives_ahead": 13317
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9638550281524658,
+        "layer2": 0.984255313873291,
+        "layer3": 0.994267463684082
+      }
+    },
+    {
+      "index": 48494,
+      "layer1": {
+        "score": 0.8236758708953857,
+        "hit": false,
+        "negatives_ahead": 108
+      },
+      "layer2": {
+        "score": 0.8166321516036987,
+        "hit": false,
+        "negatives_ahead": 116
+      },
+      "layer3": {
+        "score": 0.33960413932800293,
+        "hit": false,
+        "negatives_ahead": 67
+      },
+      "zero_learned_pair": {
+        "score": 0.8297989368438721,
+        "hit": false,
+        "negatives_ahead": 235
+      },
+      "zero_structural": {
+        "score": -1.955190896987915,
+        "hit": false,
+        "negatives_ahead": 24042
+      },
+      "endpoint_cosine": {
+        "layer1": 0.9569346904754639,
+        "layer2": 0.9730485677719116,
+        "layer3": 0.9930106997489929
+      }
+    }
+  ],
+  "saved_score_replay": {
+    "absolute_tolerance": 3e-06,
+    "maximum_absolute_error": {
+      "p": 1.9073486328125e-06,
+      "n": 2.86102294921875e-06
+    },
+    "positive_hitmask_exact": true,
+    "negative_top50_order_exact": true
+  },
+  "official_evaluator_parity": true,
+  "no_fit": true,
+  "test_access": false,
+  "prior_test_exploration_disclosed": true,
+  "tracking": "local machine-readable diagnostic only; offline W&B service unavailable in sandbox"
+}
