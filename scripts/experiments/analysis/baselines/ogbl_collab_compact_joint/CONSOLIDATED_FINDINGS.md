@@ -30,6 +30,18 @@ negative-pool renewal, followed by a controlled tail-ranking objective test;
 temporal path-age features need historical replication before training.
 See ../ogbl_collab_fresh_diagnosis/FINDINGS.md and data/ receipts.
 
+## Three hypotheses tested in parallel: none advances
+
+Completed 12 matched training cells and the temporal path prerequisite, with no
+new2019 access. Corrected standalone BCE control averages68.8908% on2018.
+Negative renewal averages68.8164% (−0.0743pp); BCE plus top50 pairwise loss averages
+68.2467% (−0.6441pp). Both reduce late overfit but fail the frozen all-positive,
+mean+0.5pp selected-performance gate. Temporal path age is directionally consistent
+but only25/27 usable negative groups, below the frozen30 minimum; feature training
+was not run. See ../ogbl_collab_parallel_hypotheses/FINDINGS.md for independent
+audits, full seed results and source qualification. These proposals are no longer
+pending; do not rerun or expand them without a new hypothesis/authorization.
+
 ## Objective and current answer
 
 The explicit objective is to show that a model with fewer than one million learned

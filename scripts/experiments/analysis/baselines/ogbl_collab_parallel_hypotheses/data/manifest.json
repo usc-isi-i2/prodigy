@@ -1,0 +1,93 @@
+{
+  "name": "parallel_three_hypotheses_20260914",
+  "authorization": "User: try all 3 in parallel with subagents",
+  "shared_test_boundary": "No 2019 files, final refits, or leaderboard claims in this campaign",
+  "control": {
+    "control": "existing fixed fresh-negative pool, BCE, standalone selection",
+    "rows": [
+      {
+        "seed": 0,
+        "step": 150,
+        "validation_hits": 0.6871546501564476,
+        "history_sha256": "48e061ae668e256b12c6df9287358291a5a4e5053b3016e41742b3405c81b296",
+        "producer_revision": "bcb778798df0208cf70caffa5866e1309d938802"
+      },
+      {
+        "seed": 1,
+        "step": 100,
+        "validation_hits": 0.6902503162239532,
+        "history_sha256": "831d089faa632b59e6557bd8d1ba8a895e10c8c8cbe60caa03cd5acfaa2db540",
+        "producer_revision": "bcb778798df0208cf70caffa5866e1309d938802"
+      },
+      {
+        "seed": 2,
+        "step": 100,
+        "validation_hits": 0.6893182877305106,
+        "history_sha256": "0285ce012222e4a12e3507975e8530d7ef725578679b482b6445bb9ace6dcfe4",
+        "producer_revision": "bcb778798df0208cf70caffa5866e1309d938802"
+      }
+    ],
+    "mean": 0.6889077513703038,
+    "selection": "earliest maximal standalone Hits@50 among 40 evaluations",
+    "test_access": false
+  },
+  "arms": [
+    {
+      "id": "H1",
+      "agent": "renew_negatives",
+      "resource": "GPU0",
+      "intervention": "renew100k training-negative pool every50 updates",
+      "first_transition": "2017->2018",
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "controls": "rerun fixed-pool BCE",
+      "training_cells": 6
+    },
+    {
+      "id": "H2",
+      "agent": "tail_objective",
+      "resource": "GPU1",
+      "intervention": "BCE plus coefficient1 softplus(1+n-p) against top50 training negatives refreshed10",
+      "first_transition": "2017->2018",
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "controls": "rerun fixed-pool BCE",
+      "training_cells": 6
+    },
+    {
+      "id": "H3",
+      "agent": "temporal_paths",
+      "resource": "CPU; GPU2 only after prerequisite",
+      "intervention": "replicate matched median path formation age before feature ablation",
+      "first_years": [
+        2017,
+        2018
+      ],
+      "replication_gate": {
+        "primary": "any-seed cohort",
+        "min_usable_negative_groups_per_year": 30,
+        "younger_preference_each_year": ">0.5",
+        "robustness": "remains >0.5 after deleting most favorable20% groups",
+        "consistent_cohort": "no reversal when >=10 usable groups"
+      },
+      "training_cells": "conditional"
+    }
+  ],
+  "training_advancement": "All3 seed deltas positive and mean>=0.005; if passed, earlier forward transition replication required before any future final candidate",
+  "root_review": [
+    "source and panel identity",
+    "no test access",
+    "paired positive and uniform random streams, with model-dependent mined identity differences disclosed",
+    "same standalone selector and budgets",
+    "all expected cells accounted for",
+    "parameter count",
+    "per-seed values and gate recomputation",
+    "no inference of episode uncertainty from optimization seeds"
+  ]
+}
