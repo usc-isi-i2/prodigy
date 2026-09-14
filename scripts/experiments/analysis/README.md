@@ -127,3 +127,5 @@ Setup and launch files remain in `../setup/<name>/`.
 
 - [Warm-positive joint training](baselines/ogbl_collab_warm_joint/FINDINGS.md): six-cell validation-only test; 68.5124% vs 68.8908%, all seeds regressed; audited, no new test access.
 - [Frozen ogbl-collab SAGE layer trace](baselines/ogbl_collab_layer_trace/FINDINGS.md): endpoint cosine oversmooths, but layer 3 and learned pair inputs materially improve the frozen scorer; no fit or test access.
+
+- [Compact NCN and completion](baselines/ogbl_collab_ncn_completion/FINDINGS.md): nine-cell validation-only comparison; control 68.8908%, observed 63.9055%, completion 61.7247%; audited, no advancement or new test access.

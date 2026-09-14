@@ -1,0 +1,84 @@
+{
+  "name": "ncn_completion_v1",
+  "producing_revision": "6e0963a2d54d1a723467558e2d977c63fbd2af4c",
+  "cells": [
+    {
+      "arm": "control",
+      "seed": 0,
+      "steps": 2000,
+      "interval": 50
+    },
+    {
+      "arm": "control",
+      "seed": 1,
+      "steps": 2000,
+      "interval": 50
+    },
+    {
+      "arm": "control",
+      "seed": 2,
+      "steps": 2000,
+      "interval": 50
+    },
+    {
+      "arm": "observed",
+      "seed": 0,
+      "steps": 2000,
+      "interval": 50
+    },
+    {
+      "arm": "observed",
+      "seed": 1,
+      "steps": 2000,
+      "interval": 50
+    },
+    {
+      "arm": "observed",
+      "seed": 2,
+      "steps": 2000,
+      "interval": 50
+    },
+    {
+      "arm": "completion",
+      "seed": 0,
+      "steps": 2000,
+      "interval": 50
+    },
+    {
+      "arm": "completion",
+      "seed": 1,
+      "steps": 2000,
+      "interval": 50
+    },
+    {
+      "arm": "completion",
+      "seed": 2,
+      "steps": 2000,
+      "interval": 50
+    }
+  ],
+  "selection": "earliest standalone maximum per cell",
+  "gate": "each new arm must improve all3 seeds over control and mean>=.005; winner higher mean, observed on exact tie; else stop",
+  "test_access": false,
+  "prior_test_exploration_disclosed": true,
+  "smoke": {
+    "control_seconds": 0.5596732988487929,
+    "observed_seconds": 1.2331823259592056,
+    "completion_seconds": 1.8401993680745363,
+    "updates": 10
+  },
+  "parallel_smoke": {
+    "control_seconds": 0.5778857900295407,
+    "observed_seconds": 2.8335526001174003,
+    "completion_seconds": 3.076543207047507
+  },
+  "scheduling": "Sequential GPU1; concurrent profile gave modest aggregate improvement but roughly doubled per-new-arm time; other owned GPUs have active jobs",
+  "runtime": "/dataMeR1/phil/gfm/ogbl_collab_compact_joint/ncn_completion_v1",
+  "worktree": "/dataMeR1/phil/gfm/prodigy-collab-ncn-completion",
+  "branch": "codex/collab-ncn-completion",
+  "complete": true,
+  "all9_audit_passed": true,
+  "production_session_exited": true,
+  "producing_worktree_clean_at_completion": true,
+  "gpu1_idle_at_completion": true
+}

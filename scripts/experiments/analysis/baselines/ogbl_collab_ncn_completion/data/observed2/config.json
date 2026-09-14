@@ -1,0 +1,49 @@
+{
+  "name": "ncn_completion_v1",
+  "revision": "6e0963a2d54d1a723467558e2d977c63fbd2af4c",
+  "arms": [
+    "control",
+    "observed",
+    "completion"
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "steps": 2000,
+  "interval": 50,
+  "train_year": 2017,
+  "validation_year": 2018,
+  "selection": "earliest maximum standalone validation Hits@50",
+  "neural_parameters": {
+    "control": 496385,
+    "observed": 525633,
+    "completion": 525633
+  },
+  "conservative_inference_scalars": {
+    "control": 496448,
+    "observed": 525697,
+    "completion": 525697
+  },
+  "objective": "balanced BCE; unchanged positive/uniform-negative/mining slot streams",
+  "budget": "2048 positive +1024 uniform negative+1024 top2048-mined; refresh10; Adam .001 wd .0001 clip5",
+  "representation": "same initialized 256-wide SAGE encoder; new heads use product/absolute difference and 64-dimensional neighbor pooling, no handcrafted14; baseline retains handcrafted14",
+  "completion": "one-step shared observed decoder; sigmoid(logit+log(.1)); detached weights refreshed every10 training updates and freshly on every validation evaluation; cap8 one-sided neighbors per endpoint, cap32 common neighbors, fixed label-independent priority and full-count/sample-count expansion",
+  "advance": "for each new arm all3 paired selected gains positive and mean>=.005; if either passes, recommend historical replication; higher mean wins with observed tie preference; no test access",
+  "test_access": false,
+  "prior_test_exploration_disclosed": true,
+  "interpretation": "adaptive validation research; NCN-inspired compact adaptation, not paper reproduction or capacity-only ablation",
+  "arm": "observed",
+  "seed": 2,
+  "device": "cuda:1",
+  "smoke": false,
+  "source_files": {
+    "/dataMeR1/phil/gfm/ogbl_collab_compact_joint/candidate_fresh_v1/train2017.npz": "8c7a3e250528e33a60dab0a4306b9fa510af702d5a38c02157b4256db1c5e686",
+    "/dataMeR1/phil/gfm/ogbl_collab_compact_joint/joint_v1/assessment/year2018.npz": "9427b395e75968e5d49e315f7231cb0ad94c493991535e3cf8b157d0c729b4c4",
+    "/dataMeR1/phil/gfm/ogbl_collab_compact_joint/joint_v1/node_features.npy": "c632753f7b557a10aca39190b732b076fea9255f9e8a8b2a7863f78929963818",
+    "/dataMeR1/phil/gfm/ogbl_collab_compact_joint/joint_v1/standardization.npz": "5503c2e84d4184dd03c87be18fda8a94c387df9591cf6f979849a47b8cb287bc"
+  },
+  "cache_manifest_sha256": "c35669cc8223eae5e01de5c469952e75e17b3d4c71597aba8a1495a7deee7c17",
+  "initial_encoder_sha256": "e596754a81535a809eaaa144e392011e8334ec7d4e80391a10edf23e273d6aaa"
+}

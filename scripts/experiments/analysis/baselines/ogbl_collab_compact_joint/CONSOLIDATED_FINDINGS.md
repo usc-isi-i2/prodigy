@@ -6,6 +6,22 @@ below are historical diagnostics, not authorization for submission or further ru
 Acceptance has not been established. All proposed next experiments are parked;
 see [retirement record](../../../../../cleanup_records/2026-09-14-collab.md).
 
+## Compact NCN / completion follow-up: failed
+
+All nine cells completed: mean selected 2018 Hits@50 is 68.8908% for the joint
+control, 63.9055% for observed-neighbor pooling, and 61.7247% with completion.
+Both new arms regress in every seed. Completion restores some zero-AA recall
+relative to observed pooling but loses more elsewhere. No new test access.
+
+The new heads replace the original handcrafted14 with pooled representations;
+control-versus-new-head comparisons therefore do not isolate an additive feature
+change. Observed-versus-completion uses the same architecture and initialization.
+This is a compact NCNC-inspired adaptation, not a published-model reproduction.
+All 120 control measurements reproduce; all nine replays, official metrics,
+source/hash checks, paired streams and independent score audits pass. New models
+use 525,697 conservative inference scalars. Neither advances to replication.
+See [NCN completion findings](../ogbl_collab_ncn_completion/FINDINGS.md).
+
 ## Frozen model trace: shallower SAGE is not supported
 
 A no-fit seed-0 diagnostic captures every SAGE layer and intervenes on the frozen
