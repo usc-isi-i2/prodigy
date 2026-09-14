@@ -1,5 +1,58 @@
 # Temporal residual gate pilot
 
+## Warm-gate error overlap diagnostic
+
+Post-hoc analysis of the unchanged official 2018 validation panel, using all three
+frozen warm_v1 seeds and official-calibrated AA-DC as the reference:
+
+- 840 AA-DC misses are recovered by every seed; all are previously unobserved
+  author pairs, and 833 have zero AA (no common neighbor).
+- 1,435 misses are recovered by at least one seed. Another 18,179 remain misses
+  for AA-DC and every gate seed; 17,744 of these have zero AA.
+- 433 AA-DC hits are lost by every seed, including 94 repeat collaborations.
+  These consistent losses mostly have nonzero AA (427 of 433).
+
+| Pair history | Positives | AA-DC hits | Net additional hits, seeds 0 / 1 / 2 |
+| --- | ---: | ---: | ---: |
+| Repeat collaboration | 28,072 | 27,947 | -77 / -234 / -264 |
+| Previously unobserved pair | 32,012 | 12,523 | +827 / +370 / +282 |
+
+Thus the gain is not merely memorizing repeat collaborations: every seed gains
+on new pairs and loses on repeats. "New" means no previous pair event, not a
+new author. AA-DC already hits 99.55% of repeat positives on this panel.
+
+Define negative promotion as entry into the top 50 from outside AA-DC's top 50.
+Seeds introduce 7 / 10 / 9 negatives respectively (14 distinct; three shared by
+all seeds). Thirteen of the 14 have zero AA; none are repeat pairs. Negative
+indices 29950, 46048, and 58383 enter all three top-50 sets, moving from AA-DC
+ranks 105, 70, and 144 respectively into gate ranks 31--46. These are benchmark
+negative labels, not externally verified absence of collaboration.
+
+Consistent recoveries have median raw feature cosine 0.968 and minimum endpoint
+degree 24; promoted negatives have median cosine 0.957 and minimum degree 14.5.
+Consistent losses have median cosine 0.906 and minimum degree 4. These profiles
+are descriptive correlations, not proof of which features caused score changes.
+Each seed has a unique score at its 50th negative; membership uses fixed-index
+tie breaking, while positive Hits retains the official strict comparison.
+Top-50 turnover alone does not causally assign each lost positive to a negative.
+
+The diagnosis supports investigating protection of already-strong structural
+predictions and discrimination within the zero-common-neighbor population.
+It does not establish that a particular protection rule will improve overall
+ranking: changing scores also changes the negative cutoff. No rule was fitted,
+ensemble selected, or additional model evaluated in this analysis.
+
+Validation checks: assessment archive SHA-256 matches the committed receipt;
+positive/negative pair and feature fingerprints match the run metadata; all
+three full-panel Hits values and the AA-DC reference recompute exactly. No test
+data were read by this diagnostic. Local worktree and branch remain
+`/Users/philipp/projects/gfm/prodigy-collab-gate`, `codex/collab-temporal-gate`.
+
+Evidence: [overlap and negative-rank report](data/warm_v1/error_overlap.json).
+Reproduce with `error_overlap.py --runtime <warm_v1> --evidence data/warm_v1
+--out <new-report.json>`. This is development evidence from repeatedly inspected
+2018 validation, not an independent holdout or a causal feature ablation.
+
 ## Warm-endpoint follow-up: completed
 
 The matched-population follow-up improves mean official 2018 Hits@50 from

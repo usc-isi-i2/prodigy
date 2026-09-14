@@ -1,5 +1,34 @@
 # Temporal residual gate pilot on ogbl-collab
 
+## Constrained rescue (constrained_v1; frozen before launch)
+
+Run with `--warm-only --constrained-rescue --out
+/dataMeR1/phil/gfm/ogbl_collab_temporal_gate/constrained_v1`.
+Only nonself pairs with zero raw AA and zero prior pair events may receive a
+learned correction. All other scores remain the frozen 2015-calibrated base in
+the existing log-score coordinates. This does not preserve the separately
+2018-calibrated reference score, nor guarantee preserved hits when cutoffs move.
+Eligible corrections remain signed, allowing hard-negative suppression.
+
+Train on eligible 2016 positives and negatives only; retain the same 2048-positive,
+1024-uniform-negative, 1024-hard-negative batch sizes. Mine the top 2048 eligible
+negatives every ten steps. Nonself eligibility applies equally to both labels.
+Keep full warm_v1 panels for calibration, feature standardization, 2017 selection,
+and official 2018 assessment. No changes to graphs, features, negative arrays,
+481-parameter architecture, three seeds, 400 steps, optimizer, strength grid,
+tie-breaking, or full-panel Hits@50 selection. This tests the combined eligibility
+constraint and subgroup training, not separate causal effects of those changes.
+Checkpoint metadata records the new scoring flag; previous checkpoints must not
+be interpreted as constrained scorers merely because shapes match.
+
+Report all seeds against warm_v1, frozen AA-DC, and official-calibrated AA-DC,
+including recoveries, losses, repeat/new slices, protected-score equality, and
+negative-cutoff movement. Success requires consistent gains, not picking a seed.
+No sweep expansion or test scoring; stop after the fixed run even if it fails.
+This remains post-hoc 2018 development. CPU eight threads with offline W&B;
+warm_v1 took 78 seconds. Use idle dedicated gate worktree and tmux
+`collab-temporal-gate-constrained`; evidence goes in `data/constrained_v1/`.
+
 ## Warm-endpoint follow-up (warm_v1)
 
 Run with `--warm-only --out /dataMeR1/phil/gfm/ogbl_collab_temporal_gate/warm_v1`.

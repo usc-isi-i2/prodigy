@@ -1,9 +1,32 @@
 import unittest
 import numpy as np
-from run import historical_inputs, keys, negatives, hits, warm_positive_mask
+from run import historical_inputs, keys, negatives, hits, warm_positive_mask, rescue_eligible, residual_score
 
 
 class TemporalContractTests(unittest.TestCase):
+    def test_rescue_eligibility(self):
+        x=np.zeros((5,13)); x[1,0]=1; x[2,8]=1; x[3,[0,8]]=1
+        edges=np.array([[0,1],[0,1],[0,1],[0,1],[2,2]])
+        self.assertEqual(rescue_eligible(x,edges).tolist(),[True,False,False,False,False])
+
+    def test_protected_scores_and_gradients(self):
+        try:
+            import torch
+        except ImportError:
+            self.skipTest('Torch integration test requires prodigy environment')
+        model=torch.nn.Linear(1,1,bias=False)
+        with torch.no_grad(): model.weight.fill_(1.)
+        features=torch.tensor([[1.],[2.],[3.]],requires_grad=True)
+        base=torch.tensor([.2,.3,.4]); selfpair=torch.tensor([False,False,True])
+        eligible=torch.tensor([True,False,False])
+        values=residual_score(model,(features,base,selfpair,eligible),.25)
+        self.assertEqual(values[1].item(),base[1].item())
+        self.assertEqual(values[2].item(),-1e9)
+        self.assertGreater(values[0].item(),base[0].item())
+        values.sum().backward()
+        self.assertEqual(features.grad[1].item(),0.)
+        self.assertEqual(features.grad[2].item(),0.)
+
     def test_warm_filter_requires_both_previously_active_endpoints(self):
         train=np.array([[0,1],[1,2]])
         pos=np.array([[0,2],[0,3],[3,4]])

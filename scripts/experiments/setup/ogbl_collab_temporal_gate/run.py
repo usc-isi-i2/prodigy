@@ -107,6 +107,17 @@ def warm_positive_mask(pos, train, n):
     return active[pos].all(axis=1)
 
 
+def rescue_eligible(features, edges):
+    return ((features[:, 0] == 0) & (features[:, 8] == 0)
+            & (edges[:, 0] != edges[:, 1]))
+
+
+def residual_score(model, data, strength=1.):
+    f, base, selfpair, eligible = data
+    correction = strength * 12 * (model(f).flatten()/12).tanh()
+    return (base + correction.masked_fill(~eligible, 0.)).masked_fill(selfpair, -1e9)
+
+
 def make_year(aa, shared, graph, split, year, calibration, warm_only=False):
     started = time.monotonic()
     n = int(graph['num_nodes'])
@@ -184,11 +195,17 @@ def main():
     parser.add_argument('--threads',type=int,default=8)
     parser.add_argument('--dry-run',action='store_true')
     parser.add_argument('--warm-only',action='store_true')
+    parser.add_argument('--constrained-rescue',action='store_true')
     args=parser.parse_args()
+    if args.constrained_rescue and not args.warm_only:
+        parser.error('--constrained-rescue requires --warm-only')
     shared=load_module(Path(__file__).parents[1]/'ogbl_collab_mlp_lp/run.py','shared')
     config={'years':{'calibration':2015,'train':2016,'selection':2017,'assessment':2018},'seeds':SEEDS,
             'strengths':STRENGTHS,'steps':400,'hidden':32,'residual_bound':12.,'features':FEATURES,
             'negative_count':100000,'warm_only':args.warm_only,
+            'constrained_rescue':args.constrained_rescue,
+            'correction_eligibility':'zero AA and no prior pair event and nonself' if args.constrained_rescue else 'all nonself',
+            'training_pool':'eligible positives and eligible negatives' if args.constrained_rescue else 'full warm panel',
             'negative_policy':'unchanged full-year-positive exclusion before positive filtering',
             'test_scored':False,'revision':shared.git_revision(),'threads':args.threads}
     print(json.dumps(config),flush=True)
@@ -205,7 +222,7 @@ def main():
     aa=load_module(source,'aa')
     args.out.mkdir(parents=True,exist_ok=False)
     save(args.out/'protocol.json',config)
-    run=wandb.init(project='ogbl-collab-temporal-gate',group='warm_v1' if args.warm_only else 'pilot_v1',name='temporal_gate_seeds012',
+    run=wandb.init(project='ogbl-collab-temporal-gate',group='constrained_v1' if args.constrained_rescue else ('warm_v1' if args.warm_only else 'pilot_v1'),name='temporal_gate_seeds012',
                    mode='offline',dir=str(args.out),config=config)
     begin=time.monotonic()
     graph,split,evaluator,version=shared.load_official_dataset(args.dataset_root)
@@ -226,17 +243,24 @@ def main():
     def tensors(d):
         return {side:(torch.from_numpy((d[side+'features']-mean)/std),
                        torch.from_numpy(np.log(np.maximum(d['b'+side],1e-6)/scale)),
-                       torch.from_numpy(d['pos' if side=='p' else 'neg'][:,0]==d['pos' if side=='p' else 'neg'][:,1]))
+                       torch.from_numpy(d['pos' if side=='p' else 'neg'][:,0]==d['pos' if side=='p' else 'neg'][:,1]),
+                       torch.from_numpy(rescue_eligible(d[side+'features'],d['pos' if side=='p' else 'neg'])
+                                        if args.constrained_rescue else np.ones(len(d['b'+side]),dtype=bool)))
                 for side in ('p','n')}
     train,valid=tensors(years[2016]),tensors(years[2017])
+    if args.constrained_rescue:
+        train={side:tuple(t[d[3]] for t in d) for side,d in train.items()}
+        assert len(train['p'][0])>0 and len(train['n'][0])>=2048
+        assert all(bool(d[3].all()) and not bool(d[2].any()) for d in train.values())
+    training_pool={'positives':len(train['p'][0]),'negatives':len(train['n'][0]),
+                   'constrained_rescue':args.constrained_rescue}
+    save(args.out/'training_pool.json',training_pool)
     def model_new():
         net=nn.Sequential(nn.Linear(len(FEATURES),32),nn.ReLU(),nn.Linear(32,1))
         nn.init.zeros_(net[-1].weight); nn.init.zeros_(net[-1].bias)
         return net
     def score(model,data,strength=1.):
-        f,b,selfpair=data
-        result=b+strength*12*torch.tanh(model(f).flatten()/12)
-        return result.masked_fill(selfpair,-1e9)
+        return residual_score(model,data,strength)
     models,selections=[],[]
     for seed in SEEDS:
         started=time.monotonic(); torch.manual_seed(seed)
@@ -270,7 +294,8 @@ def main():
         model.load_state_dict(state)
         path=args.out/f'gate_seed{seed}.pt'
         torch.save({'state_dict':state,'mean':torch.from_numpy(mean),'std':torch.from_numpy(std),'scale':scale,
-                    'strength':best_strength,'seed':seed,'step':best_step,'features':FEATURES},path)
+                    'strength':best_strength,'seed':seed,'step':best_step,'features':FEATURES,
+                    'constrained_rescue':args.constrained_rescue},path)
         selection={'seed':seed,'step':best_step,'strength':best_strength,'selection_2017_hits_at_50':best,
                    'checkpoint':str(path),'sha256':shared.sha256_file(path),'parameter_count':sum(p.numel() for p in model.parameters()),
                    'elapsed_seconds':time.monotonic()-started,'history':history}
@@ -292,6 +317,10 @@ def main():
             p=score(model,final['p'],selection['strength']).numpy()
             n=score(model,final['n'],selection['strength']).numpy()
         value=hits(p,n)
+        if args.constrained_rescue:
+            for side,values in [('p',p),('n',n)]:
+                protected=(~final[side][3]) & (~final[side][2])
+                assert np.array_equal(values[protected.numpy()],final[side][1][protected].numpy())
         evaluator.K=50
         assert evaluator.eval({'y_pred_pos':p,'y_pred_neg':n})['hits@50']==value
         row={'seed':seed,'selected_step':selection['step'],'selected_strength':selection['strength'],
@@ -300,6 +329,7 @@ def main():
         print(json.dumps({'event':'assessment',**row}),flush=True)
     np.savez_compressed(args.out/'assessment_scores.npz',**arrays)
     result={'complete':True,'test_scored':False,'classification':'temporal_validation_pilot','revision':config['revision'],
+            'constrained_rescue':args.constrained_rescue,'training_pool':training_pool,
             'frozen_2015_aadc_2018_hits_at_50':base,'official_2018_calibrated_aadc_hits_at_50':official,
             'seeds':rows,'mean_hits_at_50':float(np.mean([r['hits_at_50'] for r in rows])),
             'sample_std':float(np.std([r['hits_at_50'] for r in rows],ddof=1)),

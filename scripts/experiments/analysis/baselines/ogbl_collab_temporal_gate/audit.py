@@ -69,6 +69,23 @@ def main():
             'source_selection_sha256':sha(r/'selection_frozen.json'),
             'source_assessment_sha256':sha(r/'assessment_scores.npz'),
             'audit_source_sha256':sha(Path(__file__))}
+    if result.get('constrained_rescue'):
+        protected_checks=[]
+        scale=frozen['scale']
+        baseline_logs={side:np.log(np.maximum(year['b'+side],1e-6)/scale) for side in ('p','n')}
+        eligible={side:(year[side+'features'][:,0]==0)&(year[side+'features'][:,8]==0)
+                  for side in ('p','n')}
+        frozen_hits=hitmask(baseline_logs['p'],baseline_logs['n'])
+        for seed in range(3):
+            for side,key in [('p','positive'),('n','negative')]:
+                edge=year['pos' if side=='p' else 'neg']
+                protected=~eligible[side] & (edge[:,0]!=edge[:,1])
+                assert np.array_equal(score[f'seed{seed}_{key}'][protected],baseline_logs[side][protected])
+            mask=hitmask(score[f'seed{seed}_positive'],score[f'seed{seed}_negative'])
+            protected_checks.append({'seed':seed,'protected_scores_exactly_equal':True,
+                'negative_cutoff_log_change':float(np.sort(score[f'seed{seed}_negative'])[-50]-np.sort(baseline_logs['n'])[-50]),
+                'protected_positive_hits_lost_vs_frozen':int((~eligible['p']&frozen_hits&~mask).sum())})
+        report['constrained_score_checks']=protected_checks
     if args.control_runtime:
         checks=[]
         for y in (2015,2016,2017,2018):
