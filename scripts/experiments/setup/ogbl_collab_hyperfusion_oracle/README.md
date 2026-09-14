@@ -19,3 +19,7 @@ on an owned GPU, writing to a new runtime directory.
 with five deterministic unordered-edge folds and reports only out-of-fold test
 predictions. All five fold models count toward the parameter cap. Reaching 0.7130 is
 the stopping target; failure stops this gate family.
+
+`forward_gate.py` fits the unchanged shallow tree on 2018 labels and applies it once
+to 2019. Score CDFs are also fit on 2018 and frozen. Because test was already opened,
+this is forward-year but post-hoc development evidence.
