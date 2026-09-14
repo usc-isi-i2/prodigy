@@ -43,3 +43,31 @@ The full-data two-epoch smoke exercised the test path before production. No scie
 setting changed afterward, but the test panel was therefore not literally unseen;
 see the setup `DEVIATIONS.md`. This matched arm is also not the official example's
 three-layer GraphSAGE plus edge-MLP recipe and should not be labeled as that baseline.
+
+## OGB-style recipe follow-up
+
+The separately named `ogb_style_v1` arm uses the official recipe's major choices:
+the supplied weighted training adjacency (including repeated events), three 256-wide
+GraphSAGE layers, and a three-layer edge MLP over the elementwise endpoint product.
+It keeps validation edges out of message passing and opens test only after selecting
+the best validation checkpoint across all 400 epochs.
+
+| Model | Hits@10 | Hits@50 | Hits@100 | ROC-AUC | AP |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Matched GraphSAGE + cosine | 24.97 +/- 1.42 | 46.63 +/- 1.22 | 51.40 +/- 1.19 | 95.32 +/- 0.42 | 93.87 +/- 0.44 |
+| OGB-style GraphSAGE | 23.92 +/- 1.32 | **48.62 +/- 0.99** | **54.08 +/- 0.53** | **97.10 +/- 0.05** | **95.64 +/- 0.04** |
+| Published OGB GraphSAGE | - | 48.10 +/- 0.81 | - | - | - |
+
+The OGB-style arm gains 1.99 Hits@50 points over the matched GraphSAGE and lands
+0.52 points above the published mean, well within the variation implied by the two
+small seed samples. This reproduces the official baseline closely; it does not
+establish superiority. Seed test Hits@50 values are 48.01%, 48.09%, and 49.77%.
+
+The recurrence split remains important: seen-in-training Hits@50 is
+`93.76 +/- 0.78%`, while novel-versus-training Hits@50 is `22.54 +/- 1.13%`.
+Compared with the matched GraphSAGE, nearly all of the overall improvement comes
+from repeat edges; novel performance is essentially unchanged.
+
+Follow-up evidence: revision `8a98ce23c538f78caa935abeeedd6914702faef7`, graph
+fingerprint `f951b6169fe0ee95f762680205a5431a70b2d86b92b0226e60a333a693d22485`,
+runtime artifacts `/dataMeR1/phil/gfm/ogbl_collab_sage_lp/ogb_style_v1/`.
