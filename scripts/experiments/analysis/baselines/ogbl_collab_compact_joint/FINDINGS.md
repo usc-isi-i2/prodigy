@@ -1,5 +1,57 @@
 # Compact joint scorer: completed negative result
 
+## Follow-up: frozen fusion retains a real development gain
+
+The original standalone-model result below remains negative. A subsequent,
+user-authorized no-training fusion check reaches **68.2433 ±0.7134%**2018 Hits@50
+with all normalization and the common mixing coefficient frozen on2017. It beats
+the identically2015-calibrated AA-DC baseline66.8398% in all three seeds, by
+0.7140/2.1387/1.3581 points (mean1.4036). Scores are67.5538/68.9784/68.1979%.
+It also exceeds the separately2018-calibrated AA reference67.3557% in all seeds;
+that contextual mean gap is0.8876 points, not the matched calibration comparison.
+
+The coefficient grid selected alpha1.0, its upper boundary, on mean2017 Hits.
+The grid was not extended after assessment. Both the AA scale and joint logit
+offset use2017's50th negative and remain fixed in2018; AA calibration itself is
+frozen from2015. The score is max(normalized AA, alpha*exp(clipped centered joint
+logit)); the fused negative cutoff is recomputed for Hits, not used to renormalize
+the model.2018 recoveries/losses versus matched AA are2026/1597,2503/1218,
+2377/1561: positive net429/1285/816. This closes the narrow question of whether
+complementarity survives moving selection AND normalization off2018. It does.
+It does not establish a HyperFusion win or guarantee2019 transfer.2018 remains a
+previously inspected development panel;2017 also selected these checkpoints.
+
+The two-base HyperFusion-style construction gives all-zero H and weights for every
+seed, whether built on2017 alone or2017 plus labeled2018 partitions. With no
+fallback, all predictions tie and Hits is0. This is a degenerate diagnostic,
+NOT evidence against the published three-base system or a measurement of its
+test-adaptation advantage. Our transformed score basis also differs from its
+original base predictions. No third scorer or threshold change was added to rescue
+the diagnostic. For two bases the rule can only produce equal or zero weights.
+
+Conservative total inference scalar bound496,434 (including all base calibration,
+normalization, alpha and diagnostic weights); optimization seeds are replications,
+not an ensemble. No training and no official2019 test access. The prior68.9463%
+exploration used2018 calibration, normalization AND alpha selection, so the
+0.703-point difference cannot be attributed solely to freezing alpha.
+
+All three checkpoint replays exactly matched original2017 Hits and verified saved
+checkpoint hashes/steps/producing revision. Independent local NumPy audit verified
+panel and score hashes, the full selection grid, frozen normalization,2018 scores,
+recoveries/losses, and H/weights using a separate cosine implementation. Three
+synthetic tests passed. Source revision `d41e0d6f`; original model `be46110e`.
+Same dedicated local/Tucker worktrees and branch as below. Runtime on Tucker:
+`/dataMeR1/phil/gfm/ogbl_collab_compact_joint/fusion_frozen_v1`; offline W&B path
+recorded in results. One bounded GPU0 inference pass, no retries or new training.
+
+Evidence: [contract](data/fusion_frozen_v1/protocol.json),
+[frozen selection](data/fusion_frozen_v1/selection.json),
+[results](data/fusion_frozen_v1/results.json), [independent audit](data/fusion_frozen_v1/audit.json).
+Reproduce using setup `fusion.py`; audit using `audit_fusion.py --runtime
+<private score/panel directory> --evidence data/fusion_frozen_v1`.
+Decision: retain frozen max fusion as the compact candidate; do not claim the
+leaderboard goal achieved or automatically open the official test.
+
 ## Outcome
 
 All six predeclared cells completed. The496,429-scalar joint model loses to its
