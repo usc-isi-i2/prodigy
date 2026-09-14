@@ -14,3 +14,8 @@ are 533,296. No retraining occurs.
 
 Run tests and `--dry-run` locally. Run the diagnostic in a dedicated Tucker worktree
 on an owned GPU, writing to a new runtime directory.
+
+`gate.py` is the bounded follow-up. It fits logistic and shallow boosted-tree gates
+with five deterministic unordered-edge folds and reports only out-of-fold test
+predictions. All five fold models count toward the parameter cap. Reaching 0.7130 is
+the stopping target; failure stops this gate family.
