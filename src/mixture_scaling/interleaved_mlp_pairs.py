@@ -67,7 +67,8 @@ def ranking_distillation(student,teacher,n_positive):
 
 def train_one(row,config,args,device):
     run_id,a,b=row;run_dir=Path(args.root)/'node_neighbors/lp'/run_id
-    expected=dict(sources=[a,b],seed=args.seed,schedule='alternating_equal_updates',initialization='fresh',
+    mixed=getattr(args,'batch_schedule','alternating')=='mixed'
+    expected=dict(sources=[a,b],seed=args.seed,schedule='balanced_mixed_batches' if mixed else 'alternating_equal_updates',initialization='fresh',
                   max_steps=args.max_steps,validation_interval=args.validation_interval,patience=args.patience,
                   min_delta=1e-4,minimum_steps=2500)
     warm_start=getattr(args,'warm_start',None);rank_weight=getattr(args,'rank_weight',0.)
@@ -189,6 +190,7 @@ def main():
     p.add_argument('--config',default='configs/nonzero_mini_transfer.yaml');p.add_argument('--device',type=int,choices=range(4),default=0);p.add_argument('--seed',type=int,default=0)
     p.add_argument('--max-steps',type=int,default=100000);p.add_argument('--validation-interval',type=int,default=2000);p.add_argument('--patience',type=int,default=3);p.add_argument('--log-interval',type=int,default=100)
     p.add_argument('--wandb-mode',default='offline');p.add_argument('--wandb-project',default='nonzero-mini-transfer');p.add_argument('--wandb-group',default='interleaved-mlp-pairs')
+    p.add_argument('--batch-schedule',choices=['alternating','mixed'],default='alternating')
     p.add_argument('--prodigy-root',default='/dataMeR1/phil/gfm/prodigy-walk-mini-pilot');args=p.parse_args()
     if any(v<=0 or v%2 for v in (args.max_steps,args.validation_interval,args.log_interval)) or args.patience<1:
         p.error('step counts/intervals must be positive and even; patience must be positive')
