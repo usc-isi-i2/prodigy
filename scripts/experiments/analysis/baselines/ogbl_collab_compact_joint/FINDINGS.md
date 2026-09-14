@@ -160,3 +160,96 @@ Evidence: [failure-case receipt](data/joint_v1/failure_cases.json). Reproduce wi
 `failure_cases.py --runtime <assessment directory> --evidence data/joint_v1
 --out <new receipt.json>`. The diagnostic verifies the saved score and panel hashes
 and never reads2019 test data.
+
+## Matched path and timing diagnosis
+
+**Outcome: no clean separating rule emerged. Path-formation age is a modest
+remaining lead; raw path count and hub dependence are not supported as missing
+features by this diagnostic.** No model was trained or rescored, no threshold was
+fitted, and no test split was read. This is a post-hoc analysis of selected2018
+errors, not evidence that a proposed feature improves full-panel Hits@50.
+
+First, match each promoted negative to up to five recovered positives, using exact
+AA-zero and recurrence strata and fixed calipers on cosine, both endpoint degrees,
+pair count/age, and both recent activity summaries. The consistent cohort comprises
+16 negatives promoted into every joint seed's top50 and positives recovered by
+every seed. All16 obtain five matches (80 assignments,76 distinct positives).
+The broader sensitivity cohort uses64 negatives promoted in any seed and positives
+recovered in any seed: all64 match, with309 assignments and285 distinct positives.
+Positive controls can be reused across negative cases; observations are not
+independent. Full calipers and matching assignments are in the receipts.
+
+The first pass suggested more paths in positives: their matched average has more
+three-hop paths in14/16 persistent cases. However, the model already receives an
+L3 summary. We therefore ran a disclosed SECOND, stricter sensitivity analysis,
+additionally requiring every one of the14 actual symmetric model inputs to be
+within0.75 training-set standard deviations. This was added to address that
+confound after inspecting the first result, not presented as a preregistered test.
+
+The stricter pass retains13/16 consistent negatives (62 assignments,55 unique
+positives) and55/64 broader negatives (236 assignments,223 unique positives).
+Unmatched cases remain explicitly listed rather than silently dropping them.
+
+### What survives the stricter comparison?
+
+| Quantity | Consistent cohort | Broader cohort | Interpretation |
+| --- | --- | --- | --- |
+| Positive has more length-three paths, pairwise probability with half credit for ties | 41.2% (13 groups) | 46.9% (55 groups) | No positive advantage after matching existing inputs |
+| Positive has more independent length-three paths, same statistic | 53.5% (13) | 49.9% (55) | No robust remaining distinction |
+| Positive has a younger path-formation age, same statistic | 72.5% (10) | 67.3% (33) | Modest directional lead, on a smaller subset |
+
+These probabilities equally weight each negative group and then its positive
+matches. They are descriptive pairwise contrasts, NOT classifier accuracy, a
+causal effect, or confidence estimates. They also avoid interpreting one negative
+versus the mean of five positives as five independent wins. Recent-path presence
+is mostly tied; largest-bridge concentration is not a reliable separator, and
+higher bridge-author cosine is not positively associated with the desired label.
+
+For each simple path `u-a-b-v`, formation year is the maximum of the three edges'
+first-observed years: when all three links had first appeared. The per-pair summary
+is the median age of its length-three paths at2018. In the broader matched subset
+where both sides have such paths (33 negative groups), mean negative summary age
+is3.86 years; the equally group-weighted positive summary is2.64 years. In the
+consistent subset (10 groups), the corresponding means are4.80 and2.91 years.
+This measures static path formation, not a time-respecting walk. It differs from
+the existing direct-pair recency and endpoint-activity features, and from simply
+decaying edge weights. Pairs without length-three paths have undefined path age,
+not age zero; they are not covered by the timing comparison.
+
+The initial path-count advantage largely disappears after conditioning on L3 and
+the other existing summaries. That is the main closed evidence gap. The remaining
+timing association is too limited to justify a new architecture or a2018-fitted
+rejection threshold. If pursued, the next decision should be whether this SAME
+path-age definition separates future positives from hard negatives on earlier
+year panels, before training another model. No historical-transfer claim is made
+here, and no further run was launched.
+
+### Validation and reproduction
+
+CPU-only diagnostics on Tucker, GPUs disabled, offline W&B; roughly2 seconds of
+measured analysis each, plus startup. Raw edge/year files contain no year after2017;
+their unique undirected graph exactly matches the frozen2018 input graph. Score,
+panel, and supplied node-feature hashes were verified. Five synthetic tests cover
+path independence, symmetry, event first/last dates, future-edge rejection, and
+matching, including the additional L3 caliper. Local audits exactly recompute both
+matching assignments and independently recount simple paths for ten negative and
+ten positive cases per pass. Date logic is covered by synthetic tests and producer
+graph checks; dates were not independently reloaded on the laptop.
+
+Analysis source commits: `6180d0ff` (initial) and `a2f80341` (all-input sensitivity).
+The producing model revision remains `be46110e`; no checkpoint was changed.
+Branch/worktrees remain `codex/collab-compact-joint`,
+`/Users/philipp/projects/gfm/prodigy-collab-joint` and
+`/dataMeR1/phil/gfm/prodigy-collab-joint`. Tucker runtime roots are
+`/dataMeR1/phil/gfm/ogbl_collab_compact_joint/matched_paths_v1` and
+`/dataMeR1/phil/gfm/ogbl_collab_compact_joint/matched_paths_all14`.
+
+Evidence: [initial matching](data/matched_paths_v1/results.json),
+[initial audit](data/matched_paths_v1/audit.json),
+[all-input matching](data/matched_paths_all14/results.json),
+[all-input audit](data/matched_paths_all14/audit.json).
+Run `path_diagnosis.py --runtime <joint_v1/assessment> --evidence data/joint_v1
+--out <new runtime>`; append `--match-all-inputs` for the sensitivity pass. The
+script reads only pre2018 raw graph events and the saved2018 assessment arrays.
+Run `audit_paths.py --runtime <local score/panel/standardization archive directory>
+--diagnostic <diagnostic results.json> --out <new audit.json>` for the local audit.
