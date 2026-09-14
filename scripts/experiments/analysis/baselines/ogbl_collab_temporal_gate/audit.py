@@ -73,6 +73,23 @@ def main():
         protected_checks=[]
         scale=frozen['scale']
         baseline_logs={side:np.log(np.maximum(year['b'+side],1e-6)/scale) for side in ('p','n')}
+        # Cross-platform NumPy log can differ in the last float32 bits. If present,
+        # use a hash-verified zero-strength seed as an exact producer-side baseline.
+        zero_seeds=[s['seed'] for s in frozen['selections'] if s['strength']==0.]
+        if zero_seeds:
+            producer_baseline={side:score[f'seed{zero_seeds[0]}_{key}']
+                               for side,key in [('p','positive'),('n','negative')]}
+            for seed in zero_seeds:
+                for side,key in [('p','positive'),('n','negative')]:
+                    assert np.array_equal(score[f'seed{seed}_{key}'],producer_baseline[side])
+            assert np.array_equal(hitmask(producer_baseline['p'],producer_baseline['n']),base)
+            report['protected_baseline_reference']={'zero_strength_seeds':zero_seeds,
+                'zero_strength_hitmask_exactly_matches_raw_frozen_aadc':True,
+                'local_log_max_difference_nonself':{
+                    side:float(np.max(np.abs(producer_baseline[side][year[edge][:,0]!=year[edge][:,1]]-
+                        baseline_logs[side][year[edge][:,0]!=year[edge][:,1]])))
+                    for side,edge in [('p','pos'),('n','neg')]}}
+            baseline_logs=producer_baseline
         eligible={side:(year[side+'features'][:,0]==0)&(year[side+'features'][:,8]==0)
                   for side in ('p','n')}
         frozen_hits=hitmask(baseline_logs['p'],baseline_logs['n'])

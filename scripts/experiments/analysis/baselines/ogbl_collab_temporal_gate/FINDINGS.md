@@ -1,5 +1,72 @@
 # Temporal residual gate pilot
 
+## Constrained-rescue follow-up: completed, negative result
+
+Restricting corrections to new pairs with zero AA, and training only within that
+group, did not improve performance. Mean official 2018 Hits@50 is **66.5868%**
+(sample SD 0.4382 points), versus warm_v1's 67.8572% and official-calibrated AA-DC's
+67.3557%. The unchanged frozen 2015-calibrated base is 66.8398%.
+
+| Seed | Selected step / strength | 2018 Hits@50 | Recovered / lost vs frozen base |
+| --- | --- | ---: | ---: |
+| 0 | 400 / 0.25 | 66.0808% | 1561 / 2017 |
+| 1 | 0 / 0 | 66.8398% | 0 / 0 |
+| 2 | 0 / 0 | 66.8398% | 0 / 0 |
+
+All three completed the 400-step budget. Seeds 1 and 2 selected the zero-strength
+fallback because learned candidates did not beat it on full-panel 2017 selection.
+Seed 0's selected correction failed to transfer: its negative cutoff rose by
+0.586386 in log-score units. **1,601 protected positive hits were lost despite
+their scores remaining bit-for-bit unchanged.** The constraint protects scores,
+not ranks against the negative pool. This confirms the anticipated failure mode;
+it does not prove all constrained methods must fail.
+
+Compared with the separately official-calibrated AA-DC reference, seed 0 recovers
+1,754 but loses 2,520 positive hits. Repeat/new net changes are -427 / -339.
+The fallback seeds differ from that reference solely because calibration differs:
+they recover 339 and lose 649 each. These are not learned improvements or damage.
+
+The training pool contains 16,475 eligible 2016 positives and 99,957 eligible
+negatives. All calibration, selection, assessment, graph, and feature inputs stay
+as in warm_v1; all historical and official pair/feature arrays match the control.
+The architecture remains 481 parameters, 3 seeds, 400 steps, same optimizer and
+full-panel selection grid. This intervention jointly changes correction masking
+and training-pool eligibility, so their separate contributions are not identified.
+
+Six tests passed locally and the Tucker test command succeeded before training.
+The independent audit verifies checkpoint and score hashes, selection rules, all
+reported hit counts, input parity, self-pair handling, and exact protected-score
+equality. A first local audit failed exact comparison to locally recomputed logs:
+macOS versus Tucker NumPy log results differed by at most 9.54e-7. The audit now
+uses the hash-verified zero-strength seeds as the exact producer-side baseline;
+those two full score arrays match each other exactly and reproduce the frozen
+AA-DC hitmask exactly. Protected-score equality is still exact, not tolerance-based.
+No training artifact was changed to resolve this audit portability issue.
+
+Producing revision `ed25a6bdbe34d4ead2e1176fa7292dee8e0e21a6`, branch
+`codex/collab-temporal-gate`; local worktree
+`/Users/philipp/projects/gfm/prodigy-collab-gate`, Tucker worktree
+`/dataMeR1/phil/gfm/prodigy-collab-gate`. Runtime on Tucker:
+`/dataMeR1/phil/gfm/ogbl_collab_temporal_gate/constrained_v1`. CPU eight threads,
+77.34 seconds, offline W&B, no GPU use. Dedicated tmux
+`collab-temporal-gate-constrained` exited normally. No test scores computed;
+the existing dataset identity audit still reads full-split metadata as declared.
+No additional sweep or test evaluation followed the negative result.
+
+Evidence: [results](data/constrained_v1/results.json),
+[protocol](data/constrained_v1/protocol.json), [training pool](data/constrained_v1/training_pool.json),
+[selections](data/constrained_v1/selection_frozen.json),
+[receipt](data/constrained_v1/validation_receipt.json),
+[independent audit](data/constrained_v1/audit.json),
+[error slices](data/constrained_v1/error_overlap.json).
+Reproduce audit with `audit.py --runtime <constrained_v1> --evidence <constrained_v1>
+--control-runtime <warm_v1> --out <new-audit.json>`.
+
+Conclusion: do not replace warm_v1 with this variant. The current feature/model
+combination still promotes difficult negatives too strongly; protected-score
+masking alone plus subgroup training did not solve that discrimination problem.
+This is post-hoc development evidence, not a fresh holdout or HyperFusion comparison.
+
 ## Warm-gate error overlap diagnostic
 
 Post-hoc analysis of the unchanged official 2018 validation panel, using all three
