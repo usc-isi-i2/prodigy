@@ -128,13 +128,21 @@ def train_arm(arm: str, x: torch.Tensor, campaign: dict[str, np.ndarray], args, 
     torch.manual_seed(args.seed)
     model = Encoder(arm, x.shape[1]).to(x.device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
-    train_pairs, train_labels = labels_and_pairs(campaign["train_pos"], campaign["train_neg"], x.device)
     val_pairs, val_labels = labels_and_pairs(campaign["val_pos"], campaign["val_neg"], x.device)
+    num_nodes = len(x)
+    all_positive = np.concatenate([campaign[f"{split}_pos"] for split in ("train", "val", "test")])
+    forbidden = {int(u) * num_nodes + int(v) for u, v in all_positive}
+    reserved = {
+        int(u) * num_nodes + int(v)
+        for split in ("val", "test")
+        for u, v in campaign[f"{split}_neg"]
+    }
+    negative_rng = np.random.default_rng(args.train_negative_seed)
     best_auc, best_epoch, stale, best_state = -np.inf, -1, 0, None
     history = []
     run = wandb.init(
         project=args.wandb_project,
-        name=f"cora_standard_lp_{arm}_s{args.seed}",
+        name=f"cora_standard_lp_{arm}_s{args.seed}_{args.run_tag}",
         mode="offline",
         dir=str(out),
         reinit=True,
@@ -147,9 +155,20 @@ def train_arm(arm: str, x: torch.Tensor, campaign: dict[str, np.ndarray], args, 
             "epochs": args.epochs,
             "patience": args.patience,
             "pair_fingerprint": args.pair_fingerprint,
+            "resample_train_negatives": args.resample_train_negatives,
+            "train_negative_seed": args.train_negative_seed,
+            "run_tag": args.run_tag,
         },
     )
     for epoch in range(1, args.epochs + 1):
+        if args.resample_train_negatives:
+            train_neg = sample_nonedges(
+                num_nodes, len(campaign["train_pos"]), forbidden, set(reserved), negative_rng
+            )
+        else:
+            train_neg = campaign["train_neg"]
+        train_negative_fingerprint = fingerprint(train_neg)
+        train_pairs, train_labels = labels_and_pairs(campaign["train_pos"], train_neg, x.device)
         model.train()
         logits = model.logits(model(x), train_pairs)
         loss = F.binary_cross_entropy_with_logits(logits, train_labels)
@@ -164,9 +183,10 @@ def train_arm(arm: str, x: torch.Tensor, campaign: dict[str, np.ndarray], args, 
             "val_average_precision": val["average_precision"],
             "logit_scale": float(model.log_scale.detach().exp().clamp(max=100.0)),
             "logit_bias": float(model.bias.detach()),
+            "train_negative_fingerprint": train_negative_fingerprint,
         }
         history.append(row)
-        run.log(row, step=epoch)
+        run.log({k: v for k, v in row.items() if k != "train_negative_fingerprint"}, step=epoch)
         if val["roc_auc"] > best_auc:
             best_auc, best_epoch, stale = val["roc_auc"], epoch, 0
             best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
@@ -197,6 +217,9 @@ def main() -> None:
     parser.add_argument("--weight-decay", type=float, default=5e-4)
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--wandb-project", default="cora-standard-mlp-lp")
+    parser.add_argument("--run-tag", default="fixed_negatives")
+    parser.add_argument("--resample-train-negatives", action="store_true")
+    parser.add_argument("--train-negative-seed", type=int, default=1000)
     args = parser.parse_args()
     if args.out.exists():
         parser.error(f"output directory already exists: {args.out}")
@@ -225,6 +248,13 @@ def main() -> None:
         "epochs": args.epochs, "patience": args.patience,
         "learning_rate": args.learning_rate, "weight_decay": args.weight_decay,
         "wandb": {"mode": "offline", "project": args.wandb_project, "logging": "every epoch, unsmoothed"},
+        "run_tag": args.run_tag,
+        "training_negatives": (
+            f"resampled every epoch from deterministic seed {args.train_negative_seed}; "
+            "unique within epoch and disjoint from fixed validation/test negatives"
+            if args.resample_train_negatives
+            else "fixed campaign train_neg panel"
+        ),
         "selection": "maximum validation ROC-AUC; earliest epoch wins ties; test closed until all selections finish",
     }
     (args.out / "protocol.json").write_text(json.dumps(protocol, indent=2, sort_keys=True) + "\n")

@@ -48,3 +48,27 @@ The output directory must not already exist. `protocol.json`, `pairs.npz`,
 record. Offline W&B run directories are retained with the Tucker runtime output.
 Render the exact unsmoothed curves with `plot_curves.py`. The analysis copy belongs in
 `scripts/experiments/analysis/baselines/cora_standard_mlp_lp/data/`.
+
+## Revised resampled-negative protocol
+
+The follow-up requested after inspecting the raw pilot curves changes exactly two
+training settings while preserving the seed-0 positive split and fixed validation/test
+panels:
+
+- learning rate `0.001` instead of `0.01`;
+- a fresh deterministic set of 4,486 unique training nonedges at every epoch,
+  using negative-stream seed 1000, with the same epoch-indexed stream for both arms.
+
+It allows 1,000 epochs with patience 100. Each selection-history row stores the
+epoch's negative-set fingerprint so matched prefixes can be verified directly.
+
+```bash
+python scripts/experiments/setup/cora_standard_mlp_lp/run.py \
+  --graph /dataMeR1/phil/data/cora/raw/graph_com_tag/processed_data.pt \
+  --out /dataMeR1/phil/gfm/cora_standard_mlp_lp/seed0_lr1e3_resampled \
+  --learning-rate 0.001 --epochs 1000 --patience 100 \
+  --resample-train-negatives --train-negative-seed 1000 \
+  --run-tag lr1e3_resampled
+```
+
+This is a revised protocol, not a replacement for the fixed-negative pilot.
