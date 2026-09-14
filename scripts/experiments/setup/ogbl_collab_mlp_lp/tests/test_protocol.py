@@ -67,7 +67,7 @@ def test_encoder_shapes_and_cosine_symmetry() -> None:
 def test_concat_scorers_are_symmetric_and_capacity_matched() -> None:
     features = torch.randn(6, 128)
     edges = torch.tensor([[0, 1], [2, 3], [4, 5]])
-    for arm in run.CONCAT_ARMS:
+    for arm in run.CONCAT_SYM_ARMS:
         model = run.Encoder(arm)
         forward = model.logits(features[edges[:, 0]], features[edges[:, 1]])
         reverse = model.logits(features[edges[:, 1]], features[edges[:, 0]])
@@ -78,6 +78,17 @@ def test_concat_scorers_are_symmetric_and_capacity_matched() -> None:
     cosine_parameters = sum(parameter.numel() for parameter in cosine.parameters())
     concat_parameters = sum(parameter.numel() for parameter in concat.parameters())
     assert abs(cosine_parameters - concat_parameters) / cosine_parameters < 0.01
+
+
+def test_ordered_concat_scorers_preserve_endpoint_order() -> None:
+    features = torch.randn(6, 128)
+    edges = torch.tensor([[0, 1], [2, 3], [4, 5]])
+    for arm in run.CONCAT_ORDERED_ARMS:
+        model = run.Encoder(arm)
+        forward = model.logits(features[edges[:, 0]], features[edges[:, 1]])
+        reverse = model.logits(features[edges[:, 1]], features[edges[:, 0]])
+        assert forward.shape == (3,)
+        assert not torch.allclose(forward, reverse)
 
 
 def test_ranking_metrics_include_official_and_secondary_views() -> None:

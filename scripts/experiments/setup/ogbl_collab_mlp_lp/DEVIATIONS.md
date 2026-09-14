@@ -38,3 +38,11 @@ operator requested a concatenation-based pair scorer. The separately tagged
 original frozen ladder. It preserves the split, feature inputs, negative stream,
 optimizer, validation selection, test-once policy, and three seeds. Because Collab
 is undirected, ordered concat scores are averaged across both endpoint orders.
+
+## 2026-09-13: literal ordered-concatenation diagnostic
+
+After inspecting the symmetric-concat result, the experiment operator requested the
+literal unsymmetrized strategy. The separately tagged `concat_ordered_v1` campaign
+uses the endpoint order stored by OGB for training, validation, and test without swap
+augmentation. It is classified as an order-sensitive diagnostic because Collab is
+undirected; improved performance could reflect a stable serialization artifact.
