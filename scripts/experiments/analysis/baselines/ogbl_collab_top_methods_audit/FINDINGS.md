@@ -1,5 +1,10 @@
 # ogbl-collab top-method audit and sub-1M decision plan
 
+Historical audit preserved at closeout, 2026-09-14. Proposals here were not executed
+by this closeout. Any test-informed selection suggestion is superseded by the
+user's final requirement for leaderboard acceptance; inferred author behavior is
+not proof of eligibility. See the compact-joint consolidated findings for outcomes.
+
 ## Decision
 
 Do not spend the next run on another compact-GNN architecture sweep. The released

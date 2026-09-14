@@ -1,5 +1,11 @@
 # Consolidated ogbl-collab findings: sub-million HyperFusion challenge
 
+Closeout (2026-09-14): the final user requirement is a **leaderboard-accepted**
+result, not merely a larger test-informed number. Earlier test-informed proposals
+below are historical diagnostics, not authorization for submission or further runs.
+Acceptance has not been established. All proposed next experiments are parked;
+see [retirement record](../../../../../cleanup_records/2026-09-14-collab.md).
+
 ## Objective and current answer
 
 The explicit objective is to show that a model with fewer than one million learned
@@ -9,8 +15,8 @@ Hits@50 of **0.7129 ± 0.0018**. We have not yet established that claim.
 The strongest defensible forward result is the fresh-negative compact candidate at
 **0.697979 ± 0.001786** test Hits@50 with **496,448** inference scalars. Its best
 standalone joint seed is **0.701569**, leaving **0.011331** to HyperFusion. A
-test-supervised cross-fitted tree reaches 0.849864 below the parameter cap, proving
-that capacity is not the immediate limitation, but it is not benchmark-valid and
+test-supervised cross-fitted tree reaches 0.849864 below the parameter cap, showing
+within-panel fitting capacity, not generalization. It is not benchmark-valid and
 does not transfer from 2018 to 2019.
 
 ## Evidence ladder
