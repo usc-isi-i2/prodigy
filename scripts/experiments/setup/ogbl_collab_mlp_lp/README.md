@@ -110,7 +110,7 @@ IDs, pair recurrence, endpoint event counts, raw-feature cosine, per-seed scores
 and the exact per-seed Hits@50 thresholds. It does not retrain or select a model.
 
 ```bash
-python scripts/experiments/setup/ogbl_collab_mlp_lp/inspect_errors.py \
+python -m scripts.experiments.setup.ogbl_collab_mlp_lp.inspect_errors \
   --campaign-root /dataMeR1/phil/gfm/ogbl_collab_mlp_lp/official_v1 \
   --out /dataMeR1/phil/gfm/ogbl_collab_mlp_lp/error_examples_v1 \
   --device cpu --dry-run
