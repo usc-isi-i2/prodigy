@@ -36,3 +36,12 @@ bash scripts/experiments/setup/ogbl_collab_mlp_hardneg/launch_tucker.sh 0 0
 bash scripts/experiments/setup/ogbl_collab_mlp_hardneg/launch_tucker.sh 1 1
 bash scripts/experiments/setup/ogbl_collab_mlp_hardneg/launch_tucker.sh 2 2
 ```
+
+Validate and aggregate only after all nine new cells finish:
+
+```bash
+python -m scripts.experiments.setup.ogbl_collab_mlp_hardneg.aggregate \
+  --root /dataMeR1/phil/gfm/ogbl_collab_mlp_hardneg/hardneg_v1 \
+  --baseline-root /dataMeR1/phil/gfm/ogbl_collab_mlp_lp/official_v1 \
+  --out /dataMeR1/phil/gfm/ogbl_collab_mlp_hardneg/hardneg_v1/aggregate.json
+```
