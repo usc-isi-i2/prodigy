@@ -123,16 +123,30 @@ def audit_dataset(
             "loaded graph pair multiplicities do not equal two arcs per training event"
         )
 
-    all_positive_keys = np.union1d(
-        np.union1d(train_keys, pair_keys(split["valid"]["edge"], num_nodes)),
-        pair_keys(split["test"]["edge"], num_nodes),
-    )
+    positive_keys = {
+        "train": train_keys,
+        "valid": np.unique(pair_keys(split["valid"]["edge"], num_nodes)),
+        "test": np.unique(pair_keys(split["test"]["edge"], num_nodes)),
+    }
+    negative_keys = {
+        name: np.unique(pair_keys(split[name]["edge_neg"], num_nodes))
+        for name in EXPECTED_NEGATIVE_COUNTS
+    }
+    negative_positive_overlap = {
+        negative_split: {
+            positive_split: int(
+                len(np.intersect1d(negative_keys[negative_split], positive_keys[positive_split]))
+            )
+            for positive_split in positive_keys
+        }
+        for negative_split in negative_keys
+    }
     for name in EXPECTED_NEGATIVE_COUNTS:
-        overlap = np.intersect1d(
-            np.unique(pair_keys(split[name]["edge_neg"], num_nodes)), all_positive_keys
-        )
-        if len(overlap):
-            raise ValueError(f"{name} official negatives overlap {len(overlap)} known positives")
+        if negative_positive_overlap[name][name]:
+            raise ValueError(
+                f"{name} official negatives overlap same-year positive pairs: "
+                f"{negative_positive_overlap[name][name]}"
+            )
 
     strata = test_strata(
         split["train"]["edge"], split["valid"]["edge"], split["test"]["edge"], num_nodes
@@ -155,6 +169,7 @@ def audit_dataset(
             name: int(np.sum(split[name]["edge_neg"][:, 0] == split[name]["edge_neg"][:, 1]))
             for name in EXPECTED_NEGATIVE_COUNTS
         },
+        "official_negative_positive_pair_overlap_by_split": negative_positive_overlap,
         "year_ranges": {
             name: [int(years[name].min()), int(years[name].max())]
             for name in ("train", "valid", "test")

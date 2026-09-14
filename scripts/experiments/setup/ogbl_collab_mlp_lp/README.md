@@ -51,7 +51,10 @@ The official dataset lives at `/dataMeR1/phil/data/ogb`. Validate its exact
 counts, years, feature shape, split fingerprint, official-negative self-pair
 counts, and planned update count before launching. The evaluator consumes the
 fixed official negative arrays exactly as supplied; the campaign records but
-does not silently clean them:
+does not silently clean them. Because labels are year-specific events, a negative
+for one year may legitimately be a positive in another year. The audit rejects
+same-year positive/negative collisions and records cross-year overlaps rather
+than incorrectly treating them as leakage:
 
 ```bash
 python scripts/experiments/setup/ogbl_collab_mlp_lp/run.py \
