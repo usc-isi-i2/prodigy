@@ -32,7 +32,9 @@ summaries are secondary.
 
 ## Intended recurrence and the predeclared diagnostic
 
-`ogbl-collab` predicts 2019 collaboration events from older history. Some test
+`ogbl-collab` is a temporal multigraph and predicts 2019 collaboration events
+from older history. Training itself can contain repeated pair events from
+different years, and some test
 pairs may have collaborated before, which is intended by the benchmark but is
 not the same estimand as predicting a brand-new relationship. Before inspecting
 scores, this campaign therefore predeclares official-negative Hits@K broken out

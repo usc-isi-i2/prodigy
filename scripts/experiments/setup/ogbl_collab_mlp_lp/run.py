@@ -112,13 +112,16 @@ def audit_dataset(
     if set(np.unique(years["test"]).tolist()) != {2019}:
         raise ValueError("test split is not exactly year 2019")
 
-    train_keys = np.unique(pair_keys(split["train"]["edge"], num_nodes))
+    train_event_keys = pair_keys(split["train"]["edge"], num_nodes)
+    train_keys = np.unique(train_event_keys)
     graph_edges = np.asarray(graph["edge_index"], dtype=np.int64).T
-    graph_keys = np.unique(pair_keys(graph_edges, num_nodes))
-    if not np.array_equal(train_keys, graph_keys):
-        raise ValueError("loaded graph pairs do not exactly match official training pairs")
-    if graph_edges.shape[0] != 2 * len(train_keys):
-        raise ValueError("loaded undirected graph does not contain exactly two arcs per train pair")
+    graph_event_keys = pair_keys(graph_edges, num_nodes)
+    if not np.array_equal(
+        np.sort(graph_event_keys), np.repeat(np.sort(train_event_keys), 2)
+    ):
+        raise ValueError(
+            "loaded graph pair multiplicities do not equal two arcs per training event"
+        )
 
     all_positive_keys = np.union1d(
         np.union1d(train_keys, pair_keys(split["valid"]["edge"], num_nodes)),
@@ -139,6 +142,8 @@ def audit_dataset(
         "num_nodes": num_nodes,
         "feature_shape": list(x.shape),
         "graph_stored_arcs": int(graph_edges.shape[0]),
+        "training_unique_pairs": int(len(train_keys)),
+        "training_repeated_events": int(len(train_event_keys) - len(train_keys)),
         "counts": {
             name: {
                 "positive": int(len(split[name]["edge"])),
