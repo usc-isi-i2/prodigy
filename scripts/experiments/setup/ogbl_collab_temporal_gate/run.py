@@ -127,7 +127,7 @@ def direct_score(model, data):
     return model(features).flatten().masked_fill(selfpair, -1e9)
 
 
-def make_year(aa, shared, graph, split, year, calibration, warm_only=False):
+def make_year(aa, shared, graph, split, year, calibration, warm_only=False, symmetric_features=False):
     started = time.monotonic()
     n = int(graph['num_nodes'])
     ty = split['train']['year'].flatten()
@@ -178,6 +178,16 @@ def make_year(aa, shared, graph, split, year, calibration, warm_only=False):
         assert f.shape==(len(edge),len(FEATURES)) and np.isfinite(f).all()
         return f
     output = dict(pos=pos,neg=neg,pfeatures=features(pos,rp),nfeatures=features(neg,rn),bp=bp,bn=bn)
+    if symmetric_features:
+        # New opt-in inputs only: preserve every legacy score and feature above.
+        for side, edge in [('p', pos), ('n', neg)]:
+            reverse = edge[:, ::-1].copy()
+            raw_reverse = aa.score_edges(edges=reverse, **common)
+            base_reverse = calibrated_scores(aa, raw_reverse, reverse, lcc,
+                                              calibration['gate'], calibration['anchor_scale'])
+            output[side+'symmetric'] = .5 * (
+                direct_features(output[side+'features'], output['b'+side]) +
+                direct_features(features(reverse, raw_reverse), base_reverse))
     if year==2018:
         op=calibrated_scores(aa,rp,pos,lcc,own_calibration['gate'],own_calibration['anchor_scale'])
         on=calibrated_scores(aa,rn,neg,lcc,own_calibration['gate'],own_calibration['anchor_scale'])
