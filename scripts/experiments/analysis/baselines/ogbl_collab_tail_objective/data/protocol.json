@@ -1,0 +1,23 @@
+{
+  "name": "h2_tail_v1",
+  "revision": "87bf66f80316d45943abeb5acdf5573dd24248af",
+  "arms": [
+    "bce",
+    "tail"
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "steps": 2000,
+  "interval": 50,
+  "train_year": 2017,
+  "validation_year": 2018,
+  "selection": "earliest maximum standalone validation Hits@50",
+  "objective": "balanced sampled BCE + 1*mean softplus(1 + n - p), Cartesian product of same2048 broad positives with top50 training negatives; top50 refreshed every10 updates",
+  "invariants": "fixed100k negative panel,2048pos/1024uniform/1024mined,top2048 refresh10,Adam.001 wd.0001 clip5,496385 neural weights",
+  "advance": "all3 paired selected differences positive and mean>=0.005; otherwise stop",
+  "test_access": false,
+  "prior_test_exploration_disclosed": true
+}
