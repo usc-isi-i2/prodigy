@@ -108,3 +108,27 @@ large pair arrays, checkpoints and node features remain private runtime artifact
 Tests: `python -m unittest discover -s scripts/experiments/setup/ogbl_collab_compact_joint
 -p 'test_*.py'`, plus the temporal-gate regression tests. The shared PRODIGY model,
 episode pipeline, old checkpoint schemas and default gate path are unchanged.
+
+## Bounded frozen-fusion follow-up
+
+`fusion.py --runtime <joint_v1> --out <new directory> --device cuda:0` replays
+the three selected joint checkpoints on 2017 (requiring exact Hits parity), then
+freezes a common max-fusion alpha and each seed's normalization before reading
+saved 2018 predictions. `--dry-run` prints the full contract without artifact IO.
+No training or official 2019 test access occurs. AA uses the SAME 2015 calibration
+in both years; the separately 2018-calibrated AA score is a contextual reference.
+This is a new development diagnostic, not a pristine holdout or an automatic
+extension of the failed original advancement rule. All three seeds are required;
+there is no ensemble, retry, or tuning after assessment. A gain must survive all
+three seeds to motivate another decision; no test scoring is authorized.
+
+The two-base HyperFusion-style diagnostic applies the released cosine-distance
+threshold0.1 and H H-transpose aggregation to these SAME transformed scores, with
+2017 partitions only versus adding 2018 positive/negative partitions. It is an
+adaptation of the fusion rule, not a reproduction of HyperFusion's three-model
+submission or raw score basis. For two bases, weights are necessarily equal or
+zero, so this cannot generally identify a useful adaptive preference. Zero weights
+receive no fallback. This limitation is predeclared, not repaired after inspection.
+The primary test remains frozen max fusion. All scalars across components are
+conservatively bounded by496,434. Runtime uses offline W&B and saves protocol,
+selection, replay scores, and results. Reproduce tests with `test_fusion.py`.
