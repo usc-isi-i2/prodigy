@@ -1,5 +1,42 @@
 # Temporal residual gate pilot on ogbl-collab
 
+## Direct scorer (direct_v1; frozen before launch)
+
+Run with `--warm-only --direct-score --out
+/dataMeR1/phil/gfm/ogbl_collab_temporal_gate/direct_v1`.
+Question: can these features recover positives when a fixed low AA-DC score no
+longer anchors their predictions? Keep all warm_v1 pair panels and the 13 existing
+features; append `log1p(frozen_2015_calibrated_AADC)` as feature 14, standardized
+alongside the others using only full 2016 training inputs. Use a 14->32 ReLU->1
+MLP (513 parameters), zero-initialized output layer, with its raw unbounded logit
+as the score. No base addition, tanh correction bound, or subgroup masking.
+Retain the label-independent self-pair bottom-score rule.
+
+Keep full warm 2016 training (not constrained_v1's subgroup), same BCE, Adam,
+three seeds 0/1/2, 400 steps, gradient clip, batch sizes, and hard-negative refresh.
+Select the best direct checkpoint every 20 steps on full 2017 Hits@50, earliest
+step breaks ties. There is no meaningful correction strength, so the stored
+strength field is a fixed compatibility sentinel 1. No AA-DC fallback in direct
+checkpoint selection: report all direct models even if they lose. AA-DC remains
+a separately reported comparator. All three selections precede 2018 scoring.
+
+This is a scoring-family comparison, not a single-parameter ablation: it changes
+the baseline's role, adds 32 weights, removes the residual bound, and removes
+strength/fallback selection. Graphs, base calibration, static node features,
+negative arrays and training budget remain fixed. Explicit checkpoint metadata
+and 14-input dimensionality distinguish direct from older residual checkpoints.
+The shared PRODIGY model/episode code is unaffected.
+
+Primary result: mean and individual seed 2018 Hits@50 versus warm_v1 and AA-DC;
+report recovered/lost hits, repeat/new slices, and recoveries among zero-base
+positives. Require all three cells and exact control-panel parity. If it fails,
+record failure under this budget, not proof that these features have no signal.
+No 2018 fitting, no ensemble selection, no sweep expansion, no test scoring.
+Stop after this bounded run. 2018 is repeatedly inspected development data.
+CPU eight threads, offline W&B; prior runs took 77--86 seconds. Use dedicated
+tmux `collab-temporal-gate-direct` in the idle gate worktree. Preserve evidence
+under analysis `data/direct_v1/`; retain prior controls unchanged.
+
 ## Constrained rescue (constrained_v1; frozen before launch)
 
 Run with `--warm-only --constrained-rescue --out

@@ -46,6 +46,9 @@ def main():
         baseline2017=float(hitmask(yearsel['bp'],yearsel['bn']).mean())
         candidates=[(baseline2017,0,0.)]+[(c['hits_at_50'],h['step'],c['strength'])
                     for h in selection['history'] for c in h['selection']]
+        if result.get('direct_score'):
+            candidates=candidates[1:]
+            assert all(c[2]==1. for c in candidates)
         best=min(candidates,key=lambda x:(-x[0],x[1],x[2]))
         assert best==(selection['selection_2017_hits_at_50'],selection['step'],selection['strength'])
         mask=hitmask(score[f'seed{seed}_positive'],score[f'seed{seed}_negative'])
@@ -57,6 +60,11 @@ def main():
                      'lost_vs_frozen_aadc':int((~mask&base).sum()),
                      'recovered_vs_official_aadc':int((mask&~reference).sum()),
                      'lost_vs_official_aadc':int((~mask&reference).sum())})
+        if result.get('direct_score'):
+            zero=(year['bp']==0)
+            rows[-1].update({'frozen_base_zero_positives':int(zero.sum()),
+                'frozen_base_zero_hits':int((zero&mask).sum()),
+                'zero_base_official_misses_recovered':int((zero&~reference&mask).sum())})
     panel_shift=[]
     for y,z in [(2017,yearsel),(2018,year)]:
         panel_shift.append({'year':y,'positive_raw_aa_nonzero_fraction':float((z['pfeatures'][:,0]>0).mean()),

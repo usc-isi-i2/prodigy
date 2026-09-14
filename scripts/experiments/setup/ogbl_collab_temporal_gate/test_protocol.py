@@ -1,9 +1,34 @@
 import unittest
 import numpy as np
-from run import historical_inputs, keys, negatives, hits, warm_positive_mask, rescue_eligible, residual_score
+from run import historical_inputs, keys, negatives, hits, warm_positive_mask, rescue_eligible, residual_score, direct_features, direct_score
 
 
 class TemporalContractTests(unittest.TestCase):
+    def test_direct_features_preserve_original_inputs_and_zero_base(self):
+        x=np.arange(26,dtype=np.float32).reshape(2,13)
+        f=direct_features(x,np.array([0.,2.],dtype=np.float32))
+        self.assertEqual(f.shape,(2,14))
+        np.testing.assert_array_equal(f[:,:13],x)
+        self.assertEqual(f[0,-1],0.)
+        self.assertAlmostEqual(float(f[1,-1]),float(np.log(3.)),places=6)
+
+    def test_direct_score_has_no_residual_anchor_or_bound(self):
+        try:
+            import torch
+        except ImportError:
+            self.skipTest('Torch integration test requires prodigy environment')
+        model=torch.nn.Linear(1,1,bias=False)
+        with torch.no_grad(): model.weight.fill_(20.)
+        f=torch.tensor([[1.],[2.]],requires_grad=True)
+        selfpair=torch.tensor([False,True]); eligible=torch.zeros(2,dtype=torch.bool)
+        a=direct_score(model,(f,torch.zeros(2),selfpair,eligible))
+        b=direct_score(model,(f,torch.full((2,),-100.),selfpair,eligible))
+        self.assertTrue(torch.equal(a,b))
+        self.assertEqual(a[0].item(),20.)
+        self.assertEqual(a[1].item(),-1e9)
+        a.sum().backward()
+        self.assertGreater(f.grad[0].item(),0.)
+
     def test_rescue_eligibility(self):
         x=np.zeros((5,13)); x[1,0]=1; x[2,8]=1; x[3,[0,8]]=1
         edges=np.array([[0,1],[0,1],[0,1],[0,1],[2,2]])
