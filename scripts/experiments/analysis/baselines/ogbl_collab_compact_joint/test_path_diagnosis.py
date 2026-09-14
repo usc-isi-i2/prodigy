@@ -36,6 +36,13 @@ class PathTests(unittest.TestCase):
         rows=match(pos,neg,np.arange(3),np.arange(1))
         self.assertEqual(rows[0]['positives'],[0])
 
+    def test_all_input_matching_rejects_different_l3(self):
+        pos, neg = np.zeros((2,13)), np.zeros((1,13))
+        pm, nm = np.zeros((2,14)), np.zeros((1,14))
+        pm[1,1] = 1.
+        rows = match(pos,neg,np.arange(2),np.arange(1),pm,nm,np.ones(14))
+        self.assertEqual(rows[0]['positives'],[0])
+
 
 if __name__ == '__main__':
     unittest.main()

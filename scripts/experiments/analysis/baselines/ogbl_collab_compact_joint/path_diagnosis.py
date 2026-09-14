@@ -28,7 +28,7 @@ def hits(pos, neg):
     return pos > np.partition(neg, -50)[-50]
 
 
-def match(positive, negative, candidates, targets):
+def match(positive, negative, candidates, targets, positive_model=None, negative_model=None, model_std=None):
     # Exact AA-zero/recurrence strata plus fixed physical-unit calipers.
     cols = [5, 6, 7, 8, 9, 10, 11]
     limits = np.array([.7, .7, .03, .7, 2., .7, .7])
@@ -39,10 +39,16 @@ def match(positive, negative, candidates, targets):
                     ((positive[candidates, 12] > 0) == (negative[index, 12] > 0)) &
                     ((positive[candidates, 8] > 0) == (negative[index, 8] > 0)))
         distance = np.sqrt(((diff / limits)**2).mean(1))
+        extra = None
+        if positive_model is not None:
+            extra = np.abs(positive_model[candidates]-negative_model[index])/np.maximum(model_std,1e-5)
+            eligible &= (extra <= .75).all(1)
+            distance = np.sqrt(distance**2+(extra**2).mean(1))
         ids = np.flatnonzero(eligible)
         ids = ids[np.argsort(distance[ids], kind='stable')[:5]]
         output.append(dict(negative_index=int(index), positives=candidates[ids].tolist(),
                            distances=distance[ids].tolist(),
+                           max_model_input_standardized_difference=float(extra[ids].max()) if extra is not None and len(ids) else None,
                            max_scaled_covariate_difference=float((diff[ids]/limits).max()) if len(ids) else None))
     return output
 
@@ -141,12 +147,14 @@ def main():
     p.add_argument('--evidence', type=Path, required=True)
     p.add_argument('--raw', type=Path, default=Path('/dataMeR1/phil/data/ogb/ogbl_collab/raw'))
     p.add_argument('--out', type=Path, required=True)
+    p.add_argument('--match-all-inputs', action='store_true')
     args = p.parse_args()
     args.out.mkdir(parents=True, exist_ok=False)
     config = dict(classification='post_hoc_matched_case_diagnostic', neighbors=5,
                   calipers={'log_degree_min': .7, 'log_degree_max': .7, 'cosine': .03,
                             'log_pair_count': .7, 'pair_age': 2, 'log_recent_min': .7, 'log_recent_max': .7},
                   exact_strata=['aa_zero', 'previous_pair_seen'], matching_with_reuse_across_negatives=True,
+                  all14_additional_caliper_in_training_std=.75 if args.match_all_inputs else None,
                   recent_edge_definition='last event in2016 or2017', test_read_or_scored=False,
                   warning='Selected error cohorts; no classifier fitting, causal estimate, or generalization claim')
     (args.out/'protocol.json').write_text(json.dumps(config, indent=2)+'\n')
@@ -158,6 +166,12 @@ def main():
     assert sha(args.runtime/'scores.npz') == results['score_sha256']
     assert sha(args.runtime/'year2018.npz') == results['panel_sha256']
     panel, score = np.load(args.runtime/'year2018.npz'), np.load(args.runtime/'scores.npz')
+    prepared = json.loads((args.runtime.parent/'prepared.json').read_text())
+    model_std = None
+    if args.match_all_inputs:
+        stdfile = args.runtime.parent/'standardization.npz'
+        assert sha(stdfile) == prepared['files']['standardization.npz']
+        model_std = np.load(stdfile)['std']
     baseline = hits(panel['official_bp'], panel['official_bn'])
     jh = np.stack([hits(score[f'joint_seed{s}_p'], score[f'joint_seed{s}_n']) for s in range(3)])
     jt = np.stack([top(score[f'joint_seed{s}_n']) for s in range(3)])
@@ -165,9 +179,10 @@ def main():
     for name, reducer in [('consistent', np.all), ('any_seed', np.any)]:
         positives = np.flatnonzero(~baseline & reducer(jh, axis=0))
         negatives = np.flatnonzero(~top(panel['official_bn']) & reducer(jt, axis=0))
-        cohorts[name] = match(panel['pfeatures'], panel['nfeatures'], positives, negatives)
+        cohorts[name] = match(panel['pfeatures'], panel['nfeatures'], positives, negatives,
+                             panel['psymmetric'] if args.match_all_inputs else None,
+                             panel['nsymmetric'] if args.match_all_inputs else None, model_std)
     xfile = args.runtime.parent/'node_features.npy'
-    prepared = json.loads((args.runtime.parent/'prepared.json').read_text())
     assert sha(xfile) == prepared['files']['node_features.npy']
     x = np.load(xfile)
     x /= np.maximum(np.linalg.norm(x, axis=1, keepdims=True), 1e-12)
