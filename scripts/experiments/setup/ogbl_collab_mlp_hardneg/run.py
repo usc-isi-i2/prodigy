@@ -209,6 +209,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--wandb-project", default="ogbl-collab-mlp-hardneg")
     p.add_argument("--wandb-mode", choices=("offline", "online", "disabled"), default="offline")
     p.add_argument("--run-tag", default="hardneg_v1")
+    p.add_argument("--smoke", action="store_true", help="train and validate only; never score test")
     p.add_argument("--dry-run", action="store_true")
     return p.parse_args()
 
@@ -245,6 +246,16 @@ def main() -> None:
     selection_path = args.out / "selection_frozen.json"
     selection_path.write_text(json.dumps({"frozen_at": common.utc_now(), "selection_metric": "official validation Hits@50",
         "tie_break": "earliest epoch", "learned": selection, "test_status": "closed"}, indent=2, sort_keys=True) + "\n")
+    if args.smoke:
+        (args.out / "smoke_complete.json").write_text(json.dumps({
+            "complete": True, "classification": "smoke_validation_only",
+            "test_scored": False, "cell": f"{args.scorer}_{args.negative_policy}_seed{args.seed}",
+            "epochs": selection["epochs_run"], "revision": args.revision,
+            "dataset_fingerprint": args.dataset_fingerprint,
+        }, indent=2, sort_keys=True) + "\n")
+        print(json.dumps({"event": "smoke_complete", "test_scored": False,
+                          "selection": selection}, indent=2), flush=True)
+        return
     positive = score_edges(model, x, split["test"]["edge"], args.eval_batch_size)
     negative = score_edges(model, x, split["test"]["edge_neg"], args.eval_batch_size)
     masks = common.test_strata(split["train"]["edge"], split["valid"]["edge"], split["test"]["edge"], len(x))

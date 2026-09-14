@@ -21,6 +21,17 @@ python -m scripts.experiments.setup.ogbl_collab_mlp_hardneg.run \
 After a timed smoke cell establishes resource use, launch one seed per owned GPU:
 
 ```bash
+python -m scripts.experiments.setup.ogbl_collab_mlp_hardneg.run \
+  --scorer interaction --negative-policy hard8 --seed 0 --epochs 1 --patience 1 \
+  --out /dataMeR1/phil/gfm/ogbl_collab_mlp_hardneg/smoke_interaction_hard8_seed0 \
+  --device cuda:0 --wandb-mode disabled --run-tag smoke --smoke
+```
+
+The smoke path writes `smoke_complete.json` and never scores the test split.
+
+Then launch one seed per owned GPU:
+
+```bash
 bash scripts/experiments/setup/ogbl_collab_mlp_hardneg/launch_tucker.sh 0 0
 bash scripts/experiments/setup/ogbl_collab_mlp_hardneg/launch_tucker.sh 1 1
 bash scripts/experiments/setup/ogbl_collab_mlp_hardneg/launch_tucker.sh 2 2
