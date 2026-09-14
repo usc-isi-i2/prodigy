@@ -1,0 +1,119 @@
+{
+  "complete": true,
+  "test_scored": false,
+  "all_selections_and_checkpoint_hashes_verified": true,
+  "all_assessment_metrics_recomputed": true,
+  "self_pair_rule_verified": true,
+  "seed_audits": [
+    {
+      "seed": 0,
+      "checkpoint_hash_verified": true,
+      "selection_argmax_verified": true,
+      "assessment_hits_verified": true,
+      "recovered_vs_frozen_aadc": 1561,
+      "lost_vs_frozen_aadc": 2017,
+      "recovered_vs_official_aadc": 1754,
+      "lost_vs_official_aadc": 2520
+    },
+    {
+      "seed": 1,
+      "checkpoint_hash_verified": true,
+      "selection_argmax_verified": true,
+      "assessment_hits_verified": true,
+      "recovered_vs_frozen_aadc": 0,
+      "lost_vs_frozen_aadc": 0,
+      "recovered_vs_official_aadc": 339,
+      "lost_vs_official_aadc": 649
+    },
+    {
+      "seed": 2,
+      "checkpoint_hash_verified": true,
+      "selection_argmax_verified": true,
+      "assessment_hits_verified": true,
+      "recovered_vs_frozen_aadc": 0,
+      "lost_vs_frozen_aadc": 0,
+      "recovered_vs_official_aadc": 339,
+      "lost_vs_official_aadc": 649
+    }
+  ],
+  "panel_shift_diagnostic": [
+    {
+      "year": 2017,
+      "positive_raw_aa_nonzero_fraction": 0.6520842973120767,
+      "negative_raw_aa_nonzero_count": 40,
+      "positive_prior_pair_seen_fraction": 0.4851932865014933,
+      "aadc_negative50": 0.05466678738594055
+    },
+    {
+      "year": 2018,
+      "positive_raw_aa_nonzero_fraction": 0.6488083349976699,
+      "negative_raw_aa_nonzero_count": 59,
+      "positive_prior_pair_seen_fraction": 0.4672125690699687,
+      "aadc_negative50": 0.08193720877170563
+    }
+  ],
+  "source_selection_sha256": "763a1cce52f81a8ddb37f14c9da14cf91bd12e27dbe133223c74d3f306835681",
+  "source_assessment_sha256": "c9a98025a3b51deae0f4615a9adedee5668d4bd3fa73bb13b6d859d65e2f7c80",
+  "audit_source_sha256": "f419a13a43633315d94a3fe1d0010e66db141523bbae5875ad09854bdd109486",
+  "protected_baseline_reference": {
+    "zero_strength_seeds": [
+      1,
+      2
+    ],
+    "zero_strength_hitmask_exactly_matches_raw_frozen_aadc": true,
+    "local_log_max_difference_nonself": {
+      "p": 9.5367431640625e-07,
+      "n": 2.384185791015625e-07
+    }
+  },
+  "constrained_score_checks": [
+    {
+      "seed": 0,
+      "protected_scores_exactly_equal": true,
+      "negative_cutoff_log_change": 0.5863862633705139,
+      "protected_positive_hits_lost_vs_frozen": 1601
+    },
+    {
+      "seed": 1,
+      "protected_scores_exactly_equal": true,
+      "negative_cutoff_log_change": 0.0,
+      "protected_positive_hits_lost_vs_frozen": 0
+    },
+    {
+      "seed": 2,
+      "protected_scores_exactly_equal": true,
+      "negative_cutoff_log_change": 0.0,
+      "protected_positive_hits_lost_vs_frozen": 0
+    }
+  ],
+  "matched_panel_checks": [
+    {
+      "year": 2015,
+      "negative_pairs_and_features_identical": true,
+      "positive_pairs_and_features_exact_expected_subset": true,
+      "original_positives": 34629,
+      "retained_positives": 34629
+    },
+    {
+      "year": 2016,
+      "negative_pairs_and_features_identical": true,
+      "positive_pairs_and_features_exact_expected_subset": true,
+      "original_positives": 44406,
+      "retained_positives": 44406
+    },
+    {
+      "year": 2017,
+      "negative_pairs_and_features_identical": true,
+      "positive_pairs_and_features_exact_expected_subset": true,
+      "original_positives": 47546,
+      "retained_positives": 47546
+    },
+    {
+      "year": 2018,
+      "negative_pairs_and_features_identical": true,
+      "positive_pairs_and_features_exact_expected_subset": true,
+      "original_positives": 60084,
+      "retained_positives": 60084
+    }
+  ]
+}

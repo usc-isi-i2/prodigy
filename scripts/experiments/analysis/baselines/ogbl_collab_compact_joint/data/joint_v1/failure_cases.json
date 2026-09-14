@@ -1,0 +1,54 @@
+{
+  "classification": "post_hoc_hypothesis_generating_validation_diagnostic",
+  "complete": true,
+  "test_read_or_scored": false,
+  "source_revision": "be46110e774938c6b567a5340395ea363535ae24",
+  "source_results_sha256": "423585e3057b03f616e3cb86cf0a9979d738ab4c638d6741f2c0237d688d83a2",
+  "raw_panel_and_score_hashes_verified": true,
+  "consistent_failure_counts": {
+    "aadc_misses": 19614,
+    "joint_recovered_all_seeds": 2170,
+    "joint_recovered_any_seed": 3850,
+    "joint_lost_all_seeds": 4021,
+    "persistent_miss_all_seeds": 15764,
+    "joint_promoted_negative_all_seeds": 16,
+    "joint_promoted_negative_any_seed": 64
+  },
+  "recovered_all_seed_profile": {
+    "aa_zero_fraction": 0.9516128897666931,
+    "l3_nonzero_fraction": 0.8382488479262673,
+    "both_recently_active_fraction": 0.7870967741935484,
+    "cosine_at_least_0_96_fraction": 0.7055299539170506,
+    "min_degree_at_least_10_fraction": 0.6645161290322581,
+    "median_raw_cosine": 0.9689054489135742,
+    "median_min_degree_log1p": 2.6390573978424072
+  },
+  "promoted_negative_all_seed_profile": {
+    "aa_zero_fraction": 1.0,
+    "l3_nonzero_fraction": 0.75,
+    "both_recently_active_fraction": 0.4375,
+    "cosine_at_least_0_96_fraction": 0.8125,
+    "min_degree_at_least_10_fraction": 0.6875,
+    "median_raw_cosine": 0.9702209234237671,
+    "median_min_degree_log1p": 2.5619821548461914
+  },
+  "persistent_miss_profile": {
+    "aa_zero_fraction": 0.9812230467796326,
+    "l3_nonzero_fraction": 0.2612281146917026,
+    "both_recently_active_fraction": 0.3301192590713017,
+    "cosine_at_least_0_96_fraction": 0.07441004821111392,
+    "min_degree_at_least_10_fraction": 0.22729002791169753,
+    "median_raw_cosine": 0.9091722369194031,
+    "median_min_degree_log1p": 1.7917594909667969
+  },
+  "joint_oracle_union_hit_counts_with_aadc": [43349, 43507, 43467],
+  "fusion_definition": "max(AA_DC/AA_DC_negative50, alpha*exp(clip(joint_logit-joint_negative50,-30,30))); each combined negative cutoff is recomputed",
+  "fusion_grid": {
+    "alphas": [0.0, 0.01, 0.025, 0.05, 0.1, 0.2, 0.3, 0.5, 1.0],
+    "mean_hits_at_50": [0.6735570201717596, 0.6749106806027118, 0.6769578146150944, 0.6780451811907774, 0.6796318487450902, 0.685506956926969, 0.6891906885915274, 0.6894625302354481, 0.6851796373965339]
+  },
+  "best_inspected_common_alpha": 0.5,
+  "best_inspected_seed_hits_at_50": [0.691298848279076, 0.6884029026030224, 0.688685839824246],
+  "best_inspected_mean_hits_at_50": 0.6894625302354481,
+  "qualification": "Alpha and hypotheses were inspected on repeatedly used official 2018 validation. This is not an independently selected model or expected test performance. The promoted-all profile contains only 16 negatives."
+}

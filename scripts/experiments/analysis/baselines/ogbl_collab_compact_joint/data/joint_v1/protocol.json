@@ -1,0 +1,56 @@
+{
+  "name": "compact_joint_v1",
+  "revision": "be46110e774938c6b567a5340395ea363535ae24",
+  "arms": [
+    "structure",
+    "joint"
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "parameters": {
+    "structure": 36865,
+    "joint": 496385
+  },
+  "steps": 2000,
+  "selection_interval": 50,
+  "years": {
+    "calibration": 2015,
+    "train": 2016,
+    "selection": 2017,
+    "assessment": 2018
+  },
+  "optimizer": {
+    "name": "Adam",
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "clip_norm": 5.0
+  },
+  "sampling": {
+    "positive": 2048,
+    "uniform_negative": 1024,
+    "hard_negative": 1024,
+    "hard_pool": 2048,
+    "refresh_steps": 10
+  },
+  "node_input": "supplied 128-dimensional author features; no learned node IDs",
+  "encoder": "three mean SAGE layers 128->256->256->256; unique unweighted historical graph",
+  "decoder": "[product,absolute difference,symmetric14]->256->128->1; structure uses14 only",
+  "structural_features": "mean of forward/reverse 14 transformed features; calibration frozen2015",
+  "selection": "2017 full-panel Hits@50; earliest maximum; no baseline fallback",
+  "objective": "balanced BCE with model-specific hard-negative mining",
+  "advancement_rule": "all3 paired joint-control gains positive AND joint mean at least1 percentage point above AA-DC",
+  "expected_cells": [
+    "structure_seed0",
+    "joint_seed0",
+    "structure_seed1",
+    "joint_seed1",
+    "structure_seed2",
+    "joint_seed2"
+  ],
+  "test_scored": false,
+  "assessment_previously_inspected": true,
+  "qualification": "static node features are not historical snapshots; no ensemble; not a capacity-only ablation"
+}

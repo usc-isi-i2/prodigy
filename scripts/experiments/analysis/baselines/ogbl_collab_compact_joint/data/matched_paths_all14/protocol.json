@@ -1,0 +1,22 @@
+{
+  "classification": "post_hoc_matched_case_diagnostic",
+  "neighbors": 5,
+  "calipers": {
+    "log_degree_min": 0.7,
+    "log_degree_max": 0.7,
+    "cosine": 0.03,
+    "log_pair_count": 0.7,
+    "pair_age": 2,
+    "log_recent_min": 0.7,
+    "log_recent_max": 0.7
+  },
+  "exact_strata": [
+    "aa_zero",
+    "previous_pair_seen"
+  ],
+  "matching_with_reuse_across_negatives": true,
+  "all14_additional_caliper_in_training_std": 0.75,
+  "recent_edge_definition": "last event in2016 or2017",
+  "test_read_or_scored": false,
+  "warning": "Selected error cohorts; no classifier fitting, causal estimate, or generalization claim"
+}

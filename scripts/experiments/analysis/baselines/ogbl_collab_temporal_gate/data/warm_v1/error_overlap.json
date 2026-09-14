@@ -1,0 +1,325 @@
+{
+  "classification": "post_hoc_validation_diagnostic",
+  "test_read_or_scored": false,
+  "source_revision": "7d528e274fd969a0abba5af7d7619e9c384b2190",
+  "scores_sha256": "5348950d57c3b68ac2a4b3a079f781d5adfac8a47380b5ad77de4d6c618d6eb9",
+  "features_and_pairs_fingerprints_verified": true,
+  "all_metrics_recomputed": true,
+  "groups": {
+    "all": {
+      "positives": 60084,
+      "baseline_hits": 40470,
+      "recovered": [
+        1294,
+        1025,
+        1006
+      ],
+      "lost": [
+        544,
+        889,
+        988
+      ],
+      "net": [
+        750,
+        136,
+        18
+      ]
+    },
+    "repeat": {
+      "positives": 28072,
+      "baseline_hits": 27947,
+      "recovered": [
+        17,
+        0,
+        0
+      ],
+      "lost": [
+        94,
+        234,
+        264
+      ],
+      "net": [
+        -77,
+        -234,
+        -264
+      ]
+    },
+    "new": {
+      "positives": 32012,
+      "baseline_hits": 12523,
+      "recovered": [
+        1277,
+        1025,
+        1006
+      ],
+      "lost": [
+        450,
+        655,
+        724
+      ],
+      "net": [
+        827,
+        370,
+        282
+      ]
+    }
+  },
+  "positive_profiles": {
+    "baseline_misses": {
+      "count": 19614,
+      "repeat_pairs": 125,
+      "aa_zero": 19168,
+      "median_raw_cosine": 0.9217665791511536,
+      "median_min_degree": 5.999999523162842
+    },
+    "recovered_all_three": {
+      "count": 840,
+      "repeat_pairs": 0,
+      "aa_zero": 833,
+      "median_raw_cosine": 0.9677488803863525,
+      "median_min_degree": 24.000001907348633
+    },
+    "recovered_any_seed": {
+      "count": 1435,
+      "repeat_pairs": 17,
+      "aa_zero": 1424,
+      "median_raw_cosine": 0.9641009569168091,
+      "median_min_degree": 18.0
+    },
+    "lost_all_three": {
+      "count": 433,
+      "repeat_pairs": 94,
+      "aa_zero": 6,
+      "median_raw_cosine": 0.9064038991928101,
+      "median_min_degree": 4.0
+    },
+    "missed_by_baseline_and_all_seeds": {
+      "count": 18179,
+      "repeat_pairs": 108,
+      "aa_zero": 17744,
+      "median_raw_cosine": 0.9177865982055664,
+      "median_min_degree": 5.0
+    }
+  },
+  "recovery_seed_count_histogram": [
+    18179,
+    385,
+    210,
+    840
+  ],
+  "loss_seed_count_histogram": [
+    39378,
+    196,
+    463,
+    433
+  ],
+  "negative_top50_overlap_with_baseline": [
+    43,
+    40,
+    41
+  ],
+  "negative_cutoff_tie_counts": [
+    1,
+    1,
+    1
+  ],
+  "promoted_negative_profiles": {
+    "count": 14,
+    "repeat_pairs": 0,
+    "aa_zero": 13,
+    "median_raw_cosine": 0.9571915864944458,
+    "median_min_degree": 14.5
+  },
+  "promoted_negative_all_three": {
+    "count": 3,
+    "repeat_pairs": 0,
+    "aa_zero": 3,
+    "median_raw_cosine": 0.9534858465194702,
+    "median_min_degree": 24.000001907348633
+  },
+  "promoted_negatives": [
+    {
+      "negative_index": 5727,
+      "promoted_seed_count": 2,
+      "baseline_rank": 53,
+      "seed_ranks": [
+        57,
+        50,
+        50
+      ],
+      "repeat": false,
+      "aa_zero": true,
+      "raw_cosine": 0.8980517387390137
+    },
+    {
+      "negative_index": 9482,
+      "promoted_seed_count": 1,
+      "baseline_rank": 156,
+      "seed_ranks": [
+        50,
+        64,
+        71
+      ],
+      "repeat": false,
+      "aa_zero": true,
+      "raw_cosine": 0.9591084718704224
+    },
+    {
+      "negative_index": 29950,
+      "promoted_seed_count": 3,
+      "baseline_rank": 105,
+      "seed_ranks": [
+        37,
+        39,
+        37
+      ],
+      "repeat": false,
+      "aa_zero": true,
+      "raw_cosine": 0.9379342794418335
+    },
+    {
+      "negative_index": 44162,
+      "promoted_seed_count": 1,
+      "baseline_rank": 184,
+      "seed_ranks": [
+        42,
+        54,
+        56
+      ],
+      "repeat": false,
+      "aa_zero": true,
+      "raw_cosine": 0.9640711545944214
+    },
+    {
+      "negative_index": 46048,
+      "promoted_seed_count": 3,
+      "baseline_rank": 70,
+      "seed_ranks": [
+        34,
+        46,
+        42
+      ],
+      "repeat": false,
+      "aa_zero": true,
+      "raw_cosine": 0.9534858465194702
+    },
+    {
+      "negative_index": 50759,
+      "promoted_seed_count": 2,
+      "baseline_rank": 76,
+      "seed_ranks": [
+        84,
+        48,
+        43
+      ],
+      "repeat": false,
+      "aa_zero": true,
+      "raw_cosine": 0.9352615475654602
+    },
+    {
+      "negative_index": 52112,
+      "promoted_seed_count": 2,
+      "baseline_rank": 55,
+      "seed_ranks": [
+        51,
+        40,
+        40
+      ],
+      "repeat": false,
+      "aa_zero": false,
+      "raw_cosine": 0.9713386297225952
+    },
+    {
+      "negative_index": 53557,
+      "promoted_seed_count": 1,
+      "baseline_rank": 170,
+      "seed_ranks": [
+        48,
+        52,
+        54
+      ],
+      "repeat": false,
+      "aa_zero": true,
+      "raw_cosine": 0.9780867099761963
+    },
+    {
+      "negative_index": 58383,
+      "promoted_seed_count": 3,
+      "baseline_rank": 144,
+      "seed_ranks": [
+        31,
+        33,
+        33
+      ],
+      "repeat": false,
+      "aa_zero": true,
+      "raw_cosine": 0.9565012454986572
+    },
+    {
+      "negative_index": 70257,
+      "promoted_seed_count": 1,
+      "baseline_rank": 52,
+      "seed_ranks": [
+        61,
+        41,
+        51
+      ],
+      "repeat": false,
+      "aa_zero": true,
+      "raw_cosine": 0.9040499925613403
+    },
+    {
+      "negative_index": 71092,
+      "promoted_seed_count": 2,
+      "baseline_rank": 54,
+      "seed_ranks": [
+        69,
+        45,
+        46
+      ],
+      "repeat": false,
+      "aa_zero": true,
+      "raw_cosine": 0.9469196796417236
+    },
+    {
+      "negative_index": 76677,
+      "promoted_seed_count": 2,
+      "baseline_rank": 74,
+      "seed_ranks": [
+        70,
+        42,
+        39
+      ],
+      "repeat": false,
+      "aa_zero": true,
+      "raw_cosine": 0.9593683481216431
+    },
+    {
+      "negative_index": 90881,
+      "promoted_seed_count": 1,
+      "baseline_rank": 99,
+      "seed_ranks": [
+        43,
+        53,
+        52
+      ],
+      "repeat": false,
+      "aa_zero": true,
+      "raw_cosine": 0.9578819870948792
+    },
+    {
+      "negative_index": 97866,
+      "promoted_seed_count": 2,
+      "baseline_rank": 130,
+      "seed_ranks": [
+        73,
+        44,
+        45
+      ],
+      "repeat": false,
+      "aa_zero": true,
+      "raw_cosine": 0.9690914154052734
+    }
+  ],
+  "qualification": "Correlational slices, not feature attribution; new means no earlier pair event, not a new author. Negative promotion is top-50 entry with fixed-index tie breaking."
+}

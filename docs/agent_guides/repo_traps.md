@@ -4,6 +4,22 @@ Read the relevant section before moving tracked artifacts, merging experiment
 branches, parsing evaluations, or interpreting historical results. These failure
 modes can succeed silently.
 
+## ogbl-collab validation/test negative reuse
+
+For the audited official split fingerprint
+`07f7af8e654bda27caad60ed74c479f48780343826543dd613d90cb4e979f9f4`,
+99,984 of100,000 test-negative undirected pairs also appear among validation
+negatives. Training on the official2018 validation-negative panel therefore
+exposes nearly all official2019 test negatives. Merely excluding test edges from
+the message-passing graph does NOT prevent this exposure. Check pair identities,
+not only years or split names, before claiming test independence. Prior-year
+positive pair recurrence is a separate issue and is expected in this dataset.
+
+The compact joint2018-training follow-up demonstrates this risk:82.54% mean
+test-tuned Hits@50 with496,448 scalars, but no fresh-negative control. Do not
+attribute that increase solely to recency or claim clean unseen-pair performance.
+Evidence: `scripts/experiments/analysis/baselines/ogbl_collab_compact_joint/data/train2018_v1/audit_summary.json`.
+
 ## Inverted artifact ignore policy
 
 `.gitignore` blanket-ignores JSON, CSV, PNG, and PDF files, then re-includes only

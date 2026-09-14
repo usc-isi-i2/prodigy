@@ -1,0 +1,34 @@
+{
+  "name": "fusion_frozen_v1",
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "alphas": [
+    0.0,
+    0.01,
+    0.025,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.5,
+    1.0
+  ],
+  "selection": "one common alpha maximizing mean 2017 Hits@50; smallest alpha breaks ties",
+  "normalization": "AA 50th negative and joint logit 50th negative frozen on 2017 per seed",
+  "base": "2015-calibrated AA-DC bp/bn in both years; official 2018 AA reference separate",
+  "hyper": "two-base released cosine threshold .1, H H^T sum; same frozen transformed scores; no zero-weight fallback",
+  "hyper_arms": [
+    "2017 positive/negative partitions",
+    "2017 and 2018 positive/negative partitions"
+  ],
+  "assessment_previously_inspected": true,
+  "test_scored": false,
+  "training": false,
+  "expected_cells": 3,
+  "total_inference_scalars_upper_bound": 496434,
+  "count": "496385 neural +44 existing auxiliary +2 normalization +1 alpha +2 Hyper weights; seeds not ensembled",
+  "revision": "d41e0d6f857a0addd02d88a58e4509815c92bcf0"
+}
