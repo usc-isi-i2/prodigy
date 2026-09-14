@@ -52,5 +52,8 @@ The exact protocol, complete validation histories, and final results are under
 `/dataMeR1/phil/gfm/cora_standard_mlp_lp/seed0`.
 
 The offline rerun is at `/dataMeR1/phil/gfm/cora_standard_mlp_lp/seed0_wandb`.
-Its W&B run IDs are `iuopgbrh` (linear) and `chv8ribk` (nonlinear); the local
-`.wandb` records remain under that directory's `wandb/` tree and were not synced.
+Its W&B run IDs are [`iuopgbrh`](https://wandb.ai/eibl-usc/cora-standard-mlp-lp/runs/iuopgbrh)
+(linear) and [`chv8ribk`](https://wandb.ai/eibl-usc/cora-standard-mlp-lp/runs/chv8ribk)
+(nonlinear). The local `.wandb` records remain under that directory's `wandb/`
+tree; both were synced to the `eibl-usc/cora-standard-mlp-lp` project on
+2026-09-13 after the user explicitly requested upload.
