@@ -1,0 +1,106 @@
+{
+  "case": 2,
+  "sources": [
+    "covid_political",
+    "ukr_rus_suspended"
+  ],
+  "rows": [
+    {
+      "model": "single_covid_political",
+      "source": "covid_political",
+      "step": 14000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling-bias-lp/state/bias_s0/node_neighbors/lp/ss_covid_political/best.pt",
+        "bytes": 5542189,
+        "mtime_ns": 1789183563896335132
+      },
+      "bce": 0.11180554740130902,
+      "auc": 0.9734412062168121
+    },
+    {
+      "model": "single_covid_political",
+      "source": "ukr_rus_suspended",
+      "step": 14000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling-bias-lp/state/bias_s0/node_neighbors/lp/ss_covid_political/best.pt",
+        "bytes": 5542189,
+        "mtime_ns": 1789183563896335132
+      },
+      "bce": 0.5150668650865554,
+      "auc": 0.7929907722473145
+    },
+    {
+      "model": "single_ukr_rus_suspended",
+      "source": "covid_political",
+      "step": 14000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling-bias-lp/state/bias_s0/node_neighbors/lp/ss_ukr_rus_suspended/best.pt",
+        "bytes": 5542253,
+        "mtime_ns": 1789183603404590263
+      },
+      "bce": 0.3257745638489724,
+      "auc": 0.8787058432102204
+    },
+    {
+      "model": "single_ukr_rus_suspended",
+      "source": "ukr_rus_suspended",
+      "step": 14000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling-bias-lp/state/bias_s0/node_neighbors/lp/ss_ukr_rus_suspended/best.pt",
+        "bytes": 5542253,
+        "mtime_ns": 1789183603404590263
+      },
+      "bce": 0.159637475758791,
+      "auc": 0.9597534322738648
+    },
+    {
+      "model": "joint_best",
+      "source": "covid_political",
+      "step": 12000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling/state/interleaved_mlp_pairs_noelec_s0/node_neighbors/lp/interleave_covid_political__and__ukr_rus_suspended/best.pt",
+        "bytes": 5542317,
+        "mtime_ns": 1789190749615047358
+      },
+      "bce": 0.08667728081345558,
+      "auc": 0.9847156174182892
+    },
+    {
+      "model": "joint_best",
+      "source": "ukr_rus_suspended",
+      "step": 12000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling/state/interleaved_mlp_pairs_noelec_s0/node_neighbors/lp/interleave_covid_political__and__ukr_rus_suspended/best.pt",
+        "bytes": 5542317,
+        "mtime_ns": 1789190749615047358
+      },
+      "bce": 0.15386099889874463,
+      "auc": 0.963065728187561
+    },
+    {
+      "model": "joint_final",
+      "source": "covid_political",
+      "step": 18000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling/state/interleaved_mlp_pairs_noelec_s0/node_neighbors/lp/interleave_covid_political__and__ukr_rus_suspended/latest.pt",
+        "bytes": 5542379,
+        "mtime_ns": 1789190759915145246
+      },
+      "bce": 0.08952089808881283,
+      "auc": 0.9833597123622894
+    },
+    {
+      "model": "joint_final",
+      "source": "ukr_rus_suspended",
+      "step": 18000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling/state/interleaved_mlp_pairs_noelec_s0/node_neighbors/lp/interleave_covid_political__and__ukr_rus_suspended/latest.pt",
+        "bytes": 5542379,
+        "mtime_ns": 1789190759915145246
+      },
+      "bce": 0.15379630476236342,
+      "auc": 0.9637351326942443
+    }
+  ],
+  "protocol": "unchanged singleton and fresh joint checkpoints; original fixed seed-0 source-validation pairs; no test evaluation"
+}

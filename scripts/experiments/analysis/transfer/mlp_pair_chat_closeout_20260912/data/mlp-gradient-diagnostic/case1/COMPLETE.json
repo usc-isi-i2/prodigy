@@ -1,0 +1,110 @@
+{
+  "status": "complete",
+  "case": 1,
+  "source_A": "ukr_rus_suspended",
+  "source_B": "covid_political",
+  "trials": 8,
+  "checkpoints": [
+    {
+      "state": "initial",
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling-bias-lp/state/bias_s0/node_neighbors/lp/ss_ukr_rus_suspended/best.pt",
+        "bytes": 5542253,
+        "mtime_ns": 1789183603404590263
+      },
+      "continuation_step": 0,
+      "checkpoint_step": 14000,
+      "validation": [
+        {
+          "bce": 0.159637475758791,
+          "auc": 0.9597534322738648
+        },
+        {
+          "bce": 0.3257745638489724,
+          "auc": 0.8787058432102204
+        }
+      ]
+    },
+    {
+      "state": "rank0_best",
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling/state/ranking_preservation_s0/node_neighbors/lp/warm_ukr_rus_suspended__and__covid_political__rank0/best.pt",
+        "bytes": 5542573,
+        "mtime_ns": 1789193888200623137
+      },
+      "continuation_step": 10000,
+      "checkpoint_step": 10000,
+      "validation": [
+        {
+          "bce": 0.1650052860379219,
+          "auc": 0.9614033589363098
+        },
+        {
+          "bce": 0.0869590949267149,
+          "auc": 0.9847317311763762
+        }
+      ]
+    },
+    {
+      "state": "rank0_final",
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling/state/ranking_preservation_s0/node_neighbors/lp/warm_ukr_rus_suspended__and__covid_political__rank0/latest.pt",
+        "bytes": 5542635,
+        "mtime_ns": 1789193898532690251
+      },
+      "continuation_step": 16000,
+      "checkpoint_step": 16000,
+      "validation": [
+        {
+          "bce": 0.1863498732447624,
+          "auc": 0.9583122985363006
+        },
+        {
+          "bce": 0.09595849551260471,
+          "auc": 0.9821684670448304
+        }
+      ]
+    },
+    {
+      "state": "rank1_best",
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling/state/ranking_preservation_s0/node_neighbors/lp/warm_ukr_rus_suspended__and__covid_political__rank1/best.pt",
+        "bytes": 5542573,
+        "mtime_ns": 1789193893352656599
+      },
+      "continuation_step": 10000,
+      "checkpoint_step": 10000,
+      "validation": [
+        {
+          "bce": 0.15671407654881478,
+          "auc": 0.9640966989994049
+        },
+        {
+          "bce": 0.08626292571425438,
+          "auc": 0.9854385504722595
+        }
+      ]
+    },
+    {
+      "state": "rank1_final",
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling/state/ranking_preservation_s0/node_neighbors/lp/warm_ukr_rus_suspended__and__covid_political__rank1/latest.pt",
+        "bytes": 5542635,
+        "mtime_ns": 1789193906680743197
+      },
+      "continuation_step": 16000,
+      "checkpoint_step": 16000,
+      "validation": [
+        {
+          "bce": 0.16848264485597608,
+          "auc": 0.9618331744670868
+        },
+        {
+          "bce": 0.0913359824568033,
+          "auc": 0.9835689535140991
+        }
+      ]
+    }
+  ],
+  "protocol": "fixed source validation seed0; 8 fresh training-batch probes per state; every AdamW action starts from identical saved weights and optimizer; no checkpoint writes"
+}

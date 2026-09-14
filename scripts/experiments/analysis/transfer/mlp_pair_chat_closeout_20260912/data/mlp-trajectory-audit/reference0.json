@@ -1,0 +1,106 @@
+{
+  "case": 0,
+  "sources": [
+    "ukr_rus_twitter",
+    "facebook_page_reference"
+  ],
+  "rows": [
+    {
+      "model": "single_ukr_rus_twitter",
+      "source": "ukr_rus_twitter",
+      "step": 44000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling-bias-lp/state/bias_s0/node_neighbors/lp/ss_ukr_rus_twitter/best.pt",
+        "bytes": 5542253,
+        "mtime_ns": 1789183523960079408
+      },
+      "bce": 0.07761823572218417,
+      "auc": 0.9897437653541565
+    },
+    {
+      "model": "single_ukr_rus_twitter",
+      "source": "facebook_page_reference",
+      "step": 44000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling-bias-lp/state/bias_s0/node_neighbors/lp/ss_ukr_rus_twitter/best.pt",
+        "bytes": 5542253,
+        "mtime_ns": 1789183523960079408
+      },
+      "bce": 0.37319627404212946,
+      "auc": 0.8960884220600128
+    },
+    {
+      "model": "single_facebook_page_reference",
+      "source": "ukr_rus_twitter",
+      "step": 6000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling-bias-lp/state/bias_s0/node_neighbors/lp/ss_facebook_page_reference/best.pt",
+        "bytes": 5542253,
+        "mtime_ns": 1789183701065229092
+      },
+      "bce": 0.2810991212725639,
+      "auc": 0.9516381230354309
+    },
+    {
+      "model": "single_facebook_page_reference",
+      "source": "facebook_page_reference",
+      "step": 6000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling-bias-lp/state/bias_s0/node_neighbors/lp/ss_facebook_page_reference/best.pt",
+        "bytes": 5542253,
+        "mtime_ns": 1789183701065229092
+      },
+      "bce": 0.17949495166540147,
+      "auc": 0.9538453330993651
+    },
+    {
+      "model": "joint_best",
+      "source": "ukr_rus_twitter",
+      "step": 16000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling/state/interleaved_mlp_pairs_noelec_s0/node_neighbors/lp/interleave_ukr_rus_twitter__and__facebook_page_reference/best.pt",
+        "bytes": 5542317,
+        "mtime_ns": 1789190581109365555
+      },
+      "bce": 0.10155036933720112,
+      "auc": 0.9822041552066804
+    },
+    {
+      "model": "joint_best",
+      "source": "facebook_page_reference",
+      "step": 16000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling/state/interleaved_mlp_pairs_noelec_s0/node_neighbors/lp/interleave_ukr_rus_twitter__and__facebook_page_reference/best.pt",
+        "bytes": 5542317,
+        "mtime_ns": 1789190581109365555
+      },
+      "bce": 0.179267618060112,
+      "auc": 0.9587763042449952
+    },
+    {
+      "model": "joint_final",
+      "source": "ukr_rus_twitter",
+      "step": 22000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling/state/interleaved_mlp_pairs_noelec_s0/node_neighbors/lp/interleave_ukr_rus_twitter__and__facebook_page_reference/latest.pt",
+        "bytes": 5542379,
+        "mtime_ns": 1789190590993468875
+      },
+      "bce": 0.09981367439031599,
+      "auc": 0.9838441617488861
+    },
+    {
+      "model": "joint_final",
+      "source": "facebook_page_reference",
+      "step": 22000,
+      "checkpoint": {
+        "path": "/dataMeR1/phil/gfm/mixture-scaling/state/interleaved_mlp_pairs_noelec_s0/node_neighbors/lp/interleave_ukr_rus_twitter__and__facebook_page_reference/latest.pt",
+        "bytes": 5542379,
+        "mtime_ns": 1789190590993468875
+      },
+      "bce": 0.18434977531433108,
+      "auc": 0.9578592987060546
+    }
+  ],
+  "protocol": "unchanged singleton and fresh joint checkpoints; original fixed seed-0 source-validation pairs; no test evaluation"
+}
