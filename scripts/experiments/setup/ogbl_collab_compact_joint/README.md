@@ -191,3 +191,10 @@ Count496,448 total scalars. Offline W&B is mandatory. Fixed root:
 Same dedicated worktree/branch, one named tmux session per seed. Prior measured
 joint training costs~57–59 seconds/2000 updates and~2.5GB; this run additionally
 saves40 checkpoints and evaluates40 fusion grids. Measure actual elapsed time.
+
+Post-run qualification: exact pair audit found99,984/100,000 official test
+negatives also appear in the2018 training-negative set. Thus training on the
+official validation panel exposes almost all test-negative identities. The12100
+shared positive pairs are prior2018 events, not added2019 events. Interpret this
+campaign as test-exposed numerical optimization, NOT a clean recency ablation or
+unseen-pair generalization. Preserve this caveat alongside every headline score.

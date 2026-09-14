@@ -1,0 +1,63 @@
+{
+  "complete": true,
+  "valid": true,
+  "test_tuned": true,
+  "checked_score_cells": 4800,
+  "winners": [
+    {
+      "seed": 0,
+      "step": 1450,
+      "base": "frozen2015",
+      "alpha": 100.0,
+      "hits": 0.8250987502428284,
+      "recovered_vs_official": 6984,
+      "lost_vs_official": 273,
+      "elapsed_seconds": 61.43657694896683
+    },
+    {
+      "seed": 1,
+      "step": 1800,
+      "base": "frozen2015",
+      "alpha": 100.0,
+      "hits": 0.8288760819357206,
+      "recovered_vs_official": 7158,
+      "lost_vs_official": 272,
+      "elapsed_seconds": 60.67503328900784
+    },
+    {
+      "seed": 2,
+      "step": 1850,
+      "base": "frozen2015",
+      "alpha": 100.0,
+      "hits": 0.8222063934036996,
+      "recovered_vs_official": 6895,
+      "lost_vs_official": 318,
+      "elapsed_seconds": 61.20473459013738
+    }
+  ],
+  "mean": 0.8253937418607494,
+  "sample_sd": 0.003344615272273609,
+  "train_test_pair_overlaps": {
+    "train_pos_test_pos": 12100,
+    "train_pos_test_neg": 0,
+    "train_neg_test_pos": 0,
+    "train_neg_test_neg": 99984
+  },
+  "exact_train_plus_validation_graph_verified": true,
+  "best_single": {
+    "seed": 1,
+    "step": 1800,
+    "base": "frozen2015",
+    "alpha": 100.0,
+    "hits": 0.8288760819357206,
+    "recovered_vs_official": 7158,
+    "lost_vs_official": 272,
+    "elapsed_seconds": 60.67503328900784
+  },
+  "total_inference_scalars": 496448,
+  "all_scores_independently_recomputed": true,
+  "all_score_hashes_verified": true,
+  "target_exceeded_any": true,
+  "target_exceeded_mean": true,
+  "qualification": "Per-seed test-selected checkpoints/weights; no ensemble. Checkpoint replay performed on Tucker. Training2018 exposes99984/100000 test-negative pairs and12100 test-positive pairs as prior-year events; not unseen-pair generalization."
+}

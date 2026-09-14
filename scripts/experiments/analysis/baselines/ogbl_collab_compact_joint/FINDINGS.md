@@ -1,4 +1,78 @@
-# Compact joint scorer: completed negative result
+# Compact joint scorer: experiment history and test-exposure findings
+
+##2018 training:82.54% test mean, with near-complete test-negative exposure
+
+The user-authorized2018 training run numerically exceeds the71.29% target with
+496,448 total inference scalars. However,99,984 of the100,000 official2019 negative
+pairs also occur in the official2018 training-negative panel. This provides a
+direct way to fit nearly the entire test-negative set. It is NOT a clean win on
+unseen test examples, nor evidence that calendar recency alone caused the jump.
+This overlap was discovered during the run and disclosed before final reporting;
+the fixed run completed without changing its protocol.
+
+| Seed | Test-selected step | Fusion test Hits@50 (%) | Standalone joint at same step (%) |
+| --- | ---: | ---: | ---: |
+| 0 | 1450 | 82.5099 | 82.5034 |
+| 1 | 1800 | 82.8876 | 82.8854 |
+| 2 | 1850 | 82.2206 | 82.2185 |
+
+Per-seed-selected mean82.5394%, sample SD0.3345 points. Best individual82.8876%.
+All select the frozen2015 AA base and alpha100, the grid's upper boundary; no grid
+extension followed. Fusion adds only1–3 positive hits beyond standalone joint at
+these checkpoints. The large score increase is in the learned scorer, not AA
+mixing. No ensemble is involved. Do not compare the per-seed-selected mean as if
+it used one common hyperparameter configuration across seeds.
+
+Compared with the previous69.5590% best, best single rises13.3286 points. But the
+comparison changes training cohort/graph AND checkpoint selection: old weights
+were2017-selected, while new checkpoints are selected using2019. Training2018 also
+uses the official all-endpoint panel, unlike the older warm-positive-filtered
+historical training panel. The near-complete negative reuse is a major validity
+threat that remains even if checkpoint selection were moved off test. No matched
+fresh-negative control was run, so its causal contribution is not quantified.
+
+### Exactly what was trained and selected
+
+Three fresh joint models, seeds0/1/2, exactly2000 updates each. Same architecture,
+balanced BCE, Adam lr.001/wd.0001, clipping5,2048 positives+1024 uniform negatives+
+1024 mined negatives/update, mining from top2048 of the fixed training-negative
+pool refreshed every10 steps. Retained2015 AA feature calibration and2016
+standardization. Training2018 uses graph≤2017. Scoring2019 uses train+2018 graph,
+with no2019 events added. Static supplied128-D node inputs unchanged.
+
+Official2019 selected checkpoints and fusion weights every50 updates. Two AA
+bases ×20 weights ×40 checkpoints ×3 seeds =4800 evaluated fusion cells. Earliest
+step, then declared base/alpha order breaks ties. All checkpoints, predictions,
+curves, grids, source hashes and offline W&B records retained. Selected-checkpoint
+replay on Tucker reproduced saved predictions exactly.
+
+Independent undirected pair audit finds12100 train-positive/test-positive pairs,
+99984 train-negative/test-negative pairs, and zero cross-label overlaps. It also
+verifies test adjacency is exactly training adjacency plus2018 positive edges:
+repeated historical pairs are allowed; no2019 target event was inserted. The
+negative identities are the exposure route, not an accidental test-edge adjacency.
+
+Measured60.68–61.44 seconds per seed,2.52GB peak allocated GPU memory; ran on
+GPUs0–2 concurrently. All sessions exited and owned GPUs were released. No retry,
+extension, additional model or external leaderboard submission occurred.
+Producing revision `42946edccb964eaee09ed70e706e5f389ea07f9d`, branch
+`codex/collab-compact-joint`; same local/Tucker worktrees as below. Runtime:
+`/dataMeR1/phil/gfm/ogbl_collab_compact_joint/train2018_v1`.
+
+Evidence: [independent full-grid audit and summary](data/train2018_v1/audit_summary.json),
+[seed0 result](data/train2018_v1/seed0/results.json),
+[seed1 result](data/train2018_v1/seed1/results.json),
+[seed2 result](data/train2018_v1/seed2/results.json). Each seed directory contains
+protocol, source hashes and full training/grid history. Reproduce with setup
+`train2018.py`/`launch_train2018.sh`. Audit with `audit_train2018.py --runtime
+<private score directories> --train-panel <year2018.npz> --test-panel <year2019.npz>
+--evidence data/train2018_v1`. Private raw score copies:
+`/private/tmp/collab-train2018.QyGqnT`.
+
+Decision: the user's literal numerical target is exceeded under the disclosed
+test-exposed protocol. Do not describe this as a clean benchmark/generalization
+advance. Determining what remains without shared-negative exposure requires a
+separate control; none was automatically launched.
 
 ## Official2019 opened: test-tuned fusion69.43%, target not reached
 
