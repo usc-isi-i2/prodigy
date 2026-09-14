@@ -9,6 +9,9 @@ The machine-readable contract is [`protocol.yaml`](protocol.yaml). Do not change
 its scientific settings after inspecting production test results; a changed
 setting is a new tagged campaign.
 
+Operational departures from that contract are recorded append-only in
+[`DEVIATIONS.md`](DEVIATIONS.md).
+
 ## Frozen comparison
 
 The three matched arms are:
