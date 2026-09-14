@@ -1,6 +1,7 @@
 # Experiment analysis
 
 - [Standard Cora feature-only LP ladder](baselines/cora_standard_mlp_lp/RESULTS.md)
+- [Matched GraphSAGE-cosine on ogbl-collab](baselines/ogbl_collab_sage_lp/RESULTS.md)
 - [September 11 node-only MLP ladder, activation diagnostics, LeakyReLU screening and Suspended repair](transfer/ablations/node_mlp/node_mlp_ladder_20260911/RESULTS.md)
 
 **Start here:** [June–September experiment overview](EXPERIMENT_OVERVIEW.md) — hierarchical research questions, current findings, experiment inventory, branch-only results, sibling projects, and the June archive.
