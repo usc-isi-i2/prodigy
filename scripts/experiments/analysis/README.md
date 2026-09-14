@@ -1,6 +1,7 @@
 # Experiment analysis
 
 - [Compact joint graph/feature/structure scorer on ogbl-collab](baselines/ogbl_collab_compact_joint/FINDINGS.md)
+- [Validation-frozen compact expert fusion on ogbl-collab](baselines/ogbl_collab_compact_fusion/FINDINGS.md)
 - [Temporal small-model correction to AA-DC on ogbl-collab](baselines/ogbl_collab_temporal_gate/FINDINGS.md)
 - [AA-DC / MLP validation complementarity and negative-tail audit](baselines/ogbl_collab_complementarity/FINDINGS.md)
 - [Standard Cora feature-only LP ladder](baselines/cora_standard_mlp_lp/RESULTS.md)
