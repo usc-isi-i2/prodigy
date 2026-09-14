@@ -1,0 +1,41 @@
+{
+  "arm": "nonlinear_mlp_cosine",
+  "checkpoint_epochs": [
+    137,
+    109,
+    103
+  ],
+  "checkpoint_sha256": [
+    "f21b5306c9f53b7528f2482b27c2d1ad8f96fe7723923328ed125f97752b7066",
+    "50653726a02797be63fd4bad40f95fe5d9ea858f75dba001d8ea5e46736d89fe",
+    "6fdaad54c0994bd5e28c2a856c4d91601a6b51b3e0866e22126e2987d5f1d657"
+  ],
+  "complete": true,
+  "counts": {
+    "consensus_false_negative": 27726,
+    "consensus_false_negative_novel_vs_train": 22839,
+    "consensus_false_negative_seen_in_train": 4887,
+    "exported_examples": 30,
+    "official_negatives_above_threshold_any_seed": 71
+  },
+  "dataset_fingerprint": "07f7af8e654bda27caad60ed74c479f48780343826543dd613d90cb4e979f9f4",
+  "definition": "A positive is missed when its score is not strictly above the seed's 50th-highest official-negative score.",
+  "device": "cpu",
+  "hits_at_50_threshold_by_seed": [
+    3.270184278488159,
+    3.1149044036865234,
+    3.154785633087158
+  ],
+  "limitations": [
+    "Official negatives are benchmark decoys, not verified never-collaborated author pairs.",
+    "The dataset exposes Microsoft Academic Graph author IDs but not author names or paper titles."
+  ],
+  "official_test_negatives": 100000,
+  "out": "/dataMeR1/phil/gfm/ogbl_collab_mlp_lp/error_examples_v1",
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "test_positives": 46329
+}
