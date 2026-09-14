@@ -188,3 +188,12 @@ Relevant analysis leaves under scripts/experiments/analysis/baselines/:
 The copied error-example records came from score and panel archives whose hashes
 matched the admitted validation diagnosis. The canonical compact-joint consolidated
 findings retain the historical results and earlier invalid-result disclosures.
+
+## Uniform sample follow-up
+
+A first-draw uniform sample of 20 of the baseline's 18,797 validation misses
+finds 16 without a common collaborator, 4 recovered by frozen AA-DC,
+and 8 scoring below more than 1,000 negatives. These cases temper the earlier
+hand-selected emphasis on structural retention and near-boundary errors.
+See [all 20 cases](UNIFORM_20_MISSES.md) and [sampling evidence](data/uniform_20_misses.json).
+No new model training or test access.
