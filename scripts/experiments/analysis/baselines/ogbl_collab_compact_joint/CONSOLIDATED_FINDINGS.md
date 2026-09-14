@@ -6,6 +6,9 @@ below are historical diagnostics, not authorization for submission or further ru
 Acceptance has not been established. All proposed next experiments are parked;
 see [retirement record](../../../../../cleanup_records/2026-09-14-collab.md).
 
+For the chronological hypothesis -> test -> result -> explanation account, see the
+[hypothesis ledger](HYPOTHESIS_LEDGER.md).
+
 ## Compact NCN / completion follow-up: failed
 
 All nine cells completed: mean selected 2018 Hits@50 is 68.8908% for the joint
@@ -202,10 +205,10 @@ This is the largest credible progress toward the target. Fusion is worse than th
 standalone joint expert for seeds 0 and 2, reinforcing that AA mixing is no longer
 the main opportunity. The selected steps are early, consistent with rapid overfit.
 
-## Current decision and next bounded test
+## Historical next-test decision, now completed
 
-Stop work on the original global fusion and shallow gate families. The next cheapest
-test is a two-model ensemble of the freshly refit joint experts:
+At this point in the campaign, the next cheapest test was a two-model ensemble of
+the freshly refit joint experts:
 
 - two 496,385-weight joint models plus shared small calibration state remain below
   one million total inference scalars;
@@ -215,11 +218,11 @@ test is a two-model ensemble of the freshly refit joint experts:
 - do no new training and no test-dependent pair selection;
 - require test Hits@50 greater than 0.7129; otherwise stop seed ensembling.
 
-This test is warranted because the current best standalone model is 0.701569 and the
-three seeds make different errors. It is not guaranteed to recover the remaining
-1.13 points. If it fails, progress requires a stronger single expert trained for
-rolling forward transfer—multiple historical transitions and a top-tail ranking
-objective that protects strong AA decisions—not another fusion grid.
+That test was subsequently completed. The best equal-logit pair reached 0.685607 on
+2018 versus 0.687155 for the validation-selected standalone control, so every pair
+failed the advancement gate and no new 2019 evaluation occurred. See the
+[fresh-ensemble findings](../ogbl_collab_fresh_ensemble/FINDINGS.md). The experiment
+is closed, not pending.
 
 Because 2019 has already been repeatedly inspected, even a validation-selected win
 must be described as post-hoc development unless accepted through an external fresh
@@ -272,5 +275,5 @@ launch, re-inventory current processes, tmux sessions, worktrees, and GPUs 0--3.
 
 We have shown that a sub-million model has enough within-year signal to dominate the
 reported score, but the signal does not yet transfer across years; the best defensible
-forward system is 69.80%, and the immediate remaining bet is a validation-selected
-two-model fresh-expert ensemble under the same sub-million cap.
+forward system is 69.80%, and the tested equal-logit fresh-expert ensemble did not
+improve the validation-selected standalone model.
