@@ -2,6 +2,11 @@
 
 Status: complete one-seed matched pilot.
 
+The campaign was rerun at revision `a28f58cf6e5b5c728b3f1e2abc80d9e0f9c77de5`
+with every epoch logged to W&B in explicit offline mode. The rerun reproduced the
+original final metrics exactly. Its unsmoothed curves are in
+[`figures/raw_training_curves_seed0_wandb.png`](figures/raw_training_curves_seed0_wandb.png).
+
 ## Result
 
 | Encoder | Selected epoch | Validation ROC-AUC | Test ROC-AUC | Test AP |
@@ -14,6 +19,14 @@ The learned linear metric improves test ROC-AUC by 8.38 points over raw cosine.
 The nonlinear MLP improves only 1.43 points over raw cosine and trails the linear
 arm by 6.95 points. This is evidence for this fixed seed and random-negative panel,
 not a claim that nonlinear encoders are generally worse.
+
+The raw curves clarify the gap. The linear arm reaches high validation performance
+quickly and then improves smoothly to its epoch-91 selection. The nonlinear arm's
+training loss continues downward through its epoch-66 selection while validation
+performance peaks and then degrades; after epoch 103 its optimization also becomes
+visibly unstable. The selected checkpoint predates that instability, so it does not
+cause the reported test score, but the train/validation divergence is consistent
+with overfitting.
 
 ## Evidence contract and validation
 
@@ -37,3 +50,7 @@ not a claim that nonlinear encoders are generally worse.
 The exact protocol, complete validation histories, and final results are under
 [`data/`](data/). Checkpoints and pair arrays remain in the Tucker run directory
 `/dataMeR1/phil/gfm/cora_standard_mlp_lp/seed0`.
+
+The offline rerun is at `/dataMeR1/phil/gfm/cora_standard_mlp_lp/seed0_wandb`.
+Its W&B run IDs are `iuopgbrh` (linear) and `chv8ribk` (nonlinear); the local
+`.wandb` records remain under that directory's `wandb/` tree and were not synced.
