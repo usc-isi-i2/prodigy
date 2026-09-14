@@ -124,3 +124,5 @@ Setup and launch files remain in `../setup/<name>/`.
 - Matched flagship intervention ladders: [`paper_flagship_ladders`](synthesis/cross_experiment/paper_flagship_ladders/)
 - Graph-mixing, scale, and capacity mechanisms: [`paper_mechanism_sweeps`](synthesis/cross_experiment/paper_mechanism_sweeps/)
 - Retired and superseded analyses: [`archive`](archive/)
+
+- [Warm-positive joint training](baselines/ogbl_collab_warm_joint/FINDINGS.md): six-cell validation-only test; 68.5124% vs 68.8908%, all seeds regressed; audited, no new test access.

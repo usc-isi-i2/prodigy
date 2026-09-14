@@ -1,0 +1,33 @@
+{
+  "name": "warm_joint_v1",
+  "revision": "f6d5856c78f5e177824927b4789e92effd2ab12e",
+  "arms": [
+    "bce",
+    "warm"
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "steps": 2000,
+  "interval": 50,
+  "train_year": 2017,
+  "validation_year": 2018,
+  "selection": "earliest maximum standalone validation Hits@50",
+  "objective": "balanced sampled BCE; warm arm restricts positives to both endpoints incident to graph edges strictly before 2017; negatives unchanged",
+  "invariants": "fixed100k negative panel,2048pos/1024uniform/1024mined,top2048 refresh10,Adam.001 wd.0001 clip5,496385 neural weights",
+  "advance": "all3 paired selected differences positive and mean>=0.005; otherwise stop",
+  "test_access": false,
+  "prior_test_exploration_disclosed": true,
+  "arm": "warm",
+  "seed": 1,
+  "device": "cuda:1",
+  "files": {
+    "/dataMeR1/phil/gfm/ogbl_collab_compact_joint/candidate_fresh_v1/train2017.npz": "8c7a3e250528e33a60dab0a4306b9fa510af702d5a38c02157b4256db1c5e686",
+    "/dataMeR1/phil/gfm/ogbl_collab_compact_joint/joint_v1/node_features.npy": "c632753f7b557a10aca39190b732b076fea9255f9e8a8b2a7863f78929963818",
+    "/dataMeR1/phil/gfm/ogbl_collab_compact_joint/joint_v1/standardization.npz": "5503c2e84d4184dd03c87be18fda8a94c387df9591cf6f979849a47b8cb287bc",
+    "/dataMeR1/phil/gfm/ogbl_collab_compact_joint/joint_v1/assessment/year2018.npz": "9427b395e75968e5d49e315f7231cb0ad94c493991535e3cf8b157d0c729b4c4",
+    "/dataMeR1/phil/gfm/ogbl_collab_compact_joint/joint_v1/year2017.npz": "85439e1d8c24569b6bfb9cf2a5a532658255fa36ed1f9c4bddeb979f73165343"
+  }
+}

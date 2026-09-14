@@ -6,6 +6,16 @@ below are historical diagnostics, not authorization for submission or further ru
 Acceptance has not been established. All proposed next experiments are parked;
 see [retirement record](../../../../../cleanup_records/2026-09-14-collab.md).
 
+## Warm-positive joint follow-up: failed
+
+The matched six-cell fresh-negative joint test restricted training positives to two
+previously active endpoints. Mean selected 2018 Hits@50 fell from 68.8908% to
+68.5124% (−0.3784 points), with regressions in all three seeds. Novel recall also
+decreased in every seed. This population-matching recipe does not close the gap.
+All 120 control scores reproduced exactly; six selected score archives and
+checkpoint replays passed independent/official checks. No new 2019 access.
+See [warm joint findings](../ogbl_collab_warm_joint/FINDINGS.md).
+
 ## Follow-up completed 2026-09-14: equal-logit ensemble rejected
 
 The newly authorized bounded pair experiment is complete. Best pair 0+1 scored

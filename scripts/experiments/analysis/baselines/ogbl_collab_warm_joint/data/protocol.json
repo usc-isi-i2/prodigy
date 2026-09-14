@@ -1,0 +1,23 @@
+{
+  "name": "warm_joint_v1",
+  "revision": "f6d5856c78f5e177824927b4789e92effd2ab12e",
+  "arms": [
+    "bce",
+    "warm"
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "steps": 2000,
+  "interval": 50,
+  "train_year": 2017,
+  "validation_year": 2018,
+  "selection": "earliest maximum standalone validation Hits@50",
+  "objective": "balanced sampled BCE; warm arm restricts positives to both endpoints incident to graph edges strictly before 2017; negatives unchanged",
+  "invariants": "fixed100k negative panel,2048pos/1024uniform/1024mined,top2048 refresh10,Adam.001 wd.0001 clip5,496385 neural weights",
+  "advance": "all3 paired selected differences positive and mean>=0.005; otherwise stop",
+  "test_access": false,
+  "prior_test_exploration_disclosed": true
+}
