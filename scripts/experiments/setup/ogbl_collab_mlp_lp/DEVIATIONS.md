@@ -29,3 +29,12 @@ early stopping, but expose test trajectories during retraining in order to quant
 the maximum inflation available from test-based epoch selection. All outputs from
 this diagnostic are classified as non-admissible and cannot replace the production
 results.
+
+## 2026-09-13: exploratory symmetric-concatenation extension
+
+After reporting the cosine campaign and inspecting its error profile, the experiment
+operator requested a concatenation-based pair scorer. The separately tagged
+`concat_sym_v1` campaign is a post-hoc architecture comparison and not part of the
+original frozen ladder. It preserves the split, feature inputs, negative stream,
+optimizer, validation selection, test-once policy, and three seeds. Because Collab
+is undirected, ordered concat scores are averaged across both endpoint orders.

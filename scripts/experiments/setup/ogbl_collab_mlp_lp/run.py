@@ -20,6 +20,8 @@ from torch.nn import functional as F
 
 ARMS = ("raw_cosine", "linear_cosine", "nonlinear_mlp_cosine")
 LEARNED_ARMS = ARMS[1:]
+CONCAT_ARMS = ("concat_linear_sym", "concat_mlp_sym")
+CAMPAIGN_ARMS = {"cosine": ARMS, "concat_sym": CONCAT_ARMS}
 EXPECTED_FEATURE_SHAPE = (235_868, 128)
 EXPECTED_EDGE_COUNTS = {"train": 1_179_052, "valid": 60_084, "test": 46_329}
 EXPECTED_NEGATIVE_COUNTS = {"valid": 100_000, "test": 100_000}
@@ -190,21 +192,33 @@ def audit_dataset(
 class Encoder(nn.Module):
     def __init__(self, arm: str, input_dim: int = 128):
         super().__init__()
+        self.arm = arm
         if arm == "linear_cosine":
             self.net = nn.Linear(input_dim, 128)
         elif arm == "nonlinear_mlp_cosine":
             self.net = nn.Sequential(
                 nn.Linear(input_dim, 256), nn.ReLU(), nn.Linear(256, 128)
             )
+        elif arm == "concat_linear_sym":
+            self.net = nn.Linear(2 * input_dim, 1)
+        elif arm == "concat_mlp_sym":
+            self.net = nn.Sequential(
+                nn.Linear(2 * input_dim, 256), nn.ReLU(), nn.Linear(256, 1)
+            )
         else:
             raise ValueError(f"unknown learned arm: {arm}")
-        self.log_scale = nn.Parameter(torch.tensor(float(np.log(10.0))))
-        self.bias = nn.Parameter(torch.tensor(0.0))
+        if arm in LEARNED_ARMS:
+            self.log_scale = nn.Parameter(torch.tensor(float(np.log(10.0))))
+            self.bias = nn.Parameter(torch.tensor(0.0))
 
     def encode(self, features: torch.Tensor) -> torch.Tensor:
         return F.normalize(self.net(features), dim=-1)
 
     def logits(self, left: torch.Tensor, right: torch.Tensor) -> torch.Tensor:
+        if self.arm in CONCAT_ARMS:
+            forward = self.net(torch.cat((left, right), dim=-1)).squeeze(-1)
+            reverse = self.net(torch.cat((right, left), dim=-1)).squeeze(-1)
+            return 0.5 * (forward + reverse)
         cosine = (self.encode(left) * self.encode(right)).sum(dim=-1)
         return self.log_scale.exp().clamp(max=100.0) * cosine + self.bias
 
@@ -333,6 +347,7 @@ def train_arm(
         reinit=True,
         config={
             "dataset": "ogbl-collab",
+            "campaign": args.campaign,
             "official_metric": "hits@50",
             "arm": arm,
             "seed": args.seed,
@@ -352,6 +367,11 @@ def train_arm(
                 else "production"
             ),
             "use_validation_edges": False,
+            "undirected_pair_policy": (
+                "average ordered concat scores for [u,v] and [v,u]"
+                if arm in CONCAT_ARMS
+                else "shared encoder cosine"
+            ),
             "revision": args.revision,
             "dataset_fingerprint": args.dataset_fingerprint,
             "run_tag": args.run_tag,
@@ -398,10 +418,15 @@ def train_arm(
             "train_loss": loss_sum / example_count,
             "mean_batch_grad_norm": grad_norm_sum / int(np.ceil(len(train_edges) / args.batch_size)),
             "parameter_norm": parameter_norm(model),
-            "logit_scale": float(model.log_scale.detach().exp().clamp(max=100.0)),
-            "logit_bias": float(model.bias.detach()),
             "training_stream_fingerprint": stream_fingerprint,
         }
+        if arm in LEARNED_ARMS:
+            row.update(
+                {
+                    "logit_scale": float(model.log_scale.detach().exp().clamp(max=100.0)),
+                    "logit_bias": float(model.bias.detach()),
+                }
+            )
         validation_due = epoch % args.val_interval == 0
         if validation_due:
             validation = evaluate_split(
@@ -518,6 +543,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--wandb-project", default="ogbl-collab-mlp-lp")
     parser.add_argument("--wandb-mode", choices=("online", "offline", "disabled"), default="online")
     parser.add_argument("--run-tag", default="official_v1")
+    parser.add_argument("--campaign", choices=tuple(CAMPAIGN_ARMS), default="cosine")
     parser.add_argument(
         "--diagnostic-test-every-validation",
         action="store_true",
@@ -538,10 +564,13 @@ def main() -> None:
 
     graph, split, evaluator, ogb_version = load_official_dataset(args.dataset_root)
     audit = audit_dataset(graph, split, ogb_version)
+    arms = CAMPAIGN_ARMS[args.campaign]
+    learned_arms = tuple(arm for arm in arms if arm != "raw_cosine")
     plan = {
         "event": "dry_run" if args.dry_run else "run_start",
         "seed": args.seed,
-        "arms": ARMS,
+        "arms": arms,
+        "campaign": args.campaign,
         "dataset_root": str(args.dataset_root),
         "out": str(args.out),
         "device": args.device,
@@ -564,7 +593,9 @@ def main() -> None:
     os.environ.setdefault("WANDB_SILENT", "true")
     args.revision = git_revision()
     args.dataset_fingerprint = audit["split_fingerprint"]
-    protocol_source = Path(__file__).with_name("protocol.yaml")
+    protocol_source = Path(__file__).with_name(
+        "concat_protocol.yaml" if args.campaign == "concat_sym" else "protocol.yaml"
+    )
     resolved_protocol = {
         "started_at": utc_now(),
         "revision": args.revision,
@@ -586,10 +617,14 @@ def main() -> None:
 
     device = torch.device(args.device)
     x = torch.as_tensor(np.asarray(graph["node_feat"]), dtype=torch.float32, device=device)
-    raw_validation = evaluate_split(evaluator, x, split["valid"], None, args.eval_batch_size)
+    raw_validation = (
+        evaluate_split(evaluator, x, split["valid"], None, args.eval_batch_size)
+        if "raw_cosine" in arms
+        else None
+    )
     selections: list[dict[str, Any]] = []
     trained: dict[str, Encoder] = {}
-    for arm in LEARNED_ARMS:
+    for arm in learned_arms:
         trained[arm], selection = train_arm(arm, x, split, evaluator, args, args.out)
         selections.append(selection)
 
@@ -623,7 +658,7 @@ def main() -> None:
         split["train"]["edge"], split["valid"]["edge"], split["test"]["edge"], len(x)
     )
     results: list[dict[str, Any]] = []
-    for arm in ARMS:
+    for arm in arms:
         model = trained.get(arm)
         official = evaluate_split(evaluator, x, split["test"], model, args.eval_batch_size)
         strata = {
@@ -668,7 +703,8 @@ def main() -> None:
         mode=args.wandb_mode,
         dir=str(args.out),
         reinit=True,
-        config={"dataset": "ogbl-collab", "seed": args.seed, "revision": args.revision,
+        config={"dataset": "ogbl-collab", "campaign": args.campaign,
+                "seed": args.seed, "revision": args.revision,
                 "test_opened_after_selection_freeze": not args.diagnostic_test_every_validation,
                 "evidence_classification": payload["evidence_classification"],
                 "run_tag": args.run_tag},
