@@ -1,5 +1,82 @@
 # Compact joint scorer: completed negative result
 
+## Official2019 opened: test-tuned fusion69.43%, target not reached
+
+The user explicitly authorized official-test scoring and selection, superseding
+the previous follow-up's no-test restriction for this new run. All120 cells
+(two AA calibrations ×20 mixing weights ×three saved joint seeds) completed.
+No training, checkpoint search or multi-seed ensemble was performed.
+
+| Scorer | Official2019 test Hits@50 (%) |
+| --- | ---: |
+| Reproduced official AA-DC,2018 calibration | 68.0243 |
+| AA-DC with frozen2015 calibration | 68.3049 |
+| Best common test-selected fusion:2018 AA, alpha0.3 | **69.4288 ±0.0563** |
+| Best individual test-selected seed/weight:seed0, alpha0.5 | **69.5590** |
+| HyperFusion reported target | 71.29 ±0.18 |
+
+HyperFusion target verified against the [OGB leaderboard](https://ogb.stanford.edu/docs/leader_linkprop/).
+The best common setting scores69.4101/69.4921/69.3842% across seeds0/1/2.
+It recovers943/1045/1031 AA-missed positives and loses301/365/401 previous AA hits:
+net642/680/630. The single best recovers1191 and loses480, net711. It remains
+1.7310 points below71.29;802 additional positive hits are needed to exceed that
+rounded target on46,329 positives, after accounting for any cutoff movement.
+Standalone joint scores60.7654/62.6001/61.9914%. The independent-seed mean is not
+an ensemble prediction; its SD describes optimization variation on one fixed panel.
+
+This is explicitly **test-tuned development evidence**: both negative-cutoff
+normalizers and the common/individual winning alpha use2019. It is not an
+untouched-test generalization result, nor a leaderboard submission. AA's two
+calibrations themselves remain fitted on2015 or2018, not2019 positives. The
+complete fixed alpha grid includes0 through100; the winner is not a boundary.
+Within this tested family, scalar fusion improves AA but does not meet the goal.
+No additional sweep or training followed. The prior historical-frozen2018 result
+below remains a separate experiment and is not replaced by these selections.
+
+### Protocol and verification
+
+Exactly496,448 conservatively counted scalars for the full candidate:496,385
+neural weights +44 original calibration/standardization entries +16 reference
+AA entries +2 normalizers +1 mixing coefficient. No node-ID table or hidden
+learned component. Static supplied128-D benchmark vectors and graph are inputs.
+
+Graph input is train+2018 validation, no2019 events. Repeated pairs observed before
+2019 legitimately remain. GNN uses unique unweighted undirected adjacency. AA
+matches upstream's training coauthorship lookup,0.95 decay with reference2018,
+and unit2018 validation weights. Feature age is evaluated at2019; the14-input
+decoder retains2015 AA calibration and2016 standardization. Official validation
+AA67.3557% and test AA68.0243% replay checks passed. This matches OGB's documented
+[validation-edge inference option](https://raw.githubusercontent.com/snap-stanford/ogb/master/examples/linkproppred/collab/README.md).
+
+All original official pairs retained:46,329 positives,100,000 negatives including
+one negative self-pair. Pair fingerprint
+`bed5ff18c888b502ff2a2fbe990519fe05afa08d2291a67d42db047f5deb1874`.
+Full dataset fingerprint, checkpoint hashes/steps/producing revision, upstream
+source identity, and unchanged node features were verified. Every grid metric
+matches OGB Hits@50, with strict positive >50th negative. Independent local NumPy
+audit reproduces all120 grid scores, recoveries/losses, winner selection, summary
+statistics, score hashes and self-pair handling. Twelve focused tests and eight
+legacy tests passed locally, including test-graph exclusion and historical parity.
+
+Producing evaluator revision `bd2cf0806285b5a9f0a71cffa5ea421762f5e07f`;
+saved model producer `be46110e`. Branch `codex/collab-compact-joint`, local
+`/Users/philipp/projects/gfm/prodigy-collab-joint`, Tucker
+`/dataMeR1/phil/gfm/prodigy-collab-joint`. Runtime
+`/dataMeR1/phil/gfm/ogbl_collab_compact_joint/official_test_fusion_v1`.
+Measured65.23 seconds for calibration, features, inference and grid, plus startup;
+offline W&B recorded in results. Dedicated session `collab-official-test` exited
+and GPU0 was released; unrelated jobs were not modified.
+
+Evidence: [protocol](data/official_test_fusion_v1/protocol.json),
+[checkpoint sources](data/official_test_fusion_v1/sources.json),
+[panel provenance](data/official_test_fusion_v1/panel.json),
+[full grid](data/official_test_fusion_v1/results.json),
+[independent audit](data/official_test_fusion_v1/audit.json).
+Reproduce with setup `official_test.py`; audit with `audit_official_test.py
+--runtime <private year2019.npz/scores.npz directory> --evidence
+data/official_test_fusion_v1`. Private local score copy:
+`/private/tmp/collab-official-test.96UfTc`.
+
 ## Follow-up: frozen fusion retains a real development gain
 
 The original standalone-model result below remains negative. A subsequent,

@@ -1,0 +1,52 @@
+{
+  "name": "official_test_fusion_v1",
+  "classification": "test_tuned_development",
+  "test_scored": true,
+  "test_used_for_selection": true,
+  "training": false,
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "checkpoints": "existing 2017-selected joint best.pt only",
+  "bases": [
+    "frozen2015",
+    "validation2018"
+  ],
+  "alphas": [
+    0.0,
+    0.001,
+    0.0025,
+    0.005,
+    0.01,
+    0.025,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.5,
+    0.75,
+    1.0,
+    1.5,
+    2.0,
+    3.0,
+    5.0,
+    10.0,
+    30.0,
+    100.0
+  ],
+  "joint_only_control": true,
+  "selection": "maximum mean 2019 Hits across3 seeds, then declared base/alpha order; report individual maxima separately",
+  "normalization": "each scorer at its own 2019 50th negative; deliberately test-dependent",
+  "fusion": "max(AA/AA_negative50, alpha*exp(clip(joint_logit-joint_negative50,-30,30)))",
+  "graph": "train+2018 validation only; no2019 events; unique unweighted undirected GNN adjacency",
+  "aa_weights": "upstream train weight lookup and decay .95 with reference2018; unit2018 validation weights",
+  "model_inputs": "original symmetric14 with2015 AA calibration and2016 standardization; static supplied128-D features",
+  "total_inference_scalar_upper_bound": 496448,
+  "scalar_count": "496385 neural +44 original auxiliary +16 validation AA calibration +2 normalization +1 alpha",
+  "ensemble": false,
+  "target_test_hits": 0.7129,
+  "stop": "one fixed grid after3 checkpoint inferences; no retries, additional training or automatic extension",
+  "revision": "bd2cf0806285b5a9f0a71cffa5ea421762f5e07f"
+}
