@@ -43,3 +43,33 @@ receipt = {
 (HERE / "data/independent_audit.json").write_text(json.dumps(receipt, indent=2) + "\n")
 print(json.dumps(receipt, indent=2))
 
+selector = json.loads((HERE / "data/selector_results.json").read_text())
+assert selector["complete"] and not selector["test_2019_scored"]
+assert len(selector["rows"]) == 3
+assert [row["seed"] for row in selector["rows"]] == [0, 1, 2]
+assert all(row["selected_rule"] == "joint_all_novel" for row in selector["rows"])
+for row in selector["rows"]:
+    candidates = row["all_selection_candidates"]
+    chosen = max(candidates, key=lambda item: (item["hits_at_50"], -item["order"]))
+    assert chosen["rule"] == row["selected_rule"]
+    np.testing.assert_allclose(
+        row["forward"]["gain_over_aa"],
+        row["forward"]["hits_at_50"] - 0.668397576725917,
+    )
+selector_expected = {
+    "forward_gain_over_aa_every_seed": False,
+    "forward_repeat_recall_loss_vs_aa_max": True,
+    "forward_novel_net_hits_positive_every_seed": False,
+}
+assert selector["conditions"] == selector_expected
+assert not selector["advance"] and selector["decision"] == "stop selector; do not train gate"
+selector_receipt = {
+    "complete": True,
+    "rows": 3,
+    "selected_rules_recomputed": ["joint_all_novel"] * 3,
+    "conditions_recomputed": selector_expected,
+    "decision_recomputed": "stop selector; do not train gate",
+    "test_2019_scored": False,
+}
+(HERE / "data/selector_independent_audit.json").write_text(json.dumps(selector_receipt, indent=2) + "\n")
+print(json.dumps(selector_receipt, indent=2))

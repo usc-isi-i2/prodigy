@@ -1,0 +1,35 @@
+{
+  "name": "ogbl_collab_regime_h1_selector_v1",
+  "revision": "c8d601df59b2d7e0819b1604fdc88b9ef2dd0ba1",
+  "research_question": "Can a small observable subdivision of novel pairs select AA versus joint across years?",
+  "selection_year": 2017,
+  "forward_year": 2018,
+  "fixed_rule_order": [
+    "aa_all",
+    "joint_all_novel",
+    "aa_zero",
+    "nonzero_aa",
+    "l3_positive",
+    "recent_both",
+    "aa_zero_and_recent",
+    "l3_and_recent",
+    "cosine_q50",
+    "cosine_q75",
+    "degree_min_q50",
+    "degree_min_q75",
+    "joint_minus_aa_positive",
+    "joint_minus_aa_q75"
+  ],
+  "thresholds": "2017 pooled-candidate median/75th percentile; recomputed per seed only for score disagreement",
+  "selection": "highest 2017 Hits@50; fixed rule order breaks exact ties",
+  "routing": "repeat pairs always AA; selected condition routes novel pairs to joint; all other pairs use AA",
+  "calibration": "per-expert empirical CDF over pooled 2017 candidate scores, frozen for 2018",
+  "advance": {
+    "forward_gain_over_aa_every_seed": 0.005,
+    "forward_repeat_recall_loss_vs_aa_max": 0.001,
+    "forward_novel_net_hits_positive_every_seed": true
+  },
+  "stop": "do not train a learned gate unless every condition passes",
+  "test_2019_access": false,
+  "qualification": "bounded selector diagnostic; 2018 outcome opened only after per-seed 2017 rules are frozen"
+}

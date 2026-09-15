@@ -17,6 +17,12 @@ novel-pair expert ordering reversed across years, so the rule is not a stable ro
 to complementarity. H1 stopped before training; no 2019 access occurred. See
 [regime H1 findings](../ogbl_collab_regime_h1/FINDINGS.md).
 
+A bounded 14-rule follow-up did not rescue the idea. All three 2017 selections chose
+the full novel-to-joint route, gaining 7.87--9.54 points over AA in selection, but
+the frozen rules lost 1.45--2.73 points and 1,068--1,840 novel hits on forward 2018.
+Repeat retention again passed; forward improvement and novel net hits failed in
+every seed. Do not train a more flexible gate on these two panels.
+
 For the chronological hypothesis -> test -> result -> explanation account, see the
 [hypothesis ledger](HYPOTHESIS_LEDGER.md).
 

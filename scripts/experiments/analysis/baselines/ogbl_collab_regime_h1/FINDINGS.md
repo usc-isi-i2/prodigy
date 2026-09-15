@@ -37,3 +37,30 @@ recomputed `data/independent_audit.json`. Producing revision `b73af00b`; Tucker
 worktree `/dataMeR1/phil/gfm/prodigy-collab-regime-h1`; runtime root
 `/dataMeR1/phil/gfm/ogbl_collab_compact_joint/regime_h1_prerequisite_v1`.
 
+## Bounded novel-pair selector follow-up: failed
+
+The predeclared follow-up selected among 14 simple observable rules on 2017, then
+applied the selected per-seed rule unchanged to 2018. Candidates used AA presence,
+L3 evidence, recent endpoint activity, raw-feature cosine, minimum degree, and
+calibrated expert disagreement. No learned gate or 2019 score was used.
+
+Every seed selected `joint_all_novel` on 2017. Its selection gain over AA was
+9.20, 7.87, and 9.54 points. Forward on 2018, the same rules lost 2.73, 1.45, and
+1.93 points to AA. They lost 1,840, 1,068, and 1,355 novel hits respectively even
+while repeat recall improved by about 0.70 point. Mean forward Hits@50 was 64.8037%
+versus 66.8398% for AA.
+
+The selector fails two of three advancement conditions: no seed beats AA by the
+required 0.5 point and every seed loses novel net hits. Only repeat retention passes.
+The independent audit reproduces the selected rules, arithmetic, and stop decision.
+
+This is stronger evidence against an immediate learned gate: the broad novel regime
+looks overwhelmingly favorable to joint in 2017 and reverses in 2018. Thresholding
+the same feature set on these two years would expose a flexible selector to exactly
+the temporal-boundary failure already seen in the shallow tree. The next supported
+direction is improving the forward novel expert or identifying genuinely historical
+replication beyond these two panels, not adding gate flexibility.
+
+Follow-up evidence: `data/selector_results.json`, `data/selector_protocol.json`, and
+`data/selector_independent_audit.json`. Producing revision `c8d601df`; runtime root
+`/dataMeR1/phil/gfm/ogbl_collab_compact_joint/regime_h1_selector_v1`.
