@@ -21,6 +21,13 @@ This is a mechanism prerequisite, not a leaderboard candidate. It does not acces
 2019 scores, train a gate, tune a threshold, or authorize subsequent training.
 Prior 2019 exploration elsewhere in the research program remains disclosed.
 
+After the hard repeat/novel rule failed, `selector.py` adds one bounded follow-up.
+It selects among 14 predeclared novel-pair conditions on 2017 and applies the chosen
+per-seed rule unchanged to 2018. The candidate family covers AA presence, L3,
+recent activity, feature cosine, minimum degree, and calibrated expert disagreement.
+It advances only if every seed beats AA by at least 0.5 point on forward 2018,
+preserves repeat recall within 0.1 point, and adds novel net hits in every seed.
+
 On Tucker:
 
 ```bash
@@ -30,5 +37,7 @@ conda activate prodigy
 python scripts/experiments/setup/ogbl_collab_regime_h1/audit.py --dry-run
 python scripts/experiments/setup/ogbl_collab_regime_h1/audit.py \
   --out /dataMeR1/phil/gfm/ogbl_collab_compact_joint/regime_h1_prerequisite_v1
+python scripts/experiments/setup/ogbl_collab_regime_h1/selector.py --dry-run
+python scripts/experiments/setup/ogbl_collab_regime_h1/selector.py \
+  --out /dataMeR1/phil/gfm/ogbl_collab_compact_joint/regime_h1_selector_v1
 ```
-
