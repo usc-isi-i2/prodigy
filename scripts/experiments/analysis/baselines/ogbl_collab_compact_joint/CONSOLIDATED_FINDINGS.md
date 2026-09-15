@@ -6,6 +6,17 @@ below are historical diagnostics, not authorization for submission or further ru
 Acceptance has not been established. All proposed next experiments are parked;
 see [retirement record](../../../../../cleanup_records/2026-09-14-collab.md).
 
+## Repeat/novel regime H1 prerequisite: failed
+
+A frozen no-training prerequisite routed previously observed pairs to AA-DC and
+novel pairs to the seed-matched joint model, with 2017 empirical-CDF calibration
+applied unchanged to 2018. It scored 78.0655% mean on 2017, 0.0554 points below
+joint, then 64.8037% on forward 2018: 1.1218 points above joint but 2.0360 points
+below AA-DC. Only repeat-hit retention passed the advancement contract. The relative
+novel-pair expert ordering reversed across years, so the rule is not a stable route
+to complementarity. H1 stopped before training; no 2019 access occurred. See
+[regime H1 findings](../ogbl_collab_regime_h1/FINDINGS.md).
+
 For the chronological hypothesis -> test -> result -> explanation account, see the
 [hypothesis ledger](HYPOTHESIS_LEDGER.md).
 

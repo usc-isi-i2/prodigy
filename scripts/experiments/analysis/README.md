@@ -1,4 +1,5 @@
 # Experiment analysis
+- [ogbl-collab repeat/novel regime H1 prerequisite](baselines/ogbl_collab_regime_h1/FINDINGS.md)
 - [Recall-focused error cases and chat findings](baselines/ogbl_collab_recall_cases/FINDINGS.md)
 - [Three parallel hypotheses: no advancement](baselines/ogbl_collab_parallel_hypotheses/FINDINGS.md)
 - [Fresh-expert dynamics, negative overfitting, and three hypotheses](baselines/ogbl_collab_fresh_diagnosis/FINDINGS.md)

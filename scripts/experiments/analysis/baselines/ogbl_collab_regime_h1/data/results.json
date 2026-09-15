@@ -1,0 +1,244 @@
+{
+  "complete": true,
+  "revision": "b73af00b07093463570c88bd93fce3a02f49dfb3",
+  "protocol": {
+    "name": "ogbl_collab_regime_h1_prerequisite_v1",
+    "revision": "b73af00b07093463570c88bd93fce3a02f49dfb3",
+    "research_question": "Does a fixed observable repeat/novel expert split transfer from 2017 to 2018?",
+    "years": {
+      "calibration_and_selection": 2017,
+      "forward_assessment": 2018
+    },
+    "experts": [
+      "AA-DC",
+      "seed-matched compact joint"
+    ],
+    "gate": "AA-DC if pair appeared before target year; joint otherwise",
+    "calibration": "per-expert empirical CDF over pooled 2017 candidate scores, frozen for 2018",
+    "metric": "Hits@50 with cutoff recomputed after mixing",
+    "primary_control": "seed-matched joint scorer",
+    "secondary_controls": [
+      "AA-DC",
+      "better single expert on each panel"
+    ],
+    "advance": {
+      "all_seed_gains_over_joint_positive_both_years": true,
+      "mean_gain_over_joint_each_year": 0.005,
+      "forward_repeat_recall_loss_vs_aa_max": 0.001,
+      "forward_gain_over_better_single": 0.005
+    },
+    "stop": "stop before training if any advancement condition fails",
+    "test_2019_access": false,
+    "qualification": "mechanism prerequisite only; prior 2019 exploration disclosed"
+  },
+  "inputs": {
+    "scores2017": {
+      "path": "/dataMeR1/phil/gfm/ogbl_collab_compact_joint/fusion_frozen_v1/scores2017.npz",
+      "sha256": "b0adac9cca9c9ebf414b3112eefb56f73d3ce2364f121db507d83a550423d1d0"
+    },
+    "panel2017": {
+      "path": "/dataMeR1/phil/gfm/ogbl_collab_compact_joint/joint_v1/year2017.npz",
+      "sha256": "85439e1d8c24569b6bfb9cf2a5a532658255fa36ed1f9c4bddeb979f73165343"
+    },
+    "scores2018": {
+      "path": "/dataMeR1/phil/gfm/ogbl_collab_compact_joint/joint_v1/assessment/scores.npz",
+      "sha256": "b4d045b7dfe8dc42d23d9e24e4283e31957df2fbf7941d3b972128ceb358fa9a"
+    },
+    "panel2018": {
+      "path": "/dataMeR1/phil/gfm/ogbl_collab_compact_joint/joint_v1/assessment/year2018.npz",
+      "sha256": "9427b395e75968e5d49e315f7231cb0ad94c493991535e3cf8b157d0c729b4c4"
+    },
+    "assessment": {
+      "path": "/dataMeR1/phil/gfm/ogbl_collab_compact_joint/joint_v1/assessment/results.json",
+      "sha256": "423585e3057b03f616e3cb86cf0a9979d738ab4c638d6741f2c0237d688d83a2"
+    }
+  },
+  "rows": [
+    {
+      "year": 2017,
+      "seed": 0,
+      "aa_hits_at_50": 0.6919404366297901,
+      "joint_hits_at_50": 0.7845665250494258,
+      "mixture_hits_at_50": 0.7838934926176755,
+      "gain_over_joint": -0.00067303243175032,
+      "gain_over_aa": 0.09195305598788539,
+      "gain_over_better_single": -0.00067303243175032,
+      "aa_repeat_recall": 0.997355758810525,
+      "mixture_repeat_recall": 0.9994798214053492,
+      "repeat_recall_change_vs_aa": 0.0021240625948242275,
+      "aa_novel_recall": 0.40409363892633904,
+      "joint_novel_recall": 0.5825060260652858,
+      "mixture_novel_recall": 0.5807084201495282,
+      "cutoffs": {
+        "aa": 0.7766933702031908,
+        "joint": 0.7468450517126862,
+        "mixture": 0.7471500413430388
+      },
+      "counts": {
+        "positive": 47546,
+        "negative": 100000,
+        "repeat_positive": 23069,
+        "repeat_negative": 1
+      }
+    },
+    {
+      "year": 2018,
+      "seed": 0,
+      "aa_hits_at_50": 0.668397576725917,
+      "joint_hits_at_50": 0.6289028693162906,
+      "mixture_hits_at_50": 0.6410691698289062,
+      "gain_over_joint": 0.01216630051261558,
+      "gain_over_aa": -0.027328406897010882,
+      "gain_over_better_single": -0.027328406897010882,
+      "aa_repeat_recall": 0.9923767455115418,
+      "mixture_repeat_recall": 0.9994300370475919,
+      "repeat_recall_change_vs_aa": 0.007053291536050166,
+      "aa_novel_recall": 0.38429338997875795,
+      "joint_novel_recall": 0.32681494439585157,
+      "mixture_novel_recall": 0.32681494439585157,
+      "cutoffs": {
+        "aa": 0.7843791088880756,
+        "joint": 0.7561099589280631,
+        "mixture": 0.7561099589280631
+      },
+      "counts": {
+        "positive": 60084,
+        "negative": 100000,
+        "repeat_positive": 28072,
+        "repeat_negative": 8
+      }
+    },
+    {
+      "year": 2017,
+      "seed": 1,
+      "aa_hits_at_50": 0.6919404366297901,
+      "joint_hits_at_50": 0.7717158120556934,
+      "mixture_hits_at_50": 0.7706852311445758,
+      "gain_over_joint": -0.001030580911117629,
+      "gain_over_aa": 0.07874479451478567,
+      "gain_over_better_single": -0.001030580911117629,
+      "aa_repeat_recall": 0.997355758810525,
+      "mixture_repeat_recall": 0.9994798214053492,
+      "repeat_recall_change_vs_aa": 0.0021240625948242275,
+      "aa_novel_recall": 0.40409363892633904,
+      "joint_novel_recall": 0.5578297994035216,
+      "mixture_novel_recall": 0.5550516811700781,
+      "cutoffs": {
+        "aa": 0.7766933702031908,
+        "joint": 0.75098613313814,
+        "mixture": 0.7514605614520218
+      },
+      "counts": {
+        "positive": 47546,
+        "negative": 100000,
+        "repeat_positive": 23069,
+        "repeat_negative": 1
+      }
+    },
+    {
+      "year": 2018,
+      "seed": 1,
+      "aa_hits_at_50": 0.668397576725917,
+      "joint_hits_at_50": 0.6419346248585314,
+      "mixture_hits_at_50": 0.6539012049796951,
+      "gain_over_joint": 0.011966580121163695,
+      "gain_over_aa": -0.014496371746221981,
+      "gain_over_better_single": -0.014496371746221981,
+      "aa_repeat_recall": 0.9923767455115418,
+      "mixture_repeat_recall": 0.9993944143630664,
+      "repeat_recall_change_vs_aa": 0.007017668851524661,
+      "aa_novel_recall": 0.38429338997875795,
+      "joint_novel_recall": 0.35093090091215795,
+      "mixture_novel_recall": 0.35093090091215795,
+      "cutoffs": {
+        "aa": 0.7843791088880756,
+        "joint": 0.7599528282705055,
+        "mixture": 0.7599528282705055
+      },
+      "counts": {
+        "positive": 60084,
+        "negative": 100000,
+        "repeat_positive": 28072,
+        "repeat_negative": 8
+      }
+    },
+    {
+      "year": 2017,
+      "seed": 2,
+      "aa_hits_at_50": 0.6919404366297901,
+      "joint_hits_at_50": 0.7873427838303958,
+      "mixture_hits_at_50": 0.7873848483573802,
+      "gain_over_joint": 4.206452698440888e-05,
+      "gain_over_aa": 0.0954444117275901,
+      "gain_over_better_single": 4.206452698440888e-05,
+      "aa_repeat_recall": 0.997355758810525,
+      "mixture_repeat_recall": 0.9994798214053492,
+      "repeat_recall_change_vs_aa": 0.0021240625948242275,
+      "aa_novel_recall": 0.40409363892633904,
+      "joint_novel_recall": 0.5874902970135228,
+      "mixture_novel_recall": 0.5874902970135228,
+      "cutoffs": {
+        "aa": 0.7766933702031908,
+        "joint": 0.745950415463652,
+        "mixture": 0.745950415463652
+      },
+      "counts": {
+        "positive": 47546,
+        "negative": 100000,
+        "repeat_positive": 23069,
+        "repeat_negative": 1
+      }
+    },
+    {
+      "year": 2018,
+      "seed": 2,
+      "aa_hits_at_50": 0.668397576725917,
+      "joint_hits_at_50": 0.6396211969908794,
+      "mixture_hits_at_50": 0.6491412023167565,
+      "gain_over_joint": 0.009520005325877157,
+      "gain_over_aa": -0.019256374409160504,
+      "gain_over_better_single": -0.019256374409160504,
+      "aa_repeat_recall": 0.9923767455115418,
+      "mixture_repeat_recall": 0.9994300370475919,
+      "repeat_recall_change_vs_aa": 0.007053291536050166,
+      "aa_novel_recall": 0.38429338997875795,
+      "joint_novel_recall": 0.34196551293265026,
+      "mixture_novel_recall": 0.34196551293265026,
+      "cutoffs": {
+        "aa": 0.7843791088880756,
+        "joint": 0.7548628902172881,
+        "mixture": 0.7548628902172881
+      },
+      "counts": {
+        "positive": 60084,
+        "negative": 100000,
+        "repeat_positive": 28072,
+        "repeat_negative": 8
+      }
+    }
+  ],
+  "summary": {
+    "2017": {
+      "mean_mixture": 0.7806545240398771,
+      "mean_joint": 0.7812083736451717,
+      "mean_gain_over_joint": -0.0005538496052945133,
+      "mean_gain_over_better_single": -0.0005538496052945133
+    },
+    "2018": {
+      "mean_mixture": 0.6480371923751193,
+      "mean_joint": 0.6368195637219004,
+      "mean_gain_over_joint": 0.011217628653218811,
+      "mean_gain_over_better_single": -0.02036038435079779
+    }
+  },
+  "conditions": {
+    "all_seed_gains_over_joint_positive_both_years": false,
+    "mean_gain_over_joint_each_year": false,
+    "forward_repeat_recall_loss_vs_aa_max": true,
+    "forward_gain_over_better_single": false
+  },
+  "advance": false,
+  "decision": "stop H1 before training",
+  "target_reference_only": 0.7129,
+  "test_2019_scored": false
+}

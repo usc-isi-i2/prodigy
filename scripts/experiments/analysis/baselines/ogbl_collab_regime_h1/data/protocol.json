@@ -1,0 +1,30 @@
+{
+  "name": "ogbl_collab_regime_h1_prerequisite_v1",
+  "revision": "b73af00b07093463570c88bd93fce3a02f49dfb3",
+  "research_question": "Does a fixed observable repeat/novel expert split transfer from 2017 to 2018?",
+  "years": {
+    "calibration_and_selection": 2017,
+    "forward_assessment": 2018
+  },
+  "experts": [
+    "AA-DC",
+    "seed-matched compact joint"
+  ],
+  "gate": "AA-DC if pair appeared before target year; joint otherwise",
+  "calibration": "per-expert empirical CDF over pooled 2017 candidate scores, frozen for 2018",
+  "metric": "Hits@50 with cutoff recomputed after mixing",
+  "primary_control": "seed-matched joint scorer",
+  "secondary_controls": [
+    "AA-DC",
+    "better single expert on each panel"
+  ],
+  "advance": {
+    "all_seed_gains_over_joint_positive_both_years": true,
+    "mean_gain_over_joint_each_year": 0.005,
+    "forward_repeat_recall_loss_vs_aa_max": 0.001,
+    "forward_gain_over_better_single": 0.005
+  },
+  "stop": "stop before training if any advancement condition fails",
+  "test_2019_access": false,
+  "qualification": "mechanism prerequisite only; prior 2019 exploration disclosed"
+}
