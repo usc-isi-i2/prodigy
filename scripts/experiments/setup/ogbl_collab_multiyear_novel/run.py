@@ -73,9 +73,8 @@ def prepare(args):
             symmetric_features=True, negative_edges=neg,
         )
         panel["graph_edges"] = joint.graph_edges(graph, split, year)
-        assert np.max(split["train"]["year"].flatten()[np.isin(
-            joint.gate.keys(split["train"]["edge"], int(graph["num_nodes"])),
-            joint.gate.keys(panel["graph_edges"], int(graph["num_nodes"])))]) < year
+        expected_edges = np.unique(np.sort(split["train"]["edge"][ty < year], axis=1), axis=0)
+        np.testing.assert_array_equal(panel["graph_edges"], expected_edges)
         path = args.out / f"train{year}.npz"
         np.savez_compressed(path, **panel)
         files[str(path)] = joint.shared.sha256_file(path)
@@ -227,4 +226,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
